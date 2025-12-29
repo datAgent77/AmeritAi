@@ -102,6 +102,7 @@ export async function GET(req: Request) {
                         'Access-Control-Allow-Origin': '*',
                         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                        'Cache-Control': 'no-store, max-age=0',
                     }
                 });
             } else {
@@ -151,6 +152,7 @@ export async function GET(req: Request) {
                         'Access-Control-Allow-Origin': '*',
                         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                        'Cache-Control': 'no-store, max-age=0',
                     }
                 });
             }

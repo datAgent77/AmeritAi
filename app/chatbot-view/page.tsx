@@ -1418,16 +1418,21 @@ function ChatbotViewContent() {
                         </div>
                     )}
 
+
+                    {/* Glowing Orb Animation Container - Persistent */}
+                    <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-full flex justify-center z-0 pointer-events-none">
+                        <div className="relative w-64 h-64">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded-full blur-[60px] animate-pulse"></div>
+                            <div className="absolute inset-10 bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[40px]"></div>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/40 blur-[50px] rounded-full mix-blend-overlay"></div>
+                        </div>
+                    </div>
+
                     {/* Content Area */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth z-10 relative">
                         {messages.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center -mt-10">
-                                {/* Orb Animation */}
-                                <div className="relative w-64 h-64 mb-8 pointer-events-none">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded-full blur-[60px] animate-pulse"></div>
-                                    <div className="absolute inset-10 bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[40px]"></div>
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/40 blur-[50px] rounded-full mix-blend-overlay"></div>
-                                </div>
+                                <div className="mb-8"></div>
                                 <h3 className="text-xl md:text-2xl font-medium text-slate-700 leading-tight text-center mb-12 max-w-sm px-4">
                                     {settings.welcomeMessage}
                                 </h3>
