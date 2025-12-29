@@ -31,7 +31,8 @@ export type ModuleId =
     | 'gamification'
     | 'visualDiagnosis'
     | 'agriCalendar'
-    | 'marketWatch';
+    | 'marketWatch'
+    | 'digitalWaiter';
 
 export type SectorId =
     | 'ecommerce'
@@ -515,6 +516,58 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         supportedSectors: ['agriculture'],
         defaultEnabledBySector: ['agriculture'],
         legacyFirestoreField: 'enableMarketWatch'
+    },
+
+    digitalWaiter: {
+        id: 'digitalWaiter',
+        name: {
+            en: 'Digital Waiter',
+            tr: 'Dijital Garson'
+        },
+        description: {
+            en: 'Active QR menu assistant that takes orders',
+            tr: 'Sipariş alan aktif QR menü asistanı'
+        },
+        icon: 'Utensils',
+        isCore: false,
+        isPremiumAddOn: true,
+        supportedSectors: ['restaurant'],
+        defaultEnabledBySector: ['restaurant'],
+        legacyFirestoreField: 'enableDigitalWaiter',
+        longDescription: {
+            en: 'More than a menu. A digital waiter that greets your guests, recommends specialties, answers questions about allergens, and takes orders instantly via QR code.',
+            tr: 'Bir menüden fazlası. Misafirlerinizi karşılayan, spesiyalleri öneren, alerjen sorularını yanıtlayan ve QR kod üzerinden sipariş alan dijital garson.'
+        },
+        aiSystemInstruction: {
+            en: `DIGITAL WAITER MODE ACTIVE. You are the digital waiter of this restaurant.
+            1. Greet guests warmly and present the menu.
+            2. Suggest specials and drink pairings.
+            3. Answer questions about ingredients/allergens accurately.
+            4. Take orders precisely and confirm them.
+            5. Ask if they need anything else (water, napkins, etc.).`,
+            tr: `DİJİTAL GARSON MODU AKTİF. Bu restoranın dijital garsonusun.
+            1. Misafirleri sıcak bir şekilde karşıla ve menüyü sun.
+            2. Günün spesiyallerini ve içecek eşleşmelerini öner.
+            3. İçerik ve alerjen sorularını doğru şekilde yanıtla.
+            4. Siparişleri eksiksiz al ve onayla.
+            5. Başka bir istekleri olup olmadığını sor (su, peçete vb.).`
+        },
+        features: [
+            {
+                title: { en: 'Smart Recommendations', tr: 'Akıllı Öneriler' },
+                description: { en: 'Suggests high-margin items.', tr: 'Yüksek kârlı ürünleri önerir.' },
+                icon: 'Star'
+            },
+            {
+                title: { en: 'Order Taking', tr: 'Sipariş Alma' },
+                description: { en: 'Takes complete orders and sends to kitchen.', tr: 'Siparişi eksiksiz alır ve mutfağa iletir.' },
+                icon: 'CheckCircle'
+            }
+        ],
+        benefits: [
+            { en: 'Increase table turnover by 20%', tr: 'Masa devir hızını %20 artırın' },
+            { en: 'Boost average ticket size', tr: 'Ortalama sepet tutarını yükseltin' }
+        ]
     }
 };
 
