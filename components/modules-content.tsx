@@ -4,6 +4,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import {
     ShoppingBag,
     ArrowRight,
@@ -24,12 +32,14 @@ import {
     BarChart,
     Info,
     LayoutGrid,
-    List
+    List,
+    Search,
+    Filter
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { doc, updateDoc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
@@ -112,6 +122,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [selectedModuleId, setSelectedModuleId] = useState<ModuleId | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+    // Search and Filter States
+    const [searchQuery, setSearchQuery] = useState("")
+    const [industryFilter, setIndustryFilter] = useState("all")
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
@@ -377,6 +391,32 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         return !isModuleIncluded(moduleId)
     }
 
+    // Filter Logic
+    const filteredModules = useMemo(() => {
+        return ORDERED_MODULES.filter(module => {
+            const name = t(module.nameKey) || module.nameKey
+            const description = t(module.descriptionKey) || module.descriptionKey
+            const query = searchQuery.toLowerCase()
+
+            // Search Match
+            const matchesSearch = name.toLowerCase().includes(query) || description.toLowerCase().includes(query)
+
+            // Industry Match
+            let matchesIndustry = true
+            if (industryFilter !== 'all') {
+                const recommended = module.recommendedFor || []
+                // If module has no recommendations, strictly speaking it might be for all? 
+                // In registry '[]' means all sectors. In module-config it might be consistent.
+                // If recommended list is empty, it usually means Core/General.
+                if (recommended.length > 0) {
+                    matchesIndustry = recommended.includes(industryFilter as IndustryType)
+                }
+            }
+
+            return matchesSearch && matchesIndustry
+        })
+    }, [ORDERED_MODULES, searchQuery, industryFilter, t])
+
     // Show loading skeleton while fetching data
     if (isPageLoading) {
         return (
@@ -405,42 +445,92 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6 animate-in fade-in duration-500">
-            <div className="flex items-center justify-between space-y-2">
+        <div className="flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{t('modules') || "Modüller"}</h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mt-1">
                         {t('modulesDescription') || "Yapay zeka asistanlarını ve araçlarını yönetin."}
                     </p>
-                    {!isSuperAdminViewingTenant && (
-                        <div className="mt-2 inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-                            {t('industry')}: {(industryConfig as any).names?.[language] || industryConfig.label}
-                        </div>
-                    )}
                 </div>
-                <div className="flex items-center space-x-2 bg-secondary/50 p-1 rounded-lg border">
+                {!isSuperAdminViewingTenant && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-lg">
+                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
+                            {t('activeSector') || 'Aktif Sektör'}
+                        </Badge>
+                        <span className="font-medium text-sm text-indigo-900 dark:text-indigo-300">
+                            {(industryConfig as any).names?.[language] || industryConfig.label}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Toolbar: Search, Filter, View Toggle */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-zinc-950 p-1 rounded-xl">
+                <div className="flex flex-1 w-full md:w-auto items-center gap-3">
+                    <div className="relative flex-1 md:max-w-xs">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder={t('searchModules') || "Modül ara..."}
+                            className="pl-9 h-10 w-full"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+
+                    <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                        <SelectTrigger className="w-[180px] h-10">
+                            <Filter className="w-4 h-4 mr-2" />
+                            <SelectValue placeholder={t('filterByIndustry') || "Sektör Filtrele"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t('allIndustries') || "Tüm Sektörler"}</SelectItem>
+                            {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
+                                <SelectItem key={key} value={key}>
+                                    {(config as any).names?.[language] || config.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex items-center space-x-1 bg-secondary/30 p-1 rounded-lg border">
                     <Button
                         variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                        size="icon"
-                        className="h-8 w-8"
+                        size="sm"
+                        className="h-8 px-2 lg:px-3"
                         onClick={() => setViewMode('grid')}
                     >
-                        <LayoutGrid className="h-4 w-4" />
+                        <LayoutGrid className="h-4 w-4 lg:mr-2" />
+                        <span className="hidden lg:inline">{t('gridView') || "Grid"}</span>
                     </Button>
                     <Button
                         variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                        size="icon"
-                        className="h-8 w-8"
+                        size="sm"
+                        className="h-8 px-2 lg:px-3"
                         onClick={() => setViewMode('list')}
                     >
-                        <List className="h-4 w-4" />
+                        <List className="h-4 w-4 lg:mr-2" />
+                        <span className="hidden lg:inline">{t('listView') || "Liste"}</span>
                     </Button>
                 </div>
             </div>
 
-            {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
-                    {ORDERED_MODULES.map((module) => {
+            {/* Modules Render */}
+            {filteredModules.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                    <div className="flex justify-center mb-4">
+                        <Search className="w-12 h-12 opacity-20" />
+                    </div>
+                    <p>{t('noModulesFound') || "Modül bulunamadı."}</p>
+                    <Button variant="link" onClick={() => { setSearchQuery(""); setIndustryFilter("all") }}>
+                        {t('clearFilters') || "Filtreleri Temizle"}
+                    </Button>
+                </div>
+            ) : viewMode === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+                    {filteredModules.map((module) => {
                         const isIncluded = isModuleIncluded(module.id)
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
@@ -539,8 +629,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     })}
                 </div>
             ) : (
-                <div className="flex flex-col gap-4 pt-4">
-                    {ORDERED_MODULES.map((module) => {
+                <div className="flex flex-col gap-4 pt-2">
+                    {filteredModules.map((module) => {
                         const isIncluded = isModuleIncluded(module.id)
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
