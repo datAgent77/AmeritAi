@@ -115,7 +115,302 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
-    // ... useEffects and handlers remain the same ...
+    // Use targetUserId if provided, otherwise use current user's uid
+    const effectiveUserId = targetUserId || user?.uid
+    const isSuperAdminViewingTenant = !!targetUserId
+
+    // Determine User Industry - Default to ecommerce if not set
+    const userIndustry: IndustryType = (user as any)?.industry || DEFAULT_INDUSTRY
+    const industryConfig = INDUSTRY_CONFIG[userIndustry]
+
+    useEffect(() => {
+        const loadModuleStates = async () => {
+            if (!effectiveUserId) return
+            setIsPageLoading(true)
+            try {
+                // Fetch from API to avoid client-side permission issues
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`)
+
+                if (response.ok) {
+                    const data = await response.json()
+
+                    setModuleStates({
+                        generalChatbot: data.enableChatbot ?? true,
+                        productCatalog: data.enablePersonalShopper ?? false,
+                        voiceAssistant: data.enableVoiceAssistant ?? false,
+                        knowledgeBase: data.enableKnowledgeBase ?? true,
+                        leadCollection: data.enableLeadCollection ?? false,
+                        appointments: data.enableAppointments ?? false,
+
+                        emailMarketing: data.enableEmailMarketing ?? false,
+                        salesOptimization: data.enableSalesOptimization ?? false,
+                    })
+                } else {
+                    console.error("Failed to load settings via API")
+                    // Fallback to defaults
+                    setModuleStates({
+                        generalChatbot: true,
+                        productCatalog: false,
+                        voiceAssistant: false,
+                        knowledgeBase: true,
+                        leadCollection: false,
+                        appointments: false,
+
+                        emailMarketing: false,
+                        salesOptimization: false,
+                    })
+                }
+
+            } catch (error) {
+                console.error("Error loading module states:", error)
+            } finally {
+                setIsPageLoading(false)
+            }
+        }
+        loadModuleStates()
+    }, [effectiveUserId])
+
+    const handleToggle = async (moduleId: ModuleId, checked: boolean) => {
+        if (!effectiveUserId) return
+        setIsLoading(moduleId)
+
+        // 1. Check for Conflicts
+        const targetModule = getAllRegistryModules().find(m => m.id === moduleId);
+        // If we are trying to ENABLE it (checked is true)
+        if (checked && targetModule?.conflictsWith) {
+            // Check if any conflicting module is currently enabled
+            const conflictingModuleId = targetModule.conflictsWith.find(conflictId => {
+                return moduleStates[conflictId] === true;
+            });
+
+            if (conflictingModuleId) {
+                const conflictModule = getAllRegistryModules().find(m => m.id === conflictingModuleId);
+                const conflictName = conflictModule
+                    ? (language === 'tr' ? conflictModule.name.tr : conflictModule.name.en)
+                    : conflictingModuleId;
+
+                toast({
+                    variant: "destructive",
+                    title: language === 'tr' ? "Modül Çakışması" : "Module Conflict",
+                    description: language === 'tr'
+                        ? `Bu modül, şu anda aktif olan "${conflictName}" modülü ile çakışmaktadır. Lütfen önce diğer modülü kapatın.`
+                        : `This module conflicts with the currently active "${conflictName}" module. Please disable it first.`
+                });
+                setIsLoading(null); // Stop loading state
+                return; // Prevent toggle
+            }
+        }
+
+        // 2. Optimistic Update
+        setModuleStates(prev => ({
+            ...prev,
+            [moduleId]: checked
+        }))
+
+        try {
+            const userRef = doc(db, "users", effectiveUserId)
+            const chatbotRef = doc(db, "chatbots", effectiveUserId)
+            const fieldName = MODULE_FIRESTORE_MAP[moduleId]
+
+            if (!fieldName) throw new Error("Field mapping not found")
+
+            // Get ID token for security check
+            const idToken = await user?.getIdToken()
+
+            // Use API to update settings (handles permissions via admin-sdk)
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    chatbotId: effectiveUserId,
+                    userSettings: { [fieldName]: checked },
+                    chatbotSettings: { [fieldName]: checked }
+                })
+            })
+
+            if (!response.ok) throw new Error("Failed to update module settings")
+
+            setModuleStates(prev => ({ ...prev, [moduleId]: checked }))
+
+            toast({
+                title: checked ? (t('moduleEnabled') || "Modül Aktif Edildi") : (t('moduleDisabled') || "Modül Pasif Edildi"),
+                description: t('settingsSavedDesc') || "Ayarlarınız güncellendi."
+            })
+        } catch (error) {
+            console.error("Error updating module:", error)
+            toast({
+                title: "Error",
+                description: "Failed to update module status.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsLoading(null)
+        }
+    }
+
+    const handleManage = (moduleId: ModuleId) => {
+        // Build base path based on whether viewing tenant or own console
+        const basePath = isSuperAdminViewingTenant
+            ? `/admin/tenant/${targetUserId}`
+            : '/console'
+
+        // Route to specific module management pages
+        switch (moduleId) {
+            case 'generalChatbot':
+                router.push(`${basePath}/chatbot`)
+                break
+            case 'productCatalog':
+                router.push(`${basePath}/chatbot/shopper`)
+                break
+            case 'voiceAssistant':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/voice/settings")
+                break
+            case 'knowledgeBase':
+                router.push(`${basePath}/knowledge`)
+                break
+            case 'leadCollection':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/leads/settings")
+                break
+            case 'salesOptimization':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/sales-optimization")
+                break
+            case 'appointments':
+                router.push(`${basePath}/chatbot/appointments`)
+                break
+
+            case 'emailMarketing':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/email")
+                break
+            case 'reviewManagement':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/reviews")
+                break
+            case 'loyaltyProgram':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/loyalty")
+                break
+            case 'campaignManager':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/campaigns")
+                break
+            case 'autoTranslate':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/translate")
+                break
+            case 'gamification':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/gamification")
+                break
+            case 'visualDiagnosis':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/visual")
+                break
+            case 'agriCalendar':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/calendar")
+                break
+            case 'marketWatch':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/market")
+                break
+            // Add other routes as they are implemented
+            default:
+                toast({
+                    title: t('comingSoon'),
+                    description: t('moduleUnderDevelopment')
+                })
+        }
+    }
+
+    const handleRequest = async (moduleId: ModuleId) => {
+        if (!effectiveUserId) return
+        setIsLoading(moduleId)
+
+        const moduleConfig = MODULE_DEFINITIONS[moduleId]
+        const moduleName = moduleConfig?.nameKey ? t(moduleConfig.nameKey) || moduleConfig.nameKey : moduleId
+
+        try {
+            // Get ID token for authorization
+            const idToken = await user?.getIdToken()
+
+            const response = await fetch("/api/console/request-module", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    moduleKey: moduleId,
+                    moduleName: moduleName,
+                    industry: userIndustry
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || "Failed to submit request")
+            }
+
+            toast({
+                title: t('requestSent') || "Talep Gönderildi",
+                description: t('requestSentDesc') || "Modül talebiniz yöneticiye iletildi. En kısa sürede sizinle iletişime geçeceğiz.",
+            })
+        } catch (error) {
+            console.error("Error sending request:", error)
+            toast({
+                title: "Hata",
+                description: "Talep gönderilemedi. Lütfen tekrar deneyin.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsLoading(null)
+        }
+    }
+
+    const isModuleIncluded = (moduleId: ModuleId) => {
+        if (moduleId === 'generalChatbot') return true // Always included
+
+        // Map old module IDs to new ones
+        const moduleIdMap: Record<string, string> = {
+            'generalChatbot': 'chatbot',
+            'productCatalog': 'personalShopper',
+            'voiceAssistant': 'voiceAssistant',
+            'leadCollection': 'leadFinder',
+            'knowledgeBase': 'chatbot', // Part of chatbot
+            'appointments': 'voiceAssistant', // Part of voice
+        }
+
+        const mappedId = moduleIdMap[moduleId] || moduleId
+        const industryModules = INDUSTRY_DEFAULT_MODULES[userIndustry] || INDUSTRY_DEFAULT_MODULES.other
+        return industryModules.includes(mappedId)
+    }
+
+    const isPremiumModule = (moduleId: ModuleId) => {
+        if (moduleId === 'generalChatbot') return false // Core, not premium
+        return !isModuleIncluded(moduleId)
+    }
+
+    // Show loading skeleton while fetching data
+    if (isPageLoading) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <div>
+                        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+                        <div className="h-4 w-64 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="border rounded-lg p-6 space-y-4">
+                            <div className="flex justify-between">
+                                <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse" />
+                                <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse" />
+                            </div>
+                            <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                            <div className="h-10 w-full bg-gray-200 rounded animate-pulse mt-4" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6 animate-in fade-in duration-500">
