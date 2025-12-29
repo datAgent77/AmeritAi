@@ -87,9 +87,9 @@ export default function LandingPage() {
                                     <ArrowRight className="ml-2 w-5 h-5" />
                                 </Button>
                             </Link>
-                            <Link href="/solutions/ecommerce">
+                            <Link href="/industries">
                                 <Button variant="outline" className="h-14 px-8 text-lg text-white border-white/20 hover:bg-white/10 rounded-full">
-                                    {language === 'tr' ? 'Örnekleri İnceleyin' : 'View Examples'}
+                                    {language === 'tr' ? 'Tüm Sektörler' : 'All Industries'}
                                 </Button>
                             </Link>
                         </div>
