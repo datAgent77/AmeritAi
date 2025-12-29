@@ -148,6 +148,26 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                 </div>
             </article>
 
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "BlogPosting",
+                        "headline": post.title[language as 'en' | 'tr'],
+                        "image": [post.image],
+                        "datePublished": post.date,
+                        "dateModified": post.date,
+                        "author": [{
+                            "@type": "Person",
+                            "name": post.author.name,
+                            "url": "https://userex-ai.com"
+                        }],
+                        "description": post.excerpt[language as 'en' | 'tr']
+                    })
+                }}
+            />
+
             <PublicFooter />
         </div>
     )

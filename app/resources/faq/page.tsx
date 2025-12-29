@@ -151,6 +151,24 @@ export default function FaqPage() {
             </section>
 
             <PublicFooter />
+
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "FAQPage",
+                        "mainEntity": faqs.map(faq => ({
+                            "@type": "Question",
+                            "name": faq.question[language as 'en' | 'tr'],
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": faq.answer[language as 'en' | 'tr']
+                            }
+                        }))
+                    })
+                }}
+            />
         </div>
     )
 }
