@@ -9,7 +9,9 @@ export function PublicChatbot() {
     // Don't show on admin, console, or tenant menu pages
     if (pathname?.startsWith("/admin") ||
         pathname?.startsWith("/console") ||
-        pathname?.startsWith("/menu")) {
+        pathname?.startsWith("/menu") ||
+        pathname?.startsWith("/chatbot-view") ||
+        pathname?.startsWith("/widget-test")) {
         return null
     }
 
