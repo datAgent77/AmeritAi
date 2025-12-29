@@ -215,10 +215,78 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
         ]
     },
     // Add skeletons for the rest to match header links: academic, finance, restaurant, agriculture
-    academic: { id: 'academic', title: { tr: "Akademik", en: "Academic" }, subtitle: { tr: "Okullar için asistan.", en: "Assistant for schools." }, iconName: 'School', features: [], promptExample: { user: { tr: "Okul ücreti?", en: "Tuition?" }, ai: { tr: "Detaylı bilgi için...", en: "For details..." } }, conversation: [] },
-    finance: { id: 'finance', title: { tr: "Finans", en: "Finance" }, subtitle: { tr: "Finansal asistan.", en: "Financial assistant." }, iconName: 'Banknote', features: [], promptExample: { user: { tr: "Faiz oranı?", en: "Interest rate?" }, ai: { tr: "Güncel oranlarımız...", en: "Current rates..." } }, conversation: [] },
-    restaurant: { id: 'restaurant', title: { tr: "Restoran", en: "Restaurant" }, subtitle: { tr: "Geleneksel menünün ötesinde.", en: "Beyond traditional menu." }, iconName: 'ChefHat', features: [], promptExample: { user: { tr: "Menüde ne var?", en: "Whats on menu?" }, ai: { tr: "Bugünün spesyali...", en: "Todays special..." } }, conversation: [] },
-    agriculture: { id: 'agriculture', title: { tr: "Tarım", en: "Agriculture" }, subtitle: { tr: "Çiftçi dostu asistan.", en: "Farmer friendly assistant." }, iconName: 'Sprout', features: [], promptExample: { user: { tr: "Hava durumu?", en: "Weather?" }, ai: { tr: "Yarın yağmurlu...", en: "Rain tomorrow..." } }, conversation: [] },
+    academic: {
+        id: 'academic',
+        title: { tr: "Akademik", en: "Academic" },
+        subtitle: { tr: "Okullar için asistan.", en: "Assistant for schools." },
+        iconName: 'School',
+        features: [
+            { title: { tr: "Kayıt Bilgisi", en: "Registration Info" }, description: { tr: "Velilere kayıt süreçlerini anlatır.", en: "Explains registration processes to parents." }, iconName: 'Book' },
+            { title: { tr: "Etkinlik Takvimi", en: "Events Calendar" }, description: { tr: "Okul etkinliklerini duyurur.", en: "Announces school events." }, iconName: 'Calendar' },
+            { title: { tr: "Sık Sorulanlar", en: "FAQ" }, description: { tr: "Servis, yemek gibi konuları yanıtlar.", en: "Answers questions about bus, food etc." }, iconName: 'MessageSquare' }
+        ],
+        promptExample: { user: { tr: "Okul ücreti?", en: "Tuition?" }, ai: { tr: "Detaylı bilgi için...", en: "For details..." } },
+        conversation: [
+            { role: 'user', content: { tr: "Merhaba, ilkokul kayıt ücretleri hakkında bilgi alabilir miyim?", en: "Hello, can I get information about primary school tuition fees?" } },
+            { role: 'ai', content: { tr: "Merhaba! İlkokul 1-4. sınıflar için 2025-2026 eğitim dönemi ücretlerimiz güncellendi. Erken kayıt avantajlarından yararlanmak ister misiniz?", en: "Hello! Our tuition fees for grades 1-4 for the 2025-2026 academic year have been updated. Would you like to take advantage of early registration benefits?" } },
+            { role: 'user', content: { tr: "Evet, erken kayıt indirimi ne kadar?", en: "Yes, how much is the early registration discount?" } },
+            { role: 'ai', content: { tr: "30 Nisan'a kadar yapılan kayıtlarda %15 indirim uyguluyoruz. Ayrıca kardeş indirimimiz de mevcut. Size detaylı fiyat listesini broşür olarak ileteyim mi?", en: "We offer a 15% discount for registrations made until April 30th. We also have a sibling discount. Shall I send you the detailed price list brochure?" } }
+        ]
+    },
+    finance: {
+        id: 'finance',
+        title: { tr: "Finans", en: "Finance" },
+        subtitle: { tr: "Finansal asistan.", en: "Financial assistant." },
+        iconName: 'Banknote',
+        features: [
+            { title: { tr: "Kredi Hesaplama", en: "Loan Calculator" }, description: { tr: "Anlık kredi taksit hesabı yapar.", en: "Calculates loan installments instantly." }, iconName: 'BarChart' },
+            { title: { tr: "Yatırım Danışmanı", en: "Investment Advisor" }, description: { tr: "Piyasa verilerini analiz eder.", en: "Analyzes market data." }, iconName: 'TrendingUp' },
+            { title: { tr: "Müşteri Hizmetleri", en: "Customer Service" }, description: { tr: "7/24 bankacılık desteği.", en: "24/7 banking support." }, iconName: 'Users' }
+        ],
+        promptExample: { user: { tr: "Faiz oranı?", en: "Interest rate?" }, ai: { tr: "Güncel oranlarımız...", en: "Current rates..." } },
+        conversation: [
+            { role: 'user', content: { tr: "500.000 TL ihtiyaç kredisi çekmek istiyorum.", en: "I want to take out a personal loan of 500,000 TL." } },
+            { role: 'ai', content: { tr: "Tabii, yardımcı olabilirim. Vadeniz ne olsun? 12, 24 veya 36 ay seçeneklerimiz var.", en: "Sure, I can help. What maturity would you like? We have 12, 24, or 36 month options." } },
+            { role: 'user', content: { tr: "24 ay olsun. Aylık ödemesi ne olur?", en: "Let's say 24 months. What would be the monthly payment?" } },
+            { role: 'ai', content: { tr: "Mevcut %3.59 faiz oranıyla 24 ay vade için aylık taksitleriniz yaklaşık 32.450 TL olacaktır. Hemen başvuruyu başlatmamı ister misiniz? Onay sadece 2 dakika sürer.", en: "With the current 3.59% interest rate, your monthly installments for 24 months would be approximately 32,450 TL. Would you like me to start the application now? Approval takes only 2 minutes." } }
+        ]
+    },
+    restaurant: {
+        id: 'restaurant',
+        title: { tr: "Restoran", en: "Restaurant" },
+        subtitle: { tr: "Geleneksel menünün ötesinde.", en: "Beyond traditional menu." },
+        iconName: 'ChefHat',
+        features: [
+            { title: { tr: "Dijital Menü", en: "Digital Menu" }, description: { tr: "Görsel ve içerik zengini menü.", en: "Visual and content rich menu." }, iconName: 'BookOpen' },
+            { title: { tr: "Rezervasyon", en: "Reservation" }, description: { tr: "Masa rezervasyonu yönetimi.", en: "Table reservation management." }, iconName: 'Calendar' },
+            { title: { tr: "Alerjen Uyarısı", en: "Allergen Alert" }, description: { tr: "Müşteri hassasiyetine göre öneri.", en: "Suggestions based on sensitivity." }, iconName: 'Info' }
+        ],
+        promptExample: { user: { tr: "Menüde ne var?", en: "Whats on menu?" }, ai: { tr: "Bugünün spesyali...", en: "Todays special..." } },
+        conversation: [
+            { role: 'user', content: { tr: "Bu akşam 2 kişi için yeriniz var mı?", en: "Do you have a table for 2 tonight?" } },
+            { role: 'ai', content: { tr: "Saat kaç için düşünüyorsunuz? Şu an 19:00 ve 21:00 saatlerinde müsaitliğimiz var.", en: "What time are you thinking? We currently have availability at 19:00 and 21:00." } },
+            { role: 'user', content: { tr: "19:00 uygun. Vegan menünüz var mı?", en: "19:00 works. Do you have a vegan menu?" } },
+            { role: 'ai', content: { tr: "Evet, oldukça geniş bir vegan menümüz var! Özellikle 'Kinoa Köftesi' ve 'Mantar Risotto'muz çok seviliyor. Rezervasyonunuzu 19:00 olarak 'Vegan Tercihli' notuyla oluşturuyorum?", en: "Yes, we have a quite extensive vegan menu! Our 'Quinoa Patties' and 'Mushroom Risotto' are especially popular. Shall I create your reservation for 19:00 with a 'Vegan Preference' note?" } }
+        ]
+    },
+    agriculture: {
+        id: 'agriculture',
+        title: { tr: "Tarım", en: "Agriculture" },
+        subtitle: { tr: "Çiftçi dostu asistan.", en: "Farmer friendly assistant." },
+        iconName: 'Sprout',
+        features: [
+            { title: { tr: "Hastalık Tespiti", en: "Disease Detection" }, description: { tr: "Bitki fotoğrafından hastalık tanır.", en: "Identifies disease from plant photo." }, iconName: 'Eye' },
+            { title: { tr: "Hava Durumu", en: "Weather" }, description: { tr: "Zirai don ve yağış uyarıları.", en: "Frost and rain alerts." }, iconName: 'Plane' }, // Using Plane as placeholder or CloudRain if available, sticking to existing lucide imports mostly
+            { title: { tr: "Verim Analizi", en: "Yield Analysis" }, description: { tr: "Hasat tahminleri yapar.", en: "Makes harvest predictions." }, iconName: 'BarChart' }
+        ],
+        promptExample: { user: { tr: "Hava durumu?", en: "Weather?" }, ai: { tr: "Yarın yağmurlu...", en: "Rain tomorrow..." } },
+        conversation: [
+            { role: 'user', content: { tr: "Domateslerimde yapraklar sararmaya başladı, ne yapmalıyım?", en: "Leaves on my tomatoes started turning yellow, what should I do?" } },
+            { role: 'ai', content: { tr: "Sararma genellikle magnezyum eksikliği veya mantar hastalığı belirtisi olabilir. Yaprağın fotoğrafını yükleyebilir misiniz? Hemen analiz edip doğru ilacı önerebilirim.", en: "Yellowing can often be a sign of magnesium deficiency or fungal disease. Can you upload a photo of the leaf? I can analyze it immediately and recommend the right treatment." } },
+            { role: 'user', content: { tr: "[Fotoğraf Yüklendi]", en: "[Photo Uploaded]" } },
+            { role: 'ai', content: { tr: "Görsele göre bu 'Erken Yanıklık' hastalığı. Bakır içerikli fungisit kullanmanızı öneririm. Bölgenizde yarın yağmur bekleniyor, ilaçlamayı yağmurdan sonra yapmalısınız.", en: "According to the image, this is 'Early Blight'. I recommend using a copper-based fungicide. Rain is expected in your area tomorrow, you should spray after the rain." } }
+        ]
+    },
     service: {
         id: 'service',
         title: { tr: "Hizmet & Danışmanlık", en: "Service & Consulting" },
@@ -230,7 +298,12 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
             { title: { tr: "Fiyatlandırma", en: "Pricing" }, description: { tr: "Fiyatlar hakkında bilgi verir.", en: "Provides pricing info." }, iconName: 'DollarSign' }
         ],
         promptExample: { user: { tr: "Danışmanlık ücreti ne kadar?", en: "How much is consulting?" }, ai: { tr: "Saatlik danışmanlık ücretimiz 1500₺. Paket alımlarında indirim uyguluyoruz.", en: "Our hourly rate is $150. We offer discounts for packages." } },
-        conversation: []
+        conversation: [
+            { role: 'user', content: { tr: "Hukuki danışmanlık hizmetiniz neleri kapsıyor?", en: "What does your legal consulting service cover?" } },
+            { role: 'ai', content: { tr: "Şirketler hukuku, sözleşmeler ve KVKK uyumluluğu konularında uzmanız. Hangi alanda desteğe ihtiyacınız var?", en: "We specialize in corporate law, contracts, and GDPR compliance. Which area do you need support in?" } },
+            { role: 'user', content: { tr: "Yeni kurduğumuz şirket için sözleşme taslaklarına ihtiyacımız var.", en: "We need contract drafts for our newly established company." } },
+            { role: 'ai', content: { tr: "Harika! 'Startup Paketi'miz tam size göre. Ana sözleşme, gizlilik sözleşmeleri ve çalışan sözleşmelerini içerir. Avukatımızla 15 dakikalık ücretsiz bir ön görüşme planlayalım mı?", en: "Great! Our 'Startup Package' is perfect for you. It includes articles of association, NDAs, and employee contracts. Shall we schedule a free 15-minute preliminary meeting with our lawyer?" } }
+        ]
     },
 
 }

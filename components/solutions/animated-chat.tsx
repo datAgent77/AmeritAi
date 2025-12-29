@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useLanguage } from "@/context/LanguageContext"
 import { motion, AnimatePresence } from "framer-motion"
+import { VionLogo } from "@/components/vion-logo"
 
 interface Message {
     role: 'user' | 'ai';
@@ -25,12 +26,12 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
 
         const showNextMessage = () => {
             if (currentIndex >= conversation.length) {
-                // Optional: Restart loop after a long delay
+                // Restart loop after a long delay
                 setTimeout(() => {
                     setVisibleMessages(0)
                     currentIndex = 0
                     showNextMessage()
-                }, 5000)
+                }, 8000)
                 return
             }
 
@@ -42,10 +43,10 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                     setIsTyping(false)
                     setVisibleMessages(prev => prev + 1)
                     currentIndex++
-                    setTimeout(showNextMessage, 2000) // Reading time
+                    setTimeout(showNextMessage, 2500) // Reading time
                 }, 1500) // Typing duration
             } else {
-                // User message appears slightly faster
+                // User message
                 setTimeout(() => {
                     setVisibleMessages(prev => prev + 1)
                     currentIndex++
@@ -54,7 +55,6 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
             }
         }
 
-        // Start the sequence
         const timeout = setTimeout(showNextMessage, 1000)
         return () => clearTimeout(timeout)
     }, [conversation])
@@ -62,10 +62,11 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
     if (!conversation || conversation.length === 0) return null
 
     return (
-        <div className="w-full max-w-3xl mx-auto bg-black border border-white/10 rounded-2xl p-4 md:p-8 shadow-2xl relative overflow-hidden min-h-[400px] flex flex-col justify-end">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[80px] rounded-full pointer-events-none" />
+        <div className="w-full max-w-3xl mx-auto relative min-h-[400px] flex flex-col justify-end p-4">
+            {/* Subtle ambient glow behind the chat, not a box */}
+            <div className="absolute inset-0 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
 
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col space-y-6 relative z-10 sticky bottom-0">
                 <AnimatePresence mode='popLayout'>
                     {conversation.slice(0, visibleMessages).map((msg, i) => (
                         <motion.div
@@ -73,16 +74,32 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                             initial={{ opacity: 0, y: 20, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{ duration: 0.4, ease: "easeOut" }}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                            <div className={`
-                                max-w-[85%] md:max-w-[75%] px-5 py-3 rounded-2xl text-sm md:text-base leading-relaxed shadow-lg
-                                ${msg.role === 'user'
-                                    ? 'bg-zinc-800 text-zinc-100 rounded-tr-sm'
-                                    : 'bg-blue-600 text-white rounded-tl-sm shadow-blue-900/20'}
-                            `}>
-                                {msg.content[language as 'en' | 'tr']}
-                            </div>
+                            {msg.role === 'ai' ? (
+                                <div className="flex gap-3 max-w-[85%] md:max-w-[80%]">
+                                    <div className="flex-shrink-0 mt-1">
+                                        <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center p-1.5">
+                                            <VionLogo className="w-full h-full text-white" />
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold text-white">Vion AI</span>
+                                            <div className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-[10px] font-medium text-blue-300 border border-blue-500/20">
+                                                AI Agent
+                                            </div>
+                                        </div>
+                                        <div className="bg-zinc-900/90 border border-white/10 text-zinc-100 px-5 py-3 rounded-2xl rounded-tl-sm shadow-xl backdrop-blur-sm">
+                                            {msg.content[language as 'en' | 'tr']}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm shadow-lg max-w-[85%] md:max-w-[70%]">
+                                    {msg.content[language as 'en' | 'tr']}
+                                </div>
+                            )}
                         </motion.div>
                     ))}
                 </AnimatePresence>
@@ -92,12 +109,20 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="flex justify-start"
+                        className="flex gap-3 max-w-[80%]"
                     >
-                        <div className="bg-zinc-900/50 border border-white/5 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center">
-                            <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                            <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                            <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce"></span>
+                        <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center p-1.5">
+                                <VionLogo className="w-full h-full text-white" />
+                            </div>
+                        </div>
+                        <div>
+                            <span className="text-sm font-semibold text-white block mb-1">Vion AI</span>
+                            <div className="bg-zinc-900/90 border border-white/10 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center w-fit shadow-xl">
+                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce"></span>
+                            </div>
                         </div>
                     </motion.div>
                 )}
