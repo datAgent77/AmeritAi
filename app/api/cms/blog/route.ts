@@ -14,9 +14,15 @@ export async function GET(req: NextRequest) {
 
         let posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Auto-seed if empty
-        if (posts.length === 0) {
-            console.log("Seeding Blog Posts...");
+        // Auto-seed if empty or low count (indicating old seed data)
+        if (posts.length < 45) {
+            console.log("Seeding or Re-seeding Blog Posts...");
+            if (posts.length > 0) {
+                const deleteBatch = db.batch();
+                snapshot.docs.forEach(doc => deleteBatch.delete(doc.ref));
+                await deleteBatch.commit();
+            }
+
             const batch = db.batch();
             SEED_BLOG_POSTS.forEach(post => {
                 const docRef = db.collection("cms_blog").doc();

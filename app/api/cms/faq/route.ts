@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
         let faqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Re-seed if count is low (indicating old seed data)
-        if (faqs.length <= 5) {
+        if (faqs.length < 90) {
             console.log("Seeding or Re-seeding FAQs...");
 
             // Optional: You might want to delete existing ones first to avoid duplicates if you didn't have ID checks
