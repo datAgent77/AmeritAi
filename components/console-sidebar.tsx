@@ -447,7 +447,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         <DropdownMenuItem onClick={() => router.push("/console/settings/subscription")} className="px-2 py-2.5 cursor-pointer">
                                             <div className="flex items-center gap-3 w-full">
                                                 <CreditCard className="size-4 text-black dark:text-white" />
-                                                <span className="flex-1 font-medium text-sm">{t('subscription') || "Subscription"} (7 days left)</span>
+                                                <span className="flex-1 font-medium text-sm">{t('subscription') || "Subscription"}</span>
                                             </div>
                                         </DropdownMenuItem>
 

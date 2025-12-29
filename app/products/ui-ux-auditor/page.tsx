@@ -192,7 +192,7 @@ export default function UiUxAuditorPage() {
             </main>
 
             <PublicFooter />
-            <ChatbotLoader chatbotId="qqv4HRZyAuUwsApyYxoBEgTs4hC2" />
+            <ChatbotLoader chatbotId="zOh4ScBMyfMdlCMj5nrvzcuKtSi2" />
         </div>
     )
 }

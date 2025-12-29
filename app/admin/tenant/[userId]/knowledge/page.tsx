@@ -1,11 +1,14 @@
 "use client"
 
-import { KnowledgeBase } from "@/components/knowledge-base"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function TenantKnowledgePage({ params }: { params: { userId: string } }) {
-    return (
-        <div className="p-6">
-            <KnowledgeBase targetUserId={params.userId} embedded={false} />
-        </div>
-    )
+    const router = useRouter()
+
+    useEffect(() => {
+        router.push(`/admin/tenant/${params.userId}/knowledge/text`)
+    }, [router, params.userId])
+
+    return null
 }

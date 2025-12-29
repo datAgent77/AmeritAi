@@ -405,7 +405,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-8">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

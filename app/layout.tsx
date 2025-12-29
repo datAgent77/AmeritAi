@@ -28,6 +28,7 @@ export default function RootLayout({
             <CookieConsent />
             {children}
             <Toaster />
+            <Toaster />
           </ConditionalAuthProvider>
         </LanguageProvider>
       </body>
