@@ -13,5 +13,5 @@ export function PublicChatbot() {
         return null
     }
 
-    return <ChatbotLoader chatbotId="zOh4ScBMyfMdlCMj5nrvzcuKtSi2" color="#1a00db" />
+    return <ChatbotLoader chatbotId="zOh4ScBMyfMdlCMj5nrvzcuKtSi2" color="#6366f1" />
 }
