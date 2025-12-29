@@ -125,17 +125,24 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                         <button className="flex items-center gap-1 hover:text-white transition-colors group-hover:text-white">
                             {language === 'tr' ? 'Sektörler' : 'Industries'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
-                        <div className="absolute top-full left-0 w-[600px] bg-[#0A0A0C] border border-white/10 rounded-xl p-6 shadow-2xl shadow-black/80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 grid grid-cols-2 gap-4 z-50">
-                            {solutions.map((item, i) => (
-                                <Link key={i} href={item.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                                    <div className={`p-2 rounded-md bg-white/5 ${item.color} group-hover/item:bg-white/10 transition-colors`}>
-                                        <item.icon className="w-4 h-4" />
-                                    </div>
-                                    <span className="text-zinc-300 group-hover/item:text-white text-sm">
-                                        {language === 'tr' ? item.label.tr : item.label.en}
-                                    </span>
+                        <div className="absolute top-full left-0 w-[600px] bg-[#0A0A0C] border border-white/10 rounded-xl p-6 shadow-2xl shadow-black/80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                {solutions.map((item, i) => (
+                                    <Link key={i} href={item.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
+                                        <div className={`p-2 rounded-md bg-white/5 ${item.color} group-hover/item:bg-white/10 transition-colors`}>
+                                            <item.icon className="w-4 h-4" />
+                                        </div>
+                                        <span className="text-zinc-300 group-hover/item:text-white text-sm">
+                                            {language === 'tr' ? item.label.tr : item.label.en}
+                                        </span>
+                                    </Link>
+                                ))}
+                            </div>
+                            <div className="pt-4 border-t border-white/10 text-center">
+                                <Link href="/industries" className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
+                                    {language === 'tr' ? 'Tüm Sektörleri Gör' : 'View All Industries'} <ArrowRight className="ml-1 w-4 h-4" />
                                 </Link>
-                            ))}
+                            </div>
                         </div>
                     </div>
 
