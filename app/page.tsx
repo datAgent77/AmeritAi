@@ -130,6 +130,28 @@ export default function LandingPage() {
                             </Link>
                         ))}
                     </div>
+
+                    <div className="mt-16 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+                        <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                            {t('missingIndustryTitle')}
+                        </h3>
+                        <p className="text-zinc-400 mb-8 font-light">
+                            {t('missingIndustryDesc')}
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                            <Link href="/signup">
+                                <Button className="h-12 px-8 bg-white text-black hover:bg-zinc-200 transition-all rounded-full font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
+                                    {language === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'}
+                                    <ArrowRight className="ml-2 w-4 h-4" />
+                                </Button>
+                            </Link>
+                            <Link href="mailto:support@vion.ai">
+                                <Button variant="outline" className="h-12 px-8 text-white border-white/20 hover:bg-white/10 rounded-full font-medium">
+                                    {t('contactUs')}
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
 
             </section>

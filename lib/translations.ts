@@ -495,6 +495,10 @@ export const translations = {
         step4Desc: "Add a single line of code to your site.",
         step5Title: "Go Live",
         step5Desc: "Start automating sales and support instantly.",
+
+        missingIndustryTitle: "Is your industry not on the list?",
+        missingIndustryDesc: "Contact us for custom industry configuration.",
+        contactUs: "Contact Us",
         landingReadyToTransform: "Ready to transform your business?",
         landingReadyToTransformDesc: "Join the AI revolution today. Start your free trial and see the difference Vion can make.",
         landingCreateAccount: "Create your account",
@@ -1687,6 +1691,10 @@ export const translations = {
         step4Desc: "Tek satırlık kodu sitenize ekleyin.",
         step5Title: "Başlat",
         step5Desc: "Satış ve desteği anında otomatize etmeye başlayın.",
+
+        missingIndustryTitle: "Sektörünüz listede yok mu?",
+        missingIndustryDesc: "Özel sektör konfigürasyonu için bizimle iletişime geçin.",
+        contactUs: "Bize Ulaşın",
         landingReadyToTransform: "İşletmenizi dönüştürmeye hazır mısınız?",
         landingReadyToTransformDesc: "Bugün AI devrimine katılın. Ücretsiz denemenizi başlatın ve Vion'ın farkını görün.",
         landingCreateAccount: "Hesabınızı oluşturun",
