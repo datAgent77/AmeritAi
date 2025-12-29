@@ -117,7 +117,7 @@ export async function GET(req: Request) {
                     headerTextColor: "#FFFFFF",
                     suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
                     enableLeadCollection: false,
-                    position: "bottom-right",
+                    position: "bottom-center",
                     viewMode: "classic",
                     modalSize: "half",
                     launcherStyle: "circle",
