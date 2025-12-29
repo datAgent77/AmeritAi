@@ -350,7 +350,6 @@ export default function LandingPage() {
             </section>
 
             <PublicFooter />
-            <ChatbotLoader chatbotId="zOh4ScBMyfMdlCMj5nrvzcuKtSi2" />
         </div>
     )
 }

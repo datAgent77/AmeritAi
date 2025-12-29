@@ -14,6 +14,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { CookieConsent } from "@/components/cookie-consent";
 
 import { Toaster } from "@/components/ui/toaster"
+import { PublicChatbot } from "@/components/public-chatbot"
 
 export default function RootLayout({
   children,
@@ -27,7 +28,7 @@ export default function RootLayout({
           <ConditionalAuthProvider>
             <CookieConsent />
             {children}
-            <Toaster />
+            <PublicChatbot />
             <Toaster />
           </ConditionalAuthProvider>
         </LanguageProvider>
