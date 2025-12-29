@@ -157,6 +157,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                         emailMarketing: data.enableEmailMarketing ?? false,
                         salesOptimization: data.enableSalesOptimization ?? false,
+                        reviewManagement: data.enableReviewManagement ?? false,
+                        loyaltyProgram: data.enableLoyaltyProgram ?? false,
+                        campaignManager: data.enableCampaignManager ?? false,
+                        autoTranslate: data.enableAutoTranslate ?? false,
+                        gamification: data.enableGamification ?? false,
+                        visualDiagnosis: data.enableVisualDiagnosis ?? false,
+                        digitalWaiter: data.enableDigitalWaiter ?? false,
+                        proactiveMessaging: data.enableProactiveMessaging ?? false,
                     })
                 } else {
                     console.error("Failed to load settings via API")
@@ -171,6 +179,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                         emailMarketing: false,
                         salesOptimization: false,
+                        reviewManagement: false,
+                        loyaltyProgram: false,
+                        campaignManager: false,
+                        autoTranslate: false,
+                        gamification: false,
+                        visualDiagnosis: false,
+                        digitalWaiter: false,
+                        proactiveMessaging: false,
                     })
                 }
 
