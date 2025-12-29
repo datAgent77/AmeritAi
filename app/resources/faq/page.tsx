@@ -143,7 +143,7 @@ export default function FaqPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                             <button className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-white">
-                                <Mail className="w-4 h-4" /> support@vion.ai
+                                <Mail className="w-4 h-4" /> info@userex.com.tr
                             </button>
                         </div>
                     </div>
