@@ -1,10 +1,8 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
-import { collection, query, where, orderBy, onSnapshot, limit } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useLanguage } from "@/context/LanguageContext"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { Loader2, Send, MessageSquare, Monitor, Search, User, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,47 +37,41 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
 
     const scrollRef = useRef<HTMLDivElement>(null)
 
-    // 1. Listen to Sessions List
+    // Helper to format date safely
+    const formatDateSafe = (dateVal: any, formatStr: string) => {
+        if (!dateVal) return ""
+        try {
+            const date = new Date(dateVal)
+            if (!isValid(date)) return ""
+            return format(date, formatStr)
+        } catch (e) {
+            return ""
+        }
+    }
+
+    // 1. Fetch Sessions via API (to avoid Firestore permission issues)
     useEffect(() => {
         if (!userId) return
 
-        // Note: Ordering by 'createdAt' or 'lastMessageTime' requires an index in Firestore
-        // For now, we'll fetch recent 50 and sort client-side if needed, or rely on index creation
-        const q = query(
-            collection(db, "chat_sessions"),
-            where("chatbotId", "==", userId),
-            // orderBy("createdAt", "desc"), // Uncomment if index exists
-            limit(50)
-        )
+        const fetchSessions = async () => {
+            try {
+                const response = await fetch(`/api/chat-sessions?chatbotId=${userId}&limit=50`)
+                if (!response.ok) {
+                    throw new Error("Failed to fetch sessions")
+                }
+                const data = await response.json()
+                setSessions(data.sessions || [])
+                setIsLoading(false)
+            } catch (error) {
+                console.error("Error fetching sessions:", error)
+                setIsLoading(false)
+            }
+        }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedSessions: ChatSession[] = []
-            snapshot.forEach((doc) => {
-                const data = doc.data()
-                fetchedSessions.push({
-                    id: doc.id,
-                    ...data,
-                    // Helper to get last message content/time for preview
-                    lastMessage: data.messages?.length > 0 ? data.messages[data.messages.length - 1].content : "",
-                    lastMessageTime: data.messages?.length > 0 ? data.messages[data.messages.length - 1].createdAt : data.createdAt
-                } as ChatSession)
-            })
+        fetchSessions()
+        const interval = setInterval(fetchSessions, 15000) // 15 seconds polling
 
-            // Sort by last message time descending
-            fetchedSessions.sort((a, b) => {
-                const dateA = new Date(a.lastMessageTime || 0).getTime()
-                const dateB = new Date(b.lastMessageTime || 0).getTime()
-                return dateB - dateA
-            })
-
-            setSessions(fetchedSessions)
-            setIsLoading(false)
-        }, (error) => {
-            console.error("Error fetching sessions:", error)
-            setIsLoading(false)
-        })
-
-        return () => unsubscribe()
+        return () => clearInterval(interval)
     }, [userId])
 
     // 2. Auto-scroll to bottom of chat
@@ -192,7 +184,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                     <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search chats..."
+                            placeholder={t('searchChats')}
                             className="pl-8 bg-white"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -203,7 +195,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                     <div className="flex flex-col">
                         {filteredSessions.length === 0 ? (
                             <div className="p-8 text-center text-muted-foreground text-sm">
-                                No conversations found.
+                                {t('noConversationsFound')}
                             </div>
                         ) : (
                             filteredSessions.map((session) => (
@@ -224,7 +216,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                                 {getSessionDisplayName(session)}
                                             </span>
                                             <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                                                {session.lastMessageTime ? format(new Date(session.lastMessageTime), "HH:mm") : ""}
+                                                {formatDateSafe(session.lastMessageTime, "HH:mm")}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1.5 mb-1">
@@ -239,7 +231,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                             )}
                                         </div>
                                         <p className="text-xs text-muted-foreground truncate">
-                                            {session.lastMessage || "No messages"}
+                                            {session.lastMessage || t('noMessages')}
                                         </p>
                                     </div>
                                 </button>
@@ -267,12 +259,12 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         {selectedSession.isPaused ? (
                                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                                AI Paused
+                                                {t('aiPaused')}
                                             </Badge>
                                         ) : (
                                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                                AI Active
+                                                {t('aiActive')}
                                             </Badge>
                                         )}
                                     </h3>
@@ -280,7 +272,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         {getChannelIcon(selectedSession.id)}
                                         <span>{getChannelName(selectedSession.id)}</span>
                                         <span>•</span>
-                                        <span>{format(new Date(selectedSession.createdAt), "PP p")}</span>
+                                        <span>{formatDateSafe(selectedSession.createdAt, "PP p")}</span>
                                     </div>
                                 </div>
                             </div>
@@ -295,13 +287,13 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                     {isTogglingPause ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : selectedSession.isPaused ? (
-                                        "Resume AI"
+                                        t('resumeAi')
                                     ) : (
-                                        "Pause AI"
+                                        t('pauseAi')
                                     )}
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => setSelectedSessionId(null)} className="md:hidden">
-                                    Back
+                                    {t('back')}
                                 </Button>
                             </div>
                         </div>
@@ -335,7 +327,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         </div>
                                         <div className={`text-[10px] text-muted-foreground ${msg.role === "assistant" || msg.role === "agent" ? "text-right" : "text-left"
                                             }`}>
-                                            {format(new Date(msg.createdAt), "HH:mm")}
+                                            {formatDateSafe(msg.createdAt, "HH:mm")}
                                             {msg.isHuman && <span className="ml-1 font-medium text-blue-600">(Admin)</span>}
                                         </div>
                                     </div>
@@ -349,7 +341,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                 <Input
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder="Type a reply..."
+                                    placeholder={t('typeReply')}
                                     className="flex-1"
                                     disabled={isSending}
                                 />
@@ -368,9 +360,9 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                 ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8">
                         <MessageSquare className="h-12 w-12 mb-4 opacity-20" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">Select a conversation</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">{t('selectConversation')}</h3>
                         <p className="text-sm max-w-xs text-center">
-                            Choose a chat from the sidebar to view history and reply to users in real-time.
+                            {t('selectConversationDescription')}
                         </p>
                     </div>
                 )}

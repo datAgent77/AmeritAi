@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Demo Parfüm Mağazası</title>
+    <link>https://demo-store.com</link>
+    <description>Test ürün kataloğu</description>
+    
+    <item>
+      <g:id>PERF-001</g:id>
+      <g:title>Muscent Signature - Erkek Parfüm</g:title>
+      <g:price>549.00 TRY</g:price>
+      <g:description>Klasik ve sofistike bir erkek parfümü. Üst notalar: bergamot, limon. Orta notalar: lavanta, yasemin. Alt notalar: sandal ağacı, misk.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1594035910387-fea47794261f?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>25</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Erkek Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-002</g:id>
+      <g:title>Muscent Rose - Kadın Parfüm</g:title>
+      <g:price>629.00 TRY</g:price>
+      <g:description>Romantik ve feminen bir kadın parfümü. Üst notalar: gül, şakayık. Orta notalar: muskat, bergamot. Alt notalar: vanilya, amber.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1541643600914-78b084683601?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>18</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Kadın Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-003</g:id>
+      <g:title>Muscent Ocean - Unisex EDT</g:title>
+      <g:price>399.00 TRY</g:price>
+      <g:description>Taze ve ferahlatıcı unisex parfüm. Üst notalar: deniz tuzu, greyfurt. Orta notalar: yasemin, vetiver. Alt notalar: sedir, amber.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>40</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Unisex Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-004</g:id>
+      <g:title>Muscent Noir - Premium Erkek EDP</g:title>
+      <g:price>899.00 TRY</g:price>
+      <g:description>Gizemli ve yoğun bir gece parfümü. Üst notalar: siyah biber, elma. Orta notalar: kakao, patchouli. Alt notalar: oud, deri.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>8</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Erkek Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-005</g:id>
+      <g:title>Muscent Bloom - Bahar Koleksiyonu</g:title>
+      <g:price>479.00 TRY</g:price>
+      <g:description>Çiçeksi ve neşeli bir ilkbahar parfümü. Üst notalar: zambak, manolya. Orta notalar: frezya, şeftali. Alt notalar: misk, sedir.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>15</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Kadın Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-006</g:id>
+      <g:title>Muscent Velvet - Limited Edition</g:title>
+      <g:price>1299.00 TRY</g:price>
+      <g:description>Lüks ve nadir bulunan sınırlı üretim parfüm. Üst notalar: iris, bergamot. Orta notalar: orris kökü, viyalet. Alt notalar: süet, tonka fasulyesi.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>5</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Unisex Parfüm</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-007</g:id>
+      <g:title>Muscent Fresh - Spor Kolonya</g:title>
+      <g:price>249.00 TRY</g:price>
+      <g:description>Aktif yaşam için hafif ve canlandırıcı. Üst notalar: nane, limon. Orta notalar: okaliptüs, yasemin. Alt notalar: misk, beyaz sedir.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:quantity>50</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Kolonya</g:product_type>
+    </item>
+    
+    <item>
+      <g:id>PERF-008</g:id>
+      <g:title>Muscent Oud Arabic - Oriental EDP</g:title>
+      <g:price>1499.00 TRY</g:price>
+      <g:description>Otantik Arap esanslarıyla hazırlanmış oriental parfüm. Üst notalar: safran, gül. Orta notalar: oud, amber. Alt notalar: misk, sandal.</g:description>
+      <g:image_link>https://images.unsplash.com/photo-1619994403073-2cec844b8e63?w=400</g:image_link>
+      <g:availability>out of stock</g:availability>
+      <g:quantity>0</g:quantity>
+      <g:brand>Muscent</g:brand>
+      <g:product_type>Oriental Parfüm</g:product_type>
+    </item>
+    
+  </channel>
+</rss>

@@ -215,7 +215,7 @@ export default function UserFlowPage() {
                         <CardHeader>
                             <CardTitle>{t('defineJourney')}</CardTitle>
                             <CardDescription>
-                                Upload screens in order and describe the user's goal.
+                                Upload screens in order and describe the user&apos;s goal.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, query, getDocs, doc, updateDoc, onSnapshot, orderBy } from "firebase/firestore"
+import { collection, query, getDocs, doc, updateDoc, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
@@ -46,21 +46,26 @@ export default function AdminAppointmentsPage() {
     useEffect(() => {
         if (role !== 'SUPER_ADMIN') return
 
-        const q = query(collection(db, "appointments"), orderBy("createdAt", "desc"))
+        const fetchAppointments = async () => {
+            try {
+                const q = query(collection(db, "appointments"), orderBy("createdAt", "desc"))
+                const snapshot = await getDocs(q)
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Appointment[]
+                setAppointments(data)
+                setIsLoading(false)
+            } catch (error) {
+                console.error("Error fetching all appointments:", error)
+                setIsLoading(false)
+            }
+        }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Appointment[]
-            setAppointments(data)
-            setIsLoading(false)
-        }, (error) => {
-            console.error("Error fetching all appointments:", error)
-            setIsLoading(false)
-        })
+        fetchAppointments()
+        const interval = setInterval(fetchAppointments, 60000) // 1 minute polling for global admin view
 
-        return () => unsubscribe()
+        return () => clearInterval(interval)
     }, [role])
 
     const filteredAppointments = appointments.filter(appt =>

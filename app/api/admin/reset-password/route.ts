@@ -1,10 +1,11 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase-admin';
+import { getAdminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
     try {
+        const adminAuth = getAdminAuth();
         // Authenticate the requester (must be SUPER_ADMIN)
         // Since we are using client-side auth mostly, we might not have a session cookie for admin.
         // But for critical operations, we should verify the caller.

@@ -15,10 +15,10 @@ export function PublicFooter() {
                     <div className="flex items-center gap-2">
                         <VionLogo />
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 text-center md:text-left">
                         © 2025 Vion AI. {t('landingAllRights')}
                     </p>
-                    <div className="flex gap-6 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
                         <Link href="/privacy" className="hover:text-white transition-colors">{t('landingPrivacy')}</Link>
                         <Link href="/terms" className="hover:text-white transition-colors">{t('landingTerms')}</Link>
                         <Link href="/contact" className="hover:text-white transition-colors">{t('landingContact')}</Link>

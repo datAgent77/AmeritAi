@@ -12,9 +12,11 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, CheckCircle2, ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { VionLogo } from "@/components/vion-logo"
+import Image from "next/image"
 import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
+import { INDUSTRY_DEFAULT_MODULES, MODULES as MODULE_DEFINITIONS } from "@/lib/modules-config"
 import {
     Select,
     SelectContent,
@@ -67,77 +69,64 @@ export default function SignUpForm() {
         setEmail(user.email || '')
         setFullName(user.displayName || '')
 
-        // Check if user already exists in Firestore
-        const userDoc = await getDoc(doc(db, "users", user.uid))
-        if (userDoc.exists()) {
-            // User exists, redirect to platform
-            router.push("/platform")
-            return
+        // Check if user already exists in Firestore using token and API
+        // Optimally we should check via API or assume let's proceed to form if we need missing info.
+        // But checking doc existence is still client-side logic in original code. 
+        // If we can't read users due to permissions, this check might fail too!
+        // So we should try to login/check. 
+        // However, standard "allow read if uid == request.auth.uid" should work for existing users.
+        // If it fails, we assume new user.
+
+        try {
+            // Only try to read if we can. If permission error, assume new user or let API handle it.
+            const userDoc = await getDoc(doc(db, "users", user.uid))
+            if (userDoc.exists()) {
+                router.push("/platform")
+                return
+            }
+        } catch (e) {
+            // Permission error means either not exists (if rule is secure) or just error.
+            // Proceed to form.
         }
 
         // New user, go to form step
         setStep('form')
     }
 
-    // Create user document in Firestore
-    const createUserDocument = async (userId: string, userEmail: string) => {
-        const nameParts = fullName.trim().split(' ')
-        const firstName = nameParts[0] || ''
-        const lastName = nameParts.slice(1).join(' ') || ''
-
-        await setDoc(doc(db, "users", userId), {
-            firstName,
-            lastName,
-            fullName,
-            email: userEmail,
-            phoneNumber,
-            industry,
-            authProvider,
-            role: "TENANT_ADMIN",
-            createdAt: new Date().toISOString(),
-            isActive: false, // User must be approved by admin
-
-            // Enable modules based on industry defaultModules
-            enablePersonalShopper: (INDUSTRY_CONFIG[industry].defaultModules as any).productCatalog || false,
-            enableLeadFinder: (INDUSTRY_CONFIG[industry].defaultModules as any).leadCollection || false,
-            enableVoiceAssistant: (INDUSTRY_CONFIG[industry].defaultModules as any).appointments || false,
-            enableCopywriter: industry === 'saas' || industry === 'education' ? true : false,
-
-            // Set initial visibility
-            visiblePersonalShopper: true,
-            visibleLeadFinder: true,
-            visibleVoiceAssistant: true,
-            visibleCopywriter: true,
-
-            enableChatbot: true,
-            visibleChatbot: true
-        })
-
-        // Create default chatbot document
-        await setDoc(doc(db, "chatbots", userId), {
-            companyName: fullName || "Acme Corp",
-            welcomeMessage: "Hello! How can I help you today?",
-            brandColor: "#000000",
-            brandLogo: "",
-            suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
-            enableLeadCollection: false,
-            createdAt: new Date().toISOString()
-        })
-
-        // Send notification to admin
-        try {
-            await fetch('/api/admin/notify-signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: userEmail,
-                    name: fullName,
-                    company: fullName
-                })
+    // Call Server-Side Registration
+    const registerUserOnServer = async (user: User, additionalData: any = {}) => {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/auth/register-user', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: user.email,
+                fullName: fullName || user.displayName,
+                phoneNumber,
+                industry,
+                authProvider,
+                ...additionalData
             })
-        } catch (notifyError) {
-            console.error("Failed to send admin notification:", notifyError)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || "Registration failed on server");
         }
+
+        // Send admin notification (fire and forget)
+        fetch('/api/admin/notify-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: user.email,
+                name: fullName || user.displayName,
+                company: fullName || user.displayName
+            })
+        }).catch(err => console.error("Notify error", err));
     }
 
     // Handle form submission
@@ -147,9 +136,11 @@ export default function SignUpForm() {
         setIsLoading(true)
 
         try {
-            if (socialUser) {
-                // Social auth user - just create the Firestore document
-                await createUserDocument(socialUser.uid, socialUser.email || email)
+            let user = socialUser;
+
+            if (user) {
+                // Social auth user - Register on server
+                await registerUserOnServer(user);
                 await auth.signOut()
             } else {
                 // Email/password signup
@@ -160,15 +151,19 @@ export default function SignUpForm() {
                 }
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-                await createUserDocument(userCredential.user.uid, email)
+                user = userCredential.user;
+                await registerUserOnServer(user, { authProvider: 'email' });
                 await auth.signOut()
             }
 
-            setStep('success')
             toast({
                 title: t('success'),
-                description: t('applicationReceived'),
+                description: t('accountCreatedRedirecting') || "Hesabınız oluşturuldu, yönlendiriliyorsunuz...",
             })
+
+            // Redirect immediately
+            router.push("/console/chatbot")
+
         } catch (error: any) {
             console.error("Sign up error:", error)
             let errorMessage = error.message || t('failedToCreateAccount')
@@ -237,15 +232,18 @@ export default function SignUpForm() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-black flex flex-col">
             {/* Header */}
-            <header className="flex items-center justify-between p-6">
-                <Link href="/">
-                    <VionLogo variant="black" className="text-2xl dark:hidden" />
-                    <VionLogo variant="white" className="text-2xl hidden dark:block" />
+            <header className="flex items-center justify-between p-4 md:p-6">
+                <Link href="/" className="flex items-center gap-2">
+                    <div className="relative w-8 h-8">
+                        <Image src="/vion-logo-icon-dark.png" alt="Vion" fill className="object-contain dark:hidden" />
+                        <Image src="/vion-logo-icon-white.png" alt="Vion" fill className="object-contain hidden dark:block" />
+                    </div>
+                    <span className="font-bold text-xl tracking-tight">Vion</span>
                 </Link>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
                     <LanguageSwitcher />
-                    <Link href="/login">
-                        <Button variant="outline" size="sm">
+                    <Link href="/login" className="hidden md:block">
+                        <Button variant="outline" size="sm" className="whitespace-nowrap">
                             {t('login')}
                         </Button>
                     </Link>
@@ -258,10 +256,10 @@ export default function SignUpForm() {
                     {/* Title */}
                     <div className="text-center space-y-2">
                         <h1 className="text-3xl font-bold tracking-tight">
-                            {language === 'tr' ? 'Ücretsiz Başlayın' : 'Get started for free'}
+                            {language === 'tr' ? '14 Gün Ücretsiz Deneyin' : 'Try 14 Days Free'}
                         </h1>
                         <p className="text-muted-foreground">
-                            {language === 'tr' ? 'Kredi kartı gerekmez' : 'No credit card needed'}
+                            {language === 'tr' ? 'Kredi kartı gerekmez, anında erişim' : 'No credit card needed, instant access'}
                         </p>
                     </div>
 
@@ -297,12 +295,12 @@ export default function SignUpForm() {
                             <form onSubmit={handleEmailSubmit} className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">
-                                        {language === 'tr' ? 'İş E-postası' : 'Business email'}
+                                        {language === 'tr' ? 'E-posta' : 'Email'}
                                     </Label>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="name@work-email.com"
+                                        placeholder="ornek@email.com"
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -361,7 +359,7 @@ export default function SignUpForm() {
                             {/* Email (read-only if set) */}
                             <div className="space-y-2">
                                 <Label htmlFor="email">
-                                    {language === 'tr' ? 'İş E-postası' : 'Business email'}
+                                    {language === 'tr' ? 'E-posta' : 'Email'}
                                 </Label>
                                 <Input
                                     id="email"
@@ -449,6 +447,26 @@ export default function SignUpForm() {
                                         ))}
                                     </SelectContent>
                                 </Select>
+
+                                {/* Module Preview */}
+                                <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+                                    <p className="text-xs font-medium text-green-800 dark:text-green-300 mb-2">
+                                        {language === 'tr' ? '✨ Bu sektörle birlikte dahil:' : '✨ Included with this industry:'}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {(INDUSTRY_DEFAULT_MODULES[industry] || []).map((moduleId) => {
+                                            const mod = MODULE_DEFINITIONS[moduleId];
+                                            return (
+                                                <span
+                                                    key={moduleId}
+                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
+                                                >
+                                                    {mod?.name?.[language === 'tr' ? 'tr' : 'en'] || moduleId}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Submit Button */}

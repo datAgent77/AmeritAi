@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, MessageSquare, Activity, Users } from "lucide-react"
+import { Loader2, MessageSquare, Activity, Users, Download } from "lucide-react"
 import { AnalyticsSummary } from "@/lib/analytics"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
@@ -12,6 +12,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import {
     LineChart,
     Line,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -45,13 +47,7 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
 
     const locale = language === 'tr' ? tr : enUS
 
-    useEffect(() => {
-        if (effectiveUserId && startDate && endDate) {
-            fetchAnalytics()
-        }
-    }, [effectiveUserId, startDate, endDate])
-
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = useCallback(async () => {
         if (!startDate || !endDate || !effectiveUserId) return
 
         setIsLoading(true)
@@ -77,7 +73,41 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [startDate, endDate, effectiveUserId, t, toast])
+
+    useEffect(() => {
+        if (effectiveUserId && startDate && endDate) {
+            fetchAnalytics()
+        }
+    }, [effectiveUserId, startDate, endDate, fetchAnalytics])
+
+    const handleExport = () => {
+        if (!data || !data.dailyStats) return;
+
+        // Create CSV content
+        const headers = ["Date", "Conversations", "Messages"];
+        const rows = data.dailyStats.map(stat => [
+            stat.date,
+            stat.conversations.toString(),
+            stat.messages.toString()
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(row => row.join(","))
+        ].join("\n");
+
+        // Create download link
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `report_${format(new Date(), "yyyy-MM-dd")}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const COLORS = ['#4ade80', '#94a3b8', '#f87171']; // Green, Gray, Red
 
@@ -93,7 +123,7 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     <p className="text-muted-foreground">{t('analyticsSubtitle')}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
                         <DatePicker date={startDate} setDate={setStartDate} placeholder={t('startDate')} />
                         <span className="text-muted-foreground">-</span>
@@ -101,6 +131,10 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     </div>
                     <Button variant="outline" onClick={fetchAnalytics}>
                         {t('refresh')}
+                    </Button>
+                    <Button variant="outline" onClick={handleExport}>
+                        <Download className="mr-2 h-4 w-4" />
+                        {language === 'tr' ? 'Rapor Oluştur' : 'Export Report'}
                     </Button>
                 </div>
             </div>
@@ -136,9 +170,9 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {/* Activity Chart */}
-                <Card className="col-span-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                {/* Activity Chart - Full Width */}
+                <Card className="col-span-2">
                     <CardHeader>
                         <CardTitle>{t('activityOverview')}</CardTitle>
                     </CardHeader>
@@ -174,8 +208,71 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     </CardContent>
                 </Card>
 
+                {/* Weekly Activity Chart (Moved from Dashboard) */}
+                <Card className="col-span-1">
+                    <CardHeader>
+                        <CardTitle>{t('weeklyActivity')}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <div className="h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data?.dailyStats ? data.dailyStats.map(stat => ({
+                                    name: format(new Date(stat.date), "EEE", { locale }),
+                                    chats: stat.conversations,
+                                    fullDate: format(new Date(stat.date), "d MMM", { locale })
+                                })) : []}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <YAxis
+                                        stroke="#888888"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => `${value}`}
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }}
+                                        content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className="rounded-lg border bg-background p-2 shadow-sm">
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                                                                    {payload[0].payload.fullDate}
+                                                                </span>
+                                                                <span className="font-bold text-muted-foreground">
+                                                                    {payload[0].value} chats
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            }
+                                            return null
+                                        }}
+                                    />
+                                    <Bar
+                                        dataKey="chats"
+                                        fill="currentColor"
+                                        radius={[4, 4, 0, 0]}
+                                        className="fill-primary"
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Sentiment Chart */}
-                <Card className="col-span-3">
+                <Card className="col-span-1">
                     <CardHeader>
                         <CardTitle>{t('sentimentAnalysis')}</CardTitle>
                     </CardHeader>

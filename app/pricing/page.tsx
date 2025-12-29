@@ -1,76 +1,83 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import Image from "next/image"
-import { VionLogo } from "@/components/vion-logo"
 import { PublicHeader } from "@/components/public-header"
+import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { ArrowRight, Mail, Sparkles } from "lucide-react"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { Button } from "@/components/ui/button"
+import { ArrowRight, MessageSquare, Shield, Zap } from "lucide-react"
+import Link from "next/link"
 
 export default function PricingPage() {
-    const { t } = useLanguage()
+    const { language } = useLanguage()
 
     return (
-        <div className="dark min-h-screen bg-black text-white selection:bg-white/20 font-sans flex flex-col relative overflow-hidden">
+        <div className="min-h-screen bg-black text-white font-sans flex flex-col">
             <PublicHeader />
 
-            <main className="flex-1 flex flex-col items-center justify-center pt-32 pb-20 px-4 relative z-10">
-                <HeroBackground />
+            <main className="flex-1 flex flex-col relative overflow-hidden">
+                {/* Background Blobs */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none translate-y-1/2 -translate-x-1/2" />
 
-                <div className="container mx-auto px-4 text-center">
-                    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                {/* Hero Section */}
+                <div className="container mx-auto px-4 flex-1 flex flex-col items-center justify-center text-center py-24 md:py-32 relative z-10">
 
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-zinc-300 backdrop-blur-sm">
-                            <Sparkles className="w-4 h-4 text-white" />
-                            <span>{t('pricingComingSoon')}</span>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm text-zinc-400 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        {language === 'tr' ? 'Özel Çözümler' : 'Custom Solutions'}
+                    </div>
+
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 max-w-4xl leading-tight">
+                        {language === 'tr'
+                            ? 'İşletmeniz İçin En Uygun Planı Oluşturalım'
+                            : 'Let\'s Built the Perfect Plan for Your Business'}
+                    </h1>
+
+                    <p className="text-xl text-zinc-400 max-w-2xl mb-12 leading-relaxed">
+                        {language === 'tr'
+                            ? 'Her işletmenin ihtiyaçları farklıdır. Size özel ölçeklenebilir çözümler ve avantajlı fiyatlar için satış ekibimizle görüşün.'
+                            : 'Every business is unique. Contact our sales team for scalable solutions and custom pricing tailored to your needs.'}
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <Link href="/contact" className="w-full sm:w-auto">
+                            <Button className="w-full sm:w-auto h-12 px-8 rounded-full bg-white text-black hover:bg-zinc-200 text-base font-medium transition-transform hover:scale-105">
+                                {language === 'tr' ? 'İletişime Geçin' : 'Contact Sales'}
+                                <ArrowRight className="ml-2 w-4 h-4" />
+                            </Button>
+                        </Link>
+
+                    </div>
+
+                    {/* Trust Indicators */}
+                    <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16 border-t border-white/5 pt-12">
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
+                                <Zap className="w-6 h-6" />
+                            </div>
+                            <h3 className="font-semibold">{language === 'tr' ? 'Hızlı Kurulum' : 'Fast Setup'}</h3>
+                            <p className="text-sm text-zinc-500">{language === 'tr' ? 'Dakikalar içinde başlayın' : 'Get started in minutes'}</p>
                         </div>
-
-                        <div className="space-y-4">
-                            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight" dangerouslySetInnerHTML={{ __html: t('pricingFlexiblePlans') }} />
-                            <p className="text-xl text-zinc-400 leading-relaxed max-w-lg mx-auto font-light">
-                                {t('pricingFinalizingStructure')}
-                            </p>
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400">
+                                <Shield className="w-6 h-6" />
+                            </div>
+                            <h3 className="font-semibold">{language === 'tr' ? 'Kurumsal Güvenlik' : 'Enterprise Security'}</h3>
+                            <p className="text-sm text-zinc-500">{language === 'tr' ? 'Verileriniz güvende' : 'Your data is secure'}</p>
                         </div>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                            <Link href="/contact">
-                                <Button size="lg" className="bg-white text-black hover:bg-zinc-200 font-medium h-12 px-8 rounded-full shadow-lg shadow-white/5 transition-all hover:scale-105">
-                                    {t('pricingGetQuote')}
-                                    <ArrowRight className="ml-2 w-4 h-4" />
-                                </Button>
-                            </Link>
-                            <a href="mailto:info@userex.com.tr">
-                                <Button variant="outline" size="lg" className="border-white/10 hover:bg-white/5 text-white h-12 px-8 rounded-full transition-all hover:scale-105">
-                                    <Mail className="mr-2 w-4 h-4" />
-                                    {t('pricingContactSupport')}
-                                </Button>
-                            </a>
+                        <div className="flex flex-col items-center gap-3">
+                            <div className="p-3 bg-green-500/10 rounded-xl text-green-400">
+                                <MessageSquare className="w-6 h-6" />
+                            </div>
+                            <h3 className="font-semibold">{language === 'tr' ? '7/24 Destek' : '24/7 Support'}</h3>
+                            <p className="text-sm text-zinc-500">{language === 'tr' ? 'Her an yanınızdayız' : 'Always here to help'}</p>
                         </div>
                     </div>
+
                 </div>
             </main>
 
-            <footer className="border-t border-white/5 py-12 bg-black/50 backdrop-blur-sm z-10">
-                <div className="container mx-auto px-4">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <a href="mailto:info@vion.ai">
-                                info@vion.ai
-                            </a>
-                        </div>
-                        <div className="text-sm text-zinc-500">
-                            © 2025 Vion. {t('landingAllRights')}
-                        </div>
-                        <div className="flex gap-6 text-sm text-zinc-500">
-                            <Link href="/privacy" className="hover:text-white transition-colors">{t('landingPrivacy')}</Link>
-                            <Link href="/terms" className="hover:text-white transition-colors">{t('landingTerms')}</Link>
-                            <Link href="/contact" className="hover:text-white transition-colors">{t('landingContact')}</Link>
-                        </div>
-                    </div>
-                </div>
-            </footer>
+            <PublicFooter />
         </div>
     )
 }

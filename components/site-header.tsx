@@ -56,85 +56,32 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
     }
 
     return (
-        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 shadow-sm w-full">
+        <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-6 shadow-sm w-full">
             <div className="flex items-center gap-2">
-                <ProductLauncher />
                 {showSidebarTrigger && <SidebarTrigger />}
-                <div className="flex items-center gap-2 ml-2">
-                    <div className="flex items-center gap-2 ml-2">
-                        <Image
-                            src="/vion-logo-full-dark.png"
-                            alt="Vion"
-                            width={100}
-                            height={24}
-                            className="h-6 w-auto object-contain"
-                            priority
-                        />
-                    </div>
-                </div>
-                <div className="ml-4 h-6 w-px bg-border" />
                 <Breadcrumbs />
             </div>
+
+            {/* Mobile Logo Centered */}
+            <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
+                <Image
+                    src="/vion-logo-icon-dark.png"
+                    alt="Vion"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8"
+                />
+            </div>
             <div className="ml-auto flex items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/widget-test?id=${user?.uid}`, "_blank")}
+                    className="hidden md:flex items-center gap-2"
+                >
+                    Widget Test
+                </Button>
                 <NotificationBell />
-                <DropdownMenu>
-                    <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost" }), "flex items-center gap-2 h-auto p-2 hover:bg-accent hover:text-accent-foreground outline-none")}>
-                        <div className="hidden md:flex flex-col items-end">
-                            <span className="text-sm font-medium">{user?.email?.split('@')[0]}</span>
-                            <span className="text-xs text-muted-foreground">{user?.email}</span>
-                        </div>
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={user?.photoURL || ""} alt={user?.email || ""} />
-                            <AvatarFallback>{user?.email ? getInitials(user.email) : "U"}</AvatarFallback>
-                        </Avatar>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                        <DropdownMenuLabel className="font-normal">
-                            <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">User</p>
-                                <p className="text-xs leading-none text-muted-foreground">
-                                    {user?.email}
-                                </p>
-                            </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            <span>{t('dashboard')}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push("/console/settings/notifications")}>
-                            <Bell className="mr-2 h-4 w-4" />
-                            <span>{t('notificationSettings') || 'Bildirim Ayarları'}</span>
-                        </DropdownMenuItem>
-
-
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel className="text-xs text-muted-foreground uppercase">
-                            {t('language')}
-                        </DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setLanguage('en')}>
-                            <Globe className="mr-2 h-4 w-4" />
-                            <span>English</span>
-                            {language === 'en' && <Check className="ml-auto h-4 w-4" />}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setLanguage('tr')}>
-                            <Globe className="mr-2 h-4 w-4" />
-                            <span>Türkçe</span>
-                            {language === 'tr' && <Check className="ml-auto h-4 w-4" />}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {(role === 'admin' || role === 'SUPER_ADMIN') && (
-                            <DropdownMenuItem onClick={() => router.push("/admin")}>
-                                <LayoutDashboard className="mr-2 h-4 w-4 text-red-500" />
-                                <span className="text-red-500 font-medium">Manage Tenants</span>
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            <span>{t('logout')}</span>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
         </header>
     )

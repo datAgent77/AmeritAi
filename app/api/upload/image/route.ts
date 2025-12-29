@@ -1,9 +1,11 @@
+import { NextResponse } from "next/server";
+import { getAdminAuth, getAdminStorage } from "@/lib/firebase-admin";
 
-import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminStorage } from "@/lib/firebase-admin";
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
     try {
+        const adminStorage = getAdminStorage();
+        const adminAuth = getAdminAuth();
+
         // Check if Firebase Admin is configured
         if (!adminAuth || !adminStorage) {
             console.error("Firebase Admin SDK not initialized. Check environment variables.");

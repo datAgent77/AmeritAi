@@ -1,23 +1,97 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Save } from "lucide-react"
+import { Save, Loader2 } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
+import { useToast } from "@/hooks/use-toast"
+import { useLanguage } from "@/context/LanguageContext"
+
+interface ShopperConfig {
+    salesTone: string
+    strategy: string
+    strictMode: boolean
+}
 
 export function ShopperSettings() {
-    const [config, setConfig] = useState({
+    const { user } = useAuth()
+    const { toast } = useToast()
+    const { t } = useLanguage()
+    const [isLoading, setIsLoading] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
+
+    const [config, setConfig] = useState<ShopperConfig>({
         salesTone: "friendly",
         strategy: "relevance",
         strictMode: false
     })
 
-    const handleSave = () => {
-        // TODO: Save to backend
-        console.log("Saving config:", config)
+    useEffect(() => {
+        const fetchSettings = async () => {
+            if (!user) return
+            setIsLoading(true)
+            try {
+                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                if (!response.ok) throw new Error("Failed to fetch settings");
+                const data = await response.json();
+
+                if (data.shopperConfig) {
+                    setConfig({
+                        salesTone: data.shopperConfig.salesTone || "friendly",
+                        strategy: data.shopperConfig.strategy || "relevance",
+                        strictMode: data.shopperConfig.strictMode || false
+                    })
+                }
+            } catch (error) {
+                console.error("Error fetching settings:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchSettings()
+    }, [user])
+
+    const handleSave = async () => {
+        if (!user) return
+        setIsSaving(true)
+        try {
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId: user.uid,
+                    chatbotSettings: {
+                        shopperConfig: config
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to save settings");
+
+            toast({
+                title: t('settingsSaved') || "Ayarlar Kaydedildi",
+                description: t('settingsSavedDesc') || "Alışveriş asistanı ayarlarınız güncellendi."
+            })
+        } catch (error) {
+            console.error("Error saving settings:", error)
+            toast({
+                title: "Hata",
+                description: "Ayarlar kaydedilemedi.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
@@ -46,7 +120,7 @@ export function ShopperSettings() {
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">
-                        AI'nın müşterilerle konuşurken kullandığı dil tarzını belirler.
+                        AI&apos;nın müşterilerle konuşurken kullandığı dil tarzını belirler.
                     </p>
                 </div>
 
@@ -67,7 +141,7 @@ export function ShopperSettings() {
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">
-                        AI'nın hangi ürünleri önce önereceğini nasıl önceliklendirdiği.
+                        AI&apos;nın hangi ürünleri önce önereceğini nasıl önceliklendirdiği.
                     </p>
                 </div>
 
@@ -75,7 +149,7 @@ export function ShopperSettings() {
                     <div className="space-y-0.5">
                         <Label className="text-base">Katı Mod</Label>
                         <p className="text-sm text-muted-foreground">
-                            AI'yı yalnızca şirketiniz ve ürünlerinizle ilgili soruları yanıtlaması için kısıtlayın. Yaratıcı yazıları (örn. şiirler) ve konu dışı tartışmaları engeller.
+                            AI&apos;yı yalnızca şirketiniz ve ürünlerinizle ilgili soruları yanıtlaması için kısıtlayın. Yaratıcı yazıları (örn. şiirler) ve konu dışı tartışmaları engeller.
                         </p>
                     </div>
                     <Switch
@@ -85,7 +159,8 @@ export function ShopperSettings() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button onClick={handleSave}>
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Save className="w-4 h-4 mr-2" />
                     Değişiklikleri Kaydet
                 </Button>

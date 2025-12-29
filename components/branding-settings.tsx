@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -88,7 +89,7 @@ export function BrandingSettings({ targetUserId }: BrandingSettingsProps) {
             }
         }
         loadSettings()
-    }, [userId])
+    }, [userId, toast])
 
     const handleSave = async () => {
         if (!userId) return
@@ -277,14 +278,16 @@ export function BrandingSettings({ targetUserId }: BrandingSettingsProps) {
                                         {isUploading ? (
                                             <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
                                         ) : settings.brandLogo ? (
-                                            <img
+                                            <Image
                                                 src={settings.brandLogo}
                                                 alt="Logo"
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
+                                                fill
+                                                className="object-cover"
+                                                sizes="(max-width: 768px) 100vw, 300px"
+                                                unoptimized
+                                                onError={(e: any) => {
                                                     console.error("Error loading logo image")
-                                                    e.currentTarget.style.display = 'none'
-                                                    // Optionally show an error icon or fallback
+                                                    // e.currentTarget.style.display = 'none' -> Next.js Image handling is different
                                                 }}
                                             />
                                         ) : (

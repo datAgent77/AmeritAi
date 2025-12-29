@@ -1,125 +1,210 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase"; // Ensure this path is correct for server-side usage or use admin SDK if needed. 
-// Note: Client SDK in route handlers works but isn't ideal for high scale. For this prototype it's fine.
-import { doc, getDoc } from "firebase/firestore";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const chatbotId = searchParams.get("chatbotId");
+    try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 });
+        }
 
-    if (!chatbotId) {
-        return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
+        const { searchParams } = new URL(req.url);
+        const chatbotId = searchParams.get("chatbotId");
+
+        if (!chatbotId) {
+            return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
+        }
+
+        try {
+            if (!adminDb) {
+                return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+            }
+
+            // Fetch user doc as well for permissions
+            const userDocSnap = await adminDb.collection("users").doc(chatbotId).get();
+            const userData = userDocSnap.exists ? userDocSnap.data() : null;
+
+            const isChatbotEnabled = userData?.enableChatbot !== false;
+            const isAccountActive = userData?.isActive !== false;
+
+            const shouldEnable = isChatbotEnabled && isAccountActive;
+
+            const docSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
+
+            if (docSnap.exists) {
+                const data = docSnap.data() || {};
+                // Return only public settings
+                return NextResponse.json({
+                    isEnabled: shouldEnable,
+                    companyName: data.companyName || "Acme Corp",
+                    welcomeMessage: data.welcomeMessage || "Hello! How can I help you today?",
+                    brandColor: data.brandColor || "#000000",
+                    brandLogo: data.brandLogo || "",
+                    headerLogo: data.headerLogo || "",
+                    headerLogoWidth: data.headerLogoWidth || 32,
+                    headerLogoHeight: data.headerLogoHeight || 32,
+                    headerBackgroundColor: data.headerBackgroundColor || "",
+                    headerTextColor: data.headerTextColor || "#FFFFFF",
+                    suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
+                    enableLeadCollection: data.enableLeadCollection || false,
+                    position: data.position || "bottom-right", // 'bottom-right' | 'bottom-left'
+                    viewMode: data.viewMode || "classic", // 'classic' | 'wide'
+                    modalSize: data.modalSize || "half", // 'half' | 'full'
+                    launcherStyle: data.launcherStyle || "circle",
+                    launcherText: data.launcherText || "Chat",
+                    launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
+                    launcherHeight: data.launcherHeight || 60,
+                    launcherWidth: data.launcherWidth || 60,
+                    fullImageLauncherWidth: data.fullImageLauncherWidth || 60,
+                    fullImageLauncherHeight: data.fullImageLauncherHeight || 60,
+                    launcherIcon: data.launcherIcon || "message",
+                    launcherIconUrl: data.launcherIconUrl || "",
+                    launcherLibraryIcon: data.launcherLibraryIcon || "MessageSquare",
+                    launcherIconColor: data.launcherIconColor || "#FFFFFF",
+                    launcherBackgroundColor: data.launcherBackgroundColor || "",
+                    bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : 20,
+                    sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : 20,
+                    launcherShadow: data.launcherShadow || "medium",
+                    launcherAnimation: data.launcherAnimation || "none",
+                    // Full Image / Lottie Mode
+                    launcherType: data.launcherType || "standard",
+                    launcherImageMode: data.launcherImageMode || "image",
+                    launcherFullImageUrl: data.launcherFullImageUrl || "",
+                    launcherLottieUrl: data.launcherLottieUrl || "",
+                    launcherHoverEffect: data.launcherHoverEffect || "scale",
+                    initialLanguage: data.initialLanguage || "auto",
+                    // Triggers
+                    autoOpenDelay: data.autoOpenDelay || 0,
+                    openOnExitIntent: data.openOnExitIntent || false,
+                    openOnScroll: data.openOnScroll || 0,
+                    // Availability
+                    enableBusinessHours: data.enableBusinessHours || false,
+                    timezone: data.timezone || "UTC",
+                    businessHoursStart: data.businessHoursStart || "09:00",
+                    businessHoursEnd: data.businessHoursEnd || "17:00",
+                    offlineMessage: data.offlineMessage || "We are currently offline.",
+                    // Engagement
+                    engagement: data.engagement || null,
+                    enableVoiceAssistant: data.enableVoiceAssistant || false,
+                    voiceProvider: data.voiceProvider || "klassifier",
+                    elevenLabsVoiceId: data.elevenLabsVoiceId || "",
+                    enablePersonalShopper: data.enablePersonalShopper || false,
+                    enableIndustryGreeting: data.enableIndustryGreeting || false,
+                    industry: data.industry || "ecommerce",
+                    customPrompts: data.customPrompts || "",
+                    theme: data.theme || "classic",
+                }, {
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    }
+                });
+            } else {
+                // Return default settings if not found
+                return NextResponse.json({
+                    companyName: "Acme Corp",
+                    welcomeMessage: "Hello! How can I help you today?",
+                    brandColor: "#000000",
+                    brandLogo: "",
+                    headerLogo: "",
+                    headerBackgroundColor: "",
+                    headerTextColor: "#FFFFFF",
+                    suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
+                    enableLeadCollection: false,
+                    position: "bottom-right",
+                    viewMode: "classic",
+                    modalSize: "half",
+                    launcherStyle: "circle",
+                    launcherText: "Sohbet",
+                    launcherRadius: 50,
+                    launcherHeight: 60,
+                    launcherWidth: 60,
+                    fullImageLauncherWidth: 60,
+                    fullImageLauncherHeight: 60,
+                    launcherIcon: "message",
+                    launcherIconUrl: "",
+                    launcherLibraryIcon: "MessageSquare",
+                    launcherIconColor: "#FFFFFF",
+                    launcherBackgroundColor: "",
+                    bottomSpacing: 20,
+                    sideSpacing: 20,
+                    launcherShadow: "medium",
+                    launcherAnimation: "none",
+                    initialLanguage: "auto",
+                    engagement: null,
+                    enableVoiceAssistant: false,
+                    voiceProvider: "klassifier",
+                    elevenLabsVoiceId: "",
+                    enablePersonalShopper: false,
+                    enableIndustryGreeting: false,
+                    industry: "ecommerce",
+                    customPrompts: "",
+                    theme: "classic",
+                }, {
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        }
+    } catch (error) {
+        console.error("Error in GET /api/widget-settings:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+export async function POST(req: Request) {
+    const adminDb = getAdminDb();
+    const adminAuth = getAdminAuth();
+
+    if (!adminDb || !adminAuth) {
+        return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 });
     }
 
     try {
-        // Fetch user doc as well for permissions
-        const userDocRef = doc(db, "users", chatbotId);
-        const userDocSnap = await getDoc(userDocRef);
-        const userData = userDocSnap.exists() ? userDocSnap.data() : null;
-
-        const isChatbotEnabled = userData?.enableChatbot !== false; // Default to true if not set, or strict? Permissions usually default to false if undefined but let's check legacy.
-        // Looking at tenant-permissions, it defaults to true if undefined likely? 
-        // Actually earlier code: `enableChatbot: tenant.enableChatbot || false` in some places?
-        // Let's assume strict check: userData?.enableChatbot === true is safer, but let's see. 
-        // In the screenshot it's a toggle.
-        // Let's rely on what's in the DB. If undefined, maybe it should be active? 
-        // Let's check permissions component again... `tenant.enableChatbot || false`. It defaults to false.
-
-        const isAccountActive = userData?.isActive !== false; // Default true? Usually isActive is critical.
-
-        const shouldEnable = isChatbotEnabled && isAccountActive;
-
-        const docRef = doc(db, "chatbots", chatbotId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            // Return only public settings
-            return NextResponse.json({
-                isEnabled: shouldEnable,
-                companyName: data.companyName || "Acme Corp",
-                brandColor: data.brandColor || "#000000",
-                position: data.position || "bottom-right", // 'bottom-right' | 'bottom-left'
-                viewMode: data.viewMode || "classic", // 'classic' | 'wide'
-                modalSize: data.modalSize || "half", // 'half' | 'full'
-                launcherStyle: data.launcherStyle || "circle",
-                launcherText: data.launcherText || "Chat",
-                launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
-                launcherHeight: data.launcherHeight || 60,
-                launcherWidth: data.launcherWidth || 60,
-                launcherIcon: data.launcherIcon || "message",
-                launcherIconUrl: data.launcherIconUrl || "",
-                launcherLibraryIcon: data.launcherLibraryIcon || "MessageSquare",
-                launcherIconColor: data.launcherIconColor || "#FFFFFF",
-                launcherBackgroundColor: data.launcherBackgroundColor || "",
-                bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : 20,
-                sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : 20,
-                launcherShadow: data.launcherShadow || "medium",
-                launcherAnimation: data.launcherAnimation || "none",
-                // Full Image / Lottie Mode
-                launcherType: data.launcherType || "standard",
-                launcherImageMode: data.launcherImageMode || "image",
-                launcherFullImageUrl: data.launcherFullImageUrl || "",
-                launcherLottieUrl: data.launcherLottieUrl || "",
-                launcherHoverEffect: data.launcherHoverEffect || "scale",
-                initialLanguage: data.initialLanguage || "auto",
-                // Triggers
-                autoOpenDelay: data.autoOpenDelay || 0,
-                openOnExitIntent: data.openOnExitIntent || false,
-                openOnScroll: data.openOnScroll || 0,
-                // Availability
-                enableBusinessHours: data.enableBusinessHours || false,
-                timezone: data.timezone || "UTC",
-                businessHoursStart: data.businessHoursStart || "09:00",
-                businessHoursEnd: data.businessHoursEnd || "17:00",
-                offlineMessage: data.offlineMessage || "We are currently offline.",
-                // Engagement
-                engagement: data.engagement || null,
-                enableVoiceAssistant: data.enableVoiceAssistant || false,
-                enablePersonalShopper: data.enablePersonalShopper || false,
-            }, {
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
-        } else {
-            // Return default settings if not found
-            return NextResponse.json({
-                companyName: "Acme Corp",
-                brandColor: "#000000",
-                position: "bottom-right",
-                viewMode: "classic",
-                modalSize: "half",
-                launcherStyle: "circle",
-                launcherText: "Sohbet",
-                launcherRadius: 50,
-                launcherHeight: 60,
-                launcherWidth: 60,
-                launcherIcon: "message",
-                launcherIconUrl: "",
-                launcherLibraryIcon: "MessageSquare",
-                launcherIconColor: "#FFFFFF",
-                launcherBackgroundColor: "",
-                bottomSpacing: 20,
-                sideSpacing: 20,
-                launcherShadow: "medium",
-                launcherAnimation: "none",
-                initialLanguage: "auto",
-                engagement: null,
-            }, {
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        const idToken = authHeader.split("Bearer ")[1];
+        const decodedToken = await adminAuth.verifyIdToken(idToken);
+        const userId = decodedToken.uid;
+
+        if (!userId) {
+            return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+        }
+
+        const body = await req.json();
+
+        // Validation or sanitization could go here if needed
+
+        await adminDb.collection("chatbots").doc(userId).set({
+            ...body,
+            updatedAt: new Date().toISOString(),
+        }, { merge: true });
+
+        return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Error fetching settings:", error);
+        console.error("Error saving settings:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
+}
+
+export async function OPTIONS(req: Request) {
+    return new NextResponse(null, {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+    });
 }

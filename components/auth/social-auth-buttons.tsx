@@ -6,6 +6,7 @@ import { useState } from "react"
 import { signInWithPopup } from "firebase/auth"
 import { auth, googleProvider, microsoftProvider, appleProvider } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface SocialAuthButtonsProps {
     mode: 'login' | 'signup'
@@ -16,6 +17,7 @@ interface SocialAuthButtonsProps {
 export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButtonsProps) {
     const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
     const { toast } = useToast()
+    const { t, language } = useLanguage()
 
     const handleSocialAuth = async (provider: any, providerId: string) => {
         setLoadingProvider(providerId)
@@ -26,9 +28,29 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
             }
         } catch (error: any) {
             console.error("Social auth error:", error)
+
+            // Provide better error messages
+            let errorMessage = error.message || (language === 'tr'
+                ? "Kimlik doğrulama başarısız oldu. Lütfen tekrar deneyin."
+                : "Failed to authenticate. Please try again.")
+
+            if (error.code === 'auth/popup-closed-by-user') {
+                errorMessage = language === 'tr'
+                    ? "Pencere kapatıldı. Lütfen tekrar deneyin."
+                    : "Popup was closed. Please try again."
+            } else if (error.code === 'auth/account-exists-with-different-credential') {
+                errorMessage = language === 'tr'
+                    ? "Bu e-posta başka bir giriş yöntemiyle zaten kayıtlı."
+                    : "This email is already registered with a different sign-in method."
+            } else if (error.code === 'auth/operation-not-allowed') {
+                errorMessage = language === 'tr'
+                    ? "Bu giriş yöntemi şu anda devre dışı."
+                    : "This sign-in method is currently disabled."
+            }
+
             toast({
-                title: "Authentication Error",
-                description: error.message || "Failed to authenticate. Please try again.",
+                title: language === 'tr' ? "Kimlik Doğrulama Hatası" : "Authentication Error",
+                description: errorMessage,
                 variant: "destructive",
             })
         } finally {
@@ -36,7 +58,9 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
         }
     }
 
-    const actionText = mode === 'login' ? 'Log in' : 'Sign up'
+    const actionText = mode === 'login'
+        ? (language === 'tr' ? 'ile Giriş Yap' : 'Log in with')
+        : (language === 'tr' ? 'ile Kayıt Ol' : 'Sign up with')
 
     return (
         <div className="grid gap-3">
@@ -68,42 +92,7 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
                         />
                     </svg>
                 )}
-                {actionText} with Google
-            </Button>
-
-            <Button
-                variant="outline"
-                className="w-full h-11 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                onClick={() => handleSocialAuth(microsoftProvider, 'microsoft.com')}
-                disabled={disabled || !!loadingProvider}
-            >
-                {loadingProvider === 'microsoft.com' ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <svg className="mr-2 h-4 w-4" viewBox="0 0 23 23">
-                        <rect x="1" y="1" width="10" height="10" fill="#f25022" />
-                        <rect x="12" y="1" width="10" height="10" fill="#00a4ef" />
-                        <rect x="1" y="12" width="10" height="10" fill="#7fba00" />
-                        <rect x="12" y="12" width="10" height="10" fill="#ffb900" />
-                    </svg>
-                )}
-                {actionText} with Microsoft
-            </Button>
-
-            <Button
-                variant="outline"
-                className="w-full h-11 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                onClick={() => handleSocialAuth(appleProvider, 'apple.com')}
-                disabled={disabled || !!loadingProvider}
-            >
-                {loadingProvider === 'apple.com' ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                    </svg>
-                )}
-                {actionText} with Apple
+                Google {actionText}
             </Button>
         </div>
     )

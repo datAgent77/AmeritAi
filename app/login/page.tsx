@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { VionLogo } from "@/components/vion-logo"
+import Image from "next/image"
 import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
@@ -40,7 +41,7 @@ export default function LoginForm() {
           return
         }
         // User exists and is active, redirect to platform
-        router.push("/platform")
+        router.push("/console/chatbot")
       } else {
         // New user from social login - redirect to signup to complete profile
         // The signup page will detect the existing social auth and show the form step
@@ -62,32 +63,61 @@ export default function LoginForm() {
       await setPersistence(auth, browserLocalPersistence)
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
 
-      // Check if user is active in Firestore
-      const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        if (userData.isActive === false) {
-          await auth.signOut()
-          const msg = t('accountPendingApproval')
-          setError(msg)
-          toast({
-            title: t('accountPendingTitle'),
-            description: msg,
-            variant: "destructive",
-          })
-          return
+      // Check if user is active in Firestore (wrapped in try-catch for permission errors)
+      try {
+        const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          if (userData.isActive === false) {
+            await auth.signOut()
+            const msg = t('accountPendingApproval')
+            setError(msg)
+            toast({
+              title: t('accountPendingTitle'),
+              description: msg,
+              variant: "destructive",
+            })
+            return
+          }
         }
+      } catch (firestoreError) {
+        // Firestore permission error - proceed with login anyway
+        console.warn("Could not check user status in Firestore:", firestoreError)
       }
 
-      router.push("/platform")
+      router.push("/console/chatbot")
     } catch (error: any) {
       console.error("Login error:", error)
-      const msg = t('invalidEmailPassword')
-      setError(msg)
+
+      // Show more specific error messages
+      let errorMessage = t('invalidEmailPassword')
+
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = language === 'tr'
+          ? 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.'
+          : 'No user found with this email address.'
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = language === 'tr'
+          ? 'Şifre hatalı. Lütfen tekrar deneyin.'
+          : 'Incorrect password. Please try again.'
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = language === 'tr'
+          ? 'E-posta veya şifre hatalı. Lütfen kontrol edin.'
+          : 'Invalid email or password. Please check and try again.'
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = language === 'tr'
+          ? 'Çok fazla başarısız deneme. Lütfen birkaç dakika bekleyin.'
+          : 'Too many failed attempts. Please wait a few minutes.'
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = language === 'tr'
+          ? 'Bu hesap devre dışı bırakılmış.'
+          : 'This account has been disabled.'
+      }
+
+      setError(errorMessage)
       toast({
         title: t('error'),
-        description: msg,
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -98,16 +128,20 @@ export default function LoginForm() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-black flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between p-6">
-        <Link href="/">
-          <VionLogo variant="black" className="text-2xl dark:hidden" />
-          <VionLogo variant="white" className="text-2xl hidden dark:block" />
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 md:p-6">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative w-8 h-8">
+            <Image src="/vion-logo-icon-dark.png" alt="Vion" fill className="object-contain dark:hidden" />
+            <Image src="/vion-logo-icon-white.png" alt="Vion" fill className="object-contain hidden dark:block" />
+          </div>
+          <span className="font-bold text-xl tracking-tight">Vion</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <LanguageSwitcher />
-          <Link href="/signup">
-            <Button variant="outline" size="sm">
-              {language === 'tr' ? 'Ücretsiz Kayıt Ol' : 'Sign up free'}
+          <Link href="/signup" className="hidden md:block">
+            <Button variant="outline" size="sm" className="whitespace-nowrap">
+              {language === 'tr' ? '14 Gün Ücretsiz Dene' : 'Try 14 Days Free'}
             </Button>
           </Link>
         </div>
@@ -157,7 +191,7 @@ export default function LoginForm() {
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">
-                {language === 'tr' ? 'İş E-postası' : 'Business email'}
+                {language === 'tr' ? 'E-posta' : 'Email'}
               </Label>
               <Input
                 id="email"

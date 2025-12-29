@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, Timestamp, orderBy } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 export interface DailyStat {
     date: string;
@@ -27,16 +26,18 @@ export async function getAnalyticsData(
     endDate: Date
 ): Promise<AnalyticsSummary> {
     try {
-        const sessionsRef = collection(db, "chat_sessions");
-        const q = query(
-            sessionsRef,
-            where("chatbotId", "==", chatbotId),
-            where("createdAt", ">=", startDate.toISOString()),
-            where("createdAt", "<=", endDate.toISOString()),
-            orderBy("createdAt", "asc")
-        );
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            throw new Error("Firebase Admin not initialized");
+        }
 
-        const querySnapshot = await getDocs(q);
+        const sessionsRef = adminDb.collection("chat_sessions");
+        const querySnapshot = await sessionsRef
+            .where("chatbotId", "==", chatbotId)
+            .where("createdAt", ">=", startDate.toISOString())
+            .where("createdAt", "<=", endDate.toISOString())
+            .orderBy("createdAt", "asc")
+            .get();
 
         let totalConversations = 0;
         let totalMessages = 0;
@@ -50,10 +51,7 @@ export async function getAnalyticsData(
             const messageCount = data.messages ? data.messages.length : 0;
             totalMessages += messageCount;
 
-            // Sentiment Analysis (Simple aggregation based on stored sentiment if available)
-            // Assuming we might store sentiment on the session or messages. 
-            // For now, let's look at the last message's sentiment or a session-level sentiment field if it existed.
-            // Since we don't have session-level sentiment yet, we'll aggregate from messages if they have it.
+            // Sentiment Analysis
             if (data.messages) {
                 data.messages.forEach((msg: any) => {
                     if (msg.sentiment) {

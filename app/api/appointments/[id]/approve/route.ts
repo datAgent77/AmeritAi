@@ -1,0 +1,82 @@
+import { NextResponse } from "next/server";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { sendAppointmentConfirmationEmail } from "@/lib/email-service";
+
+export async function POST(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
+    try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json(
+                { error: "Database not available" },
+                { status: 503 }
+            );
+        }
+
+        const { id } = params;
+
+        if (!id) {
+            return NextResponse.json(
+                { error: "Appointment ID is required" },
+                { status: 400 }
+            );
+        }
+
+        // Get the appointment
+        const appointmentRef = adminDb.collection("appointments").doc(id);
+        const appointmentSnap = await appointmentRef.get();
+
+        if (!appointmentSnap.exists) {
+            return NextResponse.json(
+                { error: "Appointment not found" },
+                { status: 404 }
+            );
+        }
+
+        const appointment = appointmentSnap.data();
+
+        // Update status to confirmed
+        await appointmentRef.update({
+            status: "confirmed",
+            confirmedAt: new Date().toISOString()
+        });
+
+        // Send confirmation email if customer email exists
+        let emailSent = false;
+        if (appointment?.customerEmail) {
+            try {
+                emailSent = await sendAppointmentConfirmationEmail({
+                    customerEmail: appointment.customerEmail,
+                    customerName: appointment.customerName || "Değerli Müşterimiz",
+                    date: appointment.date,
+                    time: appointment.time,
+                    companyName: "Vion AI", // TODO: Get from chatbot settings
+                    notes: appointment.notes
+                });
+            } catch (emailError) {
+                console.error("Approve API: Email send failed:", emailError);
+                // Don't fail the request if email fails
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: "Appointment confirmed successfully",
+            emailSent,
+            appointment: {
+                id,
+                status: "confirmed",
+                customerEmail: appointment?.customerEmail || null
+            }
+        });
+
+    } catch (error: any) {
+        console.error("Approve API: Error:", error);
+        return NextResponse.json(
+            { error: error.message || "Failed to approve appointment" },
+            { status: 500 }
+        );
+    }
+}

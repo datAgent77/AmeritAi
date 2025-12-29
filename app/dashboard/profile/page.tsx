@@ -56,7 +56,7 @@ export default function ProfilePage() {
             }
         }
         fetchProfile()
-    }, [user, toast])
+    }, [user, toast, t])
 
     const handleSave = async () => {
         if (!user) return

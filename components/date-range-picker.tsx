@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useMemo } from "react"
 import { CalendarIcon, ChevronRight } from "lucide-react"
 import { addDays, format, subDays, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek, startOfYear, endOfYear, subYears } from "date-fns"
 import { tr, enUS } from "date-fns/locale"
@@ -46,7 +47,7 @@ export function DateRangePicker({
         }
     }, [open, date])
 
-    const presets = [
+    const presets = useMemo(() => [
         { label: t('custom'), getValue: () => undefined },
         { label: t('today'), getValue: () => ({ from: new Date(), to: new Date() }) },
         { label: t('yesterday'), getValue: () => { const yesterday = subDays(new Date(), 1); return { from: yesterday, to: yesterday } } },
@@ -63,7 +64,7 @@ export function DateRangePicker({
         { label: t('last90Days'), getValue: () => ({ from: subDays(new Date(), 89), to: new Date() }) },
         { label: t('thisYear'), getValue: () => ({ from: startOfYear(new Date()), to: new Date() }) },
         { label: t('lastYear'), getValue: () => { const last = subYears(new Date(), 1); return { from: startOfYear(last), to: endOfYear(last) } } }
-    ]
+    ], [t])
 
     // Detect current preset
     React.useEffect(() => {
@@ -81,7 +82,7 @@ export function DateRangePicker({
                 setSelectedPresetLabel(t('custom'))
             }
         }
-    }, [date, t])
+    }, [date, t, presets])
 
 
     const handleApply = () => {

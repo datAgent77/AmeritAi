@@ -1,8 +1,8 @@
-import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
 
 export async function POST(req: Request) {
+    const adminDb = getAdminDb();
     try {
         const url = new URL(req.url);
         const chatbotId = url.searchParams.get("chatbotId");
@@ -11,6 +11,11 @@ export async function POST(req: Request) {
         if (!chatbotId) {
             console.error("Telegram Webhook: Missing chatbotId");
             return new Response("Missing chatbotId", { status: 400 });
+        }
+
+        if (!adminDb) {
+            console.error("Telegram Webhook: Firebase Admin not initialized");
+            return new Response("Internal Server Error", { status: 500 });
         }
 
         // Check if it's a message
@@ -25,16 +30,16 @@ export async function POST(req: Request) {
         console.log(`Telegram Webhook: Received message from ${userId} for chatbot ${chatbotId}: ${text}`);
 
         // 1. Get Chatbot Settings (to get the Token)
-        const chatbotRef = doc(db, "chatbots", chatbotId);
-        const chatbotSnap = await getDoc(chatbotRef);
+        const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+        const chatbotSnap = await chatbotRef.get();
 
-        if (!chatbotSnap.exists()) {
+        if (!chatbotSnap.exists) {
             console.error("Telegram Webhook: Chatbot not found");
             return new Response("Chatbot not found", { status: 404 });
         }
 
         const data = chatbotSnap.data();
-        const telegramConfig = data.integrations?.telegram;
+        const telegramConfig = data?.integrations?.telegram;
 
         if (!telegramConfig || !telegramConfig.connected || !telegramConfig.botToken) {
             console.error("Telegram Webhook: Telegram not connected for this chatbot");
@@ -46,33 +51,25 @@ export async function POST(req: Request) {
         // 2. Generate AI Response
         // We use the Telegram Chat ID as the Session ID to maintain context per user
         const sessionId = `telegram-${chatbotId}-${chatId}`;
-
-        // Fetch previous context if needed, but for now we'll just pass the current message
-        // Ideally, we should fetch the last few messages from Firestore for this session
-        // But generateAIResponse handles saving to session, so we just need to pass the current message
-        // and let it build context from Pinecone + System Prompt.
-        // NOTE: For a true conversational experience, we should pass history to generateAIResponse.
-        // For this MVP, we'll rely on RAG context.
-
-        // Check if session is paused
-        const sessionRef = doc(db, "chat_sessions", sessionId);
-        const sessionSnap = await getDoc(sessionRef);
+        const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
+        const sessionSnap = await sessionRef.get();
         let isPaused = false;
         let history: any[] = [];
+        let currentMessages: any[] = [];
 
-        if (sessionSnap.exists()) {
+        if (sessionSnap.exists) {
             const sessionData = sessionSnap.data();
-            isPaused = sessionData.isPaused || false;
+            isPaused = sessionData?.isPaused || false;
             // Get last 6 messages
-            history = sessionData.messages.slice(-6).map((m: any) => ({
+            const msgs = sessionData?.messages || [];
+            currentMessages = msgs;
+            history = msgs.slice(-6).map((m: any) => ({
                 role: m.role,
                 content: m.content
             }));
-        }
-
-        // Save user message first (important for history)
-        if (!sessionSnap.exists()) {
-            await setDoc(sessionRef, {
+        } else {
+            // Create session if not exists
+            await sessionRef.set({
                 chatbotId,
                 createdAt: new Date().toISOString(),
                 messages: [],
@@ -80,13 +77,19 @@ export async function POST(req: Request) {
             });
         }
 
-        await updateDoc(sessionRef, {
-            messages: arrayUnion({
-                id: Date.now().toString(),
-                role: "user",
-                content: text,
-                createdAt: new Date().toISOString()
-            })
+        // Save user message
+        const userMsg = {
+            id: Date.now().toString(),
+            role: "user",
+            content: text,
+            createdAt: new Date().toISOString()
+        };
+        currentMessages.push(userMsg);
+
+        // We need to write back the array. 
+        // Note: Race condition possible if high concurrency but acceptable for single user chat.
+        await sessionRef.update({
+            messages: currentMessages
         });
 
         if (isPaused) {
@@ -109,6 +112,8 @@ export async function POST(req: Request) {
             })
         });
 
+        // Generate and Send AI Response
+        // Note: generateAIResponse saves the assistant reply internally now using adminDb
         const aiResult = await generateAIResponse(chatbotId, messages as any, sessionId, false);
         const replyText = aiResult.content;
 

@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { collection, query, where, getDocs, doc, updateDoc, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { useEffect, useState, useCallback } from "react"
+import { auth } from "@/lib/firebase"
 import {
     Table,
     TableBody,
@@ -14,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useLanguage } from "@/context/LanguageContext"
 
@@ -34,74 +33,82 @@ export default function AdminRequestsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
 
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async () => {
         setIsLoading(true)
         try {
-            const q = query(collection(db, "module_requests"), where("status", "==", "pending"))
-            const querySnapshot = await getDocs(q)
-            const requestsData = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as ModuleRequest[]
+            const currentUser = auth.currentUser;
+            if (!currentUser) return;
 
-            // Sort by date manually since we didn't add an index yet
-            requestsData.sort((a, b) => b.requestedAt?.seconds - a.requestedAt?.seconds)
+            const token = await currentUser.getIdToken();
+            const response = await fetch("/api/admin/module-requests", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
 
-            setRequests(requestsData)
-        } catch (error) {
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to fetch requests");
+            }
+
+            const data = await response.json();
+            setRequests(data.requests || []);
+        } catch (error: any) {
             console.error("Error fetching requests:", error)
             toast({
                 title: "Error",
-                description: "Failed to load requests.",
+                description: error.message || "Failed to load requests.",
                 variant: "destructive",
             })
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [toast])
 
     useEffect(() => {
-        fetchRequests()
-    }, [])
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetchRequests();
+            }
+        });
+
+        return () => unsubscribe();
+    }, [fetchRequests])
 
     const handleApprove = async (request: ModuleRequest) => {
         try {
-            // 1. Update Request Status
-            await updateDoc(doc(db, "module_requests", request.id), {
-                status: 'approved',
-                processedAt: new Date()
-            })
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch("/api/admin/module-requests", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    requestId: request.id,
+                    action: 'approve'
+                })
+            });
 
-            // 2. Update User Profile (for enable* flags)
-            const userRef = doc(db, "users", request.userId)
-            const enableKey = `enable${request.moduleKey.charAt(0).toUpperCase() + request.moduleKey.slice(1)}` // e.g. enableVoiceAssistant
-            // Also ensure it's visible
-            const visibleKey = `visible${request.moduleKey.charAt(0).toUpperCase() + request.moduleKey.slice(1)}`
-
-            await updateDoc(userRef, {
-                [enableKey]: true,
-                [visibleKey]: true
-            })
-
-            // 3. Update Chatbot Document (if exists, same flags often mirrored)
-            // Note: In some architectures, flags are only on user profile. 
-            // Checking implementation: flags seem to be primarily on User profile in AuthContext.
-            // But we might want to update chatbot doc too if it stores config.
-            // For now, User profile is the Single Source of Truth for access.
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to approve request");
+            }
 
             toast({
-                title: "Success",
-                description: `Request for ${request.moduleName} approved.`,
+                title: "Başarılı",
+                description: `${request.moduleName || request.moduleKey} talebi onaylandı.`,
+                className: "bg-green-600 text-white border-green-700"
             })
 
             // Remove from list
             setRequests(prev => prev.filter(r => r.id !== request.id))
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error approving request:", error)
             toast({
-                title: "Error",
-                description: "Failed to approve request.",
+                title: "Hata",
+                description: `Talep onaylanamadı: ${error.message || "Bilinmeyen hata"}`,
                 variant: "destructive",
             })
         }
@@ -109,22 +116,73 @@ export default function AdminRequestsPage() {
 
     const handleReject = async (request: ModuleRequest) => {
         try {
-            await updateDoc(doc(db, "module_requests", request.id), {
-                status: 'rejected',
-                processedAt: new Date()
-            })
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch("/api/admin/module-requests", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    requestId: request.id,
+                    action: 'reject'
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to reject request");
+            }
 
             toast({
-                title: "Rejected",
-                description: "Request has been denied.",
+                title: "Reddedildi",
+                description: "Talep reddedildi.",
             })
 
             setRequests(prev => prev.filter(r => r.id !== request.id))
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error rejecting request:", error)
             toast({
-                title: "Error",
-                description: "Failed to reject request.",
+                title: "Hata",
+                description: `Talep reddedilemedi: ${error.message || "Bilinmeyen hata"}`,
+                variant: "destructive",
+            })
+        }
+    }
+
+    const handleForceDelete = async (request: ModuleRequest) => {
+        if (!confirm("Bu talebi kalıcı olarak silmek istediğinize emin misiniz?")) return
+
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch("/api/admin/module-requests", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    requestId: request.id,
+                    action: 'delete'
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to delete request");
+            }
+
+            toast({
+                title: "Silindi",
+                description: "Talep kalıcı olarak silindi.",
+            })
+
+            setRequests(prev => prev.filter(r => r.id !== request.id))
+        } catch (error: any) {
+            console.error("Error deleting request:", error)
+            toast({
+                title: "Hata",
+                description: `Talep silinemedi: ${error.message || "Bilinmeyen hata"}`,
                 variant: "destructive",
             })
         }
@@ -141,23 +199,23 @@ export default function AdminRequestsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-bold tracking-tight">{t('moduleRequests') || "Module Requests"}</h2>
-                <p className="text-muted-foreground">{t('moduleRequestsDesc') || "Manage user requests for premium modules."}</p>
+                <h2 className="text-3xl font-bold tracking-tight">{t('moduleRequests') || "Modül Erişim Talepleri"}</h2>
+                <p className="text-muted-foreground">{t('moduleRequestsDesc') || "Kullanıcıların modül taleplerini yönetin."}</p>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{t('pendingRequests') || "Pending Requests"}</CardTitle>
+                    <CardTitle>{t('pendingRequests') || "Bekleyen Talepler"}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Module</TableHead>
-                                    <TableHead>Requested</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>Kullanıcı</TableHead>
+                                    <TableHead>Modül</TableHead>
+                                    <TableHead>Talep Tarihi</TableHead>
+                                    <TableHead className="text-right">İşlemler</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -171,13 +229,23 @@ export default function AdminRequestsPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="text-indigo-500 border-indigo-200 bg-indigo-50">
-                                                {request.moduleName || request.moduleKey}
+                                                {request.moduleName || request.moduleKey || "Bilinmeyen Modül"}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center text-muted-foreground text-sm">
                                                 <Clock className="mr-1 h-3 w-3" />
-                                                {request.requestedAt?.toDate().toLocaleDateString()}
+                                                {(() => {
+                                                    if (!request.requestedAt) return '-';
+                                                    try {
+                                                        const date = typeof request.requestedAt.toDate === 'function'
+                                                            ? request.requestedAt.toDate()
+                                                            : new Date(request.requestedAt.seconds ? request.requestedAt.seconds * 1000 : request.requestedAt);
+                                                        return date.toLocaleDateString('tr-TR');
+                                                    } catch (e) {
+                                                        return '-';
+                                                    }
+                                                })()}
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -189,7 +257,7 @@ export default function AdminRequestsPage() {
                                                     onClick={() => handleApprove(request)}
                                                 >
                                                     <CheckCircle2 className="h-4 w-4 mr-1" />
-                                                    Approve
+                                                    Onayla
                                                 </Button>
                                                 <Button
                                                     size="sm"
@@ -197,7 +265,16 @@ export default function AdminRequestsPage() {
                                                     onClick={() => handleReject(request)}
                                                 >
                                                     <XCircle className="h-4 w-4 mr-1" />
-                                                    Deny
+                                                    Reddet
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-gray-500 hover:text-red-600 hover:border-red-300"
+                                                    onClick={() => handleForceDelete(request)}
+                                                    title="Kalıcı olarak sil"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -206,7 +283,7 @@ export default function AdminRequestsPage() {
                                 {requests.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                            No pending requests found.
+                                            Bekleyen talep bulunamadı.
                                         </TableCell>
                                     </TableRow>
                                 )}

@@ -1,9 +1,13 @@
-import { db } from "@/lib/firebase";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        }
+
         const { userId, botToken, signingSecret } = await req.json();
 
         if (!userId || !botToken || !signingSecret) {
@@ -25,9 +29,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid Slack Bot Token" }, { status: 400 });
         }
 
-        // Save to Firestore
-        const docRef = doc(db, "chatbots", userId);
-        await setDoc(docRef, {
+        // Save to Firestore using Admin SDK
+        const docRef = adminDb.collection("chatbots").doc(userId);
+        await docRef.set({
             integrations: {
                 slack: {
                     connected: true,

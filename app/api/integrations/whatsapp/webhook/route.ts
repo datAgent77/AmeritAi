@@ -1,9 +1,9 @@
-import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
 
 // GET: Webhook Verification
 export async function GET(req: Request) {
+    const adminDb = getAdminDb();
     const url = new URL(req.url);
     const mode = url.searchParams.get("hub.mode");
     const token = url.searchParams.get("hub.verify_token");
@@ -14,15 +14,19 @@ export async function GET(req: Request) {
         return new Response("Missing chatbotId", { status: 400 });
     }
 
-    // Fetch verify token from Firestore
-    const chatbotRef = doc(db, "chatbots", chatbotId);
-    const chatbotSnap = await getDoc(chatbotRef);
+    if (!adminDb) {
+        return new Response("Internal Server Error", { status: 500 });
+    }
 
-    if (!chatbotSnap.exists()) {
+    // Fetch verify token from Firestore
+    const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+    const chatbotSnap = await chatbotRef.get();
+
+    if (!chatbotSnap.exists) {
         return new Response("Chatbot not found", { status: 404 });
     }
 
-    const waConfig = chatbotSnap.data().integrations?.whatsapp;
+    const waConfig = chatbotSnap.data()?.integrations?.whatsapp;
 
     if (!waConfig || waConfig.verifyToken !== token) {
         return new Response("Forbidden", { status: 403 });
@@ -37,6 +41,7 @@ export async function GET(req: Request) {
 
 // POST: Incoming Messages
 export async function POST(req: Request) {
+    const adminDb = getAdminDb();
     try {
         const url = new URL(req.url);
         const chatbotId = url.searchParams.get("chatbotId");
@@ -44,6 +49,10 @@ export async function POST(req: Request) {
 
         if (!chatbotId) {
             return new Response("Missing chatbotId", { status: 400 });
+        }
+
+        if (!adminDb) {
+            return new Response("Internal Server Error", { status: 500 });
         }
 
         // Check if it's a WhatsApp status update (ignore for now)
@@ -64,14 +73,15 @@ export async function POST(req: Request) {
         console.log(`WhatsApp Webhook: Message from ${from} for chatbot ${chatbotId}: ${text}`);
 
         // 1. Get Chatbot Settings
-        const chatbotRef = doc(db, "chatbots", chatbotId);
-        const chatbotSnap = await getDoc(chatbotRef);
+        const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+        const chatbotSnap = await chatbotRef.get();
 
-        if (!chatbotSnap.exists()) {
+        if (!chatbotSnap.exists) {
             return new Response("Chatbot not found", { status: 404 });
         }
 
-        const waConfig = chatbotSnap.data().integrations?.whatsapp;
+        const data = chatbotSnap.data();
+        const waConfig = data?.integrations?.whatsapp;
         if (!waConfig || !waConfig.connected) {
             return new Response("WhatsApp not connected", { status: 400 });
         }
@@ -81,21 +91,24 @@ export async function POST(req: Request) {
 
         // 2. Session Management
         const sessionId = `whatsapp-${chatbotId}-${from}`;
-        const sessionRef = doc(db, "chat_sessions", sessionId);
-        const sessionSnap = await getDoc(sessionRef);
+        const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
+        const sessionSnap = await sessionRef.get();
 
         let isPaused = false;
         let history: any[] = [];
+        let currentMessages: any[] = [];
 
-        if (sessionSnap.exists()) {
+        if (sessionSnap.exists) {
             const sessionData = sessionSnap.data();
-            isPaused = sessionData.isPaused || false;
-            history = sessionData.messages.slice(-6).map((m: any) => ({
+            isPaused = sessionData?.isPaused || false;
+            const msgs = sessionData?.messages || [];
+            currentMessages = msgs;
+            history = msgs.slice(-6).map((m: any) => ({
                 role: m.role,
                 content: m.content
             }));
         } else {
-            await setDoc(sessionRef, {
+            await sessionRef.set({
                 chatbotId,
                 createdAt: new Date().toISOString(),
                 messages: [],
@@ -106,13 +119,16 @@ export async function POST(req: Request) {
         }
 
         // Save User Message
-        await updateDoc(sessionRef, {
-            messages: arrayUnion({
-                id: Date.now().toString(),
-                role: "user",
-                content: text,
-                createdAt: new Date().toISOString()
-            })
+        const userMsg = {
+            id: Date.now().toString(),
+            role: "user",
+            content: text,
+            createdAt: new Date().toISOString()
+        };
+        currentMessages.push(userMsg);
+
+        await sessionRef.update({
+            messages: currentMessages
         });
 
         if (isPaused) {
@@ -126,6 +142,7 @@ export async function POST(req: Request) {
             { role: "user", content: text }
         ];
 
+        // generateAIResponse uses adminDb internally now
         const aiResult = await generateAIResponse(chatbotId, messages as any, sessionId, false);
         const replyText = aiResult.content;
 

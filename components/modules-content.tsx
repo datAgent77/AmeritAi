@@ -2,22 +2,11 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { ShoppingBag, ArrowRight, Mic, MessageSquare, Calendar, Users, BookOpen, Share2, Mail, Lock, TrendingUp } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useLanguage } from "@/context/LanguageContext"
-import { useAuth } from "@/context/AuthContext"
-import { useState, useEffect } from "react"
-import { doc, updateDoc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { db } from "@/lib/firebase"
-import { useToast } from "@/hooks/use-toast"
-import { MODULES, ModuleId, ORDERED_MODULES } from "@/lib/module-config"
-import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-// Lucide Icon Mapping
-const ICON_MAP = {
+import {
     ShoppingBag,
+    ArrowRight,
     Mic,
     MessageSquare,
     Calendar,
@@ -25,8 +14,57 @@ const ICON_MAP = {
     BookOpen,
     Share2,
     Mail,
+    Lock,
+    TrendingUp,
+    Check,
+    Globe,
+    Zap,
+    CheckCircle2,
+    Shield,
+    BarChart,
+    Info
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useLanguage } from "@/context/LanguageContext"
+import { useAuth } from "@/context/AuthContext"
+import { useState, useEffect } from "react"
+import { doc, updateDoc, getDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { useToast } from "@/hooks/use-toast"
+import { MODULES as MODULE_DEFINITIONS, ModuleId, ORDERED_MODULES } from "@/lib/module-config"
+import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
+import { INDUSTRY_DEFAULT_MODULES, MODULES as NEW_MODULES } from "@/lib/modules-config"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogClose
+} from "@/components/ui/dialog"
+import { getAllModules as getAllRegistryModules } from "@/lib/modules-registry"
+import { ModuleDetailsDialog } from "@/components/modules/module-details-dialog"
 
-    TrendingUp
+// Lucide Icon Mapping
+export const ICON_MAP = {
+    ShoppingBag,
+    Check,
+    Globe,
+    Zap,
+    TrendingUp,
+    CheckCircle2,
+    Shield,
+    BarChart,
+    Mic,
+    MessageSquare,
+    Calendar,
+    Users,
+    BookOpen,
+    Share2,
+    Mail
 }
 
 // Map ModuleId to Firestore Field
@@ -39,7 +77,15 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     knowledgeBase: 'enableKnowledgeBase',
     socialMedia: 'enableSocialMedia',
     emailMarketing: 'enableEmailMarketing',
-    salesOptimization: 'enableSalesOptimization'
+    salesOptimization: 'enableSalesOptimization',
+    reviewManagement: 'enableReviewManagement',
+    loyaltyProgram: 'enableLoyaltyProgram',
+    campaignManager: 'enableCampaignManager',
+    autoTranslate: 'enableAutoTranslate',
+    gamification: 'enableGamification',
+    visualDiagnosis: 'enableVisualDiagnosis',
+    agriCalendar: 'enableAgriCalendar',
+    marketWatch: 'enableMarketWatch'
 }
 
 interface ModulesContentProps {
@@ -60,7 +106,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     } = useAuth()
     const { toast } = useToast()
     const [isLoading, setIsLoading] = useState<ModuleId | null>(null)
+    const [isPageLoading, setIsPageLoading] = useState(true)
     const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({})
+    const [selectedModuleId, setSelectedModuleId] = useState<ModuleId | null>(null)
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
@@ -73,48 +122,87 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     useEffect(() => {
         const loadModuleStates = async () => {
             if (!effectiveUserId) return
+            setIsPageLoading(true)
             try {
-                // Fetch module states directly from chatbots collection for accurate data
-                const chatbotRef = doc(db, "chatbots", effectiveUserId)
-                const chatbotSnap = await getDoc(chatbotRef)
+                // Fetch from API to avoid client-side permission issues
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`)
 
-                if (chatbotSnap.exists()) {
-                    const data = chatbotSnap.data()
+                if (response.ok) {
+                    const data = await response.json()
+
                     setModuleStates({
-                        generalChatbot: data.enableChatbot === true,
-                        productCatalog: data.enablePersonalShopper === true,
-                        voiceAssistant: data.enableVoiceAssistant === true,
-                        knowledgeBase: data.enableKnowledgeBase === true,
-                        leadCollection: data.enableLeadCollection === true,
-                        appointments: data.enableAppointments === true,
-                        socialMedia: data.enableSocialMedia === true,
-                        emailMarketing: data.enableEmailMarketing === true,
-                        salesOptimization: data.enableSalesOptimization === true,
+                        generalChatbot: data.enableChatbot ?? true,
+                        productCatalog: data.enablePersonalShopper ?? false,
+                        voiceAssistant: data.enableVoiceAssistant ?? false,
+                        knowledgeBase: data.enableKnowledgeBase ?? true,
+                        leadCollection: data.enableLeadCollection ?? false,
+                        appointments: data.enableAppointments ?? false,
+                        socialMedia: data.enableSocialMedia ?? false,
+                        emailMarketing: data.enableEmailMarketing ?? false,
+                        salesOptimization: data.enableSalesOptimization ?? false,
                     })
                 } else {
-                    // Fallback to AuthContext values
+                    console.error("Failed to load settings via API")
+                    // Fallback to defaults
                     setModuleStates({
-                        generalChatbot: enableChatbot,
-                        productCatalog: enablePersonalShopper,
-                        voiceAssistant: enableVoiceAssistant,
-                        knowledgeBase: enableKnowledgeBase,
+                        generalChatbot: true,
+                        productCatalog: false,
+                        voiceAssistant: false,
+                        knowledgeBase: true,
                         leadCollection: false,
                         appointments: false,
                         socialMedia: false,
                         emailMarketing: false,
-
+                        salesOptimization: false,
                     })
                 }
+
             } catch (error) {
                 console.error("Error loading module states:", error)
+            } finally {
+                setIsPageLoading(false)
             }
         }
         loadModuleStates()
-    }, [effectiveUserId, enableChatbot, enablePersonalShopper, enableVoiceAssistant, enableKnowledgeBase])
+    }, [effectiveUserId])
 
     const handleToggle = async (moduleId: ModuleId, checked: boolean) => {
         if (!effectiveUserId) return
         setIsLoading(moduleId)
+
+        // 1. Check for Conflicts
+        const targetModule = getAllRegistryModules().find(m => m.id === moduleId);
+        // If we are trying to ENABLE it (checked is true)
+        if (checked && targetModule?.conflictsWith) {
+            // Check if any conflicting module is currently enabled
+            const conflictingModuleId = targetModule.conflictsWith.find(conflictId => {
+                return moduleStates[conflictId] === true;
+            });
+
+            if (conflictingModuleId) {
+                const conflictModule = getAllRegistryModules().find(m => m.id === conflictingModuleId);
+                const conflictName = conflictModule
+                    ? (language === 'tr' ? conflictModule.name.tr : conflictModule.name.en)
+                    : conflictingModuleId;
+
+                toast({
+                    variant: "destructive",
+                    title: language === 'tr' ? "Modül Çakışması" : "Module Conflict",
+                    description: language === 'tr'
+                        ? `Bu modül, şu anda aktif olan "${conflictName}" modülü ile çakışmaktadır. Lütfen önce diğer modülü kapatın.`
+                        : `This module conflicts with the currently active "${conflictName}" module. Please disable it first.`
+                });
+                setIsLoading(null); // Stop loading state
+                return; // Prevent toggle
+            }
+        }
+
+        // 2. Optimistic Update
+        setModuleStates(prev => ({
+            ...prev,
+            [moduleId]: checked
+        }))
+
         try {
             const userRef = doc(db, "users", effectiveUserId)
             const chatbotRef = doc(db, "chatbots", effectiveUserId)
@@ -122,12 +210,24 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
             if (!fieldName) throw new Error("Field mapping not found")
 
-            const updates = { [fieldName]: checked }
+            // Get ID token for security check
+            const idToken = await user?.getIdToken()
 
-            await Promise.all([
-                updateDoc(userRef, updates),
-                updateDoc(chatbotRef, updates)
-            ])
+            // Use API to update settings (handles permissions via admin-sdk)
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    chatbotId: effectiveUserId,
+                    userSettings: { [fieldName]: checked },
+                    chatbotSettings: { [fieldName]: checked }
+                })
+            })
+
+            if (!response.ok) throw new Error("Failed to update module settings")
 
             setModuleStates(prev => ({ ...prev, [moduleId]: checked }))
 
@@ -173,6 +273,39 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             case 'salesOptimization':
                 router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/sales-optimization")
                 break
+            case 'appointments':
+                router.push(`${basePath}/chatbot/appointments`)
+                break
+            case 'socialMedia':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/social")
+                break
+            case 'emailMarketing':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/email")
+                break
+            case 'reviewManagement':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/reviews")
+                break
+            case 'loyaltyProgram':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/loyalty")
+                break
+            case 'campaignManager':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/campaigns")
+                break
+            case 'autoTranslate':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/translate")
+                break
+            case 'gamification':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/gamification")
+                break
+            case 'visualDiagnosis':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/visual")
+                break
+            case 'agriCalendar':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/calendar")
+                break
+            case 'marketWatch':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/market")
+                break
             // Add other routes as they are implemented
             default:
                 toast({
@@ -186,15 +319,30 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         if (!effectiveUserId) return
         setIsLoading(moduleId)
 
+        const moduleConfig = MODULE_DEFINITIONS[moduleId]
+        const moduleName = moduleConfig?.nameKey ? t(moduleConfig.nameKey) || moduleConfig.nameKey : moduleId
+
         try {
-            await addDoc(collection(db, "module_requests"), {
-                userId: effectiveUserId,
-                userEmail: user?.email,
-                moduleId,
-                status: 'pending',
-                createdAt: serverTimestamp(),
-                industry: userIndustry
+            // Get ID token for authorization
+            const idToken = await user?.getIdToken()
+
+            const response = await fetch("/api/console/request-module", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    moduleKey: moduleId,
+                    moduleName: moduleName,
+                    industry: userIndustry
+                })
             })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || "Failed to submit request")
+            }
 
             toast({
                 title: t('requestSent') || "Talep Gönderildi",
@@ -203,8 +351,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         } catch (error) {
             console.error("Error sending request:", error)
             toast({
-                title: "Error",
-                description: "Failed to send request. Please try again.",
+                title: "Hata",
+                description: "Talep gönderilemedi. Lütfen tekrar deneyin.",
                 variant: "destructive"
             })
         } finally {
@@ -214,7 +362,52 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
     const isModuleIncluded = (moduleId: ModuleId) => {
         if (moduleId === 'generalChatbot') return true // Always included
-        return !!(industryConfig.defaultModules as any)?.[moduleId]
+
+        // Map old module IDs to new ones
+        const moduleIdMap: Record<string, string> = {
+            'generalChatbot': 'chatbot',
+            'productCatalog': 'personalShopper',
+            'voiceAssistant': 'voiceAssistant',
+            'leadCollection': 'leadFinder',
+            'knowledgeBase': 'chatbot', // Part of chatbot
+            'appointments': 'voiceAssistant', // Part of voice
+        }
+
+        const mappedId = moduleIdMap[moduleId] || moduleId
+        const industryModules = INDUSTRY_DEFAULT_MODULES[userIndustry] || INDUSTRY_DEFAULT_MODULES.other
+        return industryModules.includes(mappedId)
+    }
+
+    const isPremiumModule = (moduleId: ModuleId) => {
+        if (moduleId === 'generalChatbot') return false // Core, not premium
+        return !isModuleIncluded(moduleId)
+    }
+
+    // Show loading skeleton while fetching data
+    if (isPageLoading) {
+        return (
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between space-y-2">
+                    <div>
+                        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+                        <div className="h-4 w-64 bg-gray-100 rounded animate-pulse" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="border rounded-lg p-6 space-y-4">
+                            <div className="flex justify-between">
+                                <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse" />
+                                <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse" />
+                            </div>
+                            <div className="h-5 w-3/4 bg-gray-200 rounded animate-pulse" />
+                            <div className="h-4 w-full bg-gray-100 rounded animate-pulse" />
+                            <div className="h-10 w-full bg-gray-200 rounded animate-pulse mt-4" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -282,10 +475,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             <CardContent className="pt-0 flex-1">
                                 <div className="flex justify-between items-start mb-2">
                                     <CardTitle className="text-lg font-semibold">{t(module.nameKey) || module.nameKey}</CardTitle>
-                                    {!isCoreModule && (
-                                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-amber-100 text-amber-800">
-                                            Premium
+                                    {isCoreModule ? null : isIncluded ? (
+                                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-green-100 text-green-800">
+                                            {t('included') || 'Dahil'}
                                         </span>
+                                    ) : (
+                                        <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50">
+                                            Premium
+                                        </Badge>
                                     )}
                                 </div>
                                 <CardDescription className="line-clamp-2">
@@ -302,12 +499,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             <CardFooter className="pt-0 mt-auto">
                                 {isAccessGranted ? (
                                     <Button
-                                        className="w-full gap-2"
-                                        variant={isActive ? "default" : "outline"}
-                                        disabled={!isActive}
                                         onClick={() => handleManage(module.id)}
+                                        className="flex-1 h-9 text-xs font-medium bg-black text-white hover:bg-zinc-800 rounded-full shadow-sm"
+                                        disabled={!isActive}
                                     >
-                                        {t('manageModule') || "Modülü Yönet"} <ArrowRight className="w-4 h-4" />
+                                        {language === 'tr' ? 'Yönet' : 'Manage'}
+                                        <ArrowRight className="w-3 h-3 ml-1.5" />
                                     </Button>
                                 ) : (
                                     <Button
@@ -319,11 +516,33 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         {isLoading === module.id ? "..." : (t('requestAccess') || "Talep Oluştur")}
                                     </Button>
                                 )}
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-9 px-3 text-xs text-muted-foreground hover:text-foreground"
+                                    onClick={() => {
+                                        setSelectedModuleId(module.id)
+                                        setIsDetailsOpen(true)
+                                    }}
+                                >
+                                    {language === 'tr' ? 'Detaylar' : 'Details'}
+                                </Button>
                             </CardFooter>
                         </Card>
                     )
                 })}
             </div>
+
+            <ModuleDetailsDialog
+                isOpen={isDetailsOpen}
+                onOpenChange={setIsDetailsOpen}
+                selectedModuleId={selectedModuleId}
+                moduleStates={moduleStates}
+                onManage={handleManage}
+                registryModules={getAllRegistryModules()}
+                firestoreMap={MODULE_FIRESTORE_MAP}
+                iconMap={ICON_MAP}
+            />
         </div>
     )
 }

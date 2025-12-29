@@ -164,7 +164,7 @@ export default function LeadFinderPage() {
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="space-y-1">
                             <CardTitle>Results ({leads.length})</CardTitle>
-                            <CardDescription>Leads found for "{searchParams.keyword}" in "{searchParams.location}"</CardDescription>
+                            <CardDescription>Leads found for &quot;{searchParams.keyword}&quot; in &quot;{searchParams.location}&quot;</CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={handleExport}>
                             <Download className="mr-2 h-4 w-4" />

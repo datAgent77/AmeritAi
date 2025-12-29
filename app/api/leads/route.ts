@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy, doc, getDoc } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
+import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
+    const adminDb = getAdminDb();
     try {
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
+
         const body = await req.json();
         const { chatbotId, name, email, phone, source, customFields } = body;
 
@@ -16,25 +21,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "At least one contact field is required" }, { status: 400 });
         }
 
-        const docRef = await addDoc(collection(db, "leads"), {
+        const docRef = await adminDb.collection("leads").add({
             chatbotId,
             name: name || "Anonymous",
             email: email || "",
             phone: phone || "",
             source: source || "Pre-chat Form",
             customFields: customFields || {},
-            createdAt: serverTimestamp()
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
         // Send email notification if enabled
         try {
-            const chatbotRef = doc(db, "chatbots", chatbotId);
-            const chatbotSnap = await getDoc(chatbotRef);
+            const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
 
-            if (chatbotSnap.exists()) {
+            if (chatbotSnap.exists) {
                 const settings = chatbotSnap.data();
 
-                if (settings.enableLeadNotifications && settings.leadNotificationEmail) {
+                if (settings?.enableLeadNotifications && settings?.leadNotificationEmail) {
                     const transporter = nodemailer.createTransport({
                         host: process.env.SMTP_HOST,
                         port: parseInt(process.env.SMTP_PORT || '587'),
@@ -104,7 +108,12 @@ Leadlerinizi yönetmek için paneli ziyaret edin.
 
 
 export async function GET(req: Request) {
+    const adminDb = getAdminDb();
     try {
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
+
         const { searchParams } = new URL(req.url);
         const chatbotId = searchParams.get("chatbotId");
 
@@ -112,12 +121,10 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
         }
 
-        const q = query(
-            collection(db, "leads"),
-            where("chatbotId", "==", chatbotId)
-        );
+        const querySnapshot = await adminDb.collection("leads")
+            .where("chatbotId", "==", chatbotId)
+            .get();
 
-        const querySnapshot = await getDocs(q);
         const leads = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),

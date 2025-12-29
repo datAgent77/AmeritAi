@@ -1,20 +1,14 @@
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, orderBy, addDoc, serverTimestamp, deleteDoc, doc, setDoc } from "firebase/firestore"
+import { collection, query, where, getDocs, orderBy, deleteDoc, doc } from "firebase/firestore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Loader2, Plus, Trash2, Database } from "lucide-react"
+import { Loader2, Trash2, Database, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, CheckSquare, Square } from "lucide-react"
 import {
     Table,
     TableBody,
@@ -23,6 +17,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { KnowledgeForm } from "@/components/knowledge-form"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface KnowledgeDoc {
     id: string
@@ -37,35 +33,17 @@ interface KnowledgeBaseProps {
     embedded?: boolean
 }
 
-import { useLanguage } from "@/context/LanguageContext"
-
 export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseProps) {
     const { user } = useAuth()
     const { t } = useLanguage()
+    const { toast } = useToast()
     const userId = targetUserId || user?.uid
 
-    const { toast } = useToast()
     const [docs, setDocs] = useState<KnowledgeDoc[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [isAdding, setIsAdding] = useState(false)
-
-    // Form State
-    const [activeTab, setActiveTab] = useState("text")
-    const [title, setTitle] = useState("")
-    const [content, setContent] = useState("")
-    const [url, setUrl] = useState("")
-    const [file, setFile] = useState<File | null>(null)
-    const [question, setQuestion] = useState("")
-    const [answer, setAnswer] = useState("")
     const [selectedDoc, setSelectedDoc] = useState<KnowledgeDoc | null>(null)
 
-    // Sitemap State
-    const [sitemapUrls, setSitemapUrls] = useState<string[]>([])
-    const [selectedSitemapUrls, setSelectedSitemapUrls] = useState<string[]>([])
-    const [isFetchingSitemap, setIsFetchingSitemap] = useState(false)
-    const [importProgress, setImportProgress] = useState(0)
-
-    const fetchDocs = async () => {
+    const fetchDocs = useCallback(async () => {
         if (!userId) return
         setIsLoading(true)
         try {
@@ -85,309 +63,33 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [userId])
 
     useEffect(() => {
         fetchDocs()
-    }, [userId])
-
-    const handleAddKnowledge = async () => {
-        if (!userId) return
-
-        // Validation
-        if (activeTab === "text" && (!title || !content)) return
-        if (activeTab === "url" && !url) return
-        if (activeTab === "file" && !file) return
-        if (activeTab === "qa" && (!question || !answer)) return
-
-        setIsAdding(true)
-        try {
-            // 1. Generate Firestore ID first to ensure consistency
-            const docRef = doc(collection(db, "knowledge_docs"));
-            const docId = docRef.id;
-
-            let payload = {}
-
-            if (activeTab === "text") {
-                // Save to Firestore
-                await setDoc(docRef, {
-                    chatbotId: userId,
-                    title,
-                    type: "text",
-                    content: content.substring(0, 200) + "...",
-                    fullContent: content,
-                    createdAt: serverTimestamp()
-                })
-                payload = { chatbotId: userId, docId, type: "text", text: content }
-            } else if (activeTab === "url") {
-                // If we have content (fetched via preview), treat it as text but with URL source
-                if (content) {
-                    await setDoc(docRef, {
-                        chatbotId: userId,
-                        title: title || url,
-                        type: "url",
-                        source: url,
-                        content: content.substring(0, 200) + "...",
-                        fullContent: content,
-                        createdAt: serverTimestamp()
-                    })
-                    // Send as text to API to avoid re-scraping
-                    payload = { chatbotId: userId, docId, type: "text", text: content, url, fileName: url }
-                } else {
-                    // Fallback to old behavior (API scrapes) - BUT we still need to save metadata after
-                    // For now, let's just send to API and save metadata after success if we don't have content yet
-                    // Actually, better to scrape first in UI always? 
-                    // The current UI allows "Fetch" button. If user didn't click fetch, we rely on API.
-                    // But we need docId.
-
-                    // We will save a placeholder to Firestore to reserve the ID? 
-                    // Or just pass the ID and save later.
-                    payload = { chatbotId: userId, docId, type: "url", url }
-                }
-            } else if (activeTab === "file" && file) {
-                // Validation: Check file size (10MB limit)
-                if (file.size > 10 * 1024 * 1024) {
-                    toast({
-                        title: t('fileTooLarge'),
-                        description: t('fileTooLargeDescription'),
-                        variant: "destructive",
-                    })
-                    setIsAdding(false)
-                    return
-                }
-
-                // Convert file to Base64
-                const reader = new FileReader();
-                const fileBase64 = await new Promise((resolve, reject) => {
-                    reader.onload = () => {
-                        const result = reader.result as string;
-                        // Remove data URL prefix (e.g. "data:application/pdf;base64,")
-                        const base64 = result.split(',')[1];
-                        resolve(base64);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-
-                payload = {
-                    chatbotId: userId,
-                    docId, // Pass the generated ID
-                    type: "file",
-                    fileBase64,
-                    fileName: file.name
-                }
-            } else if (activeTab === "qa") {
-                const qaContent = `Q: ${question}\nA: ${answer}`;
-                await setDoc(docRef, {
-                    chatbotId: userId,
-                    title: question,
-                    type: "qa",
-                    content: qaContent.substring(0, 200) + "...",
-                    fullContent: qaContent,
-                    createdAt: serverTimestamp()
-                })
-                payload = { chatbotId: userId, docId, type: "qa", text: qaContent, title: question }
-            }
-
-            // 2. Call API
-            const response = await fetch("/api/knowledge", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error("Failed to ingest data: " + (errorData.error || response.statusText))
-            }
-
-            const result = await response.json()
-
-            // 3. Save Metadata to Firestore for File/URL (if not saved yet)
-            if (activeTab === "file") {
-                await setDoc(docRef, {
-                    chatbotId: userId,
-                    title: result.title || file?.name,
-                    type: "file",
-                    source: file?.name,
-                    content: result.preview || "Parsed Content",
-                    createdAt: serverTimestamp()
-                })
-            } else if (activeTab === "url" && !content) {
-                await setDoc(docRef, {
-                    chatbotId: userId,
-                    title: result.title || url,
-                    type: "url",
-                    source: url,
-                    content: result.preview || "Scraped Content",
-                    fullContent: result.fullContent || result.preview, // API doesn't return full content yet, but preview is something
-                    createdAt: serverTimestamp()
-                })
-            }
-
-            toast({
-                title: "Success",
-                description: t('knowledgeAdded'),
-            })
-
-            setTitle("")
-            setContent("")
-            setUrl("")
-            setFile(null)
-            setQuestion("")
-            setAnswer("")
-            fetchDocs() // Refresh list
-        } catch (error) {
-            console.error("Error adding knowledge:", error)
-            toast({
-                title: "Error",
-                description: t('failedToAdd'),
-                variant: "destructive",
-            })
-        } finally {
-            setIsAdding(false)
-        }
-    }
+    }, [userId, fetchDocs])
 
     const handleDelete = async (docId: string) => {
-        // Automatically approved as per user request
-        // if (!confirm(t('deleteConfirm'))) return
-
         try {
             // 1. Delete from Firestore
             await deleteDoc(doc(db, "knowledge_docs", docId))
 
             // 2. Call API to delete from Pinecone (Best effort)
-            // We pass docId and chatbotId to the API
             await fetch(`/api/knowledge?docId=${docId}&chatbotId=${userId}`, {
                 method: "DELETE"
             })
 
-            toast({
-                title: t('deleted'),
-                description: t('knowledgeDeleted'),
-            })
-
+            toast({ title: t('deleted'), description: t('knowledgeDeleted') })
             fetchDocs()
         } catch (error) {
             console.error("Error deleting doc:", error)
-            toast({
-                title: "Error",
-                description: t('failedToDelete'),
-                variant: "destructive",
-            })
-        }
-    }
-
-    const fetchSitemap = async () => {
-        if (!url) return
-        setIsFetchingSitemap(true)
-        setSitemapUrls([])
-        setSelectedSitemapUrls([])
-        try {
-            const response = await fetch("/api/admin/sitemap", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url: url })
-            })
-
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || "Failed to fetch sitemap")
-            }
-
-            const data = await response.json()
-            setSitemapUrls(data.urls)
-            toast({
-                title: t('success'),
-                description: `${t('urlsFound')}: ${data.urls.length}`,
-            })
-        } catch (error: any) {
-            console.error("Sitemap error:", error)
-            toast({
-                title: t('error'),
-                description: error.message,
-                variant: "destructive",
-            })
-        } finally {
-            setIsFetchingSitemap(false)
-        }
-    }
-
-    const handleImportSitemap = async () => {
-        if (selectedSitemapUrls.length === 0) return
-        setIsAdding(true)
-        setImportProgress(0)
-
-        try {
-            let successCount = 0
-            for (let i = 0; i < selectedSitemapUrls.length; i++) {
-                const urlToImport = selectedSitemapUrls[i]
-
-                // Similar logic to single URL add
-                // We rely on backend scraping for speed here usually, or reuse the same logic
-                // For simplicity, we'll reuse the single URL logic but wrapped
-                // Ideally, we'd have a bulk API, but loop is fine for < 50 items
-
-                try {
-                    const docRef = doc(collection(db, "knowledge_docs"));
-                    const docId = docRef.id;
-
-                    // 1. API Call
-                    const response = await fetch("/api/knowledge", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ chatbotId: userId, docId, type: "url", url: urlToImport })
-                    })
-
-                    if (response.ok) {
-                        const result = await response.json()
-                        // 2. Save Metadata
-                        await setDoc(docRef, {
-                            chatbotId: userId,
-                            title: result.title || urlToImport,
-                            type: "url",
-                            source: urlToImport,
-                            content: result.preview || "Scraped Content",
-                            fullContent: result.fullContent || result.preview,
-                            createdAt: serverTimestamp()
-                        })
-                        successCount++
-                    }
-                } catch (e) {
-                    console.error("Failed to import URL:", urlToImport, e)
-                }
-
-                setImportProgress(Math.round(((i + 1) / selectedSitemapUrls.length) * 100))
-            }
-
-            toast({
-                title: t('success'),
-                description: `Imported ${successCount}/${selectedSitemapUrls.length} URLs.`,
-            })
-
-            fetchDocs()
-            // setActiveTab("text") // Keep user on URL tab to see results or add more? Maybe reset is better.
-            setUrl("") // Clear input
-            setSitemapUrls([])
-            setSelectedSitemapUrls([])
-
-        } catch (error) {
-            console.error("Import error:", error)
-            toast({
-                title: t('error'),
-                description: "Failed to complete import.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsAdding(false)
-            setImportProgress(0)
+            toast({ title: "Error", description: t('failedToDelete'), variant: "destructive" })
         }
     }
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+            <div className="flex items-center justify-center h-[200px]">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         )
@@ -398,481 +100,88 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
             {!embedded && (
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">{t('knowledgeBase')}</h2>
-                    <p className="text-muted-foreground">
-                        {t('trainChatbotDescription')}
-                    </p>
+                    <p className="text-muted-foreground">{t('trainChatbotDescription')}</p>
                 </div>
             )}
 
             <div className="grid gap-8 md:grid-cols-2">
-                {/* Left: Add New Data */}
-                {embedded ? (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium">{t('addNewData')}</h3>
-                        <Tabs defaultValue="text" className="w-full" onValueChange={(val) => setActiveTab(val)}>
-                            <TabsList className="grid w-full grid-cols-4">
-                                <TabsTrigger value="text">{t('knowledgeText')}</TabsTrigger>
-                                <TabsTrigger value="url">{t('knowledgeUrl')}</TabsTrigger>
-                                <TabsTrigger value="file">{t('knowledgeFile')}</TabsTrigger>
-                                <TabsTrigger value="qa">{t('knowledgeQa')}</TabsTrigger>
-                            </TabsList>
-
-                            {/* TEXT INPUT */}
-                            <TabsContent value="text" className="space-y-4 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="title">{t('knowledgeTitle')}</Label>
-                                    <Input
-                                        id="title"
-                                        placeholder="e.g. Return Policy"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="content">{t('knowledgeContent')}</Label>
-                                    <Textarea
-                                        id="content"
-                                        placeholder="Enter the detailed information here..."
-                                        className="h-40"
-                                        value={content}
-                                        onChange={(e) => setContent(e.target.value)}
-                                    />
-                                </div>
-                            </TabsContent>
-
-                            {/* URL INPUT */}
-                            <TabsContent value="url" className="space-y-4 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="url">{t('websiteUrl')}</Label>
-                                    <Input
-                                        id="url"
-                                        placeholder="https://example.com/about"
-                                        value={url}
-                                        onChange={(e) => setUrl(e.target.value)}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('scrapeDescription')}
-                                    </p>
-                                </div>
-                            </TabsContent>
-
-                            {/* FILE INPUT */}
-                            <TabsContent value="file" className="space-y-4 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="file">{t('uploadDocument')}</Label>
-                                    <Input
-                                        id="file"
-                                        type="file"
-                                        accept=".pdf,.txt,.xlsx,.xls,.docx"
-                                        onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        {t('supportedFormats')}
-                                    </p>
-                                </div>
-                            </TabsContent>
-
-                            {/* Q&A INPUT */}
-                            <TabsContent value="qa" className="space-y-4 mt-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="question">{t('question')}</Label>
-                                    <Input
-                                        id="question"
-                                        placeholder="e.g. What is your return policy?"
-                                        value={question}
-                                        onChange={(e) => setQuestion(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="answer">{t('answer')}</Label>
-                                    <Textarea
-                                        id="answer"
-                                        placeholder="e.g. You can return items within 30 days..."
-                                        className="h-32"
-                                        value={answer}
-                                        onChange={(e) => setAnswer(e.target.value)}
-                                    />
-                                </div>
-                            </TabsContent>
-
-                            <Button
-                                className="w-full mt-4"
-                                onClick={handleAddKnowledge}
-                                disabled={isAdding || (activeTab === "text" ? (!title || !content) : (activeTab === "url" ? !url : (activeTab === "file" ? !file : (!question || !answer))))}
-                            >
-                                {isAdding ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {activeTab === "url" ? "Scraping..." : activeTab === "file" ? "Uploading & Parsing..." : "Adding..."}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        {t('addToKnowledgeBase')}
-                                    </>
-                                )}
-                            </Button>
-                        </Tabs>
-                    </div>
-                ) : (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>{t('addNewData')}</CardTitle>
-                            <CardDescription>
-                                {t('trainChatbotDescription')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Tabs defaultValue="text" className="w-full" onValueChange={(val) => setActiveTab(val)}>
-                                <TabsList className="grid w-full grid-cols-4">
-                                    <TabsTrigger value="text">{t('knowledgeText')}</TabsTrigger>
-                                    <TabsTrigger value="url">{t('knowledgeUrl')}</TabsTrigger>
-                                    <TabsTrigger value="file">{t('knowledgeFile')}</TabsTrigger>
-                                    <TabsTrigger value="qa">{t('knowledgeQa')}</TabsTrigger>
-                                </TabsList>
-
-                                {/* TEXT INPUT */}
-                                <TabsContent value="text" className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="title">{t('knowledgeTitle')}</Label>
-                                        <Input
-                                            id="title"
-                                            placeholder="e.g. Return Policy"
-                                            value={title}
-                                            onChange={(e) => setTitle(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="content">{t('knowledgeContent')}</Label>
-                                        <Textarea
-                                            id="content"
-                                            placeholder="Enter the detailed information here..."
-                                            className="h-40"
-                                            value={content}
-                                            onChange={(e) => setContent(e.target.value)}
-                                        />
-                                    </div>
-                                </TabsContent>
-
-                                {/* URL INPUT */}
-                                <TabsContent value="url" className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="url">{t('websiteUrl')}</Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                id="url"
-                                                placeholder="https://example.com/about or sitemap.xml"
-                                                value={url}
-                                                onChange={(e) => setUrl(e.target.value)}
-                                            />
-                                            <Button
-                                                variant="outline"
-                                                onClick={async () => {
-                                                    if (!url) return;
-                                                    setIsAdding(true);
-                                                    try {
-                                                        const res = await fetch('/api/crawl', {
-                                                            method: 'POST',
-                                                            headers: { 'Content-Type': 'application/json' },
-                                                            body: JSON.stringify({ url })
-                                                        });
-                                                        if (!res.ok) throw new Error('Failed to crawl');
-                                                        const data = await res.json();
-                                                        setTitle(data.title);
-                                                        setContent(data.content);
-                                                        toast({ title: "Success", description: "Content fetched successfully. Review and add." });
-                                                    } catch (e) {
-                                                        toast({ title: "Error", description: "Failed to fetch URL", variant: "destructive" });
-                                                    } finally {
-                                                        setIsAdding(false);
-                                                    }
-                                                }}
-                                                disabled={isAdding || !url}
-                                            >
-                                                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch Content"}
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                onClick={fetchSitemap}
-                                                disabled={isFetchingSitemap || !url}
-                                            >
-                                                {isFetchingSitemap ? <Loader2 className="h-4 w-4 animate-spin" /> : t('fetchSitemap')}
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            {t('scrapeDescription')} OR {t('sitemapDescription')}
-                                        </p>
-                                    </div>
-
-                                    {/* Single Page Preview */}
-                                    {content && activeTab === 'url' && (
-                                        <div className="space-y-2 border p-4 rounded-md bg-muted/50">
-                                            <div className="space-y-1">
-                                                <Label>Preview Title</Label>
-                                                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label>Preview Content</Label>
-                                                <Textarea
-                                                    value={content}
-                                                    onChange={(e) => setContent(e.target.value)}
-                                                    className="h-40"
-                                                />
-                                            </div>
-                                            <div className="flex justify-end">
-                                                {/* Main button adds it */}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Sitemap Results */}
-                                    {sitemapUrls.length > 0 && (
-                                        <div className="space-y-4 border rounded-md p-4 bg-muted/30 mt-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <h4 className="text-sm font-medium">{t('urlsFound')}: {sitemapUrls.length}</h4>
-                                                <div className="flex gap-2">
-                                                    <Button variant="ghost" size="sm" onClick={() => setSelectedSitemapUrls(sitemapUrls)} className="text-xs h-7">
-                                                        <CheckSquare className="w-3 h-3 mr-1" /> {t('selectAll')}
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" onClick={() => setSelectedSitemapUrls([])} className="text-xs h-7">
-                                                        <Square className="w-3 h-3 mr-1" /> {t('deselectAll')}
-                                                    </Button>
-                                                </div>
-                                            </div>
-
-                                            <div className="h-48 overflow-y-auto border rounded bg-background p-2 space-y-2">
-                                                {sitemapUrls.map((url, idx) => (
-                                                    <div key={idx} className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`url-${idx}`}
-                                                            checked={selectedSitemapUrls.includes(url)}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    setSelectedSitemapUrls([...selectedSitemapUrls, url])
-                                                                } else {
-                                                                    setSelectedSitemapUrls(selectedSitemapUrls.filter(u => u !== url))
-                                                                }
-                                                            }}
-                                                        />
-                                                        <label
-                                                            htmlFor={`url-${idx}`}
-                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 truncate w-full"
-                                                            title={url}
-                                                        >
-                                                            {url}
-                                                        </label>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <Button
-                                                className="w-full"
-                                                onClick={handleImportSitemap}
-                                                disabled={isAdding || selectedSitemapUrls.length === 0}
-                                            >
-                                                {isAdding ? (
-                                                    <>
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                        {t('processing')} {importProgress > 0 && `(${importProgress}%)`}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Plus className="mr-2 h-4 w-4" />
-                                                        {t('importSelected')} ({selectedSitemapUrls.length})
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    )}
-                                </TabsContent>
-
-
-
-                                {/* FILE INPUT */}
-                                <TabsContent value="file" className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="file">{t('uploadDocument')}</Label>
-                                        <Input
-                                            id="file"
-                                            type="file"
-                                            accept=".pdf,.txt,.xlsx,.xls,.docx"
-                                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            {t('supportedFormats')}
-                                        </p>
-                                    </div>
-                                </TabsContent>
-
-                                {/* Q&A INPUT */}
-                                <TabsContent value="qa" className="space-y-4 mt-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="question">{t('question')}</Label>
-                                        <Input
-                                            id="question"
-                                            placeholder="e.g. What is your return policy?"
-                                            value={question}
-                                            onChange={(e) => setQuestion(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="answer">{t('answer')}</Label>
-                                        <Textarea
-                                            id="answer"
-                                            placeholder="e.g. You can return items within 30 days..."
-                                            className="h-32"
-                                            value={answer}
-                                            onChange={(e) => setAnswer(e.target.value)}
-                                        />
-                                    </div>
-                                </TabsContent>
-
-                                <Button
-                                    className="w-full mt-4"
-                                    onClick={handleAddKnowledge}
-                                    disabled={isAdding || (activeTab === "text" ? (!title || !content) : (activeTab === "url" ? !url : (activeTab === "file" ? !file : (!question || !answer))))}
-                                >
-                                    {isAdding ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {activeTab === "url" ? "Scraping..." : activeTab === "file" ? "Uploading & Parsing..." : "Adding..."}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add to Knowledge Base
-                                        </>
-                                    )}
-                                </Button>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
-                )
-                }
+                {/* Left: Add New Data (Form) */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium">{t('addNewData')}</h3>
+                    {/* Using the new extracted component */}
+                    <KnowledgeForm targetUserId={userId} onSuccess={fetchDocs} />
+                </div>
 
                 {/* Right: List Data */}
-                {
-                    embedded ? (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">{t('existingKnowledge')}</h3>
-                            <div className="border rounded-lg">
-                                {docs.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
-                                        <Database className="h-10 w-10 mb-2 opacity-20" />
-                                        {t('noKnowledge')}
-                                    </div>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t('knowledgeTitle')}</TableHead>
-                                                <TableHead className="text-right">{t('date')}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {docs.map((doc) => (
-                                                <TableRow key={doc.id}>
-                                                    <TableCell className="font-medium">{doc.title}</TableCell>
-                                                    <TableCell className="text-right text-muted-foreground text-xs">
-                                                        {doc.createdAt?.seconds ? new Date(doc.createdAt.seconds * 1000).toLocaleDateString() : "Just now"}
-                                                    </TableCell>
-                                                    <TableCell className="text-right flex justify-end gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => setSelectedDoc(doc)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                            onClick={() => handleDelete(doc.id)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-medium">{t('existingKnowledge')}</h3>
+                    <div className="border rounded-lg bg-white overflow-hidden">
+                        {docs.length === 0 ? (
+                            <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
+                                <Database className="h-10 w-10 mb-2 opacity-20" />
+                                {t('noKnowledge')}
                             </div>
-                        </div>
-                    ) : (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('existingKnowledge')}</CardTitle>
-                                <CardDescription>
-                                    {t('existingKnowledgeDescription')}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {docs.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
-                                        <Database className="h-10 w-10 mb-2 opacity-20" />
-                                        {t('noKnowledge')}
-                                    </div>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{t('knowledgeTitle')}</TableHead>
-                                                <TableHead className="text-right">{t('date')}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {docs.map((doc) => (
-                                                <TableRow key={doc.id}>
-                                                    <TableCell className="font-medium">{doc.title}</TableCell>
-                                                    <TableCell className="text-right text-muted-foreground text-xs">
-                                                        {doc.createdAt?.seconds ? new Date(doc.createdAt.seconds * 1000).toLocaleDateString() : "Just now"}
-                                                    </TableCell>
-                                                    <TableCell className="text-right flex justify-end gap-2">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                                            onClick={() => setSelectedDoc(doc)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                            onClick={() => handleDelete(doc.id)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )
-                }
-            </div >
-
-            {/* View Content Modal */}
-            < Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>{selectedDoc?.title}</DialogTitle>
-                        <DialogDescription>
-                            Added on {selectedDoc?.createdAt?.seconds ? new Date(selectedDoc.createdAt.seconds * 1000).toLocaleDateString() : ""}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="mt-4 whitespace-pre-wrap text-sm p-4 bg-muted rounded-md">
-                        {selectedDoc?.fullContent || selectedDoc?.content}
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[60%]">{t('knowledgeTitle')}</TableHead>
+                                        <TableHead className="text-right">{t('date')}</TableHead>
+                                        <TableHead className="text-right"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {docs.map((doc) => (
+                                        <TableRow key={doc.id}>
+                                            <TableCell className="font-medium align-middle">
+                                                <div className="line-clamp-2" title={doc.title}>{doc.title}</div>
+                                            </TableCell>
+                                            <TableCell className="text-right text-muted-foreground text-xs align-middle">
+                                                {doc.createdAt?.seconds ? new Date(doc.createdAt.seconds * 1000).toLocaleDateString() : "Just now"}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-blue-500"
+                                                        onClick={() => setSelectedDoc(doc)}
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                                                        onClick={() => handleDelete(doc.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </div>
-                </DialogContent>
-            </Dialog >
-        </div >
+                </div>
+            </div>
+
+            {/* View Modal */}
+            {selectedDoc && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col shadow-xl">
+                        <div className="p-4 border-b flex justify-between items-center">
+                            <h3 className="font-bold text-lg">{selectedDoc.title}</h3>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedDoc(null)}><Eye className="w-4 h-4 mr-2" /> Close</Button>
+                        </div>
+                        <div className="p-4 overflow-y-auto whitespace-pre-wrap font-mono text-sm">
+                            {selectedDoc.fullContent || selectedDoc.content}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }

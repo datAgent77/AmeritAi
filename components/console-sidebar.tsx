@@ -21,7 +21,16 @@ import {
     Shield,
     CreditCard,
     Code,
-    Bell
+    Bell,
+    ChevronRight,
+    ChevronDown,
+    Globe,
+    Check,
+    Building2,
+    Inbox,
+    Activity,
+    Utensils,
+    FileText
 } from "lucide-react"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
@@ -39,21 +48,43 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarMenuSubItem,
+    useSidebar,
 } from "@/components/ui/sidebar"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 
 interface ConsoleSidebarProps {
     targetUserId?: string
     targetEmail?: string
+    sectorId?: string
 }
 
-export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProps) {
+export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleSidebarProps) {
     const pathname = usePathname() || ""
     const searchParams = useSearchParams()
     const router = useRouter()
-    const { t } = useLanguage()
-    const { user, role } = useAuth()
+    const { t, language, setLanguage } = useLanguage()
+    const {
+        user,
+        role
+    } = useAuth()
+    const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     // Build link based on whether we're in super admin mode (targetUserId provided)
     const buildLink = (path: string) => {
@@ -83,10 +114,16 @@ export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProp
             title: t('dashboard'),
             icon: Zap,
             href: "/console/chatbot",
-            active: isActive("/console/chatbot") && !isActive("/console/chatbot/shopper")
+            active: pathname === buildLink("/console/chatbot")
         },
         {
-            title: t('visitors'),
+            title: t('widgetSettings') || "Widget Settings",
+            icon: Settings,
+            href: "/console/chatbot/widget",
+            active: isActive("/console/chatbot/widget")
+        },
+        {
+            title: t('leads'),
             icon: Users,
             href: "/console/chatbot/leads",
             active: isActive("/console/chatbot/leads") || isActive("/console/chatbot/appointments")
@@ -109,6 +146,15 @@ export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProp
             href: "/console/modules",
             active: isActive("/console/modules") || isActive("/console/chatbot/shopper")
         },
+
+        // Restaurant Menu (Conditionally rendered)
+        ...(sectorId === 'restaurant' ? [{
+            title: t('menu') || "Menu & QR",
+            icon: Utensils,
+            href: "/console/menu",
+            active: isActive("/console/menu")
+        }] : []),
+
         {
             title: t('reports'), // Analytics -> Reports
             icon: BarChart3,
@@ -125,17 +171,33 @@ export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProp
 
     return (
         <>
-            <Sidebar collapsible="icon" className="!top-0 !h-screen border-r-0 bg-[#1e1e2d] text-white z-40" variant="sidebar">
-                <SidebarHeader className="h-16 flex items-center justify-center border-b border-white/10 bg-[#1e1e2d]">
-                    <div className="flex items-center gap-2 px-2 w-full">
-                        <div className="flex items-center justify-center w-8 h-8 rounded bg-blue-600 text-white font-bold">
-                            V
-                        </div>
-                        <span className="font-bold text-lg tracking-tight group-data-[collapsible=icon]:hidden">Vion</span>
+            <Sidebar collapsible="icon" className="!top-0 !h-screen border-r-0 bg-[#000000] text-white z-40" variant="sidebar">
+                <SidebarHeader className="!h-16 !p-0 flex items-center justify-center border-b border-white/10 bg-[#000000]">
+                    {/* Expanded state: logo left-aligned */}
+                    <div className="flex items-center h-full px-4 w-full group-data-[collapsible=icon]:hidden">
+                        <Image
+                            src="/vion-logo-text-light.png"
+                            alt="Vion"
+                            width={80}
+                            height={24}
+                            className="h-6 w-auto object-contain"
+                            priority
+                        />
+                    </div>
+                    {/* Collapsed state: icon centered */}
+                    <div className="hidden items-center justify-center h-full w-full group-data-[collapsible=icon]:flex">
+                        <Image
+                            src="/vion-logo-icon-white.png"
+                            alt="Vion"
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 object-contain"
+                            priority
+                        />
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="bg-[#1e1e2d] px-2 py-4">
+                <SidebarContent className="bg-[#000000] px-2 py-4">
                     {/* Super Admin Back Button */}
                     {targetUserId && (
                         <SidebarMenu className="mb-4">
@@ -145,12 +207,12 @@ export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProp
                                     onClick={() => router.push("/platform/tenants")}
                                     className="bg-white/5 hover:bg-white/10 text-white"
                                 >
-                                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-indigo-500 text-white">
+                                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-black">
                                         <ArrowLeft className="size-4" />
                                     </div>
                                     <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                                         <span className="truncate font-semibold">{t('backToTenants')}</span>
-                                        <span className="truncate text-xs text-white/50">{targetEmail || targetUserId}</span>
+                                        <span className="truncate text-xs text-white/70">{targetEmail || targetUserId}</span>
                                     </div>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -164,107 +226,254 @@ export function ConsoleSidebar({ targetUserId, targetEmail }: ConsoleSidebarProp
                                     asChild
                                     isActive={item.active}
                                     className={cn(
-                                        "w-full justify-start gap-3 px-3 py-6 h-auto transition-all duration-200",
+                                        "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                         "hover:bg-white/10 hover:text-white",
                                         item.active
-                                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+                                            ? "bg-white/15 text-white shadow-sm"
                                             : "text-zinc-400 group-hover:text-white"
                                     )}
                                 >
                                     <Link href={buildLink(item.href)}>
-                                        <item.icon className={cn("size-5", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                        <item.icon className={cn("size-5 transition-colors", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
                                         <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         ))}
+
+                        {/* Super Admin Administration */}
+                        {(role === 'SUPER_ADMIN' && !targetUserId) && (
+                            <>
+                                <div className="px-3 py-2 mt-4 mb-2 group-data-[collapsible=icon]:hidden">
+                                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                        {t('administration') || "Administration"}
+                                    </h2>
+                                </div>
+
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname === "/admin"}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            pathname === "/admin"
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/admin">
+                                            <Building2 className={cn("size-5 transition-colors", pathname === "/admin" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('tenants') || "Tenants"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname === "/admin/requests"}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            pathname === "/admin/requests"
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/admin/requests">
+                                            <Inbox className={cn("size-5 transition-colors", pathname === "/admin/requests" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('moduleRequests') || "Requests"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname === "/platform/super-admin/resources"}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            pathname === "/platform/super-admin/resources"
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/platform/super-admin/resources">
+                                            <Activity className={cn("size-5 transition-colors", pathname === "/platform/super-admin/resources" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('resourceView') || "Resources"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname.startsWith("/admin/content")}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            pathname.startsWith("/admin/content")
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/admin/content/blog">
+                                            <FileText className={cn("size-5 transition-colors", pathname.startsWith("/admin/content") ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('contentManagement') || "Content & CMS"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+
+                                <div className="h-px bg-white/10 my-2 mx-3" />
+                            </>
+                        )}
+
+                        {/* Settings - Direct Link (subpages have their own sidebar) */}
+                        <SidebarMenuItem>
+                            <SidebarMenuButton
+                                asChild
+                                isActive={isActive("/console/settings")}
+                                className={cn(
+                                    "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                    "hover:bg-white/10 hover:text-white",
+                                    isActive("/console/settings")
+                                        ? "bg-white/15 text-white shadow-sm"
+                                        : "text-zinc-400 group-hover:text-white"
+                                )}
+                            >
+                                <Link href={buildLink("/console/settings")}>
+                                    <Settings className="size-5 transition-colors" />
+                                    <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('settings')}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarContent>
 
-                <SidebarFooter className="bg-[#1e1e2d] border-t border-white/10 p-2">
+                <SidebarFooter className="bg-[#000000] border-t border-white/10 p-2">
                     <SidebarMenu className="gap-1">
-                        {/* Settings Group */}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isActive("/console/chatbot/widget")}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 py-2 h-auto hover:bg-white/10 text-zinc-400 hover:text-white transition-colors",
-                                    isActive("/console/chatbot/widget") && "text-white bg-white/10"
-                                )}
-                            >
-                                <Link href={buildLink("/console/chatbot/widget")}>
-                                    <Settings className="size-4" />
-                                    <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{t('settings')} (Widget)</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
+                        {/* Settings Group Removed (Moved to Main Nav) */}
 
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isActive("/console/settings/subscription")}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 py-2 h-auto hover:bg-white/10 text-zinc-400 hover:text-white transition-colors",
-                                    isActive("/console/settings/subscription") && "text-white bg-white/10"
-                                )}
-                            >
-                                <Link href="/console/settings/subscription">
-                                    <CreditCard className="size-4" />
-                                    <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{t('subscription')}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
 
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isActive("/console/settings/developers")}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 py-2 h-auto hover:bg-white/10 text-zinc-400 hover:text-white transition-colors",
-                                    isActive("/console/settings/developers") && "text-white bg-white/10"
-                                )}
-                            >
-                                <Link href="/console/settings/developers">
-                                    <Code className="size-4" />
-                                    <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{t('developers')}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isActive("/console/settings/notifications")}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 py-2 h-auto hover:bg-white/10 text-zinc-400 hover:text-white transition-colors",
-                                    isActive("/console/settings/notifications") && "text-white bg-white/10"
-                                )}
-                            >
-                                <Link href="/console/settings/notifications">
-                                    <Bell className="size-4" />
-                                    <span className="font-medium text-sm group-data-[collapsible=icon]:hidden">{t('notificationSettings') || "Notifications"}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-
-                        <div className="h-px bg-white/10 my-2" />
 
                         {/* Profile / User */}
                         <SidebarMenuItem>
-                            <SidebarMenuButton
-                                size="lg"
-                                className="data-[state=open]:bg-white/10 hover:bg-white/5 text-white"
-                            >
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-indigo-500 text-white font-bold">
-                                    {user?.email?.[0].toUpperCase() || 'U'}
-                                </div>
-                                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                    <span className="truncate font-semibold">{user?.displayName || 'User'}</span>
-                                    <span className="truncate text-xs text-zinc-400">{user?.email}</span>
-                                </div>
-                                <LogOut className="ml-auto size-4 text-zinc-400 hover:text-white group-data-[collapsible=icon]:hidden" onClick={handleLogout} />
-                            </SidebarMenuButton>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <SidebarMenuButton
+                                        size="lg"
+                                        className="data-[state=open]:bg-white/10 hover:bg-white/5 text-white"
+                                    >
+                                        <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-zinc-800 text-white font-bold">
+                                            {user?.email?.[0].toUpperCase() || 'U'}
+                                        </div>
+                                        <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                                            <span className="truncate font-semibold">{user?.displayName || 'User'}</span>
+                                            <span className="truncate text-xs text-zinc-400">{user?.email}</span>
+                                        </div>
+                                    </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    className="w-64 rounded-xl p-0 z-[200]"
+                                    side={isMobile ? "top" : "right"}
+                                    align={isMobile ? "center" : "end"}
+                                    sideOffset={isMobile ? 0 : 24}
+                                    alignOffset={isMobile ? 0 : 24}
+                                >
+                                    <div className="p-4 border-b">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex aspect-square size-10 items-center justify-center rounded-full bg-indigo-500 text-white font-bold text-lg">
+                                                {user?.email?.[0].toUpperCase() || 'U'}
+                                            </div>
+                                            <div className="flex flex-col overflow-hidden">
+                                                <span className="truncate font-semibold text-sm">{user?.displayName || 'User'}</span>
+                                                <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="p-2 border-b bg-muted/30">
+                                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                            Partnership
+                                        </div>
+                                        <DropdownMenuItem disabled className="px-2 py-2 cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center size-8 rounded-full bg-gray-100 dark:bg-zinc-800">
+                                                    <Shield className="size-4" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">Partner Program</span>
+                                                    <span className="text-xs text-muted-foreground">Perfect for solution providers</span>
+                                                </div>
+                                            </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => router.push("/console/settings/developers")} className="px-2 py-2 cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center justify-center size-8 rounded-full bg-gray-100 dark:bg-zinc-800">
+                                                    <Code className="size-4" />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-sm">Developer Program</span>
+                                                    <span className="text-xs text-muted-foreground">Build and monetize apps</span>
+                                                </div>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    </div>
+
+                                    <div className="p-1">
+                                        <DropdownMenuSub>
+                                            <DropdownMenuSubTrigger className="px-2 py-2.5 cursor-pointer">
+                                                <div className="flex items-center gap-3">
+                                                    <Globe className="size-4 text-muted-foreground" />
+                                                    <span className="font-medium text-sm">{t('language') || "Language"}</span>
+                                                </div>
+                                            </DropdownMenuSubTrigger>
+                                            <DropdownMenuSubContent className="w-48">
+                                                <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span>English</span>
+                                                        {language === 'en' && <Check className="size-4" />}
+                                                    </div>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setLanguage('tr')} className="cursor-pointer">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span>Türkçe</span>
+                                                        {language === 'tr' && <Check className="size-4" />}
+                                                    </div>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuSubContent>
+                                        </DropdownMenuSub>
+                                        <DropdownMenuItem onClick={() => router.push("/console/settings/subscription")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <CreditCard className="size-4 text-black dark:text-white" />
+                                                <span className="flex-1 font-medium text-sm">{t('subscription') || "Subscription"} (7 days left)</span>
+                                            </div>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem onClick={() => router.push("/console/settings/notifications")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <Bell className="size-4 text-muted-foreground" />
+                                                <span className="font-medium text-sm">{t('notificationSettings') || "Notifications"}</span>
+                                            </div>
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem disabled className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <Users className="size-4 text-muted-foreground" />
+                                                <span className="font-medium text-sm">Company details</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    </div>
+
+                                    <div className="p-1 border-t">
+                                        <DropdownMenuItem onClick={handleLogout} className="px-2 py-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span className="font-medium text-sm">{t('logout')}</span>
+                                        </DropdownMenuItem>
+                                    </div>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>

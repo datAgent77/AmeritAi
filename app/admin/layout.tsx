@@ -6,7 +6,9 @@ import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { AdminSidebar } from "@/components/admin-sidebar"
+import { ConsoleSidebar } from "@/components/console-sidebar"
+import { LanguageProvider } from "@/context/LanguageContext"
+import { AnnouncementBanner } from "@/components/announcement-banner"
 
 export default function AdminLayout({
     children,
@@ -49,13 +51,26 @@ export default function AdminLayout({
     }
 
     return (
-        <div className="flex flex-col h-screen w-full bg-muted/5">
-            <SiteHeader showSidebarTrigger={false} />
-            <main className="flex-1 overflow-y-auto w-full">
-                <div className="max-w-7xl mx-auto p-4 md:p-8">
-                    {children}
+        <SidebarProvider>
+            <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                {/* Sidebar - full height on left */}
+                <ConsoleSidebar />
+
+                {/* Right side: Announcement + Header + Content */}
+                <div className="flex flex-col flex-1 min-w-0">
+                    <AnnouncementBanner />
+
+                    {/* Header - only spans content area */}
+                    <SiteHeader />
+
+                    {/* Main Content */}
+                    <main className="flex-1 overflow-y-auto w-full">
+                        <div className="max-w-7xl mx-auto p-4 md:p-8">
+                            {children}
+                        </div>
+                    </main>
                 </div>
-            </main>
-        </div>
+            </div>
+        </SidebarProvider>
     )
 }

@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone"
 import { Upload, X, FileImage } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/LanguageContext"
+import Image from "next/image"
 
 interface UploadZoneProps {
     onFileSelect: (file: File) => void
@@ -40,7 +41,7 @@ export function UploadZone({ onFileSelect, isAnalyzing }: UploadZoneProps) {
     if (preview) {
         return (
             <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-muted/20 flex items-center justify-center">
-                <img src={preview} alt="Upload preview" className="h-full w-full object-contain" />
+                <Image src={preview} alt="Upload preview" fill className="object-contain" unoptimized />
                 {!isAnalyzing && (
                     <Button
                         variant="destructive"

@@ -34,7 +34,7 @@ export function CookieConsent() {
             <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-gray-300 flex-1">
                     <p>
-                        We use cookies to improve your experience and analyze our traffic. By clicking "Accept", you consent to our use of cookies as described in our <a href="/privacy" className="text-lime-400 hover:underline">Privacy Policy</a>.
+                        We use cookies to improve your experience and analyze our traffic. By clicking &quot;Accept&quot;, you consent to our use of cookies as described in our <a href="/privacy" className="text-lime-400 hover:underline">Privacy Policy</a>.
                     </p>
                 </div>
                 <div className="flex items-center gap-3">

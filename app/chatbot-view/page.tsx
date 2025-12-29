@@ -2,14 +2,16 @@
 
 import { useEffect, useState, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore"
-import { guestDb as db, signInAsGuest } from "@/lib/firebase-guest"
+import Image from "next/image"
+import { doc, updateDoc, arrayUnion, onSnapshot, getDoc } from "firebase/firestore"
+import { guestDb as db, signInAsGuest, guestAuth } from "@/lib/firebase-guest"
 import { MessageSquare, Send, Trash2, Sparkles, X, Maximize2, Minimize2, Mic, Volume2, Square, Headphones, PhoneOff, Calendar, Activity } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
 import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
 import { useLanguage } from "@/context/LanguageContext"
+import { KlassifierService } from "@/lib/klassifier-service"
 
 // Extend Window interface for Web Speech API
 declare global {
@@ -43,11 +45,18 @@ function ChatbotViewContent() {
     // Context State
     const [pageContext, setPageContext] = useState<{ url: string, title: string, desc: string } | null>(null)
 
+    const [isGuestReady, setIsGuestReady] = useState(false)
+
     // Ensure Guest Authentication (using isolated firebase instance)
     useEffect(() => {
-        signInAsGuest().catch((error: Error) => {
-            console.error("Guest login failed:", error)
-        })
+        signInAsGuest()
+            .then(() => {
+                console.log("Guest login success")
+                setIsGuestReady(true)
+            })
+            .catch((error: Error) => {
+                console.error("Guest login failed:", error)
+            })
     }, [])
 
     // Handle initial context from URL
@@ -72,7 +81,9 @@ function ChatbotViewContent() {
 
     // Voice Input State (Simplified: Push-to-Talk only)
     const [isListening, setIsListening] = useState(false)
+    const isListeningRef = useRef(false)
     const [isSpeaking, setIsSpeaking] = useState<string | null>(null)
+    const [isVoiceMode, setIsVoiceMode] = useState(false)
     const recognitionRef = useRef<any>(null)
     const synthesisRef = useRef<SpeechSynthesis | null>(null)
     const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -90,78 +101,256 @@ function ChatbotViewContent() {
         }
     }, [])
 
-    // Handle Voice Input (Push-to-Talk: One-shot mode)
-    const handleVoiceInput = () => {
+    // Klassifier Voice Flow State
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+    const audioChunksRef = useRef<Blob[]>([])
+    const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
+    const audioContextRef = useRef<AudioContext | null>(null)
+    const analyserRef = useRef<AnalyserNode | null>(null)
+    const streamRef = useRef<MediaStream | null>(null)
+
+    // Modified to use Klassifier Service logic
+    const handleVoiceInput = async () => {
         if (isListening) {
-            recognitionRef.current?.stop()
-            setIsListening(false)
-            return
+            stopRecording()
+        } else {
+            startRecording()
         }
+    }
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-        if (!SpeechRecognition) {
-            alert("Tarayıcınız ses girişini desteklemiyor. Lütfen Chrome veya Edge kullanın.")
-            return
-        }
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            streamRef.current = stream
+            const mediaRecorder = new MediaRecorder(stream)
+            mediaRecorderRef.current = mediaRecorder
+            audioChunksRef.current = []
 
-        const recognition = new SpeechRecognition()
-        recognition.lang = 'tr-TR'
-        recognition.interimResults = false
-        recognition.maxAlternatives = 1
+            // VAD Logic setup
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+            audioContextRef.current = audioContext
+            const source = audioContext.createMediaStreamSource(stream)
+            const analyser = audioContext.createAnalyser()
+            analyser.fftSize = 256
+            source.connect(analyser)
+            analyserRef.current = analyser
 
-        recognition.onstart = () => {
+            const bufferLength = analyser.frequencyBinCount
+            const dataArray = new Uint8Array(bufferLength)
+
+            let lastSpeechTime = Date.now()
+            const SILENCE_THRESHOLD = 30 // Typical threshold for human speech
+            const SILENCE_DURATION = 1500 // 1.5 seconds
+
+            const checkSilence = () => {
+                if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return
+
+                analyser.getByteFrequencyData(dataArray)
+                const average = dataArray.reduce((a, b) => a + b) / bufferLength
+
+                if (average > SILENCE_THRESHOLD) {
+                    lastSpeechTime = Date.now()
+                } else {
+                    if (Date.now() - lastSpeechTime > SILENCE_DURATION) {
+                        console.log("Silence detected, stopping recording...")
+                        stopRecording()
+                        return
+                    }
+                }
+                requestAnimationFrame(checkSilence)
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data)
+                }
+            }
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+                runVoiceAssistantStep(audioBlob)
+
+                // Cleanup VAD
+                if (audioContextRef.current) {
+                    audioContextRef.current.close()
+                    audioContextRef.current = null
+                }
+
+                // Stop all tracks
+                if (streamRef.current) {
+                    streamRef.current.getTracks().forEach(track => track.stop())
+                    streamRef.current = null
+                }
+            }
+
+            mediaRecorder.start()
             setIsListening(true)
+            isListeningRef.current = true
+            requestAnimationFrame(checkSilence)
+        } catch (error) {
+            console.error("Error accessing microphone:", error)
+            alert("Mikrofon hatası: Lütfen izinleri kontrol edin.")
         }
+    }
 
-        recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript
-            console.log("Voice input:", transcript)
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop()
+        }
+        setIsListening(false)
+        isListeningRef.current = false
+    }
 
-            if (transcript && transcript.trim()) {
-                setLocalInput(transcript)
-                // Auto-send and mark for TTS response
-                sendMessage(transcript, true) // true = should speak response
+    const runVoiceAssistantStep = async (audioBlob: Blob) => {
+        try {
+            // 1. STT: Transcribe using Klassifier
+            setLocalInput("Ses işleniyor...") // Visual feedback
+            const transcribedText = await KlassifierService.transcribeAudio(audioBlob)
+            console.log("Transcribed Text:", transcribedText)
+
+            if (!transcribedText || !transcribedText.trim()) {
+                setLocalInput("")
+                setIsVoiceMode(false) // Optionally exit voice mode or just reset
+                return
             }
-        }
 
-        recognition.onerror = (event: any) => {
-            console.error("Speech recognition error", event.error)
-            setIsListening(false)
-            if (event.error === 'not-allowed') {
-                alert("Mikrofon erişimi reddedildi. Lütfen tarayıcı ayarlarından mikrofon izni verin.")
+            setLocalInput(transcribedText)
+
+            // 2. LLM: Send to existing AI function
+            // We pass 'shouldSpeakResponse: true' to trigger auto-speak, 
+            // but we need to intercept the text for Klassifier TTS specifically if we want to use that instead of native.
+            // Let's modify sendMessage to return the text so we can use Klassifier TTS here.
+
+            const responseText = await sendMessage(transcribedText, false) // false = don't use native auto-speak immediately, we'll handle it
+
+            if (responseText) {
+                // 3. TTS: Generate speech
+                let audio: HTMLAudioElement;
+
+                if (settings.voiceProvider === 'elevenlabs') {
+                    // Use ElevenLabs Proxy
+                    const response = await fetch('/api/voice/elevenlabs', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            text: responseText,
+                            voiceId: settings.elevenLabsVoiceId,
+                            chatbotId: chatbotId
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("ElevenLabs TTS failed");
+
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audio = new Audio(audioUrl);
+                } else {
+                    // Default: Use Klassifier
+                    audio = await KlassifierService.generateSpeech(responseText)
+                }
+
+                // 4. Play
+                audio.play()
+
+                // Optional: sync visual "speaking" state
+                audio.onplay = () => setIsSpeaking(settings.voiceProvider === 'elevenlabs' ? 'elevenlabs-tts' : 'klassifier-tts')
+                audio.onended = () => {
+                    setIsSpeaking(null)
+                    if (settings.voiceProvider === 'elevenlabs') {
+                        URL.revokeObjectURL(audio.src);
+                    }
+                }
             }
-        }
 
-        recognition.onend = () => {
-            setIsListening(false)
+        } catch (error) {
+            console.error("Voice Assistant Error:", error)
+            setLocalInput("") // clear status
         }
-
-        recognitionRef.current = recognition
-        recognition.start()
     }
 
     // Handle Text-to-Speech (Simplified)
-    const speakText = (text: string, messageId: string | null = null) => {
-        if (typeof window === 'undefined' || !window.speechSynthesis) return
+    // Handle Text-to-Speech (Provider Switch: Klassifier vs ElevenLabs)
+    const speakText = async (text: string, messageId: string | null = null) => {
+        if (!text) return
 
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = language === "tr" ? "tr-TR" : "en-US"
+        setIsSpeaking(messageId || 'auto')
 
-        // Find preferred voice if set
-        if (settings.preferredVoice) {
-            const voices = window.speechSynthesis.getVoices()
-            const selectedVoice = voices.find(v => v.name === settings.preferredVoice)
-            if (selectedVoice) {
-                utterance.voice = selectedVoice
+        try {
+            // PROVIDER 1: ELEVENLABS
+            if (settings.voiceProvider === 'elevenlabs') {
+                const response = await fetch('/api/voice/elevenlabs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text,
+                        chatbotId,
+                        voiceId: settings.elevenLabsVoiceId // Optional, backend falls back to setting
+                    })
+                })
+
+                if (!response.ok) throw new Error('ElevenLabs TTS failed')
+
+                const blob = await response.blob()
+                const url = URL.createObjectURL(blob)
+                const audio = new Audio(url)
+
+                audio.onended = () => {
+                    setIsSpeaking(null)
+                    URL.revokeObjectURL(url) // Cleanup
+                }
+                audio.onerror = () => setIsSpeaking(null)
+
+                await audio.play()
+            }
+            // PROVIDER 2: KLASSIFIER (Default)
+            else {
+                // Determine voice_id based on language
+                const voiceId = language === 'tr' ? 'derya' : 'rachel'
+
+                // Using the specific Klassifier payload structure
+                const payload = {
+                    text: text,
+                    voice_id: voiceId,
+                    tts_service: "voicifier",
+                    emotion: "happy",
+                    speed: 1.0
+                }
+
+                const response = await fetch('/api/voice/klassifier?action=generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Klassifier TTS failed");
+                const data = await response.json();
+
+                if (data.file_path) {
+                    const baseUrl = "https://api.klassifier.com"; // Pending user update on correct URL
+                    const relativePath = data.file_path.startsWith('/') ? data.file_path : `/${data.file_path}`;
+                    const audioUrl = data.file_path.startsWith('http') ? data.file_path : `${baseUrl}${relativePath}`;
+
+                    const audio = new Audio(audioUrl);
+                    audio.onended = () => setIsSpeaking(null)
+                    audio.onerror = () => setIsSpeaking(null)
+                    await audio.play();
+                } else {
+                    throw new Error("No file_path in Klassifier response");
+                }
+            }
+        } catch (error) {
+            console.error('TTS Error:', error)
+            setIsSpeaking(null)
+
+            // Fallback to browser TTS if API fails
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+                const utterance = new SpeechSynthesisUtterance(text)
+                utterance.lang = language === "tr" ? "tr-TR" : "en-US"
+                utterance.onend = () => setIsSpeaking(null)
+                window.speechSynthesis.cancel() // Cancel previous before speaking
+                window.speechSynthesis.speak(utterance)
             }
         }
-
-        utterance.onstart = () => setIsSpeaking(messageId || 'auto')
-        utterance.onend = () => setIsSpeaking(null)
-        utterance.onerror = () => setIsSpeaking(null)
-
-        window.speechSynthesis.cancel()
-        window.speechSynthesis.speak(utterance)
     }
 
     const handleSpeak = (text: string, messageId: string) => {
@@ -183,38 +372,89 @@ function ChatbotViewContent() {
     const [hasProactiveTriggered, setHasProactiveTriggered] = useState(false)
     const proactiveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Generate Session ID on mount and load history with real-time listener
+    // 1. Initialize Session ID (Separate effect to avoid race conditions)
     useEffect(() => {
-        const storageKey = `chat_session_id_${chatbotId}`
-        let sid = localStorage.getItem(storageKey)
-        if (!sid) {
-            sid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-            localStorage.setItem(storageKey, sid)
-        }
-        setSessionId(sid)
+        if (!isGuestReady) return
 
-        // Real-time listener
-        const docRef = doc(db, "chat_sessions", sid)
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data()
-                if (data.messages && Array.isArray(data.messages)) {
-                    const history = data.messages.map((m: any, idx: number) => ({
-                        // Ensure unique ID by appending index, as old data might have duplicates
-                        id: (m.id ? m.id : `${sid}-${idx}`) + `-${idx}`,
-                        role: m.role,
-                        content: m.content,
-                        createdAt: m.createdAt ? new Date(m.createdAt) : new Date()
-                    }))
-                    setInitialMessages(history)
+        const auth = guestAuth
+        const user = auth.currentUser
+        if (!user) {
+            console.warn("Guest user not ready yet for session initialization")
+            return
+        }
+
+        const storageKey = `chat_session_id_${chatbotId}`
+        const storedSid = localStorage.getItem(storageKey)
+
+        // CRITICAL: Always use user.uid as sessionId to ensure Firestore permissions work.
+        // If stored sid differs from current uid (happens if guest auth was reset/changed),
+        // we must update to the new uid.
+        const correctSid = user.uid
+
+        if (storedSid !== correctSid) {
+            console.log(`Session: Updating sessionId from ${storedSid} to ${correctSid}`)
+            localStorage.setItem(storageKey, correctSid)
+        }
+
+        // Only update state if it's different to prevent loops
+        setSessionId((prev) => (prev !== correctSid ? correctSid : prev))
+    }, [chatbotId, isGuestReady])
+
+    // 2. Real-time Listener (Depends on stable sessionId)
+    const [listenerTrigger, setListenerTrigger] = useState(0)
+
+    useEffect(() => {
+        if (!isGuestReady || !sessionId) return
+
+        let unsubscribe = () => { }
+        let isMounted = true
+
+        const setupListener = async () => {
+            const docRef = doc(db, "chat_sessions", sessionId)
+
+            try {
+                // Probe first to avoid crashing the listener with permission-denied loop on non-existent docs
+                // If this fails with permission-denied, we know we shouldn't listen yet.
+                await getDoc(docRef)
+
+                if (!isMounted) return
+
+                unsubscribe = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data()
+                        if (data.messages && Array.isArray(data.messages)) {
+                            const history = data.messages.map((m: any, idx: number) => ({
+                                id: (m.id ? m.id : `${sessionId}-${idx}`) + `-${idx}`,
+                                role: m.role,
+                                content: m.content,
+                                createdAt: m.createdAt ? (typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate() : new Date(m.createdAt)) : new Date()
+                            }))
+                            setInitialMessages(history)
+                        }
+                    }
+                }, (error) => {
+                    if (error.code === 'permission-denied') {
+                        console.warn("Session listener warning: Permission denied. Waiting for valid session...")
+                    } else {
+                        console.error("Error listening to chat history:", error)
+                    }
+                })
+            } catch (err: any) {
+                if (err.code === 'permission-denied' || err.code === 'unavailable') {
+                    console.warn("Session doc not accessible yet (likely doesn't exist). Skipping listener until first message.")
+                } else {
+                    console.error("Error checking session doc:", err)
                 }
             }
-        }, (error) => {
-            console.error("Error listening to chat history:", error)
-        })
+        }
 
-        return () => unsubscribe()
-    }, [chatbotId])
+        setupListener()
+
+        return () => {
+            isMounted = false
+            unsubscribe()
+        }
+    }, [sessionId, isGuestReady, listenerTrigger])
 
     // Local Input State to avoid useChat issues
     const [localInput, setLocalInput] = useState('')
@@ -227,8 +467,8 @@ function ChatbotViewContent() {
     // Voice mode callbacks handled in sendMessage function
 
     // Custom sendMessage function using fetch API
-    const sendMessage = async (content: string, shouldSpeakResponse: boolean = false) => {
-        if (!content.trim()) return
+    const sendMessage = async (content: string, shouldSpeakResponse: boolean = false): Promise<string> => {
+        if (!content.trim()) return ""
 
         const userMessage = {
             id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
@@ -248,11 +488,11 @@ function ChatbotViewContent() {
                 body: JSON.stringify({
                     messages: [...messages, userMessage],
                     chatbotId,
-                    sessionId,
+                    sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
                     context: pageContext,
-                    language: settings.initialLanguage || 'auto', // Pass current language to AI
-                    isVoice: shouldSpeakResponse, // Tell AI to be concise if we'll speak it
-                    shouldStream: true // Always use streaming for speed
+                    language: settings.initialLanguage || 'auto',
+                    isVoice: shouldSpeakResponse,
+                    shouldStream: true
                 }),
                 signal: controller.signal
             })
@@ -277,10 +517,19 @@ function ChatbotViewContent() {
                 setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
             }
 
+            // If content is empty (e.g. paused session or error), remove the placeholder
+            if (!assistantContent.trim()) {
+                setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
+                return ""
+            }
+
             // If this was a voice input OR auto-speak is enabled, automatically speak the response
             if ((shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent) {
                 speakText(assistantContent, assistantMsgId)
             }
+
+            // Trigger listener check now that we've definitely sent a message and doc should exist
+            setListenerTrigger(prev => prev + 1)
 
             // Check if AI suggested booking an appointment
             if (settings.enableAppointments && (
@@ -312,12 +561,28 @@ function ChatbotViewContent() {
                 setShowAuditSuggestion(true)
             }
 
+            return assistantContent
+
         } catch (error: any) {
             console.error('Chat error:', error)
+
+            // Remove the placeholder on error so we don't leave an empty bubble
+            // We can't access assistantMsgId here easily due to scope, 
+            // but we can filter out the last 'assistant' message if it's empty/loading.
+            // Better: Add a visible error system message? 
+            // For now, let's essentially 'undo' the optimistic update if it failed.
+            setMessages((prev: any) => {
+                const last = prev[prev.length - 1]
+                if (last && last.role === 'assistant' && !last.content) {
+                    return prev.slice(0, -1)
+                }
+                return prev
+            })
 
             if (error.name === 'AbortError') {
                 console.warn("Request timed out")
             }
+            return ""
         }
     }
 
@@ -386,10 +651,17 @@ function ChatbotViewContent() {
         welcomeMessage: "Hello! How can I help you today?",
         brandColor: "#000000",
         brandLogo: "",
+        headerLogo: "",
+        headerLogoWidth: 32,
+        headerLogoHeight: 32,
+        headerBackgroundColor: "",
+        headerTextColor: "#FFFFFF",
         suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
         enableLeadCollection: false,
         industry: "ecommerce" as string,
-        enableVoiceSupport: false,
+        enableVoiceAssistant: false,
+        voiceProvider: "klassifier" as string,
+        elevenLabsVoiceId: "",
         theme: "classic" as string,
 
         enableIndustryGreeting: false,
@@ -415,19 +687,26 @@ function ChatbotViewContent() {
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const docRef = doc(db, "chatbots", chatbotId)
-                const docSnap = await getDoc(docRef)
-                if (docSnap.exists()) {
-                    const data = docSnap.data()
+                // Fetch settings from API instead of Firestore directly to ensure consistency and bypass permission issues
+                const res = await fetch(`/api/widget-settings?chatbotId=${chatbotId}`)
+                if (res.ok) {
+                    const data = await res.json()
                     setSettings({
                         companyName: data.companyName || "Acme Corp",
                         welcomeMessage: data.welcomeMessage || "Hello! How can I help you today?",
                         brandColor: data.brandColor || "#000000",
                         brandLogo: data.brandLogo || "",
+                        headerLogo: data.headerLogo || "",
+                        headerLogoWidth: data.headerLogoWidth || 32,
+                        headerLogoHeight: data.headerLogoHeight || 32,
+                        headerBackgroundColor: data.headerBackgroundColor || "",
+                        headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
                         industry: data.industry || "ecommerce",
-                        enableVoiceSupport: data.enableVoiceSupport || false,
+                        enableVoiceAssistant: data.enableVoiceAssistant || false,
+                        voiceProvider: data.voiceProvider || "klassifier",
+                        elevenLabsVoiceId: data.elevenLabsVoiceId || "",
                         theme: data.theme || "classic",
                         enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : false,
                         initialLanguage: data.initialLanguage || "auto",
@@ -563,28 +842,7 @@ function ChatbotViewContent() {
         }, 12000) // 12 seconds delay
 
         return () => clearTimeout(timer)
-    }, [hasProactiveTriggered, messages.length, pageContext, isLoading, settings.industry, settings.engagement, settings.welcomeMessage])
-
-    const contactMessages = {
-        tr: "Müşteri temsilcilerimizin sizinle iletişime geçebilmesi için Ad, Soyad, Firma ve İletişim bilgilerinizi paylaşabilir misiniz?",
-        en: "Could you please share your Name, Surname, Company, and Contact Information so our customer representatives can contact you?",
-        de: "Könnten Sie bitte Ihren Namen, Nachnamen, Ihre Firma und Ihre Kontaktinformationen mitteilen, damit unsere Kundenbetreuer Sie kontaktieren können?",
-        es: "¿Podría compartir su Nombre, Apellido, Empresa e Información de contacto para que nuestros representantes de atención al cliente puedan contactarlo?",
-        fr: "Pourriez-vous partager votre Nom, Prénom, Entreprise et Coordonnées afin que nos représentants du service client puissent vous contacter ?"
-    }
-
-    const detectLanguage = (text: string): keyof typeof contactMessages => {
-        const trChars = /[çğıöşüÇĞİÖŞÜ]/
-        if (trChars.test(text)) return 'tr'
-
-        // Simple fallback to browser language if available, otherwise 'en'
-        if (typeof window !== 'undefined' && window.navigator.language) {
-            const lang = window.navigator.language.split('-')[0]
-            if (lang in contactMessages) return lang as keyof typeof contactMessages
-        }
-
-        return 'en'
-    }
+    }, [hasProactiveTriggered, messages, pageContext, isLoading, settings.industry, settings.engagement, settings.welcomeMessage, settings.enableIndustryGreeting, settings.initialLanguage])
 
     useEffect(() => {
         if (inactivityTimerRef.current) {
@@ -593,6 +851,27 @@ function ChatbotViewContent() {
 
         // If lead collection is disabled, do nothing
         if (!isLoading && !settings.enableLeadCollection) return
+
+        const contactMessages = {
+            tr: "Müşteri temsilcilerimizin sizinle iletişime geçebilmesi için Ad, Soyad, Firma ve İletişim bilgilerinizi paylaşabilir misiniz?",
+            en: "Could you please share your Name, Surname, Company, and Contact Information so our customer representatives can contact you?",
+            de: "Könnten Sie bitte Ihren Namen, Nachnamen, Ihre Firma und Ihre Kontaktinformationen mitteilen, damit unsere Kundenbetreuer Sie kontaktieren können?",
+            es: "¿Podría compartir su Nombre, Apellido, Empresa e Información de contacto para que nuestros representantes de atención al cliente puedan contactarlo?",
+            fr: "Pourriez-vous partager votre Nom, Prénom, Entreprise et Coordonnées afin que nos représentants du service client puissent vous contacter ?"
+        }
+
+        const detectLanguage = (text: string): keyof typeof contactMessages => {
+            const trChars = /[çğıöşüÇĞİÖŞÜ]/
+            if (trChars.test(text)) return 'tr'
+
+            // Simple fallback to browser language if available, otherwise 'en'
+            if (typeof window !== 'undefined' && window.navigator.language) {
+                const lang = window.navigator.language.split('-')[0]
+                if (lang in contactMessages) return lang as keyof typeof contactMessages
+            }
+
+            return 'en'
+        }
 
         const userMessageCount = messages.filter(m => m.role === 'user').length
         // Check if ANY of the contact messages have been sent
@@ -644,7 +923,28 @@ function ChatbotViewContent() {
         }
 
         if (userMessageCount >= 2 && !hasRequestedContactInfo && !isChatLoading) {
+            // Check if appointment was just confirmed to avoid redundant questions
+            const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant')
+            if (lastAssistantMsg && (
+                lastAssistantMsg.content.toLowerCase().includes("randevunuz") ||
+                lastAssistantMsg.content.toLowerCase().includes("appointment") ||
+                lastAssistantMsg.content.toLowerCase().includes("planlandı") ||
+                lastAssistantMsg.content.toLowerCase().includes("oluşturulmuştur") ||
+                lastAssistantMsg.content.toLowerCase().includes("confirmed")
+            )) {
+                return
+            }
+
             inactivityTimerRef.current = setTimeout(() => {
+                // Double check before firing in case messages changed
+                const currentLastMsg = [...messages].reverse().find(m => m.role === 'assistant')
+                if (currentLastMsg && (
+                    currentLastMsg.content.toLowerCase().includes("randevunuz") ||
+                    currentLastMsg.content.toLowerCase().includes("appointment")
+                )) {
+                    return
+                }
+
                 // Detect language from the last user message
                 const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
                 const lang = lastUserMsg ? detectLanguage(lastUserMsg.content) : 'en'
@@ -656,7 +956,7 @@ function ChatbotViewContent() {
                     content: messageContent,
                     createdAt: new Date()
                 }
-                setMessages([...messages, contactMsg as any])
+                setMessages(prev => [...prev, contactMsg as any])
                 setHasRequestedContactInfo(true)
 
                 if (sessionId) {
@@ -791,11 +1091,11 @@ function ChatbotViewContent() {
                     <div className="w-full max-w-sm space-y-6">
                         <div className="text-center space-y-2">
                             <div
-                                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto overflow-hidden"
+                                className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto overflow-hidden"
                                 style={{ backgroundColor: settings.brandColor }}
                             >
                                 {settings.brandLogo ? (
-                                    <img src={settings.brandLogo} alt="Logo" className="w-full h-full object-cover" />
+                                    <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
                                 ) : (
                                     <MessageSquare className="w-8 h-8 text-white" />
                                 )}
@@ -990,7 +1290,42 @@ function ChatbotViewContent() {
                 </div>
             )}
 
-            {/* Voice Mode Overlay removed - using push-to-talk instead */}
+            {/* Voice Mode Overlay */}
+            {isVoiceMode && (
+                <div className="absolute inset-x-0 bottom-[80px] top-[80px] bg-white dark:bg-zinc-900 z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                    <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center mb-8 relative transition-all duration-500 ${isListening ? 'border-red-100 dark:border-red-900/30 scale-110' : 'border-blue-100 dark:border-blue-900/30'}`}>
+                        {isListening && <div className="absolute inset-0 rounded-full bg-red-400 opacity-20 animate-ping"></div>}
+                        {isSpeaking && <div className="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-pulse scale-125"></div>}
+
+                        <button
+                            onClick={handleVoiceInput}
+                            className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-xl active:scale-95 ${isListening ? 'bg-red-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                        >
+                            {isListening ? <Square className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
+                        </button>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-zinc-100 mb-2">
+                        {isListening ? "Sizi Dinliyorum..." : isSpeaking ? "Vion Cevap Veriyor..." : "Sesli Asistan Hazır"}
+                    </h3>
+                    <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-xs mx-auto">
+                        {isListening ? "Lütfen sorunuzu sorun." : isSpeaking ? "Yanıt seslendiriliyor." : "Konuşmak için butona tıklayın."}
+                    </p>
+
+                    {localInput && localInput !== "Ses işleniyor..." && (localInput !== "Sesli asistan aktif...") && (
+                        <div className="mt-8 p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-700 max-w-xs mx-auto italic text-gray-600 dark:text-zinc-300 text-sm animate-in slide-in-from-bottom-2">
+                            &quot;{localInput}&quot;
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setIsVoiceMode(false)}
+                        className="mt-auto px-6 py-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 text-sm font-medium transition-colors border border-transparent hover:border-gray-100 dark:hover:border-zinc-800 rounded-full"
+                    >
+                        Yazılı Sohbete Dön
+                    </button>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             {isConfirmingClear && (
@@ -1029,7 +1364,15 @@ function ChatbotViewContent() {
                             <button onClick={handleToggleSize} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
                                 {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                             </button>
-                            {/* Voice Mode Toggle removed - using mic button for push-to-talk */}
+                            {settings.enableVoiceAssistant && (
+                                <button
+                                    onClick={() => setIsVoiceMode(!isVoiceMode)}
+                                    className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
+                                    title={isVoiceMode ? "Text Mode" : "Voice Mode"}
+                                >
+                                    {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                                </button>
+                            )}
 
                             <button onClick={handleClearChat} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
                                 <Trash2 className="w-4 h-4" />
@@ -1094,7 +1437,8 @@ function ChatbotViewContent() {
                                         <button
                                             key={i}
                                             onClick={() => sendMessage(q)}
-                                            className="bg-white hover:bg-gray-50 text-gray-700 text-sm py-2.5 px-4 rounded-2xl shadow-sm border border-gray-100 transition-all hover:scale-105 active:scale-95 text-left max-w-full"
+                                            className="bg-white hover:bg-gray-50 text-sm py-2.5 px-4 rounded-2xl shadow-sm border transition-all hover:scale-105 active:scale-95 text-left max-w-full"
+                                            style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
                                         >
                                             {q}
                                         </button>
@@ -1108,7 +1452,8 @@ function ChatbotViewContent() {
                                     <div key={m.id} className={`flex gap-4 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                                         {m.role !== 'user' && (
                                             <div
-                                                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-1 shadow-sm bg-white text-blue-600 border border-blue-100"
+                                                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-1 shadow-sm bg-white border"
+                                                style={{ color: settings.headerBackgroundColor || settings.brandColor, borderColor: `${settings.headerBackgroundColor || settings.brandColor}20` }}
                                             >
                                                 <Sparkles className="w-4 h-4" />
                                             </div>
@@ -1119,12 +1464,18 @@ function ChatbotViewContent() {
                                                     <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{settings.companyName}</p>
                                                 )}
                                                 {m.role === 'assistant' && (
-                                                    <button onClick={() => handleSpeak(m.content, m.id)} className="text-gray-300 hover:text-gray-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                    <button onClick={() => handleSpeak(m.content, m.id)} className={`transition-colors ${isSpeaking === m.id ? 'text-blue-500' : 'text-gray-300 hover:text-gray-500'} ${settings.enableVoiceAssistant ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                                         {isSpeaking === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3 h-3" />}
                                                     </button>
                                                 )}
                                             </div>
-                                            <div className={`text-sm leading-relaxed p-3.5 rounded-2xl shadow-sm inline-block text-left relative group ${m.role === 'user' ? 'bg-blue-50 text-gray-800 rounded-tr-none border border-blue-100' : 'bg-white border border-gray-100 rounded-tl-none'}`}>
+                                            <div
+                                                className={`text-sm leading-relaxed p-3.5 rounded-2xl shadow-sm inline-block text-left relative group ${m.role === 'user' ? 'text-gray-800 rounded-tr-none border' : 'bg-white border border-gray-100 rounded-tl-none'}`}
+                                                style={m.role === 'user' ? {
+                                                    backgroundColor: `${settings.headerBackgroundColor || settings.brandColor}10`, // 10% opacity for background
+                                                    borderColor: `${settings.headerBackgroundColor || settings.brandColor}30` // 30% opacity for border
+                                                } : {}}
+                                            >
                                                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
                                                     code: ({ node, inline, className, children, ...props }: any) => {
                                                         const match = /language-(\w+)/.exec(className || '')
@@ -1183,7 +1534,7 @@ function ChatbotViewContent() {
                                 className="flex-1 bg-transparent border-0 focus:ring-0 text-sm px-4 py-2 text-gray-700 placeholder:text-gray-400"
                             />
                             {/* Voice Input Button */}
-                            {settings.enableVoiceSupport && (
+                            {settings.enableVoiceAssistant && (
                                 <button
                                     type="button"
                                     onClick={handleVoiceInput}
@@ -1207,45 +1558,61 @@ function ChatbotViewContent() {
                             <button
                                 type="submit"
                                 disabled={!localInput.trim()}
-                                className="p-2 rounded-full hover:bg-gray-50 text-blue-500 transition-colors disabled:opacity-50"
+                                className="p-2 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                style={{ color: settings.headerBackgroundColor || settings.brandColor }}
                             >
                                 <Send className="w-4 h-4" />
                             </button>
                         </form>
                         <div className="text-center mt-2 flex items-center justify-center gap-1">
                             <span className="text-[10px] text-gray-400">Powered by</span>
-                            <img src="/vion-logo-full-dark.png" alt="Vion" className="h-3 opacity-60" />
+                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={100} height={20} className="h-3 w-auto opacity-60" />
                         </div>
                     </div>
                 </div>
             ) : (
                 // CLASSIC THEME UI
                 <>
+
+                    {/* Header */}
                     {/* Header */}
                     <div
                         className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
-                        style={{ backgroundColor: settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
+                        style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
                     >
                         <div className="flex items-center gap-3">
                             <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center text-white overflow-hidden bg-white/20"
+                                className="relative flex items-center justify-center"
+                                style={{ width: `${settings.headerLogoWidth || 32}px`, height: `${settings.headerLogoHeight || 32}px` }}
                             >
-                                {settings.brandLogo ? (
-                                    <img src={settings.brandLogo} alt="Logo" className="w-full h-full object-cover" />
+                                {settings.headerLogo || settings.brandLogo ? (
+                                    <Image src={settings.headerLogo || settings.brandLogo} alt="Logo" fill className="object-contain" unoptimized />
                                 ) : (
-                                    <MessageSquare className="w-5 h-5 text-white" />
+                                    <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center">
+                                        <MessageSquare className="w-5 h-5 text-white" />
+                                    </div>
                                 )}
                             </div>
                             <div>
-                                <h3 className="font-semibold text-sm leading-tight text-white">{settings.companyName}</h3>
-                                <p className="text-[10px] text-white/80 font-medium flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                                    Online
-                                </p>
+                                <h3 className="font-semibold text-sm leading-tight" style={{ color: settings.headerTextColor || '#FFFFFF' }}>{settings.companyName}</h3>
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
-                            {/* Voice Mode Toggle removed - using mic button for push-to-talk */}
+                            <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
+                                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
+                                <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
+                                    AI Online
+                                </span>
+                            </div>
+                            {settings.enableVoiceAssistant && (
+                                <button
+                                    onClick={() => setIsVoiceMode(!isVoiceMode)}
+                                    className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+                                    title={isVoiceMode ? "Text Mode" : "Voice Mode"}
+                                >
+                                    {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                                </button>
+                            )}
                             <button
                                 onClick={handleToggleSize}
                                 className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
@@ -1275,11 +1642,11 @@ function ChatbotViewContent() {
                         {messages.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
                                 <div
-                                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
-                                    style={{ backgroundColor: settings.brandColor }}
+                                    className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
+                                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                                 >
                                     {settings.brandLogo ? (
-                                        <img src={settings.brandLogo} alt="Logo" className="w-full h-full object-cover" />
+                                        <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
                                     ) : (
                                         <Sparkles className="w-8 h-8" />
                                     )}
@@ -1297,7 +1664,8 @@ function ChatbotViewContent() {
                                             onClick={() => {
                                                 sendMessage(q)
                                             }}
-                                            className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border border-gray-100 rounded-xl transition-all hover:shadow-sm text-gray-600 shadow-sm"
+                                            className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
+                                            style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
                                         >
                                             {q}
                                         </button>
@@ -1310,24 +1678,29 @@ function ChatbotViewContent() {
 
 
                                 {messages.map((m: any) => (
-                                    <div key={m.id} className={`flex gap-4 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                                    <div key={m.id} className={`flex gap-3 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300 group/msg`}>
                                         {m.role !== 'user' && (
                                             <div
-                                                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-1 shadow-sm text-white"
-                                                style={{ backgroundColor: settings.brandColor }}
+                                                className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-auto mb-1 shadow-sm overflow-hidden bg-white"
                                             >
-                                                AI
+                                                {settings.brandLogo ? (
+                                                    <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                        <Sparkles className="w-4 h-4" />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         <div className={`space-y-1 max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                            <div className="flex items-center gap-2 justify-between px-1">
-                                                {m.role !== 'user' && (
-                                                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{settings.companyName}</p>
+                                            <div className="flex items-center gap-2 justify-between px-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300">
+                                                {m.role === 'assistant' && (
+                                                    <span className="text-[10px] font-medium text-gray-400">{settings.companyName}</span>
                                                 )}
                                                 {m.role === 'assistant' && (
                                                     <button
                                                         onClick={() => handleSpeak(m.content, m.id)}
-                                                        className="text-gray-300 hover:text-gray-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                        className="text-gray-300 hover:text-gray-500 transition-colors"
                                                         title={isSpeaking === m.id ? "Stop Speaking" : "Read Aloud"}
                                                     >
                                                         {isSpeaking === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3 h-3" />}
@@ -1335,10 +1708,11 @@ function ChatbotViewContent() {
                                                 )}
                                             </div>
                                             <div
-                                                className={`text-sm leading-relaxed p-3.5 rounded-2xl shadow-sm inline-block text-left relative group ${m.role === 'user'
-                                                    ? 'bg-blue-50 text-gray-800 rounded-tr-none border border-blue-100'
-                                                    : 'bg-white border border-gray-100 rounded-tl-none'
+                                                className={`text-sm leading-relaxed px-4 py-3 rounded-2xl shadow-sm inline-block text-left relative transition-all hover:shadow-md ${m.role === 'user'
+                                                    ? 'bg-blue-600 text-white rounded-tr-sm'
+                                                    : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
                                                     }`}
+                                                style={m.role === 'user' ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor } : {}}
                                             >
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
@@ -1367,14 +1741,15 @@ function ChatbotViewContent() {
                                                                     </code>
                                                                 </div>
                                                             ) : (
-                                                                <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono text-red-500" {...props}>
+                                                                <code className={`${m.role === 'user' ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500'} px-1 py-0.5 rounded text-xs font-mono`} {...props}>
                                                                     {children}
                                                                 </code>
                                                             )
                                                         },
-                                                        table: ({ node, ...props }) => <table className="border-collapse table-auto w-full text-xs my-2" {...props} />,
-                                                        th: ({ node, ...props }) => <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold" {...props} />,
-                                                        td: ({ node, ...props }) => <td className="border border-gray-300 px-2 py-1" {...props} />,
+                                                        a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={`underline font-medium ${m.role === 'user' ? 'text-white' : 'text-blue-600 hover:text-blue-800'}`} />,
+                                                        table: ({ node, ...props }) => <table className="border-collapse table-auto w-full text-xs my-2 bg-white/5 rounded overflow-hidden" {...props} />,
+                                                        th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${m.role === 'user' ? 'border-white/20' : 'border-gray-200 bg-gray-50'}`} {...props} />,
+                                                        td: ({ node, ...props }) => <td className={`border px-2 py-1 ${m.role === 'user' ? 'border-white/20' : 'border-gray-200'}`} {...props} />,
                                                         p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
                                                         ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
                                                         ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
@@ -1382,6 +1757,9 @@ function ChatbotViewContent() {
                                                 >
                                                     {m.content}
                                                 </ReactMarkdown>
+                                                <div className={`text-[10px] mt-1 opacity-70 flex justify-end ${m.role === 'user' ? 'text-white' : 'text-gray-400'}`}>
+                                                    {m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1389,28 +1767,30 @@ function ChatbotViewContent() {
 
                                 {/* Typing Indicator */}
                                 {isTyping && (
-                                    <div className="flex gap-4 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div
-                                            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs text-white mt-1 shadow-sm"
-                                            style={{ backgroundColor: settings.brandColor }}
-                                        >
-                                            AI
+                                    <div className="flex gap-3 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white mt-auto mb-1 bg-white shadow-sm overflow-hidden order-first">
+                                            {settings.brandLogo ? (
+                                                <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                    <Sparkles className="w-4 h-4 text-white" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                        <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
                                         </div>
                                     </div>
                                 )}
-
                                 <div ref={messagesEndRef} />
                             </>
                         )}
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-4 bg-white border-t">
+                    <div className="p-4 bg-white border-t border-gray-100">
                         <div className="max-w-3xl mx-auto relative">
                             <form
                                 onSubmit={(e) => {
@@ -1421,21 +1801,21 @@ function ChatbotViewContent() {
                                 }}
                                 className="relative flex items-center gap-2"
                             >
-                                <div className="relative flex-1">
+                                <div className="relative flex-1 group">
                                     <input
                                         value={localInput}
                                         onChange={(e) => setLocalInput(e.target.value)}
                                         type="text"
                                         placeholder={t('messagePlaceholder')}
-                                        className="w-full text-sm bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all shadow-sm"
-                                        style={{ '--tw-ring-color': settings.brandColor } as any}
+                                        className="w-full text-sm bg-gray-50 border-0 rounded-2xl pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md"
+                                        style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
                                     />
                                     {/* Voice Input Button */}
-                                    {settings.enableVoiceSupport && (
+                                    {settings.enableVoiceAssistant && (
                                         <button
                                             type="button"
                                             onClick={handleVoiceInput}
-                                            className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                                            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
                                             title="Voice Input"
                                         >
                                             <Mic className="w-4 h-4" />
@@ -1445,15 +1825,14 @@ function ChatbotViewContent() {
                                 <button
                                     type="submit"
                                     disabled={!localInput.trim()}
-                                    className="p-3 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-sm"
-                                    style={{ backgroundColor: settings.brandColor }}
+                                    className="p-3.5 rounded-2xl text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5"
+                                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                                 >
                                     <Send className="w-4 h-4" />
                                 </button>
                             </form>
-                            <div className="text-center mt-2 flex items-center justify-center gap-1">
-                                <span className="text-[10px] text-gray-400">Powered by</span>
-                                <img src="/vion-logo-full-dark.png" alt="Vion" className="h-3 opacity-60" />
+                            <div className="text-center mt-2 flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] text-gray-400 font-medium">Powered by Vion</span>
                             </div>
                         </div>
                     </div>

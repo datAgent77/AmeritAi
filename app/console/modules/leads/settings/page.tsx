@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -43,15 +41,14 @@ export default function LeadCollectionSettingsPage() {
             if (!user) return
             setIsLoading(true)
             try {
-                const chatbotRef = doc(db, "chatbots", user.uid)
-                const chatbotSnap = await getDoc(chatbotRef)
-                if (chatbotSnap.exists()) {
-                    const data = chatbotSnap.data()
-                    setIsActive(data.enableLeadCollection || false)
-                    setCustomFields(data.leadCustomFields || [])
-                    setEnableNotifications(data.enableLeadNotifications || false)
-                    setNotificationEmail(data.leadNotificationEmail || user?.email || "")
-                }
+                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                if (!response.ok) throw new Error("Failed to fetch settings");
+                const data = await response.json();
+
+                setIsActive(data.enableLeadCollection || false)
+                setCustomFields(data.leadCustomFields || [])
+                setEnableNotifications(data.enableLeadNotifications || false)
+                setNotificationEmail(data.leadNotificationEmail || user.email || "")
             } catch (error) {
                 console.error("Error fetching settings:", error)
             } finally {
@@ -65,20 +62,24 @@ export default function LeadCollectionSettingsPage() {
         if (!user) return
         setIsSaving(true)
         try {
-            const userRef = doc(db, "users", user.uid)
-            const chatbotRef = doc(db, "chatbots", user.uid)
-
-            await Promise.all([
-                updateDoc(userRef, {
-                    enableLeadCollection: isActive
-                }),
-                updateDoc(chatbotRef, {
-                    enableLeadCollection: isActive,
-                    leadCustomFields: customFields,
-                    enableLeadNotifications: enableNotifications,
-                    leadNotificationEmail: notificationEmail
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId: user.uid,
+                    userSettings: {
+                        enableLeadCollection: isActive
+                    },
+                    chatbotSettings: {
+                        enableLeadCollection: isActive,
+                        leadCustomFields: customFields,
+                        enableLeadNotifications: enableNotifications,
+                        leadNotificationEmail: notificationEmail
+                    }
                 })
-            ])
+            });
+
+            if (!response.ok) throw new Error("Failed to save settings");
 
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",

@@ -1,93 +1,106 @@
-import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { NextResponse } from "next/server";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
     try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 });
+        }
+
         const { sessionId, chatbotId, content } = await req.json();
 
         if (!sessionId || !chatbotId || !content) {
-            return new Response("Missing required fields", { status: 400 });
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
         console.log(`Admin Message: Sending to ${sessionId} for bot ${chatbotId}`);
 
         // 1. Save to Firestore (This updates Web Widget automatically via onSnapshot)
-        const sessionRef = doc(db, "chat_sessions", sessionId);
+        const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
+        const sessionSnap = await sessionRef.get();
 
-        await updateDoc(sessionRef, {
-            messages: arrayUnion({
-                id: Date.now().toString(),
-                role: "assistant", // Or "agent" if we want to distinguish
-                content: content,
+        const newMessage = {
+            id: Date.now().toString(),
+            role: "assistant",
+            content: content,
+            createdAt: new Date().toISOString(),
+            isHuman: true
+        };
+
+        if (sessionSnap.exists) {
+            const currentMessages = sessionSnap.data()?.messages || [];
+            currentMessages.push(newMessage);
+            await sessionRef.update({ messages: currentMessages });
+        } else {
+            console.warn("Admin Message: Session not found, creating new one (rare case)");
+            await sessionRef.set({
+                chatbotId,
                 createdAt: new Date().toISOString(),
-                isHuman: true // Flag to indicate human reply
-            })
-        });
+                messages: [newMessage]
+            });
+        }
 
         // 2. Check if Telegram and Dispatch
         if (sessionId.startsWith("telegram-")) {
-            // Extract Chat ID (Format: telegram-{chatbotId}-{chatId})
-            const parts = sessionId.split("-");
-            // parts[0] = "telegram"
-            // parts[1] = chatbotId
-            // parts[2] = chatId (but chatId might be negative or large, so let's be careful)
-
-            // Safer extraction: Remove "telegram-" and chatbotId + "-"
             const prefix = `telegram-${chatbotId}-`;
             const chatId = sessionId.substring(prefix.length);
 
             if (chatId) {
-                // Get Bot Token
-                const chatbotRef = doc(db, "chatbots", chatbotId);
-                const chatbotSnap = await getDoc(chatbotRef);
+                const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+                const chatbotSnap = await chatbotRef.get();
 
-                if (chatbotSnap.exists()) {
+                if (chatbotSnap.exists) {
                     const data = chatbotSnap.data();
-                    const telegramConfig = data.integrations?.telegram;
+                    const telegramConfig = data?.integrations?.telegram;
 
                     if (telegramConfig?.connected && telegramConfig?.botToken) {
-                        await fetch(`https://api.telegram.org/bot${telegramConfig.botToken}/sendMessage`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                chat_id: chatId,
-                                text: content
-                            })
-                        });
-                        console.log("Admin Message: Sent to Telegram");
+                        try {
+                            await fetch(`https://api.telegram.org/bot${telegramConfig.botToken}/sendMessage`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    chat_id: chatId,
+                                    text: content
+                                })
+                            });
+                            console.log("Admin Message: Sent to Telegram");
+                        } catch (e) {
+                            console.error("Admin Message: Failed to send to Telegram", e);
+                        }
                     } else {
                         console.warn("Admin Message: No Telegram token found or not connected");
                     }
                 }
             }
         } else if (sessionId.startsWith("whatsapp-")) {
-            // WhatsApp Logic
-            const parts = sessionId.split("-");
-            // parts[0] = "whatsapp"
-            // parts[1] = chatbotId
-            // parts[2] = phoneNumber
-            const phoneNumber = parts[2];
+            const prefix = `whatsapp-${chatbotId}-`;
+            const phoneNumber = sessionId.substring(prefix.length);
 
             if (phoneNumber) {
-                const chatbotRef = doc(db, "chatbots", chatbotId);
-                const chatbotSnap = await getDoc(chatbotRef);
+                const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+                const chatbotSnap = await chatbotRef.get();
 
-                if (chatbotSnap.exists()) {
-                    const waConfig = chatbotSnap.data().integrations?.whatsapp;
+                if (chatbotSnap.exists) {
+                    const waConfig = chatbotSnap.data()?.integrations?.whatsapp;
                     if (waConfig?.connected && waConfig?.phoneNumberId && waConfig?.accessToken) {
-                        await fetch(`https://graph.facebook.com/v17.0/${waConfig.phoneNumberId}/messages`, {
-                            method: "POST",
-                            headers: {
-                                "Authorization": `Bearer ${waConfig.accessToken}`,
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                                messaging_product: "whatsapp",
-                                to: phoneNumber,
-                                text: { body: content }
-                            })
-                        });
-                        console.log("Admin Message: Sent to WhatsApp");
+                        try {
+                            await fetch(`https://graph.facebook.com/v17.0/${waConfig.phoneNumberId}/messages`, {
+                                method: "POST",
+                                headers: {
+                                    "Authorization": `Bearer ${waConfig.accessToken}`,
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    messaging_product: "whatsapp",
+                                    to: phoneNumber,
+                                    text: { body: content }
+                                })
+                            });
+                            console.log("Admin Message: Sent to WhatsApp");
+                        } catch (e) {
+                            console.error("Admin Message: Failed to send to WhatsApp", e);
+                        }
                     } else {
                         console.warn("Admin Message: WhatsApp not configured or connected for this chatbot");
                     }
@@ -95,10 +108,10 @@ export async function POST(req: Request) {
             }
         }
 
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
+        return NextResponse.json({ success: true });
 
     } catch (error) {
         console.error("Admin Message Error:", error);
-        return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -130,6 +130,32 @@ export default function AutopilotPage() {
         }, "*")
     }
 
+    // Save Run on Completion
+    const saveTestRun = useCallback(async (suiteId: string, success: boolean, error?: string) => {
+        const suite = testSuites.find(t => t.id === suiteId);
+        if (!suite) return;
+
+        try {
+            await fetch('/api/autopilot/runs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: targetUrl, // Use current target
+                    status: success ? 'passed' : 'failed',
+                    testSuiteName: suite.name,
+                    steps: suite.steps.map((s: any, idx: number) => ({
+                        action: s.action,
+                        status: success || (suite.currentStep && idx < suite.currentStep) ? 'passed' : 'failed',
+                        error: error && idx === suite.currentStep ? error : undefined
+                    }))
+                })
+            });
+            addLog("Test result saved to history.");
+        } catch (e) {
+            console.error("Failed to save run:", e);
+        }
+    }, [testSuites, targetUrl]);
+
     // Listen for Real Execution Updates
     useEffect(() => {
         const handleExtensionEvents = (event: MessageEvent) => {
@@ -192,33 +218,7 @@ export default function AutopilotPage() {
 
         window.addEventListener("message", handleExtensionEvents);
         return () => window.removeEventListener("message", handleExtensionEvents);
-    }, [activeTestId, testSuites]);
-
-    // Save Run on Completion
-    const saveTestRun = async (suiteId: string, success: boolean, error?: string) => {
-        const suite = testSuites.find(t => t.id === suiteId);
-        if (!suite) return;
-
-        try {
-            await fetch('/api/autopilot/runs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    url: targetUrl, // Use current target
-                    status: success ? 'passed' : 'failed',
-                    testSuiteName: suite.name,
-                    steps: suite.steps.map((s: any, idx: number) => ({
-                        action: s.action,
-                        status: success || (suite.currentStep && idx < suite.currentStep) ? 'passed' : 'failed',
-                        error: error && idx === suite.currentStep ? error : undefined
-                    }))
-                })
-            });
-            addLog("Test result saved to history.");
-        } catch (e) {
-            console.error("Failed to save run:", e);
-        }
-    };
+    }, [activeTestId, testSuites, saveTestRun]);
 
     const runAllTests = async () => {
         if (testSuites.length === 0) return

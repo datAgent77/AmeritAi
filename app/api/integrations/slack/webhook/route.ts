@@ -1,16 +1,20 @@
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { generateAIResponse } from "@/lib/ai-service";
 
 export async function POST(req: Request) {
+    const adminDb = getAdminDb();
     try {
         const { searchParams } = new URL(req.url);
         const chatbotId = searchParams.get("chatbotId");
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
+        }
+
+        if (!adminDb) {
+            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
         }
 
         // Read raw body for signature verification
@@ -23,15 +27,15 @@ export async function POST(req: Request) {
         }
 
         // 2. Fetch Chatbot Settings (Token & Secret)
-        const docRef = doc(db, "chatbots", chatbotId);
-        const docSnap = await getDoc(docRef);
+        const docRef = adminDb.collection("chatbots").doc(chatbotId);
+        const docSnap = await docRef.get();
 
-        if (!docSnap.exists()) {
+        if (!docSnap.exists) {
             return NextResponse.json({ error: "Chatbot not found" }, { status: 404 });
         }
 
         const settings = docSnap.data();
-        const slackConfig = settings.integrations?.slack;
+        const slackConfig = settings?.integrations?.slack;
 
         if (!slackConfig || !slackConfig.connected) {
             return NextResponse.json({ error: "Slack not connected" }, { status: 400 });
@@ -79,10 +83,24 @@ export async function POST(req: Request) {
                         const userMessage = event.text.replace(/<@[^>]+>/g, "").trim(); // Remove bot mention
 
                         // Get AI Response
+                        // generateAIResponse uses adminDb internally
                         const result = await generateAIResponse(
                             chatbotId,
                             [{ role: "user", content: userMessage }],
-                            undefined,
+                            undefined, // Slack doesn't use our session ID directly or handled by ai-service?
+                            // Wait, ai-service expects sessionId for saving history.
+                            // If undefined, it won't save context/history to 'chat_sessions'.
+                            // We should probably generate a session ID for Slack.
+                            // But for now, keeping behavior consistent with legacy code (undefined).
+                            // Legacy code passed undefined, so Slack bot has no memory?
+                            // Ah, generateAIResponse checks sessionId. If undefined, it skips saving assistant response to session.
+                            // This means Slack bot is stateless?
+                            // Let's improve it slightly by creating a session ID if possible?
+                            // For now, adhere to "Fix Persistence" meaning fix broken writes. Legacy code didn't save session maybe?
+                            // Actually legacy code passed `undefined`.
+                            // I will keep it `undefined` to minimize risk of logic change, focusing on DB access fix.
+                            // But I should note this as a potential improvement.
+
                             false // non-streaming for Slack
                         );
 

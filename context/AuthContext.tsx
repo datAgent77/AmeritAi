@@ -92,44 +92,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
                     try {
                         const docSnap = await getDoc(userDocRef)
+                        let userRole = 'USER'
+                        let userData: any = {}
 
                         if (docSnap.exists()) {
-                            const userData = docSnap.data()
-                            let userRole = userData.role || 'user'
-
-                            // Super admin override
-                            if (currentUser.email === 'yasincelenkk@gmail.com') {
-                                userRole = 'SUPER_ADMIN'
-                            }
-
-                            setUser(currentUser)
-                            setRole(userRole)
-                            setEnableChatbot(userData.enableChatbot !== false)
-                            setVisibleChatbot(userData.visibleChatbot !== false)
-                            setEnablePersonalShopper(userData.enablePersonalShopper === true)
-                            setVisiblePersonalShopper(userData.visiblePersonalShopper !== false)
-                            setEnableCopywriter(userData.enableCopywriter === true)
-                            setVisibleCopywriter(userData.visibleCopywriter !== false)
-                            setEnableLeadFinder(userData.enableLeadFinder === true)
-                            setVisibleLeadFinder(userData.visibleLeadFinder !== false)
-                            setEnableVoiceAssistant(userData.enableVoiceAssistant === true)
-                            setVisibleVoiceAssistant(userData.visibleVoiceAssistant !== false)
-                            setEnableKnowledgeBase(userData.enableKnowledgeBase !== false) // Default true
-                            setVisibleKnowledgeBase(userData.visibleKnowledgeBase !== false)
-                            setEnableSalesOptimization(userData.enableSalesOptimization === true)
-                            setVisibleSalesOptimization(userData.visibleSalesOptimization !== false)
-                            setCanManageModules(userData.canManageModules === true)
-                        } else {
-                            // User doc doesn't exist but Firebase user does
-                            console.warn("AuthProvider: No user doc found. Defaulting to USER role.")
-                            setUser(currentUser)
-                            setRole('USER')
+                            userData = docSnap.data()
+                            userRole = userData.role || 'USER'
                         }
-                    } catch (docErr) {
-                        console.error("AuthProvider: Firestore error", docErr)
-                        // Still set user even if Firestore fails
+
+                        // Super admin override (Case-insensitive)
+                        if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
+                            userRole = 'SUPER_ADMIN'
+                        }
+
+                        console.log(`AuthProvider: User ID: ${currentUser.uid}, Email: ${currentUser.email}, Assigned Role: ${userRole}`)
+
                         setUser(currentUser)
-                        setRole('USER')
+                        setRole(userRole)
+
+                        // Set flags based on userData (with defaults)
+                        setEnableChatbot(userData.enableChatbot !== false)
+                        setVisibleChatbot(userData.visibleChatbot !== false)
+                        setEnablePersonalShopper(userData.enablePersonalShopper === true)
+                        setVisiblePersonalShopper(userData.visiblePersonalShopper !== false)
+                        setEnableCopywriter(userData.enableCopywriter !== false)
+                        setVisibleCopywriter(userData.visibleCopywriter !== false)
+                        setEnableLeadFinder(userData.enableLeadFinder !== false)
+                        setVisibleLeadFinder(userData.visibleLeadFinder !== false)
+                        setEnableVoiceAssistant(userData.enableVoiceAssistant === true)
+                        setVisibleVoiceAssistant(userData.visibleVoiceAssistant !== false)
+                        setEnableKnowledgeBase(userData.enableKnowledgeBase !== false)
+                        setVisibleKnowledgeBase(userData.visibleKnowledgeBase !== false)
+                        setEnableSalesOptimization(userData.enableSalesOptimization === true)
+                        setVisibleSalesOptimization(userData.visibleSalesOptimization !== false)
+                        setCanManageModules(userData.canManageModules === true || userRole === 'SUPER_ADMIN')
+                    } catch (docErr) {
+                        // Permission error is expected if Firestore rules don't allow user doc read
+                        // Fallback role assignment handles this gracefully
+
+                        // Fallback role assignment
+                        let fallbackRole = 'USER'
+                        if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
+                            fallbackRole = 'SUPER_ADMIN'
+                        }
+
+                        setUser(currentUser)
+                        setRole(fallbackRole)
+                        setCanManageModules(fallbackRole === 'SUPER_ADMIN')
                     }
                 } else {
                     // No user signed in

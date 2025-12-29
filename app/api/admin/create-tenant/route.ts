@@ -1,39 +1,22 @@
 import { NextResponse } from "next/server";
-import { initializeApp, getApps, getApp, deleteApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signOut, setPersistence, inMemoryPersistence } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-
-// We need a separate Firebase App instance to create a user without logging out the current admin
-// This is a workaround since we don't have Firebase Admin SDK set up on the server (which requires service account)
-// We will initialize a secondary app with the same config
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
-    let secondaryApp;
     try {
+        const adminDb = getAdminDb();
+        const adminAuth = getAdminAuth();
+
+        if (!adminDb || !adminAuth) {
+            return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 });
+        }
+
         // Get the authorization header to verify the caller is a SUPER_ADMIN
         const authHeader = req.headers.get('authorization');
         if (!authHeader?.startsWith('Bearer ')) {
             return NextResponse.json({ error: "Unauthorized - No token provided" }, { status: 401 });
         }
 
-        // Extract the Firebase ID token
-        const idToken = authHeader.split('Bearer ')[1];
-
-        // Verify the token and get user info
-        // Note: This is a simplified check. Ideally we'd use Firebase Admin SDK to verify the token
-        // For now, we rely on client-side checks and verify the user's role from Firestore
-        // Verify the token and get user info
-        // Note: This is a simplified check. Ideally we'd use Firebase Admin SDK to verify the token
-        // For now, we rely on client-side checks and verify the user's role from Firestore
-        const { email, password, firstName, lastName, companyName, companyWebsite, phone, callerUid, callerRole, enablePersonalShopper, industry } = await req.json();
+        const { email, password, firstName, lastName, companyName, companyWebsite, phone, callerRole, enablePersonalShopper, industry } = await req.json();
 
         // Check if caller is SUPER_ADMIN
         if (callerRole !== 'SUPER_ADMIN') {
@@ -41,27 +24,27 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized - SUPER_ADMIN role required" }, { status: 403 });
         }
 
+        if (!adminAuth || !adminDb) {
+            console.error("Create Tenant API: Firebase Admin not initialized");
+            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        }
+
         console.log("Create Tenant API: Attempting to create user", email);
 
-        // Initialize secondary app with a unique name
-        const appName = `secondary-${Date.now()}`;
-        // Check if app with this name already exists (unlikely with timestamp but good practice)
-        const existingApp = getApps().find(app => app.name === appName);
-        secondaryApp = existingApp || initializeApp(firebaseConfig, appName);
+        // Create user using Admin SDK
+        const userRecord = await adminAuth.createUser({
+            email,
+            password,
+            displayName: `${firstName} ${lastName}`.trim(),
+            disabled: false,
+        });
 
-        const secondaryAuth = getAuth(secondaryApp);
-        // Important: Set persistence to NONE/MEMORY because we are on the server
-        await setPersistence(secondaryAuth, inMemoryPersistence);
+        // Set Custom Claims (Role)
+        await adminAuth.setCustomUserClaims(userRecord.uid, { role: "TENANT_ADMIN" });
 
-        const secondaryDb = getFirestore(secondaryApp);
-
-        // Create user
-        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-        const user = userCredential.user;
-
-        // Create user document in Firestore
-        await setDoc(doc(secondaryDb, "users", user.uid), {
-            email: user.email,
+        // Create user document in Firestore using Admin SDK
+        await adminDb.collection("users").doc(userRecord.uid).set({
+            email: userRecord.email,
             firstName: firstName || "",
             lastName: lastName || "",
             phone: phone || "",
@@ -74,9 +57,9 @@ export async function POST(req: Request) {
             industry: industry || "ecommerce"
         });
 
-        // Initialize Chatbot Document with Industry
-        await setDoc(doc(secondaryDb, "chatbots", user.uid), {
-            id: user.uid,
+        // Initialize Chatbot Document
+        await adminDb.collection("chatbots").doc(userRecord.uid).set({
+            id: userRecord.uid,
             companyName: companyName || "My Company",
             isActive: true,
             createdAt: new Date().toISOString(),
@@ -88,27 +71,17 @@ export async function POST(req: Request) {
             allowedDomains: companyWebsite ? [new URL(companyWebsite).hostname] : []
         });
 
-        // Sign out from secondary app immediately
-        await signOut(secondaryAuth);
-
-        return NextResponse.json({ success: true, userId: user.uid });
+        return NextResponse.json({ success: true, userId: userRecord.uid });
 
     } catch (error: any) {
         console.error("Error creating tenant:", error);
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
 
-        if (error.code === 'auth/email-already-in-use') {
+        if (error.code === 'auth/email-already-exists') {
             return NextResponse.json({
                 error: "Bu e-posta adresi zaten kullanımda. (Not: Daha önce silinen kullanıcıların kayıtları Auth sisteminde kalmış olabilir. Lütfen farklı bir e-posta adresi kullanın.)"
             }, { status: 409 });
         }
 
         return NextResponse.json({ error: error.message || "Failed to create tenant" }, { status: 500 });
-    } finally {
-        // Cleanup secondary app
-        if (secondaryApp) {
-            await deleteApp(secondaryApp);
-        }
     }
 }

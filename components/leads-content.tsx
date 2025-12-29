@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Download, User, Mail, Phone, Calendar, ChevronDown, ChevronUp } from "lucide-react"
@@ -24,6 +25,7 @@ interface LeadsContentProps {
 
 export function LeadsContent({ targetUserId }: LeadsContentProps) {
     const { user } = useAuth()
+    const { t } = useLanguage()
     const [leads, setLeads] = useState<Lead[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
@@ -96,39 +98,39 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
         <div className="p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Leads</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('leads')}</h2>
                     <p className="text-muted-foreground">
-                        Manage and view potential customers captured by your chatbot.
+                        {t('leadsDescription')}
                     </p>
                 </div>
                 <Button onClick={exportToExcel} disabled={leads.length === 0}>
                     <Download className="mr-2 h-4 w-4" />
-                    Export to Excel
+                    {t('exportToExcel')}
                 </Button>
             </div>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Captured Leads</CardTitle>
+                    <CardTitle>{t('capturedLeads')}</CardTitle>
                     <CardDescription>
-                        List of users who provided their contact information.
+                        {t('capturedLeadsDescription')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {leads.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
-                            No leads captured yet. Enable the "Pre-chat Form" in Branding settings to start collecting leads.
+                            {t('noLeadsYet')}
                         </div>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-8"></TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                    <TableHead>Source</TableHead>
-                                    <TableHead className="text-right">Date</TableHead>
+                                    <TableHead>{t('name')}</TableHead>
+                                    <TableHead>{t('email')}</TableHead>
+                                    <TableHead>{t('phone')}</TableHead>
+                                    <TableHead>{t('source')}</TableHead>
+                                    <TableHead className="text-right">{t('date')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

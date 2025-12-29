@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { collection, getDocs, getCountFromServer } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { useEffect, useState, useCallback } from "react"
+import { auth } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Users, Activity, MessageSquare, MessageCircle } from "lucide-react"
@@ -34,48 +33,52 @@ export function SuperAdminDashboard() {
         totalChatSessions: 0
     })
 
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         try {
-            // Fetch Users
-            const usersSnapshot = await getDocs(collection(db, "users"))
-            const usersData = usersSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as UserData[]
+            const currentUser = auth.currentUser
+            if (!currentUser) return
 
-            // Filter for tenants (excluding super admin if needed, but usually good to show all)
-            // For stats, we might want to count only TENANT_ADMIN
-            const tenants = usersData.filter(u => u.role === 'TENANT_ADMIN')
-            const active = tenants.filter(u => u.isActive).length
-
-            // Fetch Chatbots Count
-            const chatbotsSnapshot = await getCountFromServer(collection(db, "chatbots"))
-
-            // Fetch Chat Sessions Count
-            const sessionsSnapshot = await getCountFromServer(collection(db, "chat_sessions"))
-
-            setStats({
-                totalTenants: tenants.length,
-                activeTenants: active,
-                totalChatbots: chatbotsSnapshot.data().count,
-                totalChatSessions: sessionsSnapshot.data().count
+            const token = await currentUser.getIdToken()
+            const response = await fetch("/api/admin/dashboard-stats", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
             })
 
-        } catch (error) {
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || "Failed to fetch dashboard data")
+            }
+
+            const data = await response.json()
+
+            setStats({
+                totalTenants: data.stats?.totalTenants || 0,
+                activeTenants: data.stats?.activeTenants || 0,
+                totalChatbots: data.stats?.totalChatbots || 0,
+                totalChatSessions: data.stats?.totalChatSessions || 0
+            })
+
+        } catch (error: any) {
             console.error("Error fetching dashboard data:", error)
             toast({
                 title: "Error",
-                description: "Failed to load dashboard data.",
+                description: error.message || "Failed to load dashboard data.",
                 variant: "destructive",
             })
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [toast])
 
     useEffect(() => {
-        fetchDashboardData()
-    }, [])
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetchDashboardData()
+            }
+        })
+        return () => unsubscribe()
+    }, [fetchDashboardData])
 
     if (isLoading) {
         return (

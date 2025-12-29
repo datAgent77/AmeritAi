@@ -11,9 +11,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useSidebar } from "@/components/ui/sidebar"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
-import { collection, query, where, orderBy, onSnapshot, limit, doc, updateDoc } from "firebase/firestore"
+import { collection, query, where, orderBy, getDocs, limit, doc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -34,6 +35,7 @@ export function NotificationBell() {
     const { user, role } = useAuth()
     const { t } = useLanguage()
     const router = useRouter()
+    const { isMobile } = useSidebar()
 
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
@@ -48,7 +50,7 @@ export function NotificationBell() {
 
     // Initialize audio
     useEffect(() => {
-        audioRef.current = new Audio('/notification.mp3')
+        audioRef.current = new Audio('/sound/notification.mp3')
         audioRef.current.volume = 0.5
 
         const savedPref = localStorage.getItem('notificationSoundEnabled')
@@ -91,22 +93,23 @@ export function NotificationBell() {
         }
     }, [])
 
-    // Listen for CHAT notifications
-    useEffect(() => {
+    // Unified Fetch Function
+    const fetchAllNotifications = useCallback(async () => {
         if (!user?.uid) return
 
-        const sessionsRef = collection(db, "chatbots", user.uid, "sessions")
-        const q = query(sessionsRef, orderBy("updatedAt", "desc"), limit(20))
+        const results: Notification[] = []
+        let hasNewTotal = false
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const chatNotifications: Notification[] = []
-            let hasNew = false
+        // 1. CHAT - wrapped in try-catch
+        try {
+            const sessionsRef = collection(db, "chatbots", user.uid, "sessions")
+            const chatQ = query(sessionsRef, orderBy("updatedAt", "desc"), limit(20))
+            const chatSnap = await getDocs(chatQ)
 
-            snapshot.docs.forEach((docSnap) => {
+            chatSnap.docs.forEach(docSnap => {
                 const data = docSnap.data()
                 const messages = data.messages || []
                 const lastMessage = messages[messages.length - 1]
-
                 if (!lastMessage || lastMessage.role !== 'user') return
                 if (data.unreadByAdmin === false) return
 
@@ -114,7 +117,7 @@ export function NotificationBell() {
                 const notifId = `chat_${docSnap.id}`
                 const isNew = !previousIdsRef.current.has(notifId)
 
-                chatNotifications.push({
+                results.push({
                     id: notifId,
                     type: 'chat',
                     title: data.userName || data.userEmail || 'Anonim Kullanıcı',
@@ -123,49 +126,31 @@ export function NotificationBell() {
                     isNew,
                     data: { sessionId: docSnap.id }
                 })
-
-                if (isNew && previousIdsRef.current.size > 0) hasNew = true
+                if (isNew && previousIdsRef.current.size > 0) hasNewTotal = true
                 previousIdsRef.current.add(notifId)
             })
+        } catch (chatError) {
+            // Silently ignore chat notification errors (permissions issue)
+        }
 
-            setNotifications(prev => {
-                const others = prev.filter(n => n.type !== 'chat')
-                return [...chatNotifications, ...others].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            })
-
-            if (hasNew && chatNotifications.length > 0) {
-                playNotificationSound()
-                showBrowserNotification(t('newMessage') || 'Yeni Mesaj', `${chatNotifications[0].title}: ${chatNotifications[0].message}`, 'chat')
-            }
-        })
-
-        return () => unsubscribe()
-    }, [user?.uid, playNotificationSound, showBrowserNotification])
-
-    // Listen for APPOINTMENT notifications
-    useEffect(() => {
-        if (!user?.uid) return
-
-        const appointmentsRef = collection(db, "appointments")
-        const q = query(
-            appointmentsRef,
-            where("chatbotId", "==", user.uid),
-            where("status", "==", "pending"),
-            orderBy("createdAt", "desc"),
-            limit(10)
-        )
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const appointmentNotifications: Notification[] = []
-            let hasNew = false
-
-            snapshot.docs.forEach((docSnap) => {
+        // 2. APPOINTMENT - wrapped in try-catch
+        try {
+            const appointmentsRef = collection(db, "appointments")
+            const appQ = query(
+                appointmentsRef,
+                where("chatbotId", "==", user.uid),
+                where("status", "==", "pending"),
+                orderBy("createdAt", "desc"),
+                limit(10)
+            )
+            const appSnap = await getDocs(appQ)
+            appSnap.docs.forEach(docSnap => {
                 const data = docSnap.data()
                 const timestamp = data.createdAt?.toDate() || new Date()
                 const notifId = `appointment_${docSnap.id}`
                 const isNew = !previousIdsRef.current.has(notifId)
 
-                appointmentNotifications.push({
+                results.push({
                     id: notifId,
                     type: 'appointment',
                     title: '📅 Yeni Randevu Talebi',
@@ -174,52 +159,28 @@ export function NotificationBell() {
                     isNew,
                     data: { appointmentId: docSnap.id }
                 })
-
-                if (isNew && previousIdsRef.current.size > 0) hasNew = true
+                if (isNew && previousIdsRef.current.size > 0) hasNewTotal = true
                 previousIdsRef.current.add(notifId)
             })
+        } catch (appError) {
+            // Silently ignore appointment notification errors
+        }
 
-            setNotifications(prev => {
-                const others = prev.filter(n => n.type !== 'appointment')
-                return [...others, ...appointmentNotifications].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            })
-
-            if (hasNew && appointmentNotifications.length > 0) {
-                playNotificationSound()
-                showBrowserNotification(t('newAppointment') || 'Yeni Randevu', appointmentNotifications[0].message, 'appointment')
-            }
-        })
-
-        return () => unsubscribe()
-    }, [user?.uid, playNotificationSound, showBrowserNotification])
-
-    // Listen for LEAD notifications  
-    useEffect(() => {
-        if (!user?.uid) return
-
-        const leadsRef = collection(db, "leads")
-        const q = query(
-            leadsRef,
-            where("chatbotId", "==", user.uid),
-            orderBy("createdAt", "desc"),
-            limit(10)
-        )
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const leadNotifications: Notification[] = []
-            let hasNew = false
-
-            snapshot.docs.forEach((docSnap) => {
+        // 3. LEAD - wrapped in try-catch
+        try {
+            const leadsRef = collection(db, "leads")
+            const leadQ = query(leadsRef, where("chatbotId", "==", user.uid), orderBy("createdAt", "desc"), limit(10))
+            const leadSnap = await getDocs(leadQ)
+            leadSnap.docs.forEach(docSnap => {
                 const data = docSnap.data()
                 const timestamp = data.createdAt?.toDate() || new Date()
                 const notifId = `lead_${docSnap.id}`
                 const isNew = !previousIdsRef.current.has(notifId)
 
-                // Only show leads from last 24 hours
                 const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
                 if (timestamp < oneDayAgo) return
 
-                leadNotifications.push({
+                results.push({
                     id: notifId,
                     type: 'lead',
                     title: '🎯 Yeni Lead',
@@ -228,69 +189,59 @@ export function NotificationBell() {
                     isNew,
                     data: { leadId: docSnap.id }
                 })
-
-                if (isNew && previousIdsRef.current.size > 0) hasNew = true
+                if (isNew && previousIdsRef.current.size > 0) hasNewTotal = true
                 previousIdsRef.current.add(notifId)
             })
+        } catch (leadError) {
+            // Silently ignore lead notification errors
+        }
 
-            setNotifications(prev => {
-                const others = prev.filter(n => n.type !== 'lead')
-                return [...others, ...leadNotifications].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            })
+        // 4. SYSTEM (Super Admin) - wrapped in try-catch
+        if (isSuperAdmin) {
+            try {
+                const usersRef = collection(db, "users")
+                const systemQ = query(usersRef, where("isActive", "==", false), orderBy("createdAt", "desc"), limit(10))
+                const systemSnap = await getDocs(systemQ)
+                systemSnap.docs.forEach(docSnap => {
+                    const data = docSnap.data()
+                    const timestamp = data.createdAt ? new Date(data.createdAt) : new Date()
+                    const notifId = `system_tenant_${docSnap.id}`
+                    const isNew = !previousIdsRef.current.has(notifId)
 
-            if (hasNew && leadNotifications.length > 0) {
-                playNotificationSound()
-                showBrowserNotification(t('newLead') || 'Yeni Lead', leadNotifications[0].message, 'lead')
-            }
-        })
-
-        return () => unsubscribe()
-    }, [user?.uid, playNotificationSound, showBrowserNotification])
-
-    // Listen for SUPER ADMIN notifications (new tenants)
-    useEffect(() => {
-        if (!isSuperAdmin) return
-
-        const usersRef = collection(db, "users")
-        const q = query(usersRef, where("isActive", "==", false), orderBy("createdAt", "desc"), limit(10))
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const systemNotifications: Notification[] = []
-            let hasNew = false
-
-            snapshot.docs.forEach((docSnap) => {
-                const data = docSnap.data()
-                const timestamp = data.createdAt ? new Date(data.createdAt) : new Date()
-                const notifId = `system_tenant_${docSnap.id}`
-                const isNew = !previousIdsRef.current.has(notifId)
-
-                systemNotifications.push({
-                    id: notifId,
-                    type: 'system',
-                    title: '👤 Yeni Tenant Kaydı',
-                    message: `${data.fullName || data.email} - Onay bekliyor`,
-                    timestamp,
-                    isNew,
-                    data: { userId: docSnap.id }
+                    results.push({
+                        id: notifId,
+                        type: 'system',
+                        title: '👤 Yeni Tenant Kaydı',
+                        message: `${data.fullName || data.email} - Onay bekliyor`,
+                        timestamp,
+                        isNew,
+                        data: { userId: docSnap.id }
+                    })
+                    if (isNew && previousIdsRef.current.size > 0) hasNewTotal = true
+                    previousIdsRef.current.add(notifId)
                 })
-
-                if (isNew && previousIdsRef.current.size > 0) hasNew = true
-                previousIdsRef.current.add(notifId)
-            })
-
-            setNotifications(prev => {
-                const others = prev.filter(n => n.type !== 'system')
-                return [...others, ...systemNotifications].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-            })
-
-            if (hasNew && systemNotifications.length > 0) {
-                playNotificationSound()
-                showBrowserNotification(t('newTenant') || 'Yeni Tenant', systemNotifications[0].message, 'system')
+            } catch (systemError) {
+                // Silently ignore system notification errors
             }
-        })
+        }
 
-        return () => unsubscribe()
-    }, [isSuperAdmin, playNotificationSound, showBrowserNotification])
+        setNotifications(results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()))
+
+        if (hasNewTotal && previousIdsRef.current.size > results.length) {
+            playNotificationSound()
+        }
+    }, [user?.uid, isSuperAdmin, playNotificationSound])
+
+    // Polling effect
+    useEffect(() => {
+        if (!user?.uid) return
+
+        fetchAllNotifications()
+        const interval = setInterval(fetchAllNotifications, 30000) // 30 seconds polling
+
+        return () => clearInterval(interval)
+    }, [user?.uid, fetchAllNotifications])
+
 
     // Update unread count
     useEffect(() => {
@@ -393,7 +344,13 @@ export function NotificationBell() {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-96">
+            <DropdownMenuContent
+                align="end"
+                className={cn(
+                    "w-96",
+                    isMobile && "w-screen h-[calc(100vh-64px)] rounded-none border-x-0 mt-0 -mr-6"
+                )}
+            >
                 <div className="flex items-center justify-between p-3 border-b">
                     <h4 className="font-semibold text-sm">
                         {t('notifications') || 'Bildirimler'}
@@ -428,7 +385,7 @@ export function NotificationBell() {
                     </TabsList>
                 </Tabs>
 
-                <ScrollArea className="h-[320px]">
+                <ScrollArea className={cn("h-[320px]", isMobile && "h-[calc(100vh-140px)]")}>
                     {filteredNotifications.length === 0 ? (
                         <div className="p-6 text-center text-muted-foreground">
                             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />

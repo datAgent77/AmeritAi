@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Bot, User, Loader2 } from "lucide-react"
 
 interface ActivityItem {
@@ -22,42 +21,44 @@ export function AdminActivityFeed() {
     useEffect(() => {
         const fetchActivity = async () => {
             try {
-                // Fetch recent users
-                const usersQuery = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5))
-                const usersSnapshot = await getDocs(usersQuery)
-                const userActivities: ActivityItem[] = usersSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    type: 'user',
-                    title: "New User Registered",
-                    subtitle: doc.data().email,
-                    timestamp: new Date(doc.data().createdAt)
-                }))
+                const currentUser = auth.currentUser
+                if (!currentUser) return
 
-                // Fetch recent chatbots
-                const chatbotsQuery = query(collection(db, "chatbots"), orderBy("createdAt", "desc"), limit(5))
-                const chatbotsSnapshot = await getDocs(chatbotsQuery)
-                const chatbotActivities: ActivityItem[] = chatbotsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    type: 'chatbot',
-                    title: "New Chatbot Created",
-                    subtitle: doc.data().name,
-                    timestamp: new Date(doc.data().createdAt)
-                }))
+                const token = await currentUser.getIdToken()
+                const response = await fetch("/api/admin/dashboard-stats", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
 
-                // Merge and sort
-                const allActivities = [...userActivities, ...chatbotActivities]
-                    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-                    .slice(0, 5) // Keep only top 5
-
-                setActivities(allActivities)
+                if (response.ok) {
+                    const data = await response.json()
+                    // Map recentActivity to ActivityItem format
+                    const activityItems: ActivityItem[] = (data.recentActivity || []).map((item: any) => ({
+                        id: item.id,
+                        type: 'user' as const,
+                        title: "New User Registered",
+                        subtitle: item.userEmail,
+                        timestamp: item.timestamp?.seconds
+                            ? new Date(item.timestamp.seconds * 1000)
+                            : new Date()
+                    }))
+                    setActivities(activityItems)
+                }
             } catch (error) {
-                console.error("Error fetching activity feed:", error)
+                console.warn("AdminActivityFeed: Could not fetch activity")
             } finally {
                 setIsLoading(false)
             }
         }
 
-        fetchActivity()
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetchActivity()
+            }
+        })
+
+        return () => unsubscribe()
     }, [])
 
     if (isLoading) {

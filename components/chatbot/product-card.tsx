@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingCart, ExternalLink } from 'lucide-react';
+import Image from "next/image";
 
 interface Product {
     name: string;
@@ -21,11 +22,16 @@ export function ProductCard({ product, onAddToCart, brandColor = '#000000' }: Pr
         <div className="flex flex-col w-full max-w-[240px] bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300 my-2">
             <div className="relative h-32 w-full bg-gray-100 overflow-hidden group">
                 {product.imageUrl ? (
-                    <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
+                    <div className="relative w-full h-full">
+                        <Image
+                            src={product.imageUrl}
+                            alt={product.name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, 240px"
+                            unoptimized
+                        />
+                    </div>
                 ) : (
                     <div className="flex items-center justify-center w-full h-full text-gray-400">
                         <ShoppingCart className="w-8 h-8 opacity-20" />

@@ -1,8 +1,12 @@
-import { db } from "@/lib/firebase";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
+    const adminDb = getAdminDb();
     try {
+        if (!adminDb) {
+            return new Response(JSON.stringify({ error: "Firebase Admin not initialized" }), { status: 500 });
+        }
+
         const { userId, botToken } = await req.json();
 
         if (!userId || !botToken) {
@@ -20,9 +24,6 @@ export async function POST(req: Request) {
         const botName = telegramData.result.username;
 
         // 2. Set Webhook
-        // Construct the webhook URL based on the request origin or a configured base URL
-        // For local development, this needs to be a public URL (e.g., ngrok). 
-        // In production, it's the deployed domain.
         const origin = new URL(req.url).origin;
         const webhookUrl = `${origin}/api/integrations/telegram/webhook?chatbotId=${userId}`;
 
@@ -33,14 +34,11 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "Failed to set webhook", details: setWebhookData }), { status: 500 });
         }
 
-        // 3. Save to Firestore
-        const chatbotRef = doc(db, "chatbots", userId);
+        // 3. Save to Firestore via Admin SDK
+        const chatbotRef = adminDb.collection("chatbots").doc(userId);
 
-        // We use setDoc with merge: true to ensure we don't overwrite other fields
-        // But here we want to update a nested field. 
-        // Firestore updateDoc with dot notation is best for nested fields.
-
-        await updateDoc(chatbotRef, {
+        // Update strictly nested field using dot notation
+        await chatbotRef.update({
             "integrations.telegram": {
                 connected: true,
                 botToken: botToken,
@@ -49,9 +47,9 @@ export async function POST(req: Request) {
                 connectedAt: new Date().toISOString()
             }
         }).catch(async (err) => {
-            // If document doesn't exist, create it (fallback)
-            if (err.code === 'not-found') {
-                await setDoc(chatbotRef, {
+            // If document doesn't exist or update fails on missing field, fallback to set with merge
+            if (err.code === 5 || err.code === 'not-found') { // 5 is NOT_FOUND in some gRPC errors
+                await chatbotRef.set({
                     integrations: {
                         telegram: {
                             connected: true,

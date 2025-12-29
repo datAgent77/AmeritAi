@@ -58,7 +58,7 @@ export default function TenantPermissionsPage({ params }: { params: { userId: st
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">Uygulama Erişimleri</h2>
                 <p className="text-muted-foreground">
-                    Tenant'ın kullanabileceği modülleri ve araçları yönetin.
+                    Tenant&apos;ın kullanabileceği modülleri ve araçları yönetin.
                 </p>
             </div>
 

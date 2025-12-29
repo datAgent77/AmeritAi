@@ -34,7 +34,7 @@ export default function NotificationSettingsPage() {
         setSoundEnabled(checked)
         localStorage.setItem('notificationSoundEnabled', String(checked))
         if (checked) {
-            const audio = new Audio('/notification.mp3')
+            const audio = new Audio('/sound/notification.mp3')
             audio.volume = 0.5
             audio.play().catch(e => console.log(e))
         }
@@ -66,7 +66,7 @@ export default function NotificationSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="space-y-6 max-w-6xl">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">{t('notificationSettings')}</h2>
             </div>

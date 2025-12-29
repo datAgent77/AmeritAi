@@ -50,7 +50,11 @@ export default function WhyPage() {
 
     return (
         <div className="dark min-h-screen bg-black text-white font-sans relative overflow-hidden">
-            <PublicHeader />
+            <PublicHeader transparent={true} />
+
+            <div className="absolute top-0 left-0 w-full h-[120vh] min-h-[800px] overflow-hidden -z-10">
+                <HeroBackground />
+            </div>
 
             {/* Breadcrumb */}
             <div className="container mx-auto px-4 pt-24 pb-4 relative z-10">
@@ -66,7 +70,6 @@ export default function WhyPage() {
 
             {/* Hero */}
             <section className="relative pt-12 pb-20 overflow-hidden border-b border-white/5">
-                <HeroBackground />
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-4xl mx-auto text-center space-y-6 animate-in fade-in zoom-in-95 duration-700">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-zinc-400 backdrop-blur-sm">

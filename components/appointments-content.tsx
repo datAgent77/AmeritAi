@@ -1,8 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { collection, query, where, doc, updateDoc, onSnapshot } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import {
@@ -15,11 +13,17 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, Mail, Phone, CheckCircle2, XCircle, Clock3 } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Calendar, Clock, Mail, Phone, CheckCircle2, XCircle, Clock3, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { tr, enUS } from 'date-fns/locale'
 import { useToast } from "@/hooks/use-toast"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { CalendarDays, ExternalLink, AlertCircle, MessageSquare } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Appointment {
     id: string
@@ -31,7 +35,17 @@ interface Appointment {
     type: string
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
     notes?: string
+    source?: 'chatbot' | 'google' | 'outlook'
     createdAt: any
+}
+
+interface AppointmentSettings {
+    workingDays: string[]
+    workingHoursStart: string
+    workingHoursEnd: string
+    appointmentDuration: number
+    googleCalendarConnected: boolean
+    outlookCalendarConnected: boolean
 }
 
 interface AppointmentsContentProps {
@@ -44,177 +58,534 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
     const { toast } = useToast()
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [settings, setSettings] = useState<AppointmentSettings>({
+        workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+        workingHoursStart: '09:00',
+        workingHoursEnd: '18:00',
+        appointmentDuration: 30,
+        googleCalendarConnected: false,
+        outlookCalendarConnected: false
+    })
 
-    // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (!effectiveUserId) return
+        setIsLoading(true)
 
-        const q = query(collection(db, "appointments"), where("chatbotId", "==", effectiveUserId))
+        try {
+            // Fetch appointments via API
+            const apptRes = await fetch(`/api/appointments?chatbotId=${effectiveUserId}`)
+            if (apptRes.ok) {
+                const apptData = await apptRes.json()
+                setAppointments(apptData.appointments || [])
+            }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Appointment[]
-
-            // Sort by date and time
-            data.sort((a, b) => {
-                const dateA = new Date(`${a.date}T${a.time}`)
-                const dateB = new Date(`${b.date}T${b.time}`)
-                return dateB.getTime() - dateA.getTime()
+            // Fetch settings via API
+            const settingsRes = await fetch(`/api/appointments/settings?chatbotId=${effectiveUserId}`)
+            if (settingsRes.ok) {
+                const settingsData = await settingsRes.json()
+                if (settingsData.settings) {
+                    setSettings(prev => ({ ...prev, ...settingsData.settings }))
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error)
+            toast({
+                title: t('error'),
+                description: t('appointmentsFetchFailed'),
+                variant: "destructive"
             })
-
-            setAppointments(data)
+        } finally {
             setIsLoading(false)
-        }, (error) => {
-            console.error("Error fetching appointments:", error)
-            setIsLoading(false)
-        })
+        }
+    }, [effectiveUserId, t, toast])
 
-        return () => unsubscribe()
-    }, [effectiveUserId])
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
 
     const updateStatus = async (id: string, newStatus: Appointment['status']) => {
         try {
-            await updateDoc(doc(db, "appointments", id), {
-                status: newStatus
-            })
-            toast({
-                title: t('success') || "Success",
-                description: t('statusUpdated') || "Appointment status updated successfully.",
-            })
-        } catch (error) {
+            let res;
+
+            // Should we use the approve endpoint?
+            if (newStatus === 'confirmed') {
+                res = await fetch(`/api/appointments/${id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } else {
+                // Use standard update for other statuses
+                res = await fetch(`/api/appointments/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+            }
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setAppointments(prev => prev.map(appt =>
+                    appt.id === id ? { ...appt, status: newStatus } : appt
+                ))
+
+                // Show specific success message
+                if (newStatus === 'confirmed' && data.emailSent) {
+                    toast({
+                        title: t('success'),
+                        description: t('appointmentConfirmedEmailSent') || "Randevu onaylandı ve müşteriye e-posta gönderildi.",
+                    })
+                } else {
+                    toast({
+                        title: t('success'),
+                        description: t('statusUpdated'),
+                    })
+                }
+            } else {
+                throw new Error(data.error || 'Failed to update')
+            }
+        } catch (error: any) {
             console.error("Error updating status:", error)
             toast({
-                title: t('error') || "Error",
-                description: t('statusUpdateFailed') || "Failed to update status.",
+                title: t('error'),
+                description: error.message || t('statusUpdateFailed'),
                 variant: "destructive"
             })
         }
     }
 
+    const handleSaveSettings = async () => {
+        if (!effectiveUserId) return
+        try {
+            const res = await fetch('/api/appointments/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatbotId: effectiveUserId, ...settings })
+            })
+
+            if (res.ok) {
+                toast({
+                    title: t('success'),
+                    description: t('settingsSaved'),
+                })
+            } else {
+                throw new Error('Failed to save')
+            }
+        } catch (error) {
+            console.error("Error saving settings:", error)
+            toast({
+                title: t('error'),
+                description: t('settingsSaveFailed'),
+                variant: "destructive"
+            })
+        }
+    }
+
+    const handleIntegrationConnect = async (provider: 'google' | 'outlook') => {
+        if (!effectiveUserId) return
+
+        try {
+            // If already connected, disconnect
+            if ((provider === 'google' && settings.googleCalendarConnected) ||
+                (provider === 'outlook' && settings.outlookCalendarConnected)) {
+                // Disconnect logic
+                const res = await fetch('/api/appointments/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatbotId: effectiveUserId,
+                        [provider === 'google' ? 'googleCalendarConnected' : 'outlookCalendarConnected']: false
+                    })
+                })
+                if (res.ok) {
+                    setSettings(prev => ({
+                        ...prev,
+                        [provider === 'google' ? 'googleCalendarConnected' : 'outlookCalendarConnected']: false
+                    }))
+                    toast({
+                        title: t('success'),
+                        description: language === 'tr' ? 'Bağlantı kaldırıldı' : 'Disconnected successfully',
+                    })
+                }
+                return
+            }
+
+            // Get OAuth URL and redirect
+            const authRes = await fetch(`/api/calendar/${provider}/auth?chatbotId=${effectiveUserId}`)
+            const authData = await authRes.json()
+
+            if (authData.error) {
+                toast({
+                    title: t('error'),
+                    description: authData.error,
+                    variant: "destructive"
+                })
+                return
+            }
+
+            if (authData.authUrl) {
+                // Redirect to OAuth consent screen
+                window.location.href = authData.authUrl
+            }
+        } catch (error: any) {
+            console.error("Integration connect error:", error)
+            toast({
+                title: t('error'),
+                description: error.message || 'Connection failed',
+                variant: "destructive"
+            })
+        }
+    }
+
+    const toggleDay = (day: string) => {
+        setSettings((prev: AppointmentSettings) => ({
+            ...prev,
+            workingDays: prev.workingDays.includes(day)
+                ? prev.workingDays.filter(d => d !== day)
+                : [...prev.workingDays, day]
+        }))
+    }
+
     const getStatusBadge = (status: Appointment['status']) => {
         switch (status) {
             case 'confirmed':
-                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" /> {t('confirmed') || "Confirmed"}</Badge>
+                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" /> {t('apptConfirm')}</Badge>
             case 'cancelled':
-                return <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200"><XCircle className="w-3 h-3 mr-1" /> {t('cancelled') || "Cancelled"}</Badge>
+                return <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200"><XCircle className="w-3 h-3 mr-1" /> {t('apptCancel')}</Badge>
             case 'completed':
-                return <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200"><CheckCircle2 className="w-3 h-3 mr-1" /> {t('completed') || "Completed"}</Badge>
+                return <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200"><CheckCircle2 className="w-3 h-3 mr-1" /> {t('apptComplete')}</Badge>
             default:
                 return <Badge variant="outline" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-yellow-200"><Clock3 className="w-3 h-3 mr-1" /> {t('pending') || "Pending"}</Badge>
         }
     }
 
+    const getSourceBadge = (source?: string) => {
+        switch (source) {
+            case 'google':
+                return <Badge variant="outline" className="text-xs"><CalendarDays className="w-3 h-3 mr-1" />Google</Badge>
+            case 'outlook':
+                return <Badge variant="outline" className="text-xs"><Mail className="w-3 h-3 mr-1" />Outlook</Badge>
+            default:
+                return <Badge variant="outline" className="text-xs"><MessageSquare className="w-3 h-3 mr-1" />Chatbot</Badge>
+        }
+    }
+
+    const daysMap = [
+        { key: 'Mon', label: language === 'tr' ? 'Pzt' : 'Mon' },
+        { key: 'Tue', label: language === 'tr' ? 'Sal' : 'Tue' },
+        { key: 'Wed', label: language === 'tr' ? 'Çar' : 'Wed' },
+        { key: 'Thu', label: language === 'tr' ? 'Per' : 'Thu' },
+        { key: 'Fri', label: language === 'tr' ? 'Cum' : 'Fri' },
+        { key: 'Sat', label: language === 'tr' ? 'Cmt' : 'Sat' },
+        { key: 'Sun', label: language === 'tr' ? 'Paz' : 'Sun' },
+    ]
+
     return (
-        <div className="p-8 space-y-8">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">{t('appointments') || "Appointments"}</h2>
-                <p className="text-muted-foreground">{t('manageAppointmentsDesc') || "View and manage your customer bookings."}</p>
+        <div className="p-8 space-y-8 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('appointments')}</h2>
+                    <p className="text-muted-foreground">{t('manageAppointmentsDesc')}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    {t('refresh') || 'Refresh'}
+                </Button>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('upcomingAppointments') || "Upcoming Appointments"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center p-8">Loading...</div>
-                    ) : appointments.length === 0 ? (
-                        <div className="text-center py-12 text-muted-foreground">
-                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                            <p>{t('noAppointmentsYet') || "No appointments booked yet."}</p>
+            <Tabs defaultValue="overview" className="space-y-4">
+                <TabsList>
+                    <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
+                    <TabsTrigger value="settings">{t('availabilitySettings')}</TabsTrigger>
+                    <TabsTrigger value="integrations">{t('integrations')}</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="space-y-4">
+                    <Alert className="flex items-start gap-3">
+                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                        <div className="space-y-2">
+                            <AlertTitle className="mb-1">{t('howItWorks') || "Nasıl Çalışır?"}</AlertTitle>
+                            <AlertDescription className="text-sm">
+                                {t('appointmentsHowItWorks') || "Randevular, müşteriler chatbot üzerinden rezervasyon yaptığında otomatik olarak oluşturulur. Tüm rezervasyonları buradan yönetebilirsiniz."}
+                            </AlertDescription>
                         </div>
-                    ) : (
-                        <div className="rounded-md border overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>{t('customer') || "Customer"}</TableHead>
-                                        <TableHead>{t('dateTime') || "Date & Time"}</TableHead>
-                                        <TableHead>{t('type') || "Type"}</TableHead>
-                                        <TableHead>{t('status') || "Status"}</TableHead>
-                                        <TableHead className="text-right">{t('actions') || "Actions"}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {appointments.map((appt) => (
-                                        <TableRow key={appt.id}>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{appt.customerName}</span>
-                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                        <Mail className="w-3 h-3" /> {appt.customerEmail}
-                                                    </div>
-                                                    {appt.customerPhone && (
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                            <Phone className="w-3 h-3" /> {appt.customerPhone}
+                    </Alert>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('upcomingAppointments')}</CardTitle>
+                            <CardDescription>
+                                {t('appointmentsFromChatbot') || "Chatbot ve senkronize takvimlerden gelen randevular"}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : appointments.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                    <p>{t('noAppointmentsYet')}</p>
+                                    <p className="text-sm mt-2">{t('appointmentsWillAppearHere') || "Müşteriler chatbot üzerinden randevu aldığında burada görünecek."}</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>{t('customer')}</TableHead>
+                                                <TableHead>{t('dateTime')}</TableHead>
+                                                <TableHead>{t('apptType') || "Tür"}</TableHead>
+                                                <TableHead>{t('source') || "Kaynak"}</TableHead>
+                                                <TableHead>{t('status')}</TableHead>
+                                                <TableHead className="text-right">{t('apptActions') || "İşlemler"}</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {appointments.map((appt) => (
+                                                <TableRow key={appt.id}>
+                                                    <TableCell>
+                                                        <div>
+                                                            <div className="font-medium">{appt.customerName}</div>
+                                                            {appt.customerEmail && (
+                                                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                                    <Mail className="w-3 h-3" />{appt.customerEmail}
+                                                                </div>
+                                                            )}
+                                                            {appt.customerPhone && (
+                                                                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                                    <Phone className="w-3 h-3" />{appt.customerPhone}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center gap-2 font-medium">
-                                                        <Calendar className="w-3 h-3 text-muted-foreground" />
-                                                        {format(new Date(appt.date), 'dd MMMM yyyy', { locale: language === 'tr' ? tr : enUS })}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                        <Clock className="w-3 h-3" />
-                                                        {appt.time}
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{appt.type}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {getStatusBadge(appt.status)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    {appt.status === 'pending' && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                            onClick={() => updateStatus(appt.id, 'confirmed')}
-                                                        >
-                                                            {t('confirm') || "Confirm"}
-                                                        </Button>
-                                                    )}
-                                                    {appt.status === 'confirmed' && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                            onClick={() => updateStatus(appt.id, 'completed')}
-                                                        >
-                                                            {t('complete') || "Complete"}
-                                                        </Button>
-                                                    )}
-                                                    {appt.status !== 'cancelled' && appt.status !== 'completed' && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                            onClick={() => updateStatus(appt.id, 'cancelled')}
-                                                        >
-                                                            {t('cancel') || "Cancel"}
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                            {appt.date && (() => {
+                                                                const dateObj = new Date(appt.date);
+                                                                return !isNaN(dateObj.getTime())
+                                                                    ? format(dateObj, 'dd MMMM yyyy', { locale: language === 'tr' ? tr : enUS })
+                                                                    : appt.date;
+                                                            })()}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                            <Clock className="w-3 h-3" />
+                                                            {appt.time}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{appt.type}</TableCell>
+                                                    <TableCell>{getSourceBadge(appt.source)}</TableCell>
+                                                    <TableCell>{getStatusBadge(appt.status)}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            {appt.status === 'pending' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                    onClick={() => updateStatus(appt.id, 'confirmed')}
+                                                                >
+                                                                    {t('apptConfirm')}
+                                                                </Button>
+                                                            )}
+                                                            {appt.status === 'confirmed' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                                    onClick={() => updateStatus(appt.id, 'completed')}
+                                                                >
+                                                                    {t('apptComplete')}
+                                                                </Button>
+                                                            )}
+                                                            {appt.status !== 'cancelled' && appt.status !== 'completed' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                    onClick={() => updateStatus(appt.id, 'cancelled')}
+                                                                >
+                                                                    {t('apptCancel')}
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="settings" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('availabilitySettings')}</CardTitle>
+                            <CardDescription>
+                                {t('availabilitySettingsDesc') || "Müşterilerin chatbot üzerinden randevu alabileceği zamanları ayarlayın."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium">{t('workingDays')}</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {daysMap.map(day => (
+                                        <div key={day.key} className="flex items-center space-x-2 border p-3 rounded-lg">
+                                            <Switch
+                                                id={`day-${day.key}`}
+                                                checked={settings.workingDays.includes(day.key)}
+                                                onCheckedChange={() => toggleDay(day.key)}
+                                            />
+                                            <Label htmlFor={`day-${day.key}`}>{day.label}</Label>
+                                        </div>
                                     ))}
-                                </TableBody>
-                            </Table>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-medium">{t('workingHours') || "Çalışma Saatleri"}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>{t('workingHoursStart')}</Label>
+                                        <Input
+                                            type="time"
+                                            value={settings.workingHoursStart}
+                                            onChange={(e) => setSettings({ ...settings, workingHoursStart: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('workingHoursEnd')}</Label>
+                                        <Input
+                                            type="time"
+                                            value={settings.workingHoursEnd}
+                                            onChange={(e) => setSettings({ ...settings, workingHoursEnd: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>{t('appointmentDuration')}</Label>
+                                <Input
+                                    type="number"
+                                    value={settings.appointmentDuration}
+                                    onChange={(e) => setSettings({ ...settings, appointmentDuration: parseInt(e.target.value) })}
+                                />
+                            </div>
+
+                            <div className="pt-4">
+                                <Button onClick={handleSaveSettings}>{t('saveSettings') || "Ayarları Kaydet"}</Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="integrations" className="space-y-4">
+                    {/* Integration Guide */}
+                    <Alert className="flex items-start gap-3">
+                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                        <div className="space-y-2">
+                            <AlertTitle className="mb-1">{language === 'tr' ? 'Takvim Entegrasyonu Rehberi' : 'Calendar Integration Guide'}</AlertTitle>
+                            <AlertDescription className="space-y-2 text-sm">
+                                <p>{language === 'tr'
+                                    ? 'Takviminizi bağlayarak müşterilerinizin sadece müsait olduğunuz zamanlarda randevu almasını sağlayabilirsiniz.'
+                                    : 'Connect your calendar to ensure customers can only book appointments when you are available.'}</p>
+                                <div className="mt-2 p-3 bg-muted/50 rounded-md space-y-1">
+                                    <p className="font-medium">{language === 'tr' ? 'Kurulum Adımları:' : 'Setup Steps:'}</p>
+                                    <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                                        <li>{language === 'tr'
+                                            ? 'Google Cloud Console veya Azure Portal\'dan OAuth uygulama oluşturun'
+                                            : 'Create an OAuth app in Google Cloud Console or Azure Portal'}</li>
+                                        <li>{language === 'tr'
+                                            ? 'Client ID ve Client Secret değerlerini ortam değişkenlerine ekleyin'
+                                            : 'Add Client ID and Client Secret to environment variables'}</li>
+                                        <li>{language === 'tr'
+                                            ? '"Takvim Bağla" butonuna tıklayarak yetkilendirmeyi tamamlayın'
+                                            : 'Click "Connect Calendar" to complete authorization'}</li>
+                                    </ol>
+                                </div>
+                            </AlertDescription>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </Alert>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-lg font-medium">Google Calendar</CardTitle>
+                                {settings.googleCalendarConnected ? (
+                                    <Badge className="bg-green-100 text-green-700">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />{language === 'tr' ? 'Bağlı' : 'Connected'}
+                                    </Badge>
+                                ) : (
+                                    <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    {t('googleCalendarDesc')}
+                                </p>
+                                <div className="space-y-3">
+                                    <div className="text-xs text-muted-foreground p-2 bg-muted/50 rounded font-mono">
+                                        GOOGLE_CLIENT_ID=your_client_id<br />
+                                        GOOGLE_CLIENT_SECRET=your_secret
+                                    </div>
+                                    <Button
+                                        variant={settings.googleCalendarConnected ? "destructive" : "outline"}
+                                        className="w-full"
+                                        onClick={() => handleIntegrationConnect('google')}
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        {settings.googleCalendarConnected
+                                            ? (language === 'tr' ? 'Bağlantıyı Kes' : 'Disconnect')
+                                            : t('connectGoogle')}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-lg font-medium">Outlook Calendar</CardTitle>
+                                {settings.outlookCalendarConnected ? (
+                                    <Badge className="bg-green-100 text-green-700">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />{language === 'tr' ? 'Bağlı' : 'Connected'}
+                                    </Badge>
+                                ) : (
+                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                )}
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    {t('outlookCalendarDesc')}
+                                </p>
+                                <div className="space-y-3">
+                                    <div className="text-xs text-muted-foreground p-2 bg-muted/50 rounded font-mono">
+                                        OUTLOOK_CLIENT_ID=your_client_id<br />
+                                        OUTLOOK_CLIENT_SECRET=your_secret
+                                    </div>
+                                    <Button
+                                        variant={settings.outlookCalendarConnected ? "destructive" : "outline"}
+                                        className="w-full"
+                                        onClick={() => handleIntegrationConnect('outlook')}
+                                    >
+                                        <ExternalLink className="h-4 w-4 mr-2" />
+                                        {settings.outlookCalendarConnected
+                                            ? (language === 'tr' ? 'Bağlantıyı Kes' : 'Disconnect')
+                                            : t('connectOutlook')}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

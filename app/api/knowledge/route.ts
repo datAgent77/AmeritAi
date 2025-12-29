@@ -1,6 +1,7 @@
 import { OpenAI } from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { NextResponse } from "next/server";
+import { getAdminDb } from "@/lib/firebase-admin";
 import * as cheerio from 'cheerio';
 import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
@@ -14,8 +15,44 @@ const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY!,
 });
 
+export async function GET(req: Request) {
+    try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const chatbotId = searchParams.get("chatbotId");
+
+        if (!chatbotId) {
+            return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
+        }
+
+        const querySnapshot = await adminDb.collection("knowledge_docs")
+            .where("chatbotId", "==", chatbotId)
+            .get();
+
+        const docs = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date()
+        })).sort((a: any, b: any) => b.createdAt - a.createdAt);
+
+        return NextResponse.json({ docs });
+
+    } catch (error: any) {
+        console.error("Error fetching knowledge docs:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
+
 export async function POST(req: Request) {
     try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
         console.log("API: Received knowledge request");
         const body = await req.json();
         const { text, chatbotId, docId, type, url, fileBase64, fileName } = body;
@@ -187,7 +224,42 @@ export async function POST(req: Request) {
 
         console.log("API: Saved all chunks to Pinecone");
 
-        return NextResponse.json({ success: true, title, preview, vectorId: vectors[0].id, chunkCount: chunks.length });
+        // 3. Save Metadata to Firestore (Admin SDK) - Critical for persistence
+        try {
+            // Use serverTimestamp from admin SDK (it's actually Firestore.Timestamp or FieldValue)
+            // We can just use new Date() for simplicity in Admin SDK usually, or FieldValue.
+            const docData: any = {
+                chatbotId,
+                title: title || "Untitled",
+                type: type || "text",
+                content: preview || (contentToEmbed.substring(0, 200) + "..."),
+                // Store full content for editing/reference, but strict limit?
+                // Firestore limit is 1MB. If text is huge, maybe truncate?
+                // Let's store it for now as client did.
+                fullContent: contentToEmbed,
+                source: url || fileName || 'manual',
+                updatedAt: new Date()
+            };
+
+            // Only set createdAt if it doesn't exist (using merge)
+            // Actually we can just set it if we fetch first, or use set with merge and dont touch createdAt if exists?
+            // But we can't condition inside set easily without Preconditions.
+            // Let's just set createdAt to now if we are creating. 
+            // Since we use docId, we can check existence?
+            // For simplicity, let's just write. The client was writing createdAt every time on add.
+            docData.createdAt = new Date(); // Admin SDK accepts Date objects
+
+            await adminDb.collection("knowledge_docs").doc(docId).set(docData, { merge: true });
+            console.log("API: Saved metadata to Firestore");
+        } catch (fsError) {
+            console.error("API: Failed to save to Firestore:", fsError);
+            // Don't fail the request if embedding worked, but warn? 
+            // Actually this IS the persistence fix, so we should arguably fail or retry.
+            // But yielding error will show "Failed" to user.
+            throw fsError;
+        }
+
+        return NextResponse.json({ success: true, title, preview, vectorId: vectors?.[0]?.id, chunkCount: chunks.length });
 
     } catch (error) {
         console.error("Ingestion error:", error);
@@ -197,6 +269,10 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
     try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
         const { searchParams } = new URL(req.url);
         const docId = searchParams.get("docId");
         const chatbotId = searchParams.get("chatbotId");
@@ -214,6 +290,11 @@ export async function DELETE(req: Request) {
             chatbotId: chatbotId,
             docId: docId
         });
+
+        // Also delete from Firestore
+        if (adminDb) {
+            await adminDb.collection("knowledge_docs").doc(docId).delete();
+        }
 
         console.log("API: Deleted vectors from Pinecone");
 

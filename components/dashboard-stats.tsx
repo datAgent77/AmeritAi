@@ -73,7 +73,7 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
         }
 
         fetchStats()
-    }, [effectiveUserId])
+    }, [effectiveUserId, locale])
 
     if (isLoading) {
         return (
@@ -123,64 +123,6 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
                     </CardContent>
                 </Card>
             </div>
-
-            <Card className="col-span-4">
-                <CardHeader>
-                    <CardTitle>{t('weeklyActivity')}</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2">
-                    <div className="h-[240px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis
-                                    dataKey="name"
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(value) => `${value}`}
-                                    allowDecimals={false}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: 'transparent' }}
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            return (
-                                                <div className="rounded-lg border bg-background p-2 shadow-sm">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <div className="flex flex-col">
-                                                            <span className="text-[0.70rem] uppercase text-muted-foreground">
-                                                                {payload[0].payload.fullDate}
-                                                            </span>
-                                                            <span className="font-bold text-muted-foreground">
-                                                                {payload[0].value} chats
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        }
-                                        return null
-                                    }}
-                                />
-                                <Bar
-                                    dataKey="chats"
-                                    fill="currentColor"
-                                    radius={[4, 4, 0, 0]}
-                                    className="fill-primary"
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     )
 }

@@ -21,7 +21,7 @@ export function LanguageSwitcher() {
 
     return (
         <Select value={language} onValueChange={(val: any) => setLanguage(val)}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px] rounded-full">
                 <Globe className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Language" />
             </SelectTrigger>

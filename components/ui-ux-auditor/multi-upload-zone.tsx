@@ -5,6 +5,7 @@ import { useDropzone } from "react-dropzone"
 import { Upload, X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/LanguageContext"
+import Image from "next/image"
 
 interface MultiUploadZoneProps {
     onFilesChange: (files: File[]) => void
@@ -53,7 +54,7 @@ export function MultiUploadZone({ onFilesChange, isAnalyzing, maxFiles = 5 }: Mu
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {previews.map((preview, index) => (
                     <div key={index} className="relative aspect-[9/16] rounded-lg overflow-hidden border bg-muted/20 group">
-                        <img src={preview} alt={`Screen ${index + 1}`} className="h-full w-full object-cover" />
+                        <Image src={preview} alt={`Screen ${index + 1}`} fill className="object-cover" unoptimized />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <span className="text-white font-bold text-xl">#{index + 1}</span>
                         </div>

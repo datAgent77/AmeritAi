@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { useAuth } from "@/context/AuthContext"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore"
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Plus, Search, Trash2, Upload, Globe, DollarSign, Package } from "lucide-react"
+import { Loader2, Plus, Search, Trash2, Upload, Globe, DollarSign, Package, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -35,11 +36,7 @@ export function ProductKnowledge() {
     const [isLoading, setIsLoading] = useState(true)
     const [isAdding, setIsAdding] = useState(false)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false) // Renamed for clarity, was isOpen
-
-    // Import / Feed State
-    const [isImportOpen, setIsImportOpen] = useState(false)
-    const [feedUrl, setFeedUrl] = useState("")
-    const [isSyncing, setIsSyncing] = useState(false)
+    const [fetchError, setFetchError] = useState<string | null>(null)
 
     // Form State
     const [newProduct, setNewProduct] = useState({
@@ -50,30 +47,35 @@ export function ProductKnowledge() {
         imageUrl: ""
     })
 
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async () => {
         if (!user?.uid) return
         setIsLoading(true)
+        setFetchError(null)
         try {
-            const q = query(
-                collection(db, "products"),
-                where("chatbotId", "==", user.uid)
-            )
-            const querySnapshot = await getDocs(q)
-            const fetchedProducts: Product[] = []
-            querySnapshot.forEach((doc) => {
-                fetchedProducts.push({ id: doc.id, ...doc.data() } as Product)
-            })
-            setProducts(fetchedProducts)
-        } catch (error) {
+            // Use API to bypass Firestore SDK issues
+            const response = await fetch(`/api/shopper/products?chatbotId=${user.uid}`)
+            if (!response.ok) {
+                throw new Error("Failed to fetch products")
+            }
+            const data = await response.json()
+            setProducts(data.products || [])
+        } catch (error: any) {
             console.error("Error fetching products:", error)
+            setFetchError("Ürünler yüklenirken bir hata oluştu.")
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [user])
 
     useEffect(() => {
-        fetchProducts()
-    }, [user])
+        // Delay fetch slightly to avoid SDK race conditions
+        const timer = setTimeout(() => {
+            if (user) {
+                fetchProducts()
+            }
+        }, 100)
+        return () => clearTimeout(timer)
+    }, [user, fetchProducts])
 
     const handleAddProduct = async () => {
         if (!user?.uid || !newProduct.name || !newProduct.price) return
@@ -129,35 +131,6 @@ export function ProductKnowledge() {
         }
     }
 
-    const handleFeedSync = async () => {
-        if (!feedUrl) return
-        setIsSyncing(true)
-        try {
-            const token = await user?.getIdToken()
-            const res = await fetch('/api/chatbot/shopper/feed-sync', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ feedUrl, chatbotId: user?.uid })
-            })
-            const data = await res.json()
-            if (data.success) {
-                toast({ title: "Success", description: `Synced ${data.count} products from feed.` })
-                setFeedUrl("")
-                setIsImportOpen(false) // Close the import dialog
-                await fetchProducts()
-            } else {
-                toast({ title: "Error", description: data.error, variant: "destructive" })
-            }
-        } catch (e) {
-            toast({ title: "Error", description: "Feed sync failed", variant: "destructive" })
-        } finally {
-            setIsSyncing(false)
-        }
-    }
-
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -168,51 +141,6 @@ export function ProductKnowledge() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="gap-2">
-                                <Upload className="h-4 w-4" />
-                                Import Options
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle>Import Products</DialogTitle>
-                                <DialogDescription>Choose a method to import your products.</DialogDescription>
-                            </DialogHeader>
-
-                            <Tabs defaultValue="feed" className="w-full">
-                                <TabsList className="grid w-full grid-cols-1">
-                                    <TabsTrigger value="feed">XML Feed (Bulk)</TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="feed" className="space-y-4 py-4">
-                                    <div className="bg-blue-50 p-4 rounded-md text-sm text-blue-700 mb-4">
-                                        <p className="font-semibold flex items-center gap-2">
-                                            <Globe className="h-4 w-4" />
-                                            Auto-Sync Enabled
-                                        </p>
-                                        <p>Connect your Google Merchant or generic XML feed. The system will automatically update prices and stock levels daily.</p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>XML Feed URL</Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                placeholder="https://site.com/feed/google_merchant.xml"
-                                                value={feedUrl}
-                                                onChange={(e) => setFeedUrl(e.target.value)}
-                                            />
-                                            <Button onClick={handleFeedSync} disabled={isSyncing}>
-                                                {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sync Feed"}
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">Supports RSS 2.0, Atom, Google Merchant Center formats.</p>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        </DialogContent>
-                    </Dialog>
 
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                         <DialogTrigger asChild>
@@ -304,6 +232,18 @@ export function ProductKnowledge() {
                                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                                 </TableCell>
                             </TableRow>
+                        ) : fetchError ? (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                        <AlertCircle className="h-6 w-6 text-red-500" />
+                                        <p>{fetchError}</p>
+                                        <Button variant="outline" size="sm" onClick={fetchProducts}>
+                                            Tekrar Dene
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                         ) : products.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
@@ -316,7 +256,7 @@ export function ProductKnowledge() {
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
                                             {product.imageUrl ? (
-                                                <img src={product.imageUrl} alt={product.name} className="h-8 w-8 rounded object-cover" />
+                                                <Image src={product.imageUrl} alt={product.name} width={32} height={32} className="h-8 w-8 rounded object-cover" unoptimized />
                                             ) : (
                                                 <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
                                                     <Package className="h-4 w-4 text-muted-foreground" />

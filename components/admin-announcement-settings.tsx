@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { doc, getDoc, setDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -21,40 +20,72 @@ export function AdminAnnouncementSettings() {
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const docRef = doc(db, "system_settings", "general")
-                const docSnap = await getDoc(docRef)
-                if (docSnap.exists()) {
-                    const data = docSnap.data()
-                    setMessage(data.announcementMessage || "")
-                    setIsActive(data.announcementActive || false)
+                const currentUser = auth.currentUser
+                if (!currentUser) return
+
+                const token = await currentUser.getIdToken()
+                const response = await fetch("/api/admin/dashboard-stats", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    if (data.announcement) {
+                        setMessage(data.announcement.message || "")
+                        setIsActive(data.announcement.isActive || false)
+                    }
                 }
             } catch (error) {
-                console.error("Error fetching settings:", error)
+                console.warn("AdminAnnouncementSettings: Could not fetch settings")
             } finally {
                 setIsLoading(false)
             }
         }
-        fetchSettings()
+
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetchSettings()
+            }
+        })
+
+        return () => unsubscribe()
     }, [])
 
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            await setDoc(doc(db, "system_settings", "general"), {
-                announcementMessage: message,
-                announcementActive: isActive,
-                updatedAt: new Date().toISOString()
-            }, { merge: true })
+            const currentUser = auth.currentUser
+            if (!currentUser) throw new Error("Not authenticated")
+
+            const token = await currentUser.getIdToken()
+            const response = await fetch("/api/admin/save-announcement", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    isActive,
+                    message
+                })
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || "Failed to save")
+            }
 
             toast({
                 title: "Success",
                 description: "Announcement settings updated.",
             })
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error saving settings:", error)
             toast({
                 title: "Error",
-                description: "Failed to save settings.",
+                description: error.message || "Failed to save settings.",
                 variant: "destructive",
             })
         } finally {

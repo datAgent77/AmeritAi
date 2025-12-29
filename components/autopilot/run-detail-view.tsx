@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle, XCircle, AlertTriangle, Sparkles } from "lucide-react";
 import { TestRun } from "@/lib/services/test-run-service";
+import Image from "next/image";
 
 interface RunDetailViewProps {
     run: TestRun | null;
@@ -101,7 +102,16 @@ export function RunDetailView({ run, isOpen, onClose }: RunDetailViewProps) {
 
                                 {run.screenshotUrl && (
                                     <div className="border rounded-lg overflow-hidden bg-black/5">
-                                        <img src={run.screenshotUrl} alt="Test Screenshot" className="w-full h-auto object-contain" />
+                                        <div className="relative w-full h-auto aspect-video">
+                                            <Image
+                                                src={run.screenshotUrl}
+                                                alt="Test Screenshot"
+                                                fill
+                                                className="object-contain"
+                                                sizes="(max-width: 768px) 100vw, 800px"
+                                                unoptimized
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>

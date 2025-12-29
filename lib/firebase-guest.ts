@@ -10,7 +10,7 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, setPersistence, inMemoryPersistence, signInAnonymously, Auth } from "firebase/auth";
+import { getAuth, setPersistence, browserLocalPersistence, signInAnonymously, Auth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCUwSlqGfisUtejDfF8Snv-EzI374vcuus",
@@ -30,19 +30,28 @@ const guestApp = existingGuestApp || initializeApp(firebaseConfig, GUEST_APP_NAM
 const guestDb = getFirestore(guestApp);
 const guestAuth = getAuth(guestApp);
 
-// Immediately set to in-memory persistence on load
+// Set to browser persistence to keep guest logged in across refreshes
 let persistenceSet = false;
 const ensureGuestPersistence = async () => {
     if (!persistenceSet) {
-        await setPersistence(guestAuth, inMemoryPersistence);
+        await setPersistence(guestAuth, browserLocalPersistence);
         persistenceSet = true;
     }
 };
 
-// Helper function to sign in anonymously with guaranteed in-memory persistence
+// Helper function to sign in anonymously with guaranteed browser persistence
+// CRITICAL: Only signs in if no user is already logged in (preserves session across refreshes)
 const signInAsGuest = async (): Promise<Auth> => {
     await ensureGuestPersistence();
-    await signInAnonymously(guestAuth);
+
+    // Check if user is already logged in from a previous session
+    if (!guestAuth.currentUser) {
+        await signInAnonymously(guestAuth);
+        console.log("Guest login: Created new anonymous user", guestAuth.currentUser?.uid);
+    } else {
+        console.log("Guest login: Reusing existing user", guestAuth.currentUser.uid);
+    }
+
     return guestAuth;
 };
 

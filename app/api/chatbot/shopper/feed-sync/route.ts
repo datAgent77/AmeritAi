@@ -1,16 +1,21 @@
 
 import { NextResponse } from 'next/server';
 import { XMLParser } from 'fast-xml-parser';
-import { db } from '@/lib/firebase'; // Ensure you have firebase admin or client configured for server
-// Note: Client SDK in route handlers is OK but Admin SDK is better for bulk ops. 
-// Assuming we use the existing 'db' export which is likely Client SDK based on previous context.
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
+import * as admin from 'firebase-admin';
 
 // Allow long timeout for feed processing
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+    const adminDb = getAdminDb();
     try {
+        // Check if Admin SDK is initialized
+        if (!adminDb) {
+            console.error("[FeedSync] Firebase Admin SDK not initialized");
+            return NextResponse.json({ success: false, error: "Server configuration error - Admin SDK not available" }, { status: 500 });
+        }
+
         const authHeader = request.headers.get('authorization');
         if (!authHeader?.startsWith('Bearer ')) {
             return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
@@ -88,7 +93,7 @@ export async function POST(request: Request) {
         // This allows us to overwrite existing products without querying first.
 
         const batchSize = 450;
-        let batch = writeBatch(db);
+        let batch = adminDb!.batch();
         let currentBatchCount = 0;
         let processedCount = 0;
 
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
             if (!pName) continue;
 
             const deterministicId = `${chatbotId}_${cleanSku}`;
-            const docRef = doc(db, "products", deterministicId);
+            const docRef = adminDb!.collection("products").doc(deterministicId);
 
             const productData = {
                 chatbotId: chatbotId, // Ensure ownership
@@ -157,7 +162,7 @@ export async function POST(request: Request) {
 
             if (currentBatchCount >= batchSize) {
                 await batch.commit();
-                batch = writeBatch(db);
+                batch = adminDb!.batch();
                 currentBatchCount = 0;
             }
         }

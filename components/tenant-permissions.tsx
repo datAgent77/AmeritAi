@@ -83,26 +83,7 @@ const INTEGRATED_MODULES: ModuleConfig[] = [
 ]
 
 const STANDALONE_MODULES: ModuleConfig[] = [
-    {
-        id: "copywriter",
-        usageKey: "enableCopywriter",
-        visibilityKey: "visibleCopywriter",
-        title: "AI Copywriter",
-        description: "Generate compelling marketing copy and product descriptions automatically.",
-        icon: FileText,
-        color: "text-purple-600",
-        bgColor: "bg-purple-100",
-    },
-    {
-        id: "lead-finder",
-        usageKey: "enableLeadFinder",
-        visibilityKey: "visibleLeadFinder",
-        title: "Lead Finder",
-        description: "Identify and engage potential customers using AI-driven insights.",
-        icon: Users,
-        color: "text-green-600",
-        bgColor: "bg-green-100",
-    },
+
     {
         id: "sales-optimization",
         usageKey: "enableSalesOptimization",
@@ -271,7 +252,7 @@ export function TenantPermissions({ tenant, userId, onUpdate }: TenantPermission
                             Bağımsız Araçlar
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                            Bu araçlar, yönetim panelinden bağımsız olarak kullanılır ve chatbot widget'ını etkilemez.
+                            Bu araçlar, yönetim panelinden bağımsız olarak kullanılır ve chatbot widget&apos;ını etkilemez.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

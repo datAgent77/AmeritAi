@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { collection, getDocs, doc, updateDoc, onSnapshot } from "firebase/firestore"
+import { useEffect, useState, useCallback } from "react"
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { INDUSTRY_CONFIG } from "@/lib/industry-config"
 import {
@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Plus, Trash2, ShieldCheck, Search } from "lucide-react"
+import { Loader2, Plus, Archive, ArchiveRestore, ShieldCheck, Search } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -42,6 +42,8 @@ interface UserData {
     email: string
     role: string
     isActive: boolean
+    isArchived?: boolean
+    archivedAt?: string
     createdAt: string
 }
 
@@ -67,51 +69,54 @@ export function TenantManagement() {
     const [error, setError] = useState<string | null>(null)
     const [createError, setCreateError] = useState<string | null>(null)
 
-    const setupListener = () => {
-        console.log("TenantManagement: Setting up onSnapshot listener")
+    // Archive Tenant State
+    const [showArchived, setShowArchived] = useState(false)
+    const [isArchiving, setIsArchiving] = useState<string | null>(null)
+
+    const fetchUsers = useCallback(async () => {
+        if (!user) return
+
         setIsLoading(true)
         setError(null)
+        try {
+            const token = await user.getIdToken()
+            const url = showArchived
+                ? '/api/admin/users?includeArchived=true'
+                : '/api/admin/users'
 
-        let timeoutId: NodeJS.Timeout
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
 
-        const unsubscribe = onSnapshot(collection(db, "users"),
-            (snapshot) => {
-                console.log(`TenantManagement: Snapshot received with ${snapshot.docs.length} users`)
-                const usersData = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as UserData[]
-                setUsers(usersData)
-                setIsLoading(false)
-                if (timeoutId) clearTimeout(timeoutId)
-            },
-            (err) => {
-                console.error("Error in onSnapshot:", err)
-                setError(t('failedToLoadUsers'))
-                setIsLoading(false)
-                if (timeoutId) clearTimeout(timeoutId)
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || 'Failed to fetch users')
             }
-        )
 
-        // Safety timeout
-        timeoutId = setTimeout(() => {
-            console.log("TenantManagement: Safety timeout triggered")
+            const data = await response.json()
+            setUsers(data.users)
             setIsLoading(false)
-            setError("Loading timed out. Please check your connection.")
-            unsubscribe() // Stop listening if timed out
-        }, 15000)
-
-        return () => {
-            console.log("TenantManagement: Unsubscribing listener")
-            unsubscribe()
-            if (timeoutId) clearTimeout(timeoutId)
+        } catch (err: any) {
+            console.error("Error fetching users:", err)
+            setError(t('failedToLoadUsers'))
+            setIsLoading(false)
         }
-    }
+    }, [t, user, showArchived])
 
     useEffect(() => {
-        const cleanup = setupListener()
-        return cleanup
-    }, [])
+        // Wait for user to be authenticated before fetching
+        if (!user) {
+            setIsLoading(true)
+            return
+        }
+
+        fetchUsers()
+        const interval = setInterval(fetchUsers, 60000) // 60 seconds polling
+
+        return () => clearInterval(interval)
+    }, [fetchUsers, user])
 
     const toggleStatus = async (userId: string, currentStatus: boolean) => {
         try {
@@ -207,44 +212,93 @@ export function TenantManagement() {
         }
     }
 
-    const handleDeleteTenant = async (userId: string) => {
-        // Automatically approved as per user request
-        // if (!confirm(t('deleteTenantConfirm'))) return
+    const handleArchiveTenant = async (userId: string) => {
+        const confirmed = window.confirm('Bu kiracıyı arşivlemek istediğinizden emin misiniz? Hesabı deaktive edilecek ancak veriler korunacak.')
+        if (!confirmed) return
 
+        setIsArchiving(userId)
         try {
             const token = await user?.getIdToken()
 
-            const response = await fetch("/api/admin/delete-tenant", {
+            const response = await fetch("/api/admin/archive-tenant", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    userId,
-                    callerRole: role
-                })
+                body: JSON.stringify({ userId })
             })
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.error || "Failed to delete tenant data")
+                throw new Error(data.error || "Failed to archive tenant")
             }
 
-            const updatedUsers = users.filter(u => u.id !== userId)
+            // Remove from visible list (or mark as archived if showArchived is true)
+            if (!showArchived) {
+                const updatedUsers = users.filter(u => u.id !== userId)
+                setUsers(updatedUsers)
+            } else {
+                const updatedUsers = users.map(u =>
+                    u.id === userId ? { ...u, isArchived: true, archivedAt: new Date().toISOString() } : u
+                )
+                setUsers(updatedUsers)
+            }
+
+            toast({
+                title: t('success'),
+                description: "Kiracı başarıyla arşivlendi",
+            })
+        } catch (error: any) {
+            console.error("Error archiving tenant:", error)
+            toast({
+                title: t('error'),
+                description: error.message || "Failed to archive tenant",
+                variant: "destructive",
+            })
+        } finally {
+            setIsArchiving(null)
+        }
+    }
+
+    const handleRestoreTenant = async (userId: string) => {
+        setIsArchiving(userId)
+        try {
+            const token = await user?.getIdToken()
+
+            const response = await fetch("/api/admin/restore-tenant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to restore tenant")
+            }
+
+            // Update local state
+            const updatedUsers = users.map(u =>
+                u.id === userId ? { ...u, isArchived: false, archivedAt: undefined } : u
+            )
             setUsers(updatedUsers)
 
             toast({
                 title: t('success'),
-                description: t('tenantDeleted'),
+                description: "Kiracı başarıyla geri yüklendi",
             })
         } catch (error: any) {
-            console.error("Error deleting tenant:", error)
+            console.error("Error restoring tenant:", error)
             toast({
                 title: t('error'),
-                description: error.message,
+                description: error.message || "Failed to restore tenant",
                 variant: "destructive",
             })
+        } finally {
+            setIsArchiving(null)
         }
     }
 
@@ -261,16 +315,7 @@ export function TenantManagement() {
         )
     }
 
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center p-8 gap-4">
-                <p className="text-red-500 font-medium">{error}</p>
-                <Button onClick={() => window.location.reload()}>
-                    {t('retry') || "Retry"}
-                </Button>
-            </div>
-        )
-    }
+
 
     return (
         <div className="space-y-6">
@@ -288,14 +333,25 @@ export function TenantManagement() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>{t('allTenants')}</CardTitle>
-                    <div className="relative w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={t('searchTenants')}
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                    <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={showArchived}
+                                onChange={(e) => setShowArchived(e.target.checked)}
+                                className="rounded border-gray-300"
+                            />
+                            <span className="text-muted-foreground">Arşivlenmiş kullanıcıları göster</span>
+                        </label>
+                        <div className="relative w-64">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder={t('searchTenants')}
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -312,13 +368,18 @@ export function TenantManagement() {
                             </TableHeader>
                             <TableBody>
                                 {filteredUsers.map((user) => (
-                                    <TableRow key={user.id}>
+                                    <TableRow key={user.id} className={user.isArchived ? "bg-gray-50 opacity-70" : ""}>
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
                                                     {user.email.substring(0, 2).toUpperCase()}
                                                 </div>
                                                 {user.email}
+                                                {user.isArchived && (
+                                                    <Badge variant="secondary" className="ml-2 bg-gray-200 text-gray-600">
+                                                        Arşiv
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -349,17 +410,44 @@ export function TenantManagement() {
                                                         variant={user.isActive ? "destructive" : "default"}
                                                         size="sm"
                                                         onClick={() => toggleStatus(user.id, user.isActive)}
+                                                        disabled={user.isArchived}
                                                     >
                                                         {user.isActive ? t('deactivate') : t('activate')}
                                                     </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                        onClick={() => handleDeleteTenant(user.id)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {user.isArchived ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-300"
+                                                            onClick={() => handleRestoreTenant(user.id)}
+                                                            disabled={isArchiving === user.id}
+                                                        >
+                                                            {isArchiving === user.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <>
+                                                                    <ArchiveRestore className="h-4 w-4 mr-1" />
+                                                                    Geri Yükle
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                                                            onClick={() => handleArchiveTenant(user.id)}
+                                                            disabled={isArchiving === user.id}
+                                                        >
+                                                            {isArchiving === user.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Archive className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             )}
                                         </TableCell>
@@ -479,6 +567,7 @@ export function TenantManagement() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
         </div>
     )
 }

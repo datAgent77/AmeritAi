@@ -60,7 +60,7 @@ export default function AnalyticsPage() {
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">Analytics</h2>
                 <p className="text-muted-foreground">
-                    Deep dive into your chatbot's performance and user sentiment.
+                    Deep dive into your chatbot&apos;s performance and user sentiment.
                 </p>
             </div>
 

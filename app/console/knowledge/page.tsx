@@ -1,12 +1,14 @@
 "use client"
 
-import { KnowledgeBase } from "@/components/knowledge-base"
-import { useAuth } from "@/context/AuthContext"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function KnowledgePage() {
-    const { user } = useAuth()
+    const router = useRouter()
 
-    if (!user) return null
+    useEffect(() => {
+        router.push("/console/knowledge/text")
+    }, [router])
 
-    return <KnowledgeBase targetUserId={user.uid} />
+    return null
 }

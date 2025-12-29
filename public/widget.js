@@ -660,6 +660,9 @@
             </svg>
         `;
 
+      // Add subtle pulse animation
+      voiceLauncher.classList.add('userex-anim-pulse');
+
       voiceLauncher.onclick = (e) => {
         e.stopPropagation();
         toggleVoiceInterface();
@@ -931,13 +934,13 @@
     // Base styles
     Object.assign(iframeContainer.style, {
       position: 'fixed',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-      borderRadius: '12px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.06)',
+      borderRadius: '24px',
       overflow: 'hidden',
       zIndex: '2147483647',
       display: 'none',
       backgroundColor: '#fff',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
 
     // Apply View Mode Styles
@@ -1002,9 +1005,9 @@
       }
 
       Object.assign(iframeContainer.style, {
-        width: '400px', // Increased from 350px
-        height: '600px', // Increased from 500px
-        maxHeight: '80vh',
+        width: '420px',
+        height: '700px',
+        maxHeight: '85vh',
         ...horizontalStyle,
         ...classicVerticalStyle
       });
@@ -1088,7 +1091,7 @@
               maxWidth: '95%', // Increased from 90%
               height: '700px', // Increased from 600px
               maxHeight: '90vh', // Increased from 80vh
-              borderRadius: '12px'
+              borderRadius: '24px'
             });
           }
         }

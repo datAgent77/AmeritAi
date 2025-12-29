@@ -10,8 +10,6 @@ import { ArrowLeft, TrendingUp, Tag, Package, ShoppingCart, GitCompare, Loader2,
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { doc, updateDoc, getDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 
@@ -78,13 +76,12 @@ export default function SalesOptimizationPage() {
         const loadConfig = async () => {
             if (!user?.uid) return
             try {
-                const chatbotRef = doc(db, "chatbots", user.uid)
-                const snap = await getDoc(chatbotRef)
-                if (snap.exists()) {
-                    const data = snap.data()
-                    if (data.salesOptimizationConfig) {
-                        setConfig({ ...DEFAULT_CONFIG, ...data.salesOptimizationConfig })
-                    }
+                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                if (!response.ok) throw new Error("Failed to fetch settings");
+                const data = await response.json();
+
+                if (data.salesOptimizationConfig) {
+                    setConfig({ ...DEFAULT_CONFIG, ...data.salesOptimizationConfig })
                 }
             } catch (error) {
                 console.error("Error loading config:", error)
@@ -99,10 +96,19 @@ export default function SalesOptimizationPage() {
         if (!user?.uid) return
         setIsSaving(true)
         try {
-            const chatbotRef = doc(db, "chatbots", user.uid)
-            await updateDoc(chatbotRef, {
-                salesOptimizationConfig: config
-            })
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId: user.uid,
+                    chatbotSettings: {
+                        salesOptimizationConfig: config
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to save settings");
+
             toast({
                 title: t('saved') || "Saved",
                 description: t('settingsSaved') || "Settings saved successfully"

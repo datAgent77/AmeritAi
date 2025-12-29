@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, Info } from "lucide-react"
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Switch } from "@/components/ui/switch"
 
 export default function ShopperSettingsPage() {
@@ -27,54 +25,61 @@ export default function ShopperSettingsPage() {
     const [strictMode, setStrictMode] = useState(false)
 
     useEffect(() => {
-        if (targetUserId) {
-            fetchSettings()
-        }
-    }, [targetUserId])
+        const fetchSettings = async () => {
+            if (!targetUserId) return
+            setIsLoading(true)
+            try {
+                const response = await fetch(`/api/console/settings?chatbotId=${targetUserId}`);
+                if (!response.ok) throw new Error("Failed to fetch settings");
 
-    const fetchSettings = async () => {
-        if (!targetUserId) return
-        setIsLoading(true)
-        try {
-            const docRef = doc(db, "chatbots", targetUserId)
-            const docSnap = await getDoc(docRef)
+                const data = await response.json();
 
-            if (docSnap.exists()) {
-                const data = docSnap.data()
                 if (data.shopperConfig) {
                     setSalesTone(data.shopperConfig.salesTone || "friendly")
                     setRecommendationStrategy(data.shopperConfig.recommendationStrategy || "best_match")
                     setStrictMode(data.shopperConfig.strictMode || false)
                 }
+            } catch (error) {
+                console.error("Error fetching settings:", error)
+                toast({
+                    title: t('error'),
+                    description: t('failedToLoadProfile'),
+                    variant: "destructive"
+                })
+            } finally {
+                setIsLoading(false)
             }
-        } catch (error) {
-            console.error("Error fetching settings:", error)
-            toast({
-                title: t('error'),
-                description: t('failedToLoadProfile'), // Using closest generic error
-                variant: "destructive"
-            })
-        } finally {
-            setIsLoading(false)
         }
-    }
+
+        if (targetUserId) {
+            fetchSettings()
+        }
+    }, [targetUserId, t, toast])
 
     const handleSave = async () => {
         if (!targetUserId) return
         setIsSaving(true)
         try {
-            const docRef = doc(db, "chatbots", targetUserId)
-            await updateDoc(docRef, {
-                shopperConfig: {
-                    salesTone,
-                    recommendationStrategy,
-                    strictMode
-                }
-            })
+            const response = await fetch("/api/console/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId: targetUserId,
+                    chatbotSettings: {
+                        shopperConfig: {
+                            salesTone,
+                            recommendationStrategy,
+                            strictMode
+                        }
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to save settings");
 
             toast({
                 title: t('success'),
-                description: t('saveChanges') + " " + t('success'), // Generic "Save Changes Success"
+                description: t('saveChanges') + " " + t('success'),
             })
         } catch (error) {
             console.error("Error saving settings:", error)
