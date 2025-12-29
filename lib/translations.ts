@@ -312,6 +312,8 @@ export const translations = {
         "modules.gamificationDesc": "Engage users with games and rewards.",
         "modules.visualDiagnosis": "Visual Diagnosis",
         "modules.visualDiagnosisDesc": "AI-powered visual analysis and diagnosis.",
+        "modules.digitalWaiter": "Digital Waiter",
+        "modules.digitalWaiterDesc": "Active QR menu assistant that takes orders.",
 
         "activeSector": "Active Sector",
         "searchModules": "Search modules...",
@@ -1479,6 +1481,8 @@ export const translations = {
         "modules.gamificationDesc": "Kullanıcıları oyunlar ve ödüllerle etkileşime geçirin.",
         "modules.visualDiagnosis": "Görsel Tanı",
         "modules.visualDiagnosisDesc": "AI destekli görsel analiz ve teşhis.",
+        "modules.digitalWaiter": "Dijital Garson",
+        "modules.digitalWaiterDesc": "Sipariş alan aktif QR menü asistanı.",
 
         "activeSector": "Aktif Sektör",
         "searchModules": "Modül ara...",
