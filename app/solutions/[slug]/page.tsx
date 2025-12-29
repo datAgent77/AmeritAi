@@ -36,9 +36,9 @@ export default function SolutionPage({ params }: { params: { slug: string } }) {
             title={language === 'tr' ? content.title.tr : content.title.en}
             subtitle={language === 'tr' ? content.subtitle.tr : content.subtitle.en}
             icon={<MainIcon className={`w-5 h-5 ${params.slug === 'ecommerce' ? 'text-blue-400' :
-                    params.slug === 'booking' ? 'text-sky-400' :
-                        params.slug === 'real-estate' ? 'text-indigo-400' :
-                            'text-white'
+                params.slug === 'booking' ? 'text-sky-400' :
+                    params.slug === 'real-estate' ? 'text-indigo-400' :
+                        'text-white'
                 }`} />}
             features={content.features.map(f => {
                 const FIcon = iconMap[f.iconName] || Star
@@ -52,6 +52,7 @@ export default function SolutionPage({ params }: { params: { slug: string } }) {
                 user: language === 'tr' ? content.promptExample.user.tr : content.promptExample.user.en,
                 ai: language === 'tr' ? content.promptExample.ai.tr : content.promptExample.ai.en
             }}
+            conversation={content.conversation}
         />
     )
 }
