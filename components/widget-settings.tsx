@@ -470,7 +470,10 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(settings)
+                body: JSON.stringify({
+                    ...settings,
+                    chatbotId: userId
+                })
             })
 
             if (!response.ok) {

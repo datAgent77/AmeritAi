@@ -614,7 +614,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         </span>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="pt-0 mt-auto">
+                                <CardFooter className="pt-0 mt-auto gap-3">
                                     {isAccessGranted ? (
                                         <Button
                                             onClick={() => handleManage(module.id)}

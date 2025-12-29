@@ -187,11 +187,29 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
+        const { chatbotId } = body;
+
+        let targetChatbotId = userId;
+
+        // If trying to edit another chatbot, check permissions
+        if (chatbotId && chatbotId !== userId) {
+            const userDoc = await adminDb.collection("users").doc(userId).get();
+            const userData = userDoc.data();
+
+            if (userData?.role === 'SUPER_ADMIN') {
+                targetChatbotId = chatbotId;
+            } else {
+                return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            }
+        }
 
         // Validation or sanitization could go here if needed
 
-        await adminDb.collection("chatbots").doc(userId).set({
-            ...body,
+        // Remove chatbotId from body before saving
+        const { chatbotId: _, ...settingsToSave } = body;
+
+        await adminDb.collection("chatbots").doc(targetChatbotId).set({
+            ...settingsToSave,
             updatedAt: new Date().toISOString(),
         }, { merge: true });
 

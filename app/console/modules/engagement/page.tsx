@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles, Rocket, Zap, TrendingUp, CheckCircle2, Lock } from "lucide-react"
 import Link from "next/link"
 
 interface BubbleMessage {
@@ -85,7 +85,7 @@ const defaultSettings: EngagementSettings = {
     }
 }
 
-// Premium check - you can modify this based on your subscription system
+// Premium check
 const usePremiumStatus = () => {
     const { user } = useAuth()
     const [isPremium, setIsPremium] = useState(false)
@@ -96,22 +96,25 @@ const usePremiumStatus = () => {
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid))
                 const userData = userDoc.data()
-                // Check for premium status - adjust based on your subscription model
                 setIsPremium(userData?.plan === 'premium' || userData?.subscription?.status === 'active')
-            } catch (e) {
-                console.error("Failed to check premium status:", e)
+            } catch (error) {
+                console.error("Error checking premium status:", error)
             }
         }
         checkPremium()
-    }, [user?.uid])
+    }, [user])
 
     return isPremium
 }
 
-export default function ProactiveEngagementPage() {
-    const { user } = useAuth()
+export default function EngagementPage() {
+    const { user, role } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
+
+    const isTenantPremium = usePremiumStatus()
+    const [adminOverride, setAdminOverride] = useState(false)
+    const isPremium = isTenantPremium || (role === 'SUPER_ADMIN' && adminOverride)
 
     const [settings, setSettings] = useState<EngagementSettings>(defaultSettings)
     const [isLoading, setIsLoading] = useState(true)
@@ -227,9 +230,6 @@ export default function ProactiveEngagementPage() {
             }
         }))
     }
-
-    // Premium feature check
-    const isPremium = false // TODO: Connect to actual subscription system
 
     if (isLoading) {
         return (
@@ -347,7 +347,7 @@ export default function ProactiveEngagementPage() {
                             <CardTitle className="flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-amber-500" />
                                 AI Akıllı Balonlar
-                                <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                                <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 hover:from-amber-600 hover:to-orange-600">
                                     Premium
                                 </Badge>
                             </CardTitle>
@@ -355,19 +355,34 @@ export default function ProactiveEngagementPage() {
                                 Ziyaretçinin bulunduğu sayfaya özel AI mesajları otomatik üretilsin.
                             </CardDescription>
                         </div>
-                        {isPremium ? (
-                            <Switch
-                                checked={settings.aiSmartBubbles.enabled}
-                                onCheckedChange={(checked) => setSettings(prev => ({
-                                    ...prev,
-                                    aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
-                                }))}
-                            />
-                        ) : (
-                            <Badge variant="outline" className="text-muted-foreground">
-                                🔒 Kilitli
-                            </Badge>
-                        )}
+                        <div className="flex items-center gap-3">
+                            {/* Super Admin Override Toggle */}
+                            {!isTenantPremium && role === 'SUPER_ADMIN' && (
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full border">
+                                    <span className="text-xs font-medium text-muted-foreground">Admin Force:</span>
+                                    <Switch
+                                        checked={adminOverride}
+                                        onCheckedChange={setAdminOverride}
+                                        className="scale-75 data-[state=checked]:bg-amber-500"
+                                    />
+                                </div>
+                            )}
+
+                            {isPremium ? (
+                                <Switch
+                                    checked={settings.aiSmartBubbles.enabled}
+                                    onCheckedChange={(checked) => setSettings(prev => ({
+                                        ...prev,
+                                        aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
+                                    }))}
+                                />
+                            ) : (
+                                <Badge variant="outline" className="text-muted-foreground gap-1.5 py-1.5 px-3">
+                                    <Lock className="w-3.5 h-3.5" />
+                                    Kilitli
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                 </CardHeader>
 
@@ -453,35 +468,70 @@ export default function ProactiveEngagementPage() {
                         </CardContent>
                     )
                 ) : (
-                    // Free User - Show upgrade prompt
-                    <CardContent>
-                        <div className="text-center py-6 space-y-4">
-                            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg p-6">
-                                <Sparkles className="w-12 h-12 mx-auto mb-4 text-amber-500" />
-                                <h3 className="font-semibold text-lg mb-2">Sayfa Bazlı AI Balonları</h3>
-                                <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                                    AI, ziyaretçinin bulunduğu sayfaya göre otomatik mesaj üretir.
-                                    Örneğin &quot;/pricing&quot; sayfasında &quot;Fiyatlarımız hakkında sorunuz mu var?&quot; gibi.
-                                </p>
-                                <ul className="text-sm text-left max-w-xs mx-auto space-y-2 mb-6">
-                                    <li className="flex items-center gap-2">
-                                        <span className="text-amber-500">✨</span>
-                                        Real-time sayfa analizi
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <span className="text-amber-500">✨</span>
-                                        Kişiselleştirilmiş mesajlar
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <span className="text-amber-500">✨</span>
-                                        Dönüşüm oranını artırır
-                                    </li>
-                                </ul>
-                                <Link href="/console/subscription">
-                                    <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
-                                        🚀 Premium&apos;a Yükselt
-                                    </Button>
-                                </Link>
+                    // Free User - Show upgrade prompt (Redesigned)
+                    <CardContent className="p-0">
+                        <div className="relative overflow-hidden">
+                            {/* Background Pattern */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/20 dark:via-background dark:to-orange-950/10 z-0" />
+                            <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
+                            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
+
+                            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 p-8 md:p-10">
+                                {/* Left Content */}
+                                <div className="flex-1 space-y-6 text-center md:text-left">
+                                    <div className="space-y-4">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            Premium Özellik
+                                        </div>
+                                        <h3 className="text-2xl font-bold tracking-tight text-foreground">
+                                            Ziyaretçilerinizi <span className="text-amber-600 dark:text-amber-500">AI Gücüyle</span> Karşılayın
+                                        </h3>
+                                        <p className="text-muted-foreground leading-relaxed max-w-lg">
+                                            Ziyaretçinin gezdiği sayfayı anlık analiz eden yapay zeka, o sayfaya özel en doğru karşılama mesajını otomatik yazar. Satışları artırın, etkileşimi katlayın.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        {[
+                                            { icon: Zap, text: "Anlık Sayfa Analizi" },
+                                            { icon: MessageCircle, text: "Bağlam Odaklı Mesaj" },
+                                            { icon: TrendingUp, text: "%40+ Daha Fazla Etkileşim" }
+                                        ].map((feature, idx) => (
+                                            <div key={idx} className="flex flex-col items-center md:items-start gap-2 p-3 rounded-lg bg-white/50 dark:bg-black/20 border border-amber-100 dark:border-amber-900/50 backdrop-blur-sm">
+                                                <feature.icon className="w-5 h-5 text-amber-600 dark:text-amber-500" />
+                                                <span className="text-xs font-medium text-foreground/80">{feature.text}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <Link href="/console/subscription">
+                                            <Button size="lg" className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-xl shadow-amber-500/20 border-0 transition-all hover:scale-105">
+                                                <Rocket className="w-5 h-5 mr-2" />
+                                                Hemen Premium'a Geç
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                {/* Right Image/Visual */}
+                                <div className="hidden md:flex flex-col items-center justify-center relative w-1/3">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
+                                    {/* Mockup Chat Bubble */}
+                                    <div className="relative z-0 w-full max-w-[240px] space-y-3 opacity-90">
+                                        <div className="flex justify-end">
+                                            <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 p-3 rounded-2xl rounded-tr-none text-sm shadow-sm border border-amber-200 dark:border-amber-800">
+                                                Fiyatlar sayfasındasınız 👀 <br /> Size özel indirim tanımlamamı ister misiniz?
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-start">
+                                            <div className="bg-white dark:bg-muted p-3 rounded-2xl rounded-tl-none text-sm shadow-sm border">
+                                                Evet, lütfen!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </CardContent>

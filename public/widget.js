@@ -678,8 +678,22 @@
     // Main Launcher Styles
     const isTextMode = settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text';
 
-    Object.assign(launcher.style, {
+    // Launcher Container (Wrapper) to separate positioning from animation transforms
+    const launcherContainer = document.createElement('div');
+    launcherContainer.id = 'userex-launcher-wrapper';
+    Object.assign(launcherContainer.style, {
       position: 'fixed',
+      zIndex: '2147483647',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none', // Pass clicks through
+      ...horizontalStyle,
+      ...verticalStyle
+    });
+
+    Object.assign(launcher.style, {
+      position: 'relative',
       width: isTextMode ? 'auto' : `${settings.launcherWidth}px`,
       minWidth: isTextMode ? `${settings.launcherWidth}px` : undefined,
       height: `${settings.launcherHeight}px`,
@@ -688,13 +702,11 @@
       backgroundColor: settings.launcherBackgroundColor || settings.brandColor,
       boxShadow: shadowStyle,
       cursor: 'pointer',
-      zIndex: '999999',
+      pointerEvents: 'auto', // Catch clicks
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-      ...horizontalStyle,
-      ...verticalStyle
     });
 
     const isTextStyle = settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text';
@@ -753,7 +765,7 @@
     const currentHeight = settings.launcherType === 'fullImage' ? (settings.fullImageLauncherHeight || 60) : settings.launcherHeight;
 
     Object.assign(launcher.style, {
-      position: 'fixed',
+      position: 'relative',
       width: isTextStyle ? 'auto' : `${currentWidth}px`,
       height: `${currentHeight}px`,
       minWidth: isTextStyle ? '100px' : 'auto',
@@ -764,15 +776,13 @@
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: '2147483647',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
       color: 'white',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       fontWeight: '600',
       padding: isTextStyle ? '0 20px' : '0',
       gap: '8px',
-      ...horizontalStyle,
-      ...verticalStyle
+      pointerEvents: 'auto'
     });
 
     if (settings.launcherAnimation === 'pulse') {
@@ -912,19 +922,13 @@
       }
 
       // Default: scale effect
-      let transform = 'scale(1.05)';
-      if (isMiddle && isCenter) transform = 'translate(-50%, -50%) scale(1.05)';
-      else if (isMiddle) transform = 'translateY(-50%) scale(1.05)';
-      else if (isCenter) transform = 'translateX(-50%) scale(1.05)';
-      launcher.style.transform = transform;
+      // Default: scale effect
+      // Simplified: Container handles position, so just scale relative
+      launcher.style.transform = 'scale(1.05)';
     };
     launcher.onmouseleave = () => {
       launcher.style.opacity = '1';
-      let transform = 'scale(1)';
-      if (isMiddle && isCenter) transform = 'translate(-50%, -50%) scale(1)';
-      else if (isMiddle) transform = 'translateY(-50%) scale(1)';
-      else if (isCenter) transform = 'translateX(-50%) scale(1)';
-      launcher.style.transform = transform;
+      launcher.style.transform = 'scale(1)';
     };
 
     // Create Iframe Container
@@ -1099,7 +1103,9 @@
     });
 
     // Append to body
-    document.body.appendChild(launcher);
+    // Append to body (Container wraps launcher)
+    launcherContainer.appendChild(launcher);
+    document.body.appendChild(launcherContainer);
     document.body.appendChild(iframeContainer);
 
     // Initialize Engagement Controller AFTER launcher is in DOM
