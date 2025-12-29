@@ -153,7 +153,7 @@ const SCENARIO_A: PlanConfig[] = [
         modules: {
             included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
-            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing']
+            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing']
         },
         copy: {
             badge: 'Önerilen',
@@ -175,7 +175,7 @@ const SCENARIO_A: PlanConfig[] = [
             messageLimit: 'unlimited'
         },
         modules: {
-            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing'],
+            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
             premiumEligible: []
         },
@@ -234,7 +234,7 @@ const SCENARIO_B: PlanConfig[] = [
         modules: {
             included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
-            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing']
+            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing']
         },
         copy: { badge: 'Önerilen', ctaLabel: 'Planı Seç', subtitle: 'Büyüyen işletmeler için' }
     },
@@ -246,7 +246,7 @@ const SCENARIO_B: PlanConfig[] = [
         billing: { contact: true },
         limits: { maxPremiumAddOns: 'unlimited', messageLimit: 'unlimited' },
         modules: {
-            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing'],
+            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
             premiumEligible: []
         },
@@ -298,7 +298,7 @@ const SCENARIO_C: PlanConfig[] = [
         modules: {
             included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
-            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing']
+            premiumEligible: ['voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing']
         },
         copy: { badge: 'Recommended', ctaLabel: 'Start 14-Day Trial', subtitle: 'For growing businesses' }
     },
@@ -310,7 +310,7 @@ const SCENARIO_C: PlanConfig[] = [
         billing: { contact: true },
         limits: { maxPremiumAddOns: 'unlimited', messageLimit: 'unlimited' },
         modules: {
-            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'socialMediaSharing', 'emailMarketing'],
+            included: ['generalAssistant', 'knowledgeEducation', 'leadCollection', 'salesCatalog', 'voiceAppointments', 'aiCopywriter', 'salesOptimization', 'emailMarketing'],
             defaultEnabled: ['generalAssistant', 'knowledgeEducation', 'leadCollection'],
             premiumEligible: []
         },

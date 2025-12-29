@@ -75,7 +75,7 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     appointments: 'enableAppointments',
     leadCollection: 'enableLeadCollection',
     knowledgeBase: 'enableKnowledgeBase',
-    socialMedia: 'enableSocialMedia',
+
     emailMarketing: 'enableEmailMarketing',
     salesOptimization: 'enableSalesOptimization',
     reviewManagement: 'enableReviewManagement',
@@ -137,7 +137,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         knowledgeBase: data.enableKnowledgeBase ?? true,
                         leadCollection: data.enableLeadCollection ?? false,
                         appointments: data.enableAppointments ?? false,
-                        socialMedia: data.enableSocialMedia ?? false,
+
                         emailMarketing: data.enableEmailMarketing ?? false,
                         salesOptimization: data.enableSalesOptimization ?? false,
                     })
@@ -151,7 +151,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         knowledgeBase: true,
                         leadCollection: false,
                         appointments: false,
-                        socialMedia: false,
+
                         emailMarketing: false,
                         salesOptimization: false,
                     })
@@ -276,9 +276,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             case 'appointments':
                 router.push(`${basePath}/chatbot/appointments`)
                 break
-            case 'socialMedia':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/social")
-                break
+
             case 'emailMarketing':
                 router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/email")
                 break

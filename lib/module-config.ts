@@ -1,4 +1,4 @@
-export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'socialMedia' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'agriCalendar' | 'marketWatch';
+export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'agriCalendar' | 'marketWatch';
 
 export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'other';
 
@@ -97,16 +97,6 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         price: 49,
         icon: 'Mic',
         recommendedFor: ['healthcare', 'service', 'booking']
-    },
-    socialMedia: {
-        id: 'socialMedia',
-        nameKey: 'modules.socialMedia',
-        descriptionKey: 'modules.socialMediaDesc',
-        isPremium: true,
-        isCore: false,
-        price: 19,
-        icon: 'Share2',
-        recommendedFor: ['ecommerce', 'education', 'saas']
     },
     emailMarketing: {
         id: 'emailMarketing',
@@ -234,7 +224,7 @@ export const ORDERED_MODULES: ModuleConfig[] = [
     MODULES.leadCollection,    // 4. Lead Collection
     MODULES.appointments,      // 5. Appointments
     MODULES.voiceAssistant,    // 6. Voice Assistant
-    MODULES.socialMedia,       // 7. Social Media
+
     MODULES.emailMarketing,    // 8. Email Marketing
     MODULES.reviewManagement,  // 9. Review Management
     MODULES.loyaltyProgram,    // 10. Loyalty Program

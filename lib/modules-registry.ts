@@ -21,7 +21,7 @@ export type ModuleId =
     | 'appointments'
     | 'leadCollection'
     | 'knowledgeBase'
-    | 'socialMedia'
+
     | 'emailMarketing'
     | 'salesOptimization'
     | 'reviewManagement'
@@ -331,24 +331,6 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         supportedSectors: ['ecommerce', 'saas'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableSalesOptimization'
-    },
-
-    socialMedia: {
-        id: 'socialMedia',
-        name: {
-            en: 'Social Media Sharing',
-            tr: 'Sosyal Medya Paylaşımı'
-        },
-        description: {
-            en: 'Generate and schedule social media content',
-            tr: 'Sosyal medya içeriği üretimi ve zamanlama'
-        },
-        icon: 'Share2',
-        isCore: false,
-        isPremiumAddOn: true,
-        supportedSectors: [],
-        defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableSocialMedia'
     },
 
     emailMarketing: {

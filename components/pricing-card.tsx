@@ -31,7 +31,7 @@ const MODULE_ICONS: Record<string, any> = {
     voiceAppointments: Mic,
     aiCopywriter: PenTool,
     salesOptimization: TrendingUp,
-    socialMediaSharing: Share2,
+
     emailMarketing: Mail
 }
 

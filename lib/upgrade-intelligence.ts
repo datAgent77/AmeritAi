@@ -173,10 +173,6 @@ const MODULE_BENEFITS: Record<string, { en: string; tr: string }> = {
         en: 'optimize your sales funnel with AI insights',
         tr: 'AI önerileriyle satış huninizi optimize etmenizi'
     },
-    socialMediaSharing: {
-        en: 'share content across social platforms automatically',
-        tr: 'içeriklerinizi sosyal platformlarda otomatik paylaşmanızı'
-    },
     emailMarketing: {
         en: 'automate email campaigns and follow-ups',
         tr: 'e-posta kampanyalarını ve takipleri otomatikleştirmenizi'

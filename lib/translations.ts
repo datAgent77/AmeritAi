@@ -316,8 +316,7 @@ export const translations = {
         "modules.appointmentsDesc": "Allow users to book appointments directly within the chat.",
         "modules.voiceAssistant": "Voice Assistant",
         "modules.voiceAssistantDesc": "Enable Voice-to-Text and Text-to-Speech capabilities.",
-        "modules.socialMedia": "Social Media Sharing",
-        "modules.socialMediaDesc": "Allow users to share product cards on social media.",
+
         "modules.emailMarketing": "Email Marketing",
         "modules.emailMarketingDesc": "Capture emails and sync with your marketing tools.",
         "modules.salesOptimization": "Sales Optimization",
@@ -1443,8 +1442,7 @@ export const translations = {
         "modules.appointmentsDesc": "Kullanıcıların sohbet içinden randevu almasını sağlar.",
         "modules.voiceAssistant": "Sesli Asistan",
         "modules.voiceAssistantDesc": "Sesli konuşma ve dinleme özelliklerini aktif eder.",
-        "modules.socialMedia": "Sosyal Medya Paylaşımı",
-        "modules.socialMediaDesc": "Kullanıcıların ürün kartlarını paylaşmasını sağlar.",
+
         "modules.emailMarketing": "E-posta Pazarlama",
         "modules.emailMarketingDesc": "E-postaları toplar ve pazarlama araçlarınızla senkronize eder.",
         "modules.salesOptimization": "Satış Optimizasyonu",
