@@ -30,8 +30,6 @@ export type ModuleId =
     | 'autoTranslate'
     | 'gamification'
     | 'visualDiagnosis'
-    | 'agriCalendar'
-    | 'marketWatch'
     | 'digitalWaiter';
 
 export type SectorId =
@@ -480,42 +478,6 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         supportedSectors: ['agriculture', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableVisualDiagnosis'
-    },
-
-    agriCalendar: {
-        id: 'agriCalendar',
-        name: {
-            en: 'Smart Agri-Calendar',
-            tr: 'Akıllı Tarım Takvimi'
-        },
-        description: {
-            en: 'Weather-based planting and harvest alerts',
-            tr: 'Hava durumu tabanlı ekim ve hasat uyarıları'
-        },
-        icon: 'CalendarDays',
-        isCore: false,
-        isPremiumAddOn: false,
-        supportedSectors: ['agriculture'],
-        defaultEnabledBySector: ['agriculture'],
-        legacyFirestoreField: 'enableAgriCalendar'
-    },
-
-    marketWatch: {
-        id: 'marketWatch',
-        name: {
-            en: 'Market Watch',
-            tr: 'Hal & Borsa Takibi'
-        },
-        description: {
-            en: 'Real-time market price tracking',
-            tr: 'Anlık piyasa fiyat takibi'
-        },
-        icon: 'TrendingUp',
-        isCore: false,
-        isPremiumAddOn: false,
-        supportedSectors: ['agriculture'],
-        defaultEnabledBySector: ['agriculture'],
-        legacyFirestoreField: 'enableMarketWatch'
     },
 
     digitalWaiter: {

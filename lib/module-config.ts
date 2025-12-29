@@ -1,4 +1,4 @@
-export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'agriCalendar' | 'marketWatch' | 'digitalWaiter';
+export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'digitalWaiter';
 
 export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'other';
 
@@ -175,38 +175,11 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         recommendedFor: ['agriculture', 'healthcare', 'real_estate']
     },
 
-    agriCalendar: {
-        id: 'agriCalendar',
-        nameKey: 'modules.agriCalendar',
-        descriptionKey: 'modules.agriCalendarDesc',
-        isPremium: false,
-        isCore: false,
-        price: 0,
-        icon: 'CalendarDays',
-        recommendedFor: ['agriculture']
-    },
 
-    marketWatch: {
-        id: 'marketWatch',
-        nameKey: 'modules.marketWatch',
-        descriptionKey: 'modules.marketWatchDesc',
-        isPremium: false,
-        isCore: false,
-        price: 0,
-        icon: 'TrendingUp',
-        recommendedFor: ['agriculture']
-    },
 
     salesOptimization: {
         id: 'salesOptimization',
         nameKey: 'modules.salesOptimization',
-        // ...
-        // (We also need to update ORDERED_MODULES)
-        // I will do it in a separate call or try to squeeze it here?
-        // The tool says "Use this tool ONLY when you are making a SINGLE CONTIGUOUS block of edits".
-        // So I can't do both if they are far apart.
-        // I will just add the definition first.
-
         descriptionKey: 'modules.salesOptimizationDesc',
         isPremium: true,
         isCore: false,
@@ -243,8 +216,6 @@ export const ORDERED_MODULES: ModuleConfig[] = [
     MODULES.autoTranslate,     // 12. Auto Translate
     MODULES.gamification,      // 13. Gamification
     MODULES.visualDiagnosis,   // 14. Visual Diagnosis
-    MODULES.agriCalendar,      // 15. Agri Calendar
-    MODULES.marketWatch,       // 16. Market Watch
     MODULES.salesOptimization, // 17. Sales Optimization
     MODULES.digitalWaiter,     // 18. Digital Waiter
 ];

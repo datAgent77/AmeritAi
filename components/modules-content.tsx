@@ -86,8 +86,6 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     autoTranslate: 'enableAutoTranslate',
     gamification: 'enableGamification',
     visualDiagnosis: 'enableVisualDiagnosis',
-    agriCalendar: 'enableAgriCalendar',
-    marketWatch: 'enableMarketWatch',
     digitalWaiter: 'enableDigitalWaiter'
 }
 
@@ -301,12 +299,6 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'visualDiagnosis':
                 router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/visual")
-                break
-            case 'agriCalendar':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/calendar")
-                break
-            case 'marketWatch':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/market")
                 break
             // Add other routes as they are implemented
             default:
