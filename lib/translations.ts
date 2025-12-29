@@ -313,6 +313,15 @@ export const translations = {
         "modules.visualDiagnosis": "Visual Diagnosis",
         "modules.visualDiagnosisDesc": "AI-powered visual analysis and diagnosis.",
 
+        "activeSector": "Active Sector",
+        "searchModules": "Search modules...",
+        "filterByIndustry": "Filter by Industry",
+        "allIndustries": "All Industries",
+        "gridView": "Grid View",
+        "listView": "List View",
+        "noModulesFound": "No modules found",
+        "clearFilters": "Clear Filters",
+
         'modules.personalShopper': 'Personal Shopper',
         'modules.personalShopperDesc': 'Smart assistant that suggests products for e-commerce sites.',
         'modules.uiUxAuditor': 'UI/UX Auditor',
@@ -1470,6 +1479,15 @@ export const translations = {
         "modules.gamificationDesc": "Kullanıcıları oyunlar ve ödüllerle etkileşime geçirin.",
         "modules.visualDiagnosis": "Görsel Tanı",
         "modules.visualDiagnosisDesc": "AI destekli görsel analiz ve teşhis.",
+
+        "activeSector": "Aktif Sektör",
+        "searchModules": "Modül ara...",
+        "filterByIndustry": "Sektör Filtrele",
+        "allIndustries": "Tüm Sektörler",
+        "gridView": "Grid",
+        "listView": "Liste",
+        "noModulesFound": "Modül bulunamadı",
+        "clearFilters": "Filtreleri Temizle",
 
         "modules.productCatalog": "Satış & Katalog Modülü",
         "modules.productCatalogDesc": "Ürün sunumu ve satış modülü. 'Kişisel Alışveriş Asistanı' yeteneklerini açar.",
