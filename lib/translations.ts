@@ -2,6 +2,8 @@ export type Language = 'en' | 'tr' | 'de' | 'es' | 'fr' | 'pt' | 'ar';
 
 export const translations = {
     en: {
+        industriesPageTitle: "All Industries",
+        industriesPageDesc: "Artificial intelligence solutions specialized for every sector.",
         dashboard: "Dashboard",
         chats: "Chats",
         chatsDescription: "View and manage your conversations with users.",
@@ -1121,6 +1123,8 @@ export const translations = {
 
     },
     tr: {
+        industriesPageTitle: "Tüm Sektörler",
+        industriesPageDesc: "Her sektör için özelleşmiş yapay zeka çözümleri.",
         welcome: "Hoş Geldiniz",
         welcomeTo: "Hoş Geldiniz:",
         dashboard: "Panel",
