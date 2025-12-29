@@ -141,11 +141,7 @@ export default function LandingPage() {
                                     <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </Link>
-                            <Link href="mailto:support@vion.ai">
-                                <Button variant="outline" className="h-12 px-8 text-white border-white/20 hover:bg-white/10 rounded-full font-medium">
-                                    {t('contactUs')}
-                                </Button>
-                            </Link>
+
                         </div>
                     </div>
                 </div>
