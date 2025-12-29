@@ -87,6 +87,8 @@ export async function GET(req: Request) {
                     offlineMessage: data.offlineMessage || "We are currently offline.",
                     // Engagement
                     engagement: data.engagement || null,
+                    // Digital Waiter (Restaurant)
+                    digitalWaiter: data.digitalWaiter || null,
                     enableVoiceAssistant: data.enableVoiceAssistant || false,
                     voiceProvider: data.voiceProvider || "klassifier",
                     elevenLabsVoiceId: data.elevenLabsVoiceId || "",
@@ -135,6 +137,7 @@ export async function GET(req: Request) {
                     launcherAnimation: "none",
                     initialLanguage: "auto",
                     engagement: null,
+                    digitalWaiter: null,
                     enableVoiceAssistant: false,
                     voiceProvider: "klassifier",
                     elevenLabsVoiceId: "",

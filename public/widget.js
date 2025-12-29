@@ -1108,11 +1108,68 @@
       .then(res => res.json())
       .then(data => {
         console.log('Engagement data from API:', data.engagement);
-        if (data.engagement && data.engagement.enabled) {
+
+        // Digital Waiter: Inject time-based bubbles
+        let engagementSettings = data.engagement || { enabled: false, bubble: { messages: [] }, triggers: {} };
+
+        if (data.digitalWaiter && data.digitalWaiter.aiSuggestionsEnabled) {
+          console.log('Digital Waiter: AI suggestions enabled, checking time...');
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMinutes = now.getMinutes();
+          const currentTime = currentHour * 60 + currentMinutes; // Minutes since midnight
+
+          const parseTime = (timeStr) => {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+          };
+
+          const breakfast = data.digitalWaiter.breakfastHours || { start: '07:00', end: '11:00' };
+          const lunch = data.digitalWaiter.lunchHours || { start: '11:00', end: '15:00' };
+          const dinner = data.digitalWaiter.dinnerHours || { start: '18:00', end: '23:00' };
+
+          let mealHint = null;
+
+          if (currentTime >= parseTime(breakfast.start) && currentTime < parseTime(breakfast.end)) {
+            mealHint = { text: '☀️ Günaydın! Kahvaltı menümüze göz atmak ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
+          } else if (currentTime >= parseTime(lunch.start) && currentTime < parseTime(lunch.end)) {
+            mealHint = { text: '🍽️ Öğle yemeği vakti! Bugünün spesiyalini sormak ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
+          } else if (currentTime >= parseTime(dinner.start) && currentTime < parseTime(dinner.end)) {
+            mealHint = { text: '🥂 İyi akşamlar! Şarap listesini veya şefin önerilerini görmek ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
+          }
+
+          if (mealHint) {
+            console.log('Digital Waiter: Injecting time-based bubble:', mealHint.text);
+            // Ensure engagement structure exists
+            if (!engagementSettings.enabled) {
+              engagementSettings.enabled = true;
+            }
+            if (!engagementSettings.bubble) {
+              engagementSettings.bubble = { messages: [], style: { backgroundColor: '#000', textColor: '#FFF' }, position: 'top', animation: 'bounce' };
+            }
+            if (!engagementSettings.bubble.messages) {
+              engagementSettings.bubble.messages = [];
+            }
+            // Add the AI-generated hint to the front
+            engagementSettings.bubble.messages.unshift(mealHint);
+          }
+
+          // Also add signature dishes hint if configured
+          if (data.digitalWaiter.signatureDishes && data.digitalWaiter.signatureDishes.length > 0) {
+            const sigDish = data.digitalWaiter.signatureDishes[Math.floor(Math.random() * data.digitalWaiter.signatureDishes.length)];
+            const sigHint = { text: `⭐ Bugün ${sigDish} tavsiye ederiz!`, delay: 15, isActive: true, isAiGenerated: true };
+            console.log('Digital Waiter: Injecting signature dish hint:', sigHint.text);
+            if (!engagementSettings.bubble.messages) engagementSettings.bubble.messages = [];
+            engagementSettings.bubble.messages.push(sigHint);
+          }
+        }
+
+        if (engagementSettings && engagementSettings.enabled) {
           console.log('Initializing Engagement Controller after launcher creation...');
-          engagementController = new EngagementController(data.engagement, baseUrl, chatbotId);
+          engagementController = new EngagementController(engagementSettings, baseUrl, chatbotId);
         } else {
-          console.log('Engagement disabled or not configured:', data.engagement?.enabled);
+          console.log('Engagement disabled or not configured:', engagementSettings?.enabled);
         }
       })
       .catch(err => console.error('Failed to load engagement settings:', err));
