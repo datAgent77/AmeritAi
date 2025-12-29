@@ -2,6 +2,18 @@ export type Language = 'en' | 'tr' | 'de' | 'es' | 'fr' | 'pt' | 'ar';
 
 export const translations = {
     en: {
+        sectorDesc_ecommerce: "Boost sales with personalized product recommendations and smart cart recovery.",
+        sectorDesc_travel: "Assist travelers with itinerary planning, booking, and local guides.",
+        sectorDesc_realestate: "Showcase properties, schedule viewings, and answer buyer queries 24/7.",
+        sectorDesc_saas: "Automate onboarding, technical support, and subscription management.",
+        sectorDesc_service: "Streamline appointment booking and quote generation for service businesses.",
+        sectorDesc_healthcare: "Triage symptoms, schedule appointments, and provide medication reminders.",
+        sectorDesc_education: "Guide students through course selection, enrollment, and campus FAQs.",
+        sectorDesc_academic: "Support research, grant applications, and academic collaboration.",
+        sectorDesc_finance: "Simplify complex financial concepts and assist with account management.",
+        sectorDesc_restaurant: "Handle reservations, show menus, and take takeout orders efficiently.",
+        sectorDesc_agriculture: "Monitor crop health, optimize irrigation, and predict harvest yields.",
+
         industriesPageTitle: "All Industries",
         industriesPageDesc: "Artificial intelligence solutions specialized for every sector.",
         dashboard: "Dashboard",
@@ -1123,6 +1135,18 @@ export const translations = {
 
     },
     tr: {
+        sectorDesc_ecommerce: "Kişiselleştirilmiş ürün önerileri ve akıllı sepet kurtarma ile satışları artırın.",
+        sectorDesc_travel: "Seyahat planlaması, rezervasyon ve yerel rehberlik konularında gezginlere yardımcı olun.",
+        sectorDesc_realestate: "Mülkleri sergileyin, randevuları planlayın ve alıcı sorularını 7/24 yanıtlayın.",
+        sectorDesc_saas: "Katılım sürecini, teknik desteği ve abonelik yönetimini otomatikleştirin.",
+        sectorDesc_service: "Hizmet işletmeleri için randevu oluşturmayı ve teklif vermeyi kolaylaştırın.",
+        sectorDesc_healthcare: "Belirtileri değerlendirin, randevu alın ve ilaç hatırlatmaları yapın.",
+        sectorDesc_education: "Öğrencilere ders seçimi, kayıt ve kampüs sorularında rehberlik edin.",
+        sectorDesc_academic: "Araştırmaları, hibe başvurularını ve akademik işbirliklerini destekleyin.",
+        sectorDesc_finance: "Karmaşık finansal kavramları basitleştirin ve hesap yönetimine yardımcı olun.",
+        sectorDesc_restaurant: "Rezervasyonları yönetin, menüleri gösterin ve siparişleri verimli bir şekilde alın.",
+        sectorDesc_agriculture: "Mahsul sağlığını izleyin, sulamayı optimize edin ve hasat verimini tahmin edin.",
+
         industriesPageTitle: "Tüm Sektörler",
         industriesPageDesc: "Her sektör için özelleşmiş yapay zeka çözümleri.",
         welcome: "Hoş Geldiniz",
