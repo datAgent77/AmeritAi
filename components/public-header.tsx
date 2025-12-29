@@ -242,7 +242,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                         ) : (
                             <>
                                 <Link href="/login">
-                                    <Button variant="ghost" className="text-sm font-medium text-white hover:bg-white/10 h-9 rounded-full px-4">
+                                    <Button variant="ghost" className="text-sm font-medium text-white hover:text-white hover:bg-white/10 h-9 rounded-full px-4">
                                         {t('login')}
                                     </Button>
                                 </Link>

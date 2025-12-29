@@ -1165,6 +1165,44 @@
           }
         }
 
+        // AI Auto-Bubbles: Inject pre-generated AI messages
+        if (engagementSettings.aiBubbles && engagementSettings.aiBubbles.enabled) {
+          const aiMessages = engagementSettings.aiBubbles.generatedMessages || [];
+          const maxAi = engagementSettings.aiBubbles.maxPerSession || 2;
+
+          // Check session limit
+          const aiShownKey = `userex_ai_bubbles_${chatbotId}`;
+          const aiShownCount = parseInt(sessionStorage.getItem(aiShownKey) || '0');
+
+          if (aiShownCount < maxAi && aiMessages.length > 0) {
+            console.log('AI Auto-Bubbles: Injecting', aiMessages.length, 'AI generated messages');
+
+            // Ensure engagement structure exists
+            if (!engagementSettings.enabled) {
+              engagementSettings.enabled = true;
+            }
+            if (!engagementSettings.bubble) {
+              engagementSettings.bubble = { messages: [], style: { backgroundColor: '#000', textColor: '#FFF' }, position: 'top', animation: 'bounce' };
+            }
+            if (!engagementSettings.bubble.messages) {
+              engagementSettings.bubble.messages = [];
+            }
+
+            // Add AI bubbles (respecting max limit)
+            const toAdd = aiMessages.slice(0, maxAi - aiShownCount);
+            toAdd.forEach((msg, i) => {
+              engagementSettings.bubble.messages.push({
+                ...msg,
+                delay: (msg.delay || 10) + (i * 5), // Stagger delays
+                isAiGenerated: true
+              });
+            });
+
+            // Update session counter
+            sessionStorage.setItem(aiShownKey, (aiShownCount + toAdd.length).toString());
+          }
+        }
+
         if (engagementSettings && engagementSettings.enabled) {
           console.log('Initializing Engagement Controller after launcher creation...');
           engagementController = new EngagementController(engagementSettings, baseUrl, chatbotId);
