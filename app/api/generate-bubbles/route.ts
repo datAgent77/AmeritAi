@@ -122,8 +122,20 @@ Kurallar:
 
 Şimdi 3 mesaj üret:`
 
+        // Check for GEMINI_API_KEY
+        if (!process.env.GEMINI_API_KEY) {
+            console.log("GEMINI_API_KEY not set, returning default bubbles")
+            return NextResponse.json({
+                bubbles: [
+                    "Merhaba! Size nasıl yardımcı olabilirim?",
+                    "Sorularınızı yanıtlamak için buradayım.",
+                    "İhtiyacınız olan bilgiye ulaşmanıza yardımcı olabilirim."
+                ]
+            })
+        }
+
         // Call Gemini API
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
         const result = await model.generateContent(prompt)
@@ -147,8 +159,14 @@ Kurallar:
 
         return NextResponse.json({ bubbles: bubbles.slice(0, 5) })
 
-    } catch (error) {
-        console.error("Error generating bubbles:", error)
-        return NextResponse.json({ error: "Failed to generate bubbles" }, { status: 500 })
+    } catch (error: any) {
+        console.error("Error generating bubbles:", error?.message || error)
+        // Return fallback bubbles instead of error
+        return NextResponse.json({
+            bubbles: [
+                "Merhaba! Size nasıl yardımcı olabilirim?",
+                "Sorularınızı yanıtlamak için buradayım."
+            ]
+        })
     }
 }
