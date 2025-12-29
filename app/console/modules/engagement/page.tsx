@@ -509,7 +509,7 @@ export default function EngagementPage() {
                                         <Link href="/console/subscription">
                                             <Button size="lg" className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-xl shadow-amber-500/20 border-0 transition-all hover:scale-105">
                                                 <Rocket className="w-5 h-5 mr-2" />
-                                                Hemen Premium'a Geç
+                                                Hemen Premium&apos;a Geç
                                             </Button>
                                         </Link>
                                     </div>
