@@ -312,10 +312,7 @@ export const translations = {
         "modules.gamificationDesc": "Engage users with games and rewards.",
         "modules.visualDiagnosis": "Visual Diagnosis",
         "modules.visualDiagnosisDesc": "AI-powered visual analysis and diagnosis.",
-        "modules.agriCalendar": "Agri-Calendar",
-        "modules.agriCalendarDesc": "Smart farming calendar and alerts.",
-        "modules.marketWatch": "Market Watch",
-        "modules.marketWatchDesc": "Real-time market price tracking.",
+
         'modules.personalShopper': 'Personal Shopper',
         'modules.personalShopperDesc': 'Smart assistant that suggests products for e-commerce sites.',
         'modules.uiUxAuditor': 'UI/UX Auditor',
@@ -1473,10 +1470,7 @@ export const translations = {
         "modules.gamificationDesc": "Kullanıcıları oyunlar ve ödüllerle etkileşime geçirin.",
         "modules.visualDiagnosis": "Görsel Tanı",
         "modules.visualDiagnosisDesc": "AI destekli görsel analiz ve teşhis.",
-        "modules.agriCalendar": "Akıllı Tarım Takvimi",
-        "modules.agriCalendarDesc": "Hava durumu tabanlı ekim ve hasat takvimi.",
-        "modules.marketWatch": "Hal & Borsa Takibi",
-        "modules.marketWatchDesc": "Anlık piyasa fiyat takibi.",
+
         "modules.productCatalog": "Satış & Katalog Modülü",
         "modules.productCatalogDesc": "Ürün sunumu ve satış modülü. 'Kişisel Alışveriş Asistanı' yeteneklerini açar.",
         "modules.knowledgeBase": "Bilgi & Eğitim Modülü",
