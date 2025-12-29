@@ -96,8 +96,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
 
     const resources = [
         { title: { en: "Blog", tr: "Blog" }, href: "/blog", desc: { en: "Industry insights and news", tr: "Sektörel haberler ve içgörüler" } },
-        { title: { en: "Help Center (FAQ)", tr: "Yardım Merkezi (SSS)" }, href: "/resources/faq", desc: { en: "Common questions", tr: "Sıkça sorulan sorular" } },
-        { title: { en: "Academy", tr: "Akademi" }, href: "/resources/education", desc: { en: "Guides and tutorials", tr: "Rehberler ve eğitimler" } },
+        { title: { en: "Help Center (FAQ)", tr: "Yardım Merkezi (SSS)" }, href: "/resources/faq", desc: { en: "Common questions", tr: "Sıkça sorulan sorular" } }
     ]
     // ----------------------
 

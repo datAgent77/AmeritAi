@@ -203,6 +203,7 @@ export const SEED_BLOG_POSTS = [
 ];
 
 export const SEED_FAQS = [
+    // --- INTEGRATION ---
     {
         question: {
             en: "How do I integrate Vion into my website?",
@@ -212,8 +213,32 @@ export const SEED_FAQS = [
             en: "Simply copy the embed code from your dashboard and paste it into your website's HTML, just before the closing </body> tag.",
             tr: "Panonuzdan gömme (embed) kodunu kopyalayın ve web sitenizin HTML'ine, kapanış </body> etiketinden hemen önce yapıştırın."
         },
-        category: "Entegrasyon"
+        category: "integration"
     },
+    {
+        question: {
+            en: "Does Vion support WordPress or Shopify?",
+            tr: "Vion WordPress veya Shopify'ı destekliyor mu?"
+        },
+        answer: {
+            en: "Yes, Vion works with all major CMS platforms including WordPress, Shopify, Wix, and Webflow. You can use our specialized plugins or the standard HTML embed code.",
+            tr: "Evet, Vion WordPress, Shopify, Wix ve Webflow dahil olmak üzere tüm büyük CMS platformlarıyla çalışır. Özel eklentilerimizi veya standart HTML gömme kodunu kullanabilirsiniz."
+        },
+        category: "integration"
+    },
+    {
+        question: {
+            en: "Can I use Vion on a mobile app?",
+            tr: "Vion'u mobil uygulamada kullanabilir miyim?"
+        },
+        answer: {
+            en: "Yes, we provide an SDK for React Native and Flutter, allowing you to embed Vion directly into your mobile applications.",
+            tr: "Evet, Vion'u doğrudan mobil uygulamalarınıza gömmenizi sağlayan React Native ve Flutter için bir SDK sunuyoruz."
+        },
+        category: "integration"
+    },
+
+    // --- PRICING ---
     {
         question: {
             en: "Is there a free trial available?",
@@ -223,40 +248,123 @@ export const SEED_FAQS = [
             en: "Yes, we offer a 14-day free trial on all premium plans. No credit card required to start.",
             tr: "Evet, tüm premium planlarda 14 günlük ücretsiz deneme sunuyoruz. Başlamak için kredi kartı gerekmez."
         },
-        category: "Fiyatlandırma"
+        category: "pricing"
     },
+    {
+        question: {
+            en: "Can I change my plan later?",
+            tr: "Planımı daha sonra değiştirebilir miyim?"
+        },
+        answer: {
+            en: "Yes, you can upgrade or downgrade your plan at any time from the billing settings in your dashboard. Changes take effect faster than you think.",
+            tr: "Evet, planınızı istediğiniz zaman panelinizdeki fatura ayarlarından yükseltebilir veya düşürebilirsiniz. Değişiklikler düşündüğünüzden daha hızlı etkili olur."
+        },
+        category: "pricing"
+    },
+    {
+        question: {
+            en: "Do you offer enterprise discounts?",
+            tr: "Kurumsal indirimler sunuyor musunuz?"
+        },
+        answer: {
+            en: "We offer special pricing for annual commitments and large-volume enterprise accounts. Contact our sales team for a custom quote.",
+            tr: "Yıllık taahhütler ve yüksek hacimli kurumsal hesaplar için özel fiyatlandırma sunuyoruz. Özel bir teklif için satış ekibimizle iletişime geçin."
+        },
+        category: "pricing"
+    },
+
+    // --- CUSTOMIZATION ---
     {
         question: {
             en: "Can I customize the chatbot's appearance?",
             tr: "Chatbot'un görünümünü özelleştirebilir miyim?"
         },
         answer: {
-            en: "Absolutely. You can change colors, icons, and position from the Widget Settings in your console.",
-            tr: "Kesinlikle. Konsolunuzdaki Widget Ayarları'ndan renkleri, simgeleri ve konumu değiştirebilirsiniz."
+            en: "Absolutely. You can change colors, icons, and position from the Widget Settings in your console to match your brand identity perfectly.",
+            tr: "Kesinlikle. Marka kimliğinize mükemmel şekilde uyması için konsolunuzdaki Widget Ayarları'ndan renkleri, simgeleri ve konumu değiştirebilirsiniz."
         },
-        category: "Özelleştirme"
+        category: "customization"
     },
+    {
+        question: {
+            en: "Can I upload my own logo?",
+            tr: "Kendi logomu yükleyebilir miyim?"
+        },
+        answer: {
+            en: "Yes, the 'Pro' and 'Enterprise' plans allow you to remove the Vion branding and upload your own custom logo for the chat launcher.",
+            tr: "Evet, 'Pro' ve 'Kurumsal' planları Vion markasını kaldırmanıza ve sohbet başlatıcı için kendi özel logonuzu yüklemenize olanak tanır."
+        },
+        category: "customization"
+    },
+    {
+        question: {
+            en: "Can I train the AI on my specific data?",
+            tr: "AI'yı kendi özel verilerimle eğitebilir miyim?"
+        },
+        answer: {
+            en: "Yes, you can upload PDFs, Word documents, or provide your website URL. Vion will crawl and learn from your content to answer user queries accurately.",
+            tr: "Evet, PDF'ler, Word belgeleri yükleyebilir veya web sitenizin URL'sini verebilirsiniz. Vion, kullanıcı sorularını doğru bir şekilde yanıtlamak için içeriğinizi tarayacak ve öğrenecektir."
+        },
+        category: "customization"
+    },
+
+    // --- GENERAL ---
     {
         question: {
             en: "Which languages does Vion support?",
             tr: "Vion hangi dilleri destekliyor?"
         },
         answer: {
-            en: "Vion supports over 95 languages globally, with auto-detection and instant translation capabilities.",
-            tr: "Vion, otomatik algılama ve anında çeviri özellikleriyle küresel olarak 95'ten fazla dili destekler."
+            en: "Vion supports over 95 languages globally, with auto-detection and instant translation capabilities. It speaks your customer's language automatically.",
+            tr: "Vion, otomatik algılama ve anında çeviri özellikleriyle küresel olarak 95'ten fazla dili destekler. Müşterinizin dilini otomatik olarak konuşur."
         },
-        category: "Genel"
+        category: "general"
     },
+    {
+        question: {
+            en: "What happens if the AI doesn't know the answer?",
+            tr: "Yapay zeka cevabı bilmiyorsa ne olur?"
+        },
+        answer: {
+            en: "You can configure a fallback message or choose to escalate the chat to a human agent immediately. We also provide a 'learning mode' where you can correct the AI.",
+            tr: "Bir yedek mesaj yapılandırabilir veya sohbeti hemen bir insan temsilciye yönlendirmeyi seçebilirsiniz. Ayrıca AI'yı düzeltebileceğiniz bir 'öğrenme modu' da sağlıyoruz."
+        },
+        category: "general"
+    },
+    {
+        question: {
+            en: "How accurate is the AI?",
+            tr: "Yapay zeka ne kadar doğru?"
+        },
+        answer: {
+            en: "Vion uses state-of-the-art LLMs (like GPT-4 and Gemini) to ensure high accuracy. It typically handles 85-90% of routine queries without human intervention.",
+            tr: "Vion, yüksek doğruluk sağlamak için en son teknoloji LLM'leri (GPT-4 ve Gemini gibi) kullanır. Genellikle rutin sorguların %85-90'ını insan müdahalesi olmadan halleder."
+        },
+        category: "general"
+    },
+
+    // --- SECURITY ---
     {
         question: {
             en: "Is my data secure?",
             tr: "Verilerim güvende mi?"
         },
         answer: {
-            en: "We use enterprise-grade encryption and follow strict GDPR/KVKK compliance guidelines to ensure your data is safe.",
-            tr: "Verilerinizin güvende olmasını sağlamak için kurumsal düzeyde şifreleme kullanıyor ve sıkı GDPR/KVKK uyumluluk yönergelerini izliyoruz."
+            en: "We use enterprise-grade encryption (AES-256) and follow strict GDPR/KVKK compliance guidelines. Your data is encrypted both in transit and at rest.",
+            tr: "Kurumsal düzeyde şifreleme (AES-256) kullanıyor ve sıkı GDPR/KVKK uyumluluk yönergelerini izliyoruz. Verileriniz hem aktarım sırasında hem de bekleme durumunda şifrelenir."
         },
-        category: "Güvenlik"
+        category: "security"
+    },
+    {
+        question: {
+            en: "Where is the data stored?",
+            tr: "Veriler nerede saklanıyor?"
+        },
+        answer: {
+            en: "Data is stored in secure data centers located in the EU and US, depending on your region and compliance requirements.",
+            tr: "Veriler, bölgenize ve uyumluluk gereksinimlerinize bağlı olarak AB ve ABD'deki güvenli veri merkezlerinde saklanır."
+        },
+        category: "security"
     }
 ];
 

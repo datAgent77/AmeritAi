@@ -11,8 +11,19 @@ export async function GET(req: NextRequest) {
         const snapshot = await db.collection("cms_faq").get();
         let faqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        if (faqs.length === 0) {
-            console.log("Seeding FAQs...");
+        // Re-seed if count is low (indicating old seed data)
+        if (faqs.length <= 5) {
+            console.log("Seeding or Re-seeding FAQs...");
+
+            // Optional: You might want to delete existing ones first to avoid duplicates if you didn't have ID checks
+            // But for now we just add. In a real scenario, we'd upsert or clean.
+            // Let's clean the old ones if they are few, to ensure fresh categories.
+            if (faqs.length > 0) {
+                const deleteBatch = db.batch();
+                snapshot.docs.forEach(doc => deleteBatch.delete(doc.ref));
+                await deleteBatch.commit();
+            }
+
             const batch = db.batch();
             SEED_FAQS.forEach(faq => {
                 const docRef = db.collection("cms_faq").doc();

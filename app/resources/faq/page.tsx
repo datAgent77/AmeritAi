@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -7,6 +6,9 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
+import { Search, MessageCircleQuestion, Phone, Mail } from "lucide-react"
 
 interface FaqItem {
     id: string;
@@ -18,6 +20,8 @@ interface FaqItem {
 export default function FaqPage() {
     const { t, language } = useLanguage()
     const [faqs, setFaqs] = useState<FaqItem[]>([])
+    const [searchQuery, setSearchQuery] = useState("")
+    const [activeCategory, setActiveCategory] = useState("all")
 
     useEffect(() => {
         fetch('/api/cms/faq')
@@ -28,39 +32,120 @@ export default function FaqPage() {
             .catch(err => console.error(err))
     }, [])
 
+    // Get unique categories (mapped for display if needed)
+    // For simplicity, we'll rely on the raw category strings from seed data
+    // Ideally we should translate these categories.
+    const categories = [
+        { id: 'all', label: { en: 'All Questions', tr: 'Tüm Sorular' } },
+        { id: 'general', label: { en: 'General', tr: 'Genel' } },
+        { id: 'pricing', label: { en: 'Pricing', tr: 'Fiyatlandırma' } },
+        { id: 'integration', label: { en: 'Integration', tr: 'Entegrasyon' } },
+        { id: 'customization', label: { en: 'Customization', tr: 'Özelleştirme' } },
+        { id: 'security', label: { en: 'Security', tr: 'Güvenlik' } }
+    ]
+
+    const filteredFaqs = faqs.filter(faq => {
+        const matchesCategory = activeCategory === 'all' || faq.category.toLowerCase() === activeCategory;
+        const q = searchQuery.toLowerCase();
+        const matchesSearch =
+            faq.question[language as 'en' | 'tr']?.toLowerCase().includes(q) ||
+            faq.answer[language as 'en' | 'tr']?.toLowerCase().includes(q);
+
+        return matchesCategory && matchesSearch;
+    })
+
     return (
-        <div className="min-h-screen bg-black text-white font-sans">
+        <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500/30">
             <PublicHeader />
 
-            <section className="pt-32 pb-20 relative overflow-hidden">
-                <div className="container mx-auto px-4 relative z-10 max-w-3xl text-center mb-16">
-                    <Badge variant="outline" className="mb-6 border-purple-500/30 text-purple-300">
-                        {language === 'tr' ? 'Yardım & Destek' : 'Help & Support'}
-                    </Badge>
-                    <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-                        {t('faqTitle') || "Frequently Asked Questions"}
-                    </h1>
-                    <p className="text-xl text-zinc-400">
-                        {language === 'tr'
-                            ? 'Vion hakkında en çok merak edilen soruların cevapları.'
-                            : 'Answers to the most common questions about Vion.'}
-                    </p>
-                </div>
+            {/* Hero */}
+            <section className="pt-32 pb-16 relative overflow-hidden border-b border-white/5 bg-zinc-950">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-black to-black opacity-40" />
 
-                <div className="container mx-auto px-4 max-w-3xl">
-                    <div className="space-y-4">
-                        <Accordion type="single" collapsible className="w-full">
-                            {faqs.map((faq) => (
-                                <AccordionItem key={faq.id} value={faq.id} className="border-white/10 px-4 rounded-lg mb-4 bg-white/5 hover:bg-white/[0.07] transition-colors data-[state=open]:bg-white/10 data-[state=open]:border-white/20">
-                                    <AccordionTrigger className="text-left text-lg py-6 hover:no-underline">
-                                        {faq.question[language as 'en' | 'tr']}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="text-zinc-400 pb-6 text-base leading-relaxed">
-                                        {faq.answer[language as 'en' | 'tr']}
-                                    </AccordionContent>
-                                </AccordionItem>
+                <div className="container mx-auto px-4 relative z-10 text-center max-w-4xl">
+                    <Badge variant="outline" className="mb-6 border-purple-500/30 text-purple-300 bg-purple-500/5 px-4 py-1">
+                        {language === 'tr' ? 'Yardım Merkezi' : 'Help Center'}
+                    </Badge>
+                    <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white">
+                        {t('faqTitle') || (language === 'tr' ? "Nasıl yardımcı olabiliriz?" : "How can we help?")}
+                    </h1>
+                    <p className="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto font-light">
+                        {language === 'tr'
+                            ? 'Vion hakkında merak ettiğiniz her şeyi burada bulabilirsiniz.'
+                            : 'Find answers to all your questions about Vion.'}
+                    </p>
+
+                    {/* Search Bar */}
+                    <div className="relative max-w-xl mx-auto">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                        <Input
+                            type="text"
+                            placeholder={language === 'tr' ? "Soru arayın..." : "Search for questions..."}
+                            className="w-full pl-12 pr-4 h-14 bg-white/5 border-white/10 rounded-full text-lg focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-zinc-600"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ Content */}
+            <section className="py-16 md:py-24">
+                <div className="container mx-auto px-4 max-w-5xl">
+
+                    {/* Categories Tabs */}
+                    <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory} className="mb-12">
+                        <TabsList className="w-full flex flex-wrap justify-center h-auto gap-2 bg-transparent">
+                            {categories.map((cat) => (
+                                <TabsTrigger
+                                    key={cat.id}
+                                    value={cat.id}
+                                    className="px-6 py-3 rounded-full border border-white/5 bg-zinc-900/50 data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:border-white transition-all text-zinc-400"
+                                >
+                                    {cat.label[language as 'en' | 'tr']}
+                                </TabsTrigger>
                             ))}
-                        </Accordion>
+                        </TabsList>
+                    </Tabs>
+
+                    {/* Accordion List */}
+                    <div className="space-y-4 min-h-[400px]">
+                        {filteredFaqs.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full space-y-4">
+                                {filteredFaqs.map((faq) => (
+                                    <AccordionItem key={faq.id} value={faq.id} className="border border-white/5 px-6 rounded-2xl bg-zinc-900/30 hover:bg-zinc-900/60 hover:border-white/10 transition-all duration-300">
+                                        <AccordionTrigger className="text-left text-lg font-medium py-6 hover:no-underline text-zinc-200 hover:text-white">
+                                            {faq.question[language as 'en' | 'tr']}
+                                        </AccordionTrigger>
+                                        <AccordionContent className="text-zinc-400 pb-6 text-base leading-relaxed font-light">
+                                            {faq.answer[language as 'en' | 'tr']}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <div className="text-center py-20 text-zinc-500">
+                                <MessageCircleQuestion className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                <p>{language === 'tr' ? "Sonuç bulunamadı." : "No results found."}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Contact Support CTA */}
+                    <div className="mt-20 pt-16 border-t border-white/5 text-center">
+                        <h3 className="text-2xl font-bold text-white mb-4">
+                            {language === 'tr' ? "Aradığınızı bulamadınız mı?" : "Still have questions?"}
+                        </h3>
+                        <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
+                            {language === 'tr'
+                                ? "Destek ekibimiz size yardımcı olmaktan mutluluk duyacaktır."
+                                : "Our support team is always ready to help you."}
+                        </p>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <button className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-white">
+                                <Mail className="w-4 h-4" /> support@vion.ai
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
