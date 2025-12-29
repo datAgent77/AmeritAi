@@ -30,7 +30,8 @@ export type ModuleId =
     | 'autoTranslate'
     | 'gamification'
     | 'visualDiagnosis'
-    | 'digitalWaiter';
+    | 'digitalWaiter'
+    | 'proactiveMessaging';
 
 export type SectorId =
     | 'ecommerce'
@@ -529,6 +530,44 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         benefits: [
             { en: 'Increase table turnover by 20%', tr: 'Masa devir hızını %20 artırın' },
             { en: 'Boost average ticket size', tr: 'Ortalama sepet tutarını yükseltin' }
+        ]
+    },
+
+    proactiveMessaging: {
+        id: 'proactiveMessaging',
+        name: {
+            en: 'Proactive Engagement',
+            tr: 'Proaktif Etkileşim'
+        },
+        description: {
+            en: 'Engage visitors with non-intrusive bubble messages',
+            tr: 'Ziyaretçilerle rahatsız etmeyen balon mesajlarıyla etkileşime geçin'
+        },
+        icon: 'MessageCircle', // Or 'Bell'
+        isCore: false,
+        isPremiumAddOn: true,
+        supportedSectors: [], // All sectors
+        defaultEnabledBySector: [],
+        legacyFirestoreField: 'enableProactiveMessaging',
+        longDescription: {
+            en: 'Catch your visitors\' attention without being annoying. Display small, timed bubble messages above your chat widget to highlight offers, welcome guests, or provide quick tips.',
+            tr: 'Ziyaretçilerinizin dikkatini rahatsız etmeden çekin. Teklifleri vurgulamak, misafirleri karşılamak veya hızlı ipuçları sağlamak için sohbet widget\'ınızın üzerinde zamanlanmış küçük balon mesajları görüntüleyin.'
+        },
+        features: [
+            {
+                title: { en: 'Timed Triggers', tr: 'Zamanlanmış Tetikleyiciler' },
+                description: { en: 'Show messages after a delay or on specific pages.', tr: 'Mesajları bir gecikmeden sonra veya belirli sayfalarda gösterin.' },
+                icon: 'Clock'
+            },
+            {
+                title: { en: 'Smart Nudges', tr: 'Akıllı Dürtmeler' },
+                description: { en: 'AI-generated hints based on user behavior.', tr: 'Kullanıcı davranışına dayalı AI tabanlı ipuçları.' },
+                icon: 'Lightbulb'
+            }
+        ],
+        benefits: [
+            { en: 'Increase conversion rates by 15%', tr: 'Dönüşüm oranlarını %15 artırın' },
+            { en: 'Reduce bounce rates', tr: 'Hemen çıkma oranlarını düşürün' }
         ]
     }
 };

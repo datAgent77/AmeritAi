@@ -1,4 +1,4 @@
-export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'digitalWaiter';
+export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'digitalWaiter' | 'proactiveMessaging';
 
 export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'other';
 
@@ -197,6 +197,16 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         price: 29,
         icon: 'Utensils',
         recommendedFor: ['restaurant']
+    },
+    proactiveMessaging: {
+        id: 'proactiveMessaging',
+        nameKey: 'modules.proactiveMessaging',
+        descriptionKey: 'modules.proactiveMessagingDesc',
+        isPremium: true,
+        isCore: false,
+        price: 19,
+        icon: 'MessageCircle', // Or another suitable icon like 'Bell' or 'Zap'
+        recommendedFor: [] // Available for all
     }
 };
 
@@ -218,4 +228,5 @@ export const ORDERED_MODULES: ModuleConfig[] = [
     MODULES.visualDiagnosis,   // 14. Visual Diagnosis
     MODULES.salesOptimization, // 17. Sales Optimization
     MODULES.digitalWaiter,     // 18. Digital Waiter
+    MODULES.proactiveMessaging, // 19. Proactive Messaging
 ];

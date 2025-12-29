@@ -96,7 +96,8 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     autoTranslate: 'enableAutoTranslate',
     gamification: 'enableGamification',
     visualDiagnosis: 'enableVisualDiagnosis',
-    digitalWaiter: 'enableDigitalWaiter'
+    digitalWaiter: 'enableDigitalWaiter',
+    proactiveMessaging: 'enableProactiveMessaging'
 }
 
 interface ModulesContentProps {
@@ -313,6 +314,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'visualDiagnosis':
                 router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/visual")
+                break
+            case 'digitalWaiter':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/digital-waiter")
+                break
+            case 'proactiveMessaging':
+                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/engagement")
                 break
             // Add other routes as they are implemented
             default:

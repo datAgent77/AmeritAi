@@ -314,6 +314,8 @@ export const translations = {
         "modules.visualDiagnosisDesc": "AI-powered visual analysis and diagnosis.",
         "modules.digitalWaiter": "Digital Waiter",
         "modules.digitalWaiterDesc": "Active QR menu assistant that takes orders.",
+        "modules.proactiveMessaging": "Proactive Engagement",
+        "modules.proactiveMessagingDesc": "Engage visitors with non-intrusive bubble messages.",
 
         "activeSector": "Active Sector",
         "searchModules": "Search modules...",
@@ -1483,6 +1485,8 @@ export const translations = {
         "modules.visualDiagnosisDesc": "AI destekli görsel analiz ve teşhis.",
         "modules.digitalWaiter": "Dijital Garson",
         "modules.digitalWaiterDesc": "Sipariş alan aktif QR menü asistanı.",
+        "modules.proactiveMessaging": "Proaktif Etkileşim",
+        "modules.proactiveMessagingDesc": "Ziyaretçilerle rahatsız etmeyen balon mesajlarıyla etkileşime geçin.",
 
         "activeSector": "Aktif Sektör",
         "searchModules": "Modül ara...",
