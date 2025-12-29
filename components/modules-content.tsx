@@ -455,13 +455,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     </p>
                 </div>
                 {!isSuperAdminViewingTenant && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900 rounded-lg">
-                        <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
-                            {t('activeSector') || 'Aktif Sektör'}
-                        </Badge>
-                        <span className="font-medium text-sm text-indigo-900 dark:text-indigo-300">
+                    <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground font-medium">{t('activeSector') || 'Aktif Sektör'}:</span>
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 rounded-full border border-indigo-100 dark:border-indigo-500/20 font-semibold shadow-sm">
+                            <Zap className="w-3.5 h-3.5 fill-indigo-700/20" />
                             {(industryConfig as any).names?.[language] || industryConfig.label}
-                        </span>
+                        </div>
                     </div>
                 )}
             </div>
