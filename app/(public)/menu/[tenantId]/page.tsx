@@ -59,7 +59,7 @@ export default function PublicMenuPage({ params }: { params: { tenantId: string 
             <div>
                 <Info className="h-12 w-12 text-red-400 mx-auto mb-4" />
                 <h1 className="text-xl font-semibold mb-2">Menu Not Available</h1>
-                <p className="text-muted-foreground">We couldn't load the restaurant menu. Please try again later.</p>
+                <p className="text-muted-foreground">We couldn&apos;t load the restaurant menu. Please try again later.</p>
             </div>
         </div>
     }
@@ -85,8 +85,8 @@ export default function PublicMenuPage({ params }: { params: { tenantId: string 
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activeCategory === cat
-                                        ? "bg-black text-white"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    ? "bg-black text-white"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                     }`}
                             >
                                 {cat}

@@ -153,7 +153,7 @@ export default function AISettingsPage() {
                                         <span className="text-lg font-semibold">Google Gemini</span>
                                     </div>
                                     <span className="text-sm text-center text-muted-foreground">
-                                        Google's multimodal models. Large context window.
+                                        Google&apos;s multimodal models. Large context window.
                                     </span>
                                 </div>
                             </div>

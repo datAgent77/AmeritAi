@@ -46,8 +46,8 @@ const signInAsGuest = async (): Promise<Auth> => {
 
     // Check if user is already logged in from a previous session
     if (!guestAuth.currentUser) {
-        await signInAnonymously(guestAuth);
-        console.log("Guest login: Created new anonymous user", guestAuth.currentUser?.uid);
+        const credential = await signInAnonymously(guestAuth);
+        console.log("Guest login: Created new anonymous user", credential.user.uid);
     } else {
         console.log("Guest login: Reusing existing user", guestAuth.currentUser.uid);
     }

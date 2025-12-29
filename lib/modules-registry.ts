@@ -15,16 +15,15 @@
 // =============================================================================
 
 export type ModuleId =
-    | 'generalAssistant'
-    | 'knowledgeEducation'
-    | 'salesCatalog'
+    | 'generalChatbot'
+    | 'productCatalog'
+    | 'voiceAssistant'
+    | 'appointments'
     | 'leadCollection'
-    | 'voiceAppointments'
-
-    | 'salesOptimization'
-    | 'socialMediaSharing'
+    | 'knowledgeBase'
+    | 'socialMedia'
     | 'emailMarketing'
-    | 'smartMenu'
+    | 'salesOptimization'
     | 'reviewManagement'
     | 'loyaltyProgram'
     | 'campaignManager'
@@ -33,7 +32,6 @@ export type ModuleId =
     | 'visualDiagnosis'
     | 'agriCalendar'
     | 'marketWatch';
-// Future: | 'restaurantQRMenu' | 'realEstateShowings' | etc.
 
 export type SectorId =
     | 'ecommerce'
@@ -131,8 +129,8 @@ export interface ModuleDefinition {
 // =============================================================================
 
 export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
-    generalAssistant: {
-        id: 'generalAssistant',
+    generalChatbot: {
+        id: 'generalChatbot',
         name: {
             en: 'General AI Assistant',
             tr: 'Genel AI Asistanı'
@@ -182,8 +180,8 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         }
     },
 
-    knowledgeEducation: {
-        id: 'knowledgeEducation',
+    knowledgeBase: {
+        id: 'knowledgeBase',
         name: {
             en: 'Knowledge & Education',
             tr: 'Bilgi Tabanı ve Eğitim'
@@ -203,8 +201,8 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         legacyFirestoreField: 'enableKnowledgeBase'
     },
 
-    salesCatalog: {
-        id: 'salesCatalog',
+    productCatalog: {
+        id: 'productCatalog',
         name: {
             en: 'Sales & Catalog',
             tr: 'Satış ve Ürün Kataloğu'
@@ -241,8 +239,8 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         legacyFirestoreField: 'enableLeadFinder'
     },
 
-    voiceAppointments: {
-        id: 'voiceAppointments',
+    voiceAssistant: {
+        id: 'voiceAssistant',
         name: {
             en: 'Voice & Appointments',
             tr: 'Sesli Asistan ve Randevu'
@@ -297,6 +295,24 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         }
     },
 
+    appointments: {
+        id: 'appointments',
+        name: {
+            en: 'Appointments',
+            tr: 'Randevular'
+        },
+        description: {
+            en: 'Appointment scheduling and calendar',
+            tr: 'Randevu planlama ve takvim'
+        },
+        icon: 'Calendar',
+        isCore: false,
+        isPremiumAddOn: true,
+        supportedSectors: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
+        defaultEnabledBySector: [],
+        legacyFirestoreField: 'enableAppointments'
+    },
+
 
 
     salesOptimization: {
@@ -317,8 +333,8 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         legacyFirestoreField: 'enableSalesOptimization'
     },
 
-    socialMediaSharing: {
-        id: 'socialMediaSharing',
+    socialMedia: {
+        id: 'socialMedia',
         name: {
             en: 'Social Media Sharing',
             tr: 'Sosyal Medya Paylaşımı'
@@ -353,23 +369,6 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         legacyFirestoreField: 'enableEmailMarketing'
     },
 
-    smartMenu: {
-        id: 'smartMenu',
-        name: {
-            en: 'Smart Menu & QR',
-            tr: 'Akıllı Menü ve QR'
-        },
-        description: {
-            en: 'Digital QR menu with AI recommendations',
-            tr: 'AI önerili dijital QR menü'
-        },
-        icon: 'Utensils',
-        isCore: false,
-        isPremiumAddOn: false,
-        supportedSectors: ['restaurant'],
-        defaultEnabledBySector: ['restaurant'],
-        legacyFirestoreField: 'enableSmartMenu'
-    },
 
     reviewManagement: {
         id: 'reviewManagement',

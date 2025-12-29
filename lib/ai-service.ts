@@ -154,8 +154,8 @@ ${context ? `Use this context to answer:\n${context}` : "No specific context ava
             // 3. For voiceAppointments, also check enableAppointments
             let isEnabled = mod.isCore || (mod.legacyFirestoreField && chatbotData?.[mod.legacyFirestoreField] === true);
 
-            // Special case for appointments - check multiple field names
-            if (mod.id === 'voiceAppointments' && !isEnabled) {
+            // Special case for appointments/voice - check multiple field names
+            if (mod.id === 'voiceAssistant' && !isEnabled) {
                 isEnabled = chatbotData?.enableAppointments === true || chatbotData?.enableVoiceAppointments === true;
             }
 
@@ -164,8 +164,8 @@ ${context ? `Use this context to answer:\n${context}` : "No specific context ava
                 const langKey = (language === 'tr') ? 'tr' : 'en';
                 let instruction = mod.aiSystemInstruction[langKey] || mod.aiSystemInstruction['en'];
 
-                // For appointments module, inject actual availability settings
-                if (mod.id === 'voiceAppointments') {
+                // For voice/appointment module, inject actual availability settings
+                if (mod.id === 'voiceAssistant') {
                     try {
                         const settingsSnap = await adminDb.collection("appointments_settings").doc(chatbotId).get();
                         if (settingsSnap.exists) {

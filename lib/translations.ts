@@ -425,7 +425,6 @@ export const translations = {
         chatbotModuleDisabledDesc: "AI Chatbot has been disabled.",
         voiceModuleEnabledDesc: "Voice Assistant is now active.",
         voiceModuleDisabledDesc: "Voice Assistant has been disabled.",
-        settingsSaved: "Settings Saved",
         requestAccess: "Request Access",
         requestSent: "Request Sent",
         requestSentDesc: "Your module request has been forwarded to the administrator. We will contact you shortly.",
@@ -1527,7 +1526,7 @@ export const translations = {
         workingHoursStart: "Başlangıç Saati",
         workingHoursEnd: "Bitiş Saati",
         appointmentDuration: "Randevu Süresi (dakika)",
-        integrations: "Entegrasyonlar",
+
         googleCalendar: "Google Takvim",
         outlookCalendar: "Outlook Takvim",
         disconnect: "Bağlantıyı Kes",
@@ -1541,9 +1540,8 @@ export const translations = {
         howItWorks: "Nasıl Çalışır?",
         appointmentsHowItWorks: "Randevular, müşteriler chatbot üzerinden rezervasyon yaptığında otomatik olarak oluşturulur. Tüm rezervasyonları buradan yönetebilirsiniz.",
         appointmentsFromChatbot: "Chatbot ve senkronize takvimlerden gelen randevular",
-        overview: "Genel Bakış",
-        refresh: "Yenile",
-        pending: "Beklemede",
+
+
         settingsSaved: "Ayarlar başarıyla kaydedildi.",
         settingsSaveFailed: "Ayarlar kaydedilemedi.",
         availabilitySettingsDesc: "Müşterilerin chatbot üzerinden randevu alabileceği zamanları ayarlayın.",
@@ -2269,10 +2267,10 @@ export const translations = {
         // Appointment Booking
         'bookAppointment': 'Randevu Al',
         'bookAppointmentDesc': 'Size en uygun zamanı seçebilirsiniz.',
-        'appointmentType': 'Randevu Türü',
+
         'selectType': 'Tür seçiniz...',
         'confirmBooking': 'Randevuyu Onayla',
-        'appointments': 'Randevular',
+
         'appointmentsTitle': 'Randevu Sistemi',
         'appointmentsDesc': 'Chatbot üzerinden randevu alımını yönetin.',
         'enableAppointments': 'Randevu Alımını Etkinleştir',
@@ -2288,13 +2286,9 @@ export const translations = {
         'friday': 'Cuma',
         'saturday': 'Cumartesi',
         'sunday': 'Pazar',
-        'manageAppointmentsDesc': 'Müşteri randevularınızı görüntüleyin ve yönetin.',
-        'upcomingAppointments': 'Yaklaşan Randevular',
-        'noAppointmentsYet': 'Henüz randevu alınmadı.',
-        'customer': 'Müşteri',
-        'dateTime': 'Tarih ve Saat',
-        'statusUpdated': 'Randevu durumu güncellendi.',
-        'statusUpdateFailed': 'Durum güncellenemedi.',
+
+
+
         'confirmed': 'Onaylandı',
         'cancelled': 'İptal Edildi',
         'completed': 'Tamamlandı',

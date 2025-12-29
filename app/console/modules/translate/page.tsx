@@ -63,7 +63,7 @@ export default function AutoTranslatePage() {
                             <Globe className="h-5 w-5" />
                             Browser Detection
                         </CardTitle>
-                        <CardDescription>Automatically detect visitor's browser language</CardDescription>
+                        <CardDescription>Automatically detect visitor&apos;s browser language</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -107,7 +107,7 @@ export default function AutoTranslatePage() {
                         <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
                                 <Label>Enable Menu Translation</Label>
-                                <p className="text-sm text-muted-foreground">Show menu items in visitor's language</p>
+                                <p className="text-sm text-muted-foreground">Show menu items in visitor&apos;s language</p>
                             </div>
                             <Switch checked={config.translateMenu} onCheckedChange={(c) => setConfig({ ...config, translateMenu: c })} />
                         </div>

@@ -118,7 +118,7 @@ export default function EmailMarketingPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Sender Settings</CardTitle>
-                            <CardDescription>Configure "From" name and email</CardDescription>
+                            <CardDescription>Configure &quot;From&quot; name and email</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-2">

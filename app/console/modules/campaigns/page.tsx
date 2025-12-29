@@ -59,7 +59,7 @@ export default function CampaignManagerPage() {
                             Rainy Day Special
                         </CardTitle>
                         <CardDescription>
-                            Automatically offers "Hot Coffee + Cookie" deal when local weather is rainy.
+                            Automatically offers &quot;Hot Coffee + Cookie&quot; deal when local weather is rainy.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -89,7 +89,7 @@ export default function CampaignManagerPage() {
                             Happy Hour
                         </CardTitle>
                         <CardDescription>
-                            Offers "2 for 1" on beverages during set hours (e.g., 16:00 - 19:00).
+                            Offers &quot;2 for 1&quot; on beverages during set hours (e.g., 16:00 - 19:00).
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
