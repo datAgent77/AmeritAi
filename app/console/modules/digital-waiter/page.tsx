@@ -75,8 +75,18 @@ export default function DigitalWaiterPage() {
         if (!user?.uid) return
         setIsSaving(true)
         try {
-            const docRef = doc(db, "chatbots", user.uid)
-            await setDoc(docRef, { digitalWaiter: config }, { merge: true })
+            const idToken = await user.getIdToken()
+            const response = await fetch('/api/widget-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ digitalWaiter: config })
+            })
+
+            if (!response.ok) throw new Error('Save failed')
+
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
                 description: "Dijital Garson ayarlarınız güncellendi."

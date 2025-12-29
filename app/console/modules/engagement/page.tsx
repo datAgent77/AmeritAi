@@ -154,8 +154,18 @@ export default function ProactiveEngagementPage() {
         if (!user?.uid) return
         setIsSaving(true)
         try {
-            const docRef = doc(db, "chatbots", user.uid)
-            await setDoc(docRef, { engagement: settings }, { merge: true })
+            const idToken = await user.getIdToken()
+            const response = await fetch('/api/widget-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ engagement: settings })
+            })
+
+            if (!response.ok) throw new Error('Save failed')
+
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
                 description: t('settingsSavedDesc') || "Proaktif etkileşim ayarlarınız güncellendi."
