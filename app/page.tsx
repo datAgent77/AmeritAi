@@ -70,7 +70,7 @@ export default function LandingPage() {
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight">
                             {language === 'tr'
-                                ? <>Cevaplamaz, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Yönlendirir.</span></>
+                                ? <>Konuşur, ikna eder ve müşteriyi <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">doğru aksiyona yönlendirir.</span></>
                                 : <>Don&apos;t just Answer, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Convert.</span></>}
                         </h1>
 
