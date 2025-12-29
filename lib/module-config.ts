@@ -1,4 +1,4 @@
-export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'agriCalendar' | 'marketWatch';
+export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'agriCalendar' | 'marketWatch' | 'digitalWaiter';
 
 export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'other';
 
@@ -213,6 +213,17 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         price: 49,
         icon: 'TrendingUp',
         recommendedFor: ['ecommerce', 'real_estate', 'finance']
+    },
+
+    digitalWaiter: {
+        id: 'digitalWaiter',
+        nameKey: 'modules.digitalWaiter',
+        descriptionKey: 'modules.digitalWaiterDesc',
+        isPremium: true,
+        isCore: false,
+        price: 29,
+        icon: 'Utensils',
+        recommendedFor: ['restaurant']
     }
 };
 
@@ -235,4 +246,5 @@ export const ORDERED_MODULES: ModuleConfig[] = [
     MODULES.agriCalendar,      // 15. Agri Calendar
     MODULES.marketWatch,       // 16. Market Watch
     MODULES.salesOptimization, // 17. Sales Optimization
+    MODULES.digitalWaiter,     // 18. Digital Waiter
 ];
