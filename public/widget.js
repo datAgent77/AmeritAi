@@ -1106,7 +1106,7 @@
     // Must fetch engagement settings from the global settings object
     fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`)
       .then(res => res.json())
-      .then(data => {
+      .then(async data => {
         console.log('Engagement data from API:', data.engagement);
 
         // Digital Waiter: Inject time-based bubbles
@@ -1165,41 +1165,69 @@
           }
         }
 
-        // AI Auto-Bubbles: Inject pre-generated AI messages
-        if (engagementSettings.aiBubbles && engagementSettings.aiBubbles.enabled) {
-          const aiMessages = engagementSettings.aiBubbles.generatedMessages || [];
-          const maxAi = engagementSettings.aiBubbles.maxPerSession || 2;
+        // AI Smart Bubbles (Premium): Real-time context-aware messages
+        if (data.engagement && data.engagement.aiSmartBubbles && data.engagement.aiSmartBubbles.enabled) {
+          const smartConfig = data.engagement.aiSmartBubbles;
+          const maxPerSession = smartConfig.maxPerSession || 3;
 
-          // Check session limit
-          const aiShownKey = `userex_ai_bubbles_${chatbotId}`;
-          const aiShownCount = parseInt(sessionStorage.getItem(aiShownKey) || '0');
+          // Storage keys
+          const aiCountKey = `userex_ai_smart_count_${chatbotId}`;
+          const currentCount = parseInt(sessionStorage.getItem(aiCountKey) || '0');
 
-          if (aiShownCount < maxAi && aiMessages.length > 0) {
-            console.log('AI Auto-Bubbles: Injecting', aiMessages.length, 'AI generated messages');
+          // Cache key based on URL to avoid re-generating for same page
+          const cacheKey = `userex_ai_smart_cache_${chatbotId}_${window.location.pathname}`;
 
-            // Ensure engagement structure exists
-            if (!engagementSettings.enabled) {
-              engagementSettings.enabled = true;
+          if (currentCount < maxPerSession) {
+            let bubbleText = sessionStorage.getItem(cacheKey);
+            let fromCache = true;
+
+            if (!bubbleText) {
+              fromCache = false;
+              console.log('AI Smart Bubbles: context analysis for', window.location.pathname);
+              try {
+                const aiResponse = await fetch(`${baseUrl}/api/generate-context-bubble`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chatbotId: chatbotId,
+                    pageUrl: window.location.href,
+                    pageTitle: document.title,
+                    h1: document.querySelector('h1')?.innerText || '',
+                    tone: smartConfig.tone || 'friendly'
+                  })
+                });
+
+                if (aiResponse.ok) {
+                  const aiData = await aiResponse.json();
+                  if (aiData.bubble) {
+                    bubbleText = aiData.bubble;
+                    // Cache it
+                    sessionStorage.setItem(cacheKey, bubbleText);
+                    // Increment session count
+                    sessionStorage.setItem(aiCountKey, (currentCount + 1).toString());
+                  }
+                }
+              } catch (err) {
+                console.error('AI Smart Bubble generation failed:', err);
+              }
             }
-            if (!engagementSettings.bubble) {
-              engagementSettings.bubble = { messages: [], style: { backgroundColor: '#000', textColor: '#FFF' }, position: 'top', animation: 'bounce' };
-            }
-            if (!engagementSettings.bubble.messages) {
-              engagementSettings.bubble.messages = [];
-            }
 
-            // Add AI bubbles (respecting max limit)
-            const toAdd = aiMessages.slice(0, maxAi - aiShownCount);
-            toAdd.forEach((msg, i) => {
+            if (bubbleText) {
+              console.log('AI Smart Bubbles: Injecting', fromCache ? '(cached)' : '(new)', bubbleText);
+
+              // Ensure engagement structure exists
+              if (!engagementSettings.enabled) engagementSettings.enabled = true;
+              if (!engagementSettings.bubble) engagementSettings.bubble = { messages: [] };
+              if (!engagementSettings.bubble.messages) engagementSettings.bubble.messages = [];
+
               engagementSettings.bubble.messages.push({
-                ...msg,
-                delay: (msg.delay || 10) + (i * 5), // Stagger delays
+                id: 'ai-smart-' + Date.now(),
+                text: bubbleText,
+                delay: smartConfig.delay || 8,
+                isActive: true,
                 isAiGenerated: true
               });
-            });
-
-            // Update session counter
-            sessionStorage.setItem(aiShownKey, (aiShownCount + toAdd.length).toString());
+            }
           }
         }
 

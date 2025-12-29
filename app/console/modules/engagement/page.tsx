@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,25 +14,14 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles, RefreshCw } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles } from "lucide-react"
 import Link from "next/link"
-import { Checkbox } from "@/components/ui/checkbox"
 
 interface BubbleMessage {
     id: string
     text: string
     delay: number
     isActive: boolean
-    isAiGenerated?: boolean
-}
-
-interface AiBubblesConfig {
-    enabled: boolean
-    tone: 'friendly' | 'professional' | 'playful'
-    topics: string[]
-    maxPerSession: number
-    generatedMessages: BubbleMessage[]
-    lastGeneratedAt: string | null
 }
 
 interface EngagementSettings {
@@ -57,7 +46,13 @@ interface EngagementSettings {
         inactivity: number
         pageRevisit: number
     }
-    aiBubbles: AiBubblesConfig
+    // Premium Feature: Real-time AI Smart Bubbles
+    aiSmartBubbles: {
+        enabled: boolean
+        tone: 'friendly' | 'professional' | 'playful'
+        delay: number
+        maxPerSession: number
+    }
 }
 
 const defaultSettings: EngagementSettings = {
@@ -82,22 +77,36 @@ const defaultSettings: EngagementSettings = {
         inactivity: 0,
         pageRevisit: 0
     },
-    aiBubbles: {
+    aiSmartBubbles: {
         enabled: false,
         tone: 'friendly',
-        topics: ['products', 'faq'],
-        maxPerSession: 2,
-        generatedMessages: [],
-        lastGeneratedAt: null
+        delay: 8,
+        maxPerSession: 3
     }
 }
 
-const topicOptions = [
-    { id: 'products', label: 'Ürünler / Hizmetler' },
-    { id: 'faq', label: 'Sık Sorulan Sorular' },
-    { id: 'promotions', label: 'Promosyonlar / İndirimler' },
-    { id: 'support', label: 'Destek / Yardım' }
-]
+// Premium check - you can modify this based on your subscription system
+const usePremiumStatus = () => {
+    const { user } = useAuth()
+    const [isPremium, setIsPremium] = useState(false)
+
+    useEffect(() => {
+        const checkPremium = async () => {
+            if (!user?.uid) return
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid))
+                const userData = userDoc.data()
+                // Check for premium status - adjust based on your subscription model
+                setIsPremium(userData?.plan === 'premium' || userData?.subscription?.status === 'active')
+            } catch (e) {
+                console.error("Failed to check premium status:", e)
+            }
+        }
+        checkPremium()
+    }, [user?.uid])
+
+    return isPremium
+}
 
 export default function ProactiveEngagementPage() {
     const { user } = useAuth()
@@ -107,7 +116,6 @@ export default function ProactiveEngagementPage() {
     const [settings, setSettings] = useState<EngagementSettings>(defaultSettings)
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
-    const [isGenerating, setIsGenerating] = useState(false)
 
     useEffect(() => {
         if (user?.uid) {
@@ -137,9 +145,9 @@ export default function ProactiveEngagementPage() {
                         ...defaultSettings.triggers,
                         ...(docSnap.data().engagement?.triggers || {})
                     },
-                    aiBubbles: {
-                        ...defaultSettings.aiBubbles,
-                        ...(docSnap.data().engagement?.aiBubbles || {})
+                    aiSmartBubbles: {
+                        ...defaultSettings.aiSmartBubbles,
+                        ...(docSnap.data().engagement?.aiSmartBubbles || {})
                     }
                 })
             }
@@ -220,71 +228,8 @@ export default function ProactiveEngagementPage() {
         }))
     }
 
-    const toggleTopic = (topicId: string) => {
-        setSettings(prev => {
-            const currentTopics = prev.aiBubbles.topics
-            const newTopics = currentTopics.includes(topicId)
-                ? currentTopics.filter(t => t !== topicId)
-                : [...currentTopics, topicId]
-            return {
-                ...prev,
-                aiBubbles: { ...prev.aiBubbles, topics: newTopics }
-            }
-        })
-    }
-
-    const generateAiBubbles = async () => {
-        if (!user?.uid) return
-        setIsGenerating(true)
-        try {
-            const idToken = await user.getIdToken()
-            const response = await fetch('/api/generate-bubbles', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    tone: settings.aiBubbles.tone,
-                    topics: settings.aiBubbles.topics
-                })
-            })
-
-            if (!response.ok) throw new Error('Generation failed')
-
-            const data = await response.json()
-
-            if (data.bubbles && Array.isArray(data.bubbles)) {
-                setSettings(prev => ({
-                    ...prev,
-                    aiBubbles: {
-                        ...prev.aiBubbles,
-                        generatedMessages: data.bubbles.map((text: string, i: number) => ({
-                            id: `ai-${Date.now()}-${i}`,
-                            text,
-                            delay: (i + 1) * 8,
-                            isActive: true,
-                            isAiGenerated: true
-                        })),
-                        lastGeneratedAt: new Date().toISOString()
-                    }
-                }))
-                toast({
-                    title: "AI Balonları Oluşturuldu",
-                    description: `${data.bubbles.length} yeni balon mesajı oluşturuldu.`
-                })
-            }
-        } catch (error) {
-            console.error('Failed to generate AI bubbles:', error)
-            toast({
-                title: "Hata",
-                description: "AI balonları oluşturulamadı.",
-                variant: "destructive"
-            })
-        } finally {
-            setIsGenerating(false)
-        }
-    }
+    // Premium feature check
+    const isPremium = false // TODO: Connect to actual subscription system
 
     if (isLoading) {
         return (
@@ -394,128 +339,150 @@ export default function ProactiveEngagementPage() {
                 </CardContent>
             </Card>
 
-            {/* AI Auto-Bubbles */}
-            <Card>
+            {/* AI Smart Bubbles - PREMIUM */}
+            <Card className={!isPremium ? "relative overflow-hidden" : ""}>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Sparkles className="w-5 h-5 text-amber-500" />
-                                AI Otomatik Balonlar
+                                AI Akıllı Balonlar
+                                <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                                    Premium
+                                </Badge>
                             </CardTitle>
                             <CardDescription>
-                                Knowledge Base bilgilerinize göre AI otomatik balon mesajları oluştursun.
+                                Ziyaretçinin bulunduğu sayfaya özel AI mesajları otomatik üretilsin.
                             </CardDescription>
                         </div>
-                        <Switch
-                            checked={settings.aiBubbles.enabled}
-                            onCheckedChange={(checked) => setSettings(prev => ({
-                                ...prev,
-                                aiBubbles: { ...prev.aiBubbles, enabled: checked }
-                            }))}
-                        />
+                        {isPremium ? (
+                            <Switch
+                                checked={settings.aiSmartBubbles.enabled}
+                                onCheckedChange={(checked) => setSettings(prev => ({
+                                    ...prev,
+                                    aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
+                                }))}
+                            />
+                        ) : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                                🔒 Kilitli
+                            </Badge>
+                        )}
                     </div>
                 </CardHeader>
-                {settings.aiBubbles.enabled && (
-                    <CardContent className="space-y-6">
-                        {/* Tone Selection */}
-                        <div className="space-y-2">
-                            <Label>Mesaj Tonu</Label>
-                            <Select
-                                value={settings.aiBubbles.tone}
-                                onValueChange={(value: 'friendly' | 'professional' | 'playful') =>
-                                    setSettings(prev => ({ ...prev, aiBubbles: { ...prev.aiBubbles, tone: value } }))
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="friendly">😊 Samimi</SelectItem>
-                                    <SelectItem value="professional">💼 Profesyonel</SelectItem>
-                                    <SelectItem value="playful">🎉 Eğlenceli</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
 
-                        {/* Topic Selection */}
-                        <div className="space-y-3">
-                            <Label>Konu Seçimi</Label>
-                            <p className="text-sm text-muted-foreground">AI hangi konularda balon mesajları oluştursun?</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                {topicOptions.map(topic => (
-                                    <div key={topic.id} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={topic.id}
-                                            checked={settings.aiBubbles.topics.includes(topic.id)}
-                                            onCheckedChange={() => toggleTopic(topic.id)}
-                                        />
-                                        <label htmlFor={topic.id} className="text-sm cursor-pointer">
-                                            {topic.label}
-                                        </label>
+                {isPremium ? (
+                    // Premium User - Show settings
+                    settings.aiSmartBubbles.enabled && (
+                        <CardContent className="space-y-6">
+                            {/* Tone Selection */}
+                            <div className="space-y-2">
+                                <Label>Mesaj Tonu</Label>
+                                <Select
+                                    value={settings.aiSmartBubbles.tone}
+                                    onValueChange={(value: 'friendly' | 'professional' | 'playful') =>
+                                        setSettings(prev => ({ ...prev, aiSmartBubbles: { ...prev.aiSmartBubbles, tone: value } }))
+                                    }
+                                >
+                                    <SelectTrigger className="w-48">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="friendly">😊 Samimi</SelectItem>
+                                        <SelectItem value="professional">💼 Profesyonel</SelectItem>
+                                        <SelectItem value="playful">🎉 Eğlenceli</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Delay */}
+                            <div className="space-y-2">
+                                <Label>Gecikme</Label>
+                                <p className="text-sm text-muted-foreground">AI balonu kaç saniye sonra gösterilsin?</p>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        value={settings.aiSmartBubbles.delay}
+                                        onChange={(e) => setSettings(prev => ({
+                                            ...prev,
+                                            aiSmartBubbles: { ...prev.aiSmartBubbles, delay: parseInt(e.target.value) || 5 }
+                                        }))}
+                                        min={3}
+                                        max={30}
+                                        className="w-20"
+                                    />
+                                    <span className="text-sm text-muted-foreground">saniye</span>
+                                </div>
+                            </div>
+
+                            {/* Max Per Session */}
+                            <div className="space-y-2">
+                                <Label>Oturum Limiti</Label>
+                                <p className="text-sm text-muted-foreground">Bir ziyarete maksimum kaç AI balonu gösterilsin?</p>
+                                <Input
+                                    type="number"
+                                    value={settings.aiSmartBubbles.maxPerSession}
+                                    onChange={(e) => setSettings(prev => ({
+                                        ...prev,
+                                        aiSmartBubbles: { ...prev.aiSmartBubbles, maxPerSession: parseInt(e.target.value) || 1 }
+                                    }))}
+                                    min={1}
+                                    max={5}
+                                    className="w-20"
+                                />
+                            </div>
+
+                            {/* Preview */}
+                            <div className="pt-4 border-t">
+                                <p className="font-medium mb-3">Nasıl Çalışır?</p>
+                                <div className="space-y-2 text-sm text-muted-foreground">
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500">✓</span>
+                                        <span>Ziyaretçi bir sayfaya gelir → AI sayfa içeriğini analiz eder</span>
                                     </div>
-                                ))}
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500">✓</span>
+                                        <span>O sayfaya özel bir balon mesajı üretir</span>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                        <span className="text-green-500">✓</span>
+                                        <span>Ziyaretçi chatbot ile etkileşime geçer</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        {/* Max Per Session */}
-                        <div className="space-y-2">
-                            <Label>Oturum Başına Maksimum AI Balonu</Label>
-                            <p className="text-sm text-muted-foreground">Bir ziyaretçiye gösterilecek maksimum AI balonu sayısı</p>
-                            <Input
-                                type="number"
-                                value={settings.aiBubbles.maxPerSession}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    aiBubbles: { ...prev.aiBubbles, maxPerSession: parseInt(e.target.value) || 1 }
-                                }))}
-                                min={1}
-                                max={5}
-                                className="w-24"
-                            />
-                        </div>
-
-                        {/* Generate Button */}
-                        <div className="pt-4 border-t">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <p className="font-medium">Oluşturulan AI Balonları</p>
-                                    {settings.aiBubbles.lastGeneratedAt && (
-                                        <p className="text-xs text-muted-foreground">
-                                            Son güncelleme: {new Date(settings.aiBubbles.lastGeneratedAt).toLocaleString('tr-TR')}
-                                        </p>
-                                    )}
-                                </div>
-                                <Button onClick={generateAiBubbles} disabled={isGenerating} variant="outline">
-                                    {isGenerating ? (
-                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                    ) : (
-                                        <RefreshCw className="w-4 h-4 mr-2" />
-                                    )}
-                                    {isGenerating ? 'Oluşturuluyor...' : 'AI ile Oluştur'}
-                                </Button>
+                        </CardContent>
+                    )
+                ) : (
+                    // Free User - Show upgrade prompt
+                    <CardContent>
+                        <div className="text-center py-6 space-y-4">
+                            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-lg p-6">
+                                <Sparkles className="w-12 h-12 mx-auto mb-4 text-amber-500" />
+                                <h3 className="font-semibold text-lg mb-2">Sayfa Bazlı AI Balonları</h3>
+                                <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                                    AI, ziyaretçinin bulunduğu sayfaya göre otomatik mesaj üretir.
+                                    Örneğin &quot;/pricing&quot; sayfasında &quot;Fiyatlarımız hakkında sorunuz mu var?&quot; gibi.
+                                </p>
+                                <ul className="text-sm text-left max-w-xs mx-auto space-y-2 mb-6">
+                                    <li className="flex items-center gap-2">
+                                        <span className="text-amber-500">✨</span>
+                                        Real-time sayfa analizi
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="text-amber-500">✨</span>
+                                        Kişiselleştirilmiş mesajlar
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="text-amber-500">✨</span>
+                                        Dönüşüm oranını artırır
+                                    </li>
+                                </ul>
+                                <Link href="/console/subscription">
+                                    <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white">
+                                        🚀 Premium&apos;a Yükselt
+                                    </Button>
+                                </Link>
                             </div>
-
-                            {/* Generated Messages Preview */}
-                            {settings.aiBubbles.generatedMessages.length > 0 ? (
-                                <div className="space-y-2">
-                                    {settings.aiBubbles.generatedMessages.map((msg, index) => (
-                                        <div key={msg.id} className="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                                            <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300">
-                                                AI #{index + 1}
-                                            </Badge>
-                                            <span className="flex-1 text-sm">{msg.text}</span>
-                                            <span className="text-xs text-muted-foreground">{msg.delay}s</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                                    <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                    <p className="text-sm">Henüz AI balonu oluşturulmadı</p>
-                                    <p className="text-xs">Yukarıdaki butona tıklayarak oluşturun</p>
-                                </div>
-                            )}
                         </div>
                     </CardContent>
                 )}
