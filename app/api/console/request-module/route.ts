@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
     try {
         const adminAuth = getAdminAuth();

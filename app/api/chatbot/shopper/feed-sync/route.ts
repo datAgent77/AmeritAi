@@ -4,8 +4,11 @@ import { XMLParser } from 'fast-xml-parser';
 import { getAdminDb } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 
+export const dynamic = 'force-dynamic';
+
 // Allow long timeout for feed processing
 export const maxDuration = 60;
+
 
 export async function POST(request: Request) {
     const adminDb = getAdminDb();
