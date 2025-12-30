@@ -14,11 +14,16 @@ function initAdmin() {
             const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
             if (clientEmail && privKey) {
+                // Handle both escaped \n (from .env files) and actual newlines (from Vercel UI)
+                const formattedPrivKey = privKey.includes('\\n')
+                    ? privKey.replace(/\\n/g, '\n')
+                    : privKey;
+
                 admin.initializeApp({
                     credential: admin.credential.cert({
                         projectId: projectId || 'ai-assistant-22f53',
                         clientEmail: clientEmail,
-                        privateKey: privKey.replace(/\\n/g, '\n'),
+                        privateKey: formattedPrivKey,
                     }),
                     storageBucket: 'ai-assistant-22f53.firebasestorage.app',
                 });
