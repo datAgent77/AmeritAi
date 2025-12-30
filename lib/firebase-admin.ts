@@ -28,6 +28,15 @@ function initAdmin() {
                 // Replace literal "\n" with actual newlines
                 formattedPrivKey = formattedPrivKey.replace(/\\n/g, '\n');
 
+                // Critical Fix: If key is a single line (no newlines after processing), 
+                // we must re-inject them around the headers for OpenSSL to accept it.
+                if (!formattedPrivKey.includes('\n')) {
+                    formattedPrivKey = formattedPrivKey
+                        .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+                        .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----\n');
+                }
+
+
                 console.log('[Firebase Admin] Key Length:', formattedPrivKey.length);
                 console.log('[Firebase Admin] Key Header:', formattedPrivKey.substring(0, 30));
 
