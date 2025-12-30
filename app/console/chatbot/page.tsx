@@ -66,7 +66,7 @@ export default function ChatbotConsolePage() {
         }
 
         fetchData()
-    }, [user])
+    }, [user, role])
 
     // Get experience state for dashboard
     const experienceState = userContext

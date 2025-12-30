@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Clock, ArrowLeft, User, Share2 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { notFound } from "next/navigation"
 
@@ -130,11 +131,14 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
             {/* Main Content */}
             <article className="container mx-auto px-4 max-w-4xl pb-24">
-                <div className="rounded-2xl overflow-hidden mb-12 border border-white/10 bg-zinc-900/50">
-                    <img
+                <div className="rounded-2xl overflow-hidden mb-12 border border-white/10 bg-zinc-900/50 relative h-auto">
+                    <Image
                         src={post.image}
                         alt={post.title[language as 'en' | 'tr']}
+                        width={800}
+                        height={500}
                         className="w-full h-auto max-h-[500px] object-cover"
+                        unoptimized
                     />
                 </div>
 

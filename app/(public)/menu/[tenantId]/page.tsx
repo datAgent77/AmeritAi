@@ -2,6 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { ChatbotLoader } from "@/components/chatbot-loader"
 import { Loader2, Utensils, Clock, Info } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -106,9 +107,9 @@ export default function PublicMenuPage({ params }: { params: { tenantId: string 
                     filteredItems.map(item => (
                         <div key={item.id} className="bg-white rounded-xl p-3 shadow-sm flex gap-4 border border-zinc-100/50">
                             {/* Image */}
-                            <div className="w-24 h-24 flex-shrink-0 bg-zinc-100 rounded-lg overflow-hidden">
+                            <div className="w-24 h-24 flex-shrink-0 bg-zinc-100 rounded-lg overflow-hidden relative">
                                 {item.imageUrl ? (
-                                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-zinc-300">
                                         <Utensils className="h-8 w-8" />

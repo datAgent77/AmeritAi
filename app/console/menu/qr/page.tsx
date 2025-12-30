@@ -1,9 +1,9 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useLanguage } from "@/context/LanguageContext"
@@ -53,8 +53,14 @@ export default function QRPage() {
                         <CardTitle>General Menu QR</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center">
-                        <div className="bg-white p-2 border rounded">
-                            <img src={getQrUrl(menuLink)} alt="General Menu" className="w-32 h-32" />
+                        <div className="bg-white p-2 border rounded relative w-36 h-36">
+                            <Image
+                                src={getQrUrl(menuLink)}
+                                alt="General Menu"
+                                fill
+                                className="object-contain"
+                                unoptimized
+                            />
                         </div>
                         <p className="mt-4 text-xs text-muted-foreground break-all text-center">
                             {menuLink}
@@ -99,7 +105,15 @@ export default function QRPage() {
                         return (
                             <div key={tableNum} className="border rounded-lg p-4 flex flex-col items-center justify-center text-center bg-white space-y-2 break-inside-avoid">
                                 <span className="font-bold text-lg">Table {tableNum}</span>
-                                <img src={getQrUrl(link)} alt={`Table ${tableNum}`} className="w-32 h-32" />
+                                <div className="relative w-32 h-32 mx-auto">
+                                    <Image
+                                        src={getQrUrl(link)}
+                                        alt={`Table ${tableNum}`}
+                                        fill
+                                        className="object-contain"
+                                        unoptimized
+                                    />
+                                </div>
                                 <span className="text-[10px] text-gray-500">Scan for Menu</span>
                             </div>
                         )

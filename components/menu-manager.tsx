@@ -1,7 +1,7 @@
-
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
@@ -58,13 +58,7 @@ export function MenuManager() {
     })
     const [isSaving, setIsSaving] = useState(false)
 
-    useEffect(() => {
-        if (user) {
-            fetchItems()
-        }
-    }, [user])
-
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         try {
             const token = await user?.getIdToken()
             const res = await fetch("/api/menu", {
@@ -79,7 +73,15 @@ export function MenuManager() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [user, setItems, setIsLoading])
+
+    useEffect(() => {
+        if (user) {
+            fetchItems()
+        }
+    }, [user, fetchItems])
+
+
 
     const handleDelete = async (id: string) => {
         if (!confirm(t('confirmDelete') || "Are you sure?")) return
@@ -185,9 +187,15 @@ export function MenuManager() {
                         ) : items.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell>
-                                    <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                                    <div className="h-10 w-10 rounded bg-gray-100 flex items-center justify-center overflow-hidden relative">
                                         {item.imageUrl ? (
-                                            <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                                            <Image
+                                                src={item.imageUrl}
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
                                         ) : (
                                             <ImageIcon className="h-5 w-5 text-gray-400" />
                                         )}
@@ -278,6 +286,6 @@ export function MenuManager() {
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     )
 }

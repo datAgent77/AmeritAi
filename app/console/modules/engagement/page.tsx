@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
@@ -120,13 +120,7 @@ export default function EngagementPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
 
-    useEffect(() => {
-        if (user?.uid) {
-            loadSettings()
-        }
-    }, [user?.uid])
-
-    const loadSettings = async () => {
+    const loadSettings = useCallback(async () => {
         if (!user?.uid) return
         setIsLoading(true)
         try {
@@ -159,7 +153,13 @@ export default function EngagementPage() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [user])
+
+    useEffect(() => {
+        if (user?.uid) {
+            loadSettings()
+        }
+    }, [user?.uid, loadSettings])
 
     const saveSettings = async () => {
         if (!user?.uid) return

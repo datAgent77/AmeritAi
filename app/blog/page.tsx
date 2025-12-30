@@ -8,6 +8,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Calendar, Clock } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 // Type definition (should be shared)
 interface BlogPost {
@@ -66,10 +67,12 @@ export default function BlogPage() {
                             <Link key={post.id} href={`/blog/${post.slug}`} className="group">
                                 <article className="bg-black border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all hover:translate-y-[-4px]">
                                     <div className="aspect-video relative overflow-hidden">
-                                        <img
+                                        <Image
                                             src={post.image}
                                             alt={post.title[language as 'en' | 'tr']}
-                                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                            unoptimized
                                         />
                                         <div className="absolute top-4 left-4">
                                             <Badge className="bg-black/50 backdrop-blur border-white/10 text-white hover:bg-black/70">

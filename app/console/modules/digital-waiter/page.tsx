@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
@@ -46,30 +46,29 @@ export default function DigitalWaiterPage() {
     const [isSaving, setIsSaving] = useState(false)
     const [newDish, setNewDish] = useState('')
 
-    useEffect(() => {
-        if (user?.uid) {
-            loadConfig()
-        }
-    }, [user?.uid])
-
-    const loadConfig = async () => {
-        if (!user?.uid) return
+    const loadConfig = useCallback(async () => {
         setIsLoading(true)
         try {
-            const docRef = doc(db, "chatbots", user.uid)
-            const docSnap = await getDoc(docRef)
-            if (docSnap.exists() && docSnap.data().digitalWaiter) {
-                setConfig({
-                    ...defaultConfig,
-                    ...docSnap.data().digitalWaiter
-                })
+            const token = await user?.getIdToken()
+            const res = await fetch(`/api/digital-waiter?chatbotId=${user?.uid}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                setConfig(prev => ({ ...prev, ...data }))
             }
         } catch (error) {
-            console.error("Failed to load digital waiter config:", error)
+            console.error("Failed to load config", error)
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [user])
+
+    useEffect(() => {
+        if (user) {
+            loadConfig()
+        }
+    }, [user, loadConfig])
 
     const saveConfig = async () => {
         if (!user?.uid) return
