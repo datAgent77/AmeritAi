@@ -5,7 +5,7 @@ let adminDb: admin.firestore.Firestore | null = null;
 let adminStorage: admin.storage.Storage | null = null;
 
 function initAdmin() {
-    if (adminAuth && adminDb) return; // Already initialized
+    if (adminAuth && adminDb) return; // Already initialized locally
 
     try {
         if (!admin.apps.length) {
@@ -13,11 +13,23 @@ function initAdmin() {
             const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
             const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
+            console.log('[Firebase Admin] Initializing...');
+
             if (clientEmail && privKey) {
-                // Handle both escaped \n (from .env files) and actual newlines (from Vercel UI)
-                const formattedPrivKey = privKey.includes('\\n')
-                    ? privKey.replace(/\\n/g, '\n')
-                    : privKey;
+                // Robust key handling:
+                // 1. Handle actual newlines (copy-paste from Vercel) which might be just \n chars
+                // 2. Handle escaped newlines (literal \n string)
+                // 3. Remove surrounding quotes if user added them
+                let formattedPrivKey = privKey;
+
+                // Remove surrounding quotes if present
+                formattedPrivKey = formattedPrivKey.replace(/^"|"$/g, '');
+
+                // Replace literal "\n" with actual newlines
+                formattedPrivKey = formattedPrivKey.replace(/\\n/g, '\n');
+
+                console.log('[Firebase Admin] Key Length:', formattedPrivKey.length);
+                console.log('[Firebase Admin] Key Header:', formattedPrivKey.substring(0, 30));
 
                 admin.initializeApp({
                     credential: admin.credential.cert({
@@ -29,11 +41,12 @@ function initAdmin() {
                 });
                 console.log("[Firebase Admin] Initialization successful");
             } else {
-                console.error("[Firebase Admin] Missing environment variables during init.");
-                return; // Stop here
+                console.error("[Firebase Admin] Missing environment variables (FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY) during init.");
+                // We don't return here, to allow it to try default creds if inside GCP, though unlikely for Vercel
             }
         }
 
+        // Assign instances
         adminAuth = admin.auth();
         adminDb = admin.firestore();
         adminStorage = admin.storage();
@@ -57,8 +70,3 @@ export function getAdminStorage() {
     initAdmin();
     return adminStorage;
 }
-
-// Deprecated exports specific for keeping some backward compat if possible with 'live binding', 
-// but safer to force usage of getters. 
-// We will simply remove the old exports to force compilation errors if I missed any consumers.
-
