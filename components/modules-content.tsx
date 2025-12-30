@@ -281,12 +281,41 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     }
 
     const handleManage = (moduleId: ModuleId) => {
-        // Build base path based on whether viewing tenant or own console
         const basePath = isSuperAdminViewingTenant
             ? `/admin/tenant/${targetUserId}`
             : '/console'
 
-        // Route to specific module management pages
+        // SUPER ADMIN VIEWING TENANT (In /admin/tenant/...)
+        if (isSuperAdminViewingTenant) {
+            // Only route to pages that actually exist in the Admin panel
+            switch (moduleId) {
+                case 'generalChatbot':
+                    router.push(`${basePath}/chatbot`)
+                    break
+                case 'productCatalog':
+                    router.push(`${basePath}/chatbot/shopper`)
+                    break
+                case 'knowledgeBase':
+                    router.push(`${basePath}/knowledge`)
+                    break
+                case 'appointments':
+                    router.push(`${basePath}/chatbot/appointments`)
+                    break
+                case 'leadCollection':
+                    // Maps to the Leads page in admin
+                    router.push(`${basePath}/chatbot/leads`)
+                    break
+                default:
+                    // For all other modules which don't have a dedicated Admin page yet
+                    toast({
+                        title: t('comingSoon'),
+                        description: t('moduleUnderDevelopment') || "Bu modülün yönetim sayfası henüz hazırlanmaktadır."
+                    })
+            }
+            return
+        }
+
+        // REGULAR USER / CONSOLE VIEW (In /console/...)
         switch (moduleId) {
             case 'generalChatbot':
                 router.push(`${basePath}/chatbot`)
@@ -295,49 +324,47 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 router.push(`${basePath}/chatbot/shopper`)
                 break
             case 'voiceAssistant':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/voice/settings")
+                router.push("/console/modules/voice/settings")
                 break
             case 'knowledgeBase':
                 router.push(`${basePath}/knowledge`)
                 break
             case 'leadCollection':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/leads/settings")
+                router.push("/console/modules/leads/settings")
                 break
             case 'salesOptimization':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/sales-optimization")
+                router.push("/console/modules/sales-optimization")
                 break
             case 'appointments':
                 router.push(`${basePath}/chatbot/appointments`)
                 break
-
             case 'emailMarketing':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/email")
+                router.push("/console/modules/email")
                 break
             case 'reviewManagement':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/reviews")
+                router.push("/console/modules/reviews")
                 break
             case 'loyaltyProgram':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/loyalty")
+                router.push("/console/modules/loyalty")
                 break
             case 'campaignManager':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/campaigns")
+                router.push("/console/modules/campaigns")
                 break
             case 'autoTranslate':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/translate")
+                router.push("/console/modules/translate")
                 break
             case 'gamification':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/gamification")
+                router.push("/console/modules/gamification")
                 break
             case 'visualDiagnosis':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/visual")
+                router.push("/console/modules/visual")
                 break
             case 'digitalWaiter':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/digital-waiter")
+                router.push("/console/modules/digital-waiter")
                 break
             case 'proactiveMessaging':
-                router.push(isSuperAdminViewingTenant ? `${basePath}/modules` : "/console/modules/engagement")
+                router.push("/console/modules/engagement")
                 break
-            // Add other routes as they are implemented
             default:
                 toast({
                     title: t('comingSoon'),
