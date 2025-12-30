@@ -28,12 +28,26 @@ function initAdmin() {
                 // Replace literal "\n" with actual newlines
                 formattedPrivKey = formattedPrivKey.replace(/\\n/g, '\n');
 
-                // Critical Fix: If key is a single line (no newlines after processing), 
-                // we must re-inject them around the headers for OpenSSL to accept it.
-                if (!formattedPrivKey.includes('\n')) {
-                    formattedPrivKey = formattedPrivKey
-                        .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
-                        .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----\n');
+                // ADVANCED FIX: Ensure strict PEM format
+                // 1. If it's a single line or missing internal newlines, we need to reformat the whole thing.
+                const hasHeader = formattedPrivKey.includes('-----BEGIN PRIVATE KEY-----');
+                const hasFooter = formattedPrivKey.includes('-----END PRIVATE KEY-----');
+
+                if (hasHeader && hasFooter) {
+                    // Strip headers to get just the body
+                    let body = formattedPrivKey
+                        .replace('-----BEGIN PRIVATE KEY-----', '')
+                        .replace('-----END PRIVATE KEY-----', '')
+                        .replace(/\s/g, ''); // Remove all whitespace/newlines from body
+
+                    // Split body into 64-char chunks
+                    const chunks = body.match(/.{1,64}/g) || [];
+
+                    // Reassemble
+                    formattedPrivKey =
+                        '-----BEGIN PRIVATE KEY-----\n' +
+                        chunks.join('\n') +
+                        '\n-----END PRIVATE KEY-----\n';
                 }
 
 

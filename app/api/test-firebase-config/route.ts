@@ -22,7 +22,22 @@ export async function GET() {
             // Manual init attempt to mimic lib
             const privKey = process.env.FIREBASE_PRIVATE_KEY;
             if (privKey) {
-                const formattedKey = privKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+                let formattedKey = privKey.replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+
+                // Strict PEM format
+                const hasHeader = formattedKey.includes('-----BEGIN PRIVATE KEY-----');
+                const hasFooter = formattedKey.includes('-----END PRIVATE KEY-----');
+
+                if (hasHeader && hasFooter) {
+                    let body = formattedKey
+                        .replace('-----BEGIN PRIVATE KEY-----', '')
+                        .replace('-----END PRIVATE KEY-----', '')
+                        .replace(/\s/g, '');
+
+                    const chunks = body.match(/.{1,64}/g) || [];
+                    formattedKey = '-----BEGIN PRIVATE KEY-----\n' + chunks.join('\n') + '\n-----END PRIVATE KEY-----\n';
+                }
+
                 admin.initializeApp({
                     credential: admin.credential.cert({
                         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
