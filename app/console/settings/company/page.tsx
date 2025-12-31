@@ -167,7 +167,7 @@ export default function CompanySettingsPage() {
                                 <option value="restaurant">{language === 'tr' ? "Restoran" : "Restaurant"}</option>
                                 <option value="healthcare">{language === 'tr' ? "Sağlık" : "Healthcare"}</option>
                                 <option value="education">{language === 'tr' ? "Eğitim" : "Education"}</option>
-                                <option value="finance">{language === 'tr' ? "Finans" : "Finance"}</option>
+                                <option value="finance">{language === 'tr' ? "Bankacılık ve Finans" : "Banking & Finance"}</option>
                                 <option value="real_estate">{language === 'tr' ? "Emlak" : "Real Estate"}</option>
                                 <option value="booking">{language === 'tr' ? "Seyahat" : "Travel"}</option>
                                 <option value="agriculture">{language === 'tr' ? "Tarım" : "Agriculture"}</option>

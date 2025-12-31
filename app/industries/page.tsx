@@ -88,7 +88,7 @@ export default function IndustriesPage() {
         },
         {
             icon: Banknote,
-            label: { en: "Finance", tr: "Finans" },
+            label: { en: "Banking & Finance", tr: "Bankacılık ve Finans" },
             descKey: "sectorDesc_finance",
             href: "/solutions/finance",
             color: "text-emerald-500"

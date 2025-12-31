@@ -81,7 +81,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
         { icon: HeartPulse, label: { en: "Healthcare", tr: "Sağlık" }, href: "/solutions/healthcare", color: "text-red-500" },
         { icon: GraduationCap, label: { en: "Education", tr: "Online Eğitim" }, href: "/solutions/education", color: "text-pink-400" },
         { icon: School, label: { en: "Academic", tr: "Okul & Üniversite" }, href: "/solutions/academic", color: "text-amber-400" },
-        { icon: Banknote, label: { en: "Finance", tr: "Finans & Sigorta" }, href: "/solutions/finance", color: "text-emerald-500" },
+        { icon: Banknote, label: { en: "Banking & Finance", tr: "Bankacılık ve Finans" }, href: "/solutions/finance", color: "text-emerald-500" },
         { icon: ChefHat, label: { en: "Restaurant", tr: "Restoran & Kafe" }, href: "/solutions/restaurant", color: "text-orange-500" },
         { icon: Sprout, label: { en: "Agriculture", tr: "Tarım & Hayvancılık" }, href: "/solutions/agriculture", color: "text-green-500" },
     ]

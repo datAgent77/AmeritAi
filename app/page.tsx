@@ -57,7 +57,7 @@ export default function LandingPage() {
         { icon: HeartPulse, label: { en: "Healthcare", tr: "Sağlık" }, href: "/solutions/healthcare", color: "text-red-500" },
         { icon: GraduationCap, label: { en: "Education", tr: "Eğitim" }, href: "/solutions/education", color: "text-pink-400" },
         { icon: School, label: { en: "Academic", tr: "Akademik" }, href: "/solutions/academic", color: "text-amber-400" },
-        { icon: Banknote, label: { en: "Finance", tr: "Finans" }, href: "/solutions/finance", color: "text-emerald-500" },
+        { icon: Banknote, label: { en: "Banking & Finance", tr: "Bankacılık" }, href: "/solutions/finance", color: "text-emerald-500" },
         { icon: ChefHat, label: { en: "Restaurant", tr: "Restoran" }, href: "/solutions/restaurant", color: "text-orange-500" },
         { icon: Sprout, label: { en: "Agriculture", tr: "Tarım" }, href: "/solutions/agriculture", color: "text-green-500" },
         { icon: Car, label: { en: "Automotive", tr: "Otomotiv" }, href: "/solutions/automotive", color: "text-slate-400" },

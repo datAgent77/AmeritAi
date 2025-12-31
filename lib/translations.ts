@@ -1465,7 +1465,7 @@ export const translations = {
         industryRealEstate: "Gayrimenkul",
         industryHealthcare: "Sağlık",
         industryEducation: "Eğitim",
-        industryFinance: "Finans",
+        industryFinance: "Bankacılık ve Finans",
         industryService: "Hizmet & Ajans",
         industryOther: "Diğer",
         industryAcademic: "Üniversite & Okullar",

@@ -235,8 +235,8 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
     },
     finance: {
         id: 'finance',
-        title: { tr: "Finans", en: "Finance" },
-        subtitle: { tr: "Finansal asistan.", en: "Financial assistant." },
+        title: { tr: "Bankacılık ve Finans", en: "Banking & Finance" },
+        subtitle: { tr: "Bankacılık ve finansal hizmetler asistanı.", en: "Banking and financial services assistant." },
         iconName: 'Banknote',
         features: [
             { title: { tr: "Kredi Hesaplama", en: "Loan Calculator" }, description: { tr: "Anlık kredi taksit hesabı yapar.", en: "Calculates loan installments instantly." }, iconName: 'BarChart' },

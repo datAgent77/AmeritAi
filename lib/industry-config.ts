@@ -347,12 +347,12 @@ export const INDUSTRY_CONFIG = {
     },
     finance: {
         names: {
-            en: "Finance",
-            tr: "Finans"
+            en: "Banking & Finance",
+            tr: "Bankacılık ve Finans"
         },
-        label: "Finance",
-        role: "Financial Advisor",
-        systemPrompt: `Sen bir Finansal Hizmetler Asistanısın.
+        label: "Banking & Finance",
+        role: "Banking Advisor",
+        systemPrompt: `Sen bir Bankacılık ve Finans Danışmanısın.
 
 ⚠️ ÖNEMLİ: Yatırım tavsiyesi VERME. Genel bilgi sun.
 
