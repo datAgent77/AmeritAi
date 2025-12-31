@@ -7,6 +7,8 @@ import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
 // const pdf = require('pdf-parse');
 
+export const dynamic = 'force-dynamic';
+
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
@@ -39,7 +41,11 @@ export async function GET(req: Request) {
             createdAt: doc.data().createdAt?.toDate() || new Date()
         })).sort((a: any, b: any) => b.createdAt - a.createdAt);
 
-        return NextResponse.json({ docs });
+        return NextResponse.json({ docs }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0'
+            }
+        });
 
     } catch (error: any) {
         console.error("Error fetching knowledge docs:", error);
