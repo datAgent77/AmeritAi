@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation"
 import { SubpageSidebar } from "@/components/subpage-sidebar"
 import { useLanguage } from "@/context/LanguageContext"
-import { CreditCard, Code, Bell } from "lucide-react"
+import { CreditCard, Code, Bell, Bot } from "lucide-react"
 
 export default function TenantSettingsLayout({
     children,
@@ -20,6 +20,12 @@ export default function TenantSettingsLayout({
             label: t('subscription') || "Abonelik",
             href: `/admin/tenant/${userId}/settings/subscription`,
             icon: <CreditCard className="w-4 h-4" />
+        },
+        {
+            id: "ai",
+            label: t('aiConfiguration') || "AI Yapılandırması",
+            href: `/admin/tenant/${userId}/settings/ai`,
+            icon: <Bot className="w-4 h-4" />
         },
         {
             id: "developers",

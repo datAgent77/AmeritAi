@@ -30,7 +30,7 @@ export function CookieConsent() {
     if (!isVisible) return null
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 bg-black/90 backdrop-blur-md border-t border-white/10 text-white shadow-2xl animate-in slide-in-from-bottom-full duration-500">
+        <div className="fixed bottom-0 left-0 right-0 z-[99999] p-4 bg-black/90 backdrop-blur-md border-t border-white/10 text-white shadow-2xl animate-in slide-in-from-bottom-full duration-500">
             <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="text-sm text-gray-300 flex-1">
                     <p>

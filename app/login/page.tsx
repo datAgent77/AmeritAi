@@ -265,23 +265,6 @@ export default function LoginForm() {
               {t('signUp')}
             </Link>
           </p>
-
-          {/* Custom SSO Link (optional) */}
-          <p className="text-center">
-            <Link
-              href="#"
-              className="text-sm text-primary hover:underline"
-              onClick={(e) => {
-                e.preventDefault()
-                toast({
-                  title: language === 'tr' ? 'Yakında' : 'Coming Soon',
-                  description: language === 'tr' ? 'Özel SSO desteği yakında eklenecek.' : 'Custom SSO support coming soon.',
-                })
-              }}
-            >
-              {language === 'tr' ? 'Özel SSO ile giriş yap' : 'Log in with custom SSO'}
-            </Link>
-          </p>
         </div>
       </main>
 

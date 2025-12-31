@@ -100,6 +100,12 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
     ]
     // ----------------------
 
+    const [activeAccordion, setActiveAccordion] = useState<string | null>(null)
+
+    const toggleAccordion = (id: string) => {
+        setActiveAccordion(activeAccordion === id ? null : id)
+    }
+
     return (
         <nav className={cn(
             "fixed top-0 w-full z-50 border-b transition-all duration-300",
@@ -268,21 +274,49 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                 <SheetHeader className="p-6 border-b border-white/5">
                                     <SheetTitle className="text-left text-white flex items-center justify-between">
                                         <VionLogo />
-                                        <button onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')} className="text-xs border border-white/20 rounded px-2 py-1 uppercase hover:bg-white/10">
+                                        <button onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')} className="text-xs border border-white/20 rounded px-2 py-1 uppercase hover:bg-white/10 mr-8">
                                             {language}
                                         </button>
                                     </SheetTitle>
                                 </SheetHeader>
 
-                                <div className="p-6 space-y-6">
-                                    {/* Mobile Solutions */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                {/* Authentication Buttons (Top) */}
+                                <div className="p-4 bg-zinc-900/50 border-b border-white/5">
+                                    {!user ? (
+                                        <div className="flex gap-2">
+                                            <Link href="/login" onClick={() => setIsOpen(false)} className="flex-1">
+                                                <Button variant="outline" className="w-full border-white/10 text-white bg-transparent hover:bg-white/5 h-9">
+                                                    {t('login')}
+                                                </Button>
+                                            </Link>
+                                            <Link href="/signup" onClick={() => setIsOpen(false)} className="flex-1">
+                                                <Button className="w-full bg-white text-black hover:bg-zinc-200 h-9">
+                                                    {t('landingGetStarted')}
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <Link href="/platform" onClick={() => setIsOpen(false)}>
+                                            <Button className="w-full bg-white text-black hover:bg-zinc-200">
+                                                {language === 'tr' ? 'Panele Git' : 'Go to Console'}
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 px-4 py-6 space-y-1">
+                                    {/* Mobile Solutions Accordion */}
+                                    <div className="border-b border-white/5">
+                                        <button
+                                            onClick={() => toggleAccordion('solutions')}
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                        >
                                             {language === 'tr' ? 'Sektörler' : 'Industries'}
-                                        </h4>
-                                        <div className="grid grid-cols-1 gap-2">
+                                            <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'solutions' ? "rotate-180" : "")} />
+                                        </button>
+                                        <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'solutions' ? "max-h-[500px] pb-3" : "max-h-0")}>
                                             {solutions.map((item, i) => (
-                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex items-center gap-3 py-2 text-zinc-300 hover:text-white">
+                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-zinc-400 hover:text-white rounded-md hover:bg-white/5">
                                                     <item.icon className="w-4 h-4 text-zinc-500" />
                                                     {language === 'tr' ? item.label.tr : item.label.en}
                                                 </Link>
@@ -290,16 +324,20 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                         </div>
                                     </div>
 
-                                    {/* Mobile Modules */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    {/* Mobile Modules Accordion */}
+                                    <div className="border-b border-white/5">
+                                        <button
+                                            onClick={() => toggleAccordion('modules')}
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                        >
                                             {language === 'tr' ? 'Modüller' : 'Modules'}
-                                        </h4>
-                                        <div className="grid grid-cols-1 gap-2">
+                                            <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'modules' ? "rotate-180" : "")} />
+                                        </button>
+                                        <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'modules' ? "max-h-[500px] pb-3" : "max-h-0")}>
                                             {getAllModules().map((module) => {
                                                 const IconComponent = iconMapping[module.icon] || Globe
                                                 return (
-                                                    <Link key={module.id} href={`/products/${module.id}`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 py-2 text-zinc-300 hover:text-white">
+                                                    <Link key={module.id} href={`/products/${module.id}`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-zinc-400 hover:text-white rounded-md hover:bg-white/5">
                                                         <IconComponent className="w-4 h-4 text-zinc-500" />
                                                         {language === 'tr' ? module.name.tr : module.name.en}
                                                     </Link>
@@ -308,42 +346,34 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                         </div>
                                     </div>
 
-                                    {/* Mobile Resources */}
-                                    <div className="space-y-3">
-                                        <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    {/* Mobile Resources Accordion */}
+                                    <div className="border-b border-white/5">
+                                        <button
+                                            onClick={() => toggleAccordion('resources')}
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                        >
                                             {language === 'tr' ? 'Kaynaklar' : 'Resources'}
-                                        </h4>
-                                        <div className="grid grid-cols-1 gap-2">
+                                            <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'resources' ? "rotate-180" : "")} />
+                                        </button>
+                                        <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'resources' ? "max-h-[300px] pb-3" : "max-h-0")}>
                                             {resources.map((item, i) => (
-                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="py-2 text-zinc-300 hover:text-white">
-                                                    {language === 'tr' ? item.title.tr : item.title.en}
+                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex flex-col px-2 py-2 rounded-md hover:bg-white/5">
+                                                    <span className="text-sm text-zinc-300">{language === 'tr' ? item.title.tr : item.title.en}</span>
                                                 </Link>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 border-t border-white/10">
-                                        {user ? (
-                                            <Link href="/platform" onClick={() => setIsOpen(false)}>
-                                                <Button className="w-full bg-white text-black hover:bg-zinc-200">
-                                                    {language === 'tr' ? 'Panele Git' : 'Go to Console'}
-                                                </Button>
-                                            </Link>
-                                        ) : (
-                                            <div className="flex flex-col gap-3">
-                                                <Link href="/login" onClick={() => setIsOpen(false)}>
-                                                    <Button variant="outline" className="w-full border-white/10 text-white bg-transparent">
-                                                        {t('login')}
-                                                    </Button>
-                                                </Link>
-                                                <Link href="/signup" onClick={() => setIsOpen(false)}>
-                                                    <Button className="w-full bg-white text-black hover:bg-zinc-200">
-                                                        {t('landingGetStarted')}
-                                                    </Button>
-                                                </Link>
-                                            </div>
-                                        )}
-                                    </div>
+                                    {/* Direct Links */}
+                                    <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white border-b border-white/5">
+                                        {t('landingPricing')}
+                                    </Link>
+                                    <Link href="/why-us" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white border-b border-white/5">
+                                        {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
+                                    </Link>
+                                    <Link href="/contact" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white">
+                                        {language === 'tr' ? 'İletişim' : 'Contact'}
+                                    </Link>
                                 </div>
                             </SheetContent>
                         </Sheet>

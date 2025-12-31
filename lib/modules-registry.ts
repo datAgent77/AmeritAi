@@ -216,7 +216,17 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         isPremiumAddOn: false, // Free for ecommerce, premium for others
         supportedSectors: ['ecommerce', 'restaurant', 'real_estate'],
         defaultEnabledBySector: ['ecommerce'],
-        legacyFirestoreField: 'enablePersonalShopper'
+        legacyFirestoreField: 'enablePersonalShopper',
+        aiSystemInstruction: {
+            en: `PRODUCT CATALOG & SHOPPER ACTIVE. You are a knowledgeable Sales Assistant.
+1. Recommend products based on user needs.
+2. Use the product context provided to answer questions about features and price.
+3. If the user is unsure, ask clarifying questions (budget, preferences) to narrow down options.`,
+            tr: `ÜRÜN KATALOĞU VE ALIŞVERİŞ MODÜLÜ AKTİF. Sen bilgili bir Satış Asistanısın.
+1. Kullanıcı ihtiyaçlarına göre ürünler öner.
+2. Özellikler ve fiyat hakkındaki soruları yanıtlamak için sağlanan ürün bağlamını kullan.
+3. Kullanıcı kararsızsa, seçenekleri daraltmak için netleştirici sorular (bütçe, tercihler) sor.`
+        }
     },
 
     leadCollection: {
@@ -236,7 +246,17 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance'
         ],
-        legacyFirestoreField: 'enableLeadFinder'
+        legacyFirestoreField: 'enableLeadFinder',
+        aiSystemInstruction: {
+            en: `LEAD COLLECTION ACTIVE. If a user expresses interest in services or asks for a quote:
+1. Politely ask for their Name and Contact Information (Email/Phone).
+2. Explain that a representative will contact them.
+3. Do not be intrusive; ask naturally within the flow of conversation.`,
+            tr: `LEAD TOPLAMA AKTİF. Kullanıcı hizmetlere ilgi gösterirse veya fiyat teklifi isterse:
+1. Nazikçe Adını ve İletişim Bilgilerini (E-posta/Telefon) iste.
+2. Bir temsilcinin onlarla iletişime geçeceğini belirt.
+3. Israrcı olma; sohbetin akışı içinde doğal bir şekilde sor.`
+        }
     },
 
     voiceAssistant: {
@@ -330,7 +350,17 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: ['ecommerce', 'saas'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableSalesOptimization'
+        legacyFirestoreField: 'enableSalesOptimization',
+        aiSystemInstruction: {
+            en: `SALES OPTIMIZATION ACTIVE.
+1. Suggest complementary items (Cross-sell) when appropriate (e.g., "Would you like a case with that phone?").
+2. Highlight unique value propositions to encourage purchase.
+3. If user abandons a topic/cart, gently remind them of the benefits.`,
+            tr: `SATIŞ OPTİMİZASYONU AKTİF.
+1. Uygun olduğunda tamamlayıcı ürünler (Çapraz Satış) öner (örn. "Bu telefonun yanına bir kılıf ister misiniz?").
+2. Satın almayı teşvik etmek için benzersiz değer önerilerini vurgula.
+3. Kullanıcı bir konuyu/sepeti terk ederse, avantajları nazikçe hatırlat.`
+        }
     },
 
     emailMarketing: {
@@ -367,7 +397,13 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: ['restaurant', 'service', 'booking', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableReviewManagement'
+        legacyFirestoreField: 'enableReviewManagement',
+        aiSystemInstruction: {
+            en: `REVIEW MANAGEMENT ACTIVE.
+If the user expresses high satisfaction or thanks you for great service, politely invite them to leave a review: "We're glad to help! If you have a moment, we'd love your feedback on Google/Yelp."`,
+            tr: `YORUM YÖNETİMİ AKTİF.
+Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür ederse, nazikçe yorum yapmaya davet et: "Yardımcı olabildiğimize sevindik! Vaktiniz varsa, Google/Yelp üzerinde değerlendirme yapmanız bizi çok mutlu eder."`
+        }
     },
 
     loyaltyProgram: {
@@ -460,7 +496,13 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: ['ecommerce', 'restaurant'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableGamification'
+        legacyFirestoreField: 'enableGamification',
+        aiSystemInstruction: {
+            en: `GAMIFICATION ACTIVE.
+If the user seems price-sensitive or asks for discounts, mention the 'Spin the Wheel' game: "Did you know you can spin the wheel to win a special discount code?"`,
+            tr: `OYUNLAŞTIRMA AKTİF.
+Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkıfelek' oyununu hatırlat: "Özel bir indirim kodu kazanmak için çarkı çevirebileceğinizi biliyor muydunuz?"`
+        }
     },
 
     visualDiagnosis: {
@@ -478,7 +520,13 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: ['agriculture', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableVisualDiagnosis'
+        legacyFirestoreField: 'enableVisualDiagnosis',
+        aiSystemInstruction: {
+            en: `VISUAL DIAGNOSIS ACTIVE.
+You have the capability to analyze images. If the user describes a visible problem (e.g., plant disease, car damage, skin issue), ask them to UPLOAD A PHOTO for analysis.`,
+            tr: `GÖRSEL TANI AKTİF.
+Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür bir sorunu (örn. bitki hastalığı, araç hasarı, cilt sorunu) tarif ederse, analiz için BİR FOTOĞRAF YÜKLEMESİNİ iste.`
+        }
     },
 
     digitalWaiter: {

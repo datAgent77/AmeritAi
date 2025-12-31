@@ -305,6 +305,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     // Maps to the Leads page in admin
                     router.push(`${basePath}/chatbot/leads`)
                     break
+                case 'digitalWaiter':
+                    // Use console page for now (works for both admin and tenant)
+                    router.push("/console/modules/digital-waiter")
+                    break
+                case 'proactiveMessaging':
+                    // Use console page for now (works for both admin and tenant)
+                    router.push("/console/modules/engagement")
+                    break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
                     toast({

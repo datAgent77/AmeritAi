@@ -44,6 +44,32 @@ async function getSystemConfig(adminDb: any) {
     return { provider: "openai", model: "gpt-3.5-turbo" };
 }
 
+function normalizeIndustry(input: string | undefined): keyof typeof INDUSTRY_CONFIG {
+    if (!input) return 'ecommerce';
+    const lower = input.toLowerCase().trim();
+
+    // Map known variations
+    if (lower.includes('saas') || lower.includes('software')) return 'saas';
+    if (lower.includes('travel') || lower.includes('booking')) return 'booking';
+    if (lower.includes('estate')) return 'real_estate';
+    if (lower.includes('education') || lower.includes('school') || lower.includes('university') || lower.includes('academic')) {
+        if (lower.includes('university') || lower.includes('academic')) return 'academic';
+        return 'education';
+    }
+    if (lower.includes('finance')) return 'finance';
+    if (lower.includes('health') || lower.includes('doctor')) return 'healthcare';
+    if (lower.includes('service') || lower.includes('agency')) return 'service';
+    if (lower.includes('restaurant') || lower.includes('cafe') || lower.includes('food')) return 'restaurant';
+    if (lower.includes('agriculture') || lower.includes('farm')) return 'agriculture';
+
+    // Direct match check (if key matches exactly e.g. 'ecommerce')
+    if (INDUSTRY_CONFIG[lower as keyof typeof INDUSTRY_CONFIG]) {
+        return lower as keyof typeof INDUSTRY_CONFIG;
+    }
+
+    return 'ecommerce';
+}
+
 export async function generateAIResponse(
     chatbotId: string,
     messages: AIMessage[],
@@ -58,13 +84,10 @@ export async function generateAIResponse(
         if (!adminDb) throw new Error("Firebase Admin not initialized");
 
         // 1. Fetch Global AI Configuration
-        const aiConfig = await getSystemConfig(adminDb);
-        const provider = aiConfig.provider || "openai";
-        const model = aiConfig.model || "gpt-3.5-turbo";
-        const apiKey = aiConfig.apiKey;
+        const globalAiConfig = await getSystemConfig(adminDb);
 
         // 2. Get Chatbot Config & Context
-        console.log(`AI Service: Generating response using ${provider}/${model}`, { chatbotId });
+        console.log(`AI Service: Fetching chatbot config`, { chatbotId });
         const lastMessage = messages[messages.length - 1];
 
         const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
@@ -72,11 +95,30 @@ export async function generateAIResponse(
         const shopperConfig = chatbotData?.shopperConfig;
         const isShopperEnabled = chatbotData?.enablePersonalShopper === true;
 
+        // 3. Determine AI Config: Tenant-specific or Global
+        let provider: string;
+        let model: string;
+        let apiKey: string | undefined;
+
+        const tenantAiConfig = chatbotData?.aiConfig;
+        if (tenantAiConfig && tenantAiConfig.useGlobalDefaults === false) {
+            // Use tenant-specific configuration
+            provider = tenantAiConfig.provider || globalAiConfig.provider || "openai";
+            model = tenantAiConfig.model || globalAiConfig.model || "gpt-3.5-turbo";
+            apiKey = tenantAiConfig.apiKey || globalAiConfig.apiKey;
+            console.log(`AI Service: Using TENANT config for ${chatbotId}: ${provider}/${model}`);
+        } else {
+            // Use global configuration
+            provider = globalAiConfig.provider || "openai";
+            model = globalAiConfig.model || "gpt-3.5-turbo";
+            apiKey = globalAiConfig.apiKey;
+            console.log(`AI Service: Using GLOBAL config: ${provider}/${model}`);
+        }
+
         // Industry Config
-        const sectorId = chatbotData?.sectorId || chatbotData?.industry || 'ecommerce';
-        const industry = (INDUSTRY_CONFIG[sectorId as keyof typeof INDUSTRY_CONFIG])
-            ? sectorId
-            : 'ecommerce';
+        // Industry Config
+        const sectorId = chatbotData?.sectorId || chatbotData?.industry;
+        const industry = normalizeIndustry(sectorId);
         const industryConfig = INDUSTRY_CONFIG[industry as keyof typeof INDUSTRY_CONFIG];
 
         // RAG Setup

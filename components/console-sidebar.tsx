@@ -204,7 +204,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     size="lg"
-                                    onClick={() => router.push("/platform/tenants")}
+                                    onClick={() => router.push("/admin")}
                                     className="bg-white/5 hover:bg-white/10 text-white"
                                 >
                                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-black">

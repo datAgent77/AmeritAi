@@ -22,12 +22,13 @@ export function VionLogo({ className, variant = "white" }: VionLogoProps) {
     }
 
     return (
-        <div className={cn("relative h-6 w-24", className)}>
+        <div className={cn("relative flex items-center justify-start", className)}>
             <Image
                 src="/vion-logo-text-light.png"
                 alt="Vion"
-                fill
-                className="object-contain object-left"
+                width={133}
+                height={42}
+                className="h-7 w-auto object-contain object-left"
                 priority
             />
         </div>

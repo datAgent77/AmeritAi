@@ -101,6 +101,10 @@
       this.selectMessage();
 
       this.setupTriggers();
+
+      // Fetch context-aware bubble if proactive messaging is enabled
+      // We do this after triggers setup so it can run in parallel
+      this.fetchContextBubble();
     }
 
     selectMessage() {
@@ -215,6 +219,51 @@
       }
     }
 
+    async fetchContextBubble() {
+      // Check if proactive messaging is enabled in settings (using legacy field or new module logic)
+      // If legacy field exists, us it. Or check specific flag.
+      // Assuming settings.enableProactiveMessaging matches backend mapping.
+      if (!this.settings.enableProactiveMessaging) return;
+
+      console.log('Engagement: Fetching context bubble...');
+
+      try {
+        const pageUrl = window.location.href;
+        const pageTitle = document.title;
+        const h1 = document.querySelector('h1')?.innerText || '';
+
+        // API URL construction
+        // If baseUrl ends with slash, remove it for safety, or just trust it.
+        // baseUrl comes from script src origin.
+        const apiUrl = `${this.baseUrl}/api/generate-context-bubble`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chatbotId: this.chatbotId,
+            pageUrl,
+            pageTitle,
+            h1,
+            tone: this.settings.tone || 'friendly'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.bubble) {
+            console.log('Engagement: Context bubble received:', data.bubble);
+            // Show it after a short delay (e.g. 2 seconds) to grab attention
+            setTimeout(() => {
+              this.showBubble({ text: data.bubble });
+            }, 2000);
+          }
+        }
+      } catch (e) {
+        console.error('Engagement: Failed to fetch context bubble', e);
+      }
+    }
+
     showBubble(specificMsg = null) {
       // Check if widget is already open
       const container = document.getElementById('userex-chatbot-container');
@@ -288,7 +337,7 @@
 
       this.bubble.style.cssText = `
         position: fixed;
-        z-index: 999998;
+        z-index: 9998;
         background-color: ${style.backgroundColor || '#000000'};
         color: ${style.textColor || '#FFFFFF'};
         padding: 12px 16px;
@@ -636,7 +685,7 @@
         backgroundColor: settings.launcherBackgroundColor || settings.primaryColor || '#000000',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         cursor: 'pointer',
-        zIndex: '999998',
+        zIndex: '9998',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -683,7 +732,7 @@
     launcherContainer.id = 'userex-launcher-wrapper';
     Object.assign(launcherContainer.style, {
       position: 'fixed',
-      zIndex: '2147483647',
+      zIndex: '9999',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -696,6 +745,7 @@
       position: 'relative',
       width: isTextMode ? 'auto' : `${settings.launcherWidth}px`,
       minWidth: isTextMode ? `${settings.launcherWidth}px` : undefined,
+      maxWidth: isTextMode ? '200px' : undefined,
       height: `${settings.launcherHeight}px`,
       padding: isTextMode ? '0 24px' : '0',
       borderRadius: `${settings.launcherRadius}px`,
@@ -706,6 +756,9 @@
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
     });
 
@@ -941,7 +994,7 @@
       boxShadow: '0 12px 40px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.06)',
       borderRadius: '24px',
       overflow: 'hidden',
-      zIndex: '2147483647',
+      zIndex: '9999',
       display: 'none',
       backgroundColor: '#fff',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
@@ -1529,7 +1582,7 @@
       height: '100vh',
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
       backdropFilter: 'blur(10px)',
-      zIndex: '999999',
+      zIndex: '9999',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

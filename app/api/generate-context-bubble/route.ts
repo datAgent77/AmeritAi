@@ -61,6 +61,18 @@ export async function POST(req: Request) {
         }
         const selectedTone = toneMap[tone] || toneMap.friendly
 
+        // Module Specific Instructions
+        let moduleInstruction = ""
+        const isRestaurant = chatbotData.industry === 'restaurant' || chatbotData.sectorId === 'restaurant'; // Robust check
+
+        if (chatbotData.enableDigitalWaiter && isRestaurant) {
+            moduleInstruction = "DİJİTAL GARSON MODU: Kullanıcı QR menüde. Bir yemek/içecek sayfasındaysa, tamamlayıcı lezzet öner (örn: 'Bunun yanına X şarabı yakışır')."
+        } else if (chatbotData.enablePersonalShopper) {
+            moduleInstruction = "ALIŞVERİŞ ASİSTANI MODU: Ziyaretçi bir ürüne bakıyorsa, satın alma kararını kolaylaştıracak veya tamamlayıcı bir ürün önerecek bir şey söyle."
+        } else if (chatbotData.enableGamification) {
+            moduleInstruction = "OYUNLAŞTIRMA MODU: Eğer uygunsa, indirim kazanmak için şansını denemesini öner."
+        }
+
         const prompt = `
 Sen bir web sitesi ziyaretçi asistanısın. Ziyaretçinin şu an bulunduğu sayfaya göre ONUN DİKKATİNİ ÇEKECEK, kısa ve alakalı bir balon mesajı oluşturman gerekiyor.
 
@@ -81,6 +93,7 @@ KURALLAR:
 4. Soru sormak genellikle iyidir.
 5. Sadece mesaj metnini döndür, tırnak işareti veya başka bir şey ekleme.
 6. Emoji kullanabilirsin.
+7. ${moduleInstruction}
 
 ÖRNEKLER:
 (Sayfa: Fiyatlar) -> Fiyatlarımız hakkında aklınıza takılan var mı? 💸
