@@ -102,7 +102,8 @@ export async function POST(req: Request) {
         // Also update chatbot document with sector
         await adminDb.collection("chatbots").doc(decoded.uid).update({
             sector: sectorId,
-            sectorId
+            sectorId,
+            industry: sectorId // Also update industry for backward compatibility with ai-service
         });
 
         return NextResponse.json({

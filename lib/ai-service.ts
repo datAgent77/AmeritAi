@@ -192,8 +192,12 @@ export async function generateAIResponse(
 
         // Industry Config
         // Industry Config
-        const sectorId = chatbotData?.sectorId || chatbotData?.industry;
+        const rawSectorId = chatbotData?.sectorId;
+        const rawIndustry = chatbotData?.industry;
+        const sectorId = rawSectorId || rawIndustry;
+        console.log(`AI Service [SECTOR DEBUG]: chatbotId=${chatbotId}, rawSectorId=${rawSectorId}, rawIndustry=${rawIndustry}, using=${sectorId}`);
         const industry = normalizeIndustry(sectorId);
+        console.log(`AI Service [SECTOR DEBUG]: Normalized to: ${industry}`);
         const industryConfig = INDUSTRY_CONFIG[industry as keyof typeof INDUSTRY_CONFIG];
 
         // RAG Setup
