@@ -49,7 +49,7 @@ interface UserData {
 }
 
 export default function AdminPage() {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
     const [users, setUsers] = useState<UserData[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const { toast } = useToast()
@@ -638,8 +638,23 @@ export default function AdminPage() {
                                             onChange={(e) => setIndustry(e.target.value)}
                                         >
                                             <option value="ecommerce">{t('industryEcommerce')}</option>
+                                            <option value="booking">{t('industryTravel') || 'Travel & Booking'}</option>
+                                            <option value="real_estate">{t('industryRealEstate')}</option>
                                             <option value="saas">{t('industrySaas')}</option>
                                             <option value="service">{t('industryService')}</option>
+                                            <option value="healthcare">{t('industryHealthcare')}</option>
+                                            <option value="education">{t('industryEducation')}</option>
+                                            <option value="academic">{t('industryAcademic')}</option>
+                                            <option value="finance">{t('industryFinance')}</option>
+                                            <option value="restaurant">{t('industryRestaurant') || 'Restaurant'}</option>
+                                            <option value="agriculture">{language === 'tr' ? 'Tarım' : 'Agriculture'}</option>
+                                            <option value="automotive">{language === 'tr' ? 'Otomotiv' : 'Automotive'}</option>
+                                            <option value="insurance">{language === 'tr' ? 'Sigorta' : 'Insurance'}</option>
+                                            <option value="logistics">{language === 'tr' ? 'Lojistik' : 'Logistics'}</option>
+                                            <option value="beauty">{language === 'tr' ? 'Güzellik & Wellness' : 'Beauty & Wellness'}</option>
+                                            <option value="legal">{language === 'tr' ? 'Hukuk' : 'Legal'}</option>
+                                            <option value="fitness">{language === 'tr' ? 'Spor & Fitness' : 'Sports & Fitness'}</option>
+                                            <option value="maritime">{language === 'tr' ? 'Denizcilik' : 'Maritime'}</option>
                                             <option value="other">{t('industryOther')}</option>
                                         </select>
                                     </div>
