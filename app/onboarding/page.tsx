@@ -16,7 +16,8 @@ import {
     ShoppingBag, Calendar, Home, Briefcase, Heart,
     GraduationCap, BookOpen, Landmark, HelpCircle, Wrench,
     MessageSquare, UserPlus, Mic, PenTool, Lock,
-    ExternalLink, TrendingUp, Share2, Mail, Info
+    ExternalLink, TrendingUp, Share2, Mail, Info,
+    ChefHat, Sprout, Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -53,6 +54,15 @@ const INDUSTRY_ICONS: Record<string, any> = {
     education: GraduationCap,
     academic: BookOpen,
     finance: Landmark,
+    restaurant: ChefHat,
+    agriculture: Sprout,
+    automotive: Car,
+    insurance: Shield,
+    logistics: Truck,
+    beauty: Sparkles,
+    legal: Scale,
+    fitness: Dumbbell,
+    maritime: Anchor,
     other: HelpCircle
 }
 
@@ -495,7 +505,7 @@ export default function OnboardingPage() {
                 {/* STEP 1: SECTOR */}
                 {currentStep === 'sector' && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => {
                                 const Icon = INDUSTRY_ICONS[key] || HelpCircle
                                 const isSelected = selectedSector === key
