@@ -196,7 +196,8 @@ export async function generateAIResponse(
         const rawSectorId = chatbotData?.sectorId;
         const rawIndustry = chatbotData?.industry;
         const rawSector = chatbotData?.sector;
-        const sectorId = rawSectorId || rawIndustry || rawSector;
+        // Prioritize 'sector' (Admin Panel) over 'sectorId' (Legacy)
+        const sectorId = rawSector || rawSectorId || rawIndustry;
         console.log(`AI Service [SECTOR DEBUG]: chatbotId=${chatbotId}, rawSectorId=${rawSectorId}, rawIndustry=${rawIndustry}, rawSector=${rawSector}, using=${sectorId}`);
         const industry = normalizeIndustry(sectorId);
         console.log(`AI Service [SECTOR DEBUG]: Normalized to: ${industry}`);
