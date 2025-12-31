@@ -305,5 +305,258 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
             { role: 'ai', content: { tr: "Harika! 'Startup Paketi'miz tam size göre. Ana sözleşme, gizlilik sözleşmeleri ve çalışan sözleşmelerini içerir. Avukatımızla 15 dakikalık ücretsiz bir ön görüşme planlayalım mı?", en: "Great! Our 'Startup Package' is perfect for you. It includes articles of association, NDAs, and employee contracts. Shall we schedule a free 15-minute preliminary meeting with our lawyer?" } }
         ]
     },
+    automotive: {
+        id: 'automotive',
+        title: { tr: "Otomotiv", en: "Automotive" },
+        subtitle: {
+            tr: "Araç satışından servise, yedek parçadan test sürüşüne kadar her adımda yanınızda.",
+            en: "From vehicle sales to service, spare parts to test drives - by your side at every step."
+        },
+        iconName: 'Car',
+        features: [
+            {
+                title: { tr: "Araç Katalog Tanıtımı", en: "Vehicle Catalog" },
+                description: { tr: "Tüm modelleri teknik özellikleri ve fiyatlarıyla sunar.", en: "Presents all models with technical specs and pricing." },
+                iconName: 'Car'
+            },
+            {
+                title: { tr: "Servis Randevusu", en: "Service Booking" },
+                description: { tr: "Periyodik bakım ve onarım randevularını 7/24 alır.", en: "Books maintenance and repair appointments 24/7." },
+                iconName: 'Calendar'
+            },
+            {
+                title: { tr: "Test Sürüşü Planlama", en: "Test Drive Scheduling" },
+                description: { tr: "İlgilenilen araç için hemen test sürüşü ayarlar.", en: "Schedules test drives for interested vehicles immediately." },
+                iconName: 'Rocket'
+            }
+        ],
+        promptExample: {
+            user: { tr: "SUV modelleriniz var mı?", en: "Do you have SUV models?" },
+            ai: { tr: "Evet, geniş SUV yelpazemiz var! Bütçenizi ve kullanım amacınızı söylerseniz size en uygun modeli önerebilirim.", en: "Yes, we have a wide SUV range! Tell me your budget and intended use, and I can recommend the best model for you." }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Aile için 7 kişilik bir araç arıyorum.", en: "I'm looking for a 7-seater for my family." } },
+            { role: 'ai', content: { tr: "Harika seçim! Aileler için en popüler modelimiz 'Comfort XL' - geniş bagaj, çocuk koltuğu sabitleme sistemi ve yakıt tasarrufu sunuyor. Test sürüşü ayarlayalım mı?", en: "Great choice! Our most popular model for families is 'Comfort XL' - spacious trunk, child seat anchoring, and fuel efficiency. Shall we schedule a test drive?" } },
+            { role: 'user', content: { tr: "Evet, hafta sonu uygun mu?", en: "Yes, is the weekend available?" } },
+            { role: 'ai', content: { tr: "Cumartesi 10:00 veya 14:00 müsait. Hangisini tercih edersiniz? Ayrıca takas aracınız varsa değerleme de yapabiliriz.", en: "Saturday 10:00 or 14:00 is available. Which do you prefer? We can also appraise your trade-in if you have one." } }
+        ]
+    },
+    insurance: {
+        id: 'insurance',
+        title: { tr: "Sigorta", en: "Insurance" },
+        subtitle: {
+            tr: "Poliçe karşılaştırmasından hasar bildirimine, sigortalı olmak hiç bu kadar kolay olmamıştı.",
+            en: "From policy comparison to claim filing, being insured has never been this easy."
+        },
+        iconName: 'Shield',
+        features: [
+            {
+                title: { tr: "Anında Teklif", en: "Instant Quotes" },
+                description: { tr: "Birkaç soruyla saniyeler içinde fiyat teklifi alın.", en: "Get price quotes in seconds with just a few questions." },
+                iconName: 'Zap'
+            },
+            {
+                title: { tr: "Hasar Bildirimi", en: "Claim Filing" },
+                description: { tr: "Kaza veya hasar durumunda adım adım yönlendirir.", en: "Guides step-by-step in case of accident or damage." },
+                iconName: 'MessageSquare'
+            },
+            {
+                title: { tr: "Poliçe Sorgulama", en: "Policy Lookup" },
+                description: { tr: "Mevcut poliçe detaylarını ve bitiş tarihini gösterir.", en: "Shows existing policy details and expiration dates." },
+                iconName: 'Book'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Kasko fiyatı almak istiyorum.", en: "I want to get a comprehensive car insurance quote." },
+            ai: { tr: "Tabii! Aracınızın plakasını veya model bilgisini paylaşır mısınız? 30 saniye içinde en uygun teklifleri sunayım.", en: "Sure! Can you share your car's plate or model info? I'll present the best offers in 30 seconds." }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Trafik sigortam bitiyor, yenilemek istiyorum.", en: "My car insurance is expiring, I want to renew." } },
+            { role: 'ai', content: { tr: "Mevcut poliçenizi gördüm. Aynı teminatla yenilersek 2.450 TL, kaskoyla birleşik pakette ise toplam 4.800 TL olur. Hangisini tercih edersiniz?", en: "I see your current policy. If we renew with the same coverage it's 2,450 TL, combined with comprehensive it's 4,800 TL total. Which do you prefer?" } },
+            { role: 'user', content: { tr: "Kasko dahil olsun.", en: "Include comprehensive." } },
+            { role: 'ai', content: { tr: "Mükemmel seçim! Poliçenizi hemen oluşturuyorum. Ödemeyi kredi kartı ile mi yoksa havale ile mi yapmak istersiniz?", en: "Excellent choice! Creating your policy now. Would you like to pay by credit card or bank transfer?" } }
+        ]
+    },
+    logistics: {
+        id: 'logistics',
+        title: { tr: "Lojistik & Kargo", en: "Logistics & Shipping" },
+        subtitle: {
+            tr: "Gönderi takibinden fiyat teklifine, her şey anlık ve otomatik.",
+            en: "From shipment tracking to price quotes, everything is instant and automated."
+        },
+        iconName: 'Truck',
+        features: [
+            {
+                title: { tr: "Kargo Takibi", en: "Shipment Tracking" },
+                description: { tr: "Takip numarasıyla anlık konum ve durum bilgisi.", en: "Real-time location and status with tracking number." },
+                iconName: 'MapPin'
+            },
+            {
+                title: { tr: "Fiyat Hesaplama", en: "Price Calculator" },
+                description: { tr: "Ağırlık ve mesafeye göre anında fiyat teklifi.", en: "Instant quotes based on weight and distance." },
+                iconName: 'DollarSign'
+            },
+            {
+                title: { tr: "Teslimat Notifikasyonları", en: "Delivery Notifications" },
+                description: { tr: "Müşterilerinize otomatik durum güncellemeleri.", en: "Automatic status updates to your customers." },
+                iconName: 'Bell'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Kargom nerede?", en: "Where is my package?" },
+            ai: { tr: "Takip numaranızı paylaşır mısınız? Hemen güncel konumunu bulayım.", en: "Can you share your tracking number? I'll find the current location right away." }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "İstanbul'dan Ankara'ya 50 kilo kargo göndermek istiyorum.", en: "I want to ship 50 kg from Istanbul to Ankara." } },
+            { role: 'ai', content: { tr: "Standart teslimat (2-3 gün) 245 TL, ekspres (ertesi gün) 420 TL. Hangisini tercih edersiniz?", en: "Standard delivery (2-3 days) is 245 TL, express (next day) is 420 TL. Which would you prefer?" } },
+            { role: 'user', content: { tr: "Ekspres olsun. Kurye gelip alabilir mi?", en: "Express please. Can a courier come and pick it up?" } },
+            { role: 'ai', content: { tr: "Tabii! Yarın 09:00-12:00 arası adresinize kurye gönderebilirim. Adres bilginizi onaylar mısınız?", en: "Of course! I can send a courier to your address tomorrow between 09:00-12:00. Can you confirm your address?" } }
+        ]
+    },
+    beauty: {
+        id: 'beauty',
+        title: { tr: "Güzellik & Wellness", en: "Beauty & Wellness" },
+        subtitle: {
+            tr: "Randevu almak, hizmetleri keşfetmek ve güzellik danışmanlığı almak artık çok kolay.",
+            en: "Booking appointments, discovering services, and getting beauty consultations is now so easy."
+        },
+        iconName: 'Sparkles',
+        features: [
+            {
+                title: { tr: "Randevu Yönetimi", en: "Appointment Management" },
+                description: { tr: "Kuaför, spa, masaj için 7/24 randevu.", en: "24/7 booking for hair, spa, massage." },
+                iconName: 'Calendar'
+            },
+            {
+                title: { tr: "Hizmet Önerileri", en: "Service Recommendations" },
+                description: { tr: "Cilt tipine ve tercihlere göre kişisel öneriler.", en: "Personal recommendations based on skin type and preferences." },
+                iconName: 'Star'
+            },
+            {
+                title: { tr: "Ürün Danışmanlığı", en: "Product Consulting" },
+                description: { tr: "Bakım rutini ve ürün tavsiyeleri.", en: "Skincare routine and product advice." },
+                iconName: 'MessageCircle'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Bugün için saç kesimi randevusu alabilir miyim?", en: "Can I book a haircut for today?" },
+            ai: { tr: "Bugün 14:30 ve 17:00'da müsaitlik var. Hangi stilistimizi tercih edersiniz?", en: "Today we have availability at 14:30 and 17:00. Which stylist would you prefer?" }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Cilt bakımı için ne önerirsiniz?", en: "What do you recommend for skincare?" } },
+            { role: 'ai', content: { tr: "Cilt tipinizi öğrenebilir miyim? Kuru, yağlı veya karma bir cildiniz mi var?", en: "May I know your skin type? Do you have dry, oily, or combination skin?" } },
+            { role: 'user', content: { tr: "Karma cildim var ve gözenekler belirgin.", en: "I have combination skin with visible pores." } },
+            { role: 'ai', content: { tr: "Karma cilt için 'Deep Cleansing' ve 'Pore Minimizing' bakım paketimizi öneriyorum. 60 dakika sürüyor ve %20 yılbaşı indirimi var. Randevu oluşturalım mı?", en: "For combination skin, I recommend our 'Deep Cleansing' and 'Pore Minimizing' package. It takes 60 minutes and there's a 20% holiday discount. Shall we book?" } }
+        ]
+    },
+    legal: {
+        id: 'legal',
+        title: { tr: "Hukuk & Avukatlık", en: "Legal Services" },
+        subtitle: {
+            tr: "Hukuki sorularınıza 7/24 ön bilgi alın, avukat randevusu oluşturun.",
+            en: "Get preliminary answers to legal questions 24/7 and schedule lawyer appointments."
+        },
+        iconName: 'Scale',
+        features: [
+            {
+                title: { tr: "Hukuki Ön Değerlendirme", en: "Legal Pre-Assessment" },
+                description: { tr: "Davanızla ilgili genel bilgilendirme yapar.", en: "Provides general information about your case." },
+                iconName: 'MessageSquare'
+            },
+            {
+                title: { tr: "Randevu Planlama", en: "Appointment Scheduling" },
+                description: { tr: "Uzman avukatlarla görüşme ayarlar.", en: "Schedules meetings with expert lawyers." },
+                iconName: 'Calendar'
+            },
+            {
+                title: { tr: "Belge Bilgilendirme", en: "Document Guidance" },
+                description: { tr: "Gerekli evraklar hakkında rehberlik eder.", en: "Guides about required documents." },
+                iconName: 'Book'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Boşanma davası için ne yapmalıyım?", en: "What should I do for a divorce case?" },
+            ai: { tr: "Boşanma süreciyle ilgili size ön bilgi verebilirim. Anlaşmalı mı yoksa çekişmeli mi boşanma düşünüyorsunuz?", en: "I can give you preliminary information about the divorce process. Are you considering a mutual or contested divorce?" }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "İş yerimden tazminatsız çıkarıldım, ne yapabilirim?", en: "I was let go from work without severance, what can I do?" } },
+            { role: 'ai', content: { tr: "Üzgünüm bu durumu duyduğuma. İş Hukuku kapsamında haklarınız var. Kaç yıl çalıştınız ve istifa mı ettirildiz yoksa fesih mi yapıldı?", en: "I'm sorry to hear this. You have rights under Labor Law. How many years did you work, and were you forced to resign or was it a termination?" } },
+            { role: 'user', content: { tr: "3 yıl çalıştım, fesih yapıldı dendi.", en: "I worked 3 years, they said it was termination." } },
+            { role: 'ai', content: { tr: "3 yıllık kıdeminiz için hem kıdem hem ihbar tazminatı hakkınız var. Bu hafta İş Hukuku uzmanımızla ücretsiz 15 dakikalık ön görüşme ayarlayabilir miyim?", en: "For your 3 years, you're entitled to both severance and notice pay. Can I schedule a free 15-minute preliminary meeting with our Labor Law expert this week?" } }
+        ]
+    },
+    fitness: {
+        id: 'fitness',
+        title: { tr: "Spor & Fitness", en: "Sports & Fitness" },
+        subtitle: {
+            tr: "Üyelik bilgisinden ders programlarına, kişisel antrenör randevusuna kadar her şey.",
+            en: "Everything from membership info to class schedules and personal trainer bookings."
+        },
+        iconName: 'Dumbbell',
+        features: [
+            {
+                title: { tr: "Üyelik Bilgilendirme", en: "Membership Info" },
+                description: { tr: "Paketleri, fiyatları ve kampanyaları sunar.", en: "Presents packages, prices, and promotions." },
+                iconName: 'DollarSign'
+            },
+            {
+                title: { tr: "Ders Programları", en: "Class Schedules" },
+                description: { tr: "Yoga, pilates, spinning ders saatlerini gösterir.", en: "Shows yoga, pilates, spinning class times." },
+                iconName: 'Calendar'
+            },
+            {
+                title: { tr: "PT Randevusu", en: "PT Booking" },
+                description: { tr: "Kişisel antrenör seansı ayarlar.", en: "Schedules personal trainer sessions." },
+                iconName: 'Users'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Aylık üyelik ücreti ne kadar?", en: "How much is monthly membership?" },
+            ai: { tr: "Aylık üyeliğimiz 990 TL, 3 aylık pakette ise %20 indirimle 2.376 TL. Hangi şubemizi düşünüyorsunuz?", en: "Monthly membership is $99, 3-month package is $237 with 20% off. Which branch are you considering?" }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Kilo vermek istiyorum, nereden başlamalıyım?", en: "I want to lose weight, where should I start?" } },
+            { role: 'ai', content: { tr: "Harika bir hedef! Öncelikle fitness seviyenizi ve hedef kilonuzu öğrenebilir miyim? Size özel bir program oluşturabiliriz.", en: "Great goal! First, can I learn your fitness level and target weight? We can create a personalized program for you." } },
+            { role: 'user', content: { tr: "Yeni başlayacağım, 10 kilo vermek istiyorum.", en: "I'm a beginner, want to lose 10 kilos." } },
+            { role: 'ai', content: { tr: "Başlangıç seviyesi için 'Kardiyo + Direnç' kombini harika sonuç veriyor. Haftada 3 gün grup derslerine katılabilir, 1 gün de PT seansı yapabilirsiniz. Ücretsiz deneme dersi için bu hafta müsait misiniz?", en: "For beginners, 'Cardio + Resistance' combo gives great results. You can join group classes 3 days a week and do PT sessions once a week. Are you available this week for a free trial class?" } }
+        ]
+    },
+    retail: {
+        id: 'retail',
+        title: { tr: "Perakende & Mağazacılık", en: "Retail & Stores" },
+        subtitle: {
+            tr: "Stok sorgulama, mağaza bilgisi, kampanyalar ve sadakat programı yönetimi.",
+            en: "Stock inquiries, store info, promotions, and loyalty program management."
+        },
+        iconName: 'Store',
+        features: [
+            {
+                title: { tr: "Stok Sorgulama", en: "Stock Check" },
+                description: { tr: "Ürün mevcudiyetini anlık kontrol eder.", en: "Checks product availability instantly." },
+                iconName: 'ShoppingBag'
+            },
+            {
+                title: { tr: "Mağaza Bulucu", en: "Store Finder" },
+                description: { tr: "En yakın mağazayı ve çalışma saatlerini gösterir.", en: "Shows nearest store and working hours." },
+                iconName: 'MapPin'
+            },
+            {
+                title: { tr: "Kampanya Bilgisi", en: "Promo Info" },
+                description: { tr: "Güncel indirim ve fırsatları duyurur.", en: "Announces current discounts and deals." },
+                iconName: 'Megaphone'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Bu ürün stokta var mı?", en: "Is this product in stock?" },
+            ai: { tr: "Ürün adını veya kodunu paylaşır mısınız? Hemen tüm mağazalarımızdaki stok durumunu kontrol edeyim.", en: "Can you share the product name or code? I'll check stock status across all our stores immediately." }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Mavi renkli XL beden mont var mı?", en: "Do you have the jacket in blue, size XL?" } },
+            { role: 'ai', content: { tr: "Stok durumunu kontrol ediyorum... Mavi XL beden Kadıköy ve Beşiktaş mağazalarımızda mevcut. Hangisine yönlendireyim?", en: "Checking stock... Blue XL is available at our Kadikoy and Besiktas stores. Which one should I direct you to?" } },
+            { role: 'user', content: { tr: "Kadıköy mağazası ne zaman açık?", en: "When is the Kadikoy store open?" } },
+            { role: 'ai', content: { tr: "Kadıköy mağazamız hafta içi 10:00-22:00, hafta sonu 11:00-21:00 saatleri arasında açık. Ayrıca bu ürünü sizin için ayırtmamı ister misiniz? 48 saat bekletebiliriz.", en: "Our Kadikoy store is open weekdays 10:00-22:00, weekends 11:00-21:00. Would you like me to reserve this product for you? We can hold it for 48 hours." } }
+        ]
+    },
 
 }
+
