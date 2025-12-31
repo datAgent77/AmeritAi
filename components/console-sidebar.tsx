@@ -458,10 +458,10 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                             </div>
                                         </DropdownMenuItem>
 
-                                        <DropdownMenuItem disabled className="px-2 py-2.5 cursor-pointer">
+                                        <DropdownMenuItem onClick={() => router.push("/console/settings/company")} className="px-2 py-2.5 cursor-pointer">
                                             <div className="flex items-center gap-3">
                                                 <Users className="size-4 text-muted-foreground" />
-                                                <span className="font-medium text-sm">Company details</span>
+                                                <span className="font-medium text-sm">{t('companyDetails') || "Company details"}</span>
                                             </div>
                                         </DropdownMenuItem>
                                     </div>

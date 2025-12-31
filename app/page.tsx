@@ -28,7 +28,14 @@ import {
     FileText,
     Settings,
     Code,
-    Rocket
+    Rocket,
+    Car,
+    ShieldCheck,
+    Truck,
+    Sparkles,
+    Scale,
+    Dumbbell,
+    Store
 } from "lucide-react"
 import { ChatbotLoader } from "@/components/chatbot-loader"
 import { PublicHeader } from "@/components/public-header"
@@ -52,7 +59,14 @@ export default function LandingPage() {
         { icon: School, label: { en: "Academic", tr: "Akademik" }, href: "/solutions/academic", color: "text-amber-400" },
         { icon: Banknote, label: { en: "Finance", tr: "Finans" }, href: "/solutions/finance", color: "text-emerald-500" },
         { icon: ChefHat, label: { en: "Restaurant", tr: "Restoran" }, href: "/solutions/restaurant", color: "text-orange-500" },
-        { icon: Sprout, label: { en: "Agriculture", tr: "Tarım (Yeni)" }, href: "/solutions/agriculture", color: "text-green-500" },
+        { icon: Sprout, label: { en: "Agriculture", tr: "Tarım" }, href: "/solutions/agriculture", color: "text-green-500" },
+        { icon: Car, label: { en: "Automotive", tr: "Otomotiv" }, href: "/solutions/automotive", color: "text-slate-400" },
+        { icon: ShieldCheck, label: { en: "Insurance", tr: "Sigorta" }, href: "/solutions/insurance", color: "text-blue-500" },
+        { icon: Truck, label: { en: "Logistics", tr: "Lojistik" }, href: "/solutions/logistics", color: "text-yellow-500" },
+        { icon: Sparkles, label: { en: "Beauty", tr: "Güzellik" }, href: "/solutions/beauty", color: "text-pink-500" },
+        { icon: Scale, label: { en: "Legal", tr: "Hukuk" }, href: "/solutions/legal", color: "text-gray-400" },
+        { icon: Dumbbell, label: { en: "Fitness", tr: "Spor" }, href: "/solutions/fitness", color: "text-red-400" },
+        { icon: Store, label: { en: "Retail", tr: "Perakende" }, href: "/solutions/retail", color: "text-violet-400" },
     ]
 
     return (

@@ -12,7 +12,14 @@ import {
     School,
     Banknote,
     ChefHat,
-    Sprout
+    Sprout,
+    Car,
+    ShieldCheck,
+    Truck,
+    Sparkles,
+    Scale,
+    Dumbbell,
+    Store
 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
@@ -99,6 +106,55 @@ export default function IndustriesPage() {
             descKey: "sectorDesc_agriculture",
             href: "/solutions/agriculture",
             color: "text-green-500"
+        },
+        {
+            icon: Car,
+            label: { en: "Automotive", tr: "Otomotiv" },
+            descKey: "sectorDesc_automotive",
+            href: "/solutions/automotive",
+            color: "text-slate-400"
+        },
+        {
+            icon: ShieldCheck,
+            label: { en: "Insurance", tr: "Sigorta" },
+            descKey: "sectorDesc_insurance",
+            href: "/solutions/insurance",
+            color: "text-blue-500"
+        },
+        {
+            icon: Truck,
+            label: { en: "Logistics", tr: "Lojistik" },
+            descKey: "sectorDesc_logistics",
+            href: "/solutions/logistics",
+            color: "text-yellow-500"
+        },
+        {
+            icon: Sparkles,
+            label: { en: "Beauty & Wellness", tr: "Güzellik & Wellness" },
+            descKey: "sectorDesc_beauty",
+            href: "/solutions/beauty",
+            color: "text-pink-500"
+        },
+        {
+            icon: Scale,
+            label: { en: "Legal", tr: "Hukuk" },
+            descKey: "sectorDesc_legal",
+            href: "/solutions/legal",
+            color: "text-gray-400"
+        },
+        {
+            icon: Dumbbell,
+            label: { en: "Sports & Fitness", tr: "Spor & Fitness" },
+            descKey: "sectorDesc_fitness",
+            href: "/solutions/fitness",
+            color: "text-red-400"
+        },
+        {
+            icon: Store,
+            label: { en: "Retail", tr: "Perakende" },
+            descKey: "sectorDesc_retail",
+            href: "/solutions/retail",
+            color: "text-violet-400"
         },
     ]
 

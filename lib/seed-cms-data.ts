@@ -52,7 +52,7 @@ Anahtar, insanları tamamen değiştirmek değil, onları gerçekten kişisel bi
         category: "Müşteri Hizmetleri",
         date: "2025-01-15",
         readTime: "5 dk",
-        image: "https://images.unsplash.com/photo-1531746790731-6c087fecd65a?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/customer-service-ai.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -118,7 +118,7 @@ Anahtar basit başlamaktır. Her şeyi aynı anda otomatikleştirmeye çalışma
         category: "E-Ticaret",
         date: "2025-01-08",
         readTime: "6 dk",
-        image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/ecommerce-ai.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -182,7 +182,7 @@ Bu yaklaşım satış odaklı değil, yardımcı hissettiriyor. Ziyaretçi etkil
         category: "Pazarlama",
         date: "2025-01-02",
         readTime: "4 dk",
-        image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/lead-generation.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -244,7 +244,7 @@ Yapay zeka asistanı uygulayan tipik bir restoran şunları görür:
         category: "Restoran",
         date: "2024-12-20",
         readTime: "5 dk",
-        image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/restaurant-digital.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -328,7 +328,7 @@ Arayın:
         category: "Rehber",
         date: "2024-12-15",
         readTime: "7 dk",
-        image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/chatbot-integration.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -406,7 +406,7 @@ Bunun yerine güvenli formlar kullanın veya doğrulanmış ödeme portallarına
         category: "Güvenlik",
         date: "2024-12-10",
         readTime: "6 dk",
-        image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/security-privacy.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -486,7 +486,7 @@ Aylık inceleme:
         category: "Analitik",
         date: "2024-12-05",
         readTime: "5 dk",
-        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/analytics-metrics.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     },
     {
@@ -554,7 +554,7 @@ Birden fazla dili destekleyen Türk işletmelerin çoğu şunları önceliklendi
         category: "Uluslararası",
         date: "2024-11-28",
         readTime: "4 dk",
-        image: "https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?auto=format&fit=crop&w=800&q=80",
+        image: "/blog/multilingual-global.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
     }
 ];
@@ -805,41 +805,3 @@ export const SEED_FAQS = [
     }
 ];
 
-export const SEED_EDUCATION = [
-    {
-        title: { en: "Getting Started with Vion AI", tr: "Vion AI ile Başlarken" },
-        description: { en: "Complete platform walkthrough for new users.", tr: "Yeni kullanıcılar için tam platform rehberi." },
-        type: "video",
-        url: "#",
-        duration: "8:00",
-        thumbnailUrl: "",
-        category: "Başlangıç"
-    },
-    {
-        title: { en: "Training Your AI Chatbot", tr: "Yapay Zeka Chatbotunuzu Eğitme" },
-        description: { en: "How to upload documents and train your assistant.", tr: "Belge yükleme ve asistanınızı eğitme." },
-        type: "video",
-        url: "#",
-        duration: "12:00",
-        thumbnailUrl: "",
-        category: "Eğitim"
-    },
-    {
-        title: { en: "Lead Generation Best Practices", tr: "Lead Toplama En İyi Pratikleri" },
-        description: { en: "Strategies for maximizing lead capture.", tr: "Lead toplamayı maksimize etme stratejileri." },
-        type: "article",
-        url: "#",
-        duration: "5 dk okuma",
-        thumbnailUrl: "",
-        category: "Pazarlama"
-    },
-    {
-        title: { en: "Understanding Analytics", tr: "Analitiği Anlama" },
-        description: { en: "How to read and act on your dashboard metrics.", tr: "Panel metriklerinizi okuma ve buna göre hareket etme." },
-        type: "guide",
-        url: "#",
-        duration: "8 dk okuma",
-        thumbnailUrl: "",
-        category: "Raporlama"
-    }
-];

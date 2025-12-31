@@ -1,6 +1,6 @@
 export type ModuleId = 'generalChatbot' | 'appointments' | 'leadCollection' | 'productCatalog' | 'knowledgeBase' | 'voiceAssistant' | 'emailMarketing' | 'salesOptimization' | 'reviewManagement' | 'loyaltyProgram' | 'campaignManager' | 'autoTranslate' | 'gamification' | 'visualDiagnosis' | 'digitalWaiter' | 'proactiveMessaging';
 
-export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'other';
+export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'automotive' | 'insurance' | 'logistics' | 'beauty' | 'legal' | 'fitness' | 'retail' | 'other';
 
 export interface ModuleConfig {
     id: ModuleId;
