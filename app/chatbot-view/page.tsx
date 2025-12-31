@@ -379,8 +379,9 @@ function ChatbotViewContent() {
         const storageKey = `chat_session_id_${chatbotId}`
         let storedSid = localStorage.getItem(storageKey)
 
-        if (!storedSid) {
-            // Generate random Session ID if none exists
+        if (!storedSid || !storedSid.startsWith('sess-')) {
+            // Generate random Session ID if none exists OR if it's a legacy ID (raw UID)
+            console.log("Session: formatting/generating new session ID")
             storedSid = 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
             localStorage.setItem(storageKey, storedSid)
         }
