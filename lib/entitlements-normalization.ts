@@ -84,33 +84,94 @@ export function normalizeSectorId(raw: any): SectorId {
 
     // Map legacy industry names to SectorId
     const sectorMap: Record<string, SectorId> = {
+        // E-commerce variations
         'e-commerce': 'ecommerce',
         'ecommerce': 'ecommerce',
         'e_commerce': 'ecommerce',
-        'maritime': 'booking',
+
+        // Real estate variations
         'realestate': 'real_estate',
         'real_estate': 'real_estate',
         'real-estate': 'real_estate',
         'property': 'real_estate',
+
+        // Healthcare variations
         'healthcare': 'healthcare',
         'health': 'healthcare',
         'medical': 'healthcare',
+
+        // Education variations
         'education': 'education',
         'edu': 'education',
         'school': 'education',
         'academic': 'academic',
+
+        // Finance variations
         'finance': 'finance',
         'banking': 'finance',
         'fintech': 'finance',
+
+        // Restaurant variations
         'hospitality': 'restaurant',
         'hotel': 'restaurant',
         'restaurant': 'restaurant',
+
+        // Technology/SaaS variations
         'technology': 'saas',
         'tech': 'saas',
         'software': 'saas',
         'saas': 'saas',
+
+        // Booking/Travel
         'booking': 'booking',
+        'travel': 'booking',
+
+        // Service
         'service': 'service',
+
+        // Agriculture
+        'agriculture': 'agriculture',
+        'farming': 'agriculture',
+        'tarim': 'agriculture',
+
+        // Automotive
+        'automotive': 'automotive',
+        'auto': 'automotive',
+        'otomotiv': 'automotive',
+
+        // Insurance
+        'insurance': 'insurance',
+        'sigorta': 'insurance',
+
+        // Logistics
+        'logistics': 'logistics',
+        'shipping': 'logistics',
+        'lojistik': 'logistics',
+
+        // Beauty & Wellness
+        'beauty': 'beauty',
+        'wellness': 'beauty',
+        'spa': 'beauty',
+        'guzellik': 'beauty',
+
+        // Legal
+        'legal': 'legal',
+        'law': 'legal',
+        'hukuk': 'legal',
+
+        // Fitness
+        'fitness': 'fitness',
+        'gym': 'fitness',
+        'sports': 'fitness',
+        'spor': 'fitness',
+
+        // Maritime
+        'maritime': 'maritime',
+        'denizcilik': 'maritime',
+        'marine': 'maritime',
+        'naval': 'maritime',
+
+        // Other
         'other': 'other'
     };
 

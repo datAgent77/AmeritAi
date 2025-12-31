@@ -45,6 +45,13 @@ export type SectorId =
     | 'finance'
     | 'restaurant'
     | 'agriculture'
+    | 'automotive'
+    | 'insurance'
+    | 'logistics'
+    | 'beauty'
+    | 'legal'
+    | 'fitness'
+    | 'maritime'
     | 'other';
 
 export interface ModuleDefinition {
