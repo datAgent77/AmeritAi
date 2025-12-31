@@ -372,33 +372,21 @@ function ChatbotViewContent() {
     const [hasProactiveTriggered, setHasProactiveTriggered] = useState(false)
     const proactiveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-    // 1. Initialize Session ID (Separate effect to avoid race conditions)
+    // 1. Initialize Session ID (Decoupled from User ID)
     useEffect(() => {
-        if (!isGuestReady) return
-
-        const auth = guestAuth
-        const user = auth.currentUser
-        if (!user) {
-            console.warn("Guest user not ready yet for session initialization")
-            return
-        }
+        if (!chatbotId) return
 
         const storageKey = `chat_session_id_${chatbotId}`
-        const storedSid = localStorage.getItem(storageKey)
+        let storedSid = localStorage.getItem(storageKey)
 
-        // CRITICAL: Always use user.uid as sessionId to ensure Firestore permissions work.
-        // If stored sid differs from current uid (happens if guest auth was reset/changed),
-        // we must update to the new uid.
-        const correctSid = user.uid
-
-        if (storedSid !== correctSid) {
-            console.log(`Session: Updating sessionId from ${storedSid} to ${correctSid}`)
-            localStorage.setItem(storageKey, correctSid)
+        if (!storedSid) {
+            // Generate random Session ID if none exists
+            storedSid = 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+            localStorage.setItem(storageKey, storedSid)
         }
 
-        // Only update state if it's different to prevent loops
-        setSessionId((prev) => (prev !== correctSid ? correctSid : prev))
-    }, [chatbotId, isGuestReady])
+        setSessionId(storedSid)
+    }, [chatbotId])
 
     // 2. Real-time Listener (Depends on stable sessionId)
     const [listenerTrigger, setListenerTrigger] = useState(0)
@@ -492,7 +480,8 @@ function ChatbotViewContent() {
                     context: pageContext,
                     language: settings.initialLanguage || 'auto',
                     isVoice: shouldSpeakResponse,
-                    shouldStream: true
+                    shouldStream: true,
+                    userId: guestAuth.currentUser?.uid // Pass User ID for permission association
                 }),
                 signal: controller.signal
             })

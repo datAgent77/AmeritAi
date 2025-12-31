@@ -25,7 +25,7 @@ export async function POST(req: Request) {
             || "unknown";
 
         const body = await req.json();
-        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true } = body;
+        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId } = body;
 
         const rateLimitResult = checkRateLimit(ip, sessionId);
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
         const [saveResult, result] = await Promise.all([
             sessionId && lastMessage.role === "user"
-                ? saveMessageToSession(sessionId, chatbotId, { ...lastMessage, id: messageId, role: "user", sentiment: "Neutral" })
+                ? saveMessageToSession(sessionId, chatbotId, { ...lastMessage, id: messageId, role: "user", sentiment: "Neutral" }, userId)
                 : Promise.resolve(),
             generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language)
         ]);
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
                             await saveMessageToSession(sessionId, chatbotId, {
                                 role: "assistant",
                                 content: fullContent
-                            });
+                            }, userId);
 
                             // Check if this is an appointment confirmation and save it
                             if (isAppointmentConfirmation(fullContent)) {

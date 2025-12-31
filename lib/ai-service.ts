@@ -452,7 +452,8 @@ export async function analyzeSentiment(text: string): Promise<"Positive" | "Neut
 export async function saveMessageToSession(
     sessionId: string,
     chatbotId: string,
-    message: { role: string, content: string, id?: string, sentiment?: string }
+    message: { role: string, content: string, id?: string, sentiment?: string },
+    userId?: string
 ) {
     const adminDb = getAdminDb();
     if (!adminDb) return;
@@ -464,8 +465,12 @@ export async function saveMessageToSession(
         await sessionRef.set({
             chatbotId,
             createdAt: new Date().toISOString(),
-            messages: []
+            messages: [],
+            ...(userId ? { userId } : {})
         });
+    } else if (userId && !sessionSnap.data()?.userId) {
+        // Backfill userId if missing (and provided)
+        await sessionRef.update({ userId });
     }
 
     const m = {
