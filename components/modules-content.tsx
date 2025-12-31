@@ -639,7 +639,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                     {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
                                                 </Badge>
                                             )}
-                                            {module.isPremiumAddOn && !isIncluded && (
+                                            {module.isPremium && !isIncluded && (
                                                 <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
                                                     Premium
                                                 </Badge>
