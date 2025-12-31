@@ -647,7 +647,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             <Switch
                                                 checked={isActive}
                                                 onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                disabled={isLoading === module.id || isCoreModule || module.status === 'coming_soon' || (!isAccessGranted && module.status !== 'coming_soon')}
+                                                disabled={isLoading === module.id || isCoreModule || !isAccessGranted}
                                                 className={isLoading === module.id ? 'opacity-50' : ''}
                                             />
                                         </div>
