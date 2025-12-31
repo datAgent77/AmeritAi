@@ -87,7 +87,7 @@ export function normalizeSectorId(raw: any): SectorId {
         'e-commerce': 'ecommerce',
         'ecommerce': 'ecommerce',
         'e_commerce': 'ecommerce',
-        'retail': 'ecommerce',
+        'maritime': 'booking',
         'realestate': 'real_estate',
         'real_estate': 'real_estate',
         'real-estate': 'real_estate',

@@ -521,40 +521,40 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
             { role: 'ai', content: { tr: "Başlangıç seviyesi için 'Kardiyo + Direnç' kombini harika sonuç veriyor. Haftada 3 gün grup derslerine katılabilir, 1 gün de PT seansı yapabilirsiniz. Ücretsiz deneme dersi için bu hafta müsait misiniz?", en: "For beginners, 'Cardio + Resistance' combo gives great results. You can join group classes 3 days a week and do PT sessions once a week. Are you available this week for a free trial class?" } }
         ]
     },
-    retail: {
-        id: 'retail',
-        title: { tr: "Perakende & Mağazacılık", en: "Retail & Stores" },
+    maritime: {
+        id: 'maritime',
+        title: { tr: "Denizcilik & Gemi", en: "Maritime & Shipping" },
         subtitle: {
-            tr: "Stok sorgulama, mağaza bilgisi, kampanyalar ve sadakat programı yönetimi.",
-            en: "Stock inquiries, store info, promotions, and loyalty program management."
+            tr: "Gemi kiralama, kargo taşımacılığı, liman bilgisi ve denizcilik hizmetleri.",
+            en: "Vessel booking, cargo shipping, port information, and maritime services."
         },
-        iconName: 'Store',
+        iconName: 'Anchor',
         features: [
             {
-                title: { tr: "Stok Sorgulama", en: "Stock Check" },
-                description: { tr: "Ürün mevcudiyetini anlık kontrol eder.", en: "Checks product availability instantly." },
-                iconName: 'ShoppingBag'
+                title: { tr: "Gemi Kiralama", en: "Vessel Booking" },
+                description: { tr: "Yat, kargo gemisi ve kruvaziyer kiralama hizmeti.", en: "Yacht, cargo vessel, and cruise ship booking service." },
+                iconName: 'Ship'
             },
             {
-                title: { tr: "Mağaza Bulucu", en: "Store Finder" },
-                description: { tr: "En yakın mağazayı ve çalışma saatlerini gösterir.", en: "Shows nearest store and working hours." },
+                title: { tr: "Liman Bilgisi", en: "Port Information" },
+                description: { tr: "Liman lokasyonları, gümrük prosedürleri ve rota planlaması.", en: "Port locations, customs procedures, and route planning." },
                 iconName: 'MapPin'
             },
             {
-                title: { tr: "Kampanya Bilgisi", en: "Promo Info" },
-                description: { tr: "Güncel indirim ve fırsatları duyurur.", en: "Announces current discounts and deals." },
-                iconName: 'Megaphone'
+                title: { tr: "Kargo Takibi", en: "Cargo Tracking" },
+                description: { tr: "Deniz yolu kargo takibi ve teslimat tahmini.", en: "Maritime cargo tracking and delivery estimates." },
+                iconName: 'Truck'
             }
         ],
         promptExample: {
-            user: { tr: "Bu ürün stokta var mı?", en: "Is this product in stock?" },
-            ai: { tr: "Ürün adını veya kodunu paylaşır mısınız? Hemen tüm mağazalarımızdaki stok durumunu kontrol edeyim.", en: "Can you share the product name or code? I'll check stock status across all our stores immediately." }
+            user: { tr: "İstanbul'dan İzmir'e konteyner taşımak istiyorum.", en: "I want to ship a container from Istanbul to Izmir." },
+            ai: { tr: "Konteyner boyutu ve yük türü nedir? Size en uygun gemi ve tarihleri sunayım.", en: "What's the container size and cargo type? I'll present the best vessel and dates for you." }
         },
         conversation: [
-            { role: 'user', content: { tr: "Mavi renkli XL beden mont var mı?", en: "Do you have the jacket in blue, size XL?" } },
-            { role: 'ai', content: { tr: "Stok durumunu kontrol ediyorum... Mavi XL beden Kadıköy ve Beşiktaş mağazalarımızda mevcut. Hangisine yönlendireyim?", en: "Checking stock... Blue XL is available at our Kadikoy and Besiktas stores. Which one should I direct you to?" } },
-            { role: 'user', content: { tr: "Kadıköy mağazası ne zaman açık?", en: "When is the Kadikoy store open?" } },
-            { role: 'ai', content: { tr: "Kadıköy mağazamız hafta içi 10:00-22:00, hafta sonu 11:00-21:00 saatleri arasında açık. Ayrıca bu ürünü sizin için ayırtmamı ister misiniz? 48 saat bekletebiliriz.", en: "Our Kadikoy store is open weekdays 10:00-22:00, weekends 11:00-21:00. Would you like me to reserve this product for you? We can hold it for 48 hours." } }
+            { role: 'user', content: { tr: "Ailece yat kiralamak istiyoruz, 10 kişilik.", en: "We want to charter a yacht for 10 people." } },
+            { role: 'ai', content: { tr: "Harika! 10 kişi için lüks motor yatlarımız var. Ne kadar süreliğine ve hangi bölgede gezmeyi düşünüyorsunuz?", en: "Great! We have luxury motor yachts for 10 people. How long and which region are you planning to cruise?" } },
+            { role: 'user', content: { tr: "Bodrum çevresinde bir haftalık.", en: "Around Bodrum for a week." } },
+            { role: 'ai', content: { tr: "Bodrum için 'Sea Breeze' ve 'Azure Dream' yatlarımız uygun. Her ikisi de mürettebatlı ve tam donanımlı. Fiyat ve müsaitlik için detayları paylaşayım mı?", en: "For Bodrum, our 'Sea Breeze' and 'Azure Dream' yachts are available. Both are crewed and fully equipped. Shall I share pricing and availability details?" } }
         ]
     },
 

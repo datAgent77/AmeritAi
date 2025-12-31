@@ -19,7 +19,7 @@ import {
     Sparkles,
     Scale,
     Dumbbell,
-    Store
+    Anchor
 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
@@ -150,11 +150,11 @@ export default function IndustriesPage() {
             color: "text-red-400"
         },
         {
-            icon: Store,
-            label: { en: "Retail", tr: "Perakende" },
-            descKey: "sectorDesc_retail",
-            href: "/solutions/retail",
-            color: "text-violet-400"
+            icon: Anchor,
+            label: { en: "Maritime", tr: "Denizcilik" },
+            descKey: "sectorDesc_maritime",
+            href: "/solutions/maritime",
+            color: "text-cyan-400"
         },
     ]
 

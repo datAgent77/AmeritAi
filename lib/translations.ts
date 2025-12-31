@@ -19,7 +19,7 @@ export const translations = {
         sectorDesc_beauty: "Salon bookings, spa appointments, product recommendations, and treatment consultations.",
         sectorDesc_legal: "Legal consultations, appointment scheduling, and case status inquiries.",
         sectorDesc_fitness: "Gym memberships, class schedules, personal training sessions, and facility tours.",
-        sectorDesc_retail: "Product availability, store locations, promotions, and loyalty program management.",
+        sectorDesc_maritime: "Vessel booking, cargo shipping, port information, and maritime certifications.",
 
         industriesPageTitle: "All Industries",
         industriesPageDesc: "Artificial intelligence solutions specialized for every sector.",
@@ -1169,7 +1169,7 @@ export const translations = {
         sectorDesc_beauty: "Salon randevuları, spa rezervasyonları, ürün önerileri ve bakım danışmanlığı.",
         sectorDesc_legal: "Hukuki danışmanlık, randevu planlama ve dava durumu sorgulamaları.",
         sectorDesc_fitness: "Spor salonu üyelikleri, ders programları, kişisel antrenman seansları ve tesis turları.",
-        sectorDesc_retail: "Ürün mevcudiyeti, mağaza lokasyonları, kampanyalar ve sadakat programı yönetimi.",
+        sectorDesc_maritime: "Gemi kiralama, kargo taşımacılığı, liman bilgisi ve denizcilik sertifikaları.",
 
         industriesPageTitle: "Tüm Sektörler",
         industriesPageDesc: "Her sektör için özelleşmiş yapay zeka çözümleri.",

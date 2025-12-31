@@ -35,7 +35,7 @@ import {
     Sparkles,
     Scale,
     Dumbbell,
-    Store
+    Anchor
 } from "lucide-react"
 import { ChatbotLoader } from "@/components/chatbot-loader"
 import { PublicHeader } from "@/components/public-header"
@@ -66,7 +66,7 @@ export default function LandingPage() {
         { icon: Sparkles, label: { en: "Beauty", tr: "Güzellik" }, href: "/solutions/beauty", color: "text-pink-500" },
         { icon: Scale, label: { en: "Legal", tr: "Hukuk" }, href: "/solutions/legal", color: "text-gray-400" },
         { icon: Dumbbell, label: { en: "Fitness", tr: "Spor" }, href: "/solutions/fitness", color: "text-red-400" },
-        { icon: Store, label: { en: "Retail", tr: "Perakende" }, href: "/solutions/retail", color: "text-violet-400" },
+        { icon: Anchor, label: { en: "Maritime", tr: "Denizcilik" }, href: "/solutions/maritime", color: "text-cyan-400" },
     ]
 
     return (

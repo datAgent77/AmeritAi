@@ -177,7 +177,7 @@ export default function CompanySettingsPage() {
                                 <option value="beauty">{language === 'tr' ? "Güzellik & Wellness" : "Beauty & Wellness"}</option>
                                 <option value="legal">{language === 'tr' ? "Hukuk" : "Legal"}</option>
                                 <option value="fitness">{language === 'tr' ? "Spor & Fitness" : "Sports & Fitness"}</option>
-                                <option value="retail">{language === 'tr' ? "Perakende" : "Retail"}</option>
+                                <option value="maritime">{language === 'tr' ? "Denizcilik" : "Maritime"}</option>
                                 <option value="other">{language === 'tr' ? "Diğer" : "Other"}</option>
                             </select>
                         </div>

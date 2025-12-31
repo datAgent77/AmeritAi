@@ -10,7 +10,7 @@ import {
     School, Banknote, ChefHat, Sprout, TrendingUp, RefreshCw, MessageSquare,
     Calendar, Star, Languages, Users, Clock, Image, Terminal, Video, Rocket,
     Info, DollarSign, MessageCircle, CheckCircle, Book, BarChart, PenTool,
-    Car, Shield, Truck, Sparkles, Scale, Dumbbell, Store, MapPin, Bell, Zap, Megaphone
+    Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor, Ship, MapPin, Bell, Zap, Megaphone
 } from "lucide-react"
 
 // Simple icon mapper for string -> Component
@@ -19,7 +19,7 @@ const iconMap: Record<string, any> = {
     School, Banknote, ChefHat, Sprout, TrendingUp, RefreshCw, MessageSquare,
     Calendar, Star, Languages, Users, Clock, Images: Image, Terminal, Video, Rocket,
     Info, DollarSign, MessageCircle, CheckCircle, Book, BarChart, PenTool,
-    Car, Shield, Truck, Sparkles, Scale, Dumbbell, Store, MapPin, Bell, Zap, Megaphone
+    Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor, Ship, MapPin, Bell, Zap, Megaphone
 }
 
 export default function SolutionPage({ params }: { params: { slug: string } }) {

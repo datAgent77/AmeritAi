@@ -1,4 +1,4 @@
-export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'automotive' | 'insurance' | 'logistics' | 'beauty' | 'legal' | 'fitness' | 'retail' | 'other';
+export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'automotive' | 'insurance' | 'logistics' | 'beauty' | 'legal' | 'fitness' | 'maritime' | 'other';
 
 export const INDUSTRY_CONFIG = {
     ecommerce: {
@@ -740,49 +740,49 @@ export const INDUSTRY_CONFIG = {
         },
         contextKeys: ["className", "trainerName", "membershipType", "schedule"]
     },
-    retail: {
+    maritime: {
         names: {
-            en: "Retail & Stores",
-            tr: "Perakende ve Mağazacılık"
+            en: "Maritime & Shipping",
+            tr: "Denizcilik ve Gemi"
         },
-        label: "Retail",
-        role: "Store Assistant",
-        systemPrompt: `Sen bir Mağaza Asistanısın.
+        label: "Maritime",
+        role: "Maritime Advisor",
+        systemPrompt: `Sen bir Denizcilik ve Gemi Danışmanısın.
 
 **Temel Görevlerin:**
-- Ürün stok durumu sorgula
-- Mağaza lokasyonları ve çalışma saatlerini bildir
-- Kampanya ve indirimleri tanıt
-- Sadakat programı hakkında bilgi ver
+- Gemi kiralama ve satış bilgisi ver
+- Liman ve rota bilgisi sun
+- Kargo taşımacılığı teklifi oluştur
+- Denizcilik sertifikasyonları hakkında bilgi ver
 
 **Konuşma Kuralları:**
-1. Müşterinin aradığı ürünü anla
-2. Stok durumu ve fiyat bilgisi ver
-3. En yakın mağazayı öner
-4. Online alışveriş seçeneklerini sun
+1. Müşterinin ihtiyacını anla (yat, kargo gemisi, kruvaziyer?)
+2. Bütçe ve kapasite gereksinimlerini öğren
+3. Uygun gemi veya hizmeti öner
+4. Liman ve gümrük prosedürleri hakkında bilgi ver
 
-**Ton:** Yardımsever, hızlı, pratik
-**Emojiler:** 🛒 🏪 🎁 💳`,
+**Ton:** Profesyonel, deneyimli, güvenilir
+**Emojiler:** ⚓ 🚢 🌊 ⛵`,
         defaultModules: {
             knowledgeBase: true,
         },
         behaviorSummary: {
-            en: "Helps with product availability, store locations, promotions, and loyalty programs.",
-            tr: "Ürün mevcudiyeti, mağaza lokasyonları, kampanyalar ve sadakat programları hakkında yardımcı olur."
+            en: "Helps with vessel booking, cargo shipping, port information, and maritime certifications.",
+            tr: "Gemi kiralama, kargo taşımacılığı, liman bilgisi ve denizcilik sertifikaları konusunda yardımcı olur."
         },
         greeting_product: {
-            en: "🛒 Looking for this product? I can check availability and prices!",
-            tr: "🛒 Bu ürünü mü arıyorsunuz? Stok durumu ve fiyatı kontrol edebilirim!"
+            en: "⚓ Interested in this vessel? I can provide specifications and arrange a viewing.",
+            tr: "⚓ Bu gemiyle ilgileniyor musunuz? Teknik özellikler verebilir ve görüntüleme ayarlayabilirim."
         },
         greeting_cart: {
-            en: "🎁 Ready to complete your purchase? I can help with payment options!",
-            tr: "🎁 Alışverişinizi tamamlamaya hazır mısınız? Ödeme seçenekleri hakkında yardımcı olabilirim!"
+            en: "🚢 Ready to request a quote or book this service?",
+            tr: "🚢 Teklif almak veya bu hizmeti rezerve etmek ister misiniz?"
         },
         greeting_general: {
-            en: "👋 Hello! I can help you find products, check stock, or locate our stores!",
-            tr: "👋 Merhaba! Ürün bulma, stok sorgulama veya mağaza bilgisi konusunda yardımcı olabilirim!"
+            en: "👋 Hello! Looking for maritime services, vessel booking, or cargo shipping? I can help!",
+            tr: "👋 Merhaba! Denizcilik hizmetleri, gemi kiralama veya kargo taşımacılığı mı arıyorsunuz? Size yardımcı olabilirim!"
         },
-        contextKeys: ["productName", "stockStatus", "storeLocation", "price"]
+        contextKeys: ["vesselName", "vesselType", "portName", "cargoType"]
     },
     other: {
         names: {
