@@ -22,6 +22,11 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
 
     const [url, setUrl] = useState("")
     const [isAdding, setIsAdding] = useState(false)
+    const [isDuplicate, setIsDuplicate] = useState(false)
+
+    // Advanced Settings
+    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [selector, setSelector] = useState("")
 
     // Sitemap / Scraping States
     const [sitemapUrls, setSitemapUrls] = useState<string[]>([])
@@ -33,9 +38,33 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
     const [previewTitle, setPreviewTitle] = useState("")
     const [previewContent, setPreviewContent] = useState("")
 
+    // Refresh trigger for list
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+    // Check for duplicate URL
+    const checkDuplicate = async (checkUrl: string) => {
+        if (!checkUrl) return
+        try {
+            const res = await fetch(`/api/knowledge?chatbotId=${userId}&source=${encodeURIComponent(checkUrl)}`)
+            const data = await res.json()
+            if (data.docs && data.docs.length > 0) {
+                setIsDuplicate(true)
+            } else {
+                setIsDuplicate(false)
+            }
+        } catch (e) {
+            console.error("Duplicate check error:", e)
+        }
+    }
+
     const handleFetch = async () => {
         if (!url) return
         setIsAdding(true)
+        setIsDuplicate(false)
+
+        // Check duplicate first
+        await checkDuplicate(url)
+
         // Reset sitemap state if switching to single fetch
         setSitemapUrls([])
 
@@ -43,7 +72,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
             const res = await fetch('/api/crawl', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
+                body: JSON.stringify({ url, selector })
             })
             if (!res.ok) throw new Error('Failed to crawl')
             const data = await res.json()
@@ -135,6 +164,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
             setUrl("")
             setPreviewTitle("")
             setPreviewContent("")
+            setRefreshTrigger(prev => prev + 1)
         } catch (e: any) {
             console.error(e)
             toast({ title: t('error'), description: e.message || "Failed to add URL", variant: "destructive" })
@@ -176,6 +206,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
             })
             setSitemapUrls([])
             setSelectedSitemapUrls([])
+            setRefreshTrigger(prev => prev + 1)
         } catch (error) {
             console.error("Import error:", error)
             toast({ title: t('error'), description: "Failed to complete import.", variant: "destructive" })
@@ -241,6 +272,47 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                                     </Button>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Duplicate Warning */}
+                        {isDuplicate && (
+                            <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-md p-3 text-sm flex items-start gap-2">
+                                <Search className="h-4 w-4 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-medium">{t('duplicateUrl') || "Bu URL zaten eklenmiş."}</p>
+                                    <p className="text-xs mt-1">{t('duplicateUrlDesc') || "Yine de eklemek isterseniz devam edebilirsiniz."}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Advanced Scrape Settings */}
+                        <div className="pt-2">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                    id="advanced-settings"
+                                    checked={showAdvanced}
+                                    onCheckedChange={(c) => setShowAdvanced(!!c)}
+                                />
+                                <Label htmlFor="advanced-settings" className="cursor-pointer">
+                                    {t('advancedSettings') || "Gelişmiş Ayarlar"}
+                                </Label>
+                            </div>
+
+                            {showAdvanced && (
+                                <div className="space-y-2 pl-6 animate-in slide-in-from-top-2">
+                                    <Label htmlFor="selector">{t('cssSelector') || "CSS Seçici (Opsiyonel)"}</Label>
+                                    <Input
+                                        id="selector"
+                                        placeholder="main, #content, .article-body"
+                                        value={selector}
+                                        onChange={(e) => setSelector(e.target.value)}
+                                        className="h-8 text-sm"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('cssSelectorDesc') || "Belirli bir alanı çekmek için CSS seçici girin (örn: main). Boş bırakılırsa tüm sayfa taranır."}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Single Page Preview */}
@@ -333,8 +405,8 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                 </Card>
             </div>
             <div>
-                <KnowledgeList userId={userId} filterType="url" />
+                <KnowledgeList userId={userId} filterType="url" refreshTrigger={refreshTrigger} />
             </div>
-        </div>
+        </div >
     )
 }

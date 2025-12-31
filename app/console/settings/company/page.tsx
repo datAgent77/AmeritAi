@@ -85,6 +85,15 @@ export default function CompanySettingsPage() {
                 updatedAt: new Date().toISOString()
             })
 
+            // Sync industry to chatbots collection so AI service uses correct sector
+            // AI service prioritizes sector > sectorId > industry, so we sync all three
+            await updateDoc(doc(db, "chatbots", user.uid), {
+                industry: company.industry,
+                sector: company.industry,
+                sectorId: company.industry,
+                updatedAt: new Date().toISOString()
+            })
+
             toast({
                 title: language === 'tr' ? "Başarılı" : "Success",
                 description: language === 'tr' ? "Şirket bilgileri güncellendi." : "Company details updated successfully.",
@@ -232,11 +241,7 @@ export default function CompanySettingsPage() {
                                 disabled
                                 className="bg-muted"
                             />
-                            <p className="text-xs text-muted-foreground">
-                                {language === 'tr'
-                                    ? "E-posta adresi hesap ayarlarından değiştirilebilir."
-                                    : "Email address can be changed from account settings."}
-                            </p>
+
                         </div>
                     </div>
 
@@ -252,6 +257,8 @@ export default function CompanySettingsPage() {
                     </div>
                 </CardContent>
             </Card>
+
+
         </div>
     )
 }

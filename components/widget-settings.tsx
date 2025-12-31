@@ -20,7 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
 import { db, storage } from "@/lib/firebase"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { useToast } from "@/hooks/use-toast"
@@ -179,119 +179,99 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
     }
 
     useEffect(() => {
-        const loadSettings = async () => {
-            if (!userId) return
-            setIsLoading(true)
-            try {
-                // Use API instead of direct Firestore
-                const response = await fetch(`/api/widget-settings?chatbotId=${userId}&t=${Date.now()}`)
-                const data = await response.json()
+        if (!userId) return
 
-                if (data.error) throw new Error(data.error)
+        setIsLoading(true)
+        const chatbotDocRef = doc(db, "chatbots", userId)
 
-                setSettings(prev => ({
-                    ...prev,
-                    // Branding
-                    companyName: data.companyName || "Acme Corp",
-                    welcomeMessage: data.welcomeMessage || "Hello! How can I help you today?",
-                    brandColor: data.brandColor || "#000000",
-                    brandLogo: data.brandLogo || "",
-                    headerLogo: data.headerLogo || "",
-                    headerLogoWidth: data.headerLogoWidth || 32,
-                    headerLogoHeight: data.headerLogoHeight || 32,
-                    headerBackgroundColor: data.headerBackgroundColor || "",
-                    headerTextColor: data.headerTextColor || "#FFFFFF",
-                    suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
-                    enableLeadCollection: data.enableLeadCollection || false,
-                    enableVoiceAssistant: data.enableVoiceAssistant || false,
-                    enablePersonalShopper: data.enablePersonalShopper || false,
-                    initialLanguage: data.initialLanguage || "auto",
-                    enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : false,
-                    industry: data.industry || 'ecommerce',
-                    customPrompts: data.customPrompts || '',
-                    // Theme
-                    theme: data.theme || "classic",
-                    // Widget
-                    position: data.position || "bottom-right",
-                    viewMode: data.viewMode || "classic",
-                    modalSize: data.modalSize || "half",
-                    launcherStyle: data.launcherStyle || "circle",
-                    launcherText: data.launcherText || "Chat",
-                    launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
-                    launcherHeight: data.launcherHeight || 60,
-                    launcherWidth: data.launcherWidth || 60,
-                    fullImageLauncherWidth: data.fullImageLauncherWidth || 60,
-                    fullImageLauncherHeight: data.fullImageLauncherHeight || 60,
-                    launcherIcon: "library", // Force library or check if custom
-                    launcherIconUrl: data.launcherIconUrl || "",
-                    launcherLibraryIcon: data.launcherLibraryIcon || "MessageSquare",
-                    launcherIconColor: data.launcherIconColor || "#FFFFFF",
-                    launcherBackgroundColor: data.launcherBackgroundColor || "",
-                    bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : 20,
-                    sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : 20,
-                    launcherShadow: data.launcherShadow || "medium",
-                    launcherAnimation: data.launcherAnimation || "none",
-                    // Full Image / Lottie Mode
-                    launcherType: data.launcherType || "standard",
-                    launcherImageMode: data.launcherImageMode || "image",
-                    launcherFullImageUrl: data.launcherFullImageUrl || "",
-                    launcherLottieUrl: data.launcherLottieUrl || "",
-                    launcherHoverEffect: data.launcherHoverEffect || "scale",
-                    // Triggers
-                    autoOpenDelay: data.autoOpenDelay || 0,
-                    openOnExitIntent: data.openOnExitIntent || false,
-                    openOnScroll: data.openOnScroll || 0,
-                    // Engagement
-                    engagement: data.engagement || {
-                        enabled: false,
-                        triggers: {
-                            timeOnPage: null,
-                            scrollDepth: null,
-                            exitIntent: false,
-                            pageRevisit: null,
-                            inactivity: null,
-                        },
-                        bubble: {
-                            messages: [
-                                { text: "Yardıma ihtiyacınız var mı? 👋", delay: 0, isActive: true },
-                                { text: "Size özel tekliflerimizi gördünüz mü?", delay: 5, isActive: true }
-                            ],
-                            position: "top",
-                            style: {
-                                backgroundColor: "#000000",
-                                textColor: "#FFFFFF",
-                                borderRadius: 12,
-                                shadow: "medium"
-                            },
-                            animation: "bounce",
-                            autoDismiss: true,
-                            autoDismissDelay: 10,
-                            showCloseButton: true,
-                            maxShowCount: 3
-                        }
-                    },
-                    // Availability
-                    enableBusinessHours: data.enableBusinessHours || false,
-                    timezone: data.timezone || "UTC",
-                    businessHoursStart: data.businessHoursStart || "09:00",
-                    businessHoursEnd: data.businessHoursEnd || "17:00",
-                    offlineMessage: data.offlineMessage || "Şu anda çevrimdışıyız.",
-                }))
+        const unsubscribe = onSnapshot(chatbotDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data()
 
-                // Set correct launcher icon mode
-                if (data.launcherIcon === 'custom') {
-                    setSettings(prev => ({ ...prev, launcherIcon: 'custom' }))
-                } else if (data.launcherIcon === 'library') {
-                    setSettings(prev => ({ ...prev, launcherIcon: 'library' }))
-                }
+                // Update state with real-time data
+                setSettings(prev => {
+                    // Only update if data actually changed to avoid unnecessary re-renders or overwriting user input too aggressively
+                    // For now, we'll do a shallow merge of the fields we care about ensuring are synced
 
-            } catch (error) {
-                console.error("Error loading settings:", error)
-            } finally {
-                setIsLoading(false)
+                    return {
+                        ...prev,
+                        // Branding
+                        companyName: data.companyName || prev.companyName,
+                        welcomeMessage: data.welcomeMessage || prev.welcomeMessage,
+                        brandColor: data.brandColor || prev.brandColor,
+                        brandLogo: data.brandLogo || prev.brandLogo,
+                        headerLogo: data.headerLogo || prev.headerLogo,
+                        headerLogoWidth: data.headerLogoWidth || prev.headerLogoWidth,
+                        headerLogoHeight: data.headerLogoHeight || prev.headerLogoHeight,
+                        headerBackgroundColor: data.headerBackgroundColor || prev.headerBackgroundColor,
+                        headerTextColor: data.headerTextColor || prev.headerTextColor,
+                        suggestedQuestions: data.suggestedQuestions || prev.suggestedQuestions,
+                        enableLeadCollection: data.enableLeadCollection !== undefined ? data.enableLeadCollection : prev.enableLeadCollection,
+                        enableVoiceAssistant: data.enableVoiceAssistant !== undefined ? data.enableVoiceAssistant : prev.enableVoiceAssistant,
+                        enablePersonalShopper: data.enablePersonalShopper !== undefined ? data.enablePersonalShopper : prev.enablePersonalShopper,
+                        initialLanguage: data.initialLanguage || prev.initialLanguage,
+                        enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : prev.enableIndustryGreeting,
+                        industry: data.industry || prev.industry, // CRITICAL: This ensures sector sync works
+                        customPrompts: data.customPrompts || prev.customPrompts,
+                        // Theme
+                        theme: data.theme || prev.theme,
+                        // Widget
+                        position: data.position || prev.position,
+                        viewMode: data.viewMode || prev.viewMode,
+                        modalSize: data.modalSize || prev.modalSize,
+                        launcherStyle: data.launcherStyle || prev.launcherStyle,
+                        launcherText: data.launcherText || prev.launcherText,
+                        launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : prev.launcherRadius,
+                        launcherHeight: data.launcherHeight || prev.launcherHeight,
+                        launcherWidth: data.launcherWidth || prev.launcherWidth,
+                        fullImageLauncherWidth: data.fullImageLauncherWidth || prev.fullImageLauncherWidth,
+                        fullImageLauncherHeight: data.fullImageLauncherHeight || prev.fullImageLauncherHeight,
+                        launcherIcon: data.launcherIcon || prev.launcherIcon,
+                        launcherIconUrl: data.launcherIconUrl || prev.launcherIconUrl,
+                        launcherLibraryIcon: data.launcherLibraryIcon || prev.launcherLibraryIcon,
+                        launcherIconColor: data.launcherIconColor || prev.launcherIconColor,
+                        launcherBackgroundColor: data.launcherBackgroundColor || prev.launcherBackgroundColor,
+                        bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : prev.bottomSpacing,
+                        sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : prev.sideSpacing,
+                        launcherShadow: data.launcherShadow || prev.launcherShadow,
+                        launcherAnimation: data.launcherAnimation || prev.launcherAnimation,
+                        // Full Image / Lottie Mode
+                        launcherType: data.launcherType || prev.launcherType,
+                        launcherImageMode: data.launcherImageMode || prev.launcherImageMode,
+                        launcherFullImageUrl: data.launcherFullImageUrl || prev.launcherFullImageUrl,
+                        launcherLottieUrl: data.launcherLottieUrl || prev.launcherLottieUrl,
+                        launcherHoverEffect: data.launcherHoverEffect || prev.launcherHoverEffect,
+                        // Triggers
+                        autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
+                        openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
+                        openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
+                        // Engagement
+                        engagement: data.engagement || prev.engagement,
+                        // Availability
+                        enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
+                        timezone: data.timezone || prev.timezone,
+                        businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
+                        businessHoursEnd: data.businessHoursEnd || prev.businessHoursEnd,
+                        offlineMessage: data.offlineMessage || prev.offlineMessage,
+                    }
+                })
+
+                // Set correct launcher icon mode if explicit
+                /* 
+                   Note: The original logic had setSettings calls here which would cause loops or overridden by the main setSettings above.
+                   Since we merged above, it should be fine.
+                */
+
+            } else {
+                console.log("No chatbot settings found, using defaults")
             }
-        }
-        loadSettings()
+            setIsLoading(false)
+        }, (error) => {
+            console.error("Error listening to settings:", error)
+            setIsLoading(false)
+        })
+
+        return () => unsubscribe()
     }, [userId])
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -24,8 +24,8 @@ interface TenantData {
     visibleVoiceAssistant?: boolean
     enableCopywriter?: boolean
     visibleCopywriter?: boolean
-    enableLeadFinder?: boolean
-    visibleLeadFinder?: boolean
+    enableLeadCollection?: boolean
+    visibleLeadCollection?: boolean
     enableSalesOptimization?: boolean
     visibleSalesOptimization?: boolean
     canManageModules?: boolean
@@ -104,8 +104,8 @@ export function TenantPermissions({ tenant, userId, onUpdate }: TenantPermission
         visibleVoiceAssistant: tenant.visibleVoiceAssistant ?? true,
         enableCopywriter: tenant.enableCopywriter ?? true,
         visibleCopywriter: tenant.visibleCopywriter ?? true,
-        enableLeadFinder: tenant.enableLeadFinder ?? true,
-        visibleLeadFinder: tenant.visibleLeadFinder ?? true,
+        enableLeadCollection: tenant.enableLeadCollection ?? tenant.enableLeadFinder ?? true,
+        visibleLeadCollection: tenant.visibleLeadCollection ?? tenant.visibleLeadFinder ?? true,
     })
     const [loading, setLoading] = useState<Record<string, boolean>>({})
     const { toast } = useToast()

@@ -225,7 +225,21 @@ export async function generateAIResponse(
                 includeMetadata: true,
                 filter: { chatbotId: chatbotId }
             });
+
+            // DEBUG: Log knowledge retrieval results
+            console.log(`AI Service [KNOWLEDGE DEBUG]: Query for chatbotId=${chatbotId}, matches found: ${queryResponse.matches.length}`);
+            if (queryResponse.matches.length > 0) {
+                queryResponse.matches.forEach((m, i) => {
+                    console.log(`  Match ${i + 1}: score=${m.score?.toFixed(3)}, source=${m.metadata?.source}, title=${m.metadata?.title}`);
+                });
+            } else {
+                console.log(`AI Service [KNOWLEDGE DEBUG]: NO MATCHES FOUND for chatbotId=${chatbotId}`);
+            }
+
             context = queryResponse.matches.map((m) => m.metadata?.text).join("\n\n");
+            console.log(`AI Service [KNOWLEDGE DEBUG]: Context length: ${context.length} chars`);
+        } else {
+            console.log(`AI Service [KNOWLEDGE DEBUG]: Knowledge base DISABLED for chatbotId=${chatbotId}`);
         }
 
         // 3. Prepare System Prompt (Same Logic)
@@ -281,6 +295,12 @@ ${context ? `Use this context to answer:\n${context}` : "No specific context ava
             // Special case for appointments/voice - check multiple field names
             if (mod.id === 'voiceAssistant' && !isEnabled) {
                 isEnabled = chatbotData?.enableAppointments === true || chatbotData?.enableVoiceAppointments === true;
+            }
+
+            // DEBUG: Log module check results
+            if (mod.aiSystemInstruction) {
+                const fieldValue = mod.legacyFirestoreField ? chatbotData?.[mod.legacyFirestoreField] : 'N/A';
+                console.log(`AI Service [MODULE DEBUG]: ${mod.id} - isCore=${mod.isCore}, field=${mod.legacyFirestoreField}, value=${fieldValue}, isEnabled=${isEnabled}`);
             }
 
             if (isEnabled && mod.aiSystemInstruction) {

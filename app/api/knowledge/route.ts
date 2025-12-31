@@ -26,20 +26,40 @@ export async function GET(req: Request) {
 
         const { searchParams } = new URL(req.url);
         const chatbotId = searchParams.get("chatbotId");
+        const wantsStats = searchParams.get("stats") === "true";
+        const sourceUrl = searchParams.get("source");
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
         }
 
-        const querySnapshot = await adminDb.collection("knowledge_docs")
-            .where("chatbotId", "==", chatbotId)
-            .get();
+        let query = adminDb.collection("knowledge_docs").where("chatbotId", "==", chatbotId);
+
+        if (sourceUrl) {
+            query = query.where("source", "==", sourceUrl);
+        }
+
+        const querySnapshot = await query.get();
 
         const docs = querySnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
             createdAt: doc.data().createdAt?.toDate() || new Date()
         })).sort((a: any, b: any) => b.createdAt - a.createdAt);
+
+        // If stats requested, return aggregated counts
+        if (wantsStats) {
+            const stats = {
+                total: docs.length,
+                text: docs.filter((d: any) => d.type === 'text' || d.type === 'manual').length,
+                url: docs.filter((d: any) => d.type === 'url').length,
+                file: docs.filter((d: any) => d.type === 'file').length,
+                qa: docs.filter((d: any) => d.type === 'qa').length
+            };
+            return NextResponse.json({ stats }, {
+                headers: { 'Cache-Control': 'no-store, max-age=0' }
+            });
+        }
 
         return NextResponse.json({ docs }, {
             headers: {
@@ -61,8 +81,63 @@ export async function POST(req: Request) {
         }
         console.log("API: Received knowledge request");
         const body = await req.json();
-        const { text, chatbotId, docId, type, url, fileBase64, fileName } = body;
-        console.log("API: Parsed body", { chatbotId, docId, type, fileName, hasFile: !!fileBase64 });
+
+        // Handle Bulk Import
+        if (body.action === 'bulk_import' && Array.isArray(body.items)) {
+            console.log(`API: Processing bulk import of ${body.items.length} items`);
+            const results = [];
+            const index = pinecone.index("chatbot-knowledge");
+
+            for (const item of body.items) {
+                try {
+                    const { title, content, type, chatbotId } = item;
+                    if (!content || !chatbotId) continue;
+
+                    // Create doc in Firestore
+                    const docRef = adminDb.collection("knowledge_docs").doc();
+                    const docId = docRef.id;
+
+                    const embeddingResponse = await openai.embeddings.create({
+                        model: "text-embedding-3-small",
+                        input: content.substring(0, 8000),
+                    });
+                    const embedding = embeddingResponse.data[0].embedding;
+
+                    await index.upsert([{
+                        id: `${chatbotId}-${docId}`,
+                        values: embedding,
+                        metadata: {
+                            chatbotId,
+                            docId,
+                            title: title || 'Untitled',
+                            source: 'import',
+                            chunkIndex: 0,
+                            text: content.substring(0, 1000),
+                        }
+                    }]);
+
+                    await docRef.set({
+                        chatbotId,
+                        title: title || 'Untitled',
+                        content,
+                        fullContent: content,
+                        type: type || 'text',
+                        source: 'import',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        status: 'indexed'
+                    });
+                    results.push({ success: true, id: docId });
+                } catch (err) {
+                    console.error("Bulk import item error:", err);
+                    results.push({ success: false, error: err });
+                }
+            }
+            return NextResponse.json({ success: true, results });
+        }
+
+        const { text, chatbotId, docId, type, url, fileBase64, fileName, title: providedTitle } = body;
+        console.log("API: Parsed body", { chatbotId, docId, type, fileName, providedTitle, hasFile: !!fileBase64 });
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
@@ -74,7 +149,8 @@ export async function POST(req: Request) {
         }
 
         let contentToEmbed = text;
-        let title = fileName || "";
+        // Use provided title first, then fileName, then default
+        let title = providedTitle || fileName || "";
         let preview = "";
 
         // Handle URL Type
@@ -311,3 +387,85 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "Delete failed" }, { status: 500 });
     }
 }
+
+// PUT - Edit existing knowledge document
+export async function PUT(req: Request) {
+    try {
+        const adminDb = getAdminDb();
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
+        }
+
+        const body = await req.json();
+        const { docId, chatbotId, title, content } = body;
+
+        if (!docId || !chatbotId) {
+            return NextResponse.json({ error: "Missing docId or chatbotId" }, { status: 400 });
+        }
+
+        console.log(`API: Editing doc ${docId} for chatbot ${chatbotId}`);
+
+        // Get existing document to check type
+        const existingDoc = await adminDb.collection("knowledge_docs").doc(docId).get();
+        if (!existingDoc.exists) {
+            return NextResponse.json({ error: "Document not found" }, { status: 404 });
+        }
+
+        const existingData = existingDoc.data();
+        const docType = existingData?.type || 'text';
+
+        // For text/manual types, we can update content and re-embed
+        if ((docType === 'text' || docType === 'manual') && content) {
+            const index = pinecone.index("chatbot-knowledge");
+
+            // Delete old vectors
+            await index.deleteMany({
+                chatbotId: chatbotId,
+                docId: docId
+            });
+
+            // Create new embedding
+            const embeddingResponse = await openai.embeddings.create({
+                model: "text-embedding-3-small",
+                input: content.substring(0, 8000),
+            });
+            const embedding = embeddingResponse.data[0].embedding;
+
+            // Upsert new vector
+            await index.upsert([{
+                id: `${chatbotId}-${docId}`,
+                values: embedding,
+                metadata: {
+                    chatbotId,
+                    docId,
+                    title: title || existingData?.title || 'Untitled',
+                    source: 'manual',
+                    chunkIndex: 0,
+                    text: content.substring(0, 1000),
+                }
+            }]);
+
+            // Update Firestore
+            await adminDb.collection("knowledge_docs").doc(docId).update({
+                title: title || existingData?.title,
+                content: content,
+                fullContent: content,
+                updatedAt: new Date()
+            });
+        } else {
+            // For URL/file types, only update title
+            await adminDb.collection("knowledge_docs").doc(docId).update({
+                title: title || existingData?.title,
+                updatedAt: new Date()
+            });
+        }
+
+        console.log("API: Document updated successfully");
+        return NextResponse.json({ success: true });
+
+    } catch (error) {
+        console.error("Edit error:", error);
+        return NextResponse.json({ error: "Edit failed" }, { status: 500 });
+    }
+}
+

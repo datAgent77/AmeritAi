@@ -11,6 +11,7 @@ export interface ModuleConfig {
     price: number; // Monthly price in USD
     icon: string; // Lucide icon name
     recommendedFor: IndustryType[]; // Industries this module is recommended for
+    status: 'ready' | 'beta' | 'coming_soon';
 }
 
 export interface SalesOptimizationConfig {
@@ -46,7 +47,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: true,
         price: 0,
         icon: 'MessageSquare',
-        recommendedFor: [] // Core - always included
+        recommendedFor: [], // Core - always included
+        status: 'ready'
     },
     knowledgeBase: {
         id: 'knowledgeBase',
@@ -56,7 +58,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: true,
         price: 0,
         icon: 'BookOpen',
-        recommendedFor: [] // Core - always included
+        recommendedFor: [], // Core - always included
+        status: 'ready'
     },
     productCatalog: {
         id: 'productCatalog',
@@ -66,7 +69,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'ShoppingBag',
-        recommendedFor: ['ecommerce', 'real_estate', 'education']
+        recommendedFor: ['ecommerce', 'real_estate', 'education'],
+        status: 'ready'
     },
     leadCollection: {
         id: 'leadCollection',
@@ -76,7 +80,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'Users',
-        recommendedFor: ['ecommerce', 'real_estate', 'saas', 'service', 'finance']
+        recommendedFor: ['ecommerce', 'real_estate', 'saas', 'service', 'finance'],
+        status: 'ready'
     },
     appointments: {
         id: 'appointments',
@@ -86,7 +91,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 39,
         icon: 'Calendar',
-        recommendedFor: ['booking', 'real_estate', 'healthcare', 'service', 'academic']
+        recommendedFor: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
+        status: 'beta'
     },
     voiceAssistant: {
         id: 'voiceAssistant',
@@ -96,7 +102,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 49,
         icon: 'Mic',
-        recommendedFor: ['healthcare', 'service', 'booking']
+        recommendedFor: ['healthcare', 'service', 'booking'],
+        status: 'ready'
     },
     emailMarketing: {
         id: 'emailMarketing',
@@ -106,7 +113,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'Mail',
-        recommendedFor: ['ecommerce', 'saas', 'education']
+        recommendedFor: ['ecommerce', 'saas', 'education'],
+        status: 'beta'
     },
 
     reviewManagement: {
@@ -117,7 +125,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 39,
         icon: 'Star',
-        recommendedFor: ['restaurant', 'service', 'booking']
+        recommendedFor: ['restaurant', 'service', 'booking', 'healthcare', 'real_estate'],
+        status: 'beta'
     },
 
     loyaltyProgram: {
@@ -128,7 +137,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'Award',
-        recommendedFor: ['restaurant', 'service']
+        recommendedFor: ['restaurant', 'service'],
+        status: 'beta'
     },
 
     campaignManager: {
@@ -139,7 +149,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 19,
         icon: 'Zap',
-        recommendedFor: ['restaurant', 'ecommerce']
+        recommendedFor: [],
+        status: 'beta'
     },
 
     autoTranslate: {
@@ -150,7 +161,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'Languages',
-        recommendedFor: ['restaurant', 'booking']
+        recommendedFor: ['restaurant', 'booking', 'real_estate'],
+        status: 'beta'
     },
 
     gamification: {
@@ -161,7 +173,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 39,
         icon: 'Gamepad2',
-        recommendedFor: ['ecommerce', 'restaurant']
+        recommendedFor: ['ecommerce', 'restaurant'],
+        status: 'beta'
     },
 
     visualDiagnosis: {
@@ -172,7 +185,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 59,
         icon: 'Scan',
-        recommendedFor: ['agriculture', 'healthcare', 'real_estate']
+        recommendedFor: ['agriculture', 'healthcare', 'real_estate'],
+        status: 'beta'
     },
 
 
@@ -185,7 +199,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 49,
         icon: 'TrendingUp',
-        recommendedFor: ['ecommerce', 'real_estate', 'finance']
+        recommendedFor: ['ecommerce', 'real_estate', 'finance'],
+        status: 'beta'
     },
 
     digitalWaiter: {
@@ -196,7 +211,8 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 29,
         icon: 'Utensils',
-        recommendedFor: ['restaurant']
+        recommendedFor: ['restaurant'],
+        status: 'beta'
     },
     proactiveMessaging: {
         id: 'proactiveMessaging',
@@ -206,27 +222,33 @@ export const MODULES: Record<ModuleId, ModuleConfig> = {
         isCore: false,
         price: 19,
         icon: 'MessageCircle', // Or another suitable icon like 'Bell' or 'Zap'
-        recommendedFor: [] // Available for all
+        recommendedFor: [], // Available for all
+        status: 'beta'
     }
 };
 
 // Ordered array for rendering - Core modules first, then others
 export const ORDERED_MODULES: ModuleConfig[] = [
-    MODULES.generalChatbot,    // 1. Core: General Chatbot
-    MODULES.knowledgeBase,     // 2. Core: Knowledge Base
-    MODULES.productCatalog,    // 3. Product Catalog
-    MODULES.leadCollection,    // 4. Lead Collection
-    MODULES.appointments,      // 5. Appointments
-    MODULES.voiceAssistant,    // 6. Voice Assistant
+    // --- 1. READY MODULES ---
+    MODULES.generalChatbot,    // Core
+    MODULES.knowledgeBase,     // Core
+    MODULES.productCatalog,    // Personal Shopper
+    MODULES.leadCollection,    // Lead Collection
+    MODULES.voiceAssistant,    // Voice
 
-    MODULES.emailMarketing,    // 8. Email Marketing
-    MODULES.reviewManagement,  // 9. Review Management
-    MODULES.loyaltyProgram,    // 10. Loyalty Program
-    MODULES.campaignManager,   // 11. Campaign Manager
-    MODULES.autoTranslate,     // 12. Auto Translate
-    MODULES.gamification,      // 13. Gamification
-    MODULES.visualDiagnosis,   // 14. Visual Diagnosis
-    MODULES.salesOptimization, // 17. Sales Optimization
-    MODULES.digitalWaiter,     // 18. Digital Waiter
-    MODULES.proactiveMessaging, // 19. Proactive Messaging
+    // --- 2. BETA MODULES ---
+    MODULES.salesOptimization, // Beta
+    MODULES.proactiveMessaging, // Beta
+    MODULES.digitalWaiter,     // Beta - Functional
+    MODULES.appointments,      // Beta
+    MODULES.emailMarketing,    // Beta
+    MODULES.reviewManagement,  // Beta
+    MODULES.loyaltyProgram,    // Beta
+    MODULES.campaignManager,   // Beta
+    MODULES.autoTranslate,     // Beta
+    MODULES.gamification,      // Beta
+    MODULES.visualDiagnosis,   // Beta
+
+    // --- 3. COMING SOON MODULES ---
+    // None currently!
 ];

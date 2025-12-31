@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc, onSnapshot } from "firebase/firestore"
 
 interface AuthContextType {
     user: User | null
@@ -15,8 +15,8 @@ interface AuthContextType {
     visibleChatbot: boolean
     enableCopywriter: boolean
     visibleCopywriter: boolean
-    enableLeadFinder: boolean
-    visibleLeadFinder: boolean
+    enableLeadCollection: boolean
+    visibleLeadCollection: boolean
     enableVoiceAssistant: boolean
     visibleVoiceAssistant: boolean
     enableKnowledgeBase: boolean
@@ -36,8 +36,8 @@ const AuthContext = createContext<AuthContextType>({
     visibleChatbot: true,
     enableCopywriter: true,
     visibleCopywriter: true,
-    enableLeadFinder: true,
-    visibleLeadFinder: true,
+    enableLeadCollection: true,
+    visibleLeadCollection: true,
     enableVoiceAssistant: false,
     visibleVoiceAssistant: true,
     enableKnowledgeBase: true,
@@ -57,8 +57,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [visibleChatbot, setVisibleChatbot] = useState(true)
     const [enableCopywriter, setEnableCopywriter] = useState(true)
     const [visibleCopywriter, setVisibleCopywriter] = useState(true)
-    const [enableLeadFinder, setEnableLeadFinder] = useState(true)
-    const [visibleLeadFinder, setVisibleLeadFinder] = useState(true)
+    const [enableLeadCollection, setEnableLeadCollection] = useState(true)
+    const [visibleLeadCollection, setVisibleLeadCollection] = useState(true)
     const [enableVoiceAssistant, setEnableVoiceAssistant] = useState(false)
     const [visibleVoiceAssistant, setVisibleVoiceAssistant] = useState(true)
     const [enableKnowledgeBase, setEnableKnowledgeBase] = useState(true)
@@ -79,87 +79,95 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         console.log("AuthProvider: Setting up auth listener")
 
+        // Local variable to track the current snapshot unsubscribe function
+        let unsubscribeSnapshot: (() => void) | null = null;
+
         // Subscribe to Firebase auth state changes
-        // NO setPersistence here - Firebase uses browserLocalPersistence by default
-        // setPersistence should ONLY be called in login page before signIn
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             console.log("AuthProvider: Auth State Changed. User:", currentUser?.uid)
 
-            try {
-                if (currentUser) {
-                    // User is signed in - fetch additional data from Firestore
-                    const userDocRef = doc(db, "users", currentUser.uid)
+            // Clean up previous snapshot listener if it exists (e.g. user switching accounts)
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+                unsubscribeSnapshot = null;
+            }
 
-                    try {
-                        const docSnap = await getDoc(userDocRef)
-                        let userRole = 'USER'
-                        let userData: any = {}
+            if (currentUser) {
+                // User is signed in - subscribe to Firestore document for real-time updates
+                const userDocRef = doc(db, "users", currentUser.uid)
 
-                        if (docSnap.exists()) {
-                            userData = docSnap.data()
-                            userRole = userData.role || 'USER'
-                        }
+                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+                    let userRole = 'USER'
+                    let userData: any = {}
 
-                        // Super admin override (Case-insensitive)
-                        if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
-                            userRole = 'SUPER_ADMIN'
-                        }
-
-                        console.log(`AuthProvider: User ID: ${currentUser.uid}, Email: ${currentUser.email}, Assigned Role: ${userRole}`)
-
-                        setUser(currentUser)
-                        setRole(userRole)
-
-                        // Set flags based on userData (with defaults)
-                        setEnableChatbot(userData.enableChatbot !== false)
-                        setVisibleChatbot(userData.visibleChatbot !== false)
-                        setEnablePersonalShopper(userData.enablePersonalShopper === true)
-                        setVisiblePersonalShopper(userData.visiblePersonalShopper !== false)
-                        setEnableCopywriter(userData.enableCopywriter !== false)
-                        setVisibleCopywriter(userData.visibleCopywriter !== false)
-                        setEnableLeadFinder(userData.enableLeadFinder !== false)
-                        setVisibleLeadFinder(userData.visibleLeadFinder !== false)
-                        setEnableVoiceAssistant(userData.enableVoiceAssistant === true)
-                        setVisibleVoiceAssistant(userData.visibleVoiceAssistant !== false)
-                        setEnableKnowledgeBase(userData.enableKnowledgeBase !== false)
-                        setVisibleKnowledgeBase(userData.visibleKnowledgeBase !== false)
-                        setEnableSalesOptimization(userData.enableSalesOptimization === true)
-                        setVisibleSalesOptimization(userData.visibleSalesOptimization !== false)
-                        setCanManageModules(userData.canManageModules === true || userRole === 'SUPER_ADMIN')
-                    } catch (docErr) {
-                        // Permission error is expected if Firestore rules don't allow user doc read
-                        // Fallback role assignment handles this gracefully
-
-                        // Fallback role assignment
-                        let fallbackRole = 'USER'
-                        if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
-                            fallbackRole = 'SUPER_ADMIN'
-                        }
-
-                        setUser(currentUser)
-                        setRole(fallbackRole)
-                        setCanManageModules(fallbackRole === 'SUPER_ADMIN')
+                    if (docSnap.exists()) {
+                        userData = docSnap.data()
+                        userRole = userData.role || 'USER'
                     }
-                } else {
-                    // No user signed in
-                    setUser(null)
-                    setRole(null)
-                }
-            } catch (err) {
-                console.error("AuthProvider: Critical error", err)
+
+                    // Super admin override (Case-insensitive)
+                    if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
+                        userRole = 'SUPER_ADMIN'
+                    }
+
+                    console.log(`AuthProvider: User Data Updated. ID: ${currentUser.uid}, Role: ${userRole}`)
+
+                    // Merge Firestore data into user object to ensure 'industry' is available
+                    // Merge Firestore data into user object to ensure 'industry' is available
+                    // This is CRITICAL for the Modules page sector logic
+                    // We must preserve the prototype to keep methods like getIdToken() working
+                    const mergedUser: any = { ...currentUser, ...userData }
+                    Object.setPrototypeOf(mergedUser, Object.getPrototypeOf(currentUser))
+
+                    // Specific fix for industry: ensure it's on the top level of the user object if needed by consumers
+                    if (userData.industry) {
+                        mergedUser.industry = userData.industry
+                    }
+
+                    setUser(mergedUser as User)
+                    setRole(userRole)
+
+                    // Set flags based on userData (with defaults)
+                    setEnableChatbot(userData.enableChatbot !== false)
+                    setVisibleChatbot(userData.visibleChatbot !== false)
+                    setEnablePersonalShopper(userData.enablePersonalShopper === true)
+                    setVisiblePersonalShopper(userData.visiblePersonalShopper !== false)
+                    setEnableCopywriter(userData.enableCopywriter !== false)
+                    setVisibleCopywriter(userData.visibleCopywriter !== false)
+                    setEnableLeadCollection(userData.enableLeadCollection !== false)
+                    setVisibleLeadCollection(userData.visibleLeadCollection !== false)
+                    setEnableVoiceAssistant(userData.enableVoiceAssistant === true)
+                    setVisibleVoiceAssistant(userData.visibleVoiceAssistant !== false)
+                    setEnableKnowledgeBase(userData.enableKnowledgeBase !== false)
+                    setVisibleKnowledgeBase(userData.visibleKnowledgeBase !== false)
+                    setEnableSalesOptimization(userData.enableSalesOptimization === true)
+                    setVisibleSalesOptimization(userData.visibleSalesOptimization !== false)
+                    setCanManageModules(userData.canManageModules === true || userRole === 'SUPER_ADMIN')
+
+                    setLoading(false)
+                }, (error) => {
+                    console.error("AuthProvider: Firestore listener error", error)
+                    // Fallback to basic auth user if Firestore fails (e.g. permission denied)
+                    setUser(currentUser)
+                    setLoading(false)
+                })
+
+            } else {
+                // No user signed in
                 setUser(null)
                 setRole(null)
-            } finally {
                 setLoading(false)
             }
         })
 
-        // Cleanup on unmount
         return () => {
             console.log("AuthProvider: Cleanup")
-            unsubscribe()
+            unsubscribeAuth() // Changed from unsubscribe() to unsubscribeAuth() for correctness
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+            }
         }
-    }, []) // Empty dependency - run once on mount
+    }, [pathname]) // Added pathname to dependency array to re-run effect if pathname changes
 
     return (
         <AuthContext.Provider value={{
@@ -172,8 +180,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             visibleChatbot,
             enableCopywriter,
             visibleCopywriter,
-            enableLeadFinder,
-            visibleLeadFinder,
+            enableLeadCollection,
+            visibleLeadCollection,
             enableVoiceAssistant,
 
             visibleVoiceAssistant,

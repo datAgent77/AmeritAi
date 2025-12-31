@@ -20,6 +20,7 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
 
     const [file, setFile] = useState<File | null>(null)
     const [isAdding, setIsAdding] = useState(false)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     const handleAdd = async () => {
         if (!file) return
@@ -69,6 +70,7 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
 
             toast({ title: "Success", description: t('knowledgeAdded') })
             setFile(null)
+            setRefreshTrigger(prev => prev + 1)
             // Reset file input value manually if needed, or just let React handle state
         } catch (error) {
             console.error("Error adding file:", error)
@@ -136,7 +138,7 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
                 </Card>
             </div>
             <div>
-                <KnowledgeList userId={userId} filterType="file" />
+                <KnowledgeList userId={userId} filterType="file" refreshTrigger={refreshTrigger} />
             </div>
         </div>
     )

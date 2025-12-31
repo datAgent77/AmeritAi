@@ -3,7 +3,7 @@ import * as cheerio from "cheerio";
 
 export async function POST(req: Request) {
     try {
-        const { url } = await req.json();
+        const { url, selector } = await req.json();
 
         if (!url) {
             return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -32,16 +32,27 @@ export async function POST(req: Request) {
         // Remove scripts, styles, and other unnecessary elements
         $('script').remove();
         $('style').remove();
-        $('nav').remove();
-        $('footer').remove();
-        $('header').remove();
         $('iframe').remove();
         $('noscript').remove();
 
-        // Extract text
-        // We focus on paragraphs, headings, and list items for better content quality
-        // But getting 'body' text is a good catch-all
-        let text = $('body').text();
+        // If selector is provided, use it. Otherwise remove nav/footer/header and use body
+        let text = "";
+
+        if (selector) {
+            try {
+                text = $(selector).text();
+            } catch (e) {
+                console.error("Selector error:", e);
+                text = $('body').text();
+            }
+        }
+
+        if (!text || text.trim().length === 0) {
+            $('nav').remove();
+            $('footer').remove();
+            $('header').remove();
+            text = $('body').text();
+        }
 
         // Clean up whitespace
         text = text.replace(/\s+/g, " ").trim();

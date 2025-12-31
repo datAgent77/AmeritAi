@@ -34,7 +34,8 @@ import {
     LayoutGrid,
     List,
     Search,
-    Filter
+    Filter,
+    Settings2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
@@ -114,7 +115,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         enableChatbot,
         enableVoiceAssistant,
         enableKnowledgeBase,
-        enableLeadFinder
+        enableLeadCollection
     } = useAuth()
     const { toast } = useToast()
     const [isLoading, setIsLoading] = useState<ModuleId | null>(null)
@@ -152,7 +153,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         productCatalog: data.enablePersonalShopper ?? false,
                         voiceAssistant: data.enableVoiceAssistant ?? false,
                         knowledgeBase: data.enableKnowledgeBase ?? true,
-                        leadCollection: data.enableLeadCollection ?? false,
+                        leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
                         appointments: data.enableAppointments ?? false,
 
                         emailMarketing: data.enableEmailMarketing ?? false,
@@ -426,22 +427,22 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         }
     }
 
-    const isModuleIncluded = (moduleId: ModuleId) => {
-        if (moduleId === 'generalChatbot') return true // Always included
+    // Check if module is included in the plan based on the TENANT'S sector
+    // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
+    // Check if module is included in the plan based on the TENANT'S sector
+    // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
+    const isModuleIncluded = (moduleId: string) => {
+        const registryModule = getAllRegistryModules().find(m => m.id === moduleId)
+        if (!registryModule) return false
 
-        // Map old module IDs to new ones
-        const moduleIdMap: Record<string, string> = {
-            'generalChatbot': 'chatbot',
-            'productCatalog': 'personalShopper',
-            'voiceAssistant': 'voiceAssistant',
-            'leadCollection': 'leadFinder',
-            'knowledgeBase': 'chatbot', // Part of chatbot
-            'appointments': 'voiceAssistant', // Part of voice
+        // If we have a specific tenant sector (passed via props/context), use it.
+        // If not, fall back to checking if it's default enabled generally (which might be risky if sector is 'other')
+        // Ideally we should always have a sector if we are in this view.
+        if (userIndustry && registryModule.defaultEnabledBySector.includes(userIndustry as any)) {
+            return true
         }
 
-        const mappedId = moduleIdMap[moduleId] || moduleId
-        const industryModules = INDUSTRY_DEFAULT_MODULES[userIndustry] || INDUSTRY_DEFAULT_MODULES.other
-        return industryModules.includes(mappedId)
+        return false
     }
 
     const isPremiumModule = (moduleId: ModuleId) => {
@@ -463,7 +464,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             let matchesIndustry = true
             if (industryFilter !== 'all') {
                 const recommended = module.recommendedFor || []
-                // If module has no recommendations, strictly speaking it might be for all? 
+                // If module has no recommendations, strictly speaking it might be for all?
                 // In registry '[]' means all sectors. In module-config it might be consistent.
                 // If recommended list is empty, it usually means Core/General.
                 if (recommended.length > 0) {
@@ -594,9 +595,17 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         const isCoreModule = module.isCore
                         const isAccessGranted = isSuperAdmin || isIncluded || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
+                        const isEnabled = moduleStates[module.id] || false;
+                        const isCore = module.isCore || (module.id === 'generalChatbot')
 
                         return (
-                            <Card key={module.id} className={`flex flex-col border transition-all hover:shadow-md ${!isAccessGranted ? 'opacity-90 bg-gray-50/50 dark:bg-zinc-900/50' : ''}`}>
+                            <Card
+                                key={module.id}
+                                className={`relative overflow-hidden transition-all duration-200 ${module.status === 'coming_soon'
+                                    ? 'opacity-70 bg-muted/30 border-dashed'
+                                    : 'hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800'
+                                    }`}
+                            >
                                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-0">
                                     <div className={`p-2 rounded-lg ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
                                         <IconComponent className="w-6 h-6" />
@@ -615,12 +624,33 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
+                                    ) : module.status === 'beta' ? (
+                                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
+                                            Beta
+                                        </Badge>
+                                    ) : module.status === 'coming_soon' ? (
+                                        <Badge variant="secondary" className="bg-zinc-100 text-zinc-700 hover:bg-zinc-100 border-none">
+                                            {t('comingSoon') || 'Yakında'}
+                                        </Badge>
                                     ) : isAccessGranted ? (
-                                        <Switch
-                                            checked={isActive}
-                                            onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                            disabled={isLoading === module.id}
-                                        />
+                                        <div className="flex items-center gap-2">
+                                            {isIncluded && !module.isCore && (
+                                                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
+                                                    {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
+                                                </Badge>
+                                            )}
+                                            {module.isPremiumAddOn && !isIncluded && (
+                                                <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
+                                                    Premium
+                                                </Badge>
+                                            )}
+                                            <Switch
+                                                checked={isActive}
+                                                onCheckedChange={(checked) => handleToggle(module.id, checked)}
+                                                disabled={isLoading === module.id || isCoreModule || module.status === 'coming_soon' || (!isAccessGranted && module.status !== 'coming_soon')}
+                                                className={isLoading === module.id ? 'opacity-50' : ''}
+                                            />
+                                        </div>
                                     ) : (
                                         <Lock className="w-5 h-5 text-muted-foreground" />
                                     )}
@@ -628,7 +658,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                 <CardContent className="pt-0 flex-1">
                                     <div className="flex justify-between items-start mb-2">
                                         <CardTitle className="text-lg font-semibold">{t(module.nameKey) || module.nameKey}</CardTitle>
-                                        {isCoreModule ? null : isIncluded ? (
+                                        {isCoreModule || module.status === 'beta' || module.status === 'coming_soon' ? null : isIncluded ? (
                                             <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-green-100 text-green-800">
                                                 {t('included') || 'Dahil'}
                                             </span>
@@ -643,14 +673,23 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                     </CardDescription>
 
                                     <div className="mt-4 flex items-center gap-2 text-sm font-medium">
-                                        <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={isActive ? 'text-green-600' : 'text-gray-500'}>
-                                            {isActive ? t('active') : t('inactive')}
-                                        </span>
+                                        {module.status === 'coming_soon' ? (
+                                            <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                                                <Lock className="h-3.5 w-3.5" />
+                                                {t('inDevelopment') || 'Geliştiriliyor'}
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                <span className={isActive ? 'text-green-600' : 'text-gray-500'}>
+                                                    {isActive ? t('active') : t('inactive')}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </CardContent>
                                 <CardFooter className="pt-0 mt-auto gap-3">
-                                    {isAccessGranted ? (
+                                    {isAccessGranted && module.status !== 'coming_soon' ? (
                                         <Button
                                             onClick={() => handleManage(module.id)}
                                             className="flex-1 h-9 text-xs font-medium bg-black text-white hover:bg-zinc-800 rounded-full shadow-sm"
@@ -658,6 +697,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         >
                                             {language === 'tr' ? 'Yönet' : 'Manage'}
                                             <ArrowRight className="w-3 h-3 ml-1.5" />
+                                        </Button>
+                                    ) : module.status === 'coming_soon' ? (
+                                        <Button
+                                            className="w-full gap-2"
+                                            variant="secondary"
+                                            disabled
+                                        >
+                                            {t('comingSoon') || "Yakında"}
                                         </Button>
                                     ) : (
                                         <Button
@@ -694,6 +741,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         const isCoreModule = module.isCore
                         const isAccessGranted = isSuperAdmin || isIncluded || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
+                        const isEnabled = moduleStates[module.id] || false;
+                        const isCore = module.isCore || (module.id === 'generalChatbot')
+                        const registryModule = getAllRegistryModules().find(m => m.id === module.id)
+                        const isPremiumAddOn = registryModule?.isPremiumAddOn || false
 
                         return (
                             <div key={module.id} className={`flex items-center p-4 border rounded-xl gap-4 bg-white dark:bg-zinc-950 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 ${!isAccessGranted ? 'opacity-90' : ''}`}>
@@ -708,12 +759,24 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none">
                                                 {t('coreModule') || 'Temel'}
                                             </Badge>
-                                        ) : isIncluded ? (
-                                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                                                {t('included') || 'Dahil'}
+                                        ) : module.status === 'beta' ? (
+                                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
+                                                Beta
                                             </Badge>
                                         ) : (
-                                            <Badge variant="outline" className="text-violet-600 border-violet-200 bg-violet-50">
+                                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-100 border-none">
+                                                {t('comingSoon') || 'Yakında'}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {isIncluded && !module.isCore && (
+                                            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
+                                                {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
+                                            </Badge>
+                                        )}
+                                        {isPremiumAddOn && !isIncluded && (
+                                            <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
                                                 Premium
                                             </Badge>
                                         )}
@@ -725,15 +788,28 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 text-sm font-medium mr-4 hidden md:flex">
-                                        <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                        <span className={isActive ? 'text-green-600' : 'text-gray-500'}>
-                                            {isActive ? t('active') : t('inactive')}
-                                        </span>
+                                        {module.status === 'coming_soon' ? (
+                                            <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                                                <Lock className="h-3.5 w-3.5" />
+                                                {t('inDevelopment') || 'Geliştiriliyor'}
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                <span className={isActive ? 'text-green-600' : 'text-gray-500'}>
+                                                    {isActive ? t('active') : t('inactive')}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
 
                                     {/* Switch or Lock */}
                                     <div className="flex items-center">
                                         {isCoreModule ? (
+                                            <div className="w-10 h-6 flex items-center justify-center">
+                                                <Lock className="w-4 h-4 text-gray-400 opacity-50" />
+                                            </div>
+                                        ) : module.status === 'coming_soon' ? (
                                             <div className="w-10 h-6 flex items-center justify-center">
                                                 <Lock className="w-4 h-4 text-gray-400 opacity-50" />
                                             </div>
@@ -750,7 +826,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                                     {/* Actions */}
                                     <div className="flex items-center gap-2 pl-4 border-l">
-                                        {isAccessGranted ? (
+                                        {isAccessGranted && module.status !== 'coming_soon' ? (
                                             <Button
                                                 onClick={() => handleManage(module.id)}
                                                 size="sm"
@@ -758,6 +834,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 disabled={!isActive}
                                             >
                                                 {language === 'tr' ? 'Yönet' : 'Manage'}
+                                            </Button>
+                                        ) : module.status === 'coming_soon' ? (
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                disabled
+                                            >
+                                                {t('comingSoon') || "Yakında"}
                                             </Button>
                                         ) : (
                                             <Button
@@ -791,14 +875,34 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
             <ModuleDetailsDialog
                 isOpen={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
+                onOpenChange={(open) => {
+                    setIsDetailsOpen(open)
+                    if (!open) handleManage(selectedModuleId as ModuleId)
+                }}
                 selectedModuleId={selectedModuleId}
                 moduleStates={moduleStates}
-                onManage={handleManage}
+                onManage={(moduleId) => {
+                    const selectedModuleDef = selectedModuleId ? MODULE_DEFINITIONS[selectedModuleId] : null
+                    const isSelectedIncluded = selectedModuleId ? isModuleIncluded(selectedModuleId) : false
+                    const isSelectedActive = selectedModuleId ? (moduleStates[selectedModuleId] || false) : false
+                    const canAccessSelected = selectedModuleId
+                        ? (role === 'SUPER_ADMIN' || isSelectedIncluded || isSelectedActive || selectedModuleDef?.isCore)
+                        : false
+
+                    setIsDetailsOpen(false)
+                    if (canAccessSelected) {
+                        handleManage(selectedModuleId!)
+                    } else {
+                        handleRequest(selectedModuleId!)
+                    }
+                }}
                 registryModules={getAllRegistryModules()}
                 firestoreMap={MODULE_FIRESTORE_MAP}
                 iconMap={ICON_MAP}
+                canAccess={selectedModuleId ? (role === 'SUPER_ADMIN' || isModuleIncluded(selectedModuleId) || moduleStates[selectedModuleId] || MODULE_DEFINITIONS[selectedModuleId]?.isCore) : false}
+                onRequest={handleRequest}
             />
         </div>
     )
 }
+

@@ -123,7 +123,7 @@ export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
             </div>
 
             <div>
-                <KnowledgeList userId={userId} filterType="text" />
+                <KnowledgeList userId={userId} filterType="text" refreshTrigger={refreshTrigger} />
             </div>
         </div>
     )

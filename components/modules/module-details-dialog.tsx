@@ -24,6 +24,8 @@ interface ModuleDetailsDialogProps {
     registryModules: ModuleDefinition[]
     firestoreMap: Record<ModuleId, string>
     iconMap: Record<string, LucideIcon>
+    canAccess: boolean
+    onRequest: (moduleId: ModuleId) => void
 }
 
 export function ModuleDetailsDialog({
@@ -34,7 +36,9 @@ export function ModuleDetailsDialog({
     onManage,
     registryModules,
     firestoreMap,
-    iconMap
+    iconMap,
+    canAccess,
+    onRequest
 }: ModuleDetailsDialogProps) {
     const { t, language } = useLanguage()
 
@@ -141,7 +145,7 @@ export function ModuleDetailsDialog({
                     )}
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0 pt-4 border-t">
+                <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-6 border-t mt-4">
                     <DialogClose asChild>
                         <Button variant="outline" className="h-10">
                             {language === 'tr' ? 'Kapat' : 'Close'}
@@ -151,12 +155,17 @@ export function ModuleDetailsDialog({
                         className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
                         onClick={() => {
                             onOpenChange(false)
-                            if (moduleStates[selectedModuleId] || moduleConfig.isCore) {
+                            if (canAccess) {
                                 onManage(selectedModuleId)
+                            } else {
+                                onRequest(selectedModuleId)
                             }
                         }}
                     >
-                        {language === 'tr' ? 'Yönet' : 'Manage'}
+                        {canAccess
+                            ? (language === 'tr' ? 'Yönet' : 'Manage')
+                            : (language === 'tr' ? 'Talep Et' : 'Request Access')
+                        }
                     </Button>
                 </DialogFooter>
             </DialogContent>

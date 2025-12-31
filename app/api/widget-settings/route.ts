@@ -210,10 +210,27 @@ export async function POST(req: Request) {
         // Remove chatbotId from body before saving
         const { chatbotId: _, ...settingsToSave } = body;
 
-        await adminDb.collection("chatbots").doc(targetChatbotId).set({
+        // If industry is being set, also update sector and sectorId to ensure AI uses correct sector
+        // AI service prioritizes sector > sectorId > industry, so we must sync all three
+        const dataToSave = {
             ...settingsToSave,
             updatedAt: new Date().toISOString(),
-        }, { merge: true });
+        };
+
+        if (settingsToSave.industry) {
+            dataToSave.sector = settingsToSave.industry;
+            dataToSave.sectorId = settingsToSave.industry;
+        }
+
+        await adminDb.collection("chatbots").doc(targetChatbotId).set(dataToSave, { merge: true });
+
+        // Sync industry to users collection for Company Settings page
+        if (settingsToSave.industry) {
+            await adminDb.collection("users").doc(targetChatbotId).update({
+                industry: settingsToSave.industry,
+                updatedAt: new Date().toISOString(),
+            });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

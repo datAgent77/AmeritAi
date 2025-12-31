@@ -22,6 +22,7 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
     const [question, setQuestion] = useState("")
     const [answer, setAnswer] = useState("")
     const [isAdding, setIsAdding] = useState(false)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     const handleAdd = async () => {
         if (!question || !answer) return
@@ -49,6 +50,7 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
             toast({ title: "Success", description: t('knowledgeAdded') })
             setQuestion("")
             setAnswer("")
+            setRefreshTrigger(prev => prev + 1)
         } catch (error) {
             console.error("Error adding Q&A:", error)
             toast({ title: "Error", description: t('failedToAdd'), variant: "destructive" })
@@ -111,7 +113,7 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
                 </Card>
             </div>
             <div>
-                <KnowledgeList userId={userId} filterType="qa" />
+                <KnowledgeList userId={userId} filterType="qa" refreshTrigger={refreshTrigger} />
             </div>
         </div>
     )

@@ -80,7 +80,8 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
     const { t, language, setLanguage } = useLanguage()
     const {
         user,
-        role
+        role,
+        enableLeadCollection
     } = useAuth()
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
@@ -108,7 +109,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
         router.push("/login")
     }
 
-    // Navigation Items
+    // Navigation Items - Ordered per user request
     const navItems = [
         {
             title: t('dashboard'),
@@ -123,18 +124,6 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
             active: isActive("/console/chatbot/widget")
         },
         {
-            title: t('leads'),
-            icon: Users,
-            href: "/console/chatbot/leads",
-            active: isActive("/console/chatbot/leads") || isActive("/console/chatbot/appointments")
-        },
-        {
-            title: t('chats'),
-            icon: MessageSquare,
-            href: "/console/chatbot/chats",
-            active: isActive("/console/chatbot/chats")
-        },
-        {
             title: t('training'),
             icon: GraduationCap,
             href: "/console/knowledge",
@@ -142,10 +131,34 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
         },
         {
             title: t('modules') || "Modules",
-            icon: Grid, // Plugin/Grid icon
+            icon: Grid,
             href: "/console/modules",
             active: isActive("/console/modules") || isActive("/console/chatbot/shopper")
         },
+        {
+            title: t('integrations'),
+            icon: Plug,
+            href: "/console/chatbot/integration",
+            active: isActive("/console/chatbot/integration")
+        },
+        {
+            title: t('reports'),
+            icon: BarChart3,
+            href: "/console/chatbot/analytics",
+            active: isActive("/console/chatbot/analytics")
+        },
+        {
+            title: t('chats'),
+            icon: MessageSquare,
+            href: "/console/chatbot/chats",
+            active: isActive("/console/chatbot/chats")
+        },
+        ...(enableLeadCollection ? [{
+            title: t('leads'),
+            icon: Users,
+            href: "/console/chatbot/leads",
+            active: isActive("/console/chatbot/leads") || isActive("/console/chatbot/appointments")
+        }] : []),
 
         // Restaurant Menu (Conditionally rendered)
         ...(sectorId === 'restaurant' ? [{
@@ -153,20 +166,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
             icon: Utensils,
             href: "/console/menu",
             active: isActive("/console/menu")
-        }] : []),
-
-        {
-            title: t('reports'), // Analytics -> Reports
-            icon: BarChart3,
-            href: "/console/chatbot/analytics",
-            active: isActive("/console/chatbot/analytics")
-        },
-        {
-            title: t('integrations'),
-            icon: Plug,
-            href: "/console/chatbot/integration",
-            active: isActive("/console/chatbot/integration")
-        }
+        }] : [])
     ]
 
     return (

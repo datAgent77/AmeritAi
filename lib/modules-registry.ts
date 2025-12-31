@@ -205,7 +205,27 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
             'ecommerce', 'booking', 'real_estate', 'saas', 'service',
             'healthcare', 'education', 'academic', 'finance', 'restaurant', 'other'
         ],
-        legacyFirestoreField: 'enableKnowledgeBase'
+        legacyFirestoreField: 'enableKnowledgeBase',
+        longDescription: {
+            en: 'Turn your AI into a subject matter expert. Upload your existing PDFs, documents, or website links, and the AI will instantly learn everything about your business to answer specific questions accurately.',
+            tr: 'Yapay zekanızı bir konu uzmanına dönüştürün. Mevcut PDF, doküman veya web sitesi linklerinizi yükleyin; AI, işletmenizle ilgili her şeyi anında öğrenerek özel soruları doğru şekilde yanıtlasın.'
+        },
+        features: [
+            {
+                title: { en: 'Document Learning', tr: 'Doküman Öğrenme' },
+                description: { en: 'Upload PDFs, Docs, and TXT files directly.', tr: 'PDF, Doc ve TXT dosyalarını doğrudan yükleyin.' },
+                icon: 'FileText'
+            },
+            {
+                title: { en: 'Website Scraping', tr: 'Web Sitesi Tarama' },
+                description: { en: 'Learn from your existing website content.', tr: 'Mevcut web sitenizdeki içerikleri öğrenir.' },
+                icon: 'Globe'
+            }
+        ],
+        benefits: [
+            { en: 'Reduce training time from weeks to minutes', tr: 'Eğitim süresini haftalardan dakikalara indirin' },
+            { en: 'Provide accurate, referenced answers', tr: 'Doğru ve referanslı yanıtlar sunun' }
+        ]
     },
 
     productCatalog: {
@@ -224,6 +244,26 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         supportedSectors: ['ecommerce', 'restaurant', 'real_estate'],
         defaultEnabledBySector: ['ecommerce'],
         legacyFirestoreField: 'enablePersonalShopper',
+        longDescription: {
+            en: 'Showcase your products directly within the chat. The AI suggests items, explains features, and guides customers to checkout, acting like a knowledgeable in-store sales associate.',
+            tr: 'Ürünlerinizi doğrudan sohbet içinde sergileyin. AI, bilgili bir mağaza satış temsilcisi gibi hareket ederek ürünler önerir, özellikleri açıklar ve müşterileri satın almaya yönlendirir.'
+        },
+        features: [
+            {
+                title: { en: 'Smart Recommendations', tr: 'Akıllı Öneriler' },
+                description: { en: 'Suggests products based on customer needs.', tr: 'Müşteri ihtiyaçlarına göre ürünler önerir.' },
+                icon: 'Sparkles'
+            },
+            {
+                title: { en: 'Interactive Card', tr: 'Etkileşimli Kartlar' },
+                description: { en: 'Displays products with images and prices.', tr: 'Ürünleri görsel ve fiyatlarıyla birlikte gösterir.' },
+                icon: 'ShoppingBag'
+            }
+        ],
+        benefits: [
+            { en: 'Increase conversion rates via guided selling', tr: 'Yönlendirmeli satış ile dönüşüm oranlarını artırın' },
+            { en: 'Shorten the path to purchase', tr: 'Satın alma yolculuğunu kısaltın' }
+        ],
         aiSystemInstruction: {
             en: `PRODUCT CATALOG & SHOPPER ACTIVE. You are a knowledgeable Sales Assistant.
 1. Recommend products based on user needs.
@@ -253,7 +293,27 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance'
         ],
-        legacyFirestoreField: 'enableLeadFinder',
+        legacyFirestoreField: 'enableLeadCollection',
+        longDescription: {
+            en: 'Never lose a potential customer. The AI intelligently identifies sales opportunities during conversations and collects contact details (Name, Email, Phone) so your team can follow up.',
+            tr: 'Potansiyel hiçbir müşteriyi kaybetmeyin. AI, sohbet sırasında satış fırsatlarını akıllıca tespit eder ve ekibinizin takip edebilmesi için iletişim bilgilerini (Ad, E-posta, Telefon) toplar.'
+        },
+        features: [
+            {
+                title: { en: 'Smart Detection', tr: 'Akıllı Tespit' },
+                description: { en: 'Identifies intent to purchase or inquiry.', tr: 'Satın alma veya bilgi alma niyetini tespit eder.' },
+                icon: 'ScanFace'
+            },
+            {
+                title: { en: 'CRM Integration', tr: 'CRM Entegrasyonu' },
+                description: { en: 'Syncs leads directly to your customer list.', tr: 'Leadleri doğrudan müşteri listenize senkronize eder.' },
+                icon: 'Database'
+            }
+        ],
+        benefits: [
+            { en: 'Automate lead qualification', tr: 'Lead kalifikasyonunu otomatikleştirin' },
+            { en: 'Grow your customer database 24/7', tr: 'Müşteri veritabanınızı 7/24 büyütün' }
+        ],
         aiSystemInstruction: {
             en: `LEAD COLLECTION ACTIVE. If a user expresses interest in services or asks for a quote:
 1. Politely ask for their Name and Contact Information (Email/Phone).
@@ -319,7 +379,27 @@ NASIL DAVRANMALISIN:
 ONAYLAMA (Sadece TÜM bilgiler toplandığında):
 - Tüm bilgiler tamamsa, şu formatta onayla: "Sayın [Ad Soyad], randevunuzu [Tarih] saat [Saat] için oluşturdum. Size [İletişim] üzerinden ulaşacağız."
 - Onay mesajında "Sayın [Ad Soyad]" kalıbını kullanman, ismin sisteme doğru kaydedilmesi için ÇOK ÖNEMLİDİR.`
-        }
+        },
+        longDescription: {
+            en: 'Allow your customers to book appointments simply by talking or chatting. The AI manages your calendar, checks availability, and registers appointments seamlessly.',
+            tr: 'Müşterilerinizin sadece konuşarak veya yazışarak randevu almasını sağlayın. Yapay zeka takviminizi yönetir, müsaitliği kontrol eder ve randevuları sorunsuz şekilde kaydeder.'
+        },
+        features: [
+            {
+                title: { en: 'Voice & Chat Booking', tr: 'Sesli ve Yazılı Randevu' },
+                description: { en: 'Customers can book via voice commands or text chat.', tr: 'Müşteriler sesli komutlarla veya yazışarak randevu alabilir.' },
+                icon: 'Mic'
+            },
+            {
+                title: { en: 'Smart Availability', tr: 'Akıllı Müsaitlik' },
+                description: { en: 'AI checks your real-time calendar availability.', tr: 'AI, gerçek zamanlı takvim müsaitliğinizi kontrol eder.' },
+                icon: 'Calendar'
+            }
+        ],
+        benefits: [
+            { en: 'Automate 100% of appointment scheduling', tr: 'Randevu planlamayı %100 otomatikleştirin' },
+            { en: 'Never miss a booking call again', tr: 'Bir daha asla randevu talebini kaçırmayın' }
+        ]
     },
 
     appointments: {
@@ -337,7 +417,27 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableAppointments'
+        legacyFirestoreField: 'enableAppointments',
+        longDescription: {
+            en: 'A comprehensive calendar system fully integrated with your AI assistant. Manage staff availability, service durations, and view all AI-booked appointments in one place.',
+            tr: 'AI asistanınızla tam entegre çalışan kapsamlı bir takvim sistemi. Personel müsaitliğini ve hizmet sürelerini yönetin, AI tarafından alınan tüm randevuları tek bir yerden görüntüleyin.'
+        },
+        features: [
+            {
+                title: { en: 'Unified Calendar', tr: 'Birleşik Takvim' },
+                description: { en: 'See manual and AI bookings in one view.', tr: 'Manuel ve AI randevularını tek bir görünümde izleyin.' },
+                icon: 'Calendar'
+            },
+            {
+                title: { en: 'Service Management', tr: 'Hizmet Yönetimi' },
+                description: { en: 'Define durations and prices for your services.', tr: 'Hizmetleriniz için süre ve fiyatları tanımlayın.' },
+                icon: 'Settings'
+            }
+        ],
+        benefits: [
+            { en: 'Eliminate double bookings', tr: 'Çifte rezervasyonları ortadan kaldırın' },
+            { en: 'Optimize staff schedule efficiency', tr: 'Personel programı verimliliğini optimize edin' }
+        ]
     },
 
 
@@ -367,7 +467,27 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
 1. Uygun olduğunda tamamlayıcı ürünler (Çapraz Satış) öner (örn. "Bu telefonun yanına bir kılıf ister misiniz?").
 2. Satın almayı teşvik etmek için benzersiz değer önerilerini vurgula.
 3. Kullanıcı bir konuyu/sepeti terk ederse, avantajları nazikçe hatırlat.`
-        }
+        },
+        longDescription: {
+            en: 'Turn your AI into a top-performing sales agent. It uses proven psychological triggers, cross-selling techniques, and cart recovery strategies to maximize the value of every customer interaction.',
+            tr: 'Yapay zekanızı en iyi performans gösteren bir satış temsilcisine dönüştürün. Müşteri etkileşimlerinin değerini maksimize etmek için kanıtlanmış psikolojik tetikleyiciler, çapraz satış teknikleri ve sepet kurtarma stratejileri kullanır.'
+        },
+        features: [
+            {
+                title: { en: 'Smart Cross-Selling', tr: 'Akıllı Çapraz Satış' },
+                description: { en: 'Suggests add-ons at the perfect moment.', tr: 'Doğru zamanda ek ürünler önerir.' },
+                icon: 'TrendingUp'
+            },
+            {
+                title: { en: 'Cart Recovery', tr: 'Sepet Kurtarma' },
+                description: { en: 'Gently nudges users to complete purchases.', tr: 'Kullanıcıları satın almayı tamamlamaları için nazikçe teşvik eder.' },
+                icon: 'ShoppingBag'
+            }
+        ],
+        benefits: [
+            { en: 'Increase Average Order Value (AOV) by 25%', tr: 'Ortalama Sipariş Tutarını (AOV) %25 artırın' },
+            { en: 'Recover lost sales automatically', tr: 'Kaybedilen satışları otomatik olarak kurtarın' }
+        ]
     },
 
     emailMarketing: {
@@ -385,7 +505,32 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isPremiumAddOn: true,
         supportedSectors: [],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableEmailMarketing'
+        legacyFirestoreField: 'enableEmailMarketing',
+        longDescription: {
+            en: 'Create, schedule, and track professional email campaigns without needing a designer. The AI helps you write compelling subject lines and content that converts.',
+            tr: 'Bir tasarımcıya ihtiyaç duymadan profesyonel e-posta kampanyaları oluşturun, planlayın ve takip edin. AI, dönüşüm sağlayan etkileyici konu satırları ve içerikler yazmanıza yardımcı olur.'
+        },
+        features: [
+            {
+                title: { en: 'AI Copywriter', tr: 'AI Metin Yazarı' },
+                description: { en: 'Generates engaging email content instantly.', tr: 'Anında ilgi çekici e-posta içerikleri üretir.' },
+                icon: 'PenTool'
+            },
+            {
+                title: { en: 'Automated Sequences', tr: 'Otomatik Seriler' },
+                description: { en: 'Send welcome emails and follow-ups automatically.', tr: 'Hoş geldin ve takip e-postalarını otomatik gönderin.' },
+                icon: 'Send'
+            },
+            {
+                title: { en: 'Analytics', tr: 'Analitik' },
+                description: { en: 'Track open rates and click-throughs.', tr: 'Açılma ve tıklama oranlarını takip edin.' },
+                icon: 'BarChart'
+            }
+        ],
+        benefits: [
+            { en: 'Save hours on content creation', tr: 'İçerik üretiminde saatlerce zaman kazanın' },
+            { en: 'Drive repeat business effectively', tr: 'Tekrar eden satışları etkili bir şekilde artırın' }
+        ]
     },
 
 
@@ -410,7 +555,27 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
 If the user expresses high satisfaction or thanks you for great service, politely invite them to leave a review: "We're glad to help! If you have a moment, we'd love your feedback on Google/Yelp."`,
             tr: `YORUM YÖNETİMİ AKTİF.
 Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür ederse, nazikçe yorum yapmaya davet et: "Yardımcı olabildiğimize sevindik! Vaktiniz varsa, Google/Yelp üzerinde değerlendirme yapmanız bizi çok mutlu eder."`
-        }
+        },
+        longDescription: {
+            en: 'Consolidate reviews from Google and Yelp in one dashboard. Let AI generate professional, empathetic responses to both positive and negative reviews instantly.',
+            tr: 'Google ve Yelp yorumlarını tek bir panelde toplayın. Yapay zekanın hem olumlu hem de olumsuz yorumlara anında profesyonel ve empatik yanıtlar üretmesine izin verin.'
+        },
+        features: [
+            {
+                title: { en: 'Unified Inbox', tr: 'Birleşik Gelen Kutusu' },
+                description: { en: 'View all reviews from all platforms in one place.', tr: 'Tüm platformlardan gelen yorumları tek yerde görün.' },
+                icon: 'Inbox'
+            },
+            {
+                title: { en: 'AI Auto-Reply', tr: 'AI Otomatik Yanıt' },
+                description: { en: 'Generate perfect responses in seconds.', tr: 'Saniyeler içinde mükemmel yanıtlar oluşturun.' },
+                icon: 'MessageSquare'
+            }
+        ],
+        benefits: [
+            { en: 'Improve your online reputation score', tr: 'Çevrimiçi itibar puanınızı artırın' },
+            { en: 'Respond to customers 10x faster', tr: 'Müşterilere 10 kat daha hızlı yanıt verin' }
+        ]
     },
 
     loyaltyProgram: {
@@ -428,7 +593,27 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         isPremiumAddOn: true,
         supportedSectors: ['restaurant', 'service'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableLoyaltyProgram'
+        legacyFirestoreField: 'enableLoyaltyProgram',
+        longDescription: {
+            en: 'Replace paper punch cards with a digital loyalty system. Customers earn stamps or points for each visit, encouraging repeat business and building long-term value.',
+            tr: 'Kağıt kartları dijital bir sadakat sistemiyle değiştirin. Müşteriler her ziyarette damga veya puan kazanır, bu da tekrar eden işleri teşvik eder ve uzun vadeli değer yaratır.'
+        },
+        features: [
+            {
+                title: { en: 'Digital Stamps', tr: 'Dijital Damgalar' },
+                description: { en: 'Simple QR code scanning to give stamps.', tr: 'Damga vermek için basit QR kod tarama.' },
+                icon: 'QrCode'
+            },
+            {
+                title: { en: 'Custom Rewards', tr: 'Özel Ödüller' },
+                description: { en: 'Define your own rewards (e.g., Free Coffee).', tr: 'Kendi ödüllerinizi tanımlayın (örn. Ücretsiz Kahve).' },
+                icon: 'Gift'
+            }
+        ],
+        benefits: [
+            { en: 'Increase customer retention by 40%', tr: 'Müşteri sadakatini %40 artırın' },
+            { en: 'Eliminate fraud associated with paper cards', tr: 'Kağıt kartlarla ilgili sahtekarlığı ortadan kaldırın' }
+        ]
     },
 
     campaignManager: {
@@ -446,7 +631,27 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         isPremiumAddOn: true,
         supportedSectors: ['restaurant', 'ecommerce', 'service'],
         defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableCampaignManager'
+        legacyFirestoreField: 'enableCampaignManager',
+        longDescription: {
+            en: 'Launch "Happy Hour" or "Rainy Day" specials in seconds. The AI dynamically adjusts your chat agent\'s behavior to promote these offers during active times.',
+            tr: '"Mutlu Saatler" veya "Yağmurlu Gün" kampanyalarını saniyeler içinde başlatın. AI, bu teklifleri aktif zamanlarda tanıtmak için sohbet asistanınızın davranışını dinamik olarak ayarlar.'
+        },
+        features: [
+            {
+                title: { en: 'One-Click Campaigns', tr: 'Tek Tık Kampanyalar' },
+                description: { en: 'Launch pre-configured promotions instantly.', tr: 'Önceden yapılandırılmış promosyonları anında başlatın.' },
+                icon: 'MousePointerClick'
+            },
+            {
+                title: { en: 'Context Aware', tr: 'Bağlam Duyarlı' },
+                description: { en: 'AI promotes deals only during valid hours.', tr: 'AI, fırsatları yalnızca geçerli saatlerde tanıtır.' },
+                icon: 'Clock'
+            }
+        ],
+        benefits: [
+            { en: 'Drive traffic during slow hours', tr: 'Sakin saatlerde trafiği artırın' },
+            { en: 'Clear excess inventory quickly', tr: 'Fazla stoku hızlıca eritin' }
+        ]
     },
 
     autoTranslate: {
@@ -509,7 +714,27 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
 If the user seems price-sensitive or asks for discounts, mention the 'Spin the Wheel' game: "Did you know you can spin the wheel to win a special discount code?"`,
             tr: `OYUNLAŞTIRMA AKTİF.
 Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkıfelek' oyununu hatırlat: "Özel bir indirim kodu kazanmak için çarkı çevirebileceğinizi biliyor muydunuz?"`
-        }
+        },
+        longDescription: {
+            en: 'Add a fun "Spin the Wheel" popup to your site. Visitors play to win discounts or free items, which drastically increases email signup rates and time spent on site.',
+            tr: 'Sitenize eğlenceli bir "Çarkıfelek" açılır penceresi ekleyin. Ziyaretçiler indirim veya hediye kazanmak için oynar; bu da e-posta toplama oranlarını ve sitede geçirilen süreyi ciddi oranda artırır.'
+        },
+        features: [
+            {
+                title: { en: 'Customizable Prizes', tr: 'Özelleştirilebilir Ödüller' },
+                description: { en: 'Set your own win probabilities and rewards.', tr: 'Kendi kazanma olasılıklarınızı ve ödüllerinizi belirleyin.' },
+                icon: 'Gift'
+            },
+            {
+                title: { en: 'Exit Intent Trigger', tr: 'Çıkış Niyeti Tetikleyicisi' },
+                description: { en: 'Shows the game when a user tries to leave.', tr: 'Kullanıcı siteden çıkmaya çalıştığında oyunu gösterir.' },
+                icon: 'MousePointerClick'
+            }
+        ],
+        benefits: [
+            { en: 'Capture 3x more leads than static forms', tr: 'Statik formlardan 3 kat daha fazla lead toplayın' },
+            { en: 'Reduce cart abandonment', tr: 'Sepet terk etme oranını azaltın' }
+        ]
     },
 
     visualDiagnosis: {
@@ -533,7 +758,27 @@ Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkı
 You have the capability to analyze images. If the user describes a visible problem (e.g., plant disease, car damage, skin issue), ask them to UPLOAD A PHOTO for analysis.`,
             tr: `GÖRSEL TANI AKTİF.
 Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür bir sorunu (örn. bitki hastalığı, araç hasarı, cilt sorunu) tarif ederse, analiz için BİR FOTOĞRAF YÜKLEMESİNİ iste.`
-        }
+        },
+        longDescription: {
+            en: 'Empower your users to diagnose issues simply by uploading a photo. Perfect for agriculture (plant diseases), insurance (damage assessment), or technical support.',
+            tr: 'Kullanıcılarınızın sadece bir fotoğraf yükleyerek sorunları teşhis etmesini sağlayın. Tarım (bitki hastalıkları), sigorta (hasar tespiti) veya teknik destek için mükemmeldir.'
+        },
+        features: [
+            {
+                title: { en: 'Instant Analysis', tr: 'Anlık Analiz' },
+                description: { en: 'Identify problems in seconds with computer vision.', tr: 'Bilgisayarlı görü ile sorunları saniyeler içinde tanımlayın.' },
+                icon: 'Camera'
+            },
+            {
+                title: { en: 'Actionable Advice', tr: 'Uygulanabilir Tavsiyeler' },
+                description: { en: 'Provide immediate treatment or repair steps.', tr: 'Anında tedavi veya onarım adımları sunun.' },
+                icon: 'CheckCircle'
+            }
+        ],
+        benefits: [
+            { en: 'Solve problems remotely without site visits', tr: 'Saha ziyareti olmadan sorunları uzaktan çözün' },
+            { en: 'Standardize assessment quality', tr: 'Değerlendirme kalitesini standartlaştırın' }
+        ]
     },
 
     digitalWaiter: {
