@@ -48,26 +48,101 @@ function normalizeIndustry(input: string | undefined): keyof typeof INDUSTRY_CON
     if (!input) return 'ecommerce';
     const lower = input.toLowerCase().trim();
 
-    // Map known variations
-    if (lower.includes('saas') || lower.includes('software')) return 'saas';
-    if (lower.includes('travel') || lower.includes('booking')) return 'booking';
-    if (lower.includes('estate')) return 'real_estate';
-    if (lower.includes('education') || lower.includes('school') || lower.includes('university') || lower.includes('academic')) {
-        if (lower.includes('university') || lower.includes('academic')) return 'academic';
-        return 'education';
-    }
-    if (lower.includes('finance')) return 'finance';
-    if (lower.includes('health') || lower.includes('doctor')) return 'healthcare';
-    if (lower.includes('service') || lower.includes('agency')) return 'service';
-    if (lower.includes('restaurant') || lower.includes('cafe') || lower.includes('food')) return 'restaurant';
-    if (lower.includes('agriculture') || lower.includes('farm')) return 'agriculture';
-
-    // Direct match check (if key matches exactly e.g. 'ecommerce')
+    // Direct match check first (e.g., 'ecommerce', 'maritime')
     if (INDUSTRY_CONFIG[lower as keyof typeof INDUSTRY_CONFIG]) {
         return lower as keyof typeof INDUSTRY_CONFIG;
     }
 
-    return 'ecommerce';
+    // Map known variations - ORDER MATTERS (more specific first)
+
+    // Maritime / Denizcilik (CHECK BEFORE others to avoid false matches)
+    if (lower.includes('maritime') || lower.includes('marine') || lower.includes('denizcilik') || lower.includes('naval') || lower.includes('shipping')) {
+        return 'maritime';
+    }
+
+    // Automotive / Otomotiv
+    if (lower.includes('automotive') || lower.includes('auto') || lower.includes('otomotiv') || lower.includes('car') || lower.includes('vehicle')) {
+        return 'automotive';
+    }
+
+    // Insurance / Sigorta
+    if (lower.includes('insurance') || lower.includes('sigorta')) {
+        return 'insurance';
+    }
+
+    // Logistics / Lojistik
+    if (lower.includes('logistics') || lower.includes('lojistik') || lower.includes('cargo') || lower.includes('freight')) {
+        return 'logistics';
+    }
+
+    // Beauty & Wellness / Güzellik
+    if (lower.includes('beauty') || lower.includes('wellness') || lower.includes('spa') || lower.includes('salon') || lower.includes('guzellik')) {
+        return 'beauty';
+    }
+
+    // Legal / Hukuk
+    if (lower.includes('legal') || lower.includes('law') || lower.includes('hukuk') || lower.includes('attorney') || lower.includes('lawyer')) {
+        return 'legal';
+    }
+
+    // Fitness / Spor
+    if (lower.includes('fitness') || lower.includes('gym') || lower.includes('sport') || lower.includes('spor')) {
+        return 'fitness';
+    }
+
+    // SaaS / Software
+    if (lower.includes('saas') || lower.includes('software') || lower.includes('tech')) {
+        return 'saas';
+    }
+
+    // Travel / Booking (AFTER maritime and logistics to avoid conflicts)
+    if (lower.includes('travel') || lower.includes('booking') || lower.includes('hotel') || lower.includes('flight')) {
+        return 'booking';
+    }
+
+    // Real Estate / Emlak
+    if (lower.includes('estate') || lower.includes('property') || lower.includes('emlak')) {
+        return 'real_estate';
+    }
+
+    // Education / Academic
+    if (lower.includes('education') || lower.includes('school') || lower.includes('university') || lower.includes('academic')) {
+        if (lower.includes('university') || lower.includes('academic')) return 'academic';
+        return 'education';
+    }
+
+    // Finance / Banking
+    if (lower.includes('finance') || lower.includes('bank') || lower.includes('fintech')) {
+        return 'finance';
+    }
+
+    // Healthcare / Sağlık
+    if (lower.includes('health') || lower.includes('doctor') || lower.includes('medical') || lower.includes('saglik')) {
+        return 'healthcare';
+    }
+
+    // Service / Agency
+    if (lower.includes('service') || lower.includes('agency') || lower.includes('hizmet')) {
+        return 'service';
+    }
+
+    // Restaurant / Cafe
+    if (lower.includes('restaurant') || lower.includes('cafe') || lower.includes('food') || lower.includes('restoran')) {
+        return 'restaurant';
+    }
+
+    // Agriculture / Tarım
+    if (lower.includes('agriculture') || lower.includes('farm') || lower.includes('tarim')) {
+        return 'agriculture';
+    }
+
+    // E-commerce (check last as fallback for many terms)
+    if (lower.includes('ecommerce') || lower.includes('commerce') || lower.includes('shop') || lower.includes('store')) {
+        return 'ecommerce';
+    }
+
+    // Ultimate fallback
+    return 'other';
 }
 
 export async function generateAIResponse(
