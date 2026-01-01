@@ -556,252 +556,679 @@ Birden fazla dili destekleyen Türk işletmelerin çoğu şunları önceliklendi
         readTime: "4 dk",
         image: "/blog/multilingual-global.jpg",
         author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "gayrimenkul-yapay-zeka-danismanligi",
+        title: {
+            en: "AI in Real Estate: The Automated Property Consultant",
+            tr: "Gayrimenkulde Yapay Zeka: Otomatik Emlak Danışmanı"
+        },
+        excerpt: {
+            en: "How real estate agencies are using chatbots to qualify leads 24/7 and schedule viewings automatically.",
+            tr: "Emlak acentelerinin 7/24 lead kalifikasyonu ve otomatik randevu planlaması için chatbotları nasıl kullandığı."
+        },
+        content: {
+            en: `The real estate market never sleeps, but agents do. This gap is where AI chatbots shine, serving as tireless virtual assistants that capture and qualify leads around the clock.
+
+**The Problem: Missed Opportunities**
+
+Most property inquiries happen outside of business hours. If a potential buyer asks about a listing at 10 PM and doesn't get a reply until 9 AM the next day, they've likely moved on to another listing.
+
+**The Solution: AI Qualification**
+
+Vion AI can handle the initial vetting process:
+- "What is your budget range?"
+- "Are you looking to buy or rent?"
+- "How many bedrooms do you need?"
+- "When are you looking to move?"
+
+**Automated Scheduling**
+
+Once a lead is qualified, the bot can access your agent's calendar and book a viewing directly. This eliminates the back-and-forth emails and ensures serious buyers get priority service.
+
+**Results**
+
+Agencies using AI assistants report a 300% increase in qualified leads and a significant reduction in time spent on dead-end inquiries.`,
+            tr: `Gayrimenkul piyasası asla uyumaz, ama danışmanlar uyur. Bu boşluk, 7/24 yorulmak bilmeyen sanal asistanlar olarak hizmet veren, lead'leri yakalayan ve kalifiye eden yapay zeka chatbotlarının parladığı yerdir.
+
+**Sorun: Kaçırılan Fırsatlar**
+
+Çoğu emlak sorgusu mesai saatleri dışında gerçekleşir. Potansiyel bir alıcı saat 22:00'de bir ilan hakkında soru sorar ve ertesi gün 09:00'a kadar yanıt alamazsa, muhtemelen başka bir ilana yönelmiştir.
+
+**Çözüm: Yapay Zeka ile Eleme**
+
+Vion AI, ilk eleme sürecini yönetebilir:
+- "Bütçe aralığınız nedir?"
+- "Satın almak mı yoksa kiralamak mı istiyorsunuz?"
+- "Kaç yatak odasına ihtiyacınız var?"
+- "Ne zaman taşınmayı düşünüyorsunuz?"
+
+**Otomatik Planlama**
+
+Bir lead kalifiye olduğunda, bot danışmanınızın takvimine erişebilir ve doğrudan bir gösterim randevusu oluşturabilir. Bu, git-gel e-postaları ortadan kaldırır ve ciddi alıcıların öncelikli hizmet almasını sağlar.
+
+**Sonuçlar**
+
+Yapay zeka asistanları kullanan acenteler, kalifiye lead'lerde %300 artış ve sonuçsuz sorgulara harcanan zamanda önemli bir düşüş bildirmektedir.`
+        },
+        category: "Emlak",
+        date: "2024-11-20",
+        readTime: "5 dk",
+        image: "/blog/lead-generation.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "saglik-sektorunde-randevu-otomasyonu",
+        title: {
+            en: "Healthcare & AI: Streamlining Patient Appointments",
+            tr: "Sağlık ve Yapay Zeka: Hasta Randevularını Kolaylaştırma"
+        },
+        excerpt: {
+            en: "Reducing no-shows and administrative burden with intelligent appointment reminders and scheduling bots.",
+            tr: "Akıllı randevu hatırlatıcıları ve planlama botları ile gelmeyen hasta oranını ve idari yükü azaltma."
+        },
+        content: {
+            en: `Administrative tasks consume up to 40% of healthcare staff's time. AI chatbots are reclaiming this time for patient care by automating the scheduling process.
+
+**Efficiency First**
+
+Instead of calling a clinic and waiting on hold, patients can specificy their symptoms or preferred department to an AI assistant via WhatsApp or Web Chat. The assistant checks real-time availability and books the slot.
+
+**Reducing No-Shows**
+
+Missed appointments cost the healthcare industry billions. AI assistants send smart reminders via the patient's preferred channel (SMS, WhatsApp) and allow for easy rescheduling if plans change.
+
+**Triage Support**
+
+While not a doctor, the AI can ask preliminary screening questions ("Do you have a fever?", "Have you traveled recently?") to ensure the patient sees the right specialist or takes necessary precautions before arriving.
+
+**Privacy Compliance**
+
+With on-premise or compliant cloud deployment, Vion AI ensures that sensitive patient data remains secure and meets HIPAA/KVKK standards.`,
+            tr: `İdari görevler, sağlık personelinin zamanının %40'ını tüketir. Yapay zeka chatbotları, planlama sürecini otomatikleştirerek bu zamanı hasta bakımı için geri kazanıyor.
+
+**Önce Verimlilik**
+
+Bir kliniği arayıp hatta beklemek yerine, hastalar semptomlarını veya tercih ettikleri bölümü WhatsApp veya Web Sohbet üzerinden bir yapay zeka asistanına belirtebilirler. Asistan gerçek zamanlı uygunluğu kontrol eder ve randevuyu oluşturur.
+
+**Gelmeyenleri Azaltma**
+
+Kaçırılan randevular sağlık sektörüne milyarlara mal olur. Yapay zeka asistanları, hastanın tercih ettiği kanal (SMS, WhatsApp) üzerinden akıllı hatırlatmalar gönderir ve planlar değişirse kolayca yeniden planlamaya olanak tanır.
+
+**Triyaj Desteği**
+
+Bir doktor olmasa da, yapay zeka hastanın doğru uzmana görünmesini veya gelmeden önce gerekli önlemleri almasını sağlamak için ön eleme soruları ("Ateşiniz var mı?", "Son zamanlarda seyahat ettiniz mi?") sorabilir.
+
+**Gizlilik Uyumluluğu**
+
+Yerinde veya uyumlu bulut dağıtımı ile Vion AI, hassas hasta verilerinin güvende kalmasını ve HIPAA/KVKK standartlarını karşılamasını sağlar.`
+        },
+        category: "Sağlık",
+        date: "2024-11-15",
+        readTime: "6 dk",
+        image: "/blog/security-privacy.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "gelecegin-ajanlari-otonom-yapay-zeka",
+        title: {
+            en: "2026 and Beyond: The Future of Autonomous AI Agents",
+            tr: "2026 ve Ötesi: Otonom Yapay Zeka Ajanlarının Geleceği"
+        },
+        excerpt: {
+            en: "Moving from simple chatbots to fully autonomous agents that can execute complex tasks across multiple systems.",
+            tr: "Basit chatbotlardan, çoklu sistemlerde karmaşık görevleri yürütebilen tamamen otonom ajanlara geçiş."
+        },
+        content: {
+            en: `We are entering the era of "Agentic AI". While traditional chatbots are reactive (responding to user inputs), autonomous agents are proactive and capable of executing multi-step workflows.
+
+**What is an Agent?**
+
+An AI Agent doesn't just talk; it does.
+- It doesn't just say "Here is the refund policy"; it processes the refund in Stripe.
+- It doesn't just say "I can book a meeting"; it coordinates calendars and sends invites.
+- It doesn't just say "We have stock"; it reserves the item in the ERP system.
+
+**The Vion AI Vision**
+
+At Vion AI, we are building towards a future where your business runs on autopilot. Imagine an agent that monitors your inventory, identifies low stock, generates a purchase order, creates a blog post about the new arrival, and emails your VIP customers—all without human intervention.
+
+**Preparing for the Future**
+
+Businesses that adopt API-first tools and structured data today will be the ones that can fully leverage the autonomous agents of tomorrow.`,
+            tr: ` "Ajan Yapay Zeka" çağına giriyoruz. Geleneksel chatbotlar reaktifken (kullanıcı girdilerine yanıt verirken), otonom ajanlar proaktiftir ve çok adımlı iş akışlarını yürütebilir.
+
+**Ajan Nedir?**
+
+Bir Yapay Zeka Ajanı sadece konuşmaz; yapar.
+- Sadece "İade politikası budur" demez; Stripe'ta iadeyi işler.
+- Sadece "Toplantı ayarlayabilirim" demez; takvimleri koordine eder ve davetiyeleri gönderir.
+- Sadece "Stokumuz var" demez; ERP sisteminde ürünü ayırtır.
+
+**Vion AI Vizyonu**
+
+Vion AI'da, işinizin otopilotta çalıştığı bir geleceğe doğru inşa ediyoruz. Envanterinizi izleyen, düşük stoğu belirleyen, bir satın alma siparişi oluşturan, yeni gelen ürün hakkında bir blog yazısı yazan ve VIP müşterilerinize e-posta gönderen bir ajan hayal edin—hepsi insan müdahalesi olmadan.
+
+**Geleceğe Hazırlık**
+
+Bugün API öncelıklı araçları ve yapılandırılmış verileri benimseyen işletmeler, yarının otonom ajanlarından tam olarak yararlanabilecek olanlardır.`
+        },
+        category: "Teknoloji",
+        date: "2024-11-01",
+        readTime: "4 dk",
+        image: "/blog/multilingual-global.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "neden-7-24-musteri-destegi-sart",
+        title: {
+            en: "Why 24/7 Customer Support is No Longer Optional",
+            tr: "Neden 7/24 Müşteri Desteği Artık Bir Seçenek Değil?"
+        },
+        excerpt: {
+            en: "In an always-on digital world, closing your customer service at 5 PM means closing your doors to revenue.",
+            tr: "Her zaman açık dijital dünyada, müşteri hizmetlerinizi 17:00'de kapatmak, kapılarınızı gelire kapatmak demektir."
+        },
+        content: {
+            en: `The modern consumer expects immediacy. The era of "9-to-5" business hours ended with the rise of the smartphone.
+
+**The Cost of "We are Closed"**
+
+If a potential customer visits your pricing page at 8 PM and has a simple question, they won't send an email and wait 12 hours. They will go to your competitor who has a live chat agent (human or AI) ready to answer.
+
+**AI as the Night Shift**
+
+Hiring three shifts of human support agents is prohibitively expensive for most businesses. AI provides the perfect solution: it covers the "unsocial hours" at a fraction of the cost.
+
+**Hybrid Model**
+
+The best practice isn't to replace humans, but to augment them.
+- **Daytime:** Humans handle complex issues; AI handles routine queries.
+- **Nighttime:** AI handles everything, escalating only critical emergencies to an on-call human.
+
+This ensures you never miss a lead, no matter the time zone or hour.`,
+            tr: `Modern tüketici anındalık bekler. "9-5" mesai saatleri çağı, akıllı telefonun yükselişiyle sona erdi.
+
+**"Kapalıyız" Demenin Bedeli**
+
+Potansiyel bir müşteri fiyatlandırma sayfanızı akşam 20:00'de ziyaret ederse ve basit bir sorusu varsa, e-posta gönderip 12 saat beklemez. Yanıtlamaya hazır bir canlı sohbet temsilcisi (insan veya yapay zeka) olan rakibinize gider.
+
+**Gece Vardiyası Olarak Yapay Zeka**
+
+Üç vardiya insan destek temsilcisi işe almak çoğu işletme için aşırı pahalıdır. Yapay zeka mükemmel çözümü sunar: "mesai dışı saatleri" maliyetin çok küçük bir kısmıyla kapsar.
+
+**Hibrit Model**
+
+En iyi uygulama insanları değiştirmek değil, onları güçlendirmektir.
+- **Gündüz:** İnsanlar karmaşık sorunları çözer; Yapay zeka rutin sorguları halleder.
+- **Gece:** Yapay zeka her şeyi halleder, sadece kritik acil durumları nöbetçi bir insana iletir.
+
+Bu, saat dilimi veya saat ne olursa olsun hiçbir lead'i kaçırmamanızı sağlar.`
+        },
+        category: "Müşteri Hizmetleri",
+        date: "2024-10-25",
+        readTime: "3 dk",
+        image: "/blog/customer-service-ai.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "egitimde-yapay-zeka-kisisellestirilmis-ogrenme",
+        title: {
+            en: "The AI Tutor: Revolutionizing Personalized Education",
+            tr: "Yapay Zeka Eğitmeni: Kişiselleştirilmiş Eğitimde Devrim"
+        },
+        excerpt: {
+            en: "From university campuses to private tutoring, how AI agents are providing 24/7 academic support and personalized learning paths for students.",
+            tr: "Üniversite kampüslerinden özel derslere, yapay zeka ajanlarının öğrencilere nasıl 7/24 akademik destek ve kişiselleştirilmiş öğrenme yolları sunduğu."
+        },
+        content: {
+            en: `The traditional "one-size-fits-all" model of education is rapidly evolving. With student-to-teacher ratios constantly increasing, it has become nearly impossible for educators to provide individual attention to every student. Enter the AI Tutor—a tireless, personalized educational assistant that is reshaping how we learn.
+
+**The Challenge: Academic Scalability**
+
+Universities and online course providers face a common dilemma: How to support thousands of students simultaneously?
+- Professors cannot answer emails at 2 AM before an exam.
+- Teaching assistants are overwhelmed with repetitive questions about deadlines and syllabi.
+- Students with different learning speeds often feel left behind or bored.
+
+**The Solution: Always-On Academic Support**
+
+Vion AI's education modules act as a first line of support. Unlike basic chatbots, they are trained on specific course materials, textbooks, and lecture notes.
+
+1.  **Instant Q&A**: A student studying late at night can ask, "Explain quantum entanglement like I'm 5," and get an instant, accurate analogy.
+2.  **Administrative Relief**: "When is the final paper due?" or "How do I register for Biology 101?" are handled automatically, freeing up distinct staff for complex advising.
+3.  **Personalized Quizzes**: The AI can generate practice questions based on the student's weak areas, adapting the difficulty in real-time.
+
+**Case Study: Online Code Academy**
+
+A major coding bootcamp implemented Vion AI to support its 5,000 active students.
+- **Before:** Average wait time for code review feedback was 6 hours.
+- **After:** Identify syntax errors and logic flaws instantly.
+- **Result:** Course completion rates increased by 18%, and instructor burnout dropped significantly.
+
+**The Human Element**
+
+It's crucial to note that AI replaces the *task*, not the *teacher*. By handling the rote memorization and basic troubleshooting, AI allows human educators to focus on mentorship, complex critical thinking, and emotional support.`,
+            tr: `Geleneksel "herkese tek beden" eğitim modeli hızla değişiyor. Öğrenci-öğretmen oranlarının sürekli artmasıyla, eğitimcilerin her öğrenciye bireysel ilgi göstermesi neredeyse imkansız hale geldi. İşte karşınızda Yapay Zeka Eğitmeni—öğrenme şeklimizi yeniden şekillendiren, yorulmak bilmeyen, kişiselleştirilmiş bir eğitim asistanı.
+
+**Zorluk: Akademik Ölçeklenebilirlik**
+
+Üniversiteler ve çevrimiçi kurs sağlayıcıları ortak bir ikilemle karşı karşıya: Binlerce öğrenciyi aynı anda nasıl destekleyebiliriz?
+- Profesörler sınavdan önceki gece saat 02:00'de e-postalara cevap veremez.
+- Asistanlar, son teslim tarihleri ve müfredatla ilgili tekrarlayan sorulardan bunalmış durumdadır.
+- Farklı öğrenme hızlarına sahip öğrenciler genellikle geride kalmış veya sıkılmış hissederler.
+
+**Çözüm: Her Zaman Açık Akademik Destek**
+
+Vion AI'ın eğitim modülleri, ilk destek hattı olarak görev yapar. Temel chatbotların aksine, belirli ders materyalleri, ders kitapları ve ders notları üzerinde eğitilmişlerdir.
+
+1.  **Anında Soru-Cevap**: Gece geç saatte çalışan bir öğrenci, "Kuantum dolanıklığını 5 yaşındaymışım gibi açıkla" diyebilir ve anında, doğru bir benzetme alabilir.
+2.  **İdari Rahatlama**: "Final ödevi ne zaman?" veya "Biyoloji 101'e nasıl kayıt olurum?" gibi sorular otomatik olarak yanıtlanır, bu da personeli karmaşık danışmanlık hizmetleri için serbest bırakır.
+3.  **Kişiselleştirilmiş Quizler**: Yapay zeka, öğrencinin zayıf olduğu alanlara göre pratik soruları oluşturabilir ve zorluğu gerçek zamanlı olarak uyarlayabilir.
+
+**Vaka Çalışması: Online Kodlama Akademisi**
+
+Büyük bir kodlama bootcamp'i, 5.000 aktif öğrencisini desteklemek için Vion AI'ı entegre etti.
+- **Önce:** Kod inceleme geri bildirimi için ortalama bekleme süresi 6 saatti.
+- **Sonra:** Sözdizimi hataları ve mantık kusurları anında belirlendi.
+- **Sonuç:** Kurs tamamlama oranları %18 arttı ve eğitmen tükenmişliği önemli ölçüde azaldı.
+
+**İnsan Faktörü**
+
+Yapay zekanın *öğretmeni* değil, *görevi* değiştirdiğini belirtmek çok önemlidir. Yapay zeka, ezber ve temel sorun giderme işlerini hallederek, insan eğitimcilerin mentorluk, karmaşık eleştirel düşünme ve duygusal desteğe odaklanmasını sağlar.`
+        },
+        category: "Eğitim",
+        date: "2024-10-15",
+        readTime: "8 dk",
+        image: "/blog/chatbot-integration.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "turizmde-dijital-concierge-deneyimi",
+        title: {
+            en: "The Digital Concierge: Elevating Guest Experiences in Tourism",
+            tr: "Dijital Konsiyerj: Turizmde Misafir Deneyimini Yükseltmek"
+        },
+        excerpt: {
+            en: "Hotels and travel agencies are using AI to provide instant recommendations, booking modifications, and local guides, creating a 5-star experience for every guest.",
+            tr: "Oteller ve seyahat acenteleri, her misafire 5 yıldızlı bir deneyim yaratmak için anında öneriler, rezervasyon değişiklikleri ve yerel rehberlik sağlamak için yapay zekayı kullanıyor."
+        },
+        content: {
+            en: `In the hospitality industry, service is everything. A guest's satisfaction often hinges on how quickly their needs are met. Traditionally, this meant staffing a front desk 24/7 or having a dedicated concierge. Today, AI is democratizing luxury service.
+
+**The Guest Journey with AI**
+
+Imagine a guest, Sarah, booking a trip to Istanbul.
+
+1.  **Pre-Arrival:** Sarah chats with the hotel's AI bot on WhatsApp. "Is there a vegan restaurant nearby?" The bot, trained on local geography, instantly suggests three highly-rated options and offers to reserve a table.
+2.  **Check-In:** Instead of waiting in line, Sarah sends her ID details securely via the secure chat link provided by the bot. Her key is ready when she arrives.
+3.  **During Stay:** At 11 PM, she needs extra towels. A quick message to the AI ("Need 2 towels in Room 304") creates a ticket for housekeeping instantly. No phone calls needed.
+4.  **Post-Stay:** The bot follows up for feedback and offers a discount code for her next stay, increasing loyalty.
+
+**For Travel Agencies**
+
+Agencies deal with complex itineraries. When a flight is cancelled, panic ensues.
+- **Standard Agency:** "Please hold, you are 50th in line."
+- **AI-Powered Agency:** The bot proactively alerts the traveler, "Your flight TK1923 is cancelled. I found two alternative flights leaving in 3 hours. Reply '1' to book Option A."
+
+**ROI: More Than Just Savings**
+
+While cost reduction is clear (fewer night-shift staff), the real value is in **upselling**.
+- "I see you're booking for two. Would you like to add a romantic Bosporus dinner package for 1500 TL?"
+- "It's raining tomorrow. How about booking a spa massage?"
+
+AI makes these offers contextually, at the right time, increasing revenue per guest (RevPAR) without feeling intrusive.`,
+            tr: `Konaklama sektöründe hizmet her şeydir. Bir misafirin memnuniyeti genellikle ihtiyaçlarının ne kadar hızlı karşılandığına bağlıdır. Geleneksel olarak bu, 7/24 resepsiyon personeli bulundurmak veya özel bir konsiyerj hizmeti anlamına geliyordu. Bugün, yapay zeka lüks hizmeti demokratikleştiriyor.
+
+**Yapay Zeka ile Misafir Yolculuğu**
+
+İstanbul'a seyahat eden bir misafir olan Sarah'yı düşünün.
+
+1.  **Varış Öncesi:** Sarah, otelin WhatsApp botuyla sohbet eder. "Yakında vegan restoran var mı?" Yerel coğrafya konusunda eğitilmiş bot, anında üç yüksek puanlı seçenek önerir ve masa ayırtmayı teklif eder.
+2.  **Check-In:** Sırada beklemek yerine, Sarah kimlik bilgilerini botun sağladığı güvenli sohbet bağlantısı üzerinden güvenli bir şekilde gönderir. Vardığında anahtarı hazırdır.
+3.  **Konaklama Sırasında:** Gece 23:00'te ekstra havluya ihtiyacı olur. Yapay zekaya atılan hızlı bir mesaj ("Oda 304'e 2 havlu lazım"), kat hizmetleri için anında bir iş emri oluşturur. Telefon görüşmesine gerek yoktur.
+4.  **Konaklama Sonrası:** Bot, geri bildirim için takip eder ve bir sonraki konaklaması için indirim kodu sunarak sadakati artırır.
+
+**Seyahat Acenteleri İçin**
+
+Acenteler karmaşık seyahat planlarıyla uğraşır. Bir uçuş iptal edildiğinde panik başlar.
+- **Standart Acente:** "Lütfen hatta kalın, sıradasınız."
+- **Yapay Zeka Destekli Acente:** Bot, yolcuyu proaktif olarak uyarır: "TK1923 uçuşunuz iptal edildi. 3 saat içinde kalkan iki alternatif uçuş buldum. Seçenek A için '1' yazıp yanıtlayın."
+
+**Yatırım Getirisi: Tasarruftan Fazlası**
+
+Maliyet düşüşü açık olsa da (daha az gece vardiyası personeli), gerçek değer **ek satışlardadır (upselling)**.
+- "İki kişilik rezervasyon yaptığınızı görüyorum. 1500 TL'ye romantik bir Boğaz akşam yemeği paketi eklemek ister misiniz?"
+- "Yarın yağmur yağıyor. Spa masajı ayırtmaya ne dersiniz?"
+
+Yapay zeka bu teklifleri bağlamsal olarak, doğru zamanda yapar ve rahatsız edici hissettirmeden misafir başına geliri (RevPAR) artırır.`
+        },
+        category: "Turizm",
+        date: "2024-10-01",
+        readTime: "7 dk",
+        image: "/blog/multilingual-global.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "ik-da-yapay-zeka-ise-alim-otomasyonu",
+        title: {
+            en: "HR Automation: Screening, Onboarding, and Employee Support",
+            tr: "İK Otomasyonu: Tarama, İşe Alım ve Çalışan Desteği"
+        },
+        excerpt: {
+            en: "Human Resources departments are drowning in paperwork. Learn how AI agents handle initial candidate screening and answer employee policy questions instantly.",
+            tr: "İnsan Kaynakları departmanları evrak işlerinde boğuluyor. Yapay zeka ajanlarının ilk aday taramasını nasıl yaptığını ve çalışan politika sorularını anında nasıl yanıtladığını öğrenin."
+        },
+        content: {
+            en: `The role of Human Resources is to manage people, but ironically, HR professionals spend most of their time managing paper and processes. From sifting through thousands of CVs to answering the same "How many vacation days do I have?" question for the 500th time, efficiency is often low.
+
+**Recruitment Revolution**
+
+A typical job posting receives 250+ resumes. Manually reviewing them is time-consuming and prone to bias.
+Vion AI acts as a 24/7 Recruiter Assistant:
+- **Screening:** "Do you have 3+ years of React experience?" - The bot asks knockout questions to filter candidates.
+- **Scheduling:** It coordinates with the hiring manager's calendar to book interviews with qualified candidates.
+- **Q&A:** "What are the benefits?" "Is this remote?" - The bot answers candidate FAQs instantly, keeping them engaged.
+
+**Onboarding on Autopilot**
+
+The first day at a new job is overwhelming. Instead of dumping a 100-page handbook on a new hire, imagine an AI assistant they can query.
+- "How do I set up my email signature?"
+- "Where do I request a parking pass?"
+- "What is the expense policy for lunches?"
+
+The AI provides instant, accurate answers with links to the relevant forms, reducing the load on the HR team and making the new employee feel supported.
+
+**Internal Knowledge Base**
+
+For existing employees, the AI acts as a central brain. Instead of navigating a complex Intranet, they simple chat.
+- **Payroll:** "Why is my tax deduction higher this month?" (AI explains the tax bracket change).
+- **Benefits:** "Does our insurance cover dental?"
+- **Compliance:** "I need to report a safety incident."
+
+**Privacy & Security**
+
+HR data is sensitive. Vion AI's enterprise-grade security ensures that personal employee data—such as salaries and performance reviews—is accessible only to authorized personnel, maintaining strict confidentiality while enabling accessibility.`,
+            tr: `İnsan Kaynaklarının rolü insanları yönetmektir, ancak ironik bir şekilde, İK profesyonelleri zamanlarının çoğunu kağıt ve süreç yönetimiyle harcarlar. Binlerce CV'yi incelemekten, aynı "Kaç gün iznim var?" sorusunu 500. kez yanıtlamaya kadar, verimlilik genellikle düşüktür.
+
+**İşe Alım Devrimi**
+
+Tipik bir iş ilanı 250'den fazla özgeçmiş alır. Bunları manuel olarak incelemek zaman alıcıdır ve önyargıya açıktır.
+Vion AI, 7/24 İşe Alım Asistanı olarak hareket eder:
+- **Tarama:** "3+ yıl React deneyiminiz var mı?" - Bot, adayları filtrelemek için eleyici sorular sorar.
+- **Planlama:** Kalifiye adaylarla mülakat ayarlamak için işe alım yöneticisinin takvimiyle koordinasyon sağlar.
+- **Soru-Cevap:** "Yan haklar neler?", "Uzaktan çalışma var mı?" - Bot, adayların sorularını anında yanıtlayarak ilgilerini canlı tutar.
+
+**Otopilotta İşe Alım (Onboarding)**
+
+Yeni bir işteki ilk gün bunaltıcıdır. Yeni bir çalışanın önüne 100 sayfalık bir el kitabı atmak yerine, sorgulayabilecekleri bir yapay zeka asistanı hayal edin.
+- "E-posta imzamı nasıl ayarlarım?"
+- "Otopark kartını nereden talep edebilirim?"
+- "Öğle yemekleri için harcama politikası nedir?"
+
+Yapay zeka, ilgili formlara bağlantılarla birlikte anında ve doğru yanıtlar vererek İK ekibinin yükünü azaltır ve yeni çalışanın desteklendiğini hissetmesini sağlar.
+
+**Dahili Bilgi Tabanı**
+
+Mevcut çalışanlar için yapay zeka merkezi bir beyin görevi görür. Karmaşık bir İntranet'te gezinmek yerine, sadece sohbet ederler.
+- **Bordro:** "Vergi kesintim bu ay neden daha yüksek?" (Yapay zeka vergi dilimi değişikliğini açıklar).
+- **Yan Haklar:** "Sigortamız diş tedavisini kapsıyor mu?"
+- **Uyumluluk:** "Bir güvenlik olayı bildirmem gerekiyor."
+
+**Gizlilik ve Güvenlik**
+
+İK verileri hassastır. Vion AI'ın kurumsal düzeydeki güvenliği, maaşlar ve performans değerlendirmeleri gibi kişisel çalışan verilerinin yalnızca yetkili personel tarafından erişilebilir olmasını sağlar, erişilebilirliği mümkün kılarken katı gizliliği korur.`
+        },
+        category: "İnsan Kaynakları",
+        date: "2024-09-20",
+        readTime: "6 dk",
+        image: "/blog/lead-generation.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "hukuk-ve-finans-belge-analizi",
+        title: {
+            en: "AI in Law & Finance: Automating Document Intelligence",
+            tr: "Hukuk ve Finansta Yapay Zeka: Otomatik Belge Zekası"
+        },
+        excerpt: {
+            en: "How law firms and financial consultancies are using AI to analyze contracts, automate client intake, and summarize complex regulations instantly.",
+            tr: "Hukuk bürolarının ve finansal danışmanlıkların sözleşmeleri analiz etmek, müşteri kabulünü otomatikleştirmek ve karmaşık düzenlemeleri özetlemek için yapay zekayı nasıl kullandığı."
+        },
+        content: {
+            en: `In the legal and financial sectors, time literally equates to money. Professionals bill by the hour, yet they spend countless non-billable hours on administrative groundwork. AI is changing this equation by handling the heavy reading and initial processing.
+
+**Automated Client Intake**
+
+Before a lawyer even speaks to a potential client, an AI agent on the firm's website can perform a conflict check and basic intake.
+- "What type of case is this? (Family, Corporate, Criminal)"
+- "When did the incident occur?"
+- "Are there any existing court orders?"
+
+The AI compiles a concise summary for the attorney to review before the first consultation, making that first meeting highly productive.
+
+**Document Analysis & Summarization**
+
+Imagine a merger requiring the review of 5,000 contracts. Humans would take weeks. Vion AI can scan, OCR, and analyze these documents in hours.
+- **Flagging Risks:** "Find all contracts with 'Change of Control' clauses."
+- **Comparing Terms:** "How does this NDA differ from our standard template?"
+
+This doesn't replace the lawyer's judgment but radically accelerates their ability to find the needle in the haystack.
+
+**Financial Regulation Compliance**
+
+For financial advisors, keeping up with changing tax laws and banking regulations is a full-time job. An AI Knowledge Base fed with the latest regulatory PDFs allows an advisor to ask:
+"What are the new crypto asset reporting requirements for 2025 in Turkey?"
+And receive an exact citation from the official gazette in seconds.
+
+**Security is Non-Negotiable**
+
+We understand that client privilege and financial secrecy are paramount. Vion AI offers private instances where data is never used to train global models. Your firm's data stays yours, fully encrypted and siloed.`,
+            tr: `Hukuk ve finans sektörlerinde zaman, kelimenin tam anlamıyla paraya eşittir. Profesyoneller saatlik fatura keserler, ancak sayısız faturalandırılamayan saati idari hazırlık çalışmalarına harcarlar. Yapay zeka, yoğun okuma ve ilk işlemeyi üstlenerek bu denklemi değiştiriyor.
+
+**Otomatik Müşteri Kabulü (Intake)**
+
+Bir avukat potansiyel bir müvekkille konuşmadan önce bile, firmanın web sitesindeki bir yapay zeka ajanı bir çakışma kontrolü ve temel kabul işlemi gerçekleştirebilir.
+- "Bu ne tür bir dava? (Aile, Şirket, Ceza)"
+- "Olay ne zaman gerçekleşti?"
+- "Mevcut herhangi bir mahkeme kararı var mı?"
+
+Yapay zeka, avukatın ilk görüşmeden önce incelemesi için özlü bir özet derler, bu da o ilk toplantıyı son derece verimli hale getirir.
+
+**Belge Analizi ve Özetleme**
+
+5.000 sözleşmenin incelenmesini gerektiren bir birleşme hayal edin. İnsanlar bunun için haftalar harcar. Vion AI, bu belgeleri saatler içinde tarayabilir, OCR yapabilir ve analiz edebilir.
+- **Riskleri İşaretleme:** "'Kontrol Değişikliği' maddeleri içeren tüm sözleşmeleri bul."
+- **Şartları Karşılaştırma:** "Bu Gizlilik Sözleşmesi (NDA) standart şablonumuzdan nasıl farklı?"
+
+Bu, avukatın muhakemesinin yerini almaz, ancak samanlıkta iğne bulma yeteneklerini radikal bir şekilde hızlandırır.
+
+**Finansal Düzenleme Uyumluluğu**
+
+Finansal danışmanlar için değişen vergi yasalarını ve bankacılık düzenlemelerini takip etmek tam zamanlı bir iştir. En son düzenleyici PDF'lerle beslenen bir Yapay Zeka Bilgi Tabanı, bir danışmanın şunları sormasına olanak tanır:
+"Türkiye'de 2025 için yeni kripto varlık raporlama gereklilikleri nelerdir?"
+Ve saniyeler içinde resmi gazeteden kesin bir alıntı alır.
+
+**Güvenlik Tartışılamaz**
+
+Müvekkil gizliliğinin ve finansal mahremiyetin her şeyden önemli olduğunu anlıyoruz. Vion AI, verilerin asla küresel modelleri eğitmek için kullanılmadığı özel örnekler (private instances) sunar. Firmanızın verileri tamamen şifrelenmiş ve izole edilmiş şekilde size ait kalır.`
+        },
+        category: "Hukuk & Finans",
+        date: "2024-09-05",
+        readTime: "7 dk",
+        image: "/blog/analytics-metrics.jpg",
+        author: { name: "Vion AI Team", avatar: "VA" }
     }
 ];
 
-// Generate 30 Unique FAQs
 export const SEED_FAQS = [
-    // General
     {
-        question: { en: "What is Vion AI?", tr: "Vion AI nedir?" },
+        question: { en: "What makes Vion AI different from other chatbots?", tr: "Vion AI'ı diğer chatbotlardan ayıran özellik nedir?" },
         answer: {
-            en: "Vion AI is an intelligent chatbot platform that helps businesses automate customer support, lead generation, and sales. It uses advanced natural language processing to understand and respond to customer queries 24/7.",
-            tr: "Vion AI, işletmelerin müşteri desteği, lead toplama ve satışları otomatikleştirmesine yardımcı olan akıllı bir chatbot platformudur. Müşteri sorgularını 7/24 anlamak ve yanıtlamak için gelişmiş doğal dil işleme kullanır."
+            en: "Unlike passive support bots, Vion AI is a proactive sales assistant. It doesn't just answer questions; it detects intent (like purchase hesitation) and nurtures leads, recommends products, and encourages specific actions like booking a demo.",
+            tr: "Pasif destek botlarının aksine, Vion AI proaktif bir satış asistanıdır. Sadece soruları yanıtlamakla kalmaz; niyeti (satın alma kararsızlığı gibi) tespit eder, lead'leri besler, ürünler önerir ve demo randevusu gibi belirli aksiyonlara teşvik eder."
         },
         category: "general"
     },
     {
-        question: { en: "How quickly can I set up a chatbot?", tr: "Bir chatbotu ne kadar hızlı kurabiliyorum?" },
+        question: { en: "How quickly can I set up a chatbot?", tr: "Vion AI kurulumu ne kadar sürer?" },
         answer: {
-            en: "Most businesses can have a basic chatbot running within 30 minutes. Simply upload your FAQ document or website URL, customize the appearance, and add the widget code to your site. More complex setups with custom integrations may take a few hours.",
-            tr: "Çoğu işletme 30 dakika içinde temel bir chatbot çalıştırabilir. SSS belgenizi veya web sitesi URL'sini yükleyin, görünümü özelleştirin ve widget kodunu sitenize ekleyin. Özel entegrasyonlarla daha karmaşık kurulumlar birkaç saat sürebilir."
+            en: "You can be live in under 10 minutes. Simply sign up, choose your industry template, enter your website URL for auto-training, and paste our widget code. No coding or complex configuration required.",
+            tr: "10 dakikadan kısa sürede canlıya geçebilirsiniz. Kayıt olun, sektör şablonunuzu seçin, otomatik eğitim için web sitesi adresinizi girin ve widget kodumuzu yapıştırın. Kodlama veya karmaşık ayar gerekmez."
         },
         category: "general"
     },
     {
-        question: { en: "Do I need coding skills to use Vion AI?", tr: "Vion AI'ı kullanmak için kodlama becerileri gerekiyor mu?" },
+        question: { en: "Which industries does Vion AI support?", tr: "Vion AI hangi sektörleri destekliyor?" },
         answer: {
-            en: "No coding skills required. Vion AI is designed for business users with a simple drag-and-drop interface. You can train the AI, customize appearance, and manage conversations all through our visual dashboard.",
-            tr: "Kodlama becerisi gerekmiyor. Vion AI, basit bir sürükle-bırak arayüzüyle iş kullanıcıları için tasarlanmıştır. Yapay zekayı eğitebilir, görünümü özelleştirebilir ve tüm konuşmaları görsel panelimiz aracılığıyla yönetebilirsiniz."
+            en: "We offer specialized modes for 15+ industries including E-Commerce, Real Estate, Healthcare, Tourism, SaaS, and Education. Each mode comes with pre-trained knowledge and industry-specific terminology.",
+            tr: "E-Ticaret, Emlak, Sağlık, Turizm, SaaS ve Eğitim dahil 15'ten fazla sektör için özelleşmiş modlar sunuyoruz. Her mod, önceden eğitilmiş bilgi tabanı ve sektöre özgü terminoloji ile gelir."
         },
         category: "general"
     },
-    // Pricing
     {
-        question: { en: "What does Vion AI cost?", tr: "Vion AI'ın maliyeti nedir?" },
+        question: { en: "Does it support multiple languages?", tr: "Çoklu dil desteği var mı?" },
         answer: {
-            en: "Vion AI offers flexible pricing based on conversation volume. Our Starter plan begins at $49/month with 1,000 conversations included. We also offer a free trial so you can test the platform before committing.",
-            tr: "Vion AI, konuşma hacmine göre esnek fiyatlandırma sunuyor. Başlangıç planımız dahil 1.000 konuşma ile aylık 49$'dan başlıyor. Ayrıca taahhüt vermeden önce platformu test edebilmeniz için ücretsiz deneme sunuyoruz."
+            en: "Yes, Vion AI speaks 50+ languages fluently. It automatically detects the user's browser language or input language and responds instantly in the same language, making it perfect for global businesses.",
+            tr: "Evet, Vion AI 50'den fazla dili akıcı bir şekilde konuşur. Kullanıcının tarayıcı dilini veya yazdığı dili otomatik algılar ve anında aynı dilde yanıt verir; global işletmeler için mükemmeldir."
+        },
+        category: "general"
+    },
+    {
+        question: { en: "Can I manage multiple chatbots under one account?", tr: "Tek hesapta birden fazla chatbot yönetebilir miyim?" },
+        answer: {
+            en: "Yes, you can create and manage separate chatbots for different websites, brands, or departments from a single dashboard. Each chatbot has its own independent settings and knowledge base.",
+            tr: "Evet, tek bir panelden farklı web siteleri, markalar veya departmanlar için ayrı chatbotlar oluşturup yönetebilirsiniz. Her chatbotun kendi bağımsız ayarları ve bilgi tabanı vardır."
+        },
+        category: "general"
+    },
+
+    // Pricing (Includes Billing)
+    {
+        question: { en: "Is there a free trial?", tr: "Ücretsiz deneme süresi var mı?" },
+        answer: {
+            en: "Yes, we offer a 14-day full-access free trial. You don't need a credit card to start. You can test all features, including document training and integrations, risk-free.",
+            tr: "Evet, 14 günlük tam erişimli ücretsiz deneme sunuyoruz. Başlamak için kredi kartı gerekmez. Doküman eğitimi ve entegrasyonlar dahil tüm özellikleri riski olmadan test edebilirsiniz."
         },
         category: "pricing"
     },
     {
-        question: { en: "Is there a free trial?", tr: "Ücretsiz deneme var mı?" },
+        question: { en: "What happens if I exceed my message limit?", tr: "Mesaj limitimi aşarsam ne olur?" },
         answer: {
-            en: "Yes! We offer a 14-day free trial with full access to all features. No credit card required to start. You can create your chatbot, train it with your content, and see real results before deciding.",
-            tr: "Evet! Tüm özelliklere tam erişimle 14 günlük ücretsiz deneme sunuyoruz. Başlamak için kredi kartı gerekmiyor. Karar vermeden önce chatbotunuzu oluşturabilir, içeriğinizle eğitebilir ve gerçek sonuçları görebilirsiniz."
+            en: "Your chatbot will never stop working. If you exceed your plan's limit, we'll notify you. You can either upgrade to the next tier or continue with a flexible pay-as-you-go rate for extra messages.",
+            tr: "Chatbotunuz asla durmaz. Plan limitinizi aşarsanız sizi bilgilendiririz. İsterseniz bir üst pakete geçebilir veya ek mesajlar için esnek kullandığın-kadar-öde tarifesiyle devam edebilirsiniz."
         },
         category: "pricing"
     },
     {
-        question: { en: "What happens if I exceed my monthly conversation limit?", tr: "Aylık konuşma limitimi aşarsam ne olur?" },
+        question: { en: "Do you offer discounts for annual payments?", tr: "Yıllık ödemelerde indirim var mı?" },
         answer: {
-            en: "You'll receive a notification when you reach 80% of your limit. If you exceed it, you can either upgrade your plan or pay for additional conversations at our overage rate. Your chatbot will never stop working.",
-            tr: "Limitinizin %80'ine ulaştığınızda bir bildirim alacaksınız. Aşarsanız, planınızı yükseltebilir veya aşım oranımızda ek konuşmalar için ödeme yapabilirsiniz. Chatbotunuz asla çalışmayı durdurmaz."
+            en: "Yes, annual subscriptions come with a 20% discount compared to monthly billing. This effectively gives you more than 2 months of service for free each year.",
+            tr: "Evet, yıllık abonelikler aylık ödemeye kıyasla %20 indirimlidir. Bu, her yıl 2 aydan fazla ücretsiz hizmet almanızı sağlar."
         },
         category: "pricing"
     },
-    // Integration
     {
-        question: { en: "Which platforms can I integrate with?", tr: "Hangi platformlarla entegre olabiliyorum?" },
+        question: { en: "Can I change my plan later?", tr: "Planımı sonradan değiştirebilir miyim?" },
         answer: {
-            en: "Vion AI integrates with popular platforms including WordPress, Shopify, Wix, Webflow, and any custom website via our JavaScript widget. We also support WhatsApp, Instagram, and Facebook Messenger.",
-            tr: "Vion AI, WordPress, Shopify, Wix, Webflow ve JavaScript widget'ımız aracılığıyla herhangi bir özel web sitesi dahil popüler platformlarla entegre olur. Ayrıca WhatsApp, Instagram ve Facebook Messenger'ı da destekliyoruz."
+            en: "Absolutely. You can upgrade or downgrade your plan at any time directly from the dashboard. Changes take effect immediately, and billing is prorated automatically.",
+            tr: "Kesinlikle. Paneliniden istediğiniz zaman paketinizi yükseltebilir veya düşürebilirsiniz. Değişiklikler anında geçerli olur ve faturalandırma otomatik olarak güncellenir."
+        },
+        category: "pricing"
+    },
+
+    // Integration (Includes API)
+    {
+        question: { en: "How do I add Vion AI to my website?", tr: "Vion AI'ı siteme nasıl eklerim?" },
+        answer: {
+            en: "It's as simple as copy-pasting. We provide a small JavaScript code snippet universally compatible with WordPress, Shopify, Wix, Squarespace, and custom-coded sites. No plugin required.",
+            tr: "Kopyala-yapıştır kadar basittir. WordPress, Shopify, Wix, Squarespace ve özel yazılımlarla %100 uyumlu küçük bir JavaScript kodu veriyoruz. Eklenti kurmanıza gerek yoktur."
         },
         category: "integration"
     },
     {
-        question: { en: "Can I connect Vion AI to my CRM?", tr: "Vion AI'ı CRM'ime bağlayabilir miyim?" },
+        question: { en: "Do you integrate with CRMs?", tr: "CRM programlarıyla entegre oluyor mu?" },
         answer: {
-            en: "Yes, we offer native integrations with Salesforce, HubSpot, and Pipedrive. For other CRMs, you can use our Zapier integration or API to sync leads and conversations automatically.",
-            tr: "Evet, Salesforce, HubSpot ve Pipedrive ile yerel entegrasyonlar sunuyoruz. Diğer CRM'ler için, lead'leri ve konuşmaları otomatik olarak senkronize etmek için Zapier entegrasyonumuzu veya API'mizi kullanabilirsiniz."
+            en: "Yes, Vion AI connects with major CRMs like HubSpot, Salesforce, and Zoho. Captured leads are automatically pushed to your CRM in real-time. We also support Zapier for 5000+ other apps.",
+            tr: "Evet, Vion AI HubSpot, Salesforce ve Zoho gibi büyük CRM'lerle bağlanır. Toplanan lead'ler gerçek zamanlı olarak CRM'inize aktarılır. Ayrıca 5000+ diğer uygulama için Zapier desteğimiz mevcuttur."
         },
         category: "integration"
     },
     {
-        question: { en: "How do I add the chatbot to my website?", tr: "Chatbotu web siteme nasıl ekleyebilirim?" },
+        question: { en: "Is there an API for developers?", tr: "Geliştiriciler için API var mı?" },
         answer: {
-            en: "Simply copy the JavaScript snippet from your dashboard and paste it before the closing </body> tag on your website. For platforms like WordPress, we have a dedicated plugin that makes installation even easier.",
-            tr: "Panelinizden JavaScript kod parçasını kopyalayın ve web sitenizde kapanış </body> etiketinden önce yapıştırın. WordPress gibi platformlar için kurulumu daha da kolaylaştıran özel bir eklentimiz var."
+            en: "Yes, our REST API allows full programmatic control. You can send messages, manage knowledge bases, and retrieve chat history programmatically to build custom solutions.",
+            tr: "Evet, REST API'miz tam programsal kontrol sağlar. Özel çözümler üretmek için kod ile mesaj gönderebilir, bilgi tabanını yönetebilir ve sohbet geçmişini çekebilirsiniz."
         },
         category: "integration"
     },
+    {
+        question: { en: "Can I use it on WhatsApp?", tr: "WhatsApp üzerinde kullanabilir miyim?" },
+        answer: {
+            en: "Yes, Vion AI can be connected to WhatsApp Business API. This allows your AI assistant to reply to WhatsApp messages with the same intelligence it uses on your website.",
+            tr: "Evet, Vion AI WhatsApp Business API'ye bağlanabilir. Bu sayede asistanınız, web sitenizdeki zekasıyla WhatsApp mesajlarınıza da yanıt verebilir."
+        },
+        category: "integration"
+    },
+
     // Customization
     {
-        question: { en: "Can I customize the chatbot appearance?", tr: "Chatbot görünümünü özelleştirebilir miyim?" },
+        question: { en: "Can I customize the chatbot's design?", tr: "Chatbotun tasarımını özelleştirebilir miyim?" },
         answer: {
-            en: "Absolutely! You can customize colors, fonts, button shapes, chat bubble position, avatar images, and greeting messages. Premium plans also allow custom CSS for complete brand matching.",
-            tr: "Kesinlikle! Renkleri, yazı tiplerini, düğme şekillerini, sohbet balonu konumunu, avatar görsellerini ve karşılama mesajlarını özelleştirebilirsiniz. Premium planlar ayrıca tam marka eşleşmesi için özel CSS'e izin verir."
+            en: "Yes, you can fully match your brand identity. Change colors, avatar, launcher icon, position, and fonts. You can also customize the welcome message to suit your tone of voice.",
+            tr: "Evet, marka kimliğinizle tam uyumlu hale getirebilirsiniz. Renkleri, avatarı, başlatıcı ikonunu, konumu ve yazı tiplerini değiştirin. Ayrıca karşılama mesajını kendi tonunuza göre düzenleyebilirsiniz."
         },
         category: "customization"
     },
     {
-        question: { en: "Can the chatbot speak in my brand voice?", tr: "Chatbot marka sesimle konuşabilir mi?" },
+        question: { en: "How do I train the AI on my business?", tr: "AI'yı işim konusunda nasıl eğitirim?" },
         answer: {
-            en: "Yes! You can define your brand's personality, tone, and specific phrases to use or avoid. The AI will adapt its communication style while maintaining helpful, accurate responses.",
-            tr: "Evet! Markanızın kişiliğini, tonunu ve kullanılacak veya kaçınılacak belirli ifadeleri tanımlayabilirsiniz. Yapay zeka, yardımcı ve doğru yanıtları korurken iletişim stilini uyarlayacaktır."
+            en: "Training is effortless. Upload your PDF/Word documents, or simply enter your website URL. Vion AI crawls and indexes your content in minutes to answer specific questions accurately.",
+            tr: "Eğitim zahmetsizdir. PDF/Word dosyalarınızı yükleyin veya sadece web sitenizin adresini girin. Vion AI, özel soruları doğru yanıtlamak için içeriğinizi dakikalar içinde tarar ve öğrenir."
         },
         category: "customization"
     },
+    {
+        question: { en: "Can I set specific answers for certain questions?", tr: "Belirli sorulara sabit cevap ayarlayabilir miyim?" },
+        answer: {
+            en: "Yes, you can manually add 'Q&A' pairs to override the AI or provide specific phrasing for critical questions (like refund policies or pricing tiers).",
+            tr: "Evet, AI'yı geçersiz kılmak veya kritik sorular (iade politikası veya fiyatlar gibi) için spesifik ifadeler kullanmak üzere manuel 'Soru-Cevap' çiftleri ekleyebilirsiniz."
+        },
+        category: "customization"
+    },
+
     // Security
     {
         question: { en: "Is my data secure?", tr: "Verilerim güvende mi?" },
         answer: {
-            en: "Yes. All data is encrypted in transit (TLS 1.3) and at rest (AES-256). We're GDPR and KVKK compliant, and you can choose to have your data stored in EU or Turkey-based servers.",
-            tr: "Evet. Tüm veriler iletim sırasında (TLS 1.3) ve duraklamada (AES-256) şifrelenir. GDPR ve KVKK uyumluyuz ve verilerinizin AB veya Türkiye merkezli sunucularda saklanmasını seçebilirsiniz."
+            en: "Security is our priority. We use enterprise-grade AES-256 encryption for storage and TLS 1.3 for data transit. We are fully compliant with GDPR and KVKK regulations.",
+            tr: "Güvenlik önceliğimizdir. Depolama için endüstri standardı AES-256 şifreleme ve veri transferi için TLS 1.3 kullanıyoruz. GDPR ve KVKK yönetmelikleriyle tam uyumluyuz."
         },
         category: "security"
     },
     {
-        question: { en: "Who can access my conversation data?", tr: "Konuşma verilerime kim erişebilir?" },
+        question: { en: "Where is the data stored?", tr: "Veriler nerede saklanıyor?" },
         answer: {
-            en: "Only authorized team members you designate can access conversations. You can set role-based permissions and all access is logged. Vion AI staff never access customer data without explicit permission.",
-            tr: "Yalnızca belirlediğiniz yetkili ekip üyeleri konuşmalara erişebilir. Rol tabanlı izinler ayarlayabilirsiniz ve tüm erişimler kaydedilir. Vion AI personeli, açık izin olmadan müşteri verilerine asla erişmez."
+            en: "You have control over data residency. We offer hosting options in EU (Frankfurt) and Turkey (Istanbul) to meet your specific legal compliance requirements.",
+            tr: "Veri yerleşimi üzerinde kontrol sizdedir. Yasal uyumluluk gereksinimlerinizi karşılamak için AB (Frankfurt) ve Türkiye (İstanbul) sunucu seçenekleri sunuyoruz."
         },
         category: "security"
     },
     {
-        question: { en: "Can users request their data to be deleted?", tr: "Kullanıcılar verilerinin silinmesini talep edebilir mi?" },
+        question: { en: "Can I delete my data?", tr: "Verilerimi silebilir miyim?" },
         answer: {
-            en: "Yes, in compliance with GDPR/KVKK. Users can request data deletion through the chatbot itself or by contacting your support. We provide tools to process these requests within the required timeframe.",
-            tr: "Evet, GDPR/KVKK uyumluluğunda. Kullanıcılar, chatbot aracılığıyla veya desteğinizle iletişime geçerek veri silme talebinde bulunabilir. Bu talepleri gerekli süre içinde işlemek için araçlar sağlıyoruz."
+            en: "Yes, you have full ownership. You can export or permanently delete your account and all associated data including chat logs and training documents at any time instantly.",
+            tr: "Evet, tam mülkiyet sizdedir. Hesabınızı ve sohbet kayıtları ile eğitim dokümanları dahil tüm verilerinizi istediğiniz an dışa aktarabilir veya kalıcı olarak silebilirsiniz."
         },
         category: "security"
     },
-    // Features
     {
-        question: { en: "Can the chatbot hand off to human agents?", tr: "Chatbot insan temsilcilerine aktarım yapabilir mi?" },
+        question: { en: "Who has access to the chat logs?", tr: "Sohbet kayıtlarına kim erişebilir?" },
         answer: {
-            en: "Yes! You can set triggers for human handoff based on keywords, sentiment, or customer request. Agents receive the full conversation history and can take over seamlessly.",
-            tr: "Evet! Anahtar kelimelere, duygu durumuna veya müşteri talebine göre insan aktarımı için tetikleyiciler ayarlayabilirsiniz. Temsilciler tam konuşma geçmişini alır ve sorunsuz bir şekilde devralabilir."
+            en: "Only authorized members of your team can view chat logs. Vion AI staff does not access your customer conversations unless you explicitly grant permission for support purposes.",
+            tr: "Yalnızca ekibinizin yetkili üyeleri sohbet kayıtlarını görebilir. Vion AI personeli, destek amacıyla açıkça izin vermediğiniz sürece müşteri görüşmelerinize erişmez."
         },
-        category: "features"
-    },
-    {
-        question: { en: "Does Vion AI support voice messages?", tr: "Vion AI sesli mesajları destekliyor mu?" },
-        answer: {
-            en: "Yes, our Voice module converts spoken messages to text and responds in natural-sounding voice. This is particularly useful for accessibility and hands-free scenarios.",
-            tr: "Evet, Ses modülümüz sözlü mesajları metne dönüştürür ve doğal ses tonuyla yanıt verir. Bu, erişilebilirlik ve eller serbest senaryolar için özellikle yararlıdır."
-        },
-        category: "features"
-    },
-    {
-        question: { en: "Can the chatbot collect leads?", tr: "Chatbot lead toplayabilir mi?" },
-        answer: {
-            en: "Absolutely! You can configure the chatbot to collect name, email, phone, and custom fields. Leads are automatically saved to your dashboard and can be exported or synced to your CRM.",
-            tr: "Kesinlikle! Chatbotu isim, e-posta, telefon ve özel alanları toplayacak şekilde yapılandırabilirsiniz. Lead'ler otomatik olarak panelinize kaydedilir ve dışa aktarılabilir veya CRM'inize senkronize edilebilir."
-        },
-        category: "features"
-    },
-    {
-        question: { en: "Is there an analytics dashboard?", tr: "Analitik paneli var mı?" },
-        answer: {
-            en: "Yes, comprehensive analytics including conversation volume, resolution rates, popular topics, customer satisfaction, and response times. You can also export reports for deeper analysis.",
-            tr: "Evet, konuşma hacmi, çözüm oranları, popüler konular, müşteri memnuniyeti ve yanıt süreleri dahil kapsamlı analitikler. Daha derin analiz için raporları da dışa aktarabilirsiniz."
-        },
-        category: "features"
-    },
-    // Training
-    {
-        question: { en: "How do I train the chatbot?", tr: "Chatbotu nasıl eğitirim?" },
-        answer: {
-            en: "You can train your chatbot by uploading documents (PDF, Word, Excel), adding website URLs to crawl, manually adding Q&A pairs, or importing from existing FAQ pages. The AI learns from all these sources.",
-            tr: "Chatbotunuzu belgeler yükleyerek (PDF, Word, Excel), taranacak web sitesi URL'leri ekleyerek, manuel olarak Soru-Cevap çiftleri ekleyerek veya mevcut SSS sayfalarından içe aktararak eğitebilirsiniz. Yapay zeka tüm bu kaynaklardan öğrenir."
-        },
-        category: "general"
-    },
-    {
-        question: { en: "What if the chatbot can't answer a question?", tr: "Chatbot bir soruyu yanıtlayamazsa ne olur?" },
-        answer: {
-            en: "When the AI isn't confident about an answer, it can either ask clarifying questions, offer to connect with a human agent, or collect contact info for follow-up. You can customize this behavior.",
-            tr: "Yapay zeka bir yanıt konusunda emin olmadığında, açıklayıcı sorular sorabilir, bir insan temsilciyle bağlantı kurmayı teklif edebilir veya takip için iletişim bilgilerini toplayabilir. Bu davranışı özelleştirebilirsiniz."
-        },
-        category: "general"
-    },
-    // Account
-    {
-        question: { en: "Can I have multiple team members?", tr: "Birden fazla ekip üyesi olabilir mi?" },
-        answer: {
-            en: "Yes, you can invite unlimited team members. Each member can have different roles (Admin, Agent, Viewer) with appropriate permissions for their responsibilities.",
-            tr: "Evet, sınırsız ekip üyesi davet edebilirsiniz. Her üye, sorumlulukları için uygun izinlerle farklı rollere (Yönetici, Temsilci, Görüntüleyici) sahip olabilir."
-        },
-        category: "account"
-    },
-    {
-        question: { en: "Can I manage multiple chatbots?", tr: "Birden fazla chatbot yönetebilir miyim?" },
-        answer: {
-            en: "Yes, depending on your plan. Each chatbot can have its own knowledge base, appearance, and settings - perfect for managing multiple brands, products, or departments.",
-            tr: "Evet, planınıza bağlı olarak. Her chatbot kendi bilgi tabanına, görünümüne ve ayarlarına sahip olabilir - birden fazla marka, ürün veya departmanı yönetmek için mükemmel."
-        },
-        category: "account"
-    },
-    {
-        question: { en: "How do I cancel my subscription?", tr: "Aboneliğimi nasıl iptal ederim?" },
-        answer: {
-            en: "You can cancel anytime from your account settings. There are no long-term contracts. Your chatbot will remain active until the end of your billing period.",
-            tr: "Hesap ayarlarınızdan istediğiniz zaman iptal edebilirsiniz. Uzun vadeli sözleşme yoktur. Chatbotunuz faturalandırma döneminizin sonuna kadar aktif kalacaktır."
-        },
-        category: "account"
-    },
-    // Billing
-    {
-        question: { en: "What payment methods do you accept?", tr: "Hangi ödeme yöntemlerini kabul ediyorsunuz?" },
-        answer: {
-            en: "We accept all major credit cards (Visa, Mastercard, Amex), bank transfers for annual plans, and PayPal. For Enterprise customers, we also offer invoicing with NET 30 terms.",
-            tr: "Tüm büyük kredi kartlarını (Visa, Mastercard, Amex), yıllık planlar için banka havalelerini ve PayPal'ı kabul ediyoruz. Kurumsal müşteriler için NET 30 koşullarıyla faturalandırma da sunuyoruz."
-        },
-        category: "billing"
-    },
-    {
-        question: { en: "Do you offer refunds?", tr: "İade sunuyor musunuz?" },
-        answer: {
-            en: "We offer a 14-day money-back guarantee for new subscriptions. If you're not satisfied within the first 14 days, contact us for a full refund - no questions asked.",
-            tr: "Yeni abonelikler için 14 günlük para iade garantisi sunuyoruz. İlk 14 gün içinde memnun kalmazsanız, tam iade için bizimle iletişime geçin - soru sorulmaz."
-        },
-        category: "billing"
-    },
-    {
-        question: { en: "Is there a discount for annual billing?", tr: "Yıllık faturalandırma için indirim var mı?" },
-        answer: {
-            en: "Yes! Annual billing gives you 2 months free compared to monthly billing. That's effectively a 17% discount for committing to a year.",
-            tr: "Evet! Yıllık faturalandırma, aylık faturalandırmaya kıyasla 2 ay ücretsiz verir. Bu, bir yıllık taahhüt için etkili olarak %17 indirimdir."
-        },
-        category: "billing"
-    },
-    // API
-    {
-        question: { en: "Do you have an API?", tr: "API'niz var mı?" },
-        answer: {
-            en: "Yes, we offer a full REST API for developers. You can send messages, retrieve conversations, manage knowledge base, and control settings programmatically. API documentation is available at docs.vion.ai.",
-            tr: "Evet, geliştiriciler için tam REST API sunuyoruz. Mesaj gönderebilir, konuşmaları alabilir, bilgi tabanını yönetebilir ve ayarları programatik olarak kontrol edebilirsiniz. API dokümantasyonu docs.vion.ai adresinde mevcuttur."
-        },
-        category: "api"
-    },
-    {
-        question: { en: "What are the API rate limits?", tr: "API hız limitleri nedir?" },
-        answer: {
-            en: "Standard plans allow 100 requests per minute. Enterprise plans have higher limits and can be customized based on your needs. All API calls are counted separately from chat conversations.",
-            tr: "Standart planlar dakikada 100 isteğe izin verir. Kurumsal planlar daha yüksek limitlere sahiptir ve ihtiyaçlarınıza göre özelleştirilebilir. Tüm API çağrıları sohbet konuşmalarından ayrı sayılır."
-        },
-        category: "api"
-    },
-    {
-        question: { en: "Can I use webhooks?", tr: "Webhook'ları kullanabilir miyim?" },
-        answer: {
-            en: "Yes! You can configure webhooks to receive real-time notifications for new conversations, messages, leads, and other events. This enables seamless integration with your existing systems.",
-            tr: "Evet! Yeni konuşmalar, mesajlar, lead'ler ve diğer olaylar için gerçek zamanlı bildirimler almak üzere webhook'ları yapılandırabilirsiniz. Bu, mevcut sistemlerinizle sorunsuz entegrasyon sağlar."
-        },
-        category: "api"
+        category: "security"
     }
 ];
 

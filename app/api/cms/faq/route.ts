@@ -11,8 +11,11 @@ export async function GET(req: NextRequest) {
         const snapshot = await db.collection("cms_faq").get();
         let faqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Re-seed if count is low (indicating old seed data)
-        if (faqs.length < 90) {
+        const { searchParams } = new URL(req.url);
+        const forceReset = searchParams.get("reset") === "true";
+
+        // Re-seed if empty or forced
+        if (faqs.length === 0 || forceReset) {
             console.log("Seeding or Re-seeding FAQs...");
 
             // Optional: You might want to delete existing ones first to avoid duplicates if you didn't have ID checks

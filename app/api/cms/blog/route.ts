@@ -14,8 +14,11 @@ export async function GET(req: NextRequest) {
 
         let posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // Auto-seed if empty or low count (indicating old seed data)
-        if (posts.length < 45) {
+        const { searchParams } = new URL(req.url);
+        const forceReset = searchParams.get("reset") === "true";
+
+        // Auto-seed if empty or forced reset
+        if (posts.length === 0 || forceReset) {
             console.log("Seeding or Re-seeding Blog Posts...");
             if (posts.length > 0) {
                 const deleteBatch = db.batch();
