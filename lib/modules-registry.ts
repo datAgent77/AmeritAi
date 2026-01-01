@@ -73,10 +73,20 @@ export interface ModuleDefinition {
     isCore: boolean;
 
     /**
-     * Premium add-on modules require additional payment.
-     * During trial, these are LOCKED (Decision A).
+     * Premium modules require additional payment or higher plan.
+     * During trial, these are LOCKED.
      */
-    isPremiumAddOn: boolean;
+    isPremium: boolean;
+
+    /**
+     * Monthly price in USD for this module (0 for core/free modules)
+     */
+    price: number;
+
+    /**
+     * Module status: ready, beta, or coming_soon
+     */
+    status: 'ready' | 'beta' | 'coming_soon';
 
     /**
      * Sectors where this module can be used.
@@ -148,7 +158,9 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         },
         icon: 'MessageSquare',
         isCore: true,
-        isPremiumAddOn: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service',
@@ -199,7 +211,9 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         },
         icon: 'BookOpen',
         isCore: true,
-        isPremiumAddOn: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service',
@@ -240,7 +254,9 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         },
         icon: 'ShoppingBag',
         isCore: false,
-        isPremiumAddOn: false, // Free for ecommerce, premium for others
+        isPremium: false, // Free for ecommerce, premium for others
+        price: 29,
+        status: 'ready',
         supportedSectors: ['ecommerce', 'restaurant', 'real_estate'],
         defaultEnabledBySector: ['ecommerce'],
         legacyFirestoreField: 'enablePersonalShopper',
@@ -288,7 +304,9 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         },
         icon: 'UserPlus',
         isCore: false,
-        isPremiumAddOn: false,
+        isPremium: false,
+        price: 29,
+        status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance'
@@ -338,7 +356,9 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         },
         icon: 'Mic',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 49,
+        status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate'],
         legacyFirestoreField: 'enableVoiceAssistant',
@@ -414,7 +434,9 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         },
         icon: 'Calendar',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 39,
+        status: 'beta',
         supportedSectors: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableAppointments',
@@ -454,7 +476,9 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         },
         icon: 'TrendingUp',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 49,
+        status: 'beta',
         supportedSectors: ['ecommerce', 'saas'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableSalesOptimization',
@@ -502,7 +526,9 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         },
         icon: 'Mail',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 29,
+        status: 'beta',
         supportedSectors: [],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableEmailMarketing',
@@ -546,7 +572,9 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         },
         icon: 'Star',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 39,
+        status: 'beta',
         supportedSectors: ['restaurant', 'service', 'booking', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableReviewManagement',
@@ -590,7 +618,9 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         },
         icon: 'Award',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 29,
+        status: 'beta',
         supportedSectors: ['restaurant', 'service'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableLoyaltyProgram',
@@ -628,7 +658,9 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         },
         icon: 'Zap',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 19,
+        status: 'beta',
         supportedSectors: ['restaurant', 'ecommerce', 'service'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableCampaignManager',
@@ -666,7 +698,9 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         },
         icon: 'Languages',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 29,
+        status: 'beta',
         supportedSectors: ['restaurant', 'booking', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableAutoTranslate',
@@ -705,7 +739,9 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         },
         icon: 'Gamepad2',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 39,
+        status: 'beta',
         supportedSectors: ['ecommerce', 'restaurant'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableGamification',
@@ -749,7 +785,9 @@ Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkı
         },
         icon: 'Scan',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 59,
+        status: 'beta',
         supportedSectors: ['agriculture', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableVisualDiagnosis',
@@ -793,7 +831,9 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         },
         icon: 'Utensils',
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 29,
+        status: 'beta',
         supportedSectors: ['restaurant'],
         defaultEnabledBySector: ['restaurant'],
         legacyFirestoreField: 'enableDigitalWaiter',
@@ -845,7 +885,9 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         },
         icon: 'MessageCircle', // Or 'Bell'
         isCore: false,
-        isPremiumAddOn: true,
+        isPremium: true,
+        price: 19,
+        status: 'beta',
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableProactiveMessaging',
@@ -898,10 +940,10 @@ export function getCoreModules(): ModuleDefinition[] {
 }
 
 /**
- * Get premium add-on modules
+ * Get premium modules
  */
 export function getPremiumModules(): ModuleDefinition[] {
-    return getAllModules().filter(m => m.isPremiumAddOn);
+    return getAllModules().filter(m => m.isPremium);
 }
 
 /**
@@ -967,3 +1009,53 @@ export function getLegacyFieldsForModules(moduleIds: ModuleId[]): Record<string,
 
     return fields;
 }
+
+// =============================================================================
+// ORDERED MODULES FOR RENDERING
+// =============================================================================
+
+/**
+ * Ordered array for rendering - Core modules first, then by status
+ * This replaces the ORDERED_MODULES from module-config.ts
+ */
+export const ORDERED_MODULES: ModuleDefinition[] = [
+    // --- 1. READY MODULES ---
+    MODULES_REGISTRY.generalChatbot,    // Core
+    MODULES_REGISTRY.knowledgeBase,     // Core
+    MODULES_REGISTRY.productCatalog,    // Personal Shopper
+    MODULES_REGISTRY.leadCollection,    // Lead Collection
+    MODULES_REGISTRY.voiceAssistant,    // Voice
+
+    // --- 2. BETA MODULES ---
+    MODULES_REGISTRY.salesOptimization, // Beta
+    MODULES_REGISTRY.proactiveMessaging, // Beta
+    MODULES_REGISTRY.digitalWaiter,     // Beta - Functional
+    MODULES_REGISTRY.appointments,      // Beta
+    MODULES_REGISTRY.emailMarketing,    // Beta
+    MODULES_REGISTRY.reviewManagement,  // Beta
+    MODULES_REGISTRY.loyaltyProgram,    // Beta
+    MODULES_REGISTRY.campaignManager,   // Beta
+    MODULES_REGISTRY.autoTranslate,     // Beta
+    MODULES_REGISTRY.gamification,      // Beta
+    MODULES_REGISTRY.visualDiagnosis,   // Beta
+];
+
+// =============================================================================
+// BACKWARD COMPATIBILITY EXPORTS
+// =============================================================================
+
+/**
+ * Alias for backward compatibility with module-config.ts imports
+ * Use ModuleDefinition for new code
+ */
+export type ModuleConfig = ModuleDefinition;
+
+/**
+ * Alias for backward compatibility - same as MODULES_REGISTRY
+ */
+export const MODULES = MODULES_REGISTRY;
+
+/**
+ * Alias for backward compatibility - same as SectorId
+ */
+export type IndustryType = SectorId;

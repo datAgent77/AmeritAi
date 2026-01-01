@@ -11,9 +11,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Zap, TrendingUp, CheckCircle2, Info, MessageSquare, type LucideIcon } from "lucide-react"
-import { ModuleDefinition, ModuleId } from "@/lib/modules-registry"
+import { ModuleDefinition, ModuleId, MODULES_REGISTRY as MODULE_DEFINITIONS } from "@/lib/modules-registry"
 import { useLanguage } from "@/context/LanguageContext"
-import { MODULES as MODULE_DEFINITIONS } from "@/lib/module-config"
 
 interface ModuleDetailsDialogProps {
     isOpen: boolean
@@ -56,13 +55,13 @@ export function ModuleDetailsDialog({
     const IconComponent = iconMap[moduleConfig.icon] || MessageSquare
     const title = registryModule
         ? (language === 'tr' ? registryModule.name.tr : registryModule.name.en)
-        : (t(moduleConfig.nameKey) || moduleConfig.nameKey)
+        : (language === 'tr' ? moduleConfig.name.tr : moduleConfig.name.en)
 
     const description = registryModule?.longDescription
         ? (language === 'tr' ? registryModule.longDescription.tr : registryModule.longDescription.en)
         : (registryModule
             ? (language === 'tr' ? registryModule.description.tr : registryModule.description.en)
-            : (t(moduleConfig.descriptionKey) || moduleConfig.descriptionKey))
+            : (language === 'tr' ? moduleConfig.description.tr : moduleConfig.description.en))
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>

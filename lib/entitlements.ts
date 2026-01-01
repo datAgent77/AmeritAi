@@ -299,7 +299,7 @@ export function canEnableModule(
     }
 
     // It's a premium module - check access
-    if (mod.isPremiumAddOn) {
+    if (mod.isPremium) {
         // Check if user has this add-on
         if (entitlements.modules.addOns.includes(moduleId)) {
             return { moduleId, status: 'available' };
@@ -375,7 +375,7 @@ export function getUpgradeHint(moduleId: ModuleId): string {
 
     if (!mod) return 'Upgrade required';
 
-    if (mod.isPremiumAddOn) {
+    if (mod.isPremium) {
         return 'Premium modül - Pro planına yükseltin';
     }
 

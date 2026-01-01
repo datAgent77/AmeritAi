@@ -44,9 +44,8 @@ import { useState, useEffect, useMemo } from "react"
 import { doc, updateDoc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
-import { MODULES as MODULE_DEFINITIONS, ModuleId, ORDERED_MODULES } from "@/lib/module-config"
+import { MODULES_REGISTRY as MODULE_DEFINITIONS, ModuleId, ORDERED_MODULES, ModuleDefinition } from "@/lib/modules-registry"
 import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
-import { INDUSTRY_DEFAULT_MODULES, MODULES as NEW_MODULES } from "@/lib/modules-config"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
     Dialog,
@@ -387,7 +386,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         setIsLoading(moduleId)
 
         const moduleConfig = MODULE_DEFINITIONS[moduleId]
-        const moduleName = moduleConfig?.nameKey ? t(moduleConfig.nameKey) || moduleConfig.nameKey : moduleId
+        const lang = language as 'en' | 'tr'
+        const moduleName = moduleConfig?.name ? moduleConfig.name[lang] || moduleConfig.name.en : moduleId
 
         try {
             // Get ID token for authorization
@@ -452,9 +452,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
     // Filter Logic
     const filteredModules = useMemo(() => {
+        const lang = language as 'en' | 'tr'
         return ORDERED_MODULES.filter(module => {
-            const name = t(module.nameKey) || module.nameKey
-            const description = t(module.descriptionKey) || module.descriptionKey
+            const name = module.name[lang] || module.name.en
+            const description = module.description[lang] || module.description.en
             const query = searchQuery.toLowerCase()
 
             // Search Match
@@ -463,12 +464,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             // Industry Match
             let matchesIndustry = true
             if (industryFilter !== 'all') {
-                const recommended = module.recommendedFor || []
+                const supported = module.supportedSectors || []
                 // If module has no recommendations, strictly speaking it might be for all?
                 // In registry '[]' means all sectors. In module-config it might be consistent.
                 // If recommended list is empty, it usually means Core/General.
-                if (recommended.length > 0) {
-                    matchesIndustry = recommended.includes(industryFilter as IndustryType)
+                if (supported.length > 0) {
+                    matchesIndustry = supported.includes(industryFilter as any)
                 }
             }
 
@@ -657,7 +658,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                 </CardHeader>
                                 <CardContent className="pt-0 flex-1">
                                     <div className="flex justify-between items-start mb-2">
-                                        <CardTitle className="text-lg font-semibold">{t(module.nameKey) || module.nameKey}</CardTitle>
+                                        <CardTitle className="text-lg font-semibold">{module.name[language as 'en' | 'tr'] || module.name.en}</CardTitle>
                                         {isCoreModule || module.status === 'beta' || module.status === 'coming_soon' ? null : isIncluded ? (
                                             <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-green-100 text-green-800">
                                                 {t('included') || 'Dahil'}
@@ -669,7 +670,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         )}
                                     </div>
                                     <CardDescription className="line-clamp-2">
-                                        {t(module.descriptionKey) || module.descriptionKey}
+                                        {module.description[language as 'en' | 'tr'] || module.description.en}
                                     </CardDescription>
 
                                     <div className="mt-4 flex items-center gap-2 text-sm font-medium">
@@ -744,7 +745,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         const isEnabled = moduleStates[module.id] || false;
                         const isCore = module.isCore || (module.id === 'generalChatbot')
                         const registryModule = getAllRegistryModules().find(m => m.id === module.id)
-                        const isPremiumAddOn = registryModule?.isPremiumAddOn || false
+                        const isPremiumAddOn = registryModule?.isPremium || false
 
                         return (
                             <div key={module.id} className={`flex items-center p-4 border rounded-xl gap-4 bg-white dark:bg-zinc-950 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 ${!isAccessGranted ? 'opacity-90' : ''}`}>
@@ -754,7 +755,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
-                                        <h3 className="font-semibold text-base">{t(module.nameKey) || module.nameKey}</h3>
+                                        <h3 className="font-semibold text-base">{module.name[language as 'en' | 'tr'] || module.name.en}</h3>
                                         {isCoreModule ? (
                                             <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none">
                                                 {t('coreModule') || 'Temel'}
@@ -782,7 +783,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                                        {t(module.descriptionKey) || module.descriptionKey}
+                                        {module.description[language as 'en' | 'tr'] || module.description.en}
                                     </p>
                                 </div>
 

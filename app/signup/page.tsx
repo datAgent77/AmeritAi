@@ -16,7 +16,7 @@ import Image from "next/image"
 import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
-import { INDUSTRY_DEFAULT_MODULES, MODULES as MODULE_DEFINITIONS } from "@/lib/modules-config"
+import { MODULES_REGISTRY as MODULE_DEFINITIONS, getDefaultModulesForSector, ModuleId } from "@/lib/modules-registry"
 import {
     Select,
     SelectContent,
@@ -454,7 +454,7 @@ export default function SignUpForm() {
                                         {language === 'tr' ? '✨ Bu sektörle birlikte dahil:' : '✨ Included with this industry:'}
                                     </p>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {(INDUSTRY_DEFAULT_MODULES[industry] || []).map((moduleId) => {
+                                        {(getDefaultModulesForSector(industry as any) || []).map((moduleId: ModuleId) => {
                                             const mod = MODULE_DEFINITIONS[moduleId];
                                             return (
                                                 <span

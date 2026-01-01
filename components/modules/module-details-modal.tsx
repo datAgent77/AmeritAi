@@ -11,10 +11,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Zap, TrendingUp, CheckCircle2, Info, MessageSquare } from "lucide-react"
-import { ModuleDefinition, ModuleId } from "@/lib/modules-registry"
+import { ModuleDefinition, ModuleId, MODULES_REGISTRY as MODULE_DEFINITIONS } from "@/lib/modules-registry"
 import { Language } from "@/lib/translations"
 import { useLanguage } from "@/context/LanguageContext"
-import { MODULES as MODULE_DEFINITIONS } from "@/lib/module-config"
 import { ICON_MAP } from "@/components/modules-content"
 
 interface ModuleDetailsModalProps {
