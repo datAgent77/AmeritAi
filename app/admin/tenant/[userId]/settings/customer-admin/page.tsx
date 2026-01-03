@@ -84,22 +84,9 @@ export default function CustomerAdminPage() {
         reminderDaysBefore: 3
     })
 
-    // Only SUPER_ADMIN can access this page
-    if (role !== 'SUPER_ADMIN') {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-                <div className="bg-destructive/10 p-4 rounded-full">
-                    <ShieldAlert className="h-12 w-12 text-destructive" />
-                </div>
-                <h2 className="text-xl font-semibold">{t('error')}</h2>
-                <p className="text-muted-foreground">{t('accessDenied') || 'Bu sayfaya erişim izniniz yok.'}</p>
-            </div>
-        )
-    }
-
     useEffect(() => {
         const fetchData = async () => {
-            if (!user || !userId) return
+            if (!user || !userId || role !== 'SUPER_ADMIN') return
 
             setIsLoading(true)
             try {
@@ -130,7 +117,20 @@ export default function CustomerAdminPage() {
         }
 
         fetchData()
-    }, [user, userId, t, toast])
+    }, [user, userId, role, t, toast])
+
+    // Only SUPER_ADMIN can access this page
+    if (role !== 'SUPER_ADMIN') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <div className="bg-destructive/10 p-4 rounded-full">
+                    <ShieldAlert className="h-12 w-12 text-destructive" />
+                </div>
+                <h2 className="text-xl font-semibold">{t('error')}</h2>
+                <p className="text-muted-foreground">{t('accessDenied') || 'Bu sayfaya erişim izniniz yok.'}</p>
+            </div>
+        )
+    }
 
     const handleSave = async () => {
         if (!user || !userId) return
