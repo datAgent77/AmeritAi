@@ -34,7 +34,6 @@ function ChatbotViewContent() {
     useEffect(() => {
         const langParam = searchParams?.get("lang")
         if (langParam && ['en', 'tr', 'de', 'es'].includes(langParam)) {
-            console.log('Setting initial language from URL:', langParam)
             setLanguage(langParam as any)
         }
     }, [searchParams, setLanguage])
@@ -52,7 +51,6 @@ function ChatbotViewContent() {
     useEffect(() => {
         signInAsGuest()
             .then(() => {
-                console.log("Guest login success")
                 setIsGuestReady(true)
             })
             .catch((error: Error) => {
@@ -72,7 +70,6 @@ function ChatbotViewContent() {
         // Listen for context updates from parent
         const handleMessage = (event: MessageEvent) => {
             if (event.data.type === 'USEREX_CONTEXT_UPDATE') {
-                console.log("Context updated:", event.data.context)
                 setPageContext(event.data.context)
             }
         }
@@ -153,7 +150,6 @@ function ChatbotViewContent() {
                     lastSpeechTime = Date.now()
                 } else {
                     if (Date.now() - lastSpeechTime > SILENCE_DURATION) {
-                        console.log("Silence detected, stopping recording...")
                         stopRecording()
                         return
                     }
@@ -207,7 +203,6 @@ function ChatbotViewContent() {
             // 1. STT: Transcribe using Klassifier
             setLocalInput("Ses işleniyor...") // Visual feedback
             const transcribedText = await KlassifierService.transcribeAudio(audioBlob)
-            console.log("Transcribed Text:", transcribedText)
 
             if (!transcribedText || !transcribedText.trim()) {
                 setLocalInput("")
@@ -382,7 +377,6 @@ function ChatbotViewContent() {
 
         if (!storedSid || !storedSid.startsWith('sess-')) {
             // Generate random Session ID if none exists OR if it's a legacy ID (raw UID)
-            console.log("Session: formatting/generating new session ID")
             storedSid = 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
             localStorage.setItem(storageKey, storedSid)
         }
@@ -649,6 +643,7 @@ function ChatbotViewContent() {
             })
             setMessages(mergedMessages)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialMessages, setMessages])
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -1179,7 +1174,8 @@ function ChatbotViewContent() {
                 clearTimeout(proactiveTimerRef.current)
             }
         }
-    }, [messages, settings.salesOptimizationConfig, hasProactiveTriggered, language, isLoading, settings.industry, settings.engagement, settings.welcomeMessage, settings.enableIndustryGreeting, settings.initialLanguage])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages, settings.salesOptimizationConfig, hasProactiveTriggered, language, isLoading, settings.industry, settings.engagement, settings.welcomeMessage, settings.enableIndustryGreeting, settings.initialLanguage, settings.enableAutoSpeak])
 
     useEffect(() => {
         if (inactivityTimerRef.current) {
@@ -1250,7 +1246,6 @@ function ChatbotViewContent() {
                     })
                 }).then(res => {
                     if (res.ok) {
-                        console.log("In-chat lead captured")
                         setHasCapturedInChatLead(true)
                     }
                 }).catch(err => console.error("Error capturing in-chat lead:", err))

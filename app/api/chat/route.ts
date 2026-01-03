@@ -28,14 +28,11 @@ export async function POST(req: Request) {
         const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext } = body;
 
         // Log visual analysis context presence
-        if (visualAnalysisContext) {
-            console.log(`Chat API: Received visual analysis context (${visualAnalysisContext.length} chars)`);
-        }
+        // (Removed verbose log)
 
         const rateLimitResult = checkRateLimit(ip, sessionId);
 
         if (!rateLimitResult.allowed) {
-            console.log(`Chat API: Rate limited - ${rateLimitResult.reason} for IP: ${ip}`);
             return new Response(
                 JSON.stringify({
                     error: "Çok fazla istek gönderdiniz. Lütfen bir dakika bekleyin.",
@@ -52,7 +49,7 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log("Chat API: Request received");
+
 
         // 0. Check if Session is Paused
         if (sessionId) {
@@ -60,7 +57,6 @@ export async function POST(req: Request) {
             const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
             const sessionSnap = await sessionRef.get();
             if (sessionSnap.exists && sessionSnap.data()?.isPaused) {
-                console.log("Chat API: Session is paused, skipping AI generation");
                 // Just save the user message
                 const currentMessages = sessionSnap.data()?.messages || [];
                 currentMessages.push({
@@ -98,7 +94,7 @@ export async function POST(req: Request) {
                     // I will just log it for now, or maybe we accept "Neutral" is fine for speed.
                     // correct: Cloud Functions is better for this.
                     // BUT, I can at least try to log it.
-                    console.log(`Sentiment for ${messageId}: ${sentiment}`);
+                    // Sentiment logged silently
                 } catch (e) { console.error(e) }
             });
         }
@@ -137,7 +133,6 @@ export async function POST(req: Request) {
 
                             // Check if this is an appointment confirmation and save it
                             if (isAppointmentConfirmation(fullContent)) {
-                                console.log("Chat API: ✅ Appointment confirmation detected!");
 
                                 try {
                                     // Extract appointment data using the clean extractor
@@ -145,7 +140,7 @@ export async function POST(req: Request) {
 
                                     // Validate we have minimum required data
                                     if (!extractedData.customerEmail && !extractedData.customerPhone) {
-                                        console.log("Chat API: ⚠️ No contact info found, skipping save");
+                                        // No contact info, skip save
                                     } else {
                                         // Double-check adminDb is available
                                         if (!adminDb) {
@@ -168,10 +163,8 @@ export async function POST(req: Request) {
                                             createdAt: new Date().toISOString()
                                         };
 
-                                        console.log("Chat API: 📝 Saving appointment:", JSON.stringify(appointmentData, null, 2));
 
                                         const docRef = await adminDb.collection("appointments").add(appointmentData);
-                                        console.log("Chat API: ✅ Appointment saved with ID:", docRef.id);
                                     }
                                 } catch (extractError: any) {
                                     console.error("Chat API: ❌ Appointment save failed:", extractError?.message || extractError);

@@ -510,7 +510,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
             return matchesSearch && matchesIndustry
         })
-    }, [searchQuery, industryFilter, t])
+    }, [searchQuery, industryFilter, language])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
