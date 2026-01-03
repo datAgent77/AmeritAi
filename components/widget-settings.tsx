@@ -72,6 +72,7 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
         viewMode: "classic",
         modalSize: "half",
         launcherStyle: "circle",
+        launcherCollapse: false,
         launcherText: "Sohbet",
         launcherRadius: 50,
         launcherHeight: 60,
@@ -188,6 +189,7 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                         viewMode: data.viewMode || prev.viewMode,
                         modalSize: data.modalSize || prev.modalSize,
                         launcherStyle: data.launcherStyle || prev.launcherStyle,
+                        launcherCollapse: data.launcherCollapse !== undefined ? data.launcherCollapse : prev.launcherCollapse,
                         launcherText: data.launcherText || prev.launcherText,
                         launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : prev.launcherRadius,
                         launcherHeight: data.launcherHeight || prev.launcherHeight,
@@ -452,9 +454,27 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
             })
             return
         }
+
+        // Get questions from current industry
+        let nextQuestion = "";
+        const industryConfig = settings.industry ? INDUSTRY_CONFIG[settings.industry] : INDUSTRY_CONFIG['other'];
+        const pool = (industryConfig as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || [];
+
+        // Find first question not already in the list
+        const unusedQuestion = pool.find((q: string) => !settings.suggestedQuestions.includes(q));
+
+        if (unusedQuestion) {
+            nextQuestion = unusedQuestion;
+        } else {
+            // Fallback to 'other' industry if current industry pool is exhausted
+            const otherPool = (INDUSTRY_CONFIG['other'] as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || [];
+            const otherUnused = otherPool.find((q: string) => !settings.suggestedQuestions.includes(q));
+            if (otherUnused) nextQuestion = otherUnused;
+        }
+
         setSettings(prev => ({
             ...prev,
-            suggestedQuestions: [...prev.suggestedQuestions, ""]
+            suggestedQuestions: [...prev.suggestedQuestions, nextQuestion]
         }))
     }
 
@@ -894,6 +914,21 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                         </div>
                                     )}
 
+                                    {settings.launcherStyle === 'icon_text' && (
+                                        <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg bg-muted/20">
+                                            <div className="space-y-0.5">
+                                                <Label className="text-sm">{t('autoCollapse') || 'Otomatik Daralt'}</Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {t('autoCollapseDesc') || '5 sn sonra daralarak sadece ikon görünür'}
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={settings.launcherCollapse || false}
+                                                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, launcherCollapse: checked }))}
+                                            />
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label className="text-xs">{t('backgroundColor')}</Label>
@@ -967,10 +1002,21 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                         onChange={(e) => setSearchTerm(e.target.value)}
                                                     />
                                                     <div className="border rounded-md p-2 h-32 overflow-y-auto grid grid-cols-6 gap-2">
-                                                        {Object.keys(icons)
+                                                        {(searchTerm ? Object.keys(icons) : [
+                                                            "MessageSquare", "MessageCircle", "MessageSquareText", "MessagesSquare",
+                                                            "Bot", "Sparkles", "Brain", "BrainCircuit", "Cpu", "Zap", "Activity",
+                                                            "Headset", "Mic", "Video", "Phone",
+                                                            "User", "Users", "UserCheck",
+                                                            "HelpCircle", "Info", "AlertCircle",
+                                                            "Star", "Heart", "ThumbsUp", "Smile",
+                                                            "Send", "Share2", "Paperclip",
+                                                            "Command", "Terminal", "Code", "Box",
+                                                            "Ghost", "Gamepad2", "Rocket"
+                                                        ])
                                                             .filter(key => {
                                                                 if (searchTerm && !key.toLowerCase().includes(searchTerm.toLowerCase())) return false
-                                                                return true
+                                                                // Ensure icon exists in library
+                                                                return (icons as any)[key] !== undefined
                                                             })
                                                             .slice(0, 100)
                                                             .map((iconName) => {
@@ -1093,7 +1139,22 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                 <Select
                                                     disabled={!settings.enableIndustryGreeting}
                                                     value={settings.industry}
-                                                    onValueChange={(value) => setSettings(prev => ({ ...prev, industry: value as IndustryType }))}
+                                                    onValueChange={(value) => {
+                                                        const selectedIndustry = value as IndustryType;
+                                                        const industryConfig = INDUSTRY_CONFIG[selectedIndustry];
+
+                                                        // Get suggested questions based on current language or default to English
+                                                        // We use 'as any' here because suggestedQuestions might not be in the inferred type yet if not fully updated in all places, 
+                                                        // but we just added it to the config.
+                                                        const questions = (industryConfig as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || [];
+
+                                                        setSettings(prev => ({
+                                                            ...prev,
+                                                            industry: selectedIndustry,
+                                                            // Only update questions if we have some defined
+                                                            suggestedQuestions: questions.length > 0 ? questions : prev.suggestedQuestions
+                                                        }));
+                                                    }}
                                                 >
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder={t('selectIndustry')} />
@@ -1698,8 +1759,9 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                 ),
                                                 padding: (settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text') ? '0 12px' : 0,
                                                 overflow: 'hidden',
+                                                color: settings.launcherIconColor,
                                             }}
-                                            className={`flex items-center justify-center gap-2 text-white font-medium transition-transform hover:scale-105 ${settings.launcherAnimation === 'pulse' ? 'animate-pulse' :
+                                            className={`flex items-center justify-center gap-2 font-medium transition-transform hover:scale-105 ${settings.launcherAnimation === 'pulse' ? 'animate-pulse' :
                                                 settings.launcherAnimation === 'bounce' ? 'animate-bounce' : ''
                                                 }`}
                                         >
@@ -1733,7 +1795,7 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                         )
                                                     )}
                                                     {(settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text') && (
-                                                        <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]" style={{ color: settings.launcherIconColor }}>{settings.launcherText}</span>
+                                                        <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">{settings.launcherText}</span>
                                                     )}
                                                 </>
                                             )}

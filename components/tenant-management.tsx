@@ -363,6 +363,7 @@ export function TenantManagement() {
                                     <TableHead>{t('role')}</TableHead>
                                     <TableHead>{t('status')}</TableHead>
                                     <TableHead>{t('createdAt')}</TableHead>
+                                    <TableHead>{t('usageDays')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -377,7 +378,7 @@ export function TenantManagement() {
                                                 {user.email}
                                                 {user.isArchived && (
                                                     <Badge variant="secondary" className="ml-2 bg-gray-200 text-gray-600">
-                                                        Arşiv
+                                                        {t('archive')}
                                                     </Badge>
                                                 )}
                                             </div>
@@ -395,6 +396,11 @@ export function TenantManagement() {
                                         </TableCell>
                                         <TableCell>
                                             {new Date(user.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-sm font-medium">
+                                                {Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))} {t('days')}
+                                            </span>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             {user.role !== 'SUPER_ADMIN' && (
@@ -428,7 +434,7 @@ export function TenantManagement() {
                                                             ) : (
                                                                 <>
                                                                     <ArchiveRestore className="h-4 w-4 mr-1" />
-                                                                    Geri Yükle
+                                                                    {t('restore')}
                                                                 </>
                                                             )}
                                                         </Button>

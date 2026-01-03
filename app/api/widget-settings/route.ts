@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 
+// Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
@@ -53,6 +54,7 @@ export async function GET(req: Request) {
                     viewMode: data.viewMode || "classic", // 'classic' | 'wide'
                     modalSize: data.modalSize || "half", // 'half' | 'full'
                     launcherStyle: data.launcherStyle || "circle",
+                    launcherCollapse: data.launcherCollapse || false,
                     launcherText: data.launcherText || "Chat",
                     launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
                     launcherHeight: data.launcherHeight || 60,
@@ -93,9 +95,11 @@ export async function GET(req: Request) {
                     voiceProvider: data.voiceProvider || "klassifier",
                     elevenLabsVoiceId: data.elevenLabsVoiceId || "",
                     enablePersonalShopper: data.enablePersonalShopper || false,
+                    enableVisualDiagnosis: data.enableVisualDiagnosis || false,
                     enableIndustryGreeting: data.enableIndustryGreeting || false,
                     industry: data.industry || "ecommerce",
                     customPrompts: data.customPrompts || "",
+                    salesOptimizationConfig: data.salesOptimizationConfig || null,
                     theme: data.theme || "classic",
                 }, {
                     headers: {
@@ -121,6 +125,7 @@ export async function GET(req: Request) {
                     viewMode: "classic",
                     modalSize: "half",
                     launcherStyle: "circle",
+                    launcherCollapse: false,
                     launcherText: "Sohbet",
                     launcherRadius: 50,
                     launcherHeight: 60,

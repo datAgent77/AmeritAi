@@ -309,8 +309,10 @@
           // Re-trigger animation
           if (animation && animation !== 'none') {
             this.bubble.classList.remove(`userex-eng-${animation}`);
+            this.bubble.classList.remove(`userex-eng-${animation}-center`);
             void this.bubble.offsetWidth; // trigger reflow
-            this.bubble.classList.add(`userex-eng-${animation}`);
+            const animationClass = this.isBubbleCentered ? `userex-eng-${animation}-center` : `userex-eng-${animation}`;
+            this.bubble.classList.add(animationClass);
           }
           return;
         }
@@ -392,14 +394,14 @@
       // Trigger animation entry
       setTimeout(() => {
         this.bubble.style.opacity = '1';
-        this.bubble.style.transform = 'translateY(0)';
+        this.bubble.style.transform = this.isBubbleCentered ? 'translate(-50%, 0)' : 'translateY(0)';
       }, 10);
 
-      // Apply CSS animation
       if (animation && animation !== 'none') {
         this.addAnimationStyles();
         setTimeout(() => {
-          this.bubble.classList.add(`userex-eng-${animation}`);
+          const animationClass = this.isBubbleCentered ? `userex-eng-${animation}-center` : `userex-eng-${animation}`;
+          this.bubble.classList.add(animationClass);
         }, 300);
       }
 
@@ -430,31 +432,61 @@
       const bubbleWidth = 280;
       const gap = 16;
 
-      switch (position) {
-        case 'top':
-          // Above launcher
-          this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
-          this.bubble.style.right = `${window.innerWidth - launcherRect.right}px`;
-          break;
-        case 'left':
-          // Left of launcher
-          this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
-          this.bubble.style.right = `${window.innerWidth - launcherRect.left + gap}px`;
-          break;
-        case 'right':
-          // Right of launcher  
-          this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
-          this.bubble.style.left = `${launcherRect.right + gap}px`;
-          break;
-        default:
-          // Default: top
-          this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
-          this.bubble.style.right = `${window.innerWidth - launcherRect.right}px`;
+      // Default to non-centered
+      this.isBubbleCentered = false;
+
+      // Dynamic Alignment Logic based on Launcher Position
+      if (position === 'top') {
+        const launcherCenter = launcherRect.left + (launcherRect.width / 2);
+        const screenW = window.innerWidth;
+
+        // Vertical placement (always above)
+        this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
+
+        // Horizontal Zones
+        if (launcherCenter < screenW * 0.33) {
+          // LEFT ZONE -> Align Left Edge
+          this.bubble.style.left = `${launcherRect.left}px`;
+          this.bubble.style.right = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
+        } else if (launcherCenter > screenW * 0.66) {
+          // RIGHT ZONE -> Align Right Edge
+          this.bubble.style.right = `${screenW - launcherRect.right}px`;
+          this.bubble.style.left = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
+        } else {
+          // CENTER ZONE -> Align to Center of Launcher
+          this.bubble.style.left = `${launcherCenter}px`;
+          this.bubble.style.right = 'auto';
+          // Center the bubble relative to the launcher's center point
+          this.bubble.style.transform = 'translate(-50%, 20px)';
+          this.isBubbleCentered = true;
+        }
+      } else {
+        // Fallback for other manual positions (left/right of launcher)
+        switch (position) {
+          case 'left':
+            this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
+            this.bubble.style.right = `${window.innerWidth - launcherRect.left + gap}px`;
+            break;
+          case 'right':
+            this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
+            this.bubble.style.left = `${launcherRect.right + gap}px`;
+            break;
+          default:
+            // Default check (fallback to Right-Aligned Top if unknown)
+            this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
+            this.bubble.style.right = `${window.innerWidth - launcherRect.right}px`;
+            break;
+        }
       }
+
 
       // Mobile adjustments
       if (isMobileDevice()) {
         this.bubble.style.maxWidth = 'calc(100vw - 40px)';
+        // On mobile, if centered, keep it centered? Or default to full width behaviors?
+        // Usually mobile uses specific styles injected in addMobileStyles
       }
     }
 
@@ -477,6 +509,21 @@
           25% { transform: translateX(-4px); }
           75% { transform: translateX(4px); }
         }
+        /* Centered Animations */
+        @keyframes userex-eng-bounce-center {
+          0%, 100% { transform: translate(-50%, 0); }
+          50% { transform: translate(-50%, -8px); }
+        }
+        @keyframes userex-eng-pulse-center {
+          0%, 100% { transform: translate(-50%, 0) scale(1); }
+          50% { transform: translate(-50%, 0) scale(1.05); }
+        }
+        @keyframes userex-eng-shake-center {
+          0%, 100% { transform: translate(-50%, 0); }
+          25% { transform: translate(calc(-50% - 4px), 0); }
+          75% { transform: translate(calc(-50% + 4px), 0); }
+        }
+
         .userex-eng-bounce {
           animation: userex-eng-bounce 1.5s ease-in-out infinite;
         }
@@ -485,6 +532,16 @@
         }
         .userex-eng-shake {
           animation: userex-eng-shake 0.5s ease-in-out infinite;
+        }
+        /* Centered Classes */
+        .userex-eng-bounce-center {
+          animation: userex-eng-bounce-center 1.5s ease-in-out infinite;
+        }
+        .userex-eng-pulse-center {
+          animation: userex-eng-pulse-center 2s ease-in-out infinite;
+        }
+        .userex-eng-shake-center {
+          animation: userex-eng-shake-center 0.5s ease-in-out infinite;
         }
       `;
       document.head.appendChild(style);
@@ -745,12 +802,13 @@
       position: 'relative',
       width: isTextMode ? 'auto' : `${settings.launcherWidth}px`,
       minWidth: isTextMode ? `${settings.launcherWidth}px` : undefined,
-      maxWidth: isTextMode ? '200px' : undefined,
+      maxWidth: isTextMode ? '320px' : undefined,
       height: `${settings.launcherHeight}px`,
-      padding: isTextMode ? '0 24px' : '0',
+      padding: isTextMode ? '0 16px' : '0',
       borderRadius: `${settings.launcherRadius}px`,
       backgroundColor: settings.launcherBackgroundColor || settings.brandColor,
       boxShadow: shadowStyle,
+      boxSizing: 'border-box',
       cursor: 'pointer',
       pointerEvents: 'auto', // Catch clicks
       display: 'flex',
@@ -781,27 +839,44 @@
       // We strip '-icon' suffix and 'Lucide' prefix to ensure correct icon name generation.
       // e.g. 'LucideMessageCircle' -> 'MessageCircle' -> 'message-circle'
       // e.g. 'ActivityIcon' -> 'Activity' -> 'activity'
-      const iconName = settings.launcherLibraryIcon
-        .replace(/^Lucide/, '')
-        .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-        .toLowerCase()
-        .replace(/-icon$/, '');
-      iconHtml = `<i data-lucide="${iconName}" style="width: 24px; height: 24px; color: ${settings.launcherIconColor || '#FFFFFF'};"></i>`;
+      // Static SVGs for common icons to ensure instant rendering without CDN dependency
+      const staticIcons = {
+        'MessageSquare': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+        'Bot': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
+        'Sparkles': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>',
+        'Brain': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>',
+        'Headset': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5Zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3Z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/></svg>',
+        'MessageCircle': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
+        'Zap': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+      };
 
-      // Inject Lucide Script if not already present
-      if (!document.getElementById('userex-lucide-script')) {
-        const script = document.createElement('script');
-        script.id = 'userex-lucide-script';
-        script.src = 'https://unpkg.com/lucide@latest';
-        script.onload = () => {
-          if (window.lucide) {
-            window.lucide.createIcons();
-          }
-        };
-        document.head.appendChild(script);
-      } else if (window.lucide) {
-        // If script exists, try to render icons immediately (or after a short delay to ensure DOM is ready)
-        setTimeout(() => window.lucide.createIcons(), 100);
+      if (staticIcons[settings.launcherLibraryIcon]) {
+        // Use static SVG
+        // Wrap in a span to apply color and dimensions
+        iconHtml = `<span style="display:flex; width: 24px; height: 24px; color: ${settings.launcherIconColor || '#FFFFFF'};">${staticIcons[settings.launcherLibraryIcon]}</span>`;
+      } else {
+        // Fallback to Lucide CDN for other icons
+        const iconName = settings.launcherLibraryIcon
+          .replace(/^Lucide/, '')
+          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .toLowerCase()
+          .replace(/-icon$/, '');
+        iconHtml = `<i data-lucide="${iconName}" style="width: 24px; height: 24px; color: ${settings.launcherIconColor || '#FFFFFF'};"></i>`;
+
+        // Inject Lucide Script if not already present
+        if (!document.getElementById('userex-lucide-script')) {
+          const script = document.createElement('script');
+          script.id = 'userex-lucide-script';
+          script.src = 'https://unpkg.com/lucide@latest';
+          script.onload = () => {
+            if (window.lucide) {
+              window.lucide.createIcons();
+            }
+          };
+          document.head.appendChild(script);
+        } else if (window.lucide) {
+          setTimeout(() => window.lucide.createIcons(), 100);
+        }
       }
     } else {
       // Default Message Icon
@@ -833,7 +908,7 @@
       color: 'white',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       fontWeight: '600',
-      padding: isTextStyle ? '0 20px' : '0',
+      padding: isTextStyle ? '0 16px' : '0',
       gap: '8px',
       pointerEvents: 'auto'
     });
@@ -949,9 +1024,9 @@
 
       // Standard Mode
       if (settings.launcherStyle === 'text') {
-        launcher.innerHTML = `<span>${settings.launcherText}</span>`;
+        launcher.innerHTML = `<span class="userex-launcher-text">${settings.launcherText}</span>`;
       } else if (settings.launcherStyle === 'icon_text') {
-        launcher.innerHTML = `${iconHtml}<span>${settings.launcherText}</span>`;
+        launcher.innerHTML = `${iconHtml}<span class="userex-launcher-text">${settings.launcherText}</span>`;
       } else {
         // Circle or Square (Icon only)
         launcher.innerHTML = iconHtml;
@@ -983,6 +1058,67 @@
       launcher.style.opacity = '1';
       launcher.style.transform = 'scale(1)';
     };
+
+    // Auto Collapse Logic for Icon + Text
+    if (settings.launcherStyle === 'icon_text' && settings.launcherCollapse) {
+      let collapseTimer;
+      let isCollapsed = false;
+
+      const collapseLauncher = () => {
+        if (isCollapsed) return;
+        isCollapsed = true;
+
+        // Shrink width to height (make it circle/square)
+        launcher.style.width = `${settings.launcherHeight}px`;
+        launcher.style.padding = '0';
+        launcher.style.minWidth = `${settings.launcherHeight}px`; // Override minWidth
+        launcher.style.gap = '0';
+
+        // Hide text span
+        const span = launcher.querySelector('.userex-launcher-text');
+        if (span) {
+          span.style.transition = 'all 0.3s ease';
+          span.style.opacity = '0';
+          span.style.maxWidth = '0';
+          span.style.whiteSpace = 'nowrap';
+          span.style.overflow = 'hidden';
+        }
+      };
+
+      const expandLauncher = () => {
+        if (!isCollapsed) return;
+        isCollapsed = false;
+
+        launcher.style.width = 'auto';
+        launcher.style.padding = '0 16px';
+        launcher.style.minWidth = '100px'; // Restore original minWidth for text mode
+        launcher.style.gap = '8px';
+
+        const span = launcher.querySelector('.userex-launcher-text');
+        if (span) {
+          span.style.opacity = '1';
+          span.style.maxWidth = '300px';
+        }
+      };
+
+      // Start initial timer
+      collapseTimer = setTimeout(collapseLauncher, 5000);
+
+      // Enhance existing hover handlers
+      const originalEnter = launcher.onmouseenter;
+      launcher.onmouseenter = (e) => {
+        if (originalEnter) originalEnter(e);
+        clearTimeout(collapseTimer);
+        expandLauncher();
+      };
+
+      const originalLeave = launcher.onmouseleave;
+      launcher.onmouseleave = (e) => {
+        if (originalLeave) originalLeave(e);
+        // Restart collapse timer
+        collapseTimer = setTimeout(collapseLauncher, 3000);
+      };
+    }
 
     // Create Iframe Container
     const iframeContainer = document.createElement('div');
@@ -1355,6 +1491,7 @@
           viewMode: data.viewMode || 'classic',
           modalSize: data.modalSize || 'half',
           launcherStyle: data.launcherStyle || 'circle',
+          launcherCollapse: data.launcherCollapse || false,
           launcherText: data.launcherText || 'Sohbet',
           launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
           launcherHeight: data.launcherHeight || 60,

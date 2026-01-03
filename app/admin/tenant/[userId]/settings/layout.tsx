@@ -3,7 +3,8 @@
 import { useParams } from "next/navigation"
 import { SubpageSidebar } from "@/components/subpage-sidebar"
 import { useLanguage } from "@/context/LanguageContext"
-import { CreditCard, Code, Bell, Bot } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
+import { CreditCard, Code, Bell, Bot, ShieldCheck } from "lucide-react"
 
 export default function TenantSettingsLayout({
     children,
@@ -11,6 +12,7 @@ export default function TenantSettingsLayout({
     children: React.ReactNode
 }) {
     const { t } = useLanguage()
+    const { role } = useAuth()
     const params = useParams()
     const userId = params.userId as string
 
@@ -39,6 +41,13 @@ export default function TenantSettingsLayout({
             href: `/admin/tenant/${userId}/settings/notifications`,
             icon: <Bell className="w-4 h-4" />
         },
+        // Super Admin Only
+        ...(role === 'SUPER_ADMIN' ? [{
+            id: "customer-admin",
+            label: t('customerAdmin') || "Müşteri Yönetimi",
+            href: `/admin/tenant/${userId}/settings/customer-admin`,
+            icon: <ShieldCheck className="w-4 h-4" />
+        }] : [])
     ]
 
     return (

@@ -14,24 +14,68 @@ export default function VisualDiagnosisPage() {
     const { t } = useLanguage()
     const router = useRouter()
     const { toast } = useToast()
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [result, setResult] = useState<null | { diagnosis: string, confidence: string, treatment: string }>(null)
 
-    const handleUpload = () => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // 1. Preview
+        const reader = new FileReader()
+        reader.onload = (e) => setSelectedImage(e.target?.result as string)
+        reader.readAsDataURL(file)
+
+        // 2. Analyze
         setIsAnalyzing(true)
         setResult(null)
-        setTimeout(() => {
-            setIsAnalyzing(false)
-            setResult({
-                diagnosis: "Tomato Early Blight",
-                confidence: "94%",
-                treatment: "Remove infected leaves immediately. Apply copper-based fungicide."
+
+        try {
+            // Need clean base64 string (remove data:image/bg;base64, prefix)
+            // But we can do this inside the promise
+            const base64Promise = new Promise<string>((resolve, reject) => {
+                const r = new FileReader()
+                r.onload = () => {
+                    const result = r.result as string
+                    const base64 = result.split(',')[1] // Extract actual data
+                    resolve(base64)
+                }
+                r.onerror = reject
+                r.readAsDataURL(file)
             })
+
+            const base64Data = await base64Promise
+
+            const response = await fetch('/api/visual-diagnosis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image: base64Data,
+                    mimeType: file.type
+                })
+            })
+
+            if (!response.ok) throw new Error("Analysis failed")
+
+            const data = await response.json()
+            setResult(data)
+
             toast({
                 title: "Analysis Complete",
-                description: "Disease detected: Tomato Early Blight"
+                description: `Identified: ${data.diagnosis}`
             })
-        }, 2000)
+
+        } catch (error) {
+            console.error(error)
+            toast({
+                title: "Error",
+                description: "Failed to analyze image. Please try again.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsAnalyzing(false)
+        }
     }
 
     return (
@@ -60,14 +104,27 @@ export default function VisualDiagnosisPage() {
                         <CardDescription>Upload a photo of the plant leaf or affected area</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer" onClick={handleUpload}>
-                            <Camera className="h-12 w-12 text-muted-foreground mb-4" />
-                            <p className="font-medium">Click to upload or take photo</p>
-                            <p className="text-sm text-muted-foreground mt-1">Supports JPG, PNG</p>
-                        </div>
-                        <Button className="w-full" onClick={handleUpload} disabled={isAnalyzing}>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            id="image-upload"
+                            onChange={handleFileSelect}
+                        />
+                        <label
+                            htmlFor="image-upload"
+                            className="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative overflow-hidden"
+                        >
+                            {selectedImage ? (
+                                <img src={selectedImage} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                            ) : null}
+                            <Camera className="h-12 w-12 text-muted-foreground mb-4 z-10" />
+                            <p className="font-medium z-10">Click to upload or take photo</p>
+                            <p className="text-sm text-muted-foreground mt-1 z-10">Supports JPG, PNG</p>
+                        </label>
+                        <Button className="w-full" onClick={() => document.getElementById('image-upload')?.click()} disabled={isAnalyzing}>
                             {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isAnalyzing ? "Analyzing..." : "Analyze Image"}
+                            {isAnalyzing ? "Analyzing..." : "Select Image"}
                         </Button>
                     </CardContent>
                 </Card>

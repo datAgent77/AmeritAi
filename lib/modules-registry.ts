@@ -787,7 +787,7 @@ Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkı
         isCore: false,
         isPremium: true,
         price: 59,
-        status: 'beta',
+        status: 'ready',
         supportedSectors: ['agriculture', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableVisualDiagnosis',

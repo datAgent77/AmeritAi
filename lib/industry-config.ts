@@ -44,7 +44,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Welcome! I can help you find the perfect product for your needs.",
             tr: "👋 Hoş geldiniz! Size en uygun ürünü bulmanızda yardımcı olabilirim."
         },
-        contextKeys: ["productName", "productPrice", "productImage"]
+        contextKeys: ["productName", "productPrice", "productImage"],
+        suggestedQuestions: {
+            en: ["Where is my order?", "Do you have a discount code?", "What is the return policy?", "Can you help me choose a product?"],
+            tr: ["Siparişim nerede?", "İndirim kodunuz var mı?", "İade politikanız nedir?", "Ürün seçmeme yardım eder misiniz?"]
+        }
     },
     booking: {
         names: {
@@ -91,7 +95,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help plan your next trip. Flights, hotels, buses, or car rentals - what are you looking for?",
             tr: "👋 Merhaba! Bir sonraki yolculuğunuzu planlamanıza yardımcı olabilirim. Uçak, otel, otobüs veya araç kiralama - ne arıyorsunuz?"
         },
-        contextKeys: ["title", "description", "productPrice", "url"]
+        contextKeys: ["title", "description", "productPrice", "url"],
+        suggestedQuestions: {
+            en: ["How can I find cheap flights?", "Can you help me book a hotel?", "I want to rent a car, can you help?", "How do I cancel my reservation?"],
+            tr: ["En ucuz uçak biletini nasıl bulabilirim?", "Otel rezervasyonu yapmak istiyorum, yardımcı olur musunuz?", "Araç kiralamak istiyorum, şartlarınız neler?", "Rezervasyonumu nasıl iptal edebilirim?"]
+        }
     },
     real_estate: {
         names: {
@@ -131,7 +139,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Looking for your dream home? Be it rent or sale, I can help you find it.",
             tr: "👋 Merhaba! Hayalinizdeki evi bulmanıza yardımcı olayım mı?"
         },
-        contextKeys: ["title", "productPrice"]
+        contextKeys: ["title", "productPrice"],
+        suggestedQuestions: {
+            en: ["Can you show me apartments for rent?", "What houses are for sale under $500k?", "I'd like to schedule a viewing.", "How can I list my property?"],
+            tr: ["Kiralık daireleri görebilir miyim?", "500 bin TL altı satılık evler neler?", "Evi görmek için randevu alabilir miyim?", "Kendi mülkümü nasıl ilana koyabilirim?"]
+        }
     },
     saas: {
         names: {
@@ -170,7 +182,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! How can I help you regarding our software solutions?",
             tr: "👋 Merhaba! Yazılımımızla işlerinizi nasıl kolaylaştırabileceğinizi anlatabilirim."
         },
-        contextKeys: ["title", "url"]
+        contextKeys: ["title", "url"],
+        suggestedQuestions: {
+            en: ["What are your pricing plans?", "How do I start a free trial?", "Do you offer integrations?", "How can I contact support?"],
+            tr: ["Fiyatlandırma planlarınız neler?", "Ücretsiz deneme nasıl başlatabilirim?", "Sisteminiz diğer araçlarla entegre çalışıyor mu?", "Destek ekibiyle nasıl görüşebilirim?"]
+        }
     },
     service: {
         names: {
@@ -209,7 +225,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Welcome! I can answer your questions about our services and help you make an appointment.",
             tr: "👋 Hoş geldiniz! Hizmetlerimizle ilgili sorularınızı cevaplayabilir ve randevu almanıza yardımcı olabilirim."
         },
-        contextKeys: ["title", "description"]
+        contextKeys: ["title", "description"],
+        suggestedQuestions: {
+            en: ["What services do you offer?", "Can I book an appointment?", "Could you give me a quote?", "Can I see your portfolio?"],
+            tr: ["Hangi hizmetleri sunuyorsunuz?", "Nasıl randevu alabilirim?", "Fiyat teklifi alabilir miyim?", "Daha önceki çalışmalarınızı görebilir miyim?"]
+        }
     },
     healthcare: {
         names: {
@@ -250,7 +270,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help you with health services and appointments.",
             tr: "👋 Merhaba! Sağlığınızla ilgili nasıl yardımcı olabilirim?"
         },
-        contextKeys: ["title", "description"]
+        contextKeys: ["title", "description"],
+        suggestedQuestions: {
+            en: ["When is the doctor available?", "How can I book a check-up?", "What departments do you have?", "Who should I call in an emergency?"],
+            tr: ["Doktorların çalışma saatleri nedir?", "Muayene randevusu nasıl alabilirim?", "Hastanede hangi bölümler var?", "Acil durumda kime ulaşabilirim?"]
+        }
     },
     education: {
         names: {
@@ -289,7 +313,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Welcome! I can help you find the right training or course.",
             tr: "👋 Merhaba! Geleceğiniz için en iyi eğitimi bulmanıza yardımcı olayım."
         },
-        contextKeys: ["title", "productPrice"]
+        contextKeys: ["title", "productPrice"],
+        suggestedQuestions: {
+            en: ["What courses are available?", "How do I enroll in a course?", "How much do the courses cost?", "Do you provide certificates?"],
+            tr: ["Mevcut kurslarınız nelerdir?", "Kursa nasıl kayıt olabilirim?", "Kurs fiyatları hakkında bilgi verir misiniz?", "Eğitim sonunda sertifika veriliyor mu?"]
+        }
     },
     academic: {
         names: {
@@ -343,7 +371,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Welcome! I can help you explore our academic programs and campus life.",
             tr: "👋 Hoş geldiniz! Akademik programlarımız ve kampüs yaşamı hakkında bilgi verebilirim."
         },
-        contextKeys: ["title", "description", "url"]
+        contextKeys: ["title", "description", "url"],
+        suggestedQuestions: {
+            en: ["What are the admission requirements?", "Do you offer any scholarships?", "Can I take a campus tour?", "How do I apply?"],
+            tr: ["Kabul şartlarınız nelerdir?", "Burs imkanlarınız var mı?", "Kampüsü gezebilir miyim?", "Başvuru sürecini nasıl başlatabilirim?"]
+        }
     },
     finance: {
         names: {
@@ -384,7 +416,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help you achieve your financial goals.",
             tr: "👋 Merhaba! Finansal hedeflerinize ulaşmanızda yardımcı olabilirim."
         },
-        contextKeys: ["title", "description"]
+        contextKeys: ["title", "description"],
+        suggestedQuestions: {
+            en: ["What are your loan interest rates?", "How can I open an account?", "Which credit cards do you offer?", "Can I meet with a financial advisor?"],
+            tr: ["Kredi faiz oranlarınız nedir?", "Nasıl hesap açabilirim?", "Hangi kredi kartı seçenekleriniz var?", "Bir danışmanla görüşebilir miyim?"]
+        }
     },
     restaurant: {
         names: {
@@ -429,7 +465,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Welcome! Hungry? I can suggest the perfect meal for you.",
             tr: "👋 Hoş geldiniz! Karnınız aç mı? Sizin için harika önerilerim var."
         },
-        contextKeys: ["menuItemName", "ingredients", "price", "category"]
+        contextKeys: ["menuItemName", "ingredients", "price", "category"],
+        suggestedQuestions: {
+            en: ["Can I see the menu?", "What are today's specials?", "Do you have vegetarian options?", "Can I book a table?"],
+            tr: ["Menüyü görebilir miyim?", "Günün spesiyalleri neler?", "Vejetaryen seçenekleriniz var mı?", "Rezervasyon yaptırabilir miyim?"]
+        }
     },
     agriculture: {
         names: {
@@ -472,7 +512,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I'm here to help with your farm and livestock questions.",
             tr: "👋 Merhaba! Tarlanız ve hayvanlarınızla ilgili her konuda yardıma hazırım."
         },
-        contextKeys: ["cropType", "diseaseName", "marketPrice", "location"]
+        contextKeys: ["cropType", "diseaseName", "marketPrice", "location"],
+        suggestedQuestions: {
+            en: ["Can you diagnose this crop disease?", "What are the current market prices?", "What is the weather forecast?", "Do you have any planting advice?"],
+            tr: ["Bitki hastalığı teşhisi yapıyor musunuz?", "Güncel piyasa fiyatları nedir?", "Bölgemdeki hava durumu nasıl?", "Ekim zamanı hakkında tavsiye alabilir miyim?"]
+        }
     },
     automotive: {
         names: {
@@ -516,7 +560,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! Looking for a new car, service, or spare parts? I can help!",
             tr: "👋 Merhaba! Yeni araç, servis veya yedek parça mı arıyorsunuz? Size yardımcı olabilirim!"
         },
-        contextKeys: ["vehicleName", "vehiclePrice", "vehicleType", "serviceType"]
+        contextKeys: ["vehicleName", "vehiclePrice", "vehicleType", "serviceType"],
+        suggestedQuestions: {
+            en: ["Can I book a test drive?", "How do I schedule a service appointment?", "Do you have this spare part?", "What new car models do you have?"],
+            tr: ["Test sürüşü ayarlayabilir miyim?", "Servis randevusu nasıl alırım?", "Yedek parça sorgulaması yapabilir miyim?", "Yeni araç modelleriniz nelerdir?"]
+        }
     },
     insurance: {
         names: {
@@ -560,7 +608,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help you find the right insurance for your needs.",
             tr: "👋 Merhaba! İhtiyaçlarınıza en uygun sigortayı bulmanızda yardımcı olabilirim."
         },
-        contextKeys: ["policyType", "coverageDetails", "premium"]
+        contextKeys: ["policyType", "coverageDetails", "premium"],
+        suggestedQuestions: {
+            en: ["Can I get an insurance quote?", "How do I file a claim?", "What does the policy cover?", "How can I contact an agent?"],
+            tr: ["Fiyat teklifi alabilir miyim?", "Hasar bildirimini nasıl yaparım?", "Poliçe neleri kapsıyor?", "En yakın acenteye nasıl ulaşırım?"]
+        }
     },
     logistics: {
         names: {
@@ -604,7 +656,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help you track packages or get shipping quotes.",
             tr: "👋 Merhaba! Kargo takibi veya nakliye teklifi konusunda yardımcı olabilirim."
         },
-        contextKeys: ["trackingNumber", "deliveryStatus", "estimatedDelivery"]
+        contextKeys: ["trackingNumber", "deliveryStatus", "estimatedDelivery"],
+        suggestedQuestions: {
+            en: ["Where is my package?", "Can I get a shipping quote?", "What are your estimated delivery times?", "I have a problem with my shipment, can you help?"],
+            tr: ["Kargomun nerede olduğunu öğrenebilir miyim?", "Nakliye için fiyat teklifi alabilir miyim?", "Ortalama teslimat süreleriniz nedir?", "Bir sorun bildirmek istiyorum, yardımcı olur musunuz?"]
+        }
     },
     beauty: {
         names: {
@@ -648,7 +704,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! Looking for beauty treatments or wellness services? I'm here to help!",
             tr: "👋 Merhaba! Güzellik bakımı veya wellness hizmeti mi arıyorsunuz? Yardımcı olmaktan mutluluk duyarım!"
         },
-        contextKeys: ["serviceName", "servicePrice", "staffName", "appointmentTime"]
+        contextKeys: ["serviceName", "servicePrice", "staffName", "appointmentTime"],
+        suggestedQuestions: {
+            en: ["How can I book an appointment?", "Do you have a price list for services?", "Are there any special offers?", "Can you give me skin care advice?"],
+            tr: ["Randevu oluşturabilir miyim?", "Hizmet ve fiyat listeniz var mı?", "Şu an aktif kampanyalarınız var mı?", "Cilt bakımı için tavsiye alabilir miyim?"]
+        }
     },
     legal: {
         names: {
@@ -694,7 +754,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! I can help you find the right legal assistance.",
             tr: "👋 Merhaba! Hukuki konularda size yardımcı olabilirim. Hangi alanda desteğe ihtiyacınız var?"
         },
-        contextKeys: ["caseType", "lawyerName", "consultationType"]
+        contextKeys: ["caseType", "lawyerName", "consultationType"],
+        suggestedQuestions: {
+            en: ["How do I schedule a consultation?", "What legal services do you provide?", "Can you tell me about your lawyers?", "How can I contact you?"],
+            tr: ["Danışmanlık randevusu alabilir miyim?", "Hangi hukuki hizmetleri veriyorsunuz?", "Avukatlarınız hakkında bilgi alabilir miyim?", "Size nasıl ulaşabilirim?"]
+        }
     },
     fitness: {
         names: {
@@ -738,7 +802,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! Ready to start your fitness journey? I can help you find the perfect program!",
             tr: "👋 Merhaba! Fitness yolculuğunuza başlamaya hazır mısınız? Size en uygun programı bulmada yardımcı olabilirim!"
         },
-        contextKeys: ["className", "trainerName", "membershipType", "schedule"]
+        contextKeys: ["className", "trainerName", "membershipType", "schedule"],
+        suggestedQuestions: {
+            en: ["What are your membership plans?", "Can I see the class schedule?", "Do you offer personal training?", "Do you have a free trial?"],
+            tr: ["Üyelik planlarınız nelerdir?", "Ders programını görebilir miyim?", "Özel ders veriyor musunuz?", "Ücretsiz deneme dersiniz var mı?"]
+        }
     },
     maritime: {
         names: {
@@ -782,7 +850,11 @@ export const INDUSTRY_CONFIG = {
             en: "👋 Hello! Looking for maritime services, vessel booking, or cargo shipping? I can help!",
             tr: "👋 Merhaba! Denizcilik hizmetleri, gemi kiralama veya kargo taşımacılığı mı arıyorsunuz? Size yardımcı olabilirim!"
         },
-        contextKeys: ["vesselName", "vesselType", "portName", "cargoType"]
+        contextKeys: ["vesselName", "vesselType", "portName", "cargoType"],
+        suggestedQuestions: {
+            en: ["What are the terms for chartering a vessel?", "What are your cargo shipping rates?", "Which ports do you operate in?", "What maritime services do you offer?"],
+            tr: ["Gemi kiralama şartlarınız nelerdir?", "Deniz kargo fiyatlarınız nedir?", "Hangi limanlara hizmet veriyorsunuz?", "Hangi denizcilik hizmetlerini sunuyorsunuz?"]
+        }
     },
     other: {
         names: {
@@ -818,10 +890,14 @@ export const INDUSTRY_CONFIG = {
             tr: "👋 İşleminize devam etmek ister misiniz?"
         },
         greeting_general: {
-            en: "👋 Hello! How can I help you?",
+            en: "👋 Hello! How can I assist you today?",
             tr: "👋 Merhaba! Size nasıl yardımcı olabilirim?"
         },
-        contextKeys: ["title", "description"]
+        contextKeys: [],
+        suggestedQuestions: {
+            en: ["How can I contact you?", "Can you tell me about your company?", "What services do you provide?", "I need help, what should I do?"],
+            tr: ["Size nasıl ulaşabilirim?", "Şirketiniz hakkında bilgi verir misiniz?", "Neler yapıyorsunuz?", "Yardıma ihtiyacım var, ne yapmalıyım?"]
+        }
     }
 } as const;
 

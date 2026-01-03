@@ -1,15 +1,28 @@
-"use client"
+import { getAdminDb } from "@/lib/firebase-admin"
+import { TenantDashboardClient } from "./dashboard-client"
 
-import { DashboardStats } from "@/components/dashboard-stats"
-import { useLanguage } from "@/context/LanguageContext"
+export const dynamic = "force-dynamic"
 
-export default function TenantDashboardPage({ params }: { params: { userId: string } }) {
-    const { t } = useLanguage()
+export default async function TenantDashboardPage({ params }: { params: { userId: string } }) {
+    let companyName = ""
+
+    try {
+        const adminDb = getAdminDb()
+        if (adminDb) {
+            const userDoc = await adminDb.collection("users").doc(params.userId).get()
+            if (userDoc.exists) {
+                const userData = userDoc.data()
+                companyName = userData?.companyName || userData?.displayName || ""
+            }
+        }
+    } catch (error) {
+        console.error("Error fetching tenant details:", error)
+    }
 
     return (
-        <div className="p-8">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">{t('dashboardOverview')}</h2>
-            <DashboardStats targetUserId={params.userId} />
-        </div>
+        <TenantDashboardClient
+            userId={params.userId}
+            companyName={companyName}
+        />
     )
 }

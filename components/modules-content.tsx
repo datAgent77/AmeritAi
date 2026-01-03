@@ -35,7 +35,23 @@ import {
     List,
     Search,
     Filter,
-    Settings2
+    Settings2,
+    UserPlus,
+    Star,
+    Award,
+    Languages,
+    Gamepad2,
+    Scan,
+    Utensils,
+    MessageCircle,
+    PenTool, // Email Feature
+    Send, // Email Feature Feature
+    Inbox, // Review Feature
+    QrCode, // Loyalty Feature
+    Gift, // Loyalty/Game Feature
+    MousePointerClick, // Campaign Feature
+    Lightbulb, // Proactive Feature
+    Camera // Visual Feature
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
@@ -76,7 +92,23 @@ export const ICON_MAP = {
     Users,
     BookOpen,
     Share2,
-    Mail
+    Mail,
+    UserPlus,
+    Star,
+    Award,
+    Languages,
+    Gamepad2,
+    Scan,
+    Utensils,
+    MessageCircle,
+    PenTool,
+    Send,
+    Inbox,
+    QrCode,
+    Gift,
+    MousePointerClick,
+    Lightbulb,
+    Camera
 }
 
 // Map ModuleId to Firestore Field
@@ -309,6 +341,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     // Use console page for now (works for both admin and tenant)
                     router.push("/console/modules/digital-waiter")
                     break
+                case 'visualDiagnosis':
+                    router.push("/console/modules/visual")
+                    break
                 case 'proactiveMessaging':
                     // Use console page for now (works for both admin and tenant)
                     router.push("/console/modules/engagement")
@@ -505,7 +540,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500">
+        <div className="flex-1 space-y-6 p-8 animate-in fade-in duration-500">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
@@ -625,16 +660,18 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
-                                    ) : module.status === 'beta' ? (
-                                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
-                                            Beta
-                                        </Badge>
                                     ) : module.status === 'coming_soon' ? (
                                         <Badge variant="secondary" className="bg-zinc-100 text-zinc-700 hover:bg-zinc-100 border-none">
                                             {t('comingSoon') || 'Yakında'}
                                         </Badge>
-                                    ) : isAccessGranted ? (
+                                    ) : (
+                                        /* Access Granted & No Access Case - Both Show Badges next to Switch/Lock */
                                         <div className="flex items-center gap-2">
+                                            {module.status === 'beta' && (
+                                                <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
+                                                    Beta
+                                                </Badge>
+                                            )}
                                             {isIncluded && !module.isCore && (
                                                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
                                                     {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
@@ -645,29 +682,23 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                     Premium
                                                 </Badge>
                                             )}
-                                            <Switch
-                                                checked={isActive}
-                                                onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                disabled={isLoading === module.id || isCoreModule || !isAccessGranted}
-                                                className={isLoading === module.id ? 'opacity-50' : ''}
-                                            />
+
+                                            {isAccessGranted ? (
+                                                <Switch
+                                                    checked={isActive}
+                                                    onCheckedChange={(checked) => handleToggle(module.id, checked)}
+                                                    disabled={isLoading === module.id || isCoreModule || !isAccessGranted}
+                                                    className={isLoading === module.id ? 'opacity-50' : ''}
+                                                />
+                                            ) : (
+                                                <Lock className="w-5 h-5 text-muted-foreground ml-1" />
+                                            )}
                                         </div>
-                                    ) : (
-                                        <Lock className="w-5 h-5 text-muted-foreground" />
                                     )}
                                 </CardHeader>
                                 <CardContent className="pt-0 flex-1">
-                                    <div className="flex justify-between items-start mb-2">
+                                    <div className="mb-2">
                                         <CardTitle className="text-lg font-semibold">{module.name[language as 'en' | 'tr'] || module.name.en}</CardTitle>
-                                        {isCoreModule || module.status === 'beta' || module.status === 'coming_soon' ? null : isIncluded ? (
-                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors border-transparent bg-green-100 text-green-800">
-                                                {t('included') || 'Dahil'}
-                                            </span>
-                                        ) : (
-                                            <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50">
-                                                Premium
-                                            </Badge>
-                                        )}
                                     </div>
                                     <CardDescription className="line-clamp-2">
                                         {module.description[language as 'en' | 'tr'] || module.description.en}

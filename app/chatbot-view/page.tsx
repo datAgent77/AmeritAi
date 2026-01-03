@@ -5,13 +5,14 @@ import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { doc, updateDoc, arrayUnion, onSnapshot, getDoc } from "firebase/firestore"
 import { guestDb as db, signInAsGuest, guestAuth } from "@/lib/firebase-guest"
-import { MessageSquare, Send, Trash2, Sparkles, X, Maximize2, Minimize2, Mic, Volume2, Square, Headphones, PhoneOff, Calendar, Activity } from "lucide-react"
+import { MessageSquare, Send, RefreshCw, Sparkles, X, Maximize2, Minimize2, Mic, Volume2, Square, Headphones, PhoneOff, Calendar, Activity, Paperclip, ImageIcon, XCircle, MessageCircle, MessageSquareText, MessagesSquare, Bot, Brain, BrainCircuit, Cpu, Zap, Headset, Video, Phone, User, Users, UserCheck, HelpCircle, Info, AlertCircle, Star, Heart, ThumbsUp, Smile, Share2, Command, Terminal, Code, Box, Ghost, Gamepad2, Rocket } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
 import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
 import { useLanguage } from "@/context/LanguageContext"
 import { KlassifierService } from "@/lib/klassifier-service"
+import { ChatbotSettings } from "@/types/chatbot"
 
 // Extend Window interface for Web Speech API
 declare global {
@@ -469,7 +470,7 @@ function ChatbotViewContent() {
 
         try {
             const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 30000) // 30s timeout for all requests
+            const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s timeout for all requests
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
@@ -577,28 +578,128 @@ function ChatbotViewContent() {
     }
 
 
-    // Update isTyping based on isLoading from useChat
-    useEffect(() => {
-        setIsTyping(isChatLoading)
-    }, [isChatLoading])
+    // Local Image Cache Helpers
+    // Local Image Cache Helpers (saveImageToCache moved to line ~715 to unify logic)
 
-    // Watchdog removed - using simple push-to-talk with streaming
+    const getImageFromCache = (msgId: string) => {
+        try {
+            // First check ref
+            if (imageCache.current.has(msgId)) return imageCache.current.get(msgId)
+
+            // Then check localStorage
+            const key = `img_cache_${msgId}`
+            const data = localStorage.getItem(key)
+            if (data) {
+                const parsed = JSON.parse(data)
+                // Cache back to ref
+                imageCache.current.set(msgId, { image: parsed.image, mimeType: parsed.mimeType })
+                return parsed
+            }
+        } catch (e) {
+            console.error('Failed to get image from local cache', e)
+        }
+        return null
+    }
+
+    const findImageByContent = (content: string) => {
+        if (!content) return null
+        try {
+            // Scan localStorage for matching content
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (key?.startsWith('img_cache_')) {
+                    const data = localStorage.getItem(key)
+                    if (data) {
+                        const parsed = JSON.parse(data)
+                        // Fuzzy match: Same content AND created within last 10 minutes AND same chatbotId
+                        // This prevents matching old messages with same content or from other chatbots
+                        const isRecent = Date.now() - (parsed.timestamp || 0) < 10 * 60 * 1000
+                        const isSameChatbot = parsed.chatbotId === chatbotId
+
+                        if (parsed.content === content && isRecent && isSameChatbot) {
+                            return parsed
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fuzzy find image', e)
+        }
+        return null
+    }
 
     // Sync initialMessages to useChat messages when loaded
+    // Preserve local image data that was added before Firebase sync
     useEffect(() => {
         if (initialMessages.length > 0) {
-            setMessages(initialMessages)
+            // Merge with cached images
+            const mergedMessages = initialMessages.map((msg: any) => {
+                // 1. Try exact ID match
+                let cached = getImageFromCache(msg.id)
+
+                // 2. Try fuzzy content match if generic user message (and no exact match)
+                if (!cached && msg.role === 'user' && msg.content) {
+                    cached = findImageByContent(msg.content)
+                }
+
+                if (cached) {
+                    return { ...msg, image: cached.image, imageMimeType: cached.mimeType }
+                }
+                return msg
+            })
+            setMessages(mergedMessages)
         }
     }, [initialMessages, setMessages])
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messagesContainerRef = useRef<HTMLDivElement>(null)
+    const isFirstScrollRef = useRef(true)
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+        // Method 1: Container scrollTop (Most Reliability)
+        if (messagesContainerRef.current) {
+            const container = messagesContainerRef.current
+
+            if (behavior === "auto") {
+                // Instant jump
+                container.scrollTop = container.scrollHeight
+            } else {
+                // Smooth scroll
+                container.scrollTo({
+                    top: container.scrollHeight,
+                    behavior: "smooth"
+                })
+            }
+        }
+
+        // Method 2: Fallback to Ref (Safety net)
+        else if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior })
+        }
     }
 
     useEffect(() => {
-        scrollToBottom()
+        if (messages.length > 0) {
+            if (isFirstScrollRef.current) {
+                // AGGRESSIVE SCROLL STRATEGY FOR INITIAL LOAD
+                // 1. Immediate
+                scrollToBottom("auto")
+
+                // 2. Next Frame
+                requestAnimationFrame(() => scrollToBottom("auto"))
+
+                // 3. Post-layout (100ms)
+                setTimeout(() => scrollToBottom("auto"), 100)
+
+                // 4. Heavy load safety (500ms) for images/fonts
+                setTimeout(() => scrollToBottom("auto"), 500)
+
+                isFirstScrollRef.current = false
+            } else {
+                // Normal user message
+                scrollToBottom("smooth")
+            }
+        }
     }, [messages])
 
     const [hasRequestedContactInfo, setHasRequestedContactInfo] = useState(false)
@@ -607,6 +708,143 @@ function ChatbotViewContent() {
 
 
     const [isConfirmingClear, setIsConfirmingClear] = useState(false)
+
+    // Image Upload State for Visual Diagnosis
+    const [selectedImage, setSelectedImage] = useState<string | null>(null)
+    const [selectedImageName, setSelectedImageName] = useState<string>("")
+    const [selectedImageMimeType, setSelectedImageMimeType] = useState<string>("")
+    const [isAnalyzingImage, setIsAnalyzingImage] = useState(false)
+    const imageInputRef = useRef<HTMLInputElement>(null)
+
+    // Local image cache to preserve images during Firebase sync
+    // Key: message ID (or content hash as fallback)
+    const [imageMap, setImageMap] = useState<Record<string, { image: string; mimeType: string; content?: string; timestamp?: number }>>({})
+
+    // Load all cached images on mount
+    useEffect(() => {
+        const loaded: Record<string, any> = {}
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i)
+                if (key?.startsWith('img_cache_')) {
+                    const msgId = key.replace('img_cache_', '')
+                    const data = localStorage.getItem(key)
+                    if (data) {
+                        const parsed = JSON.parse(data)
+                        // Verify that this image belongs to the current chatbot
+                        if (parsed.chatbotId === chatbotId) {
+                            loaded[msgId] = parsed
+                        }
+                    }
+                }
+            }
+            setImageMap(prev => ({ ...prev, ...loaded }))
+        } catch (e) {
+            console.error('Failed to load image cache', e)
+        }
+    }, [chatbotId])
+
+    // Key: message ID, Value: { image: base64, mimeType: string }
+    const imageCache = useRef<Map<string, { image: string; mimeType: string }>>(new Map())
+
+    // Local Image Cache Helpers
+    // Local Image Cache Helpers
+    const saveImageToCache = (msgId: string, imageData: string, mimeType: string, content: string = "") => {
+        try {
+            const key = `img_cache_${msgId}`
+            const dataObj = { image: imageData, mimeType, timestamp: Date.now(), content, chatbotId }
+            const data = JSON.stringify(dataObj)
+            localStorage.setItem(key, data)
+
+            // Update state for immediate render availability
+            setImageMap(prev => ({
+                ...prev,
+                [msgId]: dataObj
+            }))
+
+            // Also update ref cache for immediate access
+            imageCache.current.set(msgId, { image: imageData, mimeType })
+        } catch (e) {
+            console.error('Failed to save image to local cache', e)
+        }
+    }
+
+    // Handle Image Selection for Visual Diagnosis
+    const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            alert(language === 'tr' ? 'Lütfen bir görsel dosyası seçin.' : 'Please select an image file.')
+            return
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert(language === 'tr' ? 'Dosya boyutu 5MB\'dan küçük olmalıdır.' : 'File size must be less than 5MB.')
+            return
+        }
+
+        // Convert to Base64
+        const reader = new FileReader()
+        reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1] // Remove data:image/...;base64, prefix
+            setSelectedImage(base64)
+            setSelectedImageName(file.name)
+            setSelectedImageMimeType(file.type)
+        }
+        reader.readAsDataURL(file)
+
+        // Reset input
+        event.target.value = ''
+    }
+
+    // Clear Selected Image
+    const clearSelectedImage = () => {
+        setSelectedImage(null)
+        setSelectedImageName("")
+        setSelectedImageMimeType("")
+    }
+
+    // Send Image for Analysis
+    const sendImageForAnalysis = async (userMessage: string): Promise<string> => {
+        if (!selectedImage) return ""
+
+        setIsAnalyzingImage(true)
+        try {
+            const response = await fetch('/api/visual-diagnosis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    image: selectedImage,
+                    mimeType: selectedImageMimeType
+                })
+            })
+
+            if (!response.ok) {
+                throw new Error('Visual diagnosis failed')
+            }
+
+            const result = await response.json()
+
+            // Format analysis result for AI context
+            const analysisContext = language === 'tr'
+                ? `[GÖRSEL ANALİZ SONUCU]\nTeşhis: ${result.diagnosis}\nGüven: ${result.confidence}\nÖnerilen Tedavi: ${result.treatment}\n\nKullanıcı mesajı: "${userMessage}"\n\nLütfen bu analiz sonucunu kullanıcıya uygun ve anlaşılır şekilde açıkla.`
+                : `[IMAGE ANALYSIS RESULT]\nDiagnosis: ${result.diagnosis}\nConfidence: ${result.confidence}\nRecommended Treatment: ${result.treatment}\n\nUser message: "${userMessage}"\n\nPlease explain this analysis to the user in a clear and helpful way.`
+
+            return analysisContext
+
+        } catch (error) {
+            console.error('Visual diagnosis error:', error)
+            return language === 'tr'
+                ? '[GÖRSEL ANALİZ HATASI: Görsel analiz yapılamadı. Lütfen kullanıcıya teknik bir sorun olduğunu bildirin.]'
+                : '[IMAGE ANALYSIS ERROR: Could not analyze the image. Please inform the user about the technical issue.]'
+        } finally {
+            setIsAnalyzingImage(false)
+            clearSelectedImage()
+        }
+    }
 
     const handleClearChat = () => {
         setIsConfirmingClear(true)
@@ -636,7 +874,7 @@ function ChatbotViewContent() {
         setIsConfirmingClear(false)
     }
 
-    const [settings, setSettings] = useState({
+    const [settings, setSettings] = useState<ChatbotSettings>({
         companyName: "Acme Corp",
         welcomeMessage: "Hello! How can I help you today?",
         brandColor: "#000000",
@@ -670,7 +908,21 @@ function ChatbotViewContent() {
         preferredVoice: "",
         enablePersonalShopper: false,
         enableUiUxAuditor: false,
+        enableVisualDiagnosis: false,
         leadCustomFields: [] as { id: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] }[],
+        salesOptimizationConfig: {
+            enabled: false,
+            autoOfferDelay: 30, // seconds
+            discountCode: "",
+            discountAmount: 10,
+            discountType: "percent",
+            enableStockAlerts: false,
+            enableCartRecovery: false,
+            enableProductComparison: false
+        } as any,
+        launcherIcon: "library",
+        launcherIconUrl: "",
+        launcherLibraryIcon: "",
     })
     const [isLoading, setIsLoading] = useState(true)
 
@@ -703,13 +955,18 @@ function ChatbotViewContent() {
                         engagement: data.engagement || { enabled: false, bubble: { messages: [] } },
                         enableAppointments: data.enableAppointments || false,
                         appointmentTypes: data.appointmentTypes || ["Consultation", "Support", "Demo"],
-                        appointmentSuccessMessage: data.appointmentSuccessMessage || "Your appointment has been scheduled successfully!",
+                        appointmentSuccessMessage: data.appointmentSuccessMessage || "Randevunuz başarıyla oluşturuldu! Sizinle en kısa sürede iletişime geçeceğiz.",
                         availableDays: data.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
                         enableAutoSpeak: data.enableAutoSpeak || false,
                         preferredVoice: data.preferredVoice || "",
                         enablePersonalShopper: data.enablePersonalShopper || false,
                         enableUiUxAuditor: data.enableUiUxAuditor || false,
+                        enableVisualDiagnosis: data.enableVisualDiagnosis || false,
                         leadCustomFields: data.leadCustomFields || [],
+                        salesOptimizationConfig: data.salesOptimizationConfig || {},
+                        launcherIcon: data.launcherIcon || "library",
+                        launcherIconUrl: data.launcherIconUrl || "",
+                        launcherLibraryIcon: data.launcherLibraryIcon || "",
                     })
                 }
             } catch (error) {
@@ -833,6 +1090,96 @@ function ChatbotViewContent() {
 
         return () => clearTimeout(timer)
     }, [hasProactiveTriggered, messages, pageContext, isLoading, settings.industry, settings.engagement, settings.welcomeMessage, settings.enableIndustryGreeting, settings.initialLanguage])
+
+    // 3. Sales Optimization: Auto-Offer Logic
+    // Trigger when user is idle for X seconds (default 30)
+    useEffect(() => {
+        // Requirements:
+        // - Config enabled
+        // - Valid discount code exists
+        // - Not already triggered
+        // - User has interacted at least once (optional, but good for context) OR has been staring at a product
+        // - Last message was from Assistant (waiting for user)
+        // - Logic: Reset timer on every message. Start timer if last message is assistant.
+
+        const salesConfig = settings.salesOptimizationConfig
+        const autoOfferEnabled = salesConfig?.discountCodes === true && salesConfig?.discountCodeConfig?.autoOffer === true
+
+        // Find a valid code to offer
+        // Priority:
+        // 1. Explicitly marked as 'auto'
+        // 2. Legacy fallback: First code if usageType is missing (undefined)
+        const codes = salesConfig?.discountCodeConfig?.codes || []
+        const validCode = codes.find((c: any) => c.usageType === 'auto') || codes.find((c: any) => !c.usageType)
+
+        // Check persistence: Has this specific code been shown before?
+        const storageKey = `vion_auto_offer_shown_${validCode?.code}`
+        const alreadyShown = typeof window !== 'undefined' && localStorage.getItem(storageKey) === 'true'
+
+        if (!autoOfferEnabled || !validCode || hasProactiveTriggered || alreadyShown) {
+            return
+        }
+
+        // Cancel existing timer on any update (message sent/received)
+        if (proactiveTimerRef.current) {
+            clearTimeout(proactiveTimerRef.current)
+            proactiveTimerRef.current = null
+        }
+
+        const delayMs = (salesConfig?.discountCodeConfig?.offerAfterSeconds || 30) * 1000
+
+        // Start timer
+        proactiveTimerRef.current = setTimeout(() => {
+            // Check One Last Time
+            if (hasProactiveTriggered) return
+
+            // Construct Offer Message
+            const code = validCode.code
+            const amount = validCode.discount
+            const type = validCode.type === 'percent' ? '%' : (language === 'tr' ? '₺' : '$')
+
+            // Format: "10%" or "₺10"
+            const discountDisplay = validCode.type === 'percent'
+                ? `${amount}%`
+                : `${amount}${type}` // Basic formatting
+
+            const offerMessage = language === 'tr'
+                ? `👋 Fark ettim ki kararsız kaldınız... Size özel **${code}** kodunu kullanarak **${discountDisplay}** indirimden yararlanabilirsiniz!`
+                : `👋 I noticed you might be undecided... You can use the special code **${code}** to get a **${discountDisplay}** discount!`
+
+            // Inject Message
+            // We use a "fake" assistant message injection
+            const offerMsgId = 'offer-' + Date.now()
+            setMessages(prev => [...prev, {
+                id: offerMsgId,
+                role: 'assistant',
+                content: offerMessage,
+                createdAt: new Date(),
+                isSpecial: true // Flag for styling if needed
+            }])
+
+            setHasProactiveTriggered(true)
+
+            // Mark as shown in persistence ("Add Shown Tag & Passivate")
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(storageKey, 'true')
+            }
+
+            // Auto-speak if enabled
+            if (settings.enableAutoSpeak) {
+                speakText(offerMessage, offerMsgId)
+            }
+
+            setHasProactiveTriggered(true)
+
+        }, delayMs)
+
+        return () => {
+            if (proactiveTimerRef.current) {
+                clearTimeout(proactiveTimerRef.current)
+            }
+        }
+    }, [messages, settings.salesOptimizationConfig, hasProactiveTriggered, language, isLoading, settings.industry, settings.engagement, settings.welcomeMessage, settings.enableIndustryGreeting, settings.initialLanguage])
 
     useEffect(() => {
         if (inactivityTimerRef.current) {
@@ -1341,338 +1688,162 @@ function ChatbotViewContent() {
                 </div>
             )}
 
-            {settings.theme === 'modern' ? (
-                // MODERN THEME UI
-                <div className="flex flex-col h-full bg-[#f8f9fc] relative">
-                    {/* Header */}
-                    <div className="p-5 flex items-center justify-between z-20 relative">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-blue-500 fill-blue-500" />
-                            <span className="font-semibold text-gray-800 text-base">{settings.companyName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={handleToggleSize} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
-                                {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                            </button>
-                            {settings.enableVoiceAssistant && (
-                                <button
-                                    onClick={() => setIsVoiceMode(!isVoiceMode)}
-                                    className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`}
-                                    title={isVoiceMode ? "Text Mode" : "Voice Mode"}
-                                >
-                                    {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
-                                </button>
-                            )}
-
-                            <button onClick={handleClearChat} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+            {/* Hidden File Input for Image Upload - Outside theme blocks */}
+            <input
+                type="file"
+                ref={imageInputRef}
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+            />
 
 
-                            <button onClick={handleCloseWidget} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
+            <>
 
-                    {/* Proactive Audit Suggestion */}
-                    {showAuditSuggestion && (
-                        <div className="mx-4 mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-lg shadow-sm animate-in slide-in-from-bottom duration-300">
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 bg-indigo-100 rounded-full text-indigo-600">
-                                    <Activity className="w-5 h-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-indigo-900">
-                                        {t('auditSuggestion') || "Bu sayfanın kullanıcı deneyimini analiz etmemi ister misiniz?"}
-                                    </p>
-                                    <div className="mt-2 flex gap-2">
-                                        <button
-                                            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md transition-colors"
-                                            onClick={() => {
-                                                window.open(`/console/ui-ux-auditor?url=${encodeURIComponent(pageContext?.url || "")}`, '_blank');
-                                                setShowAuditSuggestion(false);
-                                            }}
-                                        >
-                                            {t('auditNow') || "Şimdi Denetle"}
-                                        </button>
-                                        <button
-                                            className="px-3 py-1.5 text-indigo-600 hover:bg-indigo-100 text-xs font-medium rounded-md transition-colors"
-                                            onClick={() => setShowAuditSuggestion(false)}
-                                        >
-                                            {t('cancel')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-
-                    {/* Glowing Orb Animation Container - Persistent */}
-                    <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-full flex justify-center z-0 pointer-events-none">
-                        <div className="relative w-64 h-64">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded-full blur-[60px] animate-pulse"></div>
-                            <div className="absolute inset-10 bg-gradient-to-tr from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-[40px]"></div>
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white/40 blur-[50px] rounded-full mix-blend-overlay"></div>
-                        </div>
-                    </div>
-
-                    {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth z-10 relative">
-                        {messages.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center -mt-10">
-                                <div className="mb-8"></div>
-                                <h3 className="text-xl md:text-2xl font-medium text-slate-700 leading-tight text-center mb-12 max-w-sm px-4">
-                                    {settings.welcomeMessage}
-                                </h3>
-                                {/* Suggested Questions - Right Aligned Chips */}
-                                <div className="w-full flex flex-col items-end gap-3 px-4 max-w-md ml-auto">
-                                    {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => sendMessage(q)}
-                                            className="bg-white hover:bg-gray-50 text-sm py-2.5 px-4 rounded-2xl shadow-sm border transition-all hover:scale-105 active:scale-95 text-left max-w-full"
-                                            style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
-                                        >
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                {/* Message List - Reusing Logic */}
-                                {messages.map((m: any) => (
-                                    <div key={m.id} className={`flex gap-4 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                                        {m.role !== 'user' && (
-                                            <div
-                                                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-1 shadow-sm bg-white border"
-                                                style={{ color: settings.headerBackgroundColor || settings.brandColor, borderColor: `${settings.headerBackgroundColor || settings.brandColor}20` }}
-                                            >
-                                                <Sparkles className="w-4 h-4" />
-                                            </div>
-                                        )}
-                                        <div className={`space-y-1 max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                            <div className="flex items-center gap-2 justify-between px-1">
-                                                {m.role !== 'user' && (
-                                                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">{settings.companyName}</p>
-                                                )}
-                                                {m.role === 'assistant' && (
-                                                    <button onClick={() => handleSpeak(m.content, m.id)} className={`transition-colors ${isSpeaking === m.id ? 'text-blue-500' : 'text-gray-300 hover:text-gray-500'} ${settings.enableVoiceAssistant ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                                        {isSpeaking === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3 h-3" />}
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div
-                                                className={`text-sm leading-relaxed p-3.5 rounded-2xl shadow-sm inline-block text-left relative group ${m.role === 'user' ? 'text-gray-800 rounded-tr-none border' : 'bg-white border border-gray-100 rounded-tl-none'}`}
-                                                style={m.role === 'user' ? {
-                                                    backgroundColor: `${settings.headerBackgroundColor || settings.brandColor}10`, // 10% opacity for background
-                                                    borderColor: `${settings.headerBackgroundColor || settings.brandColor}30` // 30% opacity for border
-                                                } : {}}
-                                            >
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-                                                    code: ({ node, inline, className, children, ...props }: any) => {
-                                                        const match = /language-(\w+)/.exec(className || '')
-                                                        const content = String(children).replace(/\n$/, '')
-                                                        if (content.trim().startsWith('{') && content.includes('"price"')) {
-                                                            try {
-                                                                const product = JSON.parse(content)
-                                                                if (product.name && product.price) return <ProductCard product={product} brandColor={settings.brandColor} />
-                                                            } catch (e) { }
-                                                        }
-                                                        return !inline && match ? (<div className="bg-gray-800 text-white p-2 rounded-md text-xs overflow-x-auto my-2"><code className={className} {...props}>{children}</code></div>) : (<code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono text-red-500" {...props}>{children}</code>)
-                                                    }
-                                                }}>{m.content}</ReactMarkdown>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {isTyping && (
-                                    <div className="flex gap-4 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs text-blue-600 bg-white border border-blue-100 mt-1 shadow-sm">
-                                            <Sparkles className="w-4 h-4" />
-                                        </div>
-                                        <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        </div>
-                                    </div>
-                                )}
-                                <div ref={messagesEndRef} />
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Input */}
-                    <div className="p-4 z-20">
-                        <div className="w-full text-right mb-2 pr-1">
-                            <button onClick={scrollToBottom} className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors">
-                                Show more
-                            </button>
-                        </div>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault()
-                                if (!localInput.trim()) return
-                                sendMessage(localInput)
-                                setLocalInput('')
-                            }}
-                            className="bg-white rounded-full shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] border border-gray-100 p-1.5 flex items-center"
+                {/* Header */}
+                {/* Header */}
+                <div
+                    className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
+                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
+                >
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="relative flex items-center justify-center"
+                            style={{ width: `${settings.headerLogoWidth || 32}px`, height: `${settings.headerLogoHeight || 32}px` }}
                         >
-                            <input
-                                value={localInput}
-                                onChange={(e) => setLocalInput(e.target.value)}
-                                type="text"
-                                placeholder={t('askMeAnythingPlaceholder')}
-                                className="flex-1 bg-transparent border-0 focus:ring-0 text-sm px-4 py-2 text-gray-700 placeholder:text-gray-400"
-                            />
-                            {/* Voice Input Button */}
-                            {settings.enableVoiceAssistant && (
-                                <button
-                                    type="button"
-                                    onClick={handleVoiceInput}
-                                    className={`p-2 rounded-full transition-colors ${isListening ? 'bg-red-50 text-red-500 animate-pulse' : 'hover:bg-gray-50 text-gray-400'}`}
-                                    title="Voice Input"
-                                >
-                                    <Mic className={`w-5 h-5 ${isListening ? 'animate-pulse' : ''}`} />
-                                </button>
-                            )}
+                            {/* Priority: HeaderLogo -> BrandLogo -> LauncherIcon (Custom/Library) -> Default */}
+                            {(() => {
+                                // 1. Header Logo
+                                if (settings.headerLogo) {
+                                    return <Image src={settings.headerLogo} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 2. Brand Logo
+                                if (settings.brandLogo) {
+                                    return <Image src={settings.brandLogo} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 3. Custom Launcher Icon (Image)
+                                if (settings.launcherIcon === 'custom' && settings.launcherIconUrl) {
+                                    return <Image src={settings.launcherIconUrl} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 4. Library Launcher Icon
+                                if (settings.launcherIcon === 'library' && settings.launcherLibraryIcon) {
+                                    const IconMap: any = {
+                                        MessageSquare, MessageCircle, MessageSquareText, MessagesSquare,
+                                        Bot, Sparkles, Brain, BrainCircuit, Cpu, Zap, Activity,
+                                        Headset, Mic, Video, Phone,
+                                        User, Users, UserCheck,
+                                        HelpCircle, Info, AlertCircle,
+                                        Star, Heart, ThumbsUp, Smile,
+                                        Send, Share2, Paperclip,
+                                        Command, Terminal, Code, Box,
+                                        Ghost, Gamepad2, Rocket
+                                    };
+                                    const IconComponent = IconMap[settings.launcherLibraryIcon];
+                                    if (IconComponent) {
+                                        return <IconComponent className="w-5 h-5 text-white" />
+                                    }
+                                }
 
-                            {settings.enableAppointments && (
-                                <button
-                                    onClick={() => setShowBooking(true)}
-                                    className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
-                                    title={t('bookAppointment') || "Book Appointment"}
-                                >
-                                    <Calendar className="w-5 h-5" />
-                                </button>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={!localInput.trim()}
-                                className="p-2 rounded-full hover:bg-gray-50 transition-colors disabled:opacity-50"
-                                style={{ color: settings.headerBackgroundColor || settings.brandColor }}
-                            >
-                                <Send className="w-4 h-4" />
-                            </button>
-                        </form>
-                        <div className="text-center mt-2 flex items-center justify-center gap-1">
-                            <span className="text-[10px] text-gray-400">Powered by</span>
-                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={100} height={20} className="h-3 w-auto opacity-60" />
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                // CLASSIC THEME UI
-                <>
-
-                    {/* Header */}
-                    {/* Header */}
-                    <div
-                        className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
-                        style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="relative flex items-center justify-center"
-                                style={{ width: `${settings.headerLogoWidth || 32}px`, height: `${settings.headerLogoHeight || 32}px` }}
-                            >
-                                {settings.headerLogo || settings.brandLogo ? (
-                                    <Image src={settings.headerLogo || settings.brandLogo} alt="Logo" fill className="object-contain" unoptimized />
-                                ) : (
+                                // 5. Default
+                                return (
                                     <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center">
                                         <MessageSquare className="w-5 h-5 text-white" />
                                     </div>
-                                )}
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-sm leading-tight" style={{ color: settings.headerTextColor || '#FFFFFF' }}>{settings.companyName}</h3>
-                            </div>
+                                )
+                            })()}
                         </div>
-                        <div className="flex items-center gap-1">
-                            <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
-                                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
-                                <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
-                                    AI Online
-                                </span>
-                            </div>
-                            {settings.enableVoiceAssistant && (
-                                <button
-                                    onClick={() => setIsVoiceMode(!isVoiceMode)}
-                                    className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                                    title={isVoiceMode ? "Text Mode" : "Voice Mode"}
-                                >
-                                    {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
-                                </button>
-                            )}
-                            <button
-                                onClick={handleToggleSize}
-                                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
-                                title={isExpanded ? "Minimize" : "Maximize"}
-                            >
-                                {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                            </button>
-                            <button
-                                onClick={handleClearChat}
-                                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                                title="Clear Chat"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={handleCloseWidget}
-                                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                                title="Close Widget"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                        <div>
+                            <h3 className="font-semibold text-sm leading-tight" style={{ color: settings.headerTextColor || '#FFFFFF' }}>{settings.companyName}</h3>
                         </div>
                     </div>
+                    <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
+                            <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
+                                AI Online
+                            </span>
+                        </div>
+                        {settings.enableVoiceAssistant && (
+                            <button
+                                onClick={() => setIsVoiceMode(!isVoiceMode)}
+                                className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+                                title={isVoiceMode ? "Text Mode" : "Voice Mode"}
+                            >
+                                {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                            </button>
+                        )}
+                        <button
+                            onClick={handleToggleSize}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
+                            title={isExpanded ? "Minimize" : "Maximize"}
+                        >
+                            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                        </button>
+                        <button
+                            onClick={handleClearChat}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                            title="Refresh Chat"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleCloseWidget}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                            title="Close Widget"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
 
-                    {/* Messages Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
-                        {messages.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
-                                <div
-                                    className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
-                                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
-                                >
-                                    {settings.brandLogo ? (
-                                        <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
-                                    ) : (
-                                        <Sparkles className="w-8 h-8" />
-                                    )}
-                                </div>
-                                <div className="space-y-2 max-w-xs">
-                                    <h2 className="text-xl font-bold text-gray-800">{t('welcomeTo')} {settings.companyName}</h2>
-                                    <p className="text-sm text-gray-500 leading-relaxed">
-                                        {settings.welcomeMessage}
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
-                                    {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => {
-                                                sendMessage(q)
-                                            }}
-                                            className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
-                                            style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
-                                        >
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
+                {/* Messages Area */}
+                {/* Messages Area */}
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
+                    {messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
+                            <div
+                                className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
+                                style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                            >
+                                {settings.brandLogo ? (
+                                    <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
+                                ) : (
+                                    <Sparkles className="w-8 h-8" />
+                                )}
                             </div>
-                        ) : (
-                            <>
-                                {/* Welcome Message as first item if desired, or just chat flow */}
+                            <div className="space-y-2 max-w-xs">
+                                <h2 className="text-xl font-bold text-gray-800">{t('welcomeTo')} {settings.companyName}</h2>
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    {settings.welcomeMessage}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
+                                {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            sendMessage(q)
+                                        }}
+                                        className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
+                                        style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Welcome Message as first item if desired, or just chat flow */}
 
 
-                                {messages.map((m: any) => (
+                            {messages.map((m: any) => {
+                                // Render-time image recovery
+                                const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
+                                const displayImage = m.image || cached?.image
+                                const displayMime = m.imageMimeType || cached?.mimeType
+
+                                return (
                                     <div key={m.id} className={`flex gap-3 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300 group/msg`}>
                                         {m.role !== 'user' && (
                                             <div
@@ -1709,6 +1880,17 @@ function ChatbotViewContent() {
                                                     }`}
                                                 style={m.role === 'user' ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor } : {}}
                                             >
+                                                {/* Show image if present */}
+                                                {displayImage && (
+                                                    <div className="mb-2">
+                                                        <img
+                                                            src={`data:${displayMime || 'image/jpeg'};base64,${displayImage}`}
+                                                            alt="Uploaded"
+                                                            className="max-w-full max-h-48 rounded-lg object-contain"
+                                                            onLoad={() => scrollToBottom("smooth")}
+                                                        />
+                                                    </div>
+                                                )}
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     components={{
@@ -1758,81 +1940,240 @@ function ChatbotViewContent() {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                )
+                            })}
 
-                                {/* Typing Indicator */}
-                                {isTyping && (
-                                    <div className="flex gap-3 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white mt-auto mb-1 bg-white shadow-sm overflow-hidden order-first">
-                                            {settings.brandLogo ? (
-                                                <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
-                                                    <Sparkles className="w-4 h-4 text-white" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                                        </div>
+                            {/* Typing Indicator */}
+                            {isTyping && (
+                                <div className="flex gap-3 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white mt-auto mb-1 bg-white shadow-sm overflow-hidden order-first">
+                                        {settings.brandLogo ? (
+                                            <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                <Sparkles className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                                <div ref={messagesEndRef} />
-                            </>
-                        )}
-                    </div>
+                                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </>
+                    )}
+                </div>
 
-                    {/* Input Area */}
-                    <div className="p-4 bg-white border-t border-gray-100">
-                        <div className="max-w-3xl mx-auto relative">
-                            <form
-                                onSubmit={(e) => {
-                                    e.preventDefault()
-                                    if (!localInput.trim()) return
-                                    sendMessage(localInput)
-                                    setLocalInput('')
-                                }}
-                                className="relative flex items-center gap-2"
-                            >
-                                <div className="relative flex-1 group">
-                                    <input
-                                        value={localInput}
-                                        onChange={(e) => setLocalInput(e.target.value)}
-                                        type="text"
-                                        placeholder={t('messagePlaceholder')}
-                                        className="w-full text-sm bg-gray-50 border-0 rounded-2xl pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md"
-                                        style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
+                {/* Input Area */}
+                <div className="p-4 bg-white border-t border-gray-100">
+                    <div className="max-w-3xl mx-auto relative">
+                        {/* Image Preview for Classic Theme */}
+                        {selectedImage && (
+                            <div className="mb-3 flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                                    <img
+                                        src={`data:${selectedImageMimeType};base64,${selectedImage}`}
+                                        alt="Preview"
+                                        className="w-full h-full object-cover"
+                                        onLoad={() => scrollToBottom("smooth")}
                                     />
-                                    {/* Voice Input Button */}
-                                    {settings.enableVoiceAssistant && (
-                                        <button
-                                            type="button"
-                                            onClick={handleVoiceInput}
-                                            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                                            title="Voice Input"
-                                        >
-                                            <Mic className="w-4 h-4" />
-                                        </button>
-                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-600 truncate">{selectedImageName}</p>
+                                    <p className="text-[10px] text-gray-400">
+                                        {isAnalyzingImage
+                                            ? (language === 'tr' ? 'Analiz ediliyor...' : 'Analyzing...')
+                                            : (language === 'tr' ? 'Görsel hazır' : 'Image ready')}
+                                    </p>
                                 </div>
                                 <button
-                                    type="submit"
-                                    disabled={!localInput.trim()}
-                                    className="p-3.5 rounded-2xl text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5"
-                                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                                    type="button"
+                                    onClick={clearSelectedImage}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                                 >
-                                    <Send className="w-4 h-4" />
+                                    <XCircle className="w-5 h-5" />
                                 </button>
-                            </form>
-                            <div className="text-center mt-2 flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] text-gray-400 font-medium">Powered by Vion</span>
                             </div>
-                        </div>
+                        )}
+
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault()
+
+                                // Prevent duplicate submissions
+                                if (isAnalyzingImage || isChatLoading) return
+                                if (!localInput.trim() && !selectedImage) return
+
+                                const userDisplayMessage = localInput.trim() || (language === 'tr' ? 'Bu görseli analiz et' : 'Analyze this image')
+                                const currentInput = localInput
+
+                                // Clear input immediately to prevent duplicates
+                                setLocalInput('')
+
+                                // If there's an image, handle visual diagnosis flow
+                                if (selectedImage) {
+                                    // Store image data BEFORE any state changes
+                                    const imageData = selectedImage
+                                    const imageMimeType = selectedImageMimeType
+
+                                    // Clear selected image immediately to prevent re-submission
+                                    setSelectedImage(null)
+                                    setSelectedImageName("")
+                                    setSelectedImageMimeType("")
+
+                                    // Mark as analyzing
+                                    setIsAnalyzingImage(true)
+
+                                    // Create user message with image for display FIRST
+                                    const userMsgId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+                                    const userMsgWithImage = {
+                                        id: userMsgId,
+                                        role: 'user',
+                                        content: userDisplayMessage,
+                                        image: imageData,
+                                        imageMimeType: imageMimeType,
+                                        createdAt: new Date()
+                                    }
+
+                                    // Cache the image for Firebase sync recovery (Persistent)
+                                    saveImageToCache(userMsgId, imageData, imageMimeType, userDisplayMessage)
+
+                                    // Add user message to UI immediately
+                                    setMessages((prev: any) => [...prev, userMsgWithImage])
+
+                                    try {
+                                        // Get visual diagnosis
+                                        let analysisResult = null
+                                        try {
+                                            const diagResponse = await fetch('/api/visual-diagnosis', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    image: imageData,
+                                                    mimeType: imageMimeType
+                                                })
+                                            })
+                                            if (diagResponse.ok) {
+                                                analysisResult = await diagResponse.json()
+                                            }
+                                        } catch (diagError) {
+                                            console.error('Visual diagnosis error:', diagError)
+                                        }
+
+                                        // Prepare AI context (hidden from UI, sent as separate parameter)
+                                        const visualAnalysisContext = analysisResult
+                                            ? (language === 'tr'
+                                                ? `[Bu bilgi sadece sana yardımcı olmak için verildi - kullanıcıya ham veri gösterme, doğal ve yardımcı bir şekilde açıkla]\nTeşhis: ${analysisResult.diagnosis}\nGüven Oranı: ${analysisResult.confidence}\nÖnerilen: ${analysisResult.treatment}`
+                                                : `[This info is to help you - don't show raw data to user, explain naturally and helpfully]\nDiagnosis: ${analysisResult.diagnosis}\nConfidence: ${analysisResult.confidence}\nRecommended: ${analysisResult.treatment}`)
+                                            : (language === 'tr'
+                                                ? `Görsel analizi yapılamadı.`
+                                                : `Image analysis failed.`)
+
+                                        // Send to chat API - user message with original content, context as separate param
+                                        const chatResponse = await fetch('/api/chat', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                messages: [...messages, { role: 'user', content: userDisplayMessage }],
+                                                chatbotId,
+                                                sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
+                                                context: pageContext,
+                                                language: settings.initialLanguage || 'auto',
+                                                shouldStream: true,
+                                                userId: guestAuth.currentUser?.uid,
+                                                visualAnalysisContext: visualAnalysisContext // Pass analysis as separate context
+                                            })
+                                        })
+
+                                        if (!chatResponse.ok) throw new Error('Chat API error')
+
+                                        const reader = chatResponse.body?.getReader()
+                                        const decoder = new TextDecoder()
+                                        let assistantContent = ''
+                                        const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+
+                                        setMessages((prev: any) => [...prev, { id: assistantMsgId, role: 'assistant', content: '', createdAt: new Date() }])
+
+                                        while (reader) {
+                                            const { done, value } = await reader.read()
+                                            if (done) break
+                                            const chunk = decoder.decode(value, { stream: true })
+                                            assistantContent += chunk
+                                            setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
+                                        }
+
+                                        if (!assistantContent.trim()) {
+                                            setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
+                                        }
+                                    } catch (error) {
+                                        console.error('Image analysis chat error:', error)
+                                    } finally {
+                                        setIsAnalyzingImage(false)
+                                    }
+                                } else {
+                                    // Normal text message
+                                    sendMessage(currentInput)
+                                }
+                            }}
+                            className="relative flex items-center gap-2"
+                        >
+                            {/* Image Upload Button for Classic Theme */}
+                            {settings.enableVisualDiagnosis && (
+                                <button
+                                    type="button"
+                                    onClick={() => imageInputRef.current?.click()}
+                                    disabled={isAnalyzingImage}
+                                    className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
+                                        ? 'text-green-600 bg-green-50 border border-green-200'
+                                        : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
+                                >
+                                    <ImageIcon className="w-4 h-4" />
+                                </button>
+                            )}
+
+                            <div className="relative flex-1 group">
+                                <input
+                                    value={localInput}
+                                    onChange={(e) => setLocalInput(e.target.value)}
+                                    type="text"
+                                    placeholder={selectedImage
+                                        ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
+                                        : t('messagePlaceholder')}
+                                    className="w-full text-sm bg-gray-50 border-0 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md"
+                                    style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
+                                />
+                                {/* Voice Input Button */}
+                                {settings.enableVoiceAssistant && (
+                                    <button
+                                        type="button"
+                                        onClick={handleVoiceInput}
+                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                                        title="Voice Input"
+                                    >
+                                        <Mic className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!localInput.trim() && !selectedImage}
+                                className={`p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                            >
+                                <Send className="w-4 h-4" />
+                            </button>
+                        </form>
+                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="text-center mt-2 flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+                            <span className="text-[10px] text-gray-400">Powered by</span>
+                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={60} height={15} className="h-3 w-auto opacity-60" unoptimized />
+                        </a>
                     </div>
-                </>
-            )}
+                </div>
+            </>
         </div>
     );
 }

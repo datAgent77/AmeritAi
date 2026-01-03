@@ -25,7 +25,12 @@ export async function POST(req: Request) {
             || "unknown";
 
         const body = await req.json();
-        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId } = body;
+        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext } = body;
+
+        // Log visual analysis context presence
+        if (visualAnalysisContext) {
+            console.log(`Chat API: Received visual analysis context (${visualAnalysisContext.length} chars)`);
+        }
 
         const rateLimitResult = checkRateLimit(ip, sessionId);
 
@@ -77,7 +82,7 @@ export async function POST(req: Request) {
             sessionId && lastMessage.role === "user"
                 ? saveMessageToSession(sessionId, chatbotId, { ...lastMessage, id: messageId, role: "user", sentiment: "Neutral" }, userId)
                 : Promise.resolve(),
-            generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language)
+            generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext)
         ]);
 
         // Fire-and-forget Sentiment Analysis (updates the message later)
