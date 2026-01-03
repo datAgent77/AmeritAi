@@ -185,16 +185,16 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
                 />
                 <StatCard
                     title={t('savedTime')}
-                    value={`${stats.savedTime || 45} ${t('hours')}`}
-                    change={15}
+                    value={`${stats.savedTime} ${t('hours')}`}
+                    change={stats.totalMessages > 0 ? 15 : 0}
                     icon={Clock}
                     colorClass="bg-emerald-500 text-emerald-600"
                     subtitle={t('dailyAverage')}
                 />
                 <StatCard
                     title={t('avgMessagesPerChat')}
-                    value={stats.avgMessagesPerChat || 6}
-                    change={-2.5}
+                    value={stats.avgMessagesPerChat}
+                    change={stats.totalChats > 0 ? -2.5 : 0}
                     icon={Zap}
                     colorClass="bg-amber-500 text-amber-600"
                     subtitle={t('dailyAverage')}
