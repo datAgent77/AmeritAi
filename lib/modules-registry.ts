@@ -833,7 +833,7 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         isCore: false,
         isPremium: true,
         price: 29,
-        status: 'beta',
+        status: 'coming_soon',
         supportedSectors: ['restaurant'],
         defaultEnabledBySector: ['restaurant'],
         legacyFirestoreField: 'enableDigitalWaiter',
@@ -887,7 +887,7 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         isCore: false,
         isPremium: true,
         price: 19,
-        status: 'beta',
+        status: 'coming_soon',
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableProactiveMessaging',
