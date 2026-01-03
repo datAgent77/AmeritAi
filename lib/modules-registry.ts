@@ -1025,19 +1025,19 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.productCatalog,    // Personal Shopper
     MODULES_REGISTRY.leadCollection,    // Lead Collection
     MODULES_REGISTRY.voiceAssistant,    // Voice
+    MODULES_REGISTRY.visualDiagnosis,   // Visual Analysis (Ready)
 
-    // --- 2. BETA MODULES ---
-    MODULES_REGISTRY.salesOptimization, // Beta
-    MODULES_REGISTRY.proactiveMessaging, // Beta
-    MODULES_REGISTRY.digitalWaiter,     // Beta - Functional
-    MODULES_REGISTRY.appointments,      // Beta
-    MODULES_REGISTRY.emailMarketing,    // Beta
-    MODULES_REGISTRY.reviewManagement,  // Beta
-    MODULES_REGISTRY.loyaltyProgram,    // Beta
-    MODULES_REGISTRY.campaignManager,   // Beta
-    MODULES_REGISTRY.autoTranslate,     // Beta
-    MODULES_REGISTRY.gamification,      // Beta
-    MODULES_REGISTRY.visualDiagnosis,   // Beta
+    // --- 2. COMING SOON MODULES ---
+    MODULES_REGISTRY.salesOptimization, // Coming Soon
+    MODULES_REGISTRY.proactiveMessaging, // Coming Soon
+    MODULES_REGISTRY.digitalWaiter,     // Coming Soon
+    MODULES_REGISTRY.appointments,      // Coming Soon
+    MODULES_REGISTRY.emailMarketing,    // Coming Soon
+    MODULES_REGISTRY.reviewManagement,  // Coming Soon
+    MODULES_REGISTRY.loyaltyProgram,    // Coming Soon
+    MODULES_REGISTRY.campaignManager,   // Coming Soon
+    MODULES_REGISTRY.autoTranslate,     // Coming Soon
+    MODULES_REGISTRY.gamification,      // Coming Soon
 ];
 
 // =============================================================================
