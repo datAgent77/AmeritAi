@@ -66,7 +66,6 @@ export default function LandingPage() {
     }
 
     const [displayText, setDisplayText] = useState("")
-    const [isDeleting, setIsDeleting] = useState(false)
     const [loopNum, setLoopNum] = useState(0)
     const [typingSpeed, setTypingSpeed] = useState(150)
 
@@ -76,24 +75,24 @@ export default function LandingPage() {
         const fullText = currentLanguageSlogans[i]
 
         const handleTyping = () => {
-            setDisplayText(isDeleting
-                ? fullText.substring(0, displayText.length - 1)
-                : fullText.substring(0, displayText.length + 1)
-            )
-
-            setTypingSpeed(isDeleting ? 30 : 150)
-
-            if (!isDeleting && displayText === fullText) {
-                setTimeout(() => setIsDeleting(true), 1500)
-            } else if (isDeleting && displayText === "") {
-                setIsDeleting(false)
-                setLoopNum(loopNum + 1)
+            // If text is fully typed
+            if (displayText === fullText) {
+                setTimeout(() => {
+                    setDisplayText("")
+                    setLoopNum(loopNum + 1)
+                    setTypingSpeed(150)
+                }, 2000) // Wait 2 seconds before switching
+                return
             }
+
+            // Normal typing
+            setDisplayText(fullText.substring(0, displayText.length + 1))
+            setTypingSpeed(50 + Math.random() * 50) // Slight random variation for realism
         }
 
         const timer = setTimeout(handleTyping, typingSpeed)
         return () => clearTimeout(timer)
-    }, [displayText, isDeleting, loopNum, language, slogans.tr, slogans.en, typingSpeed])
+    }, [displayText, loopNum, language, slogans.tr, slogans.en, typingSpeed])
 
     const sectors = [
         { icon: ShoppingBag, label: { en: "E-Commerce", tr: "E-Ticaret" }, href: "/solutions/ecommerce", color: "text-blue-400" },
