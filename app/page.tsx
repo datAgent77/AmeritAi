@@ -113,14 +113,14 @@ export default function LandingPage() {
                             {language === 'tr' ? 'Yeni Nesil Satış ve Destek Asistanı' : 'Next-Gen Sales & Support Assistant'}
                         </div>
 
-                        <div className="h-[120px] md:h-[180px] flex items-center justify-center">
+                        <div className="h-[120px] md:h-[180px] flex items-center justify-center perspective-[1000px]">
                             <AnimatePresence mode="wait">
                                 <motion.h1
                                     key={index}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                    initial={{ opacity: 0, rotateX: 90, y: 20 }}
+                                    animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                                    exit={{ opacity: 0, rotateX: -90, y: -20 }}
+                                    transition={{ duration: 0.8, ease: "backOut" }}
                                     className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white leading-tight"
                                 >
                                     {language === 'tr' ? slogans.tr[index] : slogans.en[index]}
