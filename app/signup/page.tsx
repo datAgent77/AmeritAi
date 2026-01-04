@@ -15,15 +15,6 @@ import { VionLogo } from "@/components/vion-logo"
 import Image from "next/image"
 import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
-import { MODULES_REGISTRY as MODULE_DEFINITIONS, getDefaultModulesForSector, ModuleId } from "@/lib/modules-registry"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { PasswordStrength, isPasswordStrong } from "@/components/auth/password-strength"
 import { PhoneInput } from "@/components/auth/phone-input"
@@ -40,7 +31,7 @@ export default function SignUpForm() {
     const [showPassword, setShowPassword] = useState(false)
     const [fullName, setFullName] = useState("")
     const [phoneNumber, setPhoneNumber] = useState("")
-    const [industry, setIndustry] = useState<IndustryType>("ecommerce")
+
 
     // UI state
     const [isLoading, setIsLoading] = useState(false)
@@ -106,7 +97,7 @@ export default function SignUpForm() {
                 email: user.email,
                 fullName: fullName || user.displayName,
                 phoneNumber,
-                industry,
+                industry: 'ecommerce',
                 authProvider,
                 ...additionalData
             })
@@ -430,44 +421,6 @@ export default function SignUpForm() {
                                 />
                             </div>
 
-                            {/* Industry */}
-                            <div className="space-y-2">
-                                <Label htmlFor="industry">
-                                    {t('industrySelectLabel') || (language === 'tr' ? 'Sektörünüz' : 'Your Industry')}
-                                </Label>
-                                <Select value={industry} onValueChange={(value) => setIndustry(value as IndustryType)}>
-                                    <SelectTrigger id="industry" className="w-full h-11">
-                                        <SelectValue placeholder={t('industrySelectPlaceholder') || "Select industry"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
-                                            <SelectItem key={key} value={key}>
-                                                {(config as any).names?.[language] || config.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                {/* Module Preview */}
-                                <div className="mt-3 p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
-                                    <p className="text-xs font-medium text-green-800 dark:text-green-300 mb-2">
-                                        {language === 'tr' ? '✨ Bu sektörle birlikte dahil:' : '✨ Included with this industry:'}
-                                    </p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {(getDefaultModulesForSector(industry as any) || []).map((moduleId: ModuleId) => {
-                                            const mod = MODULE_DEFINITIONS[moduleId];
-                                            return (
-                                                <span
-                                                    key={moduleId}
-                                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300"
-                                                >
-                                                    {mod?.name?.[language === 'tr' ? 'tr' : 'en'] || moduleId}
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
 
                             {/* Submit Button */}
                             <Button
