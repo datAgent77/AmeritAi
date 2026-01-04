@@ -41,8 +41,21 @@ import {
     PieChart,
     Instagram,
     MessageCircle,
-    Calendar as CalendarIcon
+    Calendar as CalendarIcon,
+    ArrowUpRight,
+    Check,
+    Users,
+    Search,
+    Utensils,
+    Box,
+    Mail,
+    Mic,
+    Scan,
+    Languages,
+    Star,
+    Award
 } from "lucide-react"
+import { ORDERED_MODULES } from "@/lib/modules-registry"
 import { ChatbotLoader } from "@/components/chatbot-loader"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
@@ -234,96 +247,69 @@ export default function LandingPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {/* Personal Shopper */}
-                        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-white/10 hover:border-white/20 transition-all group">
-                            <ShoppingBag className="w-10 h-10 text-pink-400 mb-6" />
-                            <h3 className="text-2xl font-bold mb-3 text-white">
-                                {language === 'tr' ? 'Kişisel Alışveriş Asistanı' : 'Personal Shopper'}
-                            </h3>
-                            <p className="text-zinc-400 mb-6 leading-relaxed">
-                                {language === 'tr'
-                                    ? 'Müşterinin stilini anlar, beden önerisi yapar ve kombinler sunar.'
-                                    : 'Understands customer style, suggests sizes, and offers outfit combinations.'}
-                            </p>
-                            <Link href="/products/personal-shopper" className="text-sm font-medium text-white hover:text-pink-400 transition-colors flex items-center gap-1">
-                                {language === 'tr' ? 'Detaylar' : 'Learn More'} <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {ORDERED_MODULES.filter(m => !m.isCore).map((mod) => {
+                            // Map icon name to component
+                            const IconComponent = {
+                                ShoppingBag,
+                                Eye,
+                                Gamepad2,
+                                Megaphone,
+                                Utensils,
+                                MessageSquare,
+                                UserPlus,
+                                Mail,
+                                TrendingUp,
+                                Mic,
+                                Scan,
+                                Languages,
+                                Star,
+                                Award,
+                                Zap,
+                                Globe,
+                                BookOpen: FileText // Alias if needed
+                            }[mod.icon] || Box;
 
-                        {/* Visual Diagnosis */}
-                        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-white/10 hover:border-white/20 transition-all group">
-                            <Eye className="w-10 h-10 text-indigo-400 mb-6" />
-                            <h3 className="text-2xl font-bold mb-3 text-white">
-                                {language === 'tr' ? 'Görsel Tanı (Vision)' : 'Visual Diagnosis'}
-                            </h3>
-                            <p className="text-zinc-400 mb-6 leading-relaxed">
-                                {language === 'tr'
-                                    ? 'Müşterileriniz fotoğraf göndersin, AI sorunu anında görüp çözüm üretsin.'
-                                    : 'Let customers upload photos, AI instantly sees the issue and suggests a solution.'}
-                            </p>
-                            <Link href="/products/visual-diagnosis" className="text-sm font-medium text-white hover:text-indigo-400 transition-colors flex items-center gap-1">
-                                {language === 'tr' ? 'Detaylar' : 'Learn More'} <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
+                            const statusColor = {
+                                ready: 'text-green-400',
+                                beta: 'text-blue-400',
+                                coming_soon: 'text-zinc-500'
+                            }[mod.status];
 
-                        {/* Gamification */}
-                        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-white/10 hover:border-white/20 transition-all group">
-                            <Gamepad2 className="w-10 h-10 text-purple-400 mb-6" />
-                            <h3 className="text-2xl font-bold mb-3 text-white">
-                                {language === 'tr' ? 'Oyunlaştırma & Çark' : 'Gamification & Spin'}
-                            </h3>
-                            <p className="text-zinc-400 mb-6 leading-relaxed">
-                                {language === 'tr'
-                                    ? 'Sıkıcı formlar yerine eğlenceli oyunlarla lead toplayın ve dağıtın.'
-                                    : 'Collect leads using fun games instead of boring forms.'}
-                            </p>
-                            <Link href="/products/gamification" className="text-sm font-medium text-white hover:text-purple-400 transition-colors flex items-center gap-1">
-                                {language === 'tr' ? 'Detaylar' : 'Learn More'} <ArrowRight className="w-4 h-4" />
-                            </Link>
-                        </div>
-                    </div>
+                            return (
+                                <div key={mod.id} className="group relative p-8 rounded-3xl bg-zinc-900/30 border border-white/5 hover:border-white/10 transition-all duration-500 overflow-hidden">
+                                    {/* Glass reflection effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                        {/* Campaign Manager */}
-                        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-white/10 hover:border-white/20 transition-all group flex flex-col md:flex-row gap-6 items-start">
-                            <div className="bg-red-500/10 p-4 rounded-2xl">
-                                <Megaphone className="w-8 h-8 text-red-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold mb-2 text-white">
-                                    {language === 'tr' ? 'Akıllı Kampanya Yöneticisi' : 'Smart Campaign Manager'}
-                                </h3>
-                                <p className="text-zinc-400 mb-4 leading-relaxed text-sm">
-                                    {language === 'tr'
-                                        ? 'Hava durumu, saat veya stok durumuna göre anlık değişen kampanyalar kurgulayın.'
-                                        : 'Create dynamic campaigns that change based on weather, time, or stock status.'}
-                                </p>
-                                <Link href="/products/campaign-manager" className="text-sm font-medium text-white hover:text-red-400 transition-colors flex items-center gap-1">
-                                    {language === 'tr' ? 'İncele' : 'View'} <ArrowRight className="w-3 h-3" />
-                                </Link>
-                            </div>
-                        </div>
+                                    <div className="relative z-10">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                                                <IconComponent className="w-8 h-8 text-white" />
+                                            </div>
+                                            <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-white/5 border border-white/10 ${statusColor}`}>
+                                                {mod.status.replace('_', ' ')}
+                                            </span>
+                                        </div>
 
-                        {/* Restaurant Menu */}
-                        <div className="p-8 rounded-3xl bg-zinc-900/30 border border-white/10 hover:border-white/20 transition-all group flex flex-col md:flex-row gap-6 items-start">
-                            <div className="bg-orange-500/10 p-4 rounded-2xl">
-                                <ChefHat className="w-8 h-8 text-orange-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold mb-2 text-white">
-                                    {language === 'tr' ? 'Dijital Akıllı Menü' : 'Digital Smart Menu'}
-                                </h3>
-                                <p className="text-zinc-400 mb-4 leading-relaxed text-sm">
-                                    {language === 'tr'
-                                        ? 'Otomatik çeviri, alerjen filtresi ve garson gibi satış yapabilen QR menü.'
-                                        : 'Auto-translation, allergen filter, and a QR menu that sells like a waiter.'}
-                                </p>
-                                <Link href="/products/restaurant-menu" className="text-sm font-medium text-white hover:text-orange-400 transition-colors flex items-center gap-1">
-                                    {language === 'tr' ? 'İncele' : 'View'} <ArrowRight className="w-3 h-3" />
-                                </Link>
-                            </div>
-                        </div>
+                                        <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-400 transition-colors">
+                                            {mod.name[language === 'tr' ? 'tr' : 'en']}
+                                        </h3>
+
+                                        <p className="text-zinc-400 text-sm leading-relaxed mb-6 line-clamp-2">
+                                            {mod.description[language === 'tr' ? 'tr' : 'en']}
+                                        </p>
+
+                                        <Link
+                                            href={`/products/${mod.id}`}
+                                            className="inline-flex items-center text-sm font-medium text-zinc-300 hover:text-white transition-colors gap-2"
+                                        >
+                                            {language === 'tr' ? 'İncele' : 'Learn More'}
+                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
