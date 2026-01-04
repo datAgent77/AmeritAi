@@ -489,6 +489,8 @@ export const translations = {
         saveChanges: "Save Changes",
         save: "Save",
         saved: "Saved",
+        included: "Included",
+        inDevelopment: "In Development",
 
         // Lead Collection Settings Page
         backToModules: "Back to Modules",
@@ -624,6 +626,16 @@ export const translations = {
         faqA2: "No, you can start with our free tier without entering any payment information.",
         faqQ3: "What happens if I exceed my conversation limit?",
         faqA3: "You will be notified and given the option to upgrade. We won't cut you off immediately.",
+        faqQ4: "How do I train the AI with my own data?",
+        faqA4: "You can instantly train your AI by uploading PDFs, Word documents, or providing your website URL. Vion processes this information and answers questions based only on your data.",
+        faqQ5: "Is my data secure?",
+        faqA5: "Yes. Your data is encrypted and used only for your specific AI instance. We never share or use your data to train general models.",
+        bentoAnalyticsTitle: "Analytics & Insights",
+        bentoAnalyticsSubtitle: "Monitor performance and customer behavior in real-time.",
+        analyticsConversations: "Conversations",
+        analyticsSentiment: "Sentiment Analysis",
+        analyticsEfficiency: "Efficiency Score",
+        analyticsTopTopics: "Top Topics",
 
         // Legal Pages
         lastUpdated: "Last Updated",
@@ -1700,6 +1712,8 @@ export const translations = {
         requestAccess: "Talep Oluştur",
         requestSent: "Talep Gönderildi",
         requestSentDesc: "Modül talebiniz yöneticiye iletildi. En kısa sürede sizinle iletişime geçeceğiz.",
+        included: "Dahil",
+        inDevelopment: "Geliştiriliyor",
 
         enableIndustryGreeting: "Endüstri Karşılama Mesajı",
         enableIndustryGreetingDesc: "Varsayılan marka mesajı yerine sektöre özel karşılama mesajını göster.",
@@ -1955,11 +1969,21 @@ export const translations = {
         // FAQ
         faqTitle: "Sıkça Sorulan Sorular",
         faqQ1: "İstediğim zaman iptal edebilir miyim?",
-        faqA1: "Evet, aboneliğinizi istediğiniz zaman iptal edebilirsiniz. Erişiminiz fatura dönemi sonuna kadar devam eder.",
+        faqA1: "Evet, aboneliğinizi istediğiniz zaman iptal edebilirsiniz. Erişiminiz faturalandırma döneminizin sonuna kadar devam eder.",
         faqQ2: "Ücretsiz deneme için kredi kartı gerekiyor mu?",
-        faqA2: "Hayır, ödeme bilgisi girmeden ücretsiz katmanımızla başlayabilirsiniz.",
-        faqQ3: "Konuşma limitimi aşarsam ne olur?",
-        faqA3: "Bildirim alırsınız ve yükseltme seçeneği sunulur. Sizi hemen kesmeyiz.",
+        faqA2: "Hayır, herhangi bir ödeme bilgisi girmeden ücretsiz katmanımızla başlayabilirsiniz.",
+        faqQ3: "Konuşma sınırımı aşarsam ne olur?",
+        faqA3: "Size bildirim gönderilir ve yükseltme seçeneği sunulur. Erişiminizi hemen kesmiyoruz.",
+        faqQ4: "Kendi verilerimi nasıl yüklerim?",
+        faqA4: "PDF, Word belgeleri yükleyerek veya web sitenizin URL'sini paylaşarak asistanınızı anında eğitebilirsiniz. Vion bu bilgileri saniyeler içinde öğrenir.",
+        faqQ5: "Verilerim güvende mi?",
+        faqA5: "Kesinlikle. Verileriniz banka düzeyinde şifreleme ile korunur ve sadece sizin asistanınızın eğitimi için kullanılır. Asla dışarı sızdırılmaz.",
+        bentoAnalyticsTitle: "Analitik ve Görüşler",
+        bentoAnalyticsSubtitle: "Performansı ve müşteri davranışlarını gerçek zamanlı olarak izleyin.",
+        analyticsConversations: "Görüşmeler",
+        analyticsSentiment: "Duygu Analizi",
+        analyticsEfficiency: "Verimlilik Skoru",
+        analyticsTopTopics: "Popüler Konular",
 
         // Legal Pages
         lastUpdated: "Son Güncelleme",

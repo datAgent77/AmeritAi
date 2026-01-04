@@ -853,11 +853,11 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="grid gap-2">
                                                 <Label>{t('width') || 'Width'} (px)</Label>
-                                                <Input type="number" value={settings.launcherWidth} onChange={(e) => setSettings(prev => ({ ...prev, launcherWidth: parseInt(e.target.value) || 60 }))} />
+                                                <Input type="number" value={settings.fullImageLauncherWidth} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherWidth: parseInt(e.target.value) || 60 }))} />
                                             </div>
                                             <div className="grid gap-2">
                                                 <Label>{t('height') || 'Height'} (px)</Label>
-                                                <Input type="number" value={settings.launcherHeight} onChange={(e) => setSettings(prev => ({ ...prev, launcherHeight: parseInt(e.target.value) || 60 }))} />
+                                                <Input type="number" value={settings.fullImageLauncherHeight} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherHeight: parseInt(e.target.value) || 60 }))} />
                                             </div>
                                         </div>
                                         <div className="grid gap-2">
@@ -965,11 +965,11 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label>{t('width') || 'Width'} (px)</Label>
-                                            <Input type="number" value={settings.fullImageLauncherWidth} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherWidth: parseInt(e.target.value) || 60 }))} />
+                                            <Input type="number" value={settings.launcherWidth} onChange={(e) => setSettings(prev => ({ ...prev, launcherWidth: parseInt(e.target.value) || 60 }))} />
                                         </div>
                                         <div className="grid gap-2">
                                             <Label>{t('height') || 'Height'} (px)</Label>
-                                            <Input type="number" value={settings.fullImageLauncherHeight} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherHeight: parseInt(e.target.value) || 60 }))} />
+                                            <Input type="number" value={settings.launcherHeight} onChange={(e) => setSettings(prev => ({ ...prev, launcherHeight: parseInt(e.target.value) || 60 }))} />
                                         </div>
                                     </div>
 
@@ -1546,8 +1546,8 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                     onClick={() => setIsPreviewOpen(true)}
                                                     style={{
                                                         position: 'relative',
-                                                        width: `${settings.launcherWidth}px`,
-                                                        height: `${settings.launcherHeight}px`,
+                                                        width: `${settings.launcherType === 'fullImage' ? settings.fullImageLauncherWidth : settings.launcherWidth}px`,
+                                                        height: `${settings.launcherType === 'fullImage' ? settings.fullImageLauncherHeight : settings.launcherHeight}px`,
                                                         borderRadius: settings.launcherType === 'fullImage' ? '0' : `${settings.launcherRadius}px`,
                                                         backgroundColor: settings.launcherType === 'fullImage' ? 'transparent' : (settings.launcherBackgroundColor || settings.brandColor),
                                                         boxShadow: settings.launcherType === 'fullImage' ? 'none' : (
@@ -1592,7 +1592,7 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                                 )
                                                             )}
                                                             {(settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text') && (
-                                                                <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px]" style={{ color: settings.launcherIconColor }}>{settings.launcherText}</span>
+                                                                <span className="text-sm whitespace-nowrap overflow-hidden" style={{ color: settings.launcherIconColor }}>{settings.launcherText}</span>
                                                             )}
                                                         </>
                                                     )}
@@ -1635,8 +1635,8 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                             style={{
                                                 width: '380px',
                                                 height: '500px',
-                                                ...(settings.position.includes('bottom') ? { bottom: `${settings.bottomSpacing + settings.launcherHeight + 20}px` } : {}),
-                                                ...(settings.position.includes('top') ? { top: `${settings.bottomSpacing + settings.launcherHeight + 20}px` } : {}),
+                                                ...(settings.position.includes('bottom') ? { bottom: `${settings.bottomSpacing + (settings.launcherType === 'fullImage' ? settings.fullImageLauncherHeight : settings.launcherHeight) + 20}px` } : {}),
+                                                ...(settings.position.includes('top') ? { top: `${settings.bottomSpacing + (settings.launcherType === 'fullImage' ? settings.fullImageLauncherHeight : settings.launcherHeight) + 20}px` } : {}),
                                                 ...(settings.position.includes('right') ? { right: `${settings.sideSpacing}px` } : {}),
                                                 ...(settings.position.includes('left') ? { left: `${settings.sideSpacing}px` } : {}),
                                                 ...(settings.position.includes('center') ? { left: '50%', transform: 'translateX(-50%)' } : {}),

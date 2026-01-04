@@ -909,7 +909,6 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 isOpen={isDetailsOpen}
                 onOpenChange={(open) => {
                     setIsDetailsOpen(open)
-                    if (!open) handleManage(selectedModuleId as ModuleId)
                 }}
                 selectedModuleId={selectedModuleId}
                 moduleStates={moduleStates}

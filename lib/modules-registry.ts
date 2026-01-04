@@ -164,7 +164,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service',
-            'healthcare', 'education', 'academic', 'finance', 'restaurant', 'other'
+            'healthcare', 'education', 'academic', 'finance', 'restaurant', 'maritime', 'other'
         ],
         legacyFirestoreField: 'enableChatbot',
         longDescription: {
@@ -217,7 +217,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         supportedSectors: [],
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service',
-            'healthcare', 'education', 'academic', 'finance', 'restaurant', 'other'
+            'healthcare', 'education', 'academic', 'finance', 'restaurant', 'maritime', 'other'
         ],
         legacyFirestoreField: 'enableKnowledgeBase',
         longDescription: {
@@ -309,7 +309,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: [
-            'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance'
+            'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance', 'maritime'
         ],
         legacyFirestoreField: 'enableLeadCollection',
         longDescription: {
@@ -360,7 +360,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         price: 49,
         status: 'ready',
         supportedSectors: [],
-        defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate'],
+        defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate', 'maritime'],
         legacyFirestoreField: 'enableVoiceAssistant',
         aiSystemInstruction: {
             en: `APPOINTMENT BOOKING MODULE ACTIVE. You are a helpful assistant. Your goal is to collect the necessary information to book an appointment kindly and naturally.

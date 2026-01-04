@@ -35,7 +35,13 @@ import {
     Sparkles,
     Scale,
     Dumbbell,
-    Anchor
+    Anchor,
+    Activity,
+    TrendingUp,
+    PieChart,
+    Instagram,
+    MessageCircle,
+    Calendar as CalendarIcon
 } from "lucide-react"
 import { ChatbotLoader } from "@/components/chatbot-loader"
 import { PublicHeader } from "@/components/public-header"
@@ -44,7 +50,14 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { HeroBackground } from "@/components/landing/hero-background"
 import { motion, AnimatePresence } from "framer-motion"
-import { useState, useEffect } from "react"
+import { TextRotate } from "@/components/ui/text-rotate"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
+
 
 export default function LandingPage() {
     const { t, language } = useLanguage()
@@ -64,35 +77,6 @@ export default function LandingPage() {
             "Answers Questions, Builds Trust."
         ]
     }
-
-    const [displayText, setDisplayText] = useState("")
-    const [loopNum, setLoopNum] = useState(0)
-    const [typingSpeed, setTypingSpeed] = useState(150)
-
-    useEffect(() => {
-        const currentLanguageSlogans = language === 'tr' ? slogans.tr : slogans.en
-        const i = loopNum % currentLanguageSlogans.length
-        const fullText = currentLanguageSlogans[i]
-
-        const handleTyping = () => {
-            // If text is fully typed
-            if (displayText === fullText) {
-                setTimeout(() => {
-                    setDisplayText("")
-                    setLoopNum(loopNum + 1)
-                    setTypingSpeed(150)
-                }, 2000) // Wait 2 seconds before switching
-                return
-            }
-
-            // Normal typing
-            setDisplayText(fullText.substring(0, displayText.length + 1))
-            setTypingSpeed(50 + Math.random() * 50) // Slight random variation for realism
-        }
-
-        const timer = setTimeout(handleTyping, typingSpeed)
-        return () => clearTimeout(timer)
-    }, [displayText, loopNum, language, slogans.tr, slogans.en, typingSpeed])
 
     const sectors = [
         { icon: ShoppingBag, label: { en: "E-Commerce", tr: "E-Ticaret" }, href: "/solutions/ecommerce", color: "text-blue-400" },
@@ -120,7 +104,7 @@ export default function LandingPage() {
             <PublicHeader transparent={true} />
 
             {/* Hero Section - UPDATED MESSAGING */}
-            <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden border-b border-white/5">
+            <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
                 <HeroBackground />
 
                 <div className="container mx-auto px-4 relative z-10">
@@ -134,9 +118,11 @@ export default function LandingPage() {
                         </div>
 
                         <div className="h-[120px] md:h-[180px] flex items-center justify-center">
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-white leading-tight min-h-[80px]">
-                                {displayText}
-                                <span className="animate-pulse text-white">|</span>
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-white leading-tight min-h-[80px] flex flex-col items-center justify-center">
+                                <TextRotate
+                                    texts={language === 'tr' ? slogans.tr : slogans.en}
+                                    duration={6000}
+                                />
                             </h1>
                         </div>
 
@@ -188,23 +174,7 @@ export default function LandingPage() {
                         ))}
                     </div>
 
-                    <div className="mt-16 text-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-                        <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                            {t('missingIndustryTitle')}
-                        </h3>
-                        <p className="text-zinc-400 mb-8 font-light">
-                            {t('missingIndustryDesc')}
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link href="/signup">
-                                <Button className="h-12 px-8 bg-white text-black hover:bg-zinc-200 transition-all rounded-full font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
-                                    {language === 'tr' ? 'Ücretsiz Başla' : 'Start for Free'}
-                                    <ArrowRight className="ml-2 w-4 h-4" />
-                                </Button>
-                            </Link>
 
-                        </div>
-                    </div>
                 </div>
 
             </section>
@@ -358,6 +328,102 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* ANALYTICS PREVIEW - BENTO GRID */}
+            <section className="py-32 bg-zinc-950/50 border-t border-white/5">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-16 space-y-4">
+                        <h2 className="text-3xl md:text-4xl font-bold text-slate-100 mb-4">
+                            {t('bentoAnalyticsTitle')}
+                        </h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto">
+                            {t('bentoAnalyticsSubtitle')}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-6xl mx-auto">
+                        {/* Conversations Stat */}
+                        <div className="md:col-span-2 p-8 rounded-3xl bg-zinc-900/50 border border-white/5 flex flex-col justify-between overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Activity className="w-32 h-32 text-blue-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-zinc-500 font-medium mb-1">{t('analyticsConversations')}</h3>
+                                <div className="text-4xl font-bold text-white">12,482</div>
+                                <div className="text-green-500 text-sm mt-2 flex items-center gap-1 font-medium">
+                                    <TrendingUp className="w-4 h-4" /> +24% {language === 'tr' ? 'geçen aya göre' : 'vs last month'}
+                                </div>
+                            </div>
+                            <div className="mt-8 h-20 flex items-end gap-1">
+                                {[40, 60, 45, 70, 50, 80, 65, 90, 75, 100].map((h, i) => (
+                                    <div key={i} className="flex-1 bg-blue-500/20 rounded-t-sm group-hover:bg-blue-500/40 transition-all" style={{ height: `${h}%` }}></div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Sentiment */}
+                        <div className="p-8 rounded-3xl bg-zinc-900/50 border border-white/5 flex flex-col items-center justify-center text-center group hover:border-white/10 transition-colors">
+                            <div className="relative w-32 h-32 mb-4">
+                                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#27272a" strokeWidth="8" />
+                                    <circle cx="50" cy="50" r="40" fill="none" stroke="#22c55e" strokeWidth="8" strokeDasharray="251.2" strokeDashoffset="50" className="group-hover:stroke-[#4ade80] transition-colors" />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-white">
+                                    82%
+                                </div>
+                            </div>
+                            <h3 className="text-zinc-400 font-medium">{t('analyticsSentiment')}</h3>
+                        </div>
+
+                        {/* Efficiency */}
+                        <div className="p-8 rounded-3xl bg-zinc-900/50 border border-white/5 flex flex-col items-center justify-center text-center group hover:border-white/10 transition-colors">
+                            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                <Zap className="w-8 h-8 text-purple-400" />
+                            </div>
+                            <div className="text-3xl font-bold text-white">99.4%</div>
+                            <h3 className="text-zinc-400 font-medium">{t('analyticsEfficiency')}</h3>
+                        </div>
+
+                        {/* Top Topics */}
+                        <div className="md:col-span-2 p-8 rounded-3xl bg-zinc-900/50 border border-white/5">
+                            <h3 className="text-white font-medium mb-6 flex items-center gap-2">
+                                <PieChart className="w-5 h-5 text-zinc-400" />
+                                {t('analyticsTopTopics')}
+                            </h3>
+                            <div className="space-y-4">
+                                {[
+                                    { label: language === 'tr' ? 'Ürün Bilgisi' : 'Product Info', value: '45%' },
+                                    { label: language === 'tr' ? 'Fiyatlandırma' : 'Pricing', value: '28%' },
+                                    { label: language === 'tr' ? 'Kargo Durumu' : 'Shipping Status', value: '17%' },
+                                    { label: language === 'tr' ? 'İadeler' : 'Returns', value: '10%' }
+                                ].map((topic, i) => (
+                                    <div key={i} className="space-y-1">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-zinc-400">{topic.label}</span>
+                                            <span className="text-zinc-300 font-medium">{topic.value}</span>
+                                        </div>
+                                        <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 rounded-full" style={{ width: topic.value }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Real-time indicator Card */}
+                        <div className="md:col-span-2 p-8 rounded-3xl bg-blue-600/10 border border-blue-500/20 flex items-center gap-6">
+                            <div className="relative">
+                                <div className="w-3 h-3 bg-blue-500 rounded-full animate-ping absolute inset-0"></div>
+                                <div className="w-3 h-3 bg-blue-500 rounded-full relative"></div>
+                            </div>
+                            <div>
+                                <div className="text-white font-medium">{language === 'tr' ? 'Gerçek Zamanlı Karar Verme' : 'Real-time Decision Making'}</div>
+                                <p className="text-zinc-500 text-sm">{language === 'tr' ? 'Yapay zekanız her görüşmede stratejinizi optimize eder.' : 'Your AI optimizes your strategy in every single conversation.'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Features Grid - Minimalist */}
             <section className="py-24 bg-zinc-950">
                 <div className="container mx-auto px-4">
@@ -388,6 +454,63 @@ export default function LandingPage() {
                             </div>
                         ))}
                     </div>
+                </div>
+            </section>
+
+            {/* INTEGRATION CLOUD */}
+            <section className="py-24 border-t border-white/5 relative overflow-hidden">
+                <div className="container mx-auto px-4">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                            {language === 'tr' ? 'Ekosisteminize Bağlanın' : 'Connect Your Ecosystem'}
+                        </h2>
+                        <p className="text-zinc-400 max-w-2xl mx-auto">
+                            {language === 'tr'
+                                ? 'Vion, mevcut araçlarınızla kusursuz bir şekilde entegre olur.'
+                                : 'Vion integrates seamlessly with the tools you already use.'}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-6 md:gap-12">
+                        {[
+                            { name: 'WhatsApp', icon: MessageCircle, color: 'text-green-500' },
+                            { name: 'Instagram', icon: Instagram, color: 'text-pink-500' },
+                            { name: 'Shopify', icon: ShoppingBag, color: 'text-lime-500' },
+                            { name: 'Zapier', icon: Zap, color: 'text-orange-500' },
+                            { name: 'Google Calendar', icon: CalendarIcon, color: 'text-blue-400' }
+                        ].map((item, i) => (
+                            <div key={i} className="flex flex-col items-center gap-3 grayscale hover:grayscale-0 transition-all cursor-default">
+                                <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center hover:bg-zinc-800 hover:border-white/10 transition-all">
+                                    <item.icon className={`w-10 h-10 ${item.color}`} />
+                                </div>
+                                <span className="text-zinc-500 text-sm font-medium">{item.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* FAQ SECTION */}
+            <section className="py-32 bg-zinc-950/30 border-t border-white/5">
+                <div className="container mx-auto px-4 max-w-3xl">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                            {t('faqTitle')}
+                        </h2>
+                    </div>
+
+                    <Accordion type="single" collapsible className="w-full space-y-4">
+                        {[1, 2, 3, 4, 5].map((num) => (
+                            <AccordionItem key={num} value={`item-${num}`} className="border-white/5 bg-zinc-900/30 px-6 rounded-2xl overflow-hidden">
+                                <AccordionTrigger className="text-white hover:no-underline text-left py-6">
+                                    {t(`faqQ${num}`)}
+                                </AccordionTrigger>
+                                <AccordionContent className="text-zinc-400 pb-6 leading-relaxed">
+                                    {t(`faqA${num}`)}
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </div>
             </section>
 

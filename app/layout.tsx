@@ -29,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+    <html lang="en" suppressHydrationWarning style={{ backgroundColor: '#000000' }}>
+      <body className={`${inter.className} antialiased bg-black`}>
         <LanguageProvider>
           <ConditionalAuthProvider>
             <CookieConsent />

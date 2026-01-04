@@ -11,7 +11,7 @@ export default function DashboardLayout({
     return (
         <AuthGuard>
             <SidebarProvider>
-                <div className="flex flex-col h-screen w-full">
+                <div className="flex flex-col h-screen w-full bg-[#f4f6f8]">
                     <SiteHeader />
                     <div className="flex flex-1 overflow-hidden">
                         <AppSidebar className="!top-16 !h-[calc(100svh-4rem)]" />

@@ -66,10 +66,27 @@ const config: Config = {
                     from: { height: "var(--radix-accordion-content-height)" },
                     to: { height: "0" },
                 },
+                beam: {
+                    "0%": { opacity: "0", transform: "translateX(-10%) translateY(-10%) rotate(35deg)" },
+                    "50%": { opacity: "1" },
+                    "100%": { opacity: "0", transform: "translateX(10%) translateY(10%) rotate(35deg)" },
+                },
+                spotlight: {
+                    "0%": {
+                        opacity: "0",
+                        transform: "translate(-72%, -62%) scale(0.5)",
+                    },
+                    "100%": {
+                        opacity: "1",
+                        transform: "translate(-50%,-40%) scale(1)",
+                    },
+                },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
                 "accordion-up": "accordion-up 0.2s ease-out",
+                beam: "beam linear infinite",
+                spotlight: "spotlight 2s ease .75s 1 forwards",
             },
         },
     },
