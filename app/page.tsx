@@ -84,7 +84,7 @@ export default function LandingPage() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                             </span>
-                            {language === 'tr' ? 'Satış Odaklı AI Platformu' : 'Sales-Focused AI Platform'}
+                            {language === 'tr' ? 'Yeni Nesil Satış Asistanı' : 'Next-Gen Sales Assistant'}
                         </div>
 
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight">
