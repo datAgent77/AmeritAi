@@ -134,9 +134,9 @@ export default function LandingPage() {
                         </div>
 
                         <div className="h-[120px] md:h-[180px] flex items-center justify-center">
-                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white leading-tight min-h-[80px]">
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-white leading-tight min-h-[80px]">
                                 {displayText}
-                                <span className="animate-pulse text-blue-400">|</span>
+                                <span className="animate-pulse text-white">|</span>
                             </h1>
                         </div>
 
