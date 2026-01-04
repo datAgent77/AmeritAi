@@ -43,10 +43,36 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { HeroBackground } from "@/components/landing/hero-background"
+import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from "react"
 
 export default function LandingPage() {
     const { t, language } = useLanguage()
     const { user } = useAuth()
+
+    const slogans = {
+        tr: [
+            "Ziyaretçileri Müşteriye Dönüştürür.",
+            "Her Dili Konuşan Satış Temsilciniz.",
+            "Satışları ve Randevuları Otomatize Eder.",
+            "Soruları Yanıtlar, Güven Verir."
+        ],
+        en: [
+            "Converts Visitors into Customers.",
+            "Your Multilingual Sales Representative.",
+            "Automates Sales and Appointments.",
+            "Answers Questions, Builds Trust."
+        ]
+    }
+
+    const [index, setIndex] = useState(0)
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setIndex((prev) => (prev + 1) % slogans.tr.length)
+        }, 3000)
+        return () => clearInterval(timer)
+    }, [])
 
     const sectors = [
         { icon: ShoppingBag, label: { en: "E-Commerce", tr: "E-Ticaret" }, href: "/solutions/ecommerce", color: "text-blue-400" },
@@ -87,11 +113,20 @@ export default function LandingPage() {
                             {language === 'tr' ? 'Yeni Nesil Satış ve Destek Asistanı' : 'Next-Gen Sales & Support Assistant'}
                         </div>
 
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-tight">
-                            {language === 'tr'
-                                ? <>Konuşur, ikna eder ve müşteriyi <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">doğru aksiyona yönlendirir.</span></>
-                                : <>Speaks, persuades, and guides the customer to the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">right action.</span></>}
-                        </h1>
+                        <div className="h-[120px] md:h-[180px] flex items-center justify-center">
+                            <AnimatePresence mode="wait">
+                                <motion.h1
+                                    key={index}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.5, ease: "easeOut" }}
+                                    className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white leading-tight"
+                                >
+                                    {language === 'tr' ? slogans.tr[index] : slogans.en[index]}
+                                </motion.h1>
+                            </AnimatePresence>
+                        </div>
 
                         <p className="text-xl md:text-2xl text-zinc-400 max-w-2xl mx-auto leading-relaxed font-light">
                             {language === 'tr'
