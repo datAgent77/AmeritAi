@@ -65,14 +65,35 @@ export default function LandingPage() {
         ]
     }
 
-    const [index, setIndex] = useState(0)
+    const [displayText, setDisplayText] = useState("")
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [loopNum, setLoopNum] = useState(0)
+    const [typingSpeed, setTypingSpeed] = useState(150)
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setIndex((prev) => (prev + 1) % slogans.tr.length)
-        }, 3000)
-        return () => clearInterval(timer)
-    }, [])
+        const currentLanguageSlogans = language === 'tr' ? slogans.tr : slogans.en
+        const i = loopNum % currentLanguageSlogans.length
+        const fullText = currentLanguageSlogans[i]
+
+        const handleTyping = () => {
+            setDisplayText(isDeleting
+                ? fullText.substring(0, displayText.length - 1)
+                : fullText.substring(0, displayText.length + 1)
+            )
+
+            setTypingSpeed(isDeleting ? 30 : 150)
+
+            if (!isDeleting && displayText === fullText) {
+                setTimeout(() => setIsDeleting(true), 1500)
+            } else if (isDeleting && displayText === "") {
+                setIsDeleting(false)
+                setLoopNum(loopNum + 1)
+            }
+        }
+
+        const timer = setTimeout(handleTyping, typingSpeed)
+        return () => clearTimeout(timer)
+    }, [displayText, isDeleting, loopNum, language, slogans.tr, slogans.en, typingSpeed])
 
     const sectors = [
         { icon: ShoppingBag, label: { en: "E-Commerce", tr: "E-Ticaret" }, href: "/solutions/ecommerce", color: "text-blue-400" },
@@ -113,19 +134,11 @@ export default function LandingPage() {
                             {language === 'tr' ? 'Yeni Nesil Satış ve Destek Asistanı' : 'Next-Gen Sales & Support Assistant'}
                         </div>
 
-                        <div className="h-[120px] md:h-[180px] flex items-center justify-center perspective-[1000px]">
-                            <AnimatePresence mode="wait">
-                                <motion.h1
-                                    key={index}
-                                    initial={{ opacity: 0, rotateX: 90, y: 20 }}
-                                    animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                                    exit={{ opacity: 0, rotateX: -90, y: -20 }}
-                                    transition={{ duration: 0.8, ease: "backOut" }}
-                                    className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white leading-tight"
-                                >
-                                    {language === 'tr' ? slogans.tr[index] : slogans.en[index]}
-                                </motion.h1>
-                            </AnimatePresence>
+                        <div className="h-[120px] md:h-[180px] flex items-center justify-center">
+                            <h1 className="text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white leading-tight min-h-[80px]">
+                                {displayText}
+                                <span className="animate-pulse text-blue-400">|</span>
+                            </h1>
                         </div>
 
                         <p className="text-xl md:text-2xl text-zinc-400 max-w-2xl mx-auto leading-relaxed font-light">
