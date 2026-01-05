@@ -74,14 +74,19 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url, selector })
             })
-            if (!res.ok) throw new Error('Failed to crawl')
             const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to crawl')
             setPreviewTitle(data.title)
             setPreviewContent(data.content)
             toast({ title: t('success'), description: t('contentFetched') || "Content fetched successfully." })
         } catch (e: any) {
             console.error(e)
-            toast({ title: t('error'), description: e.message || "Failed to fetch URL", variant: "destructive" })
+            // Translate known error messages
+            let errorMessage = e.message || "Failed to fetch URL"
+            if (errorMessage.includes("Insufficient content") || errorMessage.includes("JavaScript-based")) {
+                errorMessage = t('crawlErrorSpa')
+            }
+            toast({ title: t('error'), description: errorMessage, variant: "destructive" })
         } finally {
             setIsAdding(false)
         }
@@ -200,10 +205,18 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                 setImportProgress(Math.round(((i + 1) / selectedSitemapUrls.length) * 100))
             }
 
-            toast({
-                title: t('success'),
-                description: `Imported ${successCount}/${selectedSitemapUrls.length} URLs.`,
-            })
+            if (successCount === 0) {
+                toast({
+                    title: t('error'),
+                    description: `Failed to import any URLs. Check for duplicate or empty content.`,
+                    variant: "destructive"
+                })
+            } else {
+                toast({
+                    title: t('success'),
+                    description: `Imported ${successCount}/${selectedSitemapUrls.length} URLs.`,
+                })
+            }
             setSitemapUrls([])
             setSelectedSitemapUrls([])
             setRefreshTrigger(prev => prev + 1)
@@ -324,15 +337,15 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                                         {t('contentPreview') || "Preview"}
                                     </h4>
                                     <Button size="sm" variant="ghost" onClick={() => setPreviewContent("")}>
-                                        Cancel
+                                        {t('cancel')}
                                     </Button>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Title</Label>
+                                    <Label>{t('title')}</Label>
                                     <Input value={previewTitle} onChange={(e) => setPreviewTitle(e.target.value)} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Content</Label>
+                                    <Label>{t('content')}</Label>
                                     <Textarea
                                         value={previewContent}
                                         onChange={(e) => setPreviewContent(e.target.value)}
@@ -352,7 +365,10 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-0.5">
                                         <h4 className="font-medium">{t('urlsFound') || "Pages Found"}: {sitemapUrls.length}</h4>
-                                        <p className="text-xs text-muted-foreground">{t('selectPages import') || "Select pages to import"}</p>
+                                        <p className="text-xs text-muted-foreground">{t('selectPagesImport')}</p>
+                                        {sitemapUrls.length === 1 && (
+                                            <p className="text-xs text-amber-600">{t('spaWarning')}</p>
+                                        )}
                                     </div>
                                     <div className="flex gap-2">
                                         <Button variant="ghost" size="sm" onClick={() => setSelectedSitemapUrls(sitemapUrls)} className="h-8">

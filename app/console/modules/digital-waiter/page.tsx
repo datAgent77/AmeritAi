@@ -128,17 +128,14 @@ export default function DigitalWaiterPage() {
     }
 
     return (
-        <div className="container max-w-4xl py-8 space-y-8">
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Link href="/console/modules">
-                    <Button variant="ghost" size="icon">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Button>
+
                 </Link>
                 <div className="flex-1">
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <Utensils className="w-6 h-6" />
                         {t('modules.digitalWaiter') || 'Dijital Garson'}
                     </h1>
                     <p className="text-muted-foreground">

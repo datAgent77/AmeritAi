@@ -5,6 +5,7 @@ import { generateAIResponse, saveMessageToSession, analyzeSentiment } from "@/li
 import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
+import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
 
 export const runtime = 'nodejs';
 
@@ -168,6 +169,39 @@ export async function POST(req: Request) {
                                     }
                                 } catch (extractError: any) {
                                     console.error("Chat API: ❌ Appointment save failed:", extractError?.message || extractError);
+                                }
+                            }
+
+                            // Check if this is a lead confirmation and save it
+                            if (isLeadConfirmation(fullContent)) {
+                                try {
+                                    const leadData = extractLeadData(messages);
+
+                                    // Validate we have at least some contact info
+                                    if (leadData.name || leadData.email || leadData.phone) {
+                                        if (!adminDb) {
+                                            console.error("Chat API: ❌ adminDb is null for lead save!");
+                                        } else {
+                                            const leadDoc = {
+                                                chatbotId,
+                                                name: leadData.name || "Anonim",
+                                                email: leadData.email || "",
+                                                phone: leadData.phone || "",
+                                                source: "In-Chat Conversation",
+                                                customFields: leadData.company ? { company: leadData.company } : {},
+                                                sessionId,
+                                                createdAt: new Date()
+                                            };
+
+                                            console.log("Chat API: 📝 Saving lead:", leadDoc);
+                                            await adminDb.collection("leads").add(leadDoc);
+                                            console.log("Chat API: ✅ Lead saved successfully");
+                                        }
+                                    } else {
+                                        console.log("Chat API: ⚠️ Lead confirmation detected but no contact info extracted");
+                                    }
+                                } catch (leadError: any) {
+                                    console.error("Chat API: ❌ Lead save failed:", leadError?.message || leadError);
                                 }
                             }
                         }

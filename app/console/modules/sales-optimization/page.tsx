@@ -230,16 +230,13 @@ export default function SalesOptimizationPage() {
     }
 
     return (
-        <div className="p-8 space-y-8 max-w-5xl mx-auto">
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push("/console/modules")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
+
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                            <TrendingUp className="h-8 w-8 text-emerald-600" />
                             {t('modules.salesOptimization') || "Sales Optimization"}
                         </h2>
                         <p className="text-muted-foreground mt-1">
@@ -489,7 +486,7 @@ export default function SalesOptimizationPage() {
                                     <div className="p-2.5 bg-secondary/50 rounded-xl">
                                         <Package className="h-5 w-5 text-foreground/80" />
                                     </div>
-                                    <CardTitle className="text-xl font-semibold tracking-tight">{t('salesOpt.stockAlerts') || "Stock Scarcity Rules"}</CardTitle>
+                                    <CardTitle className="text-xl font-semibold tracking-tight">{t('stockScarcityRules') || "Stock Scarcity Rules"}</CardTitle>
                                 </div>
                                 <Switch
                                     checked={config.stockAlerts}
@@ -497,7 +494,7 @@ export default function SalesOptimizationPage() {
                                 />
                             </div>
                             <CardDescription className="pt-2 pl-12">
-                                {t('salesOpt.stockAlertsDesc') || "Creating urgency by highlighting low stock items."}
+                                {t('stockScarcityRulesDesc') || "Creating urgency by highlighting low stock items."}
                             </CardDescription>
                         </CardHeader>
                         {config.stockAlerts && (
@@ -620,7 +617,7 @@ export default function SalesOptimizationPage() {
                                 <div className="p-2.5 bg-secondary/50 rounded-xl">
                                     <GitCompare className="h-5 w-5 text-foreground/80" />
                                 </div>
-                                <CardTitle className="text-xl font-semibold tracking-tight">{t('salesOpt.productComparison') || "Smart Product Comparison"}</CardTitle>
+                                <CardTitle className="text-xl font-semibold tracking-tight">{t('smartProductComparison') || "Smart Product Comparison"}</CardTitle>
                             </div>
                             <Switch
                                 checked={config.productComparison}
@@ -628,7 +625,7 @@ export default function SalesOptimizationPage() {
                             />
                         </div>
                         <CardDescription>
-                            {t('salesOpt.productComparisonDesc') || "Allows the AI to create side-by-side comparison tables for products to help users decide."}
+                            {t('smartProductComparisonDesc') || "Allows the AI to create side-by-side comparison tables for products to help users decide."}
                         </CardDescription>
                     </CardHeader>
                 </Card>

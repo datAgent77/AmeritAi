@@ -50,6 +50,10 @@ export async function GET(req: Request) {
                     headerTextColor: data.headerTextColor || "#FFFFFF",
                     suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                     enableLeadCollection: data.enableLeadCollection || false,
+                    enableInitialLeadCollection: data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false,
+                    enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
+                    leadFormConfig: data.leadFormConfig || null,
+                    leadCustomFields: data.leadCustomFields || [],
                     position: data.position || "bottom-right", // 'bottom-right' | 'bottom-left'
                     viewMode: data.viewMode || "classic", // 'classic' | 'wide'
                     modalSize: data.modalSize || "half", // 'half' | 'full'

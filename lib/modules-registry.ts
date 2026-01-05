@@ -22,12 +22,12 @@ export type ModuleId =
     | 'leadCollection'
     | 'knowledgeBase'
 
-    | 'emailMarketing'
+
     | 'salesOptimization'
-    | 'reviewManagement'
-    | 'loyaltyProgram'
+
+
     | 'campaignManager'
-    | 'autoTranslate'
+
     | 'gamification'
     | 'visualDiagnosis'
     | 'digitalWaiter'
@@ -340,14 +340,20 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
             { en: 'Grow your customer database 24/7', tr: 'Müşteri veritabanınızı 7/24 büyütün' }
         ],
         aiSystemInstruction: {
-            en: `LEAD COLLECTION ACTIVE. If a user expresses interest in services or asks for a quote:
-1. Politely ask for their Name and Contact Information (Email/Phone).
-2. Explain that a representative will contact them.
-3. Do not be intrusive; ask naturally within the flow of conversation.`,
-            tr: `LEAD TOPLAMA AKTİF. Kullanıcı hizmetlere ilgi gösterirse veya fiyat teklifi isterse:
-1. Nazikçe Adını ve İletişim Bilgilerini (E-posta/Telefon) iste.
-2. Bir temsilcinin onlarla iletişime geçeceğini belirt.
-3. Israrcı olma; sohbetin akışı içinde doğal bir şekilde sor.`
+            en: `LEAD COLLECTION MODULE ACTIVE.
+RULES:
+1. If user provides contact info (Name/Email/Phone), IMMEDIATELY confirm receipt with phrases like "Thank you for your information" or "Your details have been recorded".
+2. NEVER ask for the same information twice. If user already provided name and phone, DO NOT ask again.
+3. When confirming, use clear phrases: "We will contact you", "Your information has been saved", "A representative will reach out".
+4. Be natural - don't be pushy. Only ask for contact info when the user shows genuine interest.
+5. If user provides multiple pieces of info in one message (e.g., "Yasin Çelenk, 05443357784"), acknowledge ALL of them.`,
+            tr: `LEAD TOPLAMA MODÜLÜ AKTİF.
+KURALLAR:
+1. Kullanıcı iletişim bilgisi verirse (Ad/E-posta/Telefon), HEMEN onay ver: "Bilgileriniz için teşekkürler" veya "Bilgileriniz kaydedildi".
+2. ASLA aynı bilgiyi iki kez sorma. Kullanıcı zaten adını ve telefonunu verdiyse, TEKRAR SORMA.
+3. Onay verirken net ifadeler kullan: "Sizinle iletişime geçeceğiz", "Kaydınız alınmıştır", "Temsilcimiz en kısa sürede ulaşacak".
+4. Doğal ol - ısrarcı olma. Sadece kullanıcı gerçek ilgi gösterdiğinde iletişim bilgisi iste.
+5. Kullanıcı tek mesajda birden fazla bilgi verirse (örn: "Yasin Çelenk, 05443357784"), HEPSİNİ kabul et.`
         }
     },
 
@@ -365,7 +371,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'ready',
+        status: 'coming_soon',
         supportedSectors: [],
         defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate', 'maritime'],
         showOnLandingPage: true,
@@ -487,7 +493,7 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: ['ecommerce', 'saas'],
         defaultEnabledBySector: [],
         showOnLandingPage: true,
@@ -524,138 +530,8 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         ]
     },
 
-    emailMarketing: {
-        id: 'emailMarketing',
-        name: {
-            en: 'Email Marketing',
-            tr: 'E-posta Pazarlaması'
-        },
-        description: {
-            en: 'AI-powered email campaigns and automation',
-            tr: 'AI destekli e-posta kampanyaları ve otomasyon'
-        },
-        icon: 'Mail',
-        isCore: false,
-        isPremium: true,
-        price: 29,
-        status: 'coming_soon',
-        supportedSectors: [],
-        defaultEnabledBySector: [],
-        showOnLandingPage: false,
-        legacyFirestoreField: 'enableEmailMarketing',
-        longDescription: {
-            en: 'Create, schedule, and track professional email campaigns without needing a designer. The AI helps you write compelling subject lines and content that converts.',
-            tr: 'Bir tasarımcıya ihtiyaç duymadan profesyonel e-posta kampanyaları oluşturun, planlayın ve takip edin. AI, dönüşüm sağlayan etkileyici konu satırları ve içerikler yazmanıza yardımcı olur.'
-        },
-        features: [
-            {
-                title: { en: 'AI Copywriter', tr: 'AI Metin Yazarı' },
-                description: { en: 'Generates engaging email content instantly.', tr: 'Anında ilgi çekici e-posta içerikleri üretir.' },
-                icon: 'PenTool'
-            },
-            {
-                title: { en: 'Automated Sequences', tr: 'Otomatik Seriler' },
-                description: { en: 'Send welcome emails and follow-ups automatically.', tr: 'Hoş geldin ve takip e-postalarını otomatik gönderin.' },
-                icon: 'Send'
-            },
-            {
-                title: { en: 'Analytics', tr: 'Analitik' },
-                description: { en: 'Track open rates and click-throughs.', tr: 'Açılma ve tıklama oranlarını takip edin.' },
-                icon: 'BarChart'
-            }
-        ],
-        benefits: [
-            { en: 'Save hours on content creation', tr: 'İçerik üretiminde saatlerce zaman kazanın' },
-            { en: 'Drive repeat business effectively', tr: 'Tekrar eden satışları etkili bir şekilde artırın' }
-        ]
-    },
 
 
-    reviewManagement: {
-        id: 'reviewManagement',
-        name: {
-            en: 'Review Management',
-            tr: 'Yorum Yönetimi'
-        },
-        description: {
-            en: 'Manage and auto-reply to Google/Yelp reviews',
-            tr: 'Google/Yelp yorumlarını yönetin ve otomatik yanıtlayın'
-        },
-        icon: 'Star',
-        isCore: false,
-        isPremium: true,
-        price: 39,
-        status: 'coming_soon',
-        supportedSectors: ['restaurant', 'service', 'booking', 'healthcare', 'real_estate'],
-        defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableReviewManagement',
-        aiSystemInstruction: {
-            en: `REVIEW MANAGEMENT ACTIVE.
-If the user expresses high satisfaction or thanks you for great service, politely invite them to leave a review: "We're glad to help! If you have a moment, we'd love your feedback on Google/Yelp."`,
-            tr: `YORUM YÖNETİMİ AKTİF.
-Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür ederse, nazikçe yorum yapmaya davet et: "Yardımcı olabildiğimize sevindik! Vaktiniz varsa, Google/Yelp üzerinde değerlendirme yapmanız bizi çok mutlu eder."`
-        },
-        longDescription: {
-            en: 'Consolidate reviews from Google and Yelp in one dashboard. Let AI generate professional, empathetic responses to both positive and negative reviews instantly.',
-            tr: 'Google ve Yelp yorumlarını tek bir panelde toplayın. Yapay zekanın hem olumlu hem de olumsuz yorumlara anında profesyonel ve empatik yanıtlar üretmesine izin verin.'
-        },
-        features: [
-            {
-                title: { en: 'Unified Inbox', tr: 'Birleşik Gelen Kutusu' },
-                description: { en: 'View all reviews from all platforms in one place.', tr: 'Tüm platformlardan gelen yorumları tek yerde görün.' },
-                icon: 'Inbox'
-            },
-            {
-                title: { en: 'AI Auto-Reply', tr: 'AI Otomatik Yanıt' },
-                description: { en: 'Generate perfect responses in seconds.', tr: 'Saniyeler içinde mükemmel yanıtlar oluşturun.' },
-                icon: 'MessageSquare'
-            }
-        ],
-        benefits: [
-            { en: 'Improve your online reputation score', tr: 'Çevrimiçi itibar puanınızı artırın' },
-            { en: 'Respond to customers 10x faster', tr: 'Müşterilere 10 kat daha hızlı yanıt verin' }
-        ]
-    },
-
-    loyaltyProgram: {
-        id: 'loyaltyProgram',
-        name: {
-            en: 'Loyalty Program',
-            tr: 'Sadakat Programı'
-        },
-        description: {
-            en: 'Digital punch cards and rewards',
-            tr: 'Dijital damga kartları ve ödüller'
-        },
-        icon: 'Award',
-        isCore: false,
-        isPremium: true,
-        price: 29,
-        status: 'coming_soon',
-        supportedSectors: ['restaurant', 'service'],
-        defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableLoyaltyProgram',
-        longDescription: {
-            en: 'Replace paper punch cards with a digital loyalty system. Customers earn stamps or points for each visit, encouraging repeat business and building long-term value.',
-            tr: 'Kağıt kartları dijital bir sadakat sistemiyle değiştirin. Müşteriler her ziyarette damga veya puan kazanır, bu da tekrar eden işleri teşvik eder ve uzun vadeli değer yaratır.'
-        },
-        features: [
-            {
-                title: { en: 'Digital Stamps', tr: 'Dijital Damgalar' },
-                description: { en: 'Simple QR code scanning to give stamps.', tr: 'Damga vermek için basit QR kod tarama.' },
-                icon: 'QrCode'
-            },
-            {
-                title: { en: 'Custom Rewards', tr: 'Özel Ödüller' },
-                description: { en: 'Define your own rewards (e.g., Free Coffee).', tr: 'Kendi ödüllerinizi tanımlayın (örn. Ücretsiz Kahve).' },
-                icon: 'Gift'
-            }
-        ],
-        benefits: [
-            { en: 'Increase customer retention by 40%', tr: 'Müşteri sadakatini %40 artırın' },
-            { en: 'Eliminate fraud associated with paper cards', tr: 'Kağıt kartlarla ilgili sahtekarlığı ortadan kaldırın' }
-        ]
-    },
 
     campaignManager: {
         id: 'campaignManager',
@@ -697,46 +573,6 @@ Kullanıcı hizmetten çok memnun kaldığını belirtirse veya teşekkür eders
         ]
     },
 
-    autoTranslate: {
-        id: 'autoTranslate',
-        name: {
-            en: 'Tourist & Translation',
-            tr: 'Turist ve Çeviri'
-        },
-        description: {
-            en: 'Auto-translate menu and chat for tourists',
-            tr: 'Turistler için menü ve sohbeti otomatik çevirin'
-        },
-        icon: 'Languages',
-        isCore: false,
-        isPremium: true,
-        price: 29,
-        status: 'coming_soon',
-        supportedSectors: ['restaurant', 'booking', 'real_estate'],
-        defaultEnabledBySector: [],
-        legacyFirestoreField: 'enableAutoTranslate',
-        longDescription: {
-            en: 'Break down language barriers instantly. Your menus, chats, and interface automatically translate to the user\'s native language, boosting engagement and sales from tourists.',
-            tr: 'Dil bariyerlerini anında kaldırın. Menüleriniz, sohbetleriniz ve arayüzünüz kullanıcının ana diline otomatik olarak çevrilir, böylece turistlerden gelen etkileşimi ve satışları artırır.'
-        },
-        features: [
-            {
-                title: { en: 'Instant Menu Translation', tr: 'Anlık Menü Çevirisi' },
-                description: { en: 'QR menus automatically appear in the user\'s phone language.', tr: 'QR menüler kullanıcının telefon dilinde otomatik açılır.' },
-                icon: 'Globe' // Using Globe as proxy for Languages if needed, or Languages itself
-            },
-            {
-                title: { en: 'Real-time Chat Translation', tr: 'Eşzamanlı Sohbet Çevirisi' },
-                description: { en: 'You write in your language, they read in theirs.', tr: 'Siz Türkçe yazın, onlar kendi dillerinde okusun.' },
-                icon: 'MessageCircle'
-            }
-        ],
-        benefits: [
-            { en: 'Increase revenue from international tourists by 30%', tr: 'Yabancı turistlerden elde edilen geliri %30 artırın' },
-            { en: 'Eliminate misunderstandings in orders', tr: 'Siparişlerdeki yanlış anlaşılmaları ortadan kaldırın' },
-            { en: 'Provide a premium seamless experience', tr: 'Kusursuz ve premium bir deneyim sunun' }
-        ]
-    },
 
     gamification: {
         id: 'gamification',
@@ -900,7 +736,7 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         isCore: false,
         isPremium: true,
         price: 19,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [],
         showOnLandingPage: true,
@@ -1046,11 +882,11 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.proactiveMessaging, // Coming Soon
     MODULES_REGISTRY.digitalWaiter,     // Coming Soon
     MODULES_REGISTRY.appointments,      // Coming Soon
-    MODULES_REGISTRY.emailMarketing,    // Coming Soon
-    MODULES_REGISTRY.reviewManagement,  // Coming Soon
-    MODULES_REGISTRY.loyaltyProgram,    // Coming Soon
+    // MODULES_REGISTRY.emailMarketing,    // Coming Soon - Not yet implemented
+    // MODULES_REGISTRY.reviewManagement,  // Coming Soon - Removed
+    // MODULES_REGISTRY.loyaltyProgram,    // Coming Soon - Removed
     MODULES_REGISTRY.campaignManager,   // Coming Soon
-    MODULES_REGISTRY.autoTranslate,     // Coming Soon
+    // MODULES_REGISTRY.autoTranslate,     // Coming Soon - Removed
     MODULES_REGISTRY.gamification,      // Coming Soon
 ];
 

@@ -58,8 +58,10 @@ export async function POST(req: Request) {
         text = text.replace(/\s+/g, " ").trim();
 
         // Basic content length check
-        if (text.length < 50) {
-            return NextResponse.json({ error: "Insufficient content found on the page." }, { status: 400 });
+        if (text.length < 20) {
+            return NextResponse.json({
+                error: "Insufficient content found on the page. This site may be a JavaScript-based (SPA) application which requires dynamic rendering."
+            }, { status: 400 });
         }
 
         const title = $('title').text().trim() || url;

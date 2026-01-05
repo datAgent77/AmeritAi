@@ -881,6 +881,9 @@ function ChatbotViewContent() {
         headerTextColor: "#FFFFFF",
         suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
         enableLeadCollection: false,
+        enableInitialLeadCollection: false,
+        enableInChatLeadCollection: false,
+        leadFormConfig: null as { title?: string; subtitle?: string; nameLabel?: string; emailLabel?: string; phoneLabel?: string; submitButtonText?: string } | null,
         industry: "ecommerce" as string,
         enableVoiceAssistant: false,
         voiceProvider: "klassifier" as string,
@@ -940,6 +943,9 @@ function ChatbotViewContent() {
                         headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
+                        enableInitialLeadCollection: data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false,
+                        enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
+                        leadFormConfig: data.leadFormConfig || null,
                         industry: data.industry || "ecommerce",
                         enableVoiceAssistant: data.enableVoiceAssistant || false,
                         voiceProvider: data.voiceProvider || "klassifier",
@@ -1182,8 +1188,8 @@ function ChatbotViewContent() {
             clearTimeout(inactivityTimerRef.current)
         }
 
-        // If lead collection is disabled, do nothing
-        if (!isLoading && !settings.enableLeadCollection) return
+        // If in-chat lead collection is disabled, do nothing
+        if (!isLoading && !settings.enableInChatLeadCollection) return
 
         const contactMessages = {
             tr: "Müşteri temsilcilerimizin sizinle iletişime geçebilmesi için Ad, Soyad, Firma ve İletişim bilgilerinizi paylaşabilir misiniz?",
@@ -1310,7 +1316,7 @@ function ChatbotViewContent() {
                 clearTimeout(inactivityTimerRef.current)
             }
         }
-    }, [messages, localInput, hasRequestedContactInfo, setMessages, isChatLoading, sessionId, hasCapturedInChatLead, chatbotId, settings.enableLeadCollection, isLoading])
+    }, [messages, localInput, hasRequestedContactInfo, setMessages, isChatLoading, sessionId, hasCapturedInChatLead, chatbotId, settings.enableInChatLeadCollection, isLoading])
 
     const [showLeadForm, setShowLeadForm] = useState(false)
     const [leadName, setLeadName] = useState("")
@@ -1320,13 +1326,13 @@ function ChatbotViewContent() {
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
 
     useEffect(() => {
-        if (!isLoading && settings.enableLeadCollection) {
+        if (!isLoading && settings.enableInitialLeadCollection) {
             const storedLead = localStorage.getItem(`lead_${chatbotId}`)
             if (!storedLead) {
                 setShowLeadForm(true)
             }
         }
-    }, [isLoading, settings.enableLeadCollection, chatbotId])
+    }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
 
     const handleLeadSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -1432,13 +1438,13 @@ function ChatbotViewContent() {
                                     <MessageSquare className="w-8 h-8 text-white" />
                                 )}
                             </div>
-                            <h2 className="text-2xl font-bold text-gray-800">{t('welcome')}</h2>
-                            <p className="text-sm text-gray-500">Please provide your details to start chatting.</p>
+                            <h2 className="text-2xl font-bold text-gray-800">{settings.leadFormConfig?.title || t('welcome')}</h2>
+                            <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || "Lütfen bilgilerinizi girerek sohbete başlayın."}</p>
                         </div>
 
                         <form onSubmit={handleLeadSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <label htmlFor="name" className="text-sm font-medium text-gray-700">Name</label>
+                                <label htmlFor="name" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.nameLabel || "Ad Soyad"}</label>
                                 <input
                                     id="name"
                                     required
@@ -1451,7 +1457,7 @@ function ChatbotViewContent() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.emailLabel || "E-posta"}</label>
                                 <input
                                     id="email"
                                     required
@@ -1464,7 +1470,7 @@ function ChatbotViewContent() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label htmlFor="phone" className="text-sm font-medium text-gray-700">Phone (Optional)</label>
+                                <label htmlFor="phone" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.phoneLabel || "Telefon (Opsiyonel)"}</label>
                                 <input
                                     id="phone"
                                     type="tel"
@@ -1527,7 +1533,7 @@ function ChatbotViewContent() {
                                 className="w-full py-3 rounded-lg text-white font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
                                 style={{ backgroundColor: settings.brandColor }}
                             >
-                                {isSubmittingLead ? "Starting..." : "Start Chatting"}
+                                {isSubmittingLead ? "Başlatılıyor..." : (settings.leadFormConfig?.submitButtonText || "Sohbete Başla")}
                             </button>
                         </form>
                     </div>
@@ -2162,10 +2168,18 @@ function ChatbotViewContent() {
                                 <Send className="w-4 h-4" />
                             </button>
                         </form>
-                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="text-center mt-2 flex items-center justify-center gap-1 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
-                            <span className="text-[10px] text-gray-400">Powered by</span>
-                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={60} height={15} className="h-3 w-auto opacity-60" unoptimized />
-                        </a>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-2">
+                            <p className="text-[10px] text-gray-400 text-center">
+                                {typeof window !== 'undefined' && window.navigator.language?.startsWith('tr')
+                                    ? 'Asistan hata yapabilir. Önemli bilgileri kontrol edin.'
+                                    : 'AI can make mistakes. Verify important info.'}
+                            </p>
+                            <span className="text-[10px] text-gray-300 hidden sm:block">•</span>
+                            <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] text-gray-400">Powered by</span>
+                                <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
+                            </a>
+                        </div>
                     </div>
                 </div>
             </>

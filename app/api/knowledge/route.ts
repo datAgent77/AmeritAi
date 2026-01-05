@@ -178,13 +178,15 @@ export async function POST(req: Request) {
 
                 preview = contentToEmbed.substring(0, 200) + "...";
 
-                if (!contentToEmbed || contentToEmbed.length < 50) {
-                    return NextResponse.json({ error: "Could not extract enough text from URL" }, { status: 400 });
+                if (!contentToEmbed || contentToEmbed.length < 20) {
+                    return NextResponse.json({
+                        error: "Could not extract enough text from URL. The page might be empty or require JavaScript rendering."
+                    }, { status: 400 });
                 }
 
-            } catch (e) {
+            } catch (e: any) {
                 console.error("Scraping error:", e);
-                return NextResponse.json({ error: "Failed to scrape URL" }, { status: 500 });
+                return NextResponse.json({ error: `Failed to scrape URL: ${e.message || 'Unknown error'}` }, { status: 500 });
             }
         } else if (type === 'file') {
             console.log("API: Processing file upload");
@@ -247,8 +249,11 @@ export async function POST(req: Request) {
             if (!text) {
                 return NextResponse.json({ error: "Missing text" }, { status: 400 });
             }
+            // Ensure preview is set for text type as well
+            preview = contentToEmbed.substring(0, 200) + "...";
         }
 
+        console.log("API: Content pre-embedding", { chatbotId, docId, type, titleUsed: title || 'Untitled', contentLength: contentToEmbed?.length, previewSet: !!preview });
         console.log("API: Generating embeddings...");
 
         // Simple chunking function

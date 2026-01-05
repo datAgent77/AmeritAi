@@ -79,14 +79,14 @@ export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
                 <Card>
                     <CardHeader>
                         <CardTitle>{t('addNewData')}</CardTitle>
-                        <CardDescription>{t('knowledgeTextDescription') || "Add custom text content to train your chatbot."}</CardDescription>
+                        <CardDescription>{t('knowledgeTextDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="title">{t('knowledgeTitle')}</Label>
                             <Input
                                 id="title"
-                                placeholder="e.g. Return Policy"
+                                placeholder={t('knowledgeTitlePlaceholder')}
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
@@ -95,7 +95,7 @@ export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
                             <Label htmlFor="content">{t('knowledgeContent')}</Label>
                             <Textarea
                                 id="content"
-                                placeholder="Enter the detailed information here..."
+                                placeholder={t('knowledgeContentPlaceholder')}
                                 className="h-40"
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}

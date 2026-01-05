@@ -30,15 +30,12 @@ export default function GamificationPage() {
     }
 
     return (
-        <div className="p-8 space-y-8">
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push("/console/modules")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
+
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                            <Gamepad2 className="h-8 w-8 text-pink-500" />
                             {t('modules.gamification') || "Gamification & Wheel"}
                         </h2>
                         <p className="text-muted-foreground">
@@ -55,17 +52,17 @@ export default function GamificationPage() {
             <div className="grid gap-6 md:grid-cols-2">
                 <Card className="border-2 border-pink-100 dark:border-pink-900/20">
                     <CardHeader>
-                        <CardTitle>Wheel of Fortune</CardTitle>
-                        <CardDescription>Configure the spin-the-wheel popup</CardDescription>
+                        <CardTitle>{t('wheelOfFortune') || "Wheel of Fortune"}</CardTitle>
+                        <CardDescription>{t('wheelConfig') || "Configure the spin-the-wheel popup"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between">
-                            <Label>Enable Game</Label>
+                            <Label>{t('enableGame') || "Enable Game"}</Label>
                             <Switch checked={active} onCheckedChange={setActive} />
                         </div>
 
                         <div className="space-y-4">
-                            <Label>Prizes (Probability)</Label>
+                            <Label>{t('prizesProb') || "Prizes (Probability)"}</Label>
                             <div className="flex gap-2">
                                 <Input placeholder="10% Discount" defaultValue="10% OFF" />
                                 <Input className="w-20" placeholder="%" defaultValue="50" />
@@ -84,16 +81,16 @@ export default function GamificationPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Triggers</CardTitle>
-                        <CardDescription>When should the game appear?</CardDescription>
+                        <CardTitle>{t('triggers') || "Triggers"}</CardTitle>
+                        <CardDescription>{t('gameTriggersDesc') || "When should the game appear?"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center gap-3">
                                 <MousePointerClick className="h-5 w-5 text-blue-500" />
                                 <div>
-                                    <div className="font-medium">Exit Intent</div>
-                                    <div className="text-xs text-muted-foreground">Show when cursor leaves window</div>
+                                    <div className="font-medium">{t('exitIntentShort') || "Exit Intent"}</div>
+                                    <div className="text-xs text-muted-foreground">{t('exitIntentDescShort') || "Show when cursor leaves window"}</div>
                                 </div>
                             </div>
                             <Switch checked={true} />
@@ -102,8 +99,8 @@ export default function GamificationPage() {
                             <div className="flex items-center gap-3">
                                 <Gift className="h-5 w-5 text-purple-500" />
                                 <div>
-                                    <div className="font-medium">On Entry</div>
-                                    <div className="text-xs text-muted-foreground">Show immediately (delay 5s)</div>
+                                    <div className="font-medium">{t('onEntry') || "On Entry"}</div>
+                                    <div className="text-xs text-muted-foreground">{t('onEntryDesc') || "Show immediately (delay 5s)"}</div>
                                 </div>
                             </div>
                             <Switch checked={false} />

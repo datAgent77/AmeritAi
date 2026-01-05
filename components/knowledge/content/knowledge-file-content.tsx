@@ -112,7 +112,7 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
                                     <Upload className="h-6 w-6 text-primary" />
                                 </div>
                                 <div className="text-center">
-                                    <div className="font-medium">{file ? file.name : "Click to upload or drag and drop"}</div>
+                                    <div className="font-medium">{file ? file.name : t('clickToUpload')}</div>
                                     <div className="text-xs text-muted-foreground mt-1">PDF, TXT, DOCX, XLSX (Max 10MB)</div>
                                 </div>
                             </div>

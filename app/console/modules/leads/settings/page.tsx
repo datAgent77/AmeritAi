@@ -31,10 +31,30 @@ export default function LeadCollectionSettingsPage() {
 
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
-    const [isActive, setIsActive] = useState(false)
+    const [enableInitialLead, setEnableInitialLead] = useState(false)
+    const [enableInChatLead, setEnableInChatLead] = useState(false)
     const [customFields, setCustomFields] = useState<CustomField[]>([])
     const [enableNotifications, setEnableNotifications] = useState(false)
     const [notificationEmail, setNotificationEmail] = useState("")
+
+    // Form Customization
+    const [formTitle, setFormTitle] = useState("Hoş Geldiniz")
+    const [formSubtitle, setFormSubtitle] = useState("Lütfen bilgilerinizi girerek sohbete başlayın.")
+    const [nameLabel, setNameLabel] = useState("Ad Soyad")
+    const [namePlaceholder, setNamePlaceholder] = useState("Ad Soyad")
+    const [emailLabel, setEmailLabel] = useState("E-posta")
+    const [emailPlaceholder, setEmailPlaceholder] = useState("E-posta")
+    const [phoneLabel, setPhoneLabel] = useState("Telefon")
+    const [phonePlaceholder, setPhonePlaceholder] = useState("Telefon (Opsiyonel)")
+    const [submitButtonText, setSubmitButtonText] = useState("Sohbete Başla")
+
+    // Default Field Configuration
+    const [nameEnabled, setNameEnabled] = useState(true)
+    const [emailEnabled, setEmailEnabled] = useState(true)
+    const [phoneEnabled, setPhoneEnabled] = useState(true)
+    const [nameRequired, setNameRequired] = useState(true)
+    const [emailRequired, setEmailRequired] = useState(true)
+    const [phoneRequired, setPhoneRequired] = useState(false)
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -45,10 +65,32 @@ export default function LeadCollectionSettingsPage() {
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
-                setIsActive(data.enableLeadCollection || false)
+                setEnableInitialLead(data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false)
+                setEnableInChatLead(data.enableInChatLeadCollection ?? false)
                 setCustomFields(data.leadCustomFields || [])
                 setEnableNotifications(data.enableLeadNotifications || false)
                 setNotificationEmail(data.leadNotificationEmail || user.email || "")
+
+                // Form Customization
+                if (data.leadFormConfig) {
+                    setFormTitle(data.leadFormConfig.title || "Hoş Geldiniz")
+                    setFormSubtitle(data.leadFormConfig.subtitle || "Lütfen bilgilerinizi girerek sohbete başlayın.")
+                    setNameLabel(data.leadFormConfig.nameLabel || "Ad Soyad")
+                    setNamePlaceholder(data.leadFormConfig.namePlaceholder || "Ad Soyad")
+                    setEmailLabel(data.leadFormConfig.emailLabel || "E-posta")
+                    setEmailPlaceholder(data.leadFormConfig.emailPlaceholder || "E-posta")
+                    setPhoneLabel(data.leadFormConfig.phoneLabel || "Telefon (Opsiyonel)")
+                    setPhonePlaceholder(data.leadFormConfig.phonePlaceholder || "Telefon (Opsiyonel)")
+                    setSubmitButtonText(data.leadFormConfig.submitButtonText || "Sohbete Başla")
+
+                    // Default Fields Config
+                    setNameEnabled(data.leadFormConfig.nameEnabled !== false)
+                    setEmailEnabled(data.leadFormConfig.emailEnabled !== false)
+                    setPhoneEnabled(data.leadFormConfig.phoneEnabled !== false)
+                    setNameRequired(data.leadFormConfig.nameRequired !== false)
+                    setEmailRequired(data.leadFormConfig.emailRequired !== false)
+                    setPhoneRequired(data.leadFormConfig.phoneRequired === true)
+                }
             } catch (error) {
                 console.error("Error fetching settings:", error)
             } finally {
@@ -62,19 +104,42 @@ export default function LeadCollectionSettingsPage() {
         if (!user) return
         setIsSaving(true)
         try {
+            const token = await user.getIdToken()
             const response = await fetch("/api/console/settings", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     chatbotId: user.uid,
                     userSettings: {
-                        enableLeadCollection: isActive
+                        enableLeadCollection: enableInitialLead || enableInChatLead
                     },
                     chatbotSettings: {
-                        enableLeadCollection: isActive,
+                        enableLeadCollection: enableInitialLead || enableInChatLead,
+                        enableInitialLeadCollection: enableInitialLead,
+                        enableInChatLeadCollection: enableInChatLead,
                         leadCustomFields: customFields,
                         enableLeadNotifications: enableNotifications,
-                        leadNotificationEmail: notificationEmail
+                        leadNotificationEmail: notificationEmail,
+                        leadFormConfig: {
+                            title: formTitle,
+                            subtitle: formSubtitle,
+                            nameLabel: nameLabel,
+                            namePlaceholder: namePlaceholder,
+                            emailLabel: emailLabel,
+                            emailPlaceholder: emailPlaceholder,
+                            phoneLabel: phoneLabel,
+                            phonePlaceholder: phonePlaceholder,
+                            submitButtonText: submitButtonText,
+                            nameEnabled,
+                            emailEnabled,
+                            phoneEnabled,
+                            nameRequired,
+                            emailRequired,
+                            phoneRequired
+                        }
                     }
                 })
             });
@@ -127,19 +192,10 @@ export default function LeadCollectionSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500">
-            <div className="flex items-center space-x-2 mb-6">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/console/modules')}>
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    {t('backToModules') || "Modüllere Dön"}
-                </Button>
-            </div>
-
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600">
-                        <Users className="w-8 h-8" />
-                    </div>
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight">{t('leadCollection') || "Lead Toplama"}</h2>
                         <p className="text-muted-foreground">
@@ -156,32 +212,87 @@ export default function LeadCollectionSettingsPage() {
             </div>
 
             <div className="grid gap-6 max-w-3xl">
-                {/* Module Status */}
+                {/* Lead Collection Toggles */}
                 <Card>
                     <CardHeader>
                         <CardTitle>{t('moduleStatus') || "Modül Durumu"}</CardTitle>
                         <CardDescription>
-                            {t('leadCollectionStatusDesc') || "Lead toplama özelliğini aktif veya pasif yapın."}
+                            {t('leadCollectionStatusDesc') || "Lead toplama yöntemlerini ayrı ayrı yapılandırın."}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
+                        {/* Initial Lead Collection */}
                         <div className="flex items-center justify-between">
                             <div className="space-y-0.5">
-                                <Label className="text-base">{t('enableLeadCollection') || "Lead Toplamayı Etkinleştir"}</Label>
+                                <Label className="text-base">{t('enableInitialLeadCollection') || "Başlangıç Lead Toplama"}</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    {t('enableLeadCollectionDesc') || "Sohbet başlamadan önce kullanıcılardan iletişim bilgilerini isteyin."}
+                                    {t('enableInitialLeadCollectionDesc') || "Sohbet başlamadan önce form göster."}
                                 </p>
                             </div>
                             <Switch
-                                checked={isActive}
-                                onCheckedChange={setIsActive}
+                                checked={enableInitialLead}
+                                onCheckedChange={setEnableInitialLead}
+                            />
+                        </div>
+
+                        {/* In-Chat Lead Collection */}
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">{t('enableInChatLeadCollection') || "Konuşma İçi Lead Toplama"}</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    {t('enableInChatLeadCollectionDesc') || "Kullanıcı 2 mesaj gönderdikten sonra iletişim bilgisi iste."}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={enableInChatLead}
+                                onCheckedChange={setEnableInChatLead}
                             />
                         </div>
                     </CardContent>
                 </Card>
 
+                {/* Form Customization */}
+                {enableInitialLead && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('leadFormCustomization') || "Form Özelleştirme"}</CardTitle>
+                            <CardDescription>
+                                {t('leadFormCustomizationDesc') || "Başlangıç lead formunun görünümünü özelleştirin."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label>{t('welcomeTitle') || "Hoşgeldin Başlığı"}</Label>
+                                    <Input
+                                        value={formTitle}
+                                        onChange={(e) => setFormTitle(e.target.value)}
+                                        placeholder="Hoş Geldiniz"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label>{t('submitButtonText') || "Buton Metni"}</Label>
+                                    <Input
+                                        value={submitButtonText}
+                                        onChange={(e) => setSubmitButtonText(e.target.value)}
+                                        placeholder="Sohbete Başla"
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>{t('welcomeSubtitle') || "Alt Mesaj"}</Label>
+                                <Input
+                                    value={formSubtitle}
+                                    onChange={(e) => setFormSubtitle(e.target.value)}
+                                    placeholder="Lütfen bilgilerinizi girerek sohbete başlayın."
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Notifications */}
-                {isActive && (
+                {(enableInitialLead || enableInChatLead) && (
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-2">
@@ -225,7 +336,7 @@ export default function LeadCollectionSettingsPage() {
                 )}
 
                 {/* Custom Fields */}
-                {isActive && (
+                {enableInitialLead && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{t('customFields') || "Özel Alanlar"}</CardTitle>
@@ -234,10 +345,132 @@ export default function LeadCollectionSettingsPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                                <strong>{t('defaultFields') || "Varsayılan Alanlar"}:</strong> Ad (zorunlu), E-posta (zorunlu), Telefon (opsiyonel)
-                            </div>
+                            {/* Default Fields - Displayed vertically like custom fields */}
 
+                            {/* Name Field */}
+                            {nameEnabled && (
+                                <div className="flex flex-col gap-3 p-4 border rounded-lg bg-gray-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium">{t('nameField') || "Ad Alanı"}</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                checked={nameRequired}
+                                                onCheckedChange={setNameRequired}
+                                                className="scale-90"
+                                            />
+                                            <Label className="text-xs text-muted-foreground mr-2">{t('required') || "Zorunlu"}</Label>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setNameEnabled(false)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('fieldLabel') || 'Etiket'}</Label>
+                                        <Input
+                                            value={nameLabel}
+                                            onChange={(e) => setNameLabel(e.target.value)}
+                                            placeholder="Ad Soyad"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('placeholder') || 'Placeholder'}</Label>
+                                        <Input
+                                            value={namePlaceholder}
+                                            onChange={(e) => setNamePlaceholder(e.target.value)}
+                                            placeholder="Ad Soyad"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Email Field */}
+                            {emailEnabled && (
+                                <div className="flex flex-col gap-3 p-4 border rounded-lg bg-gray-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium">{t('emailField') || "Email Alanı"}</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                checked={emailRequired}
+                                                onCheckedChange={setEmailRequired}
+                                                className="scale-90"
+                                            />
+                                            <Label className="text-xs text-muted-foreground mr-2">{t('required') || "Zorunlu"}</Label>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setEmailEnabled(false)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('fieldLabel') || 'Etiket'}</Label>
+                                        <Input
+                                            value={emailLabel}
+                                            onChange={(e) => setEmailLabel(e.target.value)}
+                                            placeholder="E-posta"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('placeholder') || 'Placeholder'}</Label>
+                                        <Input
+                                            value={emailPlaceholder}
+                                            onChange={(e) => setEmailPlaceholder(e.target.value)}
+                                            placeholder="E-posta"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Phone Field */}
+                            {phoneEnabled && (
+                                <div className="flex flex-col gap-3 p-4 border rounded-lg bg-gray-50/50">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium">{t('phoneField') || "Telefon Alanı"}</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Switch
+                                                checked={phoneRequired}
+                                                onCheckedChange={setPhoneRequired}
+                                                className="scale-90"
+                                            />
+                                            <Label className="text-xs text-muted-foreground mr-2">{t('required') || "Zorunlu"}</Label>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setPhoneEnabled(false)}
+                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('fieldLabel') || 'Etiket'}</Label>
+                                        <Input
+                                            value={phoneLabel}
+                                            onChange={(e) => setPhoneLabel(e.target.value)}
+                                            placeholder="Telefon (Opsiyonel)"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">{t('placeholder') || 'Placeholder'}</Label>
+                                        <Input
+                                            value={phonePlaceholder}
+                                            onChange={(e) => setPhonePlaceholder(e.target.value)}
+                                            placeholder="Telefon (Opsiyonel)"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Additional/Custom Fields */}
                             {customFields.map((field, index) => (
                                 <div key={field.id} className="flex flex-col gap-3 p-4 border rounded-lg bg-gray-50/50">
                                     <div className="flex items-center justify-between">
@@ -312,8 +545,34 @@ export default function LeadCollectionSettingsPage() {
                                 </div>
                             ))}
 
+                            {(!nameEnabled || !emailEnabled || !phoneEnabled) && (
+                                <div className="space-y-2 pt-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">{t('addRemovedFields') || "Kaldırılan Alanları Ekle"}</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {!nameEnabled && (
+                                            <Button variant="outline" size="sm" onClick={() => setNameEnabled(true)} className="gap-2">
+                                                <Plus className="w-3.5 h-3.5" />
+                                                {t('nameField') || "Ad Alanı"}
+                                            </Button>
+                                        )}
+                                        {!emailEnabled && (
+                                            <Button variant="outline" size="sm" onClick={() => setEmailEnabled(true)} className="gap-2">
+                                                <Plus className="w-3.5 h-3.5" />
+                                                {t('emailField') || "Email Alanı"}
+                                            </Button>
+                                        )}
+                                        {!phoneEnabled && (
+                                            <Button variant="outline" size="sm" onClick={() => setPhoneEnabled(true)} className="gap-2">
+                                                <Plus className="w-3.5 h-3.5" />
+                                                {t('phoneField') || "Telefon Alanı"}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {customFields.length < 5 && (
-                                <Button variant="outline" onClick={addCustomField} className="w-full border-dashed">
+                                <Button variant="outline" onClick={addCustomField} className="w-full border-dashed mt-2">
                                     <Plus className="w-4 h-4 mr-2" />
                                     {t('addCustomField') || 'Özel Alan Ekle'}
                                 </Button>
@@ -331,6 +590,6 @@ export default function LeadCollectionSettingsPage() {
                     </Button>
                 </div>
             </div>
-        </div>
+        </div >
     )
 }

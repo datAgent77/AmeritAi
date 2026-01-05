@@ -5,26 +5,28 @@ import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Mic, Save, Loader2 } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRouter } from "next/navigation"
+import { Loader2, Zap, Cloud, Check } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 export default function VoiceSettingsPage() {
     const { user } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
-    const router = useRouter()
 
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+
+    // ElevenLabs Fields
     const [apiKey, setApiKey] = useState("")
     const [voiceId, setVoiceId] = useState("")
-    const [isActive, setIsActive] = useState(false)
-    const [provider, setProvider] = useState<"klassifier" | "elevenlabs">("klassifier")
+
+    // Independent Enable States
+    const [enableKlassifier, setEnableKlassifier] = useState(true)
+    const [enableElevenLabs, setEnableElevenLabs] = useState(false)
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -37,8 +39,23 @@ export default function VoiceSettingsPage() {
 
                 setApiKey(data.elevenLabsApiKey || "")
                 setVoiceId(data.elevenLabsVoiceId || "")
-                setIsActive(data.enableVoiceAssistant || false)
-                setProvider(data.voiceProvider || "klassifier")
+
+                // Initialize independent states based on saved data
+                // If new fields don't exist yet, infer from legacy 'voiceProvider' and 'enableVoiceAssistant'
+                if (data.enableKlassifier !== undefined) {
+                    setEnableKlassifier(data.enableKlassifier)
+                } else {
+                    // Fallback: If provider is Klassifier (or default) and assistant is active
+                    setEnableKlassifier(data.voiceProvider === 'klassifier' || !data.voiceProvider)
+                }
+
+                if (data.enableElevenLabs !== undefined) {
+                    setEnableElevenLabs(data.enableElevenLabs)
+                } else {
+                    // Fallback: If provider is ElevenLabs and assistant is active
+                    setEnableElevenLabs(data.voiceProvider === 'elevenlabs')
+                }
+
             } catch (error) {
                 console.error("Error fetching settings:", error)
             } finally {
@@ -50,7 +67,18 @@ export default function VoiceSettingsPage() {
 
     const handleSave = async () => {
         if (!user) return
+        setIsSaving(true)
         const token = await user.getIdToken();
+
+        // Determine primary provider for backward compatibility
+        // If both enabled, prefer ElevenLabs (or logic could be different)
+        // If only one enabled, pick that.
+        // If neither, disable main toggle.
+        let primaryProvider = "klassifier"
+        if (enableElevenLabs) primaryProvider = "elevenlabs"
+
+        const isMainActive = enableKlassifier || enableElevenLabs
+
         try {
             const response = await fetch("/api/console/settings", {
                 method: "POST",
@@ -63,12 +91,20 @@ export default function VoiceSettingsPage() {
                     userSettings: {
                         elevenLabsApiKey: apiKey,
                         elevenLabsVoiceId: voiceId,
-                        enableVoiceAssistant: isActive,
-                        voiceProvider: provider
+                        // Save independent states
+                        enableKlassifier: enableKlassifier,
+                        enableElevenLabs: enableElevenLabs,
+
+                        // Maintain legacy fields for backward compatibility
+                        enableVoiceAssistant: isMainActive,
+                        voiceProvider: primaryProvider
                     },
                     chatbotSettings: {
-                        enableVoiceAssistant: isActive,
-                        voiceProvider: provider
+                        enableVoiceAssistant: isMainActive,
+                        voiceProvider: primaryProvider,
+                        // Also save specific flags if chatbot needs them directly
+                        enableKlassifier: enableKlassifier,
+                        enableElevenLabs: enableElevenLabs
                     }
                 })
             });
@@ -76,14 +112,14 @@ export default function VoiceSettingsPage() {
             if (!response.ok) throw new Error("Failed to save settings");
 
             toast({
-                title: t('settingsSaved') || "Ayarlar Kaydedildi",
-                description: t('settingsSavedDesc') || "Sesli asistan ayarlarınız güncellendi."
+                title: t('saveSuccess') || "Ayarlar Başarıyla Kaydedildi",
+                description: t('saveSuccessDesc') || "Sesli asistan tercihleriniz güncellendi."
             })
         } catch (error) {
             console.error("Error saving settings:", error)
             toast({
-                title: t('error') || "Error", // Use translated generic error if key missing
-                description: "Failed to save settings.",
+                title: t('error') || "Hata",
+                description: "Ayarlar kaydedilemedi.",
                 variant: "destructive"
             })
         } finally {
@@ -100,106 +136,132 @@ export default function VoiceSettingsPage() {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6 animate-in fade-in duration-500">
-            <div className="flex items-center space-x-2 mb-6">
-                <Button variant="ghost" size="sm" onClick={() => router.back()}>
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    {t('back') || "Geri"}
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('voiceSettingsTitle') || "Sesli Asistan Ayarları"}</h2>
+                    <p className="text-muted-foreground mt-2">
+                        {t('voiceSettingsDesc') || "Yapay zeka ses motorlarını yönetin ve yapılandırın."}
+                    </p>
+                </div>
+                <Button onClick={handleSave} disabled={isSaving} size="lg">
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('save') || "Kaydet"}
                 </Button>
             </div>
 
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{t('voiceAssistant') || "Sesli Asistan"}</h2>
-                    <p className="text-muted-foreground">
-                        {t('voiceAssistantSettingsDesc') || "ElevenLabs API anahtarınızı ve ses ID'nizi yapılandırın."}
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid gap-6 max-w-2xl">
-                <Card>
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Klassifier Card */}
+                <Card className={`relative overflow-hidden border-2 transition-all ${enableKlassifier ? 'border-primary/50 shadow-md bg-primary/5' : 'border-border/50 opacity-90'}`}>
                     <CardHeader>
-                        <CardTitle>Genel Ayarlar</CardTitle>
-                        <CardDescription>
-                            Sesli asistanın temel durumunu ve tercih edilen motoru belirleyin.
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                                    <Zap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <CardTitle className="text-lg">{t('klassifierTitle') || "Klassifier"}</CardTitle>
+                            </div>
+                            <Switch
+                                checked={enableKlassifier}
+                                onCheckedChange={setEnableKlassifier}
+                            />
+                        </div>
+                        <CardDescription className="mt-2 min-h-[3rem]">
+                            {t('klassifierDesc') || "Düşük gecikmeli ve yüksek performanslı yerel ses servisimiz."}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label>Modül Durumu</Label>
-                            <div className="flex items-center space-x-2">
-                                <Switch
-                                    checked={isActive}
-                                    onCheckedChange={setIsActive}
-                                />
-                                <span className={isActive ? "text-green-600 font-medium" : "text-gray-500"}>
-                                    {isActive ? (t('active') || "Aktif") : (t('inactive') || "Pasif")}
-                                </span>
-                            </div>
+                            <Label>{t('defaultVoice') || "Varsayılan Ses"}</Label>
+                            <Input disabled value="Derya (Türkçe)" className="bg-background/50" />
                         </div>
-
-                        <div className="space-y-3">
-                            <Label>Ses Sağlayıcısı (Provider)</Label>
-                            <Tabs value={provider} onValueChange={(v: any) => setProvider(v)} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="klassifier">Klassifier</TabsTrigger>
-                                    <TabsTrigger value="elevenlabs">ElevenLabs</TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="klassifier" className="space-y-4 pt-4">
-                                    <div className="p-4 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900">
-                                        <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                                            <strong>Klassifier:</strong> Düşük gecikmeli ve yüksek performanslı ses servisimizdir. Türkçe için optimize edilmiştir.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Varsayılan Ses</Label>
-                                        <Input disabled value="Derya (Türkçe)" />
-                                    </div>
-                                </TabsContent>
-
-                                <TabsContent value="elevenlabs" className="space-y-4 pt-4">
-                                    <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900">
-                                        <p className="text-sm text-orange-700 dark:text-orange-300">
-                                            <strong>ElevenLabs:</strong> Dünyanın en gelişmiş yapay zeka ses teknolojisidir. Kendi ses ID&apos;lerinizi kullanabilirsiniz.
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="apiKey">API Key (xi-api-key)</Label>
-                                        <Input
-                                            id="apiKey"
-                                            type="password"
-                                            value={apiKey}
-                                            onChange={(e) => setApiKey(e.target.value)}
-                                            placeholder="sk_..."
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="voiceId">Voice ID</Label>
-                                        <Input
-                                            id="voiceId"
-                                            value={voiceId}
-                                            onChange={(e) => setVoiceId(e.target.value)}
-                                            placeholder="21m00Tcm4TlvDq8ikWAM"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            Varsayılan Rachel: 21m00Tcm4TlvDq8ikWAM
-                                        </p>
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                        </div>
-
-                        <div className="pt-4 border-t">
-                            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
-                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {t('saveChanges') || "Değişiklikleri Kaydet"}
-                            </Button>
+                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mt-2">
+                            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">Ücretsiz</Badge>
+                            <span className="text-xs">Sınırsız kullanım</span>
                         </div>
                     </CardContent>
+                    {enableKlassifier && (
+                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                            <Zap className="w-32 h-32" />
+                        </div>
+                    )}
                 </Card>
+
+                {/* ElevenLabs Card */}
+                <Card className={`relative overflow-hidden border-2 transition-all ${enableElevenLabs ? 'border-orange-500/50 shadow-md bg-orange-50/50 dark:bg-orange-950/10' : 'border-border/50 opacity-90'}`}>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                                    <Cloud className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <CardTitle className="text-lg">{t('elevenLabsTitle') || "ElevenLabs"}</CardTitle>
+                            </div>
+                            <Switch
+                                checked={enableElevenLabs}
+                                onCheckedChange={setEnableElevenLabs}
+                            />
+                        </div>
+                        <CardDescription className="mt-2 min-h-[3rem]">
+                            {t('elevenLabsDesc') || "Dünyanın en gelişmiş yapay zeka ses teknolojisi."}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="apiKey">{t('apiKey') || "API Anahtarı"}</Label>
+                            <Input
+                                id="apiKey"
+                                type="password"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder="sk_..."
+                                disabled={!enableElevenLabs}
+                                className={!enableElevenLabs ? "opacity-50" : ""}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="voiceId">{t('voiceId') || "Voice ID"}</Label>
+                            <Input
+                                id="voiceId"
+                                value={voiceId}
+                                onChange={(e) => setVoiceId(e.target.value)}
+                                placeholder="21m00Tcm4TlvDq8ikWAM"
+                                disabled={!enableElevenLabs}
+                                className={!enableElevenLabs ? "opacity-50" : ""}
+                            />
+                            {enableElevenLabs && (
+                                <p className="text-xs text-muted-foreground">
+                                    Örnek: Rachel (21m00Tcm4TlvDq8ikWAM)
+                                </p>
+                            )}
+                        </div>
+                    </CardContent>
+                    {enableElevenLabs && (
+                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                            <Cloud className="w-32 h-32" />
+                        </div>
+                    )}
+                </Card>
+            </div>
+
+            {/* Summary / Confirmation Section */}
+            <div className="rounded-lg border bg-muted/30 p-4 flex items-start gap-4 text-sm text-muted-foreground">
+                <div className="p-2 bg-background rounded-full border shadow-sm">
+                    <Check className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                    <p className="font-medium text-foreground mb-1">Yapılandırma Özeti</p>
+                    <p>
+                        {enableKlassifier && enableElevenLabs
+                            ? "Her iki ses motoru da etkinleştirildi. Sistem, duruma göre en uygun motoru kullanacaktır (ElevenLabs öncelikli)."
+                            : enableKlassifier
+                                ? "Sadece Klassifier (Yerel) motoru aktif. Hızlı ve ekonomik yanıtlar için kullanılacak."
+                                : enableElevenLabs
+                                    ? "Sadece ElevenLabs motoru aktif. Yüksek kaliteli ses yanıtları için kullanılacak."
+                                    : "Her iki ses motoru da devre dışı. Sesli asistan özelliği kullanılmayacak."
+                        }
+                    </p>
+                </div>
             </div>
         </div>
     )

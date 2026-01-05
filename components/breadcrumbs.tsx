@@ -74,6 +74,13 @@ export function Breadcrumbs() {
                         "appointments": t('appointments') || "Appointments"
                     }
 
+                    // Skip "leads" and "voice" if the previous segment is "modules"
+                    // These modules don't have a main page, so we don't want a broken link
+                    const prevSegment = segments[index - 1]
+                    if (prevSegment === "modules" && (segment === "leads" || segment === "voice")) {
+                        return null
+                    }
+
                     // For tenant ID segment, just show "Tenant"
                     let title = isTenantIdSegment
                         ? "Tenant"

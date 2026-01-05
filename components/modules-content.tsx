@@ -120,12 +120,11 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     leadCollection: 'enableLeadCollection',
     knowledgeBase: 'enableKnowledgeBase',
 
-    emailMarketing: 'enableEmailMarketing',
+
     salesOptimization: 'enableSalesOptimization',
-    reviewManagement: 'enableReviewManagement',
-    loyaltyProgram: 'enableLoyaltyProgram',
+
     campaignManager: 'enableCampaignManager',
-    autoTranslate: 'enableAutoTranslate',
+
     gamification: 'enableGamification',
     visualDiagnosis: 'enableVisualDiagnosis',
     digitalWaiter: 'enableDigitalWaiter',
@@ -187,12 +186,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
                         appointments: data.enableAppointments ?? false,
 
-                        emailMarketing: data.enableEmailMarketing ?? false,
+
                         salesOptimization: data.enableSalesOptimization ?? false,
-                        reviewManagement: data.enableReviewManagement ?? false,
-                        loyaltyProgram: data.enableLoyaltyProgram ?? false,
+
                         campaignManager: data.enableCampaignManager ?? false,
-                        autoTranslate: data.enableAutoTranslate ?? false,
+
                         gamification: data.enableGamification ?? false,
                         visualDiagnosis: data.enableVisualDiagnosis ?? false,
                         digitalWaiter: data.enableDigitalWaiter ?? false,
@@ -209,12 +207,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         leadCollection: false,
                         appointments: false,
 
-                        emailMarketing: false,
+
                         salesOptimization: false,
-                        reviewManagement: false,
-                        loyaltyProgram: false,
+
                         campaignManager: false,
-                        autoTranslate: false,
+
                         gamification: false,
                         visualDiagnosis: false,
                         digitalWaiter: false,
@@ -303,8 +300,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         } catch (error) {
             console.error("Error updating module:", error)
             toast({
-                title: "Error",
-                description: "Failed to update module status.",
+                title: t('error') || "Error",
+                description: t('updateFailedDesc') || "Failed to update module status.",
                 variant: "destructive"
             })
         } finally {
@@ -381,21 +378,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             case 'appointments':
                 router.push(`${basePath}/chatbot/appointments`)
                 break
-            case 'emailMarketing':
-                router.push("/console/modules/email")
-                break
-            case 'reviewManagement':
-                router.push("/console/modules/reviews")
-                break
-            case 'loyaltyProgram':
-                router.push("/console/modules/loyalty")
-                break
+
+
             case 'campaignManager':
                 router.push("/console/modules/campaigns")
                 break
-            case 'autoTranslate':
-                router.push("/console/modules/translate")
-                break
+
             case 'gamification':
                 router.push("/console/modules/gamification")
                 break
@@ -453,8 +441,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         } catch (error) {
             console.error("Error sending request:", error)
             toast({
-                title: "Hata",
-                description: "Talep gönderilemedi. Lütfen tekrar deneyin.",
+                title: t('error') || "Hata",
+                description: t('requestFailedDesc') || "Talep gönderilemedi. Lütfen tekrar deneyin.",
                 variant: "destructive"
             })
         } finally {
@@ -509,6 +497,15 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             }
 
             return matchesSearch && matchesIndustry
+        }).sort((a, b) => {
+            // 1. Coming soon modules always at the end
+            if (a.status === 'coming_soon' && b.status !== 'coming_soon') return 1
+            if (a.status !== 'coming_soon' && b.status === 'coming_soon') return -1
+
+            // 2. Within same status group, sort alphabetically by name
+            const nameA = (a.name[lang] || a.name.en).toLowerCase()
+            const nameB = (b.name[lang] || b.name.en).toLowerCase()
+            return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
     }, [searchQuery, industryFilter, language])
 

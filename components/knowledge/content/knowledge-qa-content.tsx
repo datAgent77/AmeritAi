@@ -70,14 +70,14 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
                 <Card>
                     <CardHeader>
                         <CardTitle>{t('addNewData')}</CardTitle>
-                        <CardDescription>{t('knowledgeQaDescription') || "Add specific question and answer pairs."}</CardDescription>
+                        <CardDescription>{t('knowledgeQaDescription')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="question">{t('question')}</Label>
                             <Input
                                 id="question"
-                                placeholder="e.g. What is your return policy?"
+                                placeholder={t('questionPlaceholder')}
                                 value={question}
                                 onChange={(e) => setQuestion(e.target.value)}
                             />
@@ -86,7 +86,7 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
                             <Label htmlFor="answer">{t('answer')}</Label>
                             <Textarea
                                 id="answer"
-                                placeholder="e.g. You can return items within 30 days..."
+                                placeholder={t('answerPlaceholder')}
                                 className="h-32"
                                 value={answer}
                                 onChange={(e) => setAnswer(e.target.value)}

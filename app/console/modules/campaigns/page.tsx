@@ -31,16 +31,13 @@ export default function CampaignManagerPage() {
     }
 
     return (
-        <div className="p-8 space-y-8">
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.push("/console/modules")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
+
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                            <Zap className="h-8 w-8 text-yellow-500" />
                             {t('modules.campaignManager') || "Campaign Wizard"}
                         </h2>
                         <p className="text-muted-foreground">

@@ -248,7 +248,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {ORDERED_MODULES.filter(m => m.showOnLandingPage).map((mod) => {
+                        {ORDERED_MODULES.filter(m => m && m.showOnLandingPage).map((mod) => {
                             // Map icon name to component
                             const IconComponent = {
                                 ShoppingBag,
