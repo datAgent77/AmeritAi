@@ -248,7 +248,7 @@ export default function LandingPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {ORDERED_MODULES.filter(m => !m.isCore).map((mod) => {
+                        {ORDERED_MODULES.filter(m => m.showOnLandingPage).map((mod) => {
                             // Map icon name to component
                             const IconComponent = {
                                 ShoppingBag,
@@ -310,6 +310,15 @@ export default function LandingPage() {
                                 </div>
                             );
                         })}
+                    </div>
+
+                    <div className="flex justify-center mt-12">
+                        <Link href="/products">
+                            <Button className="h-12 px-8 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20 transition-all group backdrop-blur-sm">
+                                {t('viewAllModules')}
+                                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>

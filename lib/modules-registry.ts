@@ -101,6 +101,11 @@ export interface ModuleDefinition {
     defaultEnabledBySector: SectorId[];
 
     /**
+     * Whether this module should be featured on the landing page modules section.
+     */
+    showOnLandingPage?: boolean;
+
+    /**
      * Legacy Firestore field name for backward compatibility.
      * Used to sync with existing user document structure.
      */
@@ -259,6 +264,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         status: 'ready',
         supportedSectors: ['ecommerce', 'restaurant', 'real_estate'],
         defaultEnabledBySector: ['ecommerce'],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enablePersonalShopper',
         longDescription: {
             en: 'Showcase your products directly within the chat. The AI suggests items, explains features, and guides customers to checkout, acting like a knowledgeable in-store sales associate.',
@@ -311,6 +317,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         defaultEnabledBySector: [
             'ecommerce', 'booking', 'real_estate', 'saas', 'service', 'finance', 'maritime'
         ],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableLeadCollection',
         longDescription: {
             en: 'Never lose a potential customer. The AI intelligently identifies sales opportunities during conversations and collects contact details (Name, Email, Phone) so your team can follow up.',
@@ -361,6 +368,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate', 'maritime'],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableVoiceAssistant',
         aiSystemInstruction: {
             en: `APPOINTMENT BOOKING MODULE ACTIVE. You are a helpful assistant. Your goal is to collect the necessary information to book an appointment kindly and naturally.
@@ -439,6 +447,7 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         status: 'coming_soon',
         supportedSectors: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
         defaultEnabledBySector: [],
+        showOnLandingPage: false,
         legacyFirestoreField: 'enableAppointments',
         longDescription: {
             en: 'A comprehensive calendar system fully integrated with your AI assistant. Manage staff availability, service durations, and view all AI-booked appointments in one place.',
@@ -481,6 +490,7 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         status: 'coming_soon',
         supportedSectors: ['ecommerce', 'saas'],
         defaultEnabledBySector: [],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableSalesOptimization',
         aiSystemInstruction: {
             en: `SALES OPTIMIZATION ACTIVE.
@@ -531,6 +541,7 @@ ONAYLAMA (Sadece TÜM bilgiler toplandığında):
         status: 'coming_soon',
         supportedSectors: [],
         defaultEnabledBySector: [],
+        showOnLandingPage: false,
         legacyFirestoreField: 'enableEmailMarketing',
         longDescription: {
             en: 'Create, schedule, and track professional email campaigns without needing a designer. The AI helps you write compelling subject lines and content that converts.',
@@ -790,6 +801,7 @@ Kullanıcı fiyat konusunda hassas görünüyorsa veya indirim sorarsa, 'Çarkı
         status: 'ready',
         supportedSectors: ['agriculture', 'healthcare', 'real_estate'],
         defaultEnabledBySector: [],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableVisualDiagnosis',
         aiSystemInstruction: {
             en: `VISUAL DIAGNOSIS ACTIVE.
@@ -836,6 +848,7 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         status: 'coming_soon',
         supportedSectors: ['restaurant'],
         defaultEnabledBySector: ['restaurant'],
+        showOnLandingPage: false,
         legacyFirestoreField: 'enableDigitalWaiter',
         longDescription: {
             en: 'More than a menu. A digital waiter that greets your guests, recommends specialties, answers questions about allergens, and takes orders instantly via QR code.',
@@ -890,6 +903,7 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         status: 'coming_soon',
         supportedSectors: [], // All sectors
         defaultEnabledBySector: [],
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableProactiveMessaging',
         longDescription: {
             en: 'Catch your visitors\' attention without being annoying. Display small, timed bubble messages above your chat widget to highlight offers, welcome guests, or provide quick tips.',
