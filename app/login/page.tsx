@@ -244,7 +244,7 @@ export default function LoginForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 mt-8"
               disabled={isLoading}
             >
               {isLoading ? (

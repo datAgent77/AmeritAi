@@ -298,7 +298,7 @@ export default function SignUpForm() {
                                         className="h-11"
                                     />
                                 </div>
-                                <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90">
+                                <Button type="submit" className="w-full h-11 bg-primary hover:bg-primary/90 mt-8">
                                     {language === 'tr' ? 'E-posta ile Kayıt Ol' : 'Sign up with email'}
                                 </Button>
                             </form>
@@ -425,7 +425,7 @@ export default function SignUpForm() {
                             {/* Submit Button */}
                             <Button
                                 type="submit"
-                                className="w-full h-11 bg-primary hover:bg-primary/90"
+                                className="w-full h-11 bg-primary hover:bg-primary/90 mt-8"
                                 disabled={isLoading || (!socialUser && !isPasswordStrong(password))}
                             >
                                 {isLoading ? (
