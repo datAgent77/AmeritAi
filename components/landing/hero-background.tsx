@@ -19,35 +19,35 @@ export function HeroBackground() {
 
             {/* Star Field Background */}
             <StarsBackground
-                starDensity={0.0002}
+                starDensity={0.00015}
                 allStarsTwinkle={true}
-                twinkleProbability={0.8}
-                minTwinkleSpeed={0.8}
-                maxTwinkleSpeed={1.5}
+                twinkleProbability={0.3}
+                minTwinkleSpeed={0.5}
+                maxTwinkleSpeed={1.2}
             />
 
             {/* Dynamic Shooting Stars with Long Trails */}
             <ShootingStars
                 starColor="#9E00FF"
                 trailColor="#FFFFFF"
-                minSpeed={15}
-                maxSpeed={35}
-                minDelay={1000}
-                maxDelay={3000}
+                minSpeed={10}
+                maxSpeed={25}
+                minDelay={3000}
+                maxDelay={8000}
                 starWidth={10}
                 starHeight={1.5}
-                className="opacity-70"
+                className="opacity-40"
             />
             <ShootingStars
                 starColor="#FFFFFF"
                 trailColor="#FFFFFF"
-                minSpeed={10}
-                maxSpeed={25}
-                minDelay={2000}
-                maxDelay={5000}
+                minSpeed={8}
+                maxSpeed={20}
+                minDelay={5000}
+                maxDelay={15000}
                 starWidth={10}
                 starHeight={1}
-                className="opacity-40"
+                className="opacity-20"
             />
 
             {/* Very Subtle Noise/Grain for texture */}
