@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
                                 {t('resetEmailSent')} <span className="font-medium text-foreground">{email}</span>
                             </p>
                         </div>
-                        <Link href="/login">
+                        <Link href="/login" className="block mt-8">
                             <Button className="w-full h-11">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 {t('backToLogin')}
@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
                         </div>
                         <Button
                             type="submit"
-                            className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+                            className="w-full h-11 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 mt-12"
                             disabled={isLoading}
                         >
                             {isLoading ? (
@@ -157,7 +157,7 @@ export default function ForgotPasswordPage() {
                     <p className="text-center text-sm text-muted-foreground">
                         <Link href="/login" className="text-primary hover:underline font-medium inline-flex items-center">
                             <ArrowLeft className="mr-1 h-4 w-4" />
-                            {language === 'tr' ? 'Giriş sayfasına dön' : 'Back to login'}
+                            {t('backToLogin')}
                         </Link>
                     </p>
                 </div>
