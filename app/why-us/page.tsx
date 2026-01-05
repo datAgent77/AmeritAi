@@ -176,21 +176,6 @@ export default function WhyUsPage() {
                     </div>
                 </section>
 
-                {/* Trust / Video / CTA Section */}
-                <section className="py-20 border-t border-white/10 bg-[#0A0A0C]">
-                    <div className="container mx-auto px-4 text-center">
-                        <h2 className="text-3xl font-bold mb-8">
-                            {language === 'tr' ? 'Başarı Hikayenizi Birlikte Yazalım' : 'Let\'s Write Your Success Story Together'}
-                        </h2>
-                        <div className="flex flex-wrap justify-center gap-12 text-zinc-500 font-bold text-xl items-center opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                            {/* Placeholder Logos */}
-                            <span>ACME Corp</span>
-                            <span>Global Tech</span>
-                            <span>Future Systems</span>
-                            <span>NextGen Inc</span>
-                        </div>
-                    </div>
-                </section>
 
             </main>
             <PublicFooter />
