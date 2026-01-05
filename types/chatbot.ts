@@ -10,6 +10,16 @@ export interface ChatbotSettings {
     headerTextColor: string;
     suggestedQuestions: string[];
     enableLeadCollection: boolean;
+    enableInitialLeadCollection: boolean;
+    enableInChatLeadCollection: boolean;
+    leadFormConfig: {
+        title?: string;
+        subtitle?: string;
+        nameLabel?: string;
+        emailLabel?: string;
+        phoneLabel?: string;
+        submitButtonText?: string;
+    } | null;
     industry: string;
     enableVoiceAssistant: boolean;
     voiceProvider: string;
