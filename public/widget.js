@@ -1382,7 +1382,10 @@
         }
 
         // AI Smart Bubbles (Premium): Real-time context-aware messages
-        if (data.engagement && data.engagement.aiSmartBubbles && data.engagement.aiSmartBubbles.enabled) {
+        if (data.engagement &&
+          data.engagement.aiSmartBubbles &&
+          data.engagement.aiSmartBubbles.enabled &&
+          data.engagement.aiSmartBubbles.granted !== false) { // Check granted permission
           const smartConfig = data.engagement.aiSmartBubbles;
           const maxPerSession = smartConfig.maxPerSession || 3;
 
