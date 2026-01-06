@@ -293,6 +293,16 @@
       const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
       sessionStorage.setItem(this.shownCountKey, (shownCount + 1).toString());
 
+      // Send event to chatbot iframe
+      const iframe = document.querySelector('#userex-chatbot-container iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'USEREX_ENGAGEMENT_SHOWN',
+          message: message.text,
+          trigger: 'auto'
+        }, '*');
+      }
+
       // Note: We do NOT call cleanup() here anymore to allow subsequent scheduled messages to fire.
 
       // Get bubble config
@@ -412,8 +422,19 @@
         if (launcher) {
           launcher.click();
         }
+
+        // Notify iframe
+        const iframe = document.querySelector('#userex-chatbot-container iframe');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({
+            type: 'USEREX_BUBBLE_CLICKED',
+            message: messageText
+          }, '*');
+        }
+
         this.hideBubble();
       });
+
 
       // Auto dismiss
       if (bubble.autoDismiss) {
