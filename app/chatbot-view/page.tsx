@@ -1316,914 +1316,914 @@ function ChatbotViewContent() {
                 clearTimeout(inactivityTimerRef.current)
             }
         }
-    }
     }, [messages, localInput, hasRequestedContactInfo, setMessages, isChatLoading, sessionId, hasCapturedInChatLead, chatbotId, settings.enableInChatLeadCollection, isLoading])
 
 
 
 
-// Listen for Bubble Clicks from Parent Widget
-useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-        if (event.data.type === 'USEREX_BUBBLE_CLICKED') {
-            const messageText = event.data.message
-            if (messageText) {
-                // Check if we already have this message to avoid duplicates
-                const isDuplicate = messages.some(m => m.content === messageText)
-                if (!isDuplicate) {
-                    const newMsg = {
-                        id: 'bubble-click-' + Date.now(),
-                        role: 'assistant',
-                        content: messageText,
-                        createdAt: new Date(),
-                        isSpecial: true
-                    }
-                    setMessages(prev => [...prev, newMsg as any])
 
-                    // Auto-speak if enabled
-                    if (settings.enableAutoSpeak) {
-                        // Assuming speakText is available in scope or passed/defined elsewhere. 
-                        // It seems defined in the component based on earlier context, but let's check.
-                        // I'll skip calling it directly unless I am sure, to avoid errors.
-                        // Actually, let's look for speakText definition.
+    // Listen for Bubble Clicks from Parent Widget
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data.type === 'USEREX_BUBBLE_CLICKED') {
+                const messageText = event.data.message
+                if (messageText) {
+                    // Check if we already have this message to avoid duplicates
+                    const isDuplicate = messages.some(m => m.content === messageText)
+                    if (!isDuplicate) {
+                        const newMsg = {
+                            id: 'bubble-click-' + Date.now(),
+                            role: 'assistant',
+                            content: messageText,
+                            createdAt: new Date(),
+                            isSpecial: true
+                        }
+                        setMessages(prev => [...prev, newMsg as any])
+
+                        // Auto-speak if enabled
+                        if (settings.enableAutoSpeak) {
+                            // Assuming speakText is available in scope or passed/defined elsewhere. 
+                            // It seems defined in the component based on earlier context, but let's check.
+                            // I'll skip calling it directly unless I am sure, to avoid errors.
+                            // Actually, let's look for speakText definition.
+                        }
                     }
                 }
             }
         }
-    }
 
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
-}, [messages, settings.enableAutoSpeak])
+        window.addEventListener('message', handleMessage)
+        return () => window.removeEventListener('message', handleMessage)
+    }, [messages, settings.enableAutoSpeak])
 
 
-const [showLeadForm, setShowLeadForm] = useState(false)
-const [leadName, setLeadName] = useState("")
-const [leadEmail, setLeadEmail] = useState("")
-const [leadPhone, setLeadPhone] = useState("")
-const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({})
-const [isSubmittingLead, setIsSubmittingLead] = useState(false)
+    const [showLeadForm, setShowLeadForm] = useState(false)
+    const [leadName, setLeadName] = useState("")
+    const [leadEmail, setLeadEmail] = useState("")
+    const [leadPhone, setLeadPhone] = useState("")
+    const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({})
+    const [isSubmittingLead, setIsSubmittingLead] = useState(false)
 
-useEffect(() => {
-    if (!isLoading && settings.enableInitialLeadCollection) {
-        const storedLead = localStorage.getItem(`lead_${chatbotId}`)
-        if (!storedLead) {
-            setShowLeadForm(true)
-        }
-    }
-}, [isLoading, settings.enableInitialLeadCollection, chatbotId])
-
-const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmittingLead(true)
-
-    try {
-        const res = await fetch("/api/leads", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chatbotId,
-                name: leadName,
-                email: leadEmail,
-                phone: leadPhone,
-                customFields: customFieldValues
-            })
-        })
-
-        if (res.ok) {
-            localStorage.setItem(`lead_${chatbotId}`, JSON.stringify({ name: leadName, email: leadEmail, phone: leadPhone, customFields: customFieldValues }))
-            setShowLeadForm(false)
-        }
-    } catch (error) {
-        console.error("Error submitting lead:", error)
-    } finally {
-        setIsSubmittingLead(false)
-    }
-}
-
-// Appointment Booking State
-const [showBooking, setShowBooking] = useState(false)
-const [bookingData, setBookingData] = useState({
-    type: "",
-    date: "",
-    time: "",
-    notes: ""
-})
-const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
-const [showAuditSuggestion, setShowAuditSuggestion] = useState(false)
-
-const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!bookingData.type || !bookingData.date || !bookingData.time) return
-
-    setIsSubmittingBooking(true)
-    try {
-        const leadData = localStorage.getItem(`lead_${chatbotId}`)
-        const leadInfo = leadData ? JSON.parse(leadData) : {}
-
-        const res = await fetch("/api/appointments", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chatbotId,
-                customerName: leadInfo.name || "Guest User",
-                customerEmail: leadInfo.email || "",
-                customerPhone: leadInfo.phone || "",
-                date: bookingData.date,
-                time: bookingData.time,
-                type: bookingData.type,
-                notes: bookingData.notes,
-                sessionId,
-                status: 'pending'
-            })
-        })
-
-        if (res.ok) {
-            const assistantsMsg = {
-                id: 'appointment-success-' + Date.now(),
-                role: 'assistant',
-                content: settings.appointmentSuccessMessage,
-                createdAt: new Date()
+    useEffect(() => {
+        if (!isLoading && settings.enableInitialLeadCollection) {
+            const storedLead = localStorage.getItem(`lead_${chatbotId}`)
+            if (!storedLead) {
+                setShowLeadForm(true)
             }
-            setMessages(prev => [...prev, assistantsMsg as any])
-            setShowBooking(false)
-            setBookingData({ type: "", date: "", time: "", notes: "" })
         }
-    } catch (error) {
-        console.error("Error submitting appointment:", error)
-    } finally {
-        setIsSubmittingBooking(false)
+    }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
+
+    const handleLeadSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmittingLead(true)
+
+        try {
+            const res = await fetch("/api/leads", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId,
+                    name: leadName,
+                    email: leadEmail,
+                    phone: leadPhone,
+                    customFields: customFieldValues
+                })
+            })
+
+            if (res.ok) {
+                localStorage.setItem(`lead_${chatbotId}`, JSON.stringify({ name: leadName, email: leadEmail, phone: leadPhone, customFields: customFieldValues }))
+                setShowLeadForm(false)
+            }
+        } catch (error) {
+            console.error("Error submitting lead:", error)
+        } finally {
+            setIsSubmittingLead(false)
+        }
     }
-}
 
-if (isLoading) {
-    return <div className="flex items-center justify-center h-screen bg-gray-50">Loading...</div>
-}
+    // Appointment Booking State
+    const [showBooking, setShowBooking] = useState(false)
+    const [bookingData, setBookingData] = useState({
+        type: "",
+        date: "",
+        time: "",
+        notes: ""
+    })
+    const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
+    const [showAuditSuggestion, setShowAuditSuggestion] = useState(false)
 
-return (
-    <div className="flex flex-col h-screen bg-white font-sans text-gray-900 relative overflow-hidden">
-        {/* Lead Collection Overlay */}
-        {showLeadForm && (
-            <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
-                <div className="w-full max-w-sm space-y-6">
-                    <div className="text-center space-y-2">
-                        <div
-                            className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto overflow-hidden"
-                            style={{ backgroundColor: settings.brandColor }}
-                        >
-                            {settings.brandLogo ? (
-                                <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
-                            ) : (
-                                <MessageSquare className="w-8 h-8 text-white" />
-                            )}
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-800">{settings.leadFormConfig?.title || t('welcome')}</h2>
-                        <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || "Lütfen bilgilerinizi girerek sohbete başlayın."}</p>
-                    </div>
+    const handleBookingSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!bookingData.type || !bookingData.date || !bookingData.time) return
 
-                    <form onSubmit={handleLeadSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label htmlFor="name" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.nameLabel || "Ad Soyad"}</label>
-                            <input
-                                id="name"
-                                required
-                                type="text"
-                                value={leadName}
-                                onChange={(e) => setLeadName(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-                                style={{ '--tw-ring-color': settings.brandColor } as any}
-                                placeholder={t('namePlaceholder')}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.emailLabel || "E-posta"}</label>
-                            <input
-                                id="email"
-                                required
-                                type="email"
-                                value={leadEmail}
-                                onChange={(e) => setLeadEmail(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-                                style={{ '--tw-ring-color': settings.brandColor } as any}
-                                placeholder={t('emailPlaceholder')}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="phone" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.phoneLabel || "Telefon (Opsiyonel)"}</label>
-                            <input
-                                id="phone"
-                                type="tel"
-                                value={leadPhone}
-                                onChange={(e) => setLeadPhone(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-                                style={{ '--tw-ring-color': settings.brandColor } as any}
-                                placeholder={t('phonePlaceholder')}
-                            />
-                        </div>
+        setIsSubmittingBooking(true)
+        try {
+            const leadData = localStorage.getItem(`lead_${chatbotId}`)
+            const leadInfo = leadData ? JSON.parse(leadData) : {}
 
-                        {/* Custom Fields */}
-                        {settings.leadCustomFields.map((field) => (
-                            <div key={field.id} className="space-y-2">
-                                <label htmlFor={field.id} className="text-sm font-medium text-gray-700">
-                                    {field.label}{field.required && ' *'}
-                                </label>
-                                {field.type === 'textarea' ? (
-                                    <textarea
-                                        id={field.id}
-                                        required={field.required}
-                                        value={customFieldValues[field.id] || ''}
-                                        onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all min-h-[80px]"
-                                        style={{ '--tw-ring-color': settings.brandColor } as any}
-                                        placeholder={field.placeholder || ''}
-                                    />
-                                ) : field.type === 'select' ? (
-                                    <select
-                                        id={field.id}
-                                        required={field.required}
-                                        value={customFieldValues[field.id] || ''}
-                                        onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-                                        style={{ '--tw-ring-color': settings.brandColor } as any}
-                                    >
-                                        <option value="">{field.placeholder || 'Select...'}</option>
-                                        {(field.options || []).map((opt, i) => (
-                                            <option key={i} value={opt}>{opt}</option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <input
-                                        id={field.id}
-                                        required={field.required}
-                                        type={field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'text'}
-                                        value={customFieldValues[field.id] || ''}
-                                        onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
-                                        style={{ '--tw-ring-color': settings.brandColor } as any}
-                                        placeholder={field.placeholder || ''}
-                                    />
-                                )}
-                            </div>
-                        ))}
+            const res = await fetch("/api/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId,
+                    customerName: leadInfo.name || "Guest User",
+                    customerEmail: leadInfo.email || "",
+                    customerPhone: leadInfo.phone || "",
+                    date: bookingData.date,
+                    time: bookingData.time,
+                    type: bookingData.type,
+                    notes: bookingData.notes,
+                    sessionId,
+                    status: 'pending'
+                })
+            })
 
-                        <button
-                            type="submit"
-                            disabled={isSubmittingLead}
-                            className="w-full py-3 rounded-lg text-white font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
-                            style={{ backgroundColor: settings.brandColor }}
-                        >
-                            {isSubmittingLead ? "Başlatılıyor..." : (settings.leadFormConfig?.submitButtonText || "Sohbete Başla")}
-                        </button>
-                    </form>
-                </div>
-            </div>
-        )}
+            if (res.ok) {
+                const assistantsMsg = {
+                    id: 'appointment-success-' + Date.now(),
+                    role: 'assistant',
+                    content: settings.appointmentSuccessMessage,
+                    createdAt: new Date()
+                }
+                setMessages(prev => [...prev, assistantsMsg as any])
+                setShowBooking(false)
+                setBookingData({ type: "", date: "", time: "", notes: "" })
+            }
+        } catch (error) {
+            console.error("Error submitting appointment:", error)
+        } finally {
+            setIsSubmittingBooking(false)
+        }
+    }
 
-        {/* Appointment Booking Overlay */}
-        {showBooking && (
-            <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
-                <div className="w-full max-w-sm space-y-6 overflow-y-auto max-h-full py-4">
-                    <div className="text-center space-y-2">
-                        <div
-                            className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto"
-                            style={{ backgroundColor: settings.brandColor }}
-                        >
-                            <Calendar className="w-8 h-8" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-800">{t('bookAppointment') || "Book Appointment"}</h2>
-                        <p className="text-sm text-gray-500">{t('bookAppointmentDesc') || "Please select a time that works for you."}</p>
-                    </div>
+    if (isLoading) {
+        return <div className="flex items-center justify-center h-screen bg-gray-50">Loading...</div>
+    }
 
-                    <form onSubmit={handleBookingSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('appointmentType') || "Type"}</label>
-                            <select
-                                required
-                                value={bookingData.type}
-                                onChange={(e) => setBookingData(prev => ({ ...prev, type: e.target.value }))}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-                                style={{ '--tw-ring-color': settings.brandColor } as any}
-                            >
-                                <option value="">{t('selectType') || "Select type..."}</option>
-                                {settings.appointmentTypes.map(type => (
-                                    <option key={type} value={type}>{type}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t('date') || "Date"}</label>
-                                <input
-                                    type="date"
-                                    required
-                                    min={new Date().toISOString().split('T')[0]}
-                                    value={bookingData.date}
-                                    onChange={(e) => setBookingData(prev => ({ ...prev, date: e.target.value }))}
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-700">{t('time') || "Time"}</label>
-                                <input
-                                    type="time"
-                                    required
-                                    value={bookingData.time}
-                                    onChange={(e) => setBookingData(prev => ({ ...prev, time: e.target.value }))}
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700">{t('notes') || "Notes (Optional)"}</label>
-                            <textarea
-                                value={bookingData.notes}
-                                onChange={(e) => setBookingData(prev => ({ ...prev, notes: e.target.value }))}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
-                                rows={2}
-                            />
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setShowBooking(false)}
-                                className="flex-1 py-3 rounded-lg bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors"
-                            >
-                                {t('cancel') || "Cancel"}
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmittingBooking}
-                                className="flex-1 py-3 rounded-lg text-white font-medium shadow-md hover:opacity-90 disabled:opacity-50"
+    return (
+        <div className="flex flex-col h-screen bg-white font-sans text-gray-900 relative overflow-hidden">
+            {/* Lead Collection Overlay */}
+            {showLeadForm && (
+                <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="w-full max-w-sm space-y-6">
+                        <div className="text-center space-y-2">
+                            <div
+                                className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto overflow-hidden"
                                 style={{ backgroundColor: settings.brandColor }}
                             >
-                                {isSubmittingBooking ? "..." : (t('confirmBooking') || "Book Now")}
+                                {settings.brandLogo ? (
+                                    <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
+                                ) : (
+                                    <MessageSquare className="w-8 h-8 text-white" />
+                                )}
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-800">{settings.leadFormConfig?.title || t('welcome')}</h2>
+                            <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || "Lütfen bilgilerinizi girerek sohbete başlayın."}</p>
+                        </div>
+
+                        <form onSubmit={handleLeadSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label htmlFor="name" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.nameLabel || "Ad Soyad"}</label>
+                                <input
+                                    id="name"
+                                    required
+                                    type="text"
+                                    value={leadName}
+                                    onChange={(e) => setLeadName(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                    style={{ '--tw-ring-color': settings.brandColor } as any}
+                                    placeholder={t('namePlaceholder')}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="email" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.emailLabel || "E-posta"}</label>
+                                <input
+                                    id="email"
+                                    required
+                                    type="email"
+                                    value={leadEmail}
+                                    onChange={(e) => setLeadEmail(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                    style={{ '--tw-ring-color': settings.brandColor } as any}
+                                    placeholder={t('emailPlaceholder')}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label htmlFor="phone" className="text-sm font-medium text-gray-700">{settings.leadFormConfig?.phoneLabel || "Telefon (Opsiyonel)"}</label>
+                                <input
+                                    id="phone"
+                                    type="tel"
+                                    value={leadPhone}
+                                    onChange={(e) => setLeadPhone(e.target.value)}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                    style={{ '--tw-ring-color': settings.brandColor } as any}
+                                    placeholder={t('phonePlaceholder')}
+                                />
+                            </div>
+
+                            {/* Custom Fields */}
+                            {settings.leadCustomFields.map((field) => (
+                                <div key={field.id} className="space-y-2">
+                                    <label htmlFor={field.id} className="text-sm font-medium text-gray-700">
+                                        {field.label}{field.required && ' *'}
+                                    </label>
+                                    {field.type === 'textarea' ? (
+                                        <textarea
+                                            id={field.id}
+                                            required={field.required}
+                                            value={customFieldValues[field.id] || ''}
+                                            onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all min-h-[80px]"
+                                            style={{ '--tw-ring-color': settings.brandColor } as any}
+                                            placeholder={field.placeholder || ''}
+                                        />
+                                    ) : field.type === 'select' ? (
+                                        <select
+                                            id={field.id}
+                                            required={field.required}
+                                            value={customFieldValues[field.id] || ''}
+                                            onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                            style={{ '--tw-ring-color': settings.brandColor } as any}
+                                        >
+                                            <option value="">{field.placeholder || 'Select...'}</option>
+                                            {(field.options || []).map((opt, i) => (
+                                                <option key={i} value={opt}>{opt}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            id={field.id}
+                                            required={field.required}
+                                            type={field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : 'text'}
+                                            value={customFieldValues[field.id] || ''}
+                                            onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [field.id]: e.target.value }))}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                            style={{ '--tw-ring-color': settings.brandColor } as any}
+                                            placeholder={field.placeholder || ''}
+                                        />
+                                    )}
+                                </div>
+                            ))}
+
+                            <button
+                                type="submit"
+                                disabled={isSubmittingLead}
+                                className="w-full py-3 rounded-lg text-white font-medium shadow-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                                style={{ backgroundColor: settings.brandColor }}
+                            >
+                                {isSubmittingLead ? "Başlatılıyor..." : (settings.leadFormConfig?.submitButtonText || "Sohbete Başla")}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Appointment Booking Overlay */}
+            {showBooking && (
+                <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="w-full max-w-sm space-y-6 overflow-y-auto max-h-full py-4">
+                        <div className="text-center space-y-2">
+                            <div
+                                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto"
+                                style={{ backgroundColor: settings.brandColor }}
+                            >
+                                <Calendar className="w-8 h-8" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-800">{t('bookAppointment') || "Book Appointment"}</h2>
+                            <p className="text-sm text-gray-500">{t('bookAppointmentDesc') || "Please select a time that works for you."}</p>
+                        </div>
+
+                        <form onSubmit={handleBookingSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">{t('appointmentType') || "Type"}</label>
+                                <select
+                                    required
+                                    value={bookingData.type}
+                                    onChange={(e) => setBookingData(prev => ({ ...prev, type: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                                    style={{ '--tw-ring-color': settings.brandColor } as any}
+                                >
+                                    <option value="">{t('selectType') || "Select type..."}</option>
+                                    {settings.appointmentTypes.map(type => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">{t('date') || "Date"}</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        min={new Date().toISOString().split('T')[0]}
+                                        value={bookingData.date}
+                                        onChange={(e) => setBookingData(prev => ({ ...prev, date: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">{t('time') || "Time"}</label>
+                                    <input
+                                        type="time"
+                                        required
+                                        value={bookingData.time}
+                                        onChange={(e) => setBookingData(prev => ({ ...prev, time: e.target.value }))}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">{t('notes') || "Notes (Optional)"}</label>
+                                <textarea
+                                    value={bookingData.notes}
+                                    onChange={(e) => setBookingData(prev => ({ ...prev, notes: e.target.value }))}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none"
+                                    rows={2}
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowBooking(false)}
+                                    className="flex-1 py-3 rounded-lg bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors"
+                                >
+                                    {t('cancel') || "Cancel"}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingBooking}
+                                    className="flex-1 py-3 rounded-lg text-white font-medium shadow-md hover:opacity-90 disabled:opacity-50"
+                                    style={{ backgroundColor: settings.brandColor }}
+                                >
+                                    {isSubmittingBooking ? "..." : (t('confirmBooking') || "Book Now")}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Voice Mode Overlay */}
+            {isVoiceMode && (
+                <div className="absolute inset-x-0 bottom-[80px] top-[80px] bg-white dark:bg-zinc-900 z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                    <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center mb-8 relative transition-all duration-500 ${isListening ? 'border-red-100 dark:border-red-900/30 scale-110' : 'border-blue-100 dark:border-blue-900/30'}`}>
+                        {isListening && <div className="absolute inset-0 rounded-full bg-red-400 opacity-20 animate-ping"></div>}
+                        {isSpeaking && <div className="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-pulse scale-125"></div>}
+
+                        <button
+                            onClick={handleVoiceInput}
+                            className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-xl active:scale-95 ${isListening ? 'bg-red-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                        >
+                            {isListening ? <Square className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
+                        </button>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-zinc-100 mb-2">
+                        {isListening ? "Sizi Dinliyorum..." : isSpeaking ? "Vion Cevap Veriyor..." : "Sesli Asistan Hazır"}
+                    </h3>
+                    <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-xs mx-auto">
+                        {isListening ? "Lütfen sorunuzu sorun." : isSpeaking ? "Yanıt seslendiriliyor." : "Konuşmak için butona tıklayın."}
+                    </p>
+
+                    {localInput && localInput !== "Ses işleniyor..." && (localInput !== "Sesli asistan aktif...") && (
+                        <div className="mt-8 p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-700 max-w-xs mx-auto italic text-gray-600 dark:text-zinc-300 text-sm animate-in slide-in-from-bottom-2">
+                            &quot;{localInput}&quot;
+                        </div>
+                    )}
+
+                    <button
+                        onClick={() => setIsVoiceMode(false)}
+                        className="mt-auto px-6 py-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 text-sm font-medium transition-colors border border-transparent hover:border-gray-100 dark:hover:border-zinc-800 rounded-full"
+                    >
+                        Yazılı Sohbete Dön
+                    </button>
+                </div>
+            )}
+
+            {/* Confirmation Modal */}
+            {isConfirmingClear && (
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-xs w-full animate-in zoom-in-95 duration-200">
+                        <h3 className="font-semibold text-lg mb-2">Clear History?</h3>
+                        <p className="text-sm text-gray-500 mb-4">This will delete your current conversation. This action cannot be undone.</p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelClear}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmClear}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+                            >
+                                Clear Chat
                             </button>
                         </div>
-                    </form>
-                </div>
-            </div>
-        )}
-
-        {/* Voice Mode Overlay */}
-        {isVoiceMode && (
-            <div className="absolute inset-x-0 bottom-[80px] top-[80px] bg-white dark:bg-zinc-900 z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
-                <div className={`w-32 h-32 rounded-full border-4 flex items-center justify-center mb-8 relative transition-all duration-500 ${isListening ? 'border-red-100 dark:border-red-900/30 scale-110' : 'border-blue-100 dark:border-blue-900/30'}`}>
-                    {isListening && <div className="absolute inset-0 rounded-full bg-red-400 opacity-20 animate-ping"></div>}
-                    {isSpeaking && <div className="absolute inset-0 rounded-full bg-blue-400 opacity-20 animate-pulse scale-125"></div>}
-
-                    <button
-                        onClick={handleVoiceInput}
-                        className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-xl active:scale-95 ${isListening ? 'bg-red-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                    >
-                        {isListening ? <Square className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
-                    </button>
-                </div>
-
-                <h3 className="text-xl font-bold text-gray-800 dark:text-zinc-100 mb-2">
-                    {isListening ? "Sizi Dinliyorum..." : isSpeaking ? "Vion Cevap Veriyor..." : "Sesli Asistan Hazır"}
-                </h3>
-                <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-xs mx-auto">
-                    {isListening ? "Lütfen sorunuzu sorun." : isSpeaking ? "Yanıt seslendiriliyor." : "Konuşmak için butona tıklayın."}
-                </p>
-
-                {localInput && localInput !== "Ses işleniyor..." && (localInput !== "Sesli asistan aktif...") && (
-                    <div className="mt-8 p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-100 dark:border-zinc-700 max-w-xs mx-auto italic text-gray-600 dark:text-zinc-300 text-sm animate-in slide-in-from-bottom-2">
-                        &quot;{localInput}&quot;
                     </div>
-                )}
+                </div>
+            )}
 
-                <button
-                    onClick={() => setIsVoiceMode(false)}
-                    className="mt-auto px-6 py-2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 text-sm font-medium transition-colors border border-transparent hover:border-gray-100 dark:hover:border-zinc-800 rounded-full"
+            {/* Hidden File Input for Image Upload - Outside theme blocks */}
+            <input
+                type="file"
+                ref={imageInputRef}
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+            />
+
+
+            <>
+
+                {/* Header */}
+                {/* Header */}
+                <div
+                    className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
+                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
                 >
-                    Yazılı Sohbete Dön
-                </button>
-            </div>
-        )}
-
-        {/* Confirmation Modal */}
-        {isConfirmingClear && (
-            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl shadow-xl p-6 max-w-xs w-full animate-in zoom-in-95 duration-200">
-                    <h3 className="font-semibold text-lg mb-2">Clear History?</h3>
-                    <p className="text-sm text-gray-500 mb-4">This will delete your current conversation. This action cannot be undone.</p>
-                    <div className="flex gap-3 justify-end">
-                        <button
-                            onClick={cancelClear}
-                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmClear}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
-                        >
-                            Clear Chat
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* Hidden File Input for Image Upload - Outside theme blocks */}
-        <input
-            type="file"
-            ref={imageInputRef}
-            accept="image/*"
-            onChange={handleImageSelect}
-            className="hidden"
-        />
-
-
-        <>
-
-            {/* Header */}
-            {/* Header */}
-            <div
-                className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
-                style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
-            >
-                <div className="flex items-center gap-3">
-                    <div
-                        className="relative flex items-center justify-center"
-                        style={{ width: `${settings.headerLogoWidth || 32}px`, height: `${settings.headerLogoHeight || 32}px` }}
-                    >
-                        {/* Priority: HeaderLogo -> BrandLogo -> LauncherIcon (Custom/Library) -> Default */}
-                        {(() => {
-                            // 1. Header Logo
-                            if (settings.headerLogo) {
-                                return <Image src={settings.headerLogo} alt="Logo" fill className="object-contain" unoptimized />
-                            }
-                            // 2. Brand Logo
-                            if (settings.brandLogo) {
-                                return <Image src={settings.brandLogo} alt="Logo" fill className="object-contain" unoptimized />
-                            }
-                            // 3. Custom Launcher Icon (Image)
-                            if (settings.launcherIcon === 'custom' && settings.launcherIconUrl) {
-                                return <Image src={settings.launcherIconUrl} alt="Logo" fill className="object-contain" unoptimized />
-                            }
-                            // 4. Library Launcher Icon
-                            if (settings.launcherIcon === 'library' && settings.launcherLibraryIcon) {
-                                const IconMap: any = {
-                                    MessageSquare, MessageCircle, MessageSquareText, MessagesSquare,
-                                    Bot, Sparkles, Brain, BrainCircuit, Cpu, Zap, Activity,
-                                    Headset, Mic, Video, Phone,
-                                    User, Users, UserCheck,
-                                    HelpCircle, Info, AlertCircle,
-                                    Star, Heart, ThumbsUp, Smile,
-                                    Send, Share2, Paperclip,
-                                    Command, Terminal, Code, Box,
-                                    Ghost, Gamepad2, Rocket
-                                };
-                                const IconComponent = IconMap[settings.launcherLibraryIcon];
-                                if (IconComponent) {
-                                    return <IconComponent className="w-5 h-5 text-white" />
-                                }
-                            }
-
-                            // 5. Default
-                            return (
-                                <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center">
-                                    <MessageSquare className="w-5 h-5 text-white" />
-                                </div>
-                            )
-                        })()}
-                    </div>
-                    <div>
-                        <h3 className="font-semibold text-sm leading-tight" style={{ color: settings.headerTextColor || '#FFFFFF' }}>{settings.companyName}</h3>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1">
-                    <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
-                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
-                        <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
-                            AI Online
-                        </span>
-                    </div>
-                    {settings.enableVoiceAssistant && (
-                        <button
-                            onClick={() => setIsVoiceMode(!isVoiceMode)}
-                            className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                            title={isVoiceMode ? "Text Mode" : "Voice Mode"}
-                        >
-                            {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
-                        </button>
-                    )}
-                    <button
-                        onClick={handleToggleSize}
-                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
-                        title={isExpanded ? "Minimize" : "Maximize"}
-                    >
-                        {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                    </button>
-                    <button
-                        onClick={handleClearChat}
-                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                        title="Refresh Chat"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={handleCloseWidget}
-                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                        title="Close Widget"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Messages Area */}
-            {/* Messages Area */}
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
-                {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
+                    <div className="flex items-center gap-3">
                         <div
-                            className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
-                            style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                            className="relative flex items-center justify-center"
+                            style={{ width: `${settings.headerLogoWidth || 32}px`, height: `${settings.headerLogoHeight || 32}px` }}
                         >
-                            {settings.brandLogo ? (
-                                <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
-                            ) : (
-                                <Sparkles className="w-8 h-8" />
-                            )}
+                            {/* Priority: HeaderLogo -> BrandLogo -> LauncherIcon (Custom/Library) -> Default */}
+                            {(() => {
+                                // 1. Header Logo
+                                if (settings.headerLogo) {
+                                    return <Image src={settings.headerLogo} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 2. Brand Logo
+                                if (settings.brandLogo) {
+                                    return <Image src={settings.brandLogo} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 3. Custom Launcher Icon (Image)
+                                if (settings.launcherIcon === 'custom' && settings.launcherIconUrl) {
+                                    return <Image src={settings.launcherIconUrl} alt="Logo" fill className="object-contain" unoptimized />
+                                }
+                                // 4. Library Launcher Icon
+                                if (settings.launcherIcon === 'library' && settings.launcherLibraryIcon) {
+                                    const IconMap: any = {
+                                        MessageSquare, MessageCircle, MessageSquareText, MessagesSquare,
+                                        Bot, Sparkles, Brain, BrainCircuit, Cpu, Zap, Activity,
+                                        Headset, Mic, Video, Phone,
+                                        User, Users, UserCheck,
+                                        HelpCircle, Info, AlertCircle,
+                                        Star, Heart, ThumbsUp, Smile,
+                                        Send, Share2, Paperclip,
+                                        Command, Terminal, Code, Box,
+                                        Ghost, Gamepad2, Rocket
+                                    };
+                                    const IconComponent = IconMap[settings.launcherLibraryIcon];
+                                    if (IconComponent) {
+                                        return <IconComponent className="w-5 h-5 text-white" />
+                                    }
+                                }
+
+                                // 5. Default
+                                return (
+                                    <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center">
+                                        <MessageSquare className="w-5 h-5 text-white" />
+                                    </div>
+                                )
+                            })()}
                         </div>
-                        <div className="space-y-2 max-w-xs">
-                            <h2 className="text-xl font-bold text-gray-800">{t('welcomeTo')} {settings.companyName}</h2>
-                            <p className="text-sm text-gray-500 leading-relaxed">
-                                {settings.welcomeMessage}
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
-                            {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        sendMessage(q)
-                                    }}
-                                    className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
-                                    style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
-                                >
-                                    {q}
-                                </button>
-                            ))}
+                        <div>
+                            <h3 className="font-semibold text-sm leading-tight" style={{ color: settings.headerTextColor || '#FFFFFF' }}>{settings.companyName}</h3>
                         </div>
                     </div>
-                ) : (
-                    <>
-                        {/* Welcome Message as first item if desired, or just chat flow */}
+                    <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
+                            <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
+                                AI Online
+                            </span>
+                        </div>
+                        {settings.enableVoiceAssistant && (
+                            <button
+                                onClick={() => setIsVoiceMode(!isVoiceMode)}
+                                className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
+                                title={isVoiceMode ? "Text Mode" : "Voice Mode"}
+                            >
+                                {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                            </button>
+                        )}
+                        <button
+                            onClick={handleToggleSize}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
+                            title={isExpanded ? "Minimize" : "Maximize"}
+                        >
+                            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                        </button>
+                        <button
+                            onClick={handleClearChat}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                            title="Refresh Chat"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleCloseWidget}
+                            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                            title="Close Widget"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Messages Area */}
+                {/* Messages Area */}
+                <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
+                    {messages.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
+                            <div
+                                className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
+                                style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                            >
+                                {settings.brandLogo ? (
+                                    <Image src={settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
+                                ) : (
+                                    <Sparkles className="w-8 h-8" />
+                                )}
+                            </div>
+                            <div className="space-y-2 max-w-xs">
+                                <h2 className="text-xl font-bold text-gray-800">{t('welcomeTo')} {settings.companyName}</h2>
+                                <p className="text-sm text-gray-500 leading-relaxed">
+                                    {settings.welcomeMessage}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
+                                {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            sendMessage(q)
+                                        }}
+                                        className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
+                                        style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Welcome Message as first item if desired, or just chat flow */}
 
 
-                        {messages.map((m: any) => {
-                            // Render-time image recovery
-                            const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
-                            const displayImage = m.image || cached?.image
-                            const displayMime = m.imageMimeType || cached?.mimeType
+                            {messages.map((m: any) => {
+                                // Render-time image recovery
+                                const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
+                                const displayImage = m.image || cached?.image
+                                const displayMime = m.imageMimeType || cached?.mimeType
 
-                            return (
-                                <div key={m.id} className={`flex gap-3 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300 group/msg`}>
-                                    {m.role !== 'user' && (
-                                        <div
-                                            className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-auto mb-1 shadow-sm overflow-hidden bg-white"
-                                        >
-                                            {settings.brandLogo ? (
-                                                <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
-                                                    <Sparkles className="w-4 h-4" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                    <div className={`space-y-1 max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                                        <div className="flex items-center gap-2 justify-between px-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300">
-                                            {m.role === 'assistant' && (
-                                                <span className="text-[10px] font-medium text-gray-400">{settings.companyName}</span>
-                                            )}
-                                            {m.role === 'assistant' && (
-                                                <button
-                                                    onClick={() => handleSpeak(m.content, m.id)}
-                                                    className="text-gray-300 hover:text-gray-500 transition-colors"
-                                                    title={isSpeaking === m.id ? "Stop Speaking" : "Read Aloud"}
-                                                >
-                                                    {isSpeaking === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3 h-3" />}
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div
-                                            className={`text-sm leading-relaxed px-4 py-3 rounded-2xl shadow-sm inline-block text-left relative transition-all hover:shadow-md ${m.role === 'user'
-                                                ? 'bg-blue-600 text-white rounded-tr-sm'
-                                                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
-                                                }`}
-                                            style={m.role === 'user' ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor } : {}}
-                                        >
-                                            {/* Show image if present */}
-                                            {displayImage && (
-                                                <div className="mb-2">
-                                                    <img
-                                                        src={`data:${displayMime || 'image/jpeg'};base64,${displayImage}`}
-                                                        alt="Uploaded"
-                                                        className="max-w-full max-h-48 rounded-lg object-contain"
-                                                        onLoad={() => scrollToBottom("smooth")}
-                                                    />
-                                                </div>
-                                            )}
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    // Function to detect and render Product Card JSON/Format
-                                                    code: ({ node, inline, className, children, ...props }: any) => {
-                                                        const match = /language-(\w+)/.exec(className || '')
-                                                        const content = String(children).replace(/\n$/, '')
+                                return (
+                                    <div key={m.id} className={`flex gap-3 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} animate-in fade-in slide-in-from-bottom-2 duration-300 group/msg`}>
+                                        {m.role !== 'user' && (
+                                            <div
+                                                className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-auto mb-1 shadow-sm overflow-hidden bg-white"
+                                            >
+                                                {settings.brandLogo ? (
+                                                    <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                        <Sparkles className="w-4 h-4" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                        <div className={`space-y-1 max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                            <div className="flex items-center gap-2 justify-between px-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300">
+                                                {m.role === 'assistant' && (
+                                                    <span className="text-[10px] font-medium text-gray-400">{settings.companyName}</span>
+                                                )}
+                                                {m.role === 'assistant' && (
+                                                    <button
+                                                        onClick={() => handleSpeak(m.content, m.id)}
+                                                        className="text-gray-300 hover:text-gray-500 transition-colors"
+                                                        title={isSpeaking === m.id ? "Stop Speaking" : "Read Aloud"}
+                                                    >
+                                                        {isSpeaking === m.id ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3 h-3" />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div
+                                                className={`text-sm leading-relaxed px-4 py-3 rounded-2xl shadow-sm inline-block text-left relative transition-all hover:shadow-md ${m.role === 'user'
+                                                    ? 'bg-blue-600 text-white rounded-tr-sm'
+                                                    : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
+                                                    }`}
+                                                style={m.role === 'user' ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor } : {}}
+                                            >
+                                                {/* Show image if present */}
+                                                {displayImage && (
+                                                    <div className="mb-2">
+                                                        <img
+                                                            src={`data:${displayMime || 'image/jpeg'};base64,${displayImage}`}
+                                                            alt="Uploaded"
+                                                            className="max-w-full max-h-48 rounded-lg object-contain"
+                                                            onLoad={() => scrollToBottom("smooth")}
+                                                        />
+                                                    </div>
+                                                )}
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={{
+                                                        // Function to detect and render Product Card JSON/Format
+                                                        code: ({ node, inline, className, children, ...props }: any) => {
+                                                            const match = /language-(\w+)/.exec(className || '')
+                                                            const content = String(children).replace(/\n$/, '')
 
-                                                        // Detect Product JSON (Simple heuristic)
-                                                        if (content.trim().startsWith('{') && content.includes('"price"')) {
-                                                            try {
-                                                                const product = JSON.parse(content)
-                                                                if (product.name && product.price) {
-                                                                    return <ProductCard product={product} brandColor={settings.brandColor} />
+                                                            // Detect Product JSON (Simple heuristic)
+                                                            if (content.trim().startsWith('{') && content.includes('"price"')) {
+                                                                try {
+                                                                    const product = JSON.parse(content)
+                                                                    if (product.name && product.price) {
+                                                                        return <ProductCard product={product} brandColor={settings.brandColor} />
+                                                                    }
+                                                                } catch (e) {
+                                                                    // Not valid JSON, ignore
                                                                 }
-                                                            } catch (e) {
-                                                                // Not valid JSON, ignore
                                                             }
-                                                        }
 
-                                                        return !inline && match ? (
-                                                            <div className="bg-gray-800 text-white p-2 rounded-md text-xs overflow-x-auto my-2">
-                                                                <code className={className} {...props}>
+                                                            return !inline && match ? (
+                                                                <div className="bg-gray-800 text-white p-2 rounded-md text-xs overflow-x-auto my-2">
+                                                                    <code className={className} {...props}>
+                                                                        {children}
+                                                                    </code>
+                                                                </div>
+                                                            ) : (
+                                                                <code className={`${m.role === 'user' ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500'} px-1 py-0.5 rounded text-xs font-mono`} {...props}>
                                                                     {children}
                                                                 </code>
-                                                            </div>
-                                                        ) : (
-                                                            <code className={`${m.role === 'user' ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500'} px-1 py-0.5 rounded text-xs font-mono`} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        )
-                                                    },
-                                                    a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={`underline font-medium ${m.role === 'user' ? 'text-white' : 'text-blue-600 hover:text-blue-800'}`} />,
-                                                    table: ({ node, ...props }) => <table className="border-collapse table-auto w-full text-xs my-2 bg-white/5 rounded overflow-hidden" {...props} />,
-                                                    th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${m.role === 'user' ? 'border-white/20' : 'border-gray-200 bg-gray-50'}`} {...props} />,
-                                                    td: ({ node, ...props }) => <td className={`border px-2 py-1 ${m.role === 'user' ? 'border-white/20' : 'border-gray-200'}`} {...props} />,
-                                                    p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
-                                                    ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
-                                                    ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
-                                                }}
-                                            >
-                                                {m.content}
-                                            </ReactMarkdown>
-                                            <div className={`text-[10px] mt-1 opacity-70 flex justify-end ${m.role === 'user' ? 'text-white' : 'text-gray-400'}`}>
-                                                {m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            )
+                                                        },
+                                                        a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={`underline font-medium ${m.role === 'user' ? 'text-white' : 'text-blue-600 hover:text-blue-800'}`} />,
+                                                        table: ({ node, ...props }) => <table className="border-collapse table-auto w-full text-xs my-2 bg-white/5 rounded overflow-hidden" {...props} />,
+                                                        th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${m.role === 'user' ? 'border-white/20' : 'border-gray-200 bg-gray-50'}`} {...props} />,
+                                                        td: ({ node, ...props }) => <td className={`border px-2 py-1 ${m.role === 'user' ? 'border-white/20' : 'border-gray-200'}`} {...props} />,
+                                                        p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
+                                                        ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
+                                                    }}
+                                                >
+                                                    {m.content}
+                                                </ReactMarkdown>
+                                                <div className={`text-[10px] mt-1 opacity-70 flex justify-end ${m.role === 'user' ? 'text-white' : 'text-gray-400'}`}>
+                                                    {m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })}
 
-                        {/* Typing Indicator */}
-                        {isTyping && (
-                            <div className="flex gap-3 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white mt-auto mb-1 bg-white shadow-sm overflow-hidden order-first">
-                                    {settings.brandLogo ? (
-                                        <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
-                                            <Sparkles className="w-4 h-4 text-white" />
-                                        </div>
-                                    )}
+                            {/* Typing Indicator */}
+                            {isTyping && (
+                                <div className="flex gap-3 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white mt-auto mb-1 bg-white shadow-sm overflow-hidden order-first">
+                                        {settings.brandLogo ? (
+                                            <Image src={settings.brandLogo} alt="AI" fill className="object-cover" unoptimized />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                <Sparkles className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                    </div>
                                 </div>
-                                <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </>
+                    )}
+                </div>
+
+                {/* Input Area */}
+                <div className="p-4 bg-white border-t border-gray-100">
+                    <div className="max-w-3xl mx-auto relative">
+                        {/* Image Preview for Classic Theme */}
+                        {selectedImage && (
+                            <div className="mb-3 flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200">
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
+                                    <img
+                                        src={`data:${selectedImageMimeType};base64,${selectedImage}`}
+                                        alt="Preview"
+                                        className="w-full h-full object-cover"
+                                        onLoad={() => scrollToBottom("smooth")}
+                                    />
                                 </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-600 truncate">{selectedImageName}</p>
+                                    <p className="text-[10px] text-gray-400">
+                                        {isAnalyzingImage
+                                            ? (language === 'tr' ? 'Analiz ediliyor...' : 'Analyzing...')
+                                            : (language === 'tr' ? 'Görsel hazır' : 'Image ready')}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={clearSelectedImage}
+                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                    <XCircle className="w-5 h-5" />
+                                </button>
                             </div>
                         )}
-                        <div ref={messagesEndRef} />
-                    </>
-                )}
-            </div>
 
-            {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-100">
-                <div className="max-w-3xl mx-auto relative">
-                    {/* Image Preview for Classic Theme */}
-                    {selectedImage && (
-                        <div className="mb-3 flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200">
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                                <img
-                                    src={`data:${selectedImageMimeType};base64,${selectedImage}`}
-                                    alt="Preview"
-                                    className="w-full h-full object-cover"
-                                    onLoad={() => scrollToBottom("smooth")}
-                                />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-600 truncate">{selectedImageName}</p>
-                                <p className="text-[10px] text-gray-400">
-                                    {isAnalyzingImage
-                                        ? (language === 'tr' ? 'Analiz ediliyor...' : 'Analyzing...')
-                                        : (language === 'tr' ? 'Görsel hazır' : 'Image ready')}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={clearSelectedImage}
-                                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                                <XCircle className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault()
 
-                    <form
-                        onSubmit={async (e) => {
-                            e.preventDefault()
+                                // Prevent duplicate submissions
+                                if (isAnalyzingImage || isChatLoading) return
+                                if (!localInput.trim() && !selectedImage) return
 
-                            // Prevent duplicate submissions
-                            if (isAnalyzingImage || isChatLoading) return
-                            if (!localInput.trim() && !selectedImage) return
+                                const userDisplayMessage = localInput.trim() || (language === 'tr' ? 'Bu görseli analiz et' : 'Analyze this image')
+                                const currentInput = localInput
 
-                            const userDisplayMessage = localInput.trim() || (language === 'tr' ? 'Bu görseli analiz et' : 'Analyze this image')
-                            const currentInput = localInput
+                                // Clear input immediately to prevent duplicates
+                                setLocalInput('')
 
-                            // Clear input immediately to prevent duplicates
-                            setLocalInput('')
+                                // If there's an image, handle visual diagnosis flow
+                                if (selectedImage) {
+                                    // Store image data BEFORE any state changes
+                                    const imageData = selectedImage
+                                    const imageMimeType = selectedImageMimeType
 
-                            // If there's an image, handle visual diagnosis flow
-                            if (selectedImage) {
-                                // Store image data BEFORE any state changes
-                                const imageData = selectedImage
-                                const imageMimeType = selectedImageMimeType
+                                    // Clear selected image immediately to prevent re-submission
+                                    setSelectedImage(null)
+                                    setSelectedImageName("")
+                                    setSelectedImageMimeType("")
 
-                                // Clear selected image immediately to prevent re-submission
-                                setSelectedImage(null)
-                                setSelectedImageName("")
-                                setSelectedImageMimeType("")
+                                    // Mark as analyzing
+                                    setIsAnalyzingImage(true)
 
-                                // Mark as analyzing
-                                setIsAnalyzingImage(true)
+                                    // Create user message with image for display FIRST
+                                    const userMsgId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+                                    const userMsgWithImage = {
+                                        id: userMsgId,
+                                        role: 'user',
+                                        content: userDisplayMessage,
+                                        image: imageData,
+                                        imageMimeType: imageMimeType,
+                                        createdAt: new Date()
+                                    }
 
-                                // Create user message with image for display FIRST
-                                const userMsgId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
-                                const userMsgWithImage = {
-                                    id: userMsgId,
-                                    role: 'user',
-                                    content: userDisplayMessage,
-                                    image: imageData,
-                                    imageMimeType: imageMimeType,
-                                    createdAt: new Date()
-                                }
+                                    // Cache the image for Firebase sync recovery (Persistent)
+                                    saveImageToCache(userMsgId, imageData, imageMimeType, userDisplayMessage)
 
-                                // Cache the image for Firebase sync recovery (Persistent)
-                                saveImageToCache(userMsgId, imageData, imageMimeType, userDisplayMessage)
+                                    // Add user message to UI immediately
+                                    setMessages((prev: any) => [...prev, userMsgWithImage])
 
-                                // Add user message to UI immediately
-                                setMessages((prev: any) => [...prev, userMsgWithImage])
-
-                                try {
-                                    // Get visual diagnosis
-                                    let analysisResult = null
                                     try {
-                                        const diagResponse = await fetch('/api/visual-diagnosis', {
+                                        // Get visual diagnosis
+                                        let analysisResult = null
+                                        try {
+                                            const diagResponse = await fetch('/api/visual-diagnosis', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    image: imageData,
+                                                    mimeType: imageMimeType
+                                                })
+                                            })
+                                            if (diagResponse.ok) {
+                                                analysisResult = await diagResponse.json()
+                                            }
+                                        } catch (diagError) {
+                                            console.error('Visual diagnosis error:', diagError)
+                                        }
+
+                                        // Prepare AI context (hidden from UI, sent as separate parameter)
+                                        const visualAnalysisContext = analysisResult
+                                            ? (language === 'tr'
+                                                ? `[Bu bilgi sadece sana yardımcı olmak için verildi - kullanıcıya ham veri gösterme, doğal ve yardımcı bir şekilde açıkla]\nTeşhis: ${analysisResult.diagnosis}\nGüven Oranı: ${analysisResult.confidence}\nÖnerilen: ${analysisResult.treatment}`
+                                                : `[This info is to help you - don't show raw data to user, explain naturally and helpfully]\nDiagnosis: ${analysisResult.diagnosis}\nConfidence: ${analysisResult.confidence}\nRecommended: ${analysisResult.treatment}`)
+                                            : (language === 'tr'
+                                                ? `Görsel analizi yapılamadı.`
+                                                : `Image analysis failed.`)
+
+                                        // Send to chat API - user message with original content, context as separate param
+                                        const chatResponse = await fetch('/api/chat', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({
-                                                image: imageData,
-                                                mimeType: imageMimeType
+                                                messages: [...messages, { role: 'user', content: userDisplayMessage }],
+                                                chatbotId,
+                                                sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
+                                                context: pageContext,
+                                                language: settings.initialLanguage || 'auto',
+                                                shouldStream: true,
+                                                userId: guestAuth.currentUser?.uid,
+                                                visualAnalysisContext: visualAnalysisContext // Pass analysis as separate context
                                             })
                                         })
-                                        if (diagResponse.ok) {
-                                            analysisResult = await diagResponse.json()
+
+                                        if (!chatResponse.ok) throw new Error('Chat API error')
+
+                                        const reader = chatResponse.body?.getReader()
+                                        const decoder = new TextDecoder()
+                                        let assistantContent = ''
+                                        const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+
+                                        setMessages((prev: any) => [...prev, { id: assistantMsgId, role: 'assistant', content: '', createdAt: new Date() }])
+
+                                        while (reader) {
+                                            const { done, value } = await reader.read()
+                                            if (done) break
+                                            const chunk = decoder.decode(value, { stream: true })
+                                            assistantContent += chunk
+                                            setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
                                         }
-                                    } catch (diagError) {
-                                        console.error('Visual diagnosis error:', diagError)
+
+                                        if (!assistantContent.trim()) {
+                                            setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
+                                        }
+                                    } catch (error) {
+                                        console.error('Image analysis chat error:', error)
+                                    } finally {
+                                        setIsAnalyzingImage(false)
                                     }
-
-                                    // Prepare AI context (hidden from UI, sent as separate parameter)
-                                    const visualAnalysisContext = analysisResult
-                                        ? (language === 'tr'
-                                            ? `[Bu bilgi sadece sana yardımcı olmak için verildi - kullanıcıya ham veri gösterme, doğal ve yardımcı bir şekilde açıkla]\nTeşhis: ${analysisResult.diagnosis}\nGüven Oranı: ${analysisResult.confidence}\nÖnerilen: ${analysisResult.treatment}`
-                                            : `[This info is to help you - don't show raw data to user, explain naturally and helpfully]\nDiagnosis: ${analysisResult.diagnosis}\nConfidence: ${analysisResult.confidence}\nRecommended: ${analysisResult.treatment}`)
-                                        : (language === 'tr'
-                                            ? `Görsel analizi yapılamadı.`
-                                            : `Image analysis failed.`)
-
-                                    // Send to chat API - user message with original content, context as separate param
-                                    const chatResponse = await fetch('/api/chat', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            messages: [...messages, { role: 'user', content: userDisplayMessage }],
-                                            chatbotId,
-                                            sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
-                                            context: pageContext,
-                                            language: settings.initialLanguage || 'auto',
-                                            shouldStream: true,
-                                            userId: guestAuth.currentUser?.uid,
-                                            visualAnalysisContext: visualAnalysisContext // Pass analysis as separate context
-                                        })
-                                    })
-
-                                    if (!chatResponse.ok) throw new Error('Chat API error')
-
-                                    const reader = chatResponse.body?.getReader()
-                                    const decoder = new TextDecoder()
-                                    let assistantContent = ''
-                                    const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
-
-                                    setMessages((prev: any) => [...prev, { id: assistantMsgId, role: 'assistant', content: '', createdAt: new Date() }])
-
-                                    while (reader) {
-                                        const { done, value } = await reader.read()
-                                        if (done) break
-                                        const chunk = decoder.decode(value, { stream: true })
-                                        assistantContent += chunk
-                                        setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
-                                    }
-
-                                    if (!assistantContent.trim()) {
-                                        setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
-                                    }
-                                } catch (error) {
-                                    console.error('Image analysis chat error:', error)
-                                } finally {
-                                    setIsAnalyzingImage(false)
+                                } else {
+                                    // Normal text message
+                                    sendMessage(currentInput)
                                 }
-                            } else {
-                                // Normal text message
-                                sendMessage(currentInput)
-                            }
-                        }}
-                        className="relative flex items-center gap-2"
-                    >
-                        {/* Image Upload Button for Classic Theme */}
-                        {settings.enableVisualDiagnosis && (
-                            <button
-                                type="button"
-                                onClick={() => imageInputRef.current?.click()}
-                                disabled={isAnalyzingImage}
-                                className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
-                                    ? 'text-green-600 bg-green-50 border border-green-200'
-                                    : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
-                            >
-                                <ImageIcon className="w-4 h-4" />
-                            </button>
-                        )}
-
-                        <div className="relative flex-1 group">
-                            <input
-                                value={localInput}
-                                onChange={(e) => setLocalInput(e.target.value)}
-                                type="text"
-                                placeholder={selectedImage
-                                    ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
-                                    : t('messagePlaceholder')}
-                                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
-                                style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
-                            />
-                            {/* Voice Input Button */}
-                            {settings.enableVoiceAssistant && (
+                            }}
+                            className="relative flex items-center gap-2"
+                        >
+                            {/* Image Upload Button for Classic Theme */}
+                            {settings.enableVisualDiagnosis && (
                                 <button
                                     type="button"
-                                    onClick={handleVoiceInput}
-                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                                    title="Voice Input"
+                                    onClick={() => imageInputRef.current?.click()}
+                                    disabled={isAnalyzingImage}
+                                    className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
+                                        ? 'text-green-600 bg-green-50 border border-green-200'
+                                        : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                                 >
-                                    <Mic className="w-4 h-4" />
+                                    <ImageIcon className="w-4 h-4" />
                                 </button>
                             )}
+
+                            <div className="relative flex-1 group">
+                                <input
+                                    value={localInput}
+                                    onChange={(e) => setLocalInput(e.target.value)}
+                                    type="text"
+                                    placeholder={selectedImage
+                                        ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
+                                        : t('messagePlaceholder')}
+                                    className="w-full text-sm bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
+                                    style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
+                                />
+                                {/* Voice Input Button */}
+                                {settings.enableVoiceAssistant && (
+                                    <button
+                                        type="button"
+                                        onClick={handleVoiceInput}
+                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                                        title="Voice Input"
+                                    >
+                                        <Mic className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={!localInput.trim() && !selectedImage}
+                                className={`p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                            >
+                                <Send className="w-4 h-4" />
+                            </button>
+                        </form>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-2">
+                            <p className="text-[10px] text-gray-400 text-center">
+                                {typeof window !== 'undefined' && window.navigator.language?.startsWith('tr')
+                                    ? 'Asistan hata yapabilir. Önemli bilgileri kontrol edin.'
+                                    : 'AI can make mistakes. Verify important info.'}
+                            </p>
+                            <span className="text-[10px] text-gray-300 hidden sm:block">•</span>
+                            <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] text-gray-400">Powered by</span>
+                                <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
+                            </a>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={!localInput.trim() && !selectedImage}
-                            className={`p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
-                            style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
-                        >
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </form>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-2">
-                        <p className="text-[10px] text-gray-400 text-center">
-                            {typeof window !== 'undefined' && window.navigator.language?.startsWith('tr')
-                                ? 'Asistan hata yapabilir. Önemli bilgileri kontrol edin.'
-                                : 'AI can make mistakes. Verify important info.'}
-                        </p>
-                        <span className="text-[10px] text-gray-300 hidden sm:block">•</span>
-                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
-                            <span className="text-[10px] text-gray-400">Powered by</span>
-                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
-                        </a>
                     </div>
                 </div>
-            </div>
-        </>
-    </div>
-);
+            </>
+        </div>
+    );
 }
 
 export default function ChatbotView() {
