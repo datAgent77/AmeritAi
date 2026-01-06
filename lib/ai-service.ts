@@ -401,24 +401,25 @@ ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the c
                                 : "\n(Tip: If user finds price high or asks for discount, offer one of these codes.)";
                         }
 
+
                         // 2. Stock Alerts
-                        if (salesConfig.stockAlerts) {
-                            const threshold = salesConfig.stockAlertConfig?.lowStockThreshold || 5;
+                        if (salesConfig.enableStockAlerts) {
+                            const threshold = salesConfig.alertThreshold || 5;
                             salesPrompt += langKey === 'tr'
                                 ? `\n\n📦 STOK UYARISI: Eğer kullanıcı bir ürünle ilgileniyorsa, stoğun azaldığını (${threshold} adetten az) söyleyerek "acele etmesi gerektiğini" ima et (Aciliyet Prensibi).`
                                 : `\n\n📦 STOCK ALERT: If user is interested in a product, imply that stock is running low (below ${threshold}) and tell them to hurry (Scarcity Principle).`;
                         }
 
                         // 3. Cart Recovery
-                        if (salesConfig.cartRecovery) {
-                            const discount = salesConfig.cartRecoveryConfig?.discountPercent || 10;
+                        if (salesConfig.enableCartRecovery) {
+                            const discount = salesConfig.discountAmount || 10;
                             salesPrompt += langKey === 'tr'
                                 ? `\n\n🛒 SEPET KURTARMA: Kullanıcı satın almaktan vazgeçer gibi olursa veya fiyatı yüksek bulursa, onu ikna etmek için **%${discount} ekstra indirim** teklif edebilirsin.`
                                 : `\n\n🛒 CART RECOVERY: If user hesitates to buy or finds price high, you can offer an extra **${discount}% discount** to close the deal.`;
                         }
 
                         // 4. Product Comparison
-                        if (salesConfig.productComparison) {
+                        if (salesConfig.enableProductComparison) {
                             salesPrompt += langKey === 'tr'
                                 ? "\n\n⚖️ ÜRÜN KARŞILAŞTIRMA: Eğer kullanıcı kararsızsa veya iki ürün arasında kalırsa, ürünlerin özelliklerini, fiyatlarını ve avantajlarını gösteren bir karşılaştırma tablosu veya listesi oluştur."
                                 : "\n\n⚖️ PRODUCT COMPARISON: If user is undecided or comparing items, create a comparison table/list showing features, prices, and pros/cons.";
@@ -427,6 +428,7 @@ ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the c
                         instruction += salesPrompt;
                     }
                 }
+
 
                 if (instruction) {
                     activeModuleInstructions.push(instruction);
