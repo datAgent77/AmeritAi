@@ -81,6 +81,15 @@ export default function SalesOptimizationPage() {
     const [newCode, setNewCode] = useState<DiscountCode>({ code: '', discount: 10, type: 'percent', usageType: 'auto' })
     const [shownCodes, setShownCodes] = useState<Record<string, boolean>>({})
 
+    const resetShownStatus = (codeId: string) => {
+        setShownCodes(prev => {
+            const newState = { ...prev }
+            delete newState[codeId]
+            return newState
+        })
+    }
+
+
     useEffect(() => {
         const loadConfig = async () => {
             if (!effectiveUserId) return
