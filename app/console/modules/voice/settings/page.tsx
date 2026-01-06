@@ -16,7 +16,6 @@ import { useSearchParams } from "next/navigation"
 export default function VoiceSettingsPage() {
     const { user } = useAuth()
     const { t } = useLanguage()
-    const { t } = useLanguage()
     const { toast } = useToast()
     const searchParams = useSearchParams()
 
@@ -70,7 +69,6 @@ export default function VoiceSettingsPage() {
             }
         }
         fetchSettings()
-        fetchSettings()
     }, [user, effectiveUserId])
 
     const handleSave = async () => {
@@ -95,30 +93,29 @@ export default function VoiceSettingsPage() {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    body: JSON.stringify({
-                        chatbotId: effectiveUserId,
-                        userSettings: {
-                            elevenLabsApiKey: apiKey,
-                            elevenLabsVoiceId: voiceId,
-                            // Save independent states
-                            enableKlassifier: enableKlassifier,
-                            enableElevenLabs: enableElevenLabs,
+                    chatbotId: effectiveUserId,
+                    userSettings: {
+                        elevenLabsApiKey: apiKey,
+                        elevenLabsVoiceId: voiceId,
+                        // Save independent states
+                        enableKlassifier: enableKlassifier,
+                        enableElevenLabs: enableElevenLabs,
 
-                            // Maintain legacy fields for backward compatibility
-                            enableVoiceAssistant: isMainActive,
-                            voiceProvider: primaryProvider
-                        },
-                        chatbotSettings: {
-                            enableVoiceAssistant: isMainActive,
-                            voiceProvider: primaryProvider,
-                            // Also save specific flags if chatbot needs them directly
-                            enableKlassifier: enableKlassifier,
-                            enableElevenLabs: enableElevenLabs
-                        }
-                    })
-                });
+                        // Maintain legacy fields for backward compatibility
+                        enableVoiceAssistant: isMainActive,
+                        voiceProvider: primaryProvider
+                    },
+                    chatbotSettings: {
+                        enableVoiceAssistant: isMainActive,
+                        voiceProvider: primaryProvider,
+                        // Also save specific flags if chatbot needs them directly
+                        enableKlassifier: enableKlassifier,
+                        enableElevenLabs: enableElevenLabs
+                    }
+                })
+            })
 
-                if(!response.ok) throw new Error("Failed to save settings");
+            if (!response.ok) throw new Error("Failed to save settings");
 
             toast({
                 title: t('saveSuccess') || "Ayarlar Başarıyla Kaydedildi",
