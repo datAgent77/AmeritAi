@@ -15,8 +15,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles, Rocket, Zap, TrendingUp, CheckCircle2, Lock } from "lucide-react"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useParams } from "next/navigation"
 
 interface BubbleMessage {
     id: string
@@ -90,16 +89,15 @@ const defaultSettings: EngagementSettings = {
     }
 }
 
-// Premium check
-const usePremiumStatus = () => {
-    const { user } = useAuth()
+// Premium check - checks target tenant's premium status
+const useTenantPremiumStatus = (tenantId: string | undefined) => {
     const [isPremium, setIsPremium] = useState(false)
 
     useEffect(() => {
         const checkPremium = async () => {
-            if (!user?.uid) return
+            if (!tenantId) return
             try {
-                const userDoc = await getDoc(doc(db, "users", user.uid))
+                const userDoc = await getDoc(doc(db, "users", tenantId))
                 const userData = userDoc.data()
                 setIsPremium(userData?.plan === 'premium' || userData?.subscription?.status === 'active')
             } catch (error) {
@@ -107,24 +105,27 @@ const usePremiumStatus = () => {
             }
         }
         checkPremium()
-    }, [user])
+    }, [tenantId])
 
     return isPremium
 }
 
-export default function EngagementPage() {
+export default function TenantEngagementPage() {
+    const params = useParams()
+    const tenantUserId = params.userId as string
+
     const { user, role } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
 
-    const isTenantPremium = usePremiumStatus()
+    // Check tenant's premium status (not super admin's)
+    const isTenantPremium = useTenantPremiumStatus(tenantUserId)
     const [adminOverride, setAdminOverride] = useState(false)
+    // Super admin can force premium features with override toggle
     const isPremium = isTenantPremium || (role === 'SUPER_ADMIN' && adminOverride)
-    const searchParams = useSearchParams()
 
-    // Support Impersonation
-    const targetUserId = searchParams.get('userId')
-    const effectiveUserId = targetUserId || user?.uid
+    // Use tenant's userId for all operations
+    const effectiveUserId = tenantUserId
 
     const [settings, setSettings] = useState<EngagementSettings>(defaultSettings)
     const [isLoading, setIsLoading] = useState(true)
@@ -257,11 +258,8 @@ export default function EngagementPage() {
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Link href="/console/modules">
-
-                </Link>
-                <div className="flex-1">
+            <div className="flex items-center justify-between">
+                <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         {t('modules.proactiveMessaging') || 'Proaktif Etkileşim'}
                     </h1>
@@ -352,8 +350,8 @@ export default function EngagementPage() {
             </Card>
 
             {/* AI Smart Bubbles - PREMIUM */}
-            {/* Super Admin viewing tenant OR Tenant viewing own panel */}
-            {role === 'SUPER_ADMIN' && targetUserId ? (
+            {/* Super Admin viewing tenant */}
+            {role === 'SUPER_ADMIN' ? (
                 // SUPER ADMIN viewing tenant - show admin controls
                 <Card>
                     <CardHeader>
@@ -484,190 +482,9 @@ export default function EngagementPage() {
                     </CardContent>
                 </Card>
             ) : (
-                // TENANT viewing own panel - show based on visible/granted status
-                settings.aiSmartBubbles.visible && (
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-amber-500" />
-                                        AI Akıllı Balonlar
-                                        <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
-                                            Premium
-                                        </Badge>
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Ziyaretçinin bulunduğu sayfaya özel AI mesajları otomatik üretilsin.
-                                    </CardDescription>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {settings.aiSmartBubbles.granted ? (
-                                        <Switch
-                                            checked={settings.aiSmartBubbles.enabled}
-                                            onCheckedChange={(checked) => setSettings(prev => ({
-                                                ...prev,
-                                                aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
-                                            }))}
-                                        />
-                                    ) : (
-                                        <Badge variant="outline" className="text-muted-foreground gap-1.5 py-1.5 px-3">
-                                            <Lock className="w-3.5 h-3.5" />
-                                            Kilitli
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-                        </CardHeader>
-
-                        {settings.aiSmartBubbles.granted ? (
-                            // Granted - show settings if enabled
-                            settings.aiSmartBubbles.enabled && (
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label>Mesaj Tonu</Label>
-                                        <Select
-                                            value={settings.aiSmartBubbles.tone}
-                                            onValueChange={(value: 'friendly' | 'professional' | 'playful') =>
-                                                setSettings(prev => ({ ...prev, aiSmartBubbles: { ...prev.aiSmartBubbles, tone: value } }))
-                                            }
-                                        >
-                                            <SelectTrigger className="w-48">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="friendly">😊 Samimi</SelectItem>
-                                                <SelectItem value="professional">💼 Profesyonel</SelectItem>
-                                                <SelectItem value="playful">🎉 Eğlenceli</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Gecikme</Label>
-                                        <p className="text-sm text-muted-foreground">AI balonu kaç saniye sonra gösterilsin?</p>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="number"
-                                                value={settings.aiSmartBubbles.delay}
-                                                onChange={(e) => setSettings(prev => ({
-                                                    ...prev,
-                                                    aiSmartBubbles: { ...prev.aiSmartBubbles, delay: parseInt(e.target.value) || 5 }
-                                                }))}
-                                                min={3}
-                                                max={30}
-                                                className="w-20"
-                                            />
-                                            <span className="text-sm text-muted-foreground">saniye</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Oturum Limiti</Label>
-                                        <p className="text-sm text-muted-foreground">Bir ziyarete maksimum kaç AI balonu gösterilsin?</p>
-                                        <Input
-                                            type="number"
-                                            value={settings.aiSmartBubbles.maxPerSession}
-                                            onChange={(e) => setSettings(prev => ({
-                                                ...prev,
-                                                aiSmartBubbles: { ...prev.aiSmartBubbles, maxPerSession: parseInt(e.target.value) || 1 }
-                                            }))}
-                                            min={1}
-                                            max={5}
-                                            className="w-20"
-                                        />
-                                    </div>
-                                    <div className="pt-4 border-t">
-                                        <p className="font-medium mb-3">Nasıl Çalışır?</p>
-                                        <div className="space-y-2 text-sm text-muted-foreground">
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>Ziyaretçi bir sayfaya gelir → AI sayfa içeriğini analiz eder</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>O sayfaya özel bir balon mesajı üretir</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>Ziyaretçi chatbot ile etkileşime geçer</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            )
-                        ) : (
-                            // NOT Granted - show upgrade prompt with request button
-                            <CardContent className="p-0">
-                                <div className="relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/20 dark:via-background dark:to-orange-950/10 z-0" />
-                                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
-                                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
-
-                                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 p-8 md:p-10">
-                                        <div className="flex-1 space-y-6 text-center md:text-left">
-                                            <div className="space-y-4">
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
-                                                    <Sparkles className="w-3.5 h-3.5" />
-                                                    Premium Özellik
-                                                </div>
-                                                <h3 className="text-2xl font-bold tracking-tight text-foreground">
-                                                    Ziyaretçilerinizi <span className="text-amber-600 dark:text-amber-500">AI Gücüyle</span> Karşılayın
-                                                </h3>
-                                                <p className="text-muted-foreground leading-relaxed max-w-lg">
-                                                    Ziyaretçinin gezdiği sayfayı anlık analiz eden yapay zeka, o sayfaya özel en doğru karşılama mesajını otomatik yazar.
-                                                </p>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                {[
-                                                    { icon: Zap, text: "Anlık Sayfa Analizi" },
-                                                    { icon: MessageCircle, text: "Bağlam Odaklı Mesaj" },
-                                                    { icon: TrendingUp, text: "%40+ Daha Fazla Etkileşim" }
-                                                ].map((feature, idx) => (
-                                                    <div key={idx} className="flex flex-col items-center md:items-start gap-2 p-3 rounded-lg bg-white/50 dark:bg-black/20 border border-amber-100 dark:border-amber-900/50 backdrop-blur-sm">
-                                                        <feature.icon className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                                                        <span className="text-xs font-medium text-foreground/80">{feature.text}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <div className="pt-2">
-                                                <Button
-                                                    size="lg"
-                                                    className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-xl shadow-amber-500/20 border-0 transition-all hover:scale-105"
-                                                    onClick={() => {
-                                                        toast({
-                                                            title: "Talep Gönderildi",
-                                                            description: "Premium özellik talebiniz yöneticinize iletilecektir."
-                                                        })
-                                                    }}
-                                                >
-                                                    <Rocket className="w-5 h-5 mr-2" />
-                                                    Kullanım Talep Et
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="hidden md:flex flex-col items-center justify-center relative w-1/3">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
-                                            <div className="relative z-0 w-full max-w-[240px] space-y-3 opacity-90">
-                                                <div className="flex justify-end">
-                                                    <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 p-3 rounded-2xl rounded-tr-none text-sm shadow-sm border border-amber-200 dark:border-amber-800">
-                                                        Fiyatlar sayfasındasınız 👀 <br /> Size özel indirim tanımlamamı ister misiniz?
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-start">
-                                                    <div className="bg-white dark:bg-muted p-3 rounded-2xl rounded-tl-none text-sm shadow-sm border">
-                                                        Evet, lütfen!
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        )}
-                    </Card>
-                )
+                // This branch won't be hit in tenant admin page (super admin always views)
+                // But keeping for consistency with console page
+                null
             )}
             <Card>
                 <CardHeader>

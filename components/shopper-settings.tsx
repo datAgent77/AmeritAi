@@ -15,12 +15,18 @@ interface ShopperConfig {
     strictMode: boolean
 }
 
-export function ShopperSettings() {
+interface ShopperSettingsProps {
+    targetUserId?: string
+}
+
+export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
     const { user } = useAuth()
     const { toast } = useToast()
     const { t } = useLanguage()
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+
+    const effectiveUserId = targetUserId || user?.uid
 
     const [config, setConfig] = useState<ShopperConfig>({
         salesTone: "friendly",
@@ -30,10 +36,10 @@ export function ShopperSettings() {
 
     useEffect(() => {
         const fetchSettings = async () => {
-            if (!user) return
+            if (!effectiveUserId) return
             setIsLoading(true)
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`);
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -51,17 +57,17 @@ export function ShopperSettings() {
             }
         }
         fetchSettings()
-    }, [user])
+    }, [effectiveUserId])
 
     const handleSave = async () => {
-        if (!user) return
+        if (!effectiveUserId) return
         setIsSaving(true)
         try {
             const response = await fetch("/api/console/settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    chatbotId: user.uid,
+                    chatbotId: effectiveUserId,
                     chatbotSettings: {
                         shopperConfig: config
                     }

@@ -317,6 +317,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         // SUPER ADMIN VIEWING TENANT (In /admin/tenant/...)
         if (isSuperAdminViewingTenant) {
             // Only route to pages that actually exist in the Admin panel
+            // All routes should stay within /admin/tenant/[userId]/ context
             switch (moduleId) {
                 case 'generalChatbot':
                     router.push(`${basePath}/chatbot`)
@@ -331,19 +332,19 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`${basePath}/chatbot/appointments`)
                     break
                 case 'leadCollection':
-                    // Maps to the Leads page in admin
                     router.push(`${basePath}/chatbot/leads`)
                     break
                 case 'digitalWaiter':
-                    // Use console page for now (works for both admin and tenant)
-                    router.push("/console/modules/digital-waiter")
+                    router.push(`${basePath}/modules/digital-waiter`)
                     break
                 case 'visualDiagnosis':
-                    router.push("/console/modules/visual")
+                    router.push(`${basePath}/modules/visual`)
                     break
                 case 'proactiveMessaging':
-                    // Use console page for now (works for both admin and tenant)
-                    router.push("/console/modules/engagement")
+                    router.push(`${basePath}/modules/engagement`)
+                    break
+                case 'salesOptimization':
+                    router.push(`${basePath}/modules/sales-optimization`)
                     break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
@@ -355,46 +356,46 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             return
         }
 
+
         // REGULAR USER / CONSOLE VIEW (In /console/...)
+        const queryParams = effectiveUserId && effectiveUserId !== user?.uid ? `?userId=${effectiveUserId}` : ''
+
         switch (moduleId) {
             case 'generalChatbot':
-                router.push(`${basePath}/chatbot`)
+                router.push(`${basePath}/chatbot`) // This uses basePath which handles /admin/tenant logic correctly for chatbots
                 break
             case 'productCatalog':
                 router.push(`${basePath}/chatbot/shopper`)
                 break
             case 'voiceAssistant':
-                router.push("/console/modules/voice/settings")
+                router.push(`/console/modules/voice/settings${queryParams}`)
                 break
             case 'knowledgeBase':
                 router.push(`${basePath}/knowledge`)
                 break
             case 'leadCollection':
-                router.push("/console/modules/leads/settings")
+                router.push(`/console/modules/leads/settings${queryParams}`)
                 break
             case 'salesOptimization':
-                router.push("/console/modules/sales-optimization")
+                router.push(`/console/modules/sales-optimization${queryParams}`)
                 break
             case 'appointments':
                 router.push(`${basePath}/chatbot/appointments`)
                 break
-
-
             case 'campaignManager':
-                router.push("/console/modules/campaigns")
+                router.push(`/console/modules/campaigns${queryParams}`)
                 break
-
             case 'gamification':
-                router.push("/console/modules/gamification")
+                router.push(`/console/modules/gamification${queryParams}`)
                 break
             case 'visualDiagnosis':
-                router.push("/console/modules/visual")
+                router.push(`/console/modules/visual${queryParams}`)
                 break
             case 'digitalWaiter':
-                router.push("/console/modules/digital-waiter")
+                router.push(`/console/modules/digital-waiter${queryParams}`)
                 break
             case 'proactiveMessaging':
-                router.push("/console/modules/engagement")
+                router.push(`/console/modules/engagement${queryParams}`)
                 break
             default:
                 toast({

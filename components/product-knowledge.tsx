@@ -29,7 +29,11 @@ interface Product {
     tenantId?: string
 }
 
-export function ProductKnowledge() {
+interface ProductKnowledgeProps {
+    targetUserId?: string
+}
+
+export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
     const { user } = useAuth()
     const { toast } = useToast()
     const [products, setProducts] = useState<Product[]>([])
@@ -37,6 +41,8 @@ export function ProductKnowledge() {
     const [isAdding, setIsAdding] = useState(false)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false) // Renamed for clarity, was isOpen
     const [fetchError, setFetchError] = useState<string | null>(null)
+
+    const effectiveUserId = targetUserId || user?.uid
 
     // Form State
     const [newProduct, setNewProduct] = useState({
@@ -48,12 +54,12 @@ export function ProductKnowledge() {
     })
 
     const fetchProducts = useCallback(async () => {
-        if (!user?.uid) return
+        if (!effectiveUserId) return
         setIsLoading(true)
         setFetchError(null)
         try {
             // Use API to bypass Firestore SDK issues
-            const response = await fetch(`/api/shopper/products?chatbotId=${user.uid}`)
+            const response = await fetch(`/api/shopper/products?chatbotId=${effectiveUserId}`)
             if (!response.ok) {
                 throw new Error("Failed to fetch products")
             }
@@ -65,24 +71,24 @@ export function ProductKnowledge() {
         } finally {
             setIsLoading(false)
         }
-    }, [user])
+    }, [effectiveUserId])
 
     useEffect(() => {
         // Delay fetch slightly to avoid SDK race conditions
         const timer = setTimeout(() => {
-            if (user) {
+            if (effectiveUserId) {
                 fetchProducts()
             }
         }, 100)
         return () => clearTimeout(timer)
-    }, [user, fetchProducts])
+    }, [effectiveUserId, fetchProducts])
 
     const handleAddProduct = async () => {
-        if (!user?.uid || !newProduct.name || !newProduct.price) return
+        if (!effectiveUserId || !newProduct.name || !newProduct.price) return
         setIsAdding(true)
         try {
             await addDoc(collection(db, "products"), {
-                chatbotId: user.uid,
+                chatbotId: effectiveUserId,
                 name: newProduct.name,
                 price: parseFloat(newProduct.price),
                 currency: newProduct.currency,

@@ -392,8 +392,8 @@ export default function AdminPage() {
     }, [showArchived, fetchDashboardData])
 
     const filteredUsers = users.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchTerm.toLowerCase())
+        (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.role || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     if (isLoading) {
@@ -516,7 +516,7 @@ export default function AdminPage() {
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-semibold text-indigo-600">
-                                                    {user.email.substring(0, 2).toUpperCase()}
+                                                    {(user.email || '??').substring(0, 2).toUpperCase()}
                                                 </div>
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-2">

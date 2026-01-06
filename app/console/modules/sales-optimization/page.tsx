@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, TrendingUp, Tag, Package, ShoppingCart, GitCompare, Loader2, Plus, Trash2, Info } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
@@ -67,8 +67,14 @@ const DEFAULT_CONFIG: SalesOptimizationConfig = {
 export default function SalesOptimizationPage() {
     const { t, language } = useLanguage()
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { user } = useAuth()
     const { toast } = useToast()
+
+    // Support Impersonation
+    const targetUserId = searchParams.get('userId')
+    const effectiveUserId = targetUserId || user?.uid
+
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [config, setConfig] = useState<SalesOptimizationConfig>(DEFAULT_CONFIG)
@@ -77,9 +83,9 @@ export default function SalesOptimizationPage() {
 
     useEffect(() => {
         const loadConfig = async () => {
-            if (!user?.uid) return
+            if (!effectiveUserId) return
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`);
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -93,7 +99,7 @@ export default function SalesOptimizationPage() {
             }
         }
         loadConfig()
-    }, [user?.uid])
+    }, [effectiveUserId])
 
     // Check localStorage for "shown" tags - Realtime
     useEffect(() => {
@@ -125,22 +131,11 @@ export default function SalesOptimizationPage() {
         }
     }, [config.discountCodeConfig?.codes])
 
-    const resetShownStatus = (codeStr: string) => {
-        localStorage.removeItem(`vion_auto_offer_shown_${codeStr}`)
-        // Force update state
-        setShownCodes(prev => {
-            const next = { ...prev }
-            delete next[codeStr]
-            return next
-        })
-        toast({ title: t('reset') || "Reset", description: t('statusReset') || "Offer status reset for this browser." })
-    }
-
     const saveConfig = async () => {
-        if (!user?.uid) return
+        if (!effectiveUserId) return
         setIsSaving(true)
         try {
-            const token = await user.getIdToken();
+            const token = await user?.getIdToken();
 
             // Ensure autoOffer matches the codes state
             const codes = config.discountCodeConfig?.codes || []
@@ -160,7 +155,7 @@ export default function SalesOptimizationPage() {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    chatbotId: user.uid,
+                    chatbotId: effectiveUserId,
                     chatbotSettings: {
                         salesOptimizationConfig: finalConfig
                     }

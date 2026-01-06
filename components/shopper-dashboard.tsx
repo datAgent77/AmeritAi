@@ -27,18 +27,21 @@ interface Product {
 
 interface ShopperDashboardProps {
     onNavigateToCatalog?: () => void
+    targetUserId?: string
 }
 
-export function ShopperDashboard({ onNavigateToCatalog }: ShopperDashboardProps) {
+export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperDashboardProps) {
     const { user } = useAuth()
     const [stats, setStats] = useState<ShopperStats | null>(null)
     const [recentProducts, setRecentProducts] = useState<Product[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
+    const effectiveUserId = targetUserId || user?.uid
+
     const fetchStats = useCallback(async () => {
         setIsLoading(true)
         try {
-            const response = await fetch(`/api/shopper/stats?chatbotId=${user?.uid}`)
+            const response = await fetch(`/api/shopper/stats?chatbotId=${effectiveUserId}`)
             if (response.ok) {
                 const data = await response.json()
                 setStats(data.stats)
@@ -49,13 +52,13 @@ export function ShopperDashboard({ onNavigateToCatalog }: ShopperDashboardProps)
         } finally {
             setIsLoading(false)
         }
-    }, [user])
+    }, [effectiveUserId])
 
     useEffect(() => {
-        if (user) {
+        if (effectiveUserId) {
             fetchStats()
         }
-    }, [user, fetchStats])
+    }, [effectiveUserId, fetchStats])
 
     if (isLoading) {
         return (

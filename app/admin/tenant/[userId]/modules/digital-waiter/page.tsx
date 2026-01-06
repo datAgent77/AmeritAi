@@ -1,21 +1,18 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
-import { doc, getDoc, setDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Save, Utensils, Loader2, Link2, FileText, Clock, Sparkles } from "lucide-react"
+import { ArrowLeft, Save, Utensils, Loader2, Link2, Clock, Sparkles } from "lucide-react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 
 interface DigitalWaiterConfig {
     menuUrl: string
@@ -37,15 +34,15 @@ const defaultConfig: DigitalWaiterConfig = {
     aiSuggestionsEnabled: true
 }
 
-export default function DigitalWaiterPage() {
+export default function TenantDigitalWaiterPage() {
+    const params = useParams()
+    const userId = params.userId as string
+
     const { user } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
-    const searchParams = useSearchParams()
 
-    // Support Impersonation
-    const targetUserId = searchParams.get('userId')
-    const effectiveUserId = targetUserId || user?.uid
+    const effectiveUserId = userId
 
     const [config, setConfig] = useState<DigitalWaiterConfig>(defaultConfig)
     const [isLoading, setIsLoading] = useState(true)
@@ -139,11 +136,8 @@ export default function DigitalWaiterPage() {
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Link href="/console/modules">
-
-                </Link>
-                <div className="flex-1">
+            <div className="flex items-center justify-between">
+                <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2">
                         {t('modules.digitalWaiter') || 'Dijital Garson'}
                     </h1>

@@ -11,11 +11,18 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Loader2, Zap, Cloud, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { useSearchParams } from "next/navigation"
 
 export default function VoiceSettingsPage() {
     const { user } = useAuth()
     const { t } = useLanguage()
+    const { t } = useLanguage()
     const { toast } = useToast()
+    const searchParams = useSearchParams()
+
+    // Support Impersonation
+    const targetUserId = searchParams.get('userId')
+    const effectiveUserId = targetUserId || user?.uid
 
     const [isLoading, setIsLoading] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -30,10 +37,10 @@ export default function VoiceSettingsPage() {
 
     useEffect(() => {
         const fetchSettings = async () => {
-            if (!user) return
+            if (!effectiveUserId) return
             setIsLoading(true)
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${user.uid}`);
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`);
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -63,7 +70,8 @@ export default function VoiceSettingsPage() {
             }
         }
         fetchSettings()
-    }, [user])
+        fetchSettings()
+    }, [user, effectiveUserId])
 
     const handleSave = async () => {
         if (!user) return
@@ -87,29 +95,30 @@ export default function VoiceSettingsPage() {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    chatbotId: user.uid,
-                    userSettings: {
-                        elevenLabsApiKey: apiKey,
-                        elevenLabsVoiceId: voiceId,
-                        // Save independent states
-                        enableKlassifier: enableKlassifier,
-                        enableElevenLabs: enableElevenLabs,
+                    body: JSON.stringify({
+                        chatbotId: effectiveUserId,
+                        userSettings: {
+                            elevenLabsApiKey: apiKey,
+                            elevenLabsVoiceId: voiceId,
+                            // Save independent states
+                            enableKlassifier: enableKlassifier,
+                            enableElevenLabs: enableElevenLabs,
 
-                        // Maintain legacy fields for backward compatibility
-                        enableVoiceAssistant: isMainActive,
-                        voiceProvider: primaryProvider
-                    },
-                    chatbotSettings: {
-                        enableVoiceAssistant: isMainActive,
-                        voiceProvider: primaryProvider,
-                        // Also save specific flags if chatbot needs them directly
-                        enableKlassifier: enableKlassifier,
-                        enableElevenLabs: enableElevenLabs
-                    }
-                })
-            });
+                            // Maintain legacy fields for backward compatibility
+                            enableVoiceAssistant: isMainActive,
+                            voiceProvider: primaryProvider
+                        },
+                        chatbotSettings: {
+                            enableVoiceAssistant: isMainActive,
+                            voiceProvider: primaryProvider,
+                            // Also save specific flags if chatbot needs them directly
+                            enableKlassifier: enableKlassifier,
+                            enableElevenLabs: enableElevenLabs
+                        }
+                    })
+                });
 
-            if (!response.ok) throw new Error("Failed to save settings");
+                if(!response.ok) throw new Error("Failed to save settings");
 
             toast({
                 title: t('saveSuccess') || "Ayarlar Başarıyla Kaydedildi",
