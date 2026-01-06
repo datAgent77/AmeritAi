@@ -84,7 +84,7 @@
 
       // Check if we've exceeded max shows
       const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
-      if (shownCount >= (settings.bubble.maxShowCount || 3)) {
+      if (shownCount >= (settings.bubble.maxShowCount || 50)) {
         console.log('Engagement: Max shows reached for this session');
         return;
       }
