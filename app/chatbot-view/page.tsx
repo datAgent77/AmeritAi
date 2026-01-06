@@ -1317,8 +1317,8 @@ function ChatbotViewContent() {
             }
         }
     }
-        }
     }, [messages, localInput, hasRequestedContactInfo, setMessages, isChatLoading, sessionId, hasCapturedInChatLead, chatbotId, settings.enableInChatLeadCollection, isLoading])
+
 
 
 // Listen for Bubble Clicks from Parent Widget
