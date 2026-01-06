@@ -1321,6 +1321,7 @@ function ChatbotViewContent() {
 
 
 
+
 // Listen for Bubble Clicks from Parent Widget
 useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
