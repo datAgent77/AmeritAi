@@ -9,8 +9,7 @@ trigger: always_on
 - **Aesthetic:** Mimic the "Premium SaaS" feel of brands like Apple, Stripe, and Linear.
 - **Focus:** Master typography hierarchy, generous white space, and bento grid layouts.
 
-## 2. Design Principles (Glassmorphism & Fluid Motion)
-- **Glassmorphism:** Apply `backdrop-blur-lg` and semi-transparent backgrounds (`bg-white/10` or `bg-black/40`) to all cards/panels. Use thin transparent borders (`border-white/20`).
+## 2. Design Principles (Fluid Motion)
 - **Animations:** Use `framer-motion` with spring physics (`damping: 20`, `stiffness: 100`) for a "liquid" feel.
 - **Interactions:** Implement staggered entry animations and subtle hover scales (`scale: 1.02`).
 

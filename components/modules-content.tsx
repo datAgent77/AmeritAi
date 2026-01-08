@@ -332,7 +332,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`${basePath}/chatbot/appointments`)
                     break
                 case 'leadCollection':
-                    router.push(`${basePath}/chatbot/leads`)
+                    router.push(`${basePath}/modules/lead-collection`)
+
+
                     break
                 case 'digitalWaiter':
                     router.push(`${basePath}/modules/digital-waiter`)

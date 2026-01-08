@@ -4,7 +4,8 @@ import { useParams } from "next/navigation"
 import { SubpageSidebar } from "@/components/subpage-sidebar"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { CreditCard, Code, Bell, Bot, ShieldCheck } from "lucide-react"
+import { CreditCard, Code, Bell, Bot, ShieldCheck, UserCog } from "lucide-react"
+
 
 export default function TenantSettingsLayout({
     children,
@@ -42,12 +43,21 @@ export default function TenantSettingsLayout({
             icon: <Bell className="w-4 h-4" />
         },
         // Super Admin Only
-        ...(role === 'SUPER_ADMIN' ? [{
-            id: "customer-admin",
-            label: t('customerAdmin') || "Müşteri Yönetimi",
-            href: `/admin/tenant/${userId}/settings/customer-admin`,
-            icon: <ShieldCheck className="w-4 h-4" />
-        }] : [])
+        ...(role === 'SUPER_ADMIN' ? [
+            {
+                id: "account",
+                label: t('accountSettings') || "Hesap Ayarları",
+                href: `/admin/tenant/${userId}/settings/account`,
+                icon: <UserCog className="w-4 h-4" />
+            },
+            {
+                id: "customer-admin",
+                label: t('customerAdmin') || "Müşteri Yönetimi",
+                href: `/admin/tenant/${userId}/settings/customer-admin`,
+                icon: <ShieldCheck className="w-4 h-4" />
+            }
+        ] : [])
+
     ]
 
     return (
