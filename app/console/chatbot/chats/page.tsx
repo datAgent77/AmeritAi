@@ -115,7 +115,7 @@ export default function ChatsPage() {
 
     return (
         <>
-            <div className="h-[calc(100vh-4rem)] p-6 flex flex-col gap-6">
+            <div className="h-[calc(100vh-4rem)] p-8 flex flex-col gap-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">{t('chats')}</h1>
                     <p className="text-muted-foreground">{t('chatsDescription')}</p>

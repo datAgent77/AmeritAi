@@ -202,35 +202,37 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                 <button
                                     key={session.id}
                                     onClick={() => setSelectedSessionId(session.id)}
-                                    className={`flex items-start gap-3 p-4 text-left hover:bg-gray-100 transition-colors border-b last:border-0 ${selectedSessionId === session.id ? "bg-blue-50 hover:bg-blue-50 border-l-4 border-l-blue-500" : "border-l-4 border-l-transparent"
+                                    className={`flex items-start gap-3 p-4 text-left hover:bg-gray-100 transition-colors border-b last:border-0 w-full min-w-0 ${selectedSessionId === session.id ? "bg-blue-50 hover:bg-blue-50 border-l-4 border-l-blue-500" : "border-l-4 border-l-transparent"
                                         }`}
                                 >
-                                    <Avatar className="h-10 w-10 border bg-white">
+                                    <Avatar className="h-10 w-10 border bg-white flex-shrink-0">
                                         <AvatarFallback className="bg-gray-100 text-gray-500">
                                             <User className="h-5 w-5" />
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="flex-1 overflow-hidden">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="font-medium text-sm truncate">
+                                    <div className="flex-1 overflow-hidden min-w-0">
+                                        <div className="flex items-center justify-between mb-1 min-w-0">
+                                            <span className="font-medium text-sm truncate min-w-0">
                                                 {getSessionDisplayName(session)}
                                             </span>
-                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
+                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2 flex-shrink-0">
                                                 {formatDateSafe(session.lastMessageTime, "HH:mm")}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            {getChannelIcon(session.id)}
-                                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                                        <div className="flex items-center gap-1.5 mb-1 min-w-0">
+                                            <div className="flex-shrink-0">
+                                                {getChannelIcon(session.id)}
+                                            </div>
+                                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate min-w-0">
                                                 {getChannelName(session.id)}
                                             </span>
                                             {session.isPaused && (
-                                                <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-amber-100 text-amber-700 hover:bg-amber-100">
+                                                <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-amber-100 text-amber-700 hover:bg-amber-100 flex-shrink-0">
                                                     PAUSED
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground truncate">
+                                        <p className="text-xs text-muted-foreground truncate min-w-0">
                                             {session.lastMessage || t('noMessages')}
                                         </p>
                                     </div>

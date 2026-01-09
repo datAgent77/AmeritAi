@@ -1,14 +1,14 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { DigitalWaiterSettingsForm } from "@/components/modules/digital-waiter/digital-waiter-settings-form"
+import { CampaignManagerForm } from "@/components/modules/campaigns/campaign-manager-form"
 
-export default function TenantDigitalWaiterPage() {
+export default function TenantCampaignManagerPage() {
     const params = useParams()
     const userId = params.userId as string
 
     return (
-        <DigitalWaiterSettingsForm
+        <CampaignManagerForm
             targetUserId={userId}
             isSuperAdmin={true}
         />

@@ -22,8 +22,8 @@ export default function PlatformLayout({
                         <SiteHeader />
                         <div className="flex flex-1 overflow-hidden">
                             <ConsoleSidebar />
-                            <main className="flex-1 overflow-y-auto w-full">
-                                <div className="max-w-7xl mx-auto p-4 md:p-8">
+                            <main className="flex-1 overflow-y-auto w-full p-8">
+                                <div className="max-w-7xl mx-auto p-4 md:p-0">
                                     {children}
                                 </div>
                             </main>

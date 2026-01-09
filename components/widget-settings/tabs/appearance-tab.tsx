@@ -1,0 +1,603 @@
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Image as ImageIcon, Loader2 } from "lucide-react"
+import { icons } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
+import { useAuth } from "@/context/AuthContext"
+import { useToast } from "@/hooks/use-toast"
+import { WidgetSettings } from "@/hooks/use-widget-settings"
+import { uploadHeaderLogo, uploadLauncherIcon, uploadLauncherFullImage } from "@/lib/widget-settings-utils"
+
+interface AppearanceTabProps {
+    settings: WidgetSettings
+    setSettings: React.Dispatch<React.SetStateAction<WidgetSettings>>
+    userId: string
+    isUploading: boolean
+    setIsUploading: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export function AppearanceTab({ settings, setSettings, userId, isUploading, setIsUploading }: AppearanceTabProps) {
+    const { t } = useLanguage()
+    const { user } = useAuth()
+    const { toast } = useToast()
+    const [searchTerm, setSearchTerm] = useState("")
+
+    const handleHeaderLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !userId || !user) return
+
+        setIsUploading(true)
+        try {
+            const token = await user.getIdToken()
+            if (!token) throw new Error('Not authenticated')
+
+            await uploadHeaderLogo(
+                file,
+                userId,
+                token,
+                (url) => {
+                    setSettings(prev => ({ ...prev, headerLogo: url }))
+                    toast({
+                        title: "Success",
+                        description: "Header logo uploaded successfully.",
+                    })
+                },
+                (error) => {
+                    toast({
+                        title: "Error",
+                        description: `Failed to upload header logo: ${error.message}`,
+                        variant: "destructive",
+                    })
+                }
+            )
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: `Failed to upload header logo: ${error.message}`,
+                variant: "destructive",
+            })
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handleLauncherIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !userId || !user) return
+
+        setIsUploading(true)
+        try {
+            const token = await user.getIdToken()
+            if (!token) throw new Error('Not authenticated')
+
+            await uploadLauncherIcon(
+                file,
+                userId,
+                token,
+                (url) => {
+                    setSettings(prev => ({ ...prev, launcherIcon: "custom", launcherIconUrl: url }))
+                    toast({
+                        title: "Success",
+                        description: "Icon uploaded successfully.",
+                    })
+                },
+                (error) => {
+                    toast({
+                        title: "Error",
+                        description: `Failed to upload icon: ${error.message}`,
+                        variant: "destructive",
+                    })
+                }
+            )
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: `Failed to upload icon: ${error.message}`,
+                variant: "destructive",
+            })
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    const handleLauncherFullImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file || !userId || !user) return
+
+        setIsUploading(true)
+        try {
+            const token = await user.getIdToken()
+            if (!token) throw new Error('Not authenticated')
+
+            await uploadLauncherFullImage(
+                file,
+                userId,
+                token,
+                (url) => {
+                    setSettings(prev => ({ ...prev, launcherFullImageUrl: url }))
+                },
+                (error) => {
+                    console.error('Upload error:', error)
+                }
+            )
+        } catch (error) {
+            console.error('Upload error:', error)
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
+    return (
+        <div className="space-y-8">
+            {/* Position & View */}
+            <div className="space-y-6">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('positionLayout')}</h4>
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label>{t('widgetPosition')}</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                                <Button
+                                    key={pos}
+                                    variant={settings.position === pos ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, position: pos }))}
+                                    className="w-full justify-center text-xs"
+                                >
+                                    {pos === 'bottom-left' && t('bottomLeft')}
+                                    {pos === 'bottom-center' && t('bottomCenter')}
+                                    {pos === 'bottom-right' && t('bottomRight')}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {settings.theme === 'classic' && (
+                        <div className="grid gap-2">
+                            <Label>{t('viewMode')}</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                    variant={settings.viewMode === "classic" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, viewMode: "classic" }))}
+                                >
+                                    {t('classicSmall')}
+                                </Button>
+                                <Button
+                                    variant={settings.viewMode === "wide" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, viewMode: "wide" }))}
+                                >
+                                    {t('wideModal')}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Header Customization */}
+            <div className="space-y-6">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('headerCustomization') || 'Header Özelleştirme'}</h4>
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label>{t('headerLogo') || 'Header Logo'}</Label>
+                        <div className="flex items-center gap-4">
+                            <div className="relative w-20 h-20 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden group">
+                                {isUploading ? (
+                                    <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
+                                ) : settings.headerLogo ? (
+                                    <Image src={settings.headerLogo} alt="Header Logo" fill className="object-cover" unoptimized />
+                                ) : (
+                                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleHeaderLogoUpload}
+                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                    disabled={isUploading}
+                                />
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                                <p>{t('headerLogoDesc') || 'Widget başlığındaki marka logosunu değiştirir.'}</p>
+                                <p>{t('recommendedSize')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label>{t('logoWidth') || 'Logo Genişliği'} (px)</Label>
+                            <Input
+                                type="number"
+                                value={settings.headerLogoWidth}
+                                onChange={(e) => setSettings(prev => ({ ...prev, headerLogoWidth: Number(e.target.value) }))}
+                                min={20}
+                                max={200}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{t('logoHeight') || 'Logo Yüksekliği'} (px)</Label>
+                            <Input
+                                type="number"
+                                value={settings.headerLogoHeight}
+                                onChange={(e) => setSettings(prev => ({ ...prev, headerLogoHeight: Number(e.target.value) }))}
+                                min={20}
+                                max={200}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label>{t('headerBackgroundColor') || 'Header Arkaplan Rengi'}</Label>
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="h-10 w-10 rounded-full border shadow-sm"
+                                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                                />
+                                <Input
+                                    type="color"
+                                    value={settings.headerBackgroundColor || settings.brandColor}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, headerBackgroundColor: e.target.value, brandColor: e.target.value }))}
+                                    className="w-14 h-10 p-1 cursor-pointer"
+                                />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">{t('defaultsToBrandColor') || 'Marka rengini de belirler'}</p>
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>{t('headerTextColor') || 'Header Yazı Rengi'}</Label>
+                            <div className="flex items-center gap-2">
+                                <div
+                                    className="h-10 w-10 rounded-full border shadow-sm"
+                                    style={{ backgroundColor: settings.headerTextColor }}
+                                />
+                                <Input
+                                    type="color"
+                                    value={settings.headerTextColor}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, headerTextColor: e.target.value }))}
+                                    className="w-14 h-10 p-1 cursor-pointer"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Launcher Settings */}
+            <div className="space-y-6">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('launcherAppearance')}</h4>
+
+                {/* Launcher Type Selection */}
+                <div className="grid gap-2">
+                    <Label>{t('launcherType') || 'Launcher Type'}</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            variant={settings.launcherType === "standard" ? "secondary" : "outline"}
+                            onClick={() => setSettings(prev => ({ ...prev, launcherType: "standard" }))}
+                        >
+                            {t('standard') || 'Standard'}
+                        </Button>
+                        <Button
+                            variant={settings.launcherType === "fullImage" ? "secondary" : "outline"}
+                            onClick={() => setSettings(prev => ({ ...prev, launcherType: "fullImage" }))}
+                        >
+                            {t('fullImage') || 'Full Image'}
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Full Image Mode */}
+                {settings.launcherType === "fullImage" && (
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <div className="grid gap-2">
+                            <Label>{t('imageSource') || 'Image Source'}</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button size="sm" variant={settings.launcherImageMode === "image" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherImageMode: "image" }))}>PNG/JPG</Button>
+                                <Button size="sm" variant={settings.launcherImageMode === "lottie" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherImageMode: "lottie" }))}>Lottie</Button>
+                            </div>
+                        </div>
+                        {settings.launcherImageMode === "image" ? (
+                            <div className="grid gap-2">
+                                <Label>{t('uploadImage') || 'Upload Image'}</Label>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden">
+                                        {settings.launcherFullImageUrl ? (
+                                            <Image src={settings.launcherFullImageUrl} alt="Launcher" fill className="object-contain" unoptimized />
+                                        ) : (
+                                            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleLauncherFullImageUpload}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">PNG, JPG, GIF</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid gap-3">
+                                <Label>{t('lottieAnimation') || 'Lottie Animation'}</Label>
+                                <Input
+                                    placeholder="https://lottie.host/... veya https://assets.lottiefiles.com/..."
+                                    value={settings.launcherLottieUrl}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, launcherLottieUrl: e.target.value }))}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    <a href="https://lottiefiles.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">LottieFiles.com</a>&apos;dan JSON URL yapıştırın
+                                </p>
+                                {settings.launcherLottieUrl && settings.launcherLottieUrl.trim() !== '' && (
+                                    <Button size="sm" variant="outline" className="w-fit" onClick={() => setSettings(prev => ({ ...prev, launcherLottieUrl: '' }))}>
+                                        {t('remove') || 'Kaldır'}
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>{t('width') || 'Width'} (px)</Label>
+                                <Input type="number" value={settings.fullImageLauncherWidth} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherWidth: parseInt(e.target.value) || 60 }))} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{t('height') || 'Height'} (px)</Label>
+                                <Input type="number" value={settings.fullImageLauncherHeight} onChange={(e) => setSettings(prev => ({ ...prev, fullImageLauncherHeight: parseInt(e.target.value) || 60 }))} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{t('hoverEffect') || 'Hover Effect'}</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Button size="sm" variant={settings.launcherHoverEffect === "scale" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "scale" }))}>{t('scale') || 'Scale'}</Button>
+                                <Button size="sm" variant={settings.launcherHoverEffect === "opacity" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "opacity" }))}>{t('opacity') || 'Opacity'}</Button>
+                                <Button size="sm" variant={settings.launcherHoverEffect === "none" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "none" }))}>{t('none') || 'None'}</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Standard Mode Settings */}
+                {settings.launcherType === "standard" && (
+                    <div className="grid gap-4">
+                        <div className="grid gap-2">
+                            <Label>{t('launcherStyle')}</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button
+                                    variant={settings.launcherStyle === "circle" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, launcherStyle: "circle", launcherRadius: 50, launcherWidth: 60, launcherHeight: 60 }))}
+                                >
+                                    {t('circleIcon')}
+                                </Button>
+                                <Button
+                                    variant={settings.launcherStyle === "square" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, launcherStyle: "square", launcherRadius: 12, launcherWidth: 60, launcherHeight: 60 }))}
+                                >
+                                    {t('squareIcon')}
+                                </Button>
+                                <Button
+                                    variant={settings.launcherStyle === "text" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, launcherStyle: "text", launcherRadius: 30, launcherWidth: 100, launcherHeight: 50 }))}
+                                >
+                                    {t('textOnly')}
+                                </Button>
+                                <Button
+                                    variant={settings.launcherStyle === "icon_text" ? "secondary" : "outline"}
+                                    onClick={() => setSettings(prev => ({ ...prev, launcherStyle: "icon_text", launcherRadius: 30, launcherWidth: 140, launcherHeight: 50 }))}
+                                >
+                                    {t('iconText')}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {(settings.launcherStyle === "text" || settings.launcherStyle === "icon_text") && (
+                            <div className="grid gap-2">
+                                <Label>{t('buttonText')}</Label>
+                                <Input
+                                    value={settings.launcherText}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, launcherText: e.target.value }))}
+                                    placeholder="e.g. Chat with us"
+                                />
+                            </div>
+                        )}
+
+                        {settings.launcherStyle === 'icon_text' && (
+                            <div className="flex items-center justify-between space-x-2 border p-3 rounded-lg bg-muted/20">
+                                <div className="space-y-0.5">
+                                    <Label className="text-sm">{t('autoCollapse') || 'Otomatik Daralt'}</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('autoCollapseDesc') || '5 sn sonra daralarak sadece ikon görünür'}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={settings.launcherCollapse || false}
+                                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, launcherCollapse: checked }))}
+                                />
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label className="text-xs">{t('backgroundColor')}</Label>
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="h-8 w-8 rounded-full border shadow-sm"
+                                        style={{ backgroundColor: settings.launcherBackgroundColor || settings.brandColor }}
+                                    />
+                                    <Input
+                                        type="color"
+                                        value={settings.launcherBackgroundColor || settings.brandColor}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, launcherBackgroundColor: e.target.value }))}
+                                        className="h-8 w-16 p-0.5 cursor-pointer border-0"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label className="text-xs">{t('iconColor')}</Label>
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="h-8 w-8 rounded-full border shadow-sm"
+                                        style={{ backgroundColor: settings.launcherIconColor }}
+                                    />
+                                    <Input
+                                        type="color"
+                                        value={settings.launcherIconColor}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, launcherIconColor: e.target.value }))}
+                                        className="h-8 w-16 p-0.5 cursor-pointer border-0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>{t('width') || 'Width'} (px)</Label>
+                                <Input type="number" value={settings.launcherWidth} onChange={(e) => setSettings(prev => ({ ...prev, launcherWidth: parseInt(e.target.value) || 60 }))} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{t('height') || 'Height'} (px)</Label>
+                                <Input type="number" value={settings.launcherHeight} onChange={(e) => setSettings(prev => ({ ...prev, launcherHeight: parseInt(e.target.value) || 60 }))} />
+                            </div>
+                        </div>
+
+                        {(settings.launcherStyle === "circle" || settings.launcherStyle === "square" || settings.launcherStyle === "icon_text") && (
+                            <div className="grid gap-2">
+                                <Label>{t('launcherIcon')}</Label>
+                                <div className="grid grid-cols-2 gap-2 mb-2">
+                                    <Button
+                                        size="sm"
+                                        variant={settings.launcherIcon === "library" ? "secondary" : "outline"}
+                                        onClick={() => setSettings(prev => ({ ...prev, launcherIcon: "library" }))}
+                                    >
+                                        {t('library')}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={settings.launcherIcon === "custom" ? "secondary" : "outline"}
+                                        onClick={() => setSettings(prev => ({ ...prev, launcherIcon: "custom" }))}
+                                    >
+                                        {t('custom')}
+                                    </Button>
+                                </div>
+
+                                {settings.launcherIcon === "library" ? (
+                                    <div className="space-y-2">
+                                        <Input
+                                            placeholder={t('searchIcons')}
+                                            className="h-8 text-xs"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                        />
+                                        <div className="border rounded-md p-2 h-32 overflow-y-auto grid grid-cols-6 gap-2">
+                                            {(searchTerm ? Object.keys(icons) : [
+                                                "MessageSquare", "MessageCircle", "MessageSquareText", "MessagesSquare",
+                                                "Bot", "Sparkles", "Brain", "BrainCircuit", "Cpu", "Zap", "Activity",
+                                                "Headset", "Mic", "Video", "Phone",
+                                                "User", "Users", "UserCheck",
+                                                "HelpCircle", "Info", "AlertCircle",
+                                                "Star", "Heart", "ThumbsUp", "Smile",
+                                                "Send", "Share2", "Paperclip",
+                                                "Command", "Terminal", "Code", "Box",
+                                                "Ghost", "Gamepad2", "Rocket"
+                                            ])
+                                                .filter(key => {
+                                                    if (searchTerm && !key.toLowerCase().includes(searchTerm.toLowerCase())) return false
+                                                    return (icons as any)[key] !== undefined
+                                                })
+                                                .slice(0, 100)
+                                                .map((iconName) => {
+                                                    const Icon = (icons as any)[iconName]
+                                                    if (typeof Icon !== 'function' && typeof Icon !== 'object') return null
+                                                    return (
+                                                        <button
+                                                            key={iconName}
+                                                            onClick={() => setSettings(prev => ({ ...prev, launcherIcon: "library", launcherLibraryIcon: iconName }))}
+                                                            className={`p-2 rounded hover:bg-muted flex items-center justify-center ${settings.launcherLibraryIcon === iconName ? 'bg-primary/10 text-primary' : ''}`}
+                                                            title={iconName}
+                                                        >
+                                                            <Icon className="w-5 h-5" />
+                                                        </button>
+                                                    )
+                                                })}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-4">
+                                        <div className="relative w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden">
+                                            {settings.launcherIconUrl ? (
+                                                <Image src={settings.launcherIconUrl} alt="Icon" fill className="object-cover" unoptimized />
+                                            ) : (
+                                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleLauncherIconUpload}
+                                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Effects & Spacing */}
+            <div className="space-y-6">
+                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('effectsSpacing')}</h4>
+                <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label className="text-xs">{t('verticalSpacing')}</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={settings.bottomSpacing}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, bottomSpacing: parseInt(e.target.value) }))}
+                                    className="flex-1"
+                                />
+                                <span className="text-xs w-8 text-right">{settings.bottomSpacing}</span>
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label className="text-xs">{t('sideSpacing')}</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={settings.sideSpacing}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, sideSpacing: parseInt(e.target.value) }))}
+                                    className="flex-1"
+                                />
+                                <span className="text-xs w-8 text-right">{settings.sideSpacing}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>{t('animationLoop') || 'Animasyon Döngüsü'}</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {['none', 'pulse', 'bounce', 'wiggle', 'float', 'spin'].map((anim) => (
+                                <button
+                                    key={anim}
+                                    onClick={() => setSettings(prev => ({ ...prev, launcherAnimation: anim }))}
+                                    className={`p-2 rounded-md border text-xs capitalize transition-all ${settings.launcherAnimation === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
+                                >
+                                    {anim}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

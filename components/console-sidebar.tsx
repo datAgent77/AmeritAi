@@ -51,6 +51,9 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarGroupContent,
     useSidebar,
 } from "@/components/ui/sidebar"
 import {
@@ -75,7 +78,6 @@ interface ConsoleSidebarProps {
 
 export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleSidebarProps) {
     const pathname = usePathname() || ""
-    const searchParams = useSearchParams()
     const router = useRouter()
     const { t, language, setLanguage } = useLanguage()
     const {
@@ -85,7 +87,6 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
     } = useAuth()
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
     // Build link based on whether we're in super admin mode (targetUserId provided)
     const buildLink = (path: string) => {
@@ -109,64 +110,84 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
         router.push("/login")
     }
 
-    // Navigation Items - Ordered per user request
-    const navItems = [
-        {
-            title: t('dashboard'),
-            icon: Zap,
-            href: "/console/chatbot",
-            active: pathname === buildLink("/console/chatbot")
-        },
-        {
-            title: t('widgetSettings') || "Widget Settings",
-            icon: Settings,
-            href: "/console/chatbot/widget",
-            active: isActive("/console/chatbot/widget")
-        },
-        {
-            title: t('training'),
-            icon: GraduationCap,
-            href: "/console/knowledge",
-            active: isActive("/console/knowledge")
-        },
-        {
-            title: t('modules') || "Modules",
-            icon: Grid,
-            href: "/console/modules",
-            active: isActive("/console/modules") || isActive("/console/chatbot/shopper")
-        },
-        {
-            title: t('integrations'),
-            icon: Plug,
-            href: "/console/chatbot/integration",
-            active: isActive("/console/chatbot/integration")
-        },
-        {
-            title: t('reports'),
-            icon: BarChart3,
-            href: "/console/chatbot/analytics",
-            active: isActive("/console/chatbot/analytics")
-        },
-        {
-            title: t('chats'),
-            icon: MessageSquare,
-            href: "/console/chatbot/chats",
-            active: isActive("/console/chatbot/chats")
-        },
-        ...(enableLeadCollection ? [{
-            title: t('leads'),
-            icon: Users,
-            href: "/console/chatbot/leads",
-            active: isActive("/console/chatbot/leads") || isActive("/console/chatbot/appointments")
-        }] : []),
+    // Top-level overview item (outside groups)
+    const overviewItem = {
+        title: t('overview') || "Genel Bakış",
+        icon: LayoutDashboard,
+        href: "/console/chatbot",
+        active: pathname === "/console/chatbot" || (pathname === buildLink("/console/chatbot"))
+    }
 
-        // Restaurant Menu (Conditionally rendered)
+    const tenantGroups = [
+        {
+            label: "Build",
+            items: [
+                {
+                    title: t('training') || "Training",
+                    icon: GraduationCap, // or BookOpen
+                    href: "/console/knowledge",
+                    active: isActive("/console/knowledge")
+                },
+                {
+                    title: t('modules') || "Modules",
+                    icon: Grid,
+                    href: "/console/modules",
+                    active: isActive("/console/modules")
+                },
+
+            ]
+        },
+        {
+            label: "Connect",
+            items: [
+                {
+                    title: t('widgetSettings') || "Web Widget",
+                    icon: MessageSquare,
+                    href: "/console/chatbot/widget",
+                    active: isActive("/console/chatbot/widget")
+                },
+                {
+                    title: t('integrations') || "Integrations",
+                    icon: Plug,
+                    href: "/console/chatbot/integration",
+                    active: isActive("/console/chatbot/integration")
+                }
+            ]
+        },
+        {
+            label: "Grow",
+            items: [
+                {
+                    title: t('chats') || "Inbox", // Label change for clarity
+                    icon: Inbox,
+                    href: "/console/chatbot/chats",
+                    active: isActive("/console/chatbot/chats")
+                },
+                {
+                    title: t('leads') || "Shopper Intelligence",
+                    icon: Users,
+                    href: "/console/chatbot/leads",
+                    active: isActive("/console/chatbot/leads")
+                },
+                {
+                    title: t('reports') || "Analytics",
+                    icon: BarChart3,
+                    href: "/console/chatbot/analytics",
+                    active: isActive("/console/chatbot/analytics")
+                }
+            ]
+        }
+    ]
+
+    // Special items that don't fit groups or are conditional
+    const specialItems = [
+        // Restaurant Menu
         ...(sectorId === 'restaurant' ? [{
             title: t('menu') || "Menu & QR",
             icon: Utensils,
             href: "/console/menu",
             active: isActive("/console/menu")
-        }] : [])
+        }] : []),
     ]
 
     return (
@@ -219,43 +240,95 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                         </SidebarMenu>
                     )}
 
-                    <SidebarMenu className="gap-2">
-                        {navItems.map((item) => (
-                            <SidebarMenuItem key={item.href}>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={item.active}
-                                    className={cn(
-                                        "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                        "hover:bg-white/10 hover:text-white",
-                                        item.active
-                                            ? "bg-white/15 text-white shadow-sm"
-                                            : "text-zinc-400 group-hover:text-white"
-                                    )}
-                                >
-                                    <Link href={buildLink(item.href)}>
-                                        <item.icon className={cn("size-5 transition-colors", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                        <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{item.title}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        ))}
+                    {/* TOP OVERVIEW ITEM (Outside Groups) */}
+                    <SidebarMenu className="mb-2">
+                        <SidebarMenuItem>
+                            <SidebarMenuButton
+                                asChild
+                                isActive={overviewItem.active}
+                                className={cn(
+                                    "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                    "hover:bg-white/10 hover:text-white",
+                                    overviewItem.active
+                                        ? "bg-white/15 text-white shadow-sm"
+                                        : "text-zinc-400 group-hover:text-white"
+                                )}
+                            >
+                                <Link href={buildLink(overviewItem.href)}>
+                                    <overviewItem.icon className={cn("size-4 transition-colors", overviewItem.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                    <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{overviewItem.title}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </SidebarMenu>
 
-                        {/* Super Admin Administration */}
-                        {(role === 'SUPER_ADMIN' && !targetUserId) && (
-                            <>
-                                <div className="px-3 py-2 mt-4 mb-2 group-data-[collapsible=icon]:hidden">
-                                    <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                                        {t('administration') || "Administration"}
-                                    </h2>
-                                </div>
+                    {/* TENANT NAVIGATION GROUPS */}
+                    {tenantGroups.map((group) => (
+                        <SidebarGroup key={group.label} className="group-data-[collapsible=icon]:p-0">
+                            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-zinc-500 font-semibold uppercase tracking-wider text-xs px-2 mb-1">
+                                {group.label}
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {group.items.map((item) => (
+                                        <SidebarMenuItem key={item.href}>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={item.active}
+                                                className={cn(
+                                                    "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                                    "hover:bg-white/10 hover:text-white",
+                                                    item.active
+                                                        ? "bg-white/15 text-white shadow-sm"
+                                                        : "text-zinc-400 group-hover:text-white"
+                                                )}
+                                            >
+                                                <Link href={buildLink(item.href)}>
+                                                    <item.icon className={cn("size-4 transition-colors", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                                    <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{item.title}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    ))}
 
+                    {/* Special Items (Restaurant Menu etc.) */}
+                    {specialItems.length > 0 && (
+                        <SidebarGroup>
+                            <SidebarMenu>
+                                {specialItems.map((item) => (
+                                    <SidebarMenuItem key={item.href}>
+                                        <SidebarMenuButton asChild isActive={item.active} className="...">
+                                            <Link href={buildLink(item.href)}>
+                                                <item.icon className="size-4" />
+                                                <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroup>
+                    )}
+
+                    {/* Super Admin Administration Section */}
+                    {(role === 'SUPER_ADMIN' && !targetUserId) && (
+                        <>
+                            <div className="px-3 py-2 mt-4 mb-2 group-data-[collapsible=icon]:hidden">
+                                <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                                    {t('administration') || "Administration"}
+                                </h2>
+                            </div>
+
+                            <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname === "/admin"}
                                         className={cn(
-                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
                                             pathname === "/admin"
                                                 ? "bg-white/15 text-white shadow-sm"
@@ -263,18 +336,18 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         )}
                                     >
                                         <Link href="/admin">
-                                            <Building2 className={cn("size-5 transition-colors", pathname === "/admin" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('tenants') || "Tenants"}</span>
+                                            <Building2 className={cn("size-4", pathname === "/admin" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('tenants') || "Tenants"}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-
+                                {/* ... other admin links ... */}
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname === "/admin/requests"}
                                         className={cn(
-                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
                                             pathname === "/admin/requests"
                                                 ? "bg-white/15 text-white shadow-sm"
@@ -282,18 +355,17 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         )}
                                     >
                                         <Link href="/admin/requests">
-                                            <Inbox className={cn("size-5 transition-colors", pathname === "/admin/requests" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('moduleRequests') || "Requests"}</span>
+                                            <Inbox className={cn("size-4", pathname === "/admin/requests" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('moduleRequests') || "Requests"}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname === "/platform/super-admin/resources"}
                                         className={cn(
-                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
                                             pathname === "/platform/super-admin/resources"
                                                 ? "bg-white/15 text-white shadow-sm"
@@ -301,18 +373,17 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         )}
                                     >
                                         <Link href="/platform/super-admin/resources">
-                                            <Activity className={cn("size-5 transition-colors", pathname === "/platform/super-admin/resources" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('resourceView') || "Resources"}</span>
+                                            <Activity className={cn("size-4", pathname === "/platform/super-admin/resources" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('resourceView') || "Resources"}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
                                         isActive={pathname.startsWith("/admin/content")}
                                         className={cn(
-                                            "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
                                             pathname.startsWith("/admin/content")
                                                 ? "bg-white/15 text-white shadow-sm"
@@ -320,44 +391,42 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         )}
                                     >
                                         <Link href="/admin/content/blog">
-                                            <FileText className={cn("size-5 transition-colors", pathname.startsWith("/admin/content") ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('contentManagement') || "Content & CMS"}</span>
+                                            <FileText className={cn("size-4", pathname.startsWith("/admin/content") ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('contentManagement') || "Content & CMS"}</span>
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
+                            </SidebarMenu>
+                        </>
+                    )}
 
-                                <div className="h-px bg-white/10 my-2 mx-3" />
-                            </>
-                        )}
-
-                        {/* Settings - Direct Link (subpages have their own sidebar) */}
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isActive("/console/settings")}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 h-11 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                    "hover:bg-white/10 hover:text-white",
-                                    isActive("/console/settings")
-                                        ? "bg-white/15 text-white shadow-sm"
-                                        : "text-zinc-400 group-hover:text-white"
-                                )}
-                            >
-                                <Link href={buildLink("/console/settings")}>
-                                    <Settings className="size-5 transition-colors" />
-                                    <span className="font-medium text-[15px] group-data-[collapsible=icon]:hidden">{t('settings')}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
+                    {/* Settings Link (Outside Groups) */}
+                    <SidebarGroup className="mt-auto group-data-[collapsible=icon]:p-0">
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={isActive("/console/settings")}
+                                    className={cn(
+                                        "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                        "hover:bg-white/10 hover:text-white",
+                                        isActive("/console/settings")
+                                            ? "bg-white/15 text-white shadow-sm"
+                                            : "text-zinc-400 group-hover:text-white"
+                                    )}
+                                >
+                                    <Link href={buildLink("/console/settings")}>
+                                        <Settings className="size-4" />
+                                        <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('settings')}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroup>
                 </SidebarContent>
 
                 <SidebarFooter className="bg-[#000000] border-t border-white/10 p-2">
                     <SidebarMenu className="gap-1">
-                        {/* Settings Group Removed (Moved to Main Nav) */}
-
-
-
                         {/* Profile / User */}
                         <SidebarMenuItem>
                             <DropdownMenu>

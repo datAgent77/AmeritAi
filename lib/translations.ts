@@ -552,7 +552,7 @@ export const translations = {
         settingsSavedDesc: "Your settings have been successfully updated.",
         moduleUnderDevelopment: "This module's settings page is currently under development.",
         voiceAssistantSettingsDesc: "Configure your ElevenLabs API key and Voice ID.",
-        saveChanges: "Save Changes",
+
         save: "Save",
         saved: "Saved",
         included: "Included",
@@ -942,7 +942,7 @@ export const translations = {
         planBadge: "Plan",
 
         // Customer Admin (Super Admin Only)
-        customerAdmin: "Customer Admin",
+
         customerAdminDesc: "Manage subscription, limits, and admin controls for this customer.",
         generalInfo: "General Information",
         planAndBilling: "Plan & Billing",
@@ -2130,7 +2130,7 @@ export const translations = {
         error: "Hata",
         success: "Başarılı",
         retry: "Yeniden Dene",
-        saveChanges: "Değişiklikleri Kaydet",
+
         save: "Kaydet",
         saving: "Kaydediliyor...",
         testLiveWidget: "Canlı Widget Testi",
@@ -2262,7 +2262,7 @@ export const translations = {
         emailCannotBeChanged: "E-posta değiştirilemez.",
         phoneNumber: "Telefon Numarası",
         companyInformation: "Şirket Bilgileri",
-        accountSettings: "Hesap Bilgileri",
+
         companyDetails: "Şirket Bilgileri",
         address: "Adres",
         website: "Web Sitesi",
@@ -2354,7 +2354,7 @@ export const translations = {
         planBadge: "Plan",
 
         // Customer Admin (Super Admin Only)
-        customerAdmin: "Müşteri Yönetimi",
+
         customerAdminDesc: "Bu müşteri için abonelik, limit ve yönetim ayarlarını düzenleyin.",
         generalInfo: "Genel Bilgiler",
         planAndBilling: "Plan ve Ücretlendirme",

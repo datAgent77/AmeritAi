@@ -405,19 +405,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-8">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-                    </svg>
-                    Platform
-                </span>
-                <span>/</span>
-                <span className="text-foreground font-medium">{t('tenants') || "Müşteriler"}</span>
-            </div>
-
+        <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-0">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

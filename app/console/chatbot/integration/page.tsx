@@ -9,7 +9,7 @@ export default function IntegrationsPage() {
     if (!user) return null
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="p-8 space-y-6">
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">Integration</h1>
                 <p className="text-muted-foreground">Add the chatbot widget to your website with a simple code snippet.</p>

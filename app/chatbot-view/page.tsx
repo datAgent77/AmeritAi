@@ -870,8 +870,8 @@ function ChatbotViewContent() {
     }
 
     const [settings, setSettings] = useState<ChatbotSettings>({
-        companyName: "Acme Corp",
-        welcomeMessage: "Hello! How can I help you today?",
+        companyName: "Vion AI",
+        welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
         brandColor: "#000000",
         brandLogo: "",
         headerLogo: "",
@@ -879,19 +879,19 @@ function ChatbotViewContent() {
         headerLogoHeight: 32,
         headerBackgroundColor: "",
         headerTextColor: "#FFFFFF",
-        suggestedQuestions: ["What are your pricing plans?", "How do I get started?", "Contact support"],
+        suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
         enableLeadCollection: false,
         enableInitialLeadCollection: false,
         enableInChatLeadCollection: false,
         leadFormConfig: null as { title?: string; subtitle?: string; nameLabel?: string; emailLabel?: string; phoneLabel?: string; submitButtonText?: string } | null,
-        industry: "ecommerce" as string,
-        enableVoiceAssistant: false,
+        industry: "technology" as string,
+        enableVoiceAssistant: true,
         voiceProvider: "klassifier" as string,
         elevenLabsVoiceId: "",
         theme: "classic" as string,
 
         enableIndustryGreeting: false,
-        initialLanguage: "auto",
+        initialLanguage: "tr",
         engagement: {
             enabled: false,
             bubble: {
@@ -920,7 +920,7 @@ function ChatbotViewContent() {
         } as any,
         launcherIcon: "library",
         launcherIconUrl: "",
-        launcherLibraryIcon: "",
+        launcherLibraryIcon: "MessageSquare",
     })
     const [isLoading, setIsLoading] = useState(true)
 

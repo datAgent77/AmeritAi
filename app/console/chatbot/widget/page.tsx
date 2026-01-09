@@ -1,6 +1,6 @@
 "use client"
 
-import WidgetSettings from "@/components/widget-settings"
+import WidgetSettings from "@/components/widget-settings/widget-settings"
 
 import { useAuth } from "@/context/AuthContext"
 

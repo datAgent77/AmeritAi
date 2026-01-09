@@ -64,7 +64,7 @@ export default function AdminLayout({
                     <SiteHeader />
 
                     {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto w-full">
+                    <main className="flex-1 overflow-y-auto w-full p-0">
                         <div className="w-full">
                             {children}
                         </div>

@@ -1,0 +1,232 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
+import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Gift, MousePointerClick, Loader2, Save } from "lucide-react"
+
+interface Prize {
+    name: string
+    probability: number
+}
+
+interface GamificationConfig {
+    enabled: boolean
+    prizes: Prize[]
+    triggers: {
+        exitIntent: boolean
+        onEntry: boolean
+        entryDelay: number
+    }
+}
+
+const defaultConfig: GamificationConfig = {
+    enabled: false,
+    prizes: [
+        { name: "10% OFF", probability: 50 },
+        { name: "Free Coffee", probability: 30 },
+        { name: "Try Again", probability: 20 }
+    ],
+    triggers: {
+        exitIntent: true,
+        onEntry: false,
+        entryDelay: 5
+    }
+}
+
+interface GamificationSettingsFormProps {
+    targetUserId: string
+    isSuperAdmin?: boolean
+}
+
+export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }: GamificationSettingsFormProps) {
+    const { user } = useAuth()
+    const { t } = useLanguage()
+    const { toast } = useToast()
+
+    const [config, setConfig] = useState<GamificationConfig>(defaultConfig)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isSaving, setIsSaving] = useState(false)
+
+    const loadConfig = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const token = await user?.getIdToken()
+            const res = await fetch(`/api/widget-settings?chatbotId=${targetUserId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.gamification) {
+                    setConfig(prev => ({ ...prev, ...data.gamification }))
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load config", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [targetUserId, user])
+
+    useEffect(() => {
+        if (targetUserId && user) {
+            loadConfig()
+        }
+    }, [targetUserId, user, loadConfig])
+
+    const saveConfig = async () => {
+        if (!user?.uid) return
+        setIsSaving(true)
+        try {
+            const idToken = await user.getIdToken()
+            const response = await fetch('/api/widget-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({
+                    chatbotId: targetUserId,
+                    gamification: config
+                })
+            })
+
+            if (!response.ok) throw new Error('Save failed')
+
+            toast({
+                title: t('settingsSaved') || "Ayarlar Kaydedildi",
+                description: "Gamification ayarlarınız güncellendi."
+            })
+        } catch (error) {
+            console.error("Failed to save gamification config:", error)
+            toast({
+                title: t('error') || "Hata",
+                description: "Ayarlar kaydedilemedi.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const updatePrize = (index: number, field: keyof Prize, value: string | number) => {
+        setConfig(prev => ({
+            ...prev,
+            prizes: prev.prizes.map((p, i) => i === index ? { ...p, [field]: value } : p)
+        }))
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                            {t('modules.gamification') || "Gamification & Wheel"}
+                        </h2>
+                        <p className="text-muted-foreground">
+                            {t('modules.gamificationDesc') || "Engage visitors with games and rewards"}
+                        </p>
+                    </div>
+                </div>
+                <Button onClick={saveConfig} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {t('save') || "Kaydet"}
+                </Button>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card className="border-2 border-pink-100 dark:border-pink-900/20">
+                    <CardHeader>
+                        <CardTitle>{t('wheelOfFortune') || "Wheel of Fortune"}</CardTitle>
+                        <CardDescription>{t('wheelConfig') || "Configure the spin-the-wheel popup"}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <Label>{t('enableGame') || "Enable Game"}</Label>
+                            <Switch
+                                checked={config.enabled}
+                                onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enabled: checked }))}
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label>{t('prizesProb') || "Prizes (Probability)"}</Label>
+                            {config.prizes.map((prize, index) => (
+                                <div key={index} className="flex gap-2">
+                                    <Input
+                                        placeholder="Prize name"
+                                        value={prize.name}
+                                        onChange={(e) => updatePrize(index, 'name', e.target.value)}
+                                    />
+                                    <Input
+                                        className="w-20"
+                                        placeholder="%"
+                                        type="number"
+                                        value={prize.probability}
+                                        onChange={(e) => updatePrize(index, 'probability', parseInt(e.target.value) || 0)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('triggers') || "Triggers"}</CardTitle>
+                        <CardDescription>{t('gameTriggersDesc') || "When should the game appear?"}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                                <MousePointerClick className="h-5 w-5 text-blue-500" />
+                                <div>
+                                    <div className="font-medium">{t('exitIntentShort') || "Exit Intent"}</div>
+                                    <div className="text-xs text-muted-foreground">{t('exitIntentDescShort') || "Show when cursor leaves window"}</div>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={config.triggers.exitIntent}
+                                onCheckedChange={(checked) => setConfig(prev => ({
+                                    ...prev,
+                                    triggers: { ...prev.triggers, exitIntent: checked }
+                                }))}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                                <Gift className="h-5 w-5 text-purple-500" />
+                                <div>
+                                    <div className="font-medium">{t('onEntry') || "On Entry"}</div>
+                                    <div className="text-xs text-muted-foreground">{t('onEntryDesc') || "Show immediately (delay 5s)"}</div>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={config.triggers.onEntry}
+                                onCheckedChange={(checked) => setConfig(prev => ({
+                                    ...prev,
+                                    triggers: { ...prev.triggers, onEntry: checked }
+                                }))}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    )
+}

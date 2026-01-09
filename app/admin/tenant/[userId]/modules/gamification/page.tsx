@@ -1,14 +1,14 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { DigitalWaiterSettingsForm } from "@/components/modules/digital-waiter/digital-waiter-settings-form"
+import { GamificationSettingsForm } from "@/components/modules/gamification/gamification-settings-form"
 
-export default function TenantDigitalWaiterPage() {
+export default function TenantGamificationPage() {
     const params = useParams()
     const userId = params.userId as string
 
     return (
-        <DigitalWaiterSettingsForm
+        <GamificationSettingsForm
             targetUserId={userId}
             isSuperAdmin={true}
         />

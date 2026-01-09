@@ -608,7 +608,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 {filteredIntegrations.map((integration) => (
                     <Card
                         key={integration.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow border"
+                        className="cursor-pointer hover:shadow-md transition-shadow border py-0"
                         onClick={() => setSelectedIntegration(integration.id)}
                     >
                         <CardContent className="p-5">
@@ -633,7 +633,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     )
 
     return (
-        <div className="flex h-full bg-white">
+        <div className="flex h-full bg-white rounded-xl overflow-hidden">
             {/* Sidebar */}
             <div className="w-56 border-r bg-muted/30 flex-shrink-0">
                 <div className="p-4">

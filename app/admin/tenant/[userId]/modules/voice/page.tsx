@@ -1,14 +1,14 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import { DigitalWaiterSettingsForm } from "@/components/modules/digital-waiter/digital-waiter-settings-form"
+import { VoiceSettingsForm } from "@/components/modules/voice/voice-settings-form"
 
-export default function TenantDigitalWaiterPage() {
+export default function TenantVoiceSettingsPage() {
     const params = useParams()
     const userId = params.userId as string
 
     return (
-        <DigitalWaiterSettingsForm
+        <VoiceSettingsForm
             targetUserId={userId}
             isSuperAdmin={true}
         />
