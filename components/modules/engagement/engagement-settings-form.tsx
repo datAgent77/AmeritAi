@@ -6,87 +6,18 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Trash2, Clock, MousePointerClick, Save, MessageCircle, Loader2, Sparkles, Rocket, Zap, TrendingUp, Lock } from "lucide-react"
+import { Save, Loader2 } from "lucide-react"
 
-interface BubbleMessage {
-    id: string
-    text: string
-    delay: number
-    isActive: boolean
-}
-
-interface EngagementSettings {
-    enabled: boolean
-    bubble: {
-        messages: BubbleMessage[]
-        position: 'top' | 'left' | 'right'
-        animation: 'none' | 'bounce' | 'pulse' | 'shake'
-        autoDismiss: boolean
-        autoDismissDelay: number
-        showCloseButton: boolean
-        style: {
-            backgroundColor: string
-            textColor: string
-            borderRadius: number
-            shadow: 'none' | 'small' | 'medium' | 'large'
-        }
-    }
-    triggers: {
-        scrollDepth: number
-        exitIntent: boolean
-        inactivity: number
-        pageRevisit: number
-    }
-    // Premium Feature: Real-time AI Smart Bubbles
-    aiSmartBubbles: {
-        visible: boolean       // Super admin: Tenant'a görünsün mü?
-        granted: boolean       // Super admin: Tenant kullanabilsin mi?
-        enabled: boolean       // Tenant: Kullanıyor mu?
-        tone: 'friendly' | 'professional' | 'playful'
-        delay: number
-        maxPerSession: number
-    }
-}
-
-const defaultSettings: EngagementSettings = {
-    enabled: false,
-    bubble: {
-        messages: [{ id: '1', text: 'Merhaba! Size nasıl yardımcı olabilirim?', delay: 5, isActive: true }],
-        position: 'top',
-        animation: 'bounce',
-        autoDismiss: true,
-        autoDismissDelay: 10,
-        showCloseButton: true,
-        style: {
-            backgroundColor: '#000000',
-            textColor: '#FFFFFF',
-            borderRadius: 12,
-            shadow: 'medium'
-        }
-    },
-    triggers: {
-        scrollDepth: 0,
-        exitIntent: false,
-        inactivity: 0,
-        pageRevisit: 0
-    },
-    aiSmartBubbles: {
-        visible: false,
-        granted: false,
-        enabled: false,
-        tone: 'friendly',
-        delay: 8,
-        maxPerSession: 3
-    }
-}
+import { EngagementSettings, defaultSettings, BubbleMessage } from "./types"
+import { EngagementDesignTab } from "./tabs/design-tab"
+import { EngagementTriggersTab } from "./tabs/triggers-tab"
+import { EngagementAITab } from "./tabs/ai-tab"
+import { EngagementPreview } from "./components/preview-panel"
 
 interface EngagementSettingsFormProps {
     targetUserId: string
@@ -94,62 +25,101 @@ interface EngagementSettingsFormProps {
 }
 
 export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: EngagementSettingsFormProps) {
-    const { user, role } = useAuth()
+    const { user } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
-
-    // Determine effective user ID (redundant but explicit)
     const effectiveUserId = targetUserId
 
     const [settings, setSettings] = useState<EngagementSettings>(defaultSettings)
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [activeTab, setActiveTab] = useState("design")
+    const [sector, setSector] = useState<string>("")
 
-    // Check premium status if allowed
-    const [isPremium, setIsPremium] = useState(false)
-
-    useEffect(() => {
-        const checkPremium = async () => {
-            if (!effectiveUserId) return
-            try {
-                const userDoc = await getDoc(doc(db, "users", effectiveUserId))
-                const userData = userDoc.data()
-                setIsPremium(userData?.plan === 'premium' || userData?.subscription?.status === 'active')
-            } catch (error) {
-                console.error("Error checking premium status:", error)
-            }
-        }
-        checkPremium()
-    }, [effectiveUserId])
+    // Sector Templates
+    const sectorTemplates: Record<string, BubbleMessage[]> = {
+        'e-commerce': [
+            { id: 'ec1', text: '👀 Bu ürüne bakanlar şunları da inceledi...', delay: 5, isActive: true },
+            { id: 'ec2', text: '⚡️ Sadece bugüne özel %10 indirim kodunuz: VION10', delay: 30, isActive: true },
+            { id: 'ec3', text: '📦 Kargo bedava fırsatını kaçırmayın!', delay: 60, isActive: true }
+        ],
+        'health': [
+            { id: 'h1', text: '👋 Merhaba, randevu almak ister misiniz?', delay: 3, isActive: true },
+            { id: 'h2', text: '🩺 Uzman doktorlarımız sorularınızı bekliyor.', delay: 20, isActive: true },
+            { id: 'h3', text: '🚑 Acil bir durum mu var? Bize hemen ulaşın.', delay: 45, isActive: true }
+        ],
+        'education': [
+            { id: 'ed1', text: '🎓 Hangi eğitim programı size uygun? Testi çözün.', delay: 5, isActive: true },
+            { id: 'ed2', text: '📚 Ücretsiz deneme dersi almak için tıklayın.', delay: 25, isActive: true }
+        ],
+        'corporate': [
+            { id: 'c1', text: '🤝 Projeniz için fiyat teklifi almak ister misiniz?', delay: 5, isActive: true },
+            { id: 'c2', text: '💼 Referanslarımızı incelediniz mi?', delay: 20, isActive: true }
+        ],
+        'booking': [ // Travel/Tourism
+            { id: 'b1', text: '🌴 Erken rezervasyon fırsatlarını gördünüz mü?', delay: 5, isActive: true },
+            { id: 'b2', text: '✈️ Uçak bileti aramalarında yardımcı olabilirim.', delay: 15, isActive: true }
+        ]
+    }
 
     const loadSettings = useCallback(async () => {
         if (!effectiveUserId) return
         setIsLoading(true)
         try {
+            // Fetch chatbot details for Sector
+            const chatbotRef = doc(db, "chatbots", effectiveUserId);
+            const chatbotSnap = await getDoc(chatbotRef);
+            let currentSector = 'general';
+            if (chatbotSnap.exists()) {
+                currentSector = chatbotSnap.data().sector || 'general';
+                setSector(currentSector);
+            }
+
             const response = await fetch(`/api/widget-settings?chatbotId=${effectiveUserId}`)
             if (response.ok) {
                 const data = await response.json()
                 if (data.engagement) {
-                    setSettings({
-                        ...defaultSettings,
+                    setSettings(prev => ({
+                        ...prev,
                         ...data.engagement,
                         bubble: {
-                            ...defaultSettings.bubble,
+                            ...prev.bubble,
                             ...(data.engagement.bubble || {}),
+                            messages: (data.engagement.bubble?.messages?.length > 0)
+                                ? data.engagement.bubble.messages
+                                : [], // Legacy Global Pool
                             style: {
-                                ...defaultSettings.bubble.style,
+                                ...prev.bubble.style,
                                 ...(data.engagement.bubble?.style || {})
                             }
                         },
                         triggers: {
-                            ...defaultSettings.triggers,
-                            ...(data.engagement.triggers || {})
+                            ...prev.triggers,
+                            ...(data.engagement.triggers || {}),
+                            // Auto-populate Sector Templates if empty
+                            exitIntentMessages: (data.engagement.triggers?.exitIntentMessages?.length > 0)
+                                ? data.engagement.triggers.exitIntentMessages
+                                : (sectorTemplates[currentSector.toLowerCase()] || []).slice(0, 1),
+                            timeOnPageMessages: (data.engagement.triggers?.timeOnPageMessages?.length > 0)
+                                ? data.engagement.triggers.timeOnPageMessages
+                                : (sectorTemplates[currentSector.toLowerCase()] || []).slice(1),
                         },
                         aiSmartBubbles: {
-                            ...defaultSettings.aiSmartBubbles,
+                            ...prev.aiSmartBubbles,
                             ...(data.engagement.aiSmartBubbles || {})
                         }
-                    })
+                    }))
+                } else if (currentSector && sectorTemplates[currentSector.toLowerCase()]) {
+                    // No previous settings, but we have a sector -> Preload templates
+                    const defaultMsgs = sectorTemplates[currentSector.toLowerCase()];
+                    setSettings(prev => ({
+                        ...prev,
+                        triggers: {
+                            ...prev.triggers,
+                            exitIntentMessages: defaultMsgs.slice(0, 1),
+                            timeOnPageMessages: defaultMsgs.slice(1)
+                        }
+                    }))
                 }
             }
         } catch (error) {
@@ -186,7 +156,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
 
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
-                description: t('settingsSavedDesc') || "Proaktif etkileşim ayarlarınız güncellendi."
+                description: "Proaktif etkileşim ayarlarınız güncellendi."
             })
         } catch (error) {
             console.error("Failed to save engagement settings:", error)
@@ -200,44 +170,6 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         }
     }
 
-    const addMessage = () => {
-        const newMsg: BubbleMessage = {
-            id: Date.now().toString(),
-            text: '',
-            delay: (settings.bubble.messages.length + 1) * 5,
-            isActive: true
-        }
-        setSettings(prev => ({
-            ...prev,
-            bubble: {
-                ...prev.bubble,
-                messages: [...prev.bubble.messages, newMsg]
-            }
-        }))
-    }
-
-    const removeMessage = (id: string) => {
-        setSettings(prev => ({
-            ...prev,
-            bubble: {
-                ...prev.bubble,
-                messages: prev.bubble.messages.filter(m => m.id !== id)
-            }
-        }))
-    }
-
-    const updateMessage = (id: string, field: keyof BubbleMessage, value: any) => {
-        setSettings(prev => ({
-            ...prev,
-            bubble: {
-                ...prev.bubble,
-                messages: prev.bubble.messages.map(m =>
-                    m.id === id ? { ...m, [field]: value } : m
-                )
-            }
-        }))
-    }
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -247,560 +179,81 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
     }
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        {t('modules.proactiveMessaging') || 'Proaktif Etkileşim'}
-                    </h1>
-                    <p className="text-muted-foreground">
-                        {t('modules.proactiveMessagingDesc') || 'Ziyaretçilerinize küçük balon mesajlarıyla ulaşın.'}
-                    </p>
+        <div className="flex flex-col lg:flex-row gap-8 p-6 items-start">
+            {/* Left Panel: Settings Controls */}
+            <div className="flex-1 flex flex-col gap-6">
+                <div className="flex-none flex items-center justify-between py-2 border-b">
+                    <div>
+                        <h1 className="text-xl font-semibold flex items-center gap-2">
+                            {t('modules.proactiveMessaging') || 'Etkileşim Tasarımcısı'}
+                        </h1>
+                        <p className="text-muted-foreground text-xs mt-1">
+                            Ziyaretçi balonlarını özelleştirin.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
+                            <Switch
+                                id="module-enabled"
+                                className="scale-75"
+                                checked={settings.enabled}
+                                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
+                            />
+                            <Label htmlFor="module-enabled" className="text-xs font-medium cursor-pointer">{settings.enabled ? 'Aktif' : 'Pasif'}</Label>
+                        </div>
+                        <Button onClick={saveSettings} disabled={isSaving} size="sm" className="h-8 shadow-sm">
+                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                            {t('save') || 'Kaydet'}
+                        </Button>
+                    </div>
                 </div>
-                <Button onClick={saveSettings} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                    {t('save') || 'Kaydet'}
-                </Button>
+
+                <div className="space-y-6">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                        <div className="sticky top-0 z-20 pb-4 pt-1 bg-[#f4f6f8]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f4f6f8]/60">
+                            <TabsList className="grid grid-cols-4 w-full gap-3 bg-transparent p-0 h-auto">
+                                <TabsTrigger
+                                    value="design"
+                                    className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background"
+                                >
+                                    <span className="font-medium text-sm">Tasarım</span>
+                                </TabsTrigger>
+
+                                <TabsTrigger
+                                    value="triggers"
+                                    disabled={settings.aiSmartBubbles.enabled}
+                                    className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span className="font-medium text-sm">Tetikleyiciler</span>
+                                </TabsTrigger>
+
+                                <TabsTrigger
+                                    value="ai"
+                                    className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background relative overflow-visible"
+                                >
+                                    <span className="font-medium text-sm">AI Asistan</span>
+                                    <Badge className="absolute -top-2 -right-1 px-1.5 py-0 text-[9px] bg-gradient-to-r from-amber-500 to-orange-500 border-0 text-white shadow-sm ring-2 ring-background rounded-full">PRO</Badge>
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+
+                        <TabsContent value="design" className="space-y-6 mt-0">
+                            <EngagementDesignTab settings={settings} setSettings={setSettings} />
+                        </TabsContent>
+
+                        <TabsContent value="triggers" className="space-y-6">
+                            <EngagementTriggersTab settings={settings} setSettings={setSettings} />
+                        </TabsContent>
+
+                        <TabsContent value="ai" className="space-y-6">
+                            <EngagementAITab settings={settings} setSettings={setSettings} />
+                        </TabsContent>
+                    </Tabs>
+                </div>
             </div>
 
-            {/* Enable Toggle */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>Modül Durumu</CardTitle>
-                            <CardDescription>Proaktif balon mesajlarını etkinleştirin veya devre dışı bırakın.</CardDescription>
-                        </div>
-                        <Switch
-                            checked={settings.enabled}
-                            onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
-                        />
-                    </div>
-                </CardHeader>
-            </Card>
-
-            {/* Bubble Messages */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <MessageCircle className="w-5 h-5" />
-                        Balon Mesajları
-                    </CardTitle>
-                    <CardDescription>
-                        Ziyaretçilere gösterilecek mesajları ekleyin. Her mesaj belirlenen gecikme süresinde görünür.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {settings.bubble.messages.map((msg, index) => (
-                        <div key={msg.id} className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30">
-                            <div className="flex-1 space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <Badge variant="outline">#{index + 1}</Badge>
-                                    <Switch
-                                        checked={msg.isActive}
-                                        onCheckedChange={(checked) => updateMessage(msg.id, 'isActive', checked)}
-                                    />
-                                    <span className="text-xs text-muted-foreground">
-                                        {msg.isActive ? 'Aktif' : 'Pasif'}
-                                    </span>
-                                </div>
-                                <Textarea
-                                    value={msg.text}
-                                    onChange={(e) => updateMessage(msg.id, 'text', e.target.value)}
-                                    placeholder="Mesaj metni..."
-                                    className="min-h-[60px]"
-                                />
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        value={msg.delay}
-                                        onChange={(e) => updateMessage(msg.id, 'delay', parseInt(e.target.value) || 0)}
-                                        className="w-20"
-                                        min={0}
-                                    />
-                                    <span className="text-sm text-muted-foreground">saniye sonra göster</span>
-                                </div>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeMessage(msg.id)}
-                                className="text-destructive hover:text-destructive"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ))}
-                    <Button variant="outline" onClick={addMessage} className="w-full">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Yeni Mesaj Ekle
-                    </Button>
-                </CardContent>
-            </Card>
-
-            {/* AI Smart Bubbles - PREMIUM */}
-            {isSuperAdmin ? (
-                // SUPER ADMIN viewing tenant - show admin controls
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5 text-amber-500" />
-                                    AI Akıllı Balonlar
-                                    <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
-                                        Premium
-                                    </Badge>
-                                </CardTitle>
-                                <CardDescription>
-                                    Tenant için AI balon özelliğini yönetin.
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Admin Controls */}
-                        <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border space-y-4">
-                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Admin Kontrolleri</p>
-
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-medium flex items-center gap-2">
-                                        👁️ Tenant&apos;a Görünsün
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">Bu özellik tenant panelinde görünsün mü?</p>
-                                </div>
-                                <Switch
-                                    checked={settings.aiSmartBubbles.visible}
-                                    onCheckedChange={(checked) => setSettings(prev => ({
-                                        ...prev,
-                                        aiSmartBubbles: { ...prev.aiSmartBubbles, visible: checked }
-                                    }))}
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-medium flex items-center gap-2">
-                                        🔓 Kullanım İzni Ver
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">Tenant bu özelliği kullanabilsin mi?</p>
-                                </div>
-                                <Switch
-                                    checked={settings.aiSmartBubbles.granted}
-                                    onCheckedChange={(checked) => setSettings(prev => ({
-                                        ...prev,
-                                        aiSmartBubbles: { ...prev.aiSmartBubbles, granted: checked }
-                                    }))}
-                                    disabled={!settings.aiSmartBubbles.visible}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Current Status & Settings Preview */}
-                        <div className="flex items-center justify-between pt-2 border-t">
-                            <div>
-                                <p className="font-medium">Özellik Durumu</p>
-                                <p className="text-sm text-muted-foreground">Tenant tarafından aktif mi?</p>
-                            </div>
-                            <Switch
-                                checked={settings.aiSmartBubbles.enabled}
-                                onCheckedChange={(checked) => setSettings(prev => ({
-                                    ...prev,
-                                    aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
-                                }))}
-                            />
-                        </div>
-
-                        {settings.aiSmartBubbles.enabled && (
-                            <>
-                                <div className="space-y-2">
-                                    <Label>Mesaj Tonu</Label>
-                                    <Select
-                                        value={settings.aiSmartBubbles.tone}
-                                        onValueChange={(value: 'friendly' | 'professional' | 'playful') =>
-                                            setSettings(prev => ({ ...prev, aiSmartBubbles: { ...prev.aiSmartBubbles, tone: value } }))
-                                        }
-                                    >
-                                        <SelectTrigger className="w-48">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="friendly">😊 Samimi</SelectItem>
-                                            <SelectItem value="professional">💼 Profesyonel</SelectItem>
-                                            <SelectItem value="playful">🎉 Eğlenceli</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Gecikme</Label>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="number"
-                                                value={settings.aiSmartBubbles.delay}
-                                                onChange={(e) => setSettings(prev => ({
-                                                    ...prev,
-                                                    aiSmartBubbles: { ...prev.aiSmartBubbles, delay: parseInt(e.target.value) || 5 }
-                                                }))}
-                                                min={3}
-                                                max={30}
-                                                className="w-20"
-                                            />
-                                            <span className="text-sm text-muted-foreground">saniye</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Oturum Limiti</Label>
-                                        <Input
-                                            type="number"
-                                            value={settings.aiSmartBubbles.maxPerSession}
-                                            onChange={(e) => setSettings(prev => ({
-                                                ...prev,
-                                                aiSmartBubbles: { ...prev.aiSmartBubbles, maxPerSession: parseInt(e.target.value) || 1 }
-                                            }))}
-                                            min={1}
-                                            max={5}
-                                            className="w-20"
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-            ) : (
-                // TENANT viewing own panel - show based on visible/granted status
-                settings.aiSmartBubbles.visible && (
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-amber-500" />
-                                        AI Akıllı Balonlar
-                                        <Badge variant="secondary" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
-                                            Premium
-                                        </Badge>
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Ziyaretçinin bulunduğu sayfaya özel AI mesajları otomatik üretilsin.
-                                    </CardDescription>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    {settings.aiSmartBubbles.granted ? (
-                                        <Switch
-                                            checked={settings.aiSmartBubbles.enabled}
-                                            onCheckedChange={(checked) => setSettings(prev => ({
-                                                ...prev,
-                                                aiSmartBubbles: { ...prev.aiSmartBubbles, enabled: checked }
-                                            }))}
-                                        />
-                                    ) : (
-                                        <Badge variant="outline" className="text-muted-foreground gap-1.5 py-1.5 px-3">
-                                            <Lock className="w-3.5 h-3.5" />
-                                            Kilitli
-                                        </Badge>
-                                    )}
-                                </div>
-                            </div>
-                        </CardHeader>
-
-                        {settings.aiSmartBubbles.granted ? (
-                            // Granted - show settings if enabled
-                            settings.aiSmartBubbles.enabled && (
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label>Mesaj Tonu</Label>
-                                        <Select
-                                            value={settings.aiSmartBubbles.tone}
-                                            onValueChange={(value: 'friendly' | 'professional' | 'playful') =>
-                                                setSettings(prev => ({ ...prev, aiSmartBubbles: { ...prev.aiSmartBubbles, tone: value } }))
-                                            }
-                                        >
-                                            <SelectTrigger className="w-48">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="friendly">😊 Samimi</SelectItem>
-                                                <SelectItem value="professional">💼 Profesyonel</SelectItem>
-                                                <SelectItem value="playful">🎉 Eğlenceli</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Gecikme</Label>
-                                        <p className="text-sm text-muted-foreground">AI balonu kaç saniye sonra gösterilsin?</p>
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                type="number"
-                                                value={settings.aiSmartBubbles.delay}
-                                                onChange={(e) => setSettings(prev => ({
-                                                    ...prev,
-                                                    aiSmartBubbles: { ...prev.aiSmartBubbles, delay: parseInt(e.target.value) || 5 }
-                                                }))}
-                                                min={3}
-                                                max={30}
-                                                className="w-20"
-                                            />
-                                            <span className="text-sm text-muted-foreground">saniye</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Oturum Limiti</Label>
-                                        <p className="text-sm text-muted-foreground">Bir ziyarete maksimum kaç AI balonu gösterilsin?</p>
-                                        <Input
-                                            type="number"
-                                            value={settings.aiSmartBubbles.maxPerSession}
-                                            onChange={(e) => setSettings(prev => ({
-                                                ...prev,
-                                                aiSmartBubbles: { ...prev.aiSmartBubbles, maxPerSession: parseInt(e.target.value) || 1 }
-                                            }))}
-                                            min={1}
-                                            max={5}
-                                            className="w-20"
-                                        />
-                                    </div>
-                                    <div className="pt-4 border-t">
-                                        <p className="font-medium mb-3">Nasıl Çalışır?</p>
-                                        <div className="space-y-2 text-sm text-muted-foreground">
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>Ziyaretçi bir sayfaya gelir → AI sayfa içeriğini analiz eder</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>O sayfaya özel bir balon mesajı üretir</span>
-                                            </div>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-green-500">✓</span>
-                                                <span>Ziyaretçi chatbot ile etkileşime geçer</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            )
-                        ) : (
-                            // NOT Granted - show upgrade prompt with request button
-                            <CardContent className="p-0">
-                                <div className="relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-5 via-white to-orange-50 dark:from-amber-950/20 dark:via-background dark:to-orange-950/10 z-0" />
-                                    <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl" />
-                                    <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl" />
-
-                                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 p-8 md:p-10">
-                                        <div className="flex-1 space-y-6 text-center md:text-left">
-                                            <div className="space-y-4">
-                                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-semibold uppercase tracking-wider">
-                                                    <Sparkles className="w-3.5 h-3.5" />
-                                                    Premium Özellik
-                                                </div>
-                                                <h3 className="text-2xl font-bold tracking-tight text-foreground">
-                                                    Ziyaretçilerinizi <span className="text-amber-600 dark:text-amber-500">AI Gücüyle</span> Karşılayın
-                                                </h3>
-                                                <p className="text-muted-foreground leading-relaxed max-w-lg">
-                                                    Ziyaretçinin gezdiği sayfayı anlık analiz eden yapay zeka, o sayfaya özel en doğru karşılama mesajını otomatik yazar.
-                                                </p>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                {[
-                                                    { icon: Zap, text: "Anlık Sayfa Analizi" },
-                                                    { icon: MessageCircle, text: "Bağlam Odaklı Mesaj" },
-                                                    { icon: TrendingUp, text: "%40+ Daha Fazla Etkileşim" }
-                                                ].map((feature, idx) => (
-                                                    <div key={idx} className="flex flex-col items-center md:items-start gap-2 p-3 rounded-lg bg-white/50 dark:bg-black/20 border border-amber-100 dark:border-amber-900/50 backdrop-blur-sm">
-                                                        <feature.icon className="w-5 h-5 text-amber-600 dark:text-amber-500" />
-                                                        <span className="text-xs font-medium text-foreground/80">{feature.text}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <div className="pt-2">
-                                                <Button
-                                                    size="lg"
-                                                    className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-xl shadow-amber-500/20 border-0 transition-all hover:scale-105"
-                                                    onClick={() => {
-                                                        toast({
-                                                            title: "Talep Gönderildi",
-                                                            description: "Premium özellik talebiniz yöneticinize iletilecektir."
-                                                        })
-                                                    }}
-                                                >
-                                                    <Rocket className="w-5 h-5 mr-2" />
-                                                    Kullanım Talep Et
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="hidden md:flex flex-col items-center justify-center relative w-1/3">
-                                            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent z-10" />
-                                            <div className="relative z-0 w-full max-w-[240px] space-y-3 opacity-90">
-                                                <div className="flex justify-end">
-                                                    <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 p-3 rounded-2xl rounded-tr-none text-sm shadow-sm border border-amber-200 dark:border-amber-800">
-                                                        Fiyatlar sayfasındasınız 👀 <br /> Size özel indirim tanımlamamı ister misiniz?
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-start">
-                                                    <div className="bg-white dark:bg-muted p-3 rounded-2xl rounded-tl-none text-sm shadow-sm border">
-                                                        Evet, lütfen!
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        )}
-                    </Card>
-                )
-            )}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Balon Stili</CardTitle>
-                    <CardDescription>Balon mesajlarının görünümünü özelleştirin.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
-                        <Label>Konum</Label>
-                        <Select
-                            value={settings.bubble.position}
-                            onValueChange={(value: 'top' | 'left' | 'right') =>
-                                setSettings(prev => ({ ...prev, bubble: { ...prev.bubble, position: value } }))
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="top">Üstte</SelectItem>
-                                <SelectItem value="left">Solda</SelectItem>
-                                <SelectItem value="right">Sağda</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Animasyon</Label>
-                        <Select
-                            value={settings.bubble.animation}
-                            onValueChange={(value: 'none' | 'bounce' | 'pulse' | 'shake') =>
-                                setSettings(prev => ({ ...prev, bubble: { ...prev.bubble, animation: value } }))
-                            }
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">Yok</SelectItem>
-                                <SelectItem value="bounce">Zıplama</SelectItem>
-                                <SelectItem value="pulse">Nabız</SelectItem>
-                                <SelectItem value="shake">Titreme</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Arka Plan Rengi</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                type="color"
-                                value={settings.bubble.style.backgroundColor}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    bubble: { ...prev.bubble, style: { ...prev.bubble.style, backgroundColor: e.target.value } }
-                                }))}
-                                className="w-12 h-10 p-1"
-                            />
-                            <Input
-                                value={settings.bubble.style.backgroundColor}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    bubble: { ...prev.bubble, style: { ...prev.bubble.style, backgroundColor: e.target.value } }
-                                }))}
-                                className="flex-1"
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Metin Rengi</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                type="color"
-                                value={settings.bubble.style.textColor}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    bubble: { ...prev.bubble, style: { ...prev.bubble.style, textColor: e.target.value } }
-                                }))}
-                                className="w-12 h-10 p-1"
-                            />
-                            <Input
-                                value={settings.bubble.style.textColor}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    bubble: { ...prev.bubble, style: { ...prev.bubble.style, textColor: e.target.value } }
-                                }))}
-                                className="flex-1"
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Triggers */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <MousePointerClick className="w-5 h-5" />
-                        Tetikleyiciler
-                    </CardTitle>
-                    <CardDescription>
-                        Balon mesajlarının görünmesi için ek koşullar belirleyin.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="font-medium">Çıkış Niyeti</p>
-                            <p className="text-sm text-muted-foreground">Kullanıcı sayfadan çıkmak üzereyken göster (Masaüstü)</p>
-                        </div>
-                        <Switch
-                            checked={settings.triggers.exitIntent}
-                            onCheckedChange={(checked) => setSettings(prev => ({
-                                ...prev,
-                                triggers: { ...prev.triggers, exitIntent: checked }
-                            }))}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Kaydırma Derinliği (%)</Label>
-                        <p className="text-sm text-muted-foreground">Sayfa belirli oranda kaydırıldığında göster. 0 = devre dışı.</p>
-                        <Input
-                            type="number"
-                            value={settings.triggers.scrollDepth}
-                            onChange={(e) => setSettings(prev => ({
-                                ...prev,
-                                triggers: { ...prev.triggers, scrollDepth: parseInt(e.target.value) || 0 }
-                            }))}
-                            min={0}
-                            max={100}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Hareketsizlik Süresi (saniye)</Label>
-                        <p className="text-sm text-muted-foreground">Kullanıcı belirli süre hareketsiz kaldığında göster. 0 = devre dışı.</p>
-                        <Input
-                            type="number"
-                            value={settings.triggers.inactivity}
-                            onChange={(e) => setSettings(prev => ({
-                                ...prev,
-                                triggers: { ...prev.triggers, inactivity: parseInt(e.target.value) || 0 }
-                            }))}
-                            min={0}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+            {/* Right Panel: Live Preview */}
+            <EngagementPreview settings={settings} />
+        </div >
     )
 }

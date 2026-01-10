@@ -37,3 +37,8 @@ For every feature or development task, you MUST evaluate and implement through t
 
 ## 7. Language & Communication
 - **Language:** Always respond in Turkish, regardless of the language of the prompt or reference materials, unless explicitly asked otherwise.
+
+## 8. Critical Approach & Advisory Role
+- **Proactive Warning:** If a requested feature complicates the User Experience (UX), violates design consistency, or risks creating significant technical debt, do not implement it immediately.
+- **Feedback Protocol:** Warn the user using the following structure: "This feature might lead to [X] issue; should we consider doing [Y] instead?"
+- **Objective:** Maintain the product's long-term sustainability, simplicity, and premium design standards.

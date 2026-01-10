@@ -57,6 +57,8 @@
     };
   }
 
+
+
   // Helper: Check if mobile device
   function isMobileDevice() {
     return window.innerWidth < 768;
@@ -80,34 +82,354 @@
 
       // Session storage keys
       this.shownCountKey = `userex_eng_shown_${chatbotId}`;
+      this.conversationStartedKey = `userex_eng_conversation_${chatbotId}`;
       this.visitCountKey = `userex_eng_visits_${chatbotId}`;
+      this.lastBubbleTimeKey = `userex_eng_last_time_${chatbotId}`;
 
-      // Check if we've exceeded max shows
-      const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
-      if (shownCount >= (settings.bubble.maxShowCount || 50)) {
-        console.log('Engagement: Max shows reached for this session');
+      // Check if user has already started a conversation - no more bubbles needed
+      if (sessionStorage.getItem(this.conversationStartedKey)) {
+        console.log('Engagement: User already started conversation, stopping bubbles');
         return;
       }
+
+      // Check if we've exceeded max shows for this session (overall limit)
+      const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
+
+      let maxPerSession = 10;
+      if (settings.aiSmartBubbles && settings.aiSmartBubbles.enabled) {
+        // 0 means unlimited
+        const limit = settings.aiSmartBubbles.maxPerSession;
+        maxPerSession = (limit === 0) ? 9999 : (limit || 5);
+      } else {
+        maxPerSession = settings.bubble.maxShowCount || 10;
+      }
+
+      if (shownCount >= maxPerSession) {
+        console.log('Engagement: Max shows reached for this session', shownCount, '/', maxPerSession);
+        return;
+      }
+
+      if (window.userexEngagement) {
+        // Cleanup previous instance
+        try {
+          window.userexEngagement.destroy();
+        } catch (e) {
+          console.error('Userex: Failed to destroy previous engagement controller', e);
+        }
+      }
+      window.userexEngagement = this;
 
       this.init();
     }
 
+    destroy() {
+      // Remove all event listeners
+      this.listeners.forEach(({ event, handler, target }) => {
+        (target || window).removeEventListener(event, handler);
+      });
+      this.listeners = [];
+
+      // Clear all timers
+      this.timers.forEach(timer => clearTimeout(timer));
+      this.timers = [];
+
+      // Remove bubble if exists
+      if (this.bubble && this.bubble.parentNode) {
+        this.bubble.parentNode.removeChild(this.bubble);
+      }
+
+      console.log('Engagement: Controller destroyed');
+    }
+
     init() {
       if (!this.settings) return;
+      // console.log('Engagement Controller initialized', this.settings);
 
-      console.log('Engagement Controller initialized', this.settings);
+      // Initialize behavior tracking for AI
+      this.initBehaviorTracking();
 
       // Pre-select message to determine delay if needed
       this.selectMessage();
 
       this.setupTriggers();
 
-      // Fetch context-aware bubble if proactive messaging is enabled
-      // We do this after triggers setup so it can run in parallel
-      this.fetchContextBubble();
+      // AI Mode: Fetch AI-powered bubble instead of context bubble
+      if (this.settings.enabled) {
+        // Check targeting - should we show on this page?
+        if (!this.shouldShowOnThisPage()) {
+          console.log('Engagement: Page not in targeting list, skipping');
+          return;
+        }
+
+        // Check quiet hours
+        if (this.isInQuietHours()) {
+          console.log('Engagement: Quiet hours active, skipping');
+          return;
+        }
+
+        // Use initialDelay setting (default 5 seconds)
+        const delay = (this.settings.initialDelay || 5) * 1000;
+        setTimeout(() => {
+          this.fetchAIBubble();
+        }, delay);
+      }
+
+      // SPA Route Change Detection - trigger AI bubble on client-side navigation
+      this.setupRouteChangeDetection();
+    }
+
+    // Check if current page matches targeting settings
+    shouldShowOnThisPage() {
+      const targeting = this.settings.targeting || 'all';
+      const pathname = window.location.pathname;
+
+      if (targeting === 'all') return true;
+      if (targeting === 'homepage') return pathname === '/' || pathname === '';
+      if (targeting === 'custom') {
+        const targetUrls = this.settings.targetUrls || [];
+        return targetUrls.some(url => pathname.startsWith(url.trim()));
+      }
+      return true;
+    }
+
+    // Check if current time is in quiet hours
+    isInQuietHours() {
+      const quietHours = this.settings.quietHours;
+      if (!quietHours || !quietHours.enabled) return false;
+
+      const now = new Date();
+      const currentHour = now.getHours();
+      const start = quietHours.startHour ?? 22;
+      const end = quietHours.endHour ?? 8;
+
+      // Handle overnight quiet hours (e.g., 22:00 - 08:00)
+      if (start > end) {
+        return currentHour >= start || currentHour < end;
+      }
+      // Normal range (e.g., 13:00 - 14:00)
+      return currentHour >= start && currentHour < end;
+    }
+
+    // NEW: Detect SPA route changes and trigger AI bubble for new pages
+    setupRouteChangeDetection() {
+      let currentPath = window.location.pathname;
+
+      const handleRouteChange = () => {
+        const newPath = window.location.pathname;
+        if (newPath !== currentPath) {
+          currentPath = newPath;
+          console.log('Engagement: Route changed to', newPath);
+
+          // Check if user already started conversation - no more bubbles
+          if (sessionStorage.getItem(this.conversationStartedKey)) {
+            console.log('Engagement: User already started conversation, skipping');
+            return;
+          }
+
+          // Check max shows
+          const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
+          const maxPerSession = this.settings.bubble?.maxShowCount || 10;
+          if (shownCount >= maxPerSession) {
+            console.log('Engagement: Max shows reached');
+            return;
+          }
+
+          // Reset behavior for new page
+          this.behavior.startTime = Date.now();
+          this.behavior.scrollDepth = 0;
+          this.behavior.clickCount = 0;
+          this.hasShown = false;
+
+          // Close existing bubble
+          this.closeBubble();
+
+          // Trigger AI bubble for new page after delay
+          const delay = (this.settings.delay || 5) * 1000;
+          setTimeout(() => {
+            this.fetchAIBubble();
+          }, delay);
+        }
+      };
+
+      // Listen for popstate (browser back/forward)
+      window.addEventListener('popstate', handleRouteChange);
+
+      // Polling approach - safer for Next.js/React
+      // Check for URL changes every 500ms
+      setInterval(() => {
+        handleRouteChange();
+      }, 500);
+    }
+
+    // NEW: Initialize behavior tracking for AI intent detection
+    initBehaviorTracking() {
+      this.behavior = {
+        startTime: Date.now(),
+        scrollDepth: 0,
+        clickCount: 0,
+        isExitIntent: false
+      };
+
+      // Track scroll depth with throttle to prevent jitter
+      let scrollThrottleTimer = null;
+      const trackScroll = () => {
+        if (scrollThrottleTimer) return;
+        scrollThrottleTimer = setTimeout(() => {
+          scrollThrottleTimer = null;
+          const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+          if (scrollHeight > 0) {
+            const depth = Math.round((window.scrollY / scrollHeight) * 100);
+            this.behavior.scrollDepth = Math.max(this.behavior.scrollDepth, depth);
+          }
+        }, 200); // 200ms throttle
+      };
+      window.addEventListener('scroll', trackScroll, { passive: true });
+      this.listeners.push({ event: 'scroll', handler: trackScroll, target: window });
+
+      // Track clicks
+      const trackClick = () => { this.behavior.clickCount++; };
+      document.addEventListener('click', trackClick);
+      this.listeners.push({ event: 'click', handler: trackClick, target: document });
+    }
+
+    // NEW: Collect rich page context for AI
+    collectPageContext() {
+      const timeOnPage = Math.round((Date.now() - this.behavior.startTime) / 1000);
+
+      // Get headings
+      const headings = [];
+      document.querySelectorAll('h1, h2, h3').forEach((el, i) => {
+        if (i < 5 && el.innerText) headings.push(el.innerText.trim().substring(0, 100));
+      });
+
+      // Get meta description
+      const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
+
+      // Get visible text (first 500 chars of body text)
+      const bodyText = document.body?.innerText?.substring(0, 500) || '';
+
+      return {
+        url: window.location.href,
+        title: document.title,
+        headings,
+        metaDescription: metaDesc.substring(0, 200),
+        visibleText: bodyText.substring(0, 300),
+        behavior: {
+          timeOnPage,
+          scrollDepth: this.behavior.scrollDepth,
+          clickCount: this.behavior.clickCount,
+          isExitIntent: this.behavior.isExitIntent
+        }
+      };
+    }
+
+    // NEW: Fetch AI-powered smart bubble
+    async fetchAIBubble() {
+      // Only if AI mode is enabled
+      if (!this.settings.enabled) return;
+
+      // CHECK 1: Conversation already started?
+      if (sessionStorage.getItem(this.conversationStartedKey)) {
+        console.log('Engagement: User conversation active, skipping AI bubble');
+        return;
+      }
+
+      // CHECK 2: Session Limit
+      const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
+      let maxPerSession = 5; // Default for AI mode
+      if (this.settings.maxPerSession !== undefined) {
+        maxPerSession = this.settings.maxPerSession === 0 ? 9999 : this.settings.maxPerSession;
+      }
+
+      if (shownCount >= maxPerSession) {
+        console.log('Engagement: Max AI bubbles reached for session', shownCount);
+        return;
+      }
+
+      // CHECK 3: Frequency (Time since last bubble)
+      const lastTimeStr = sessionStorage.getItem(this.lastBubbleTimeKey);
+      if (lastTimeStr) {
+        const lastTime = parseInt(lastTimeStr);
+        const now = Date.now();
+        const frequency = (this.settings.frequency || 15) * 1000; // Default 15s
+
+        if (now - lastTime < frequency) {
+          console.log('Engagement: Too soon for next bubble (Frequency limit)', (frequency - (now - lastTime)) / 1000, 's remaining');
+          return;
+        }
+      }
+
+      console.log('Engagement: Fetching AI smart bubble...');
+
+      try {
+        const pageContext = this.collectPageContext();
+        const apiUrl = `${this.baseUrl}/api/ai-engagement/generate`;
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chatbotId: this.chatbotId,
+            pageContext,
+            tone: this.settings.tone || 'friendly',
+            messageLength: this.settings.messageLength || 'medium',
+            language: 'tr',
+            sectorHint: this.settings.sectorHint || '',
+            actionMode: this.settings.actionMode || 'aiDecides'
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Engagement: AI response received', data);
+
+          if (data.action === 'openWidget') {
+            // Open widget with AI message
+            console.log('Engagement: AI decided to open widget');
+            this.openWidget();
+            // Optionally send the AI message as first message
+            if (data.openWidgetMessage) {
+              const iframe = document.querySelector('#userex-chatbot-container iframe');
+              if (iframe && iframe.contentWindow) {
+                setTimeout(() => {
+                  iframe.contentWindow.postMessage({
+                    type: 'USEREX_AI_GREETING',
+                    message: data.openWidgetMessage
+                  }, '*');
+                }, 500);
+              }
+            }
+          } else if (data.action === 'showBubble' && data.message) {
+            console.log('Engagement: AI bubble:', data.message);
+            this.showBubble({ text: data.message }, 'aiBubble');
+          }
+        }
+      } catch (e) {
+        console.error('Engagement: Failed to fetch AI bubble', e);
+      }
+    }
+
+    // Helper: Hex to RGBA
+    hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    adjustColorBrightness(hex, percent) {
+      let num = parseInt(hex.replace("#", ""), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        B = (num >> 8 & 0x00FF) + amt,
+        G = (num & 0x0000FF) + amt;
+      return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
     }
 
     selectMessage() {
+      // Exclusivity Check
+      if (this.settings.aiSmartBubbles && this.settings.aiSmartBubbles.enabled) return;
+
       const rawMessages = this.settings.bubble?.messages;
 
       if (!rawMessages || !Array.isArray(rawMessages) || rawMessages.length === 0) {
@@ -139,15 +461,89 @@
       console.log('Engagement: Message queue prepared', this.messageQueue);
     }
 
-    setupTriggers() {
+    // NEW: Helper to find bound message (Sequential Logic)
+    getNextMessage(triggerIdSuffix) {
+      if (!this.settings || !this.settings.triggers) return null;
+
       const triggers = this.settings.triggers;
+
+      // 1. Try to get specific message list for this trigger
+      const messages = triggers[`${triggerIdSuffix}Messages`];
+
+      // 2. Fallback to legacy binding if exists
+      if (!messages || messages.length === 0) {
+        const legacyId = triggers[`${triggerIdSuffix}MessageId`];
+        if (legacyId) return this.settings.bubble?.messages?.find(m => m.id === legacyId) || null;
+        return null;
+      }
+
+      // 3. Sequential Selection
+      const activeMsgs = messages.filter(m => m.isActive !== false);
+      if (activeMsgs.length === 0) return null;
+
+      // Initialize index map if needed
+      if (!this.triggerIndices) this.triggerIndices = {};
+      if (this.triggerIndices[triggerIdSuffix] === undefined) {
+        this.triggerIndices[triggerIdSuffix] = 0;
+      }
+
+      let currentIndex = this.triggerIndices[triggerIdSuffix];
+
+      // Safety check
+      if (currentIndex >= activeMsgs.length) {
+        currentIndex = 0;
+        this.triggerIndices[triggerIdSuffix] = 0;
+      }
+
+      const selectedMsg = activeMsgs[currentIndex];
+
+      // Advance index for next time (Circular)
+      this.triggerIndices[triggerIdSuffix] = (currentIndex + 1) % activeMsgs.length;
+
+      return selectedMsg;
+    }
+
+    // NEW: Open widget directly (Phase 1)
+    openWidget() {
+      const launcher = document.getElementById('userex-chatbot-launcher');
+      if (launcher) {
+        console.log('Engagement: Opening widget via trigger action');
+        // Mark conversation as started - no more bubbles after this
+        sessionStorage.setItem(this.conversationStartedKey, 'true');
+        this.closeBubble();
+        launcher.click();
+      }
+    }
+
+    // NEW: Execute trigger action based on actionType
+    executeTriggerAction(triggerId, triggerSource) {
+      const actionType = this.settings.triggers[`${triggerId}ActionType`] || 'bubble';
+
+      if (actionType === 'openWidget') {
+        this.openWidget();
+      } else {
+        // Default: Show bubble
+        const msg = this.getNextMessage(triggerSource);
+        if (msg) this.showBubble(msg, triggerSource);
+      }
+    }
+
+    setupTriggers() {
+      // Exclusivity Check: If AI Smart Bubbles are enabled, ignore manual triggers
+      if (this.settings.aiSmartBubbles && this.settings.aiSmartBubbles.enabled) {
+        console.log('Engagement: AI Auto-Pilot active. Skipping manual triggers.');
+        return;
+      }
+
+      const triggers = this.settings.triggers;
+      console.log('Engagement: Setting up triggers', triggers);
 
       // 1. Schedule Time-based Messages (Sequential)
       if (this.messageQueue && this.messageQueue.length > 0) {
         this.messageQueue.forEach(msg => {
-          // Schedule purely based on message delay
           if (msg.delay !== undefined) {
             const timer = setTimeout(() => {
+              if (this.hasShown && !this.settings.bubble.autoDismiss) return; // Don't interrupt if already shown and persistent
               console.log(`Engagement: Delay trigger fired for message: "${msg.text}"`);
               this.showBubble(msg);
             }, (msg.delay || 0) * 1000);
@@ -155,6 +551,11 @@
           }
         });
       }
+
+      // 1. Initialize indices
+      this.triggerIndices = {};
+
+      // (Done in getNextMessage or init)
 
       // 2. Scroll Depth Trigger
       if (triggers.scrollDepth && triggers.scrollDepth > 0) {
@@ -165,7 +566,7 @@
           const scrolled = (window.scrollY / scrollHeight) * 100;
           if (scrolled >= triggers.scrollDepth) {
             console.log('Engagement: Scroll depth trigger fired');
-            this.showBubble(); // Shows next generic
+            this.executeTriggerAction('scrollDepth', 'scrollDepth');
             window.removeEventListener('scroll', debouncedCheck);
           }
         };
@@ -177,46 +578,82 @@
       // 3. Exit Intent Trigger (Desktop only)
       if (triggers.exitIntent && !isMobileDevice()) {
         const handleMouseLeave = (e) => {
-          if (e.clientY <= 5) {
+          if (e.clientY <= 10) {
             console.log('Engagement: Exit intent trigger fired');
-            this.showBubble();
+            this.executeTriggerAction('exitIntent', 'exitIntent');
+            document.removeEventListener('mouseleave', handleMouseLeave);
           }
         };
         document.addEventListener('mouseleave', handleMouseLeave);
         this.listeners.push({ event: 'mouseleave', handler: handleMouseLeave, target: document });
       }
 
+
+
+
+
       // 4. Page Revisit Trigger
       if (triggers.pageRevisit && triggers.pageRevisit > 0) {
         let visits = parseInt(localStorage.getItem(this.visitCountKey) || '0');
-        visits++;
-        localStorage.setItem(this.visitCountKey, visits.toString());
-
         if (visits >= triggers.pageRevisit) {
           console.log('Engagement: Page revisit trigger fired', visits);
-          this.showBubble();
+          setTimeout(() => this.executeTriggerAction('pageRevisit', 'pageRevisit'), 1000);
         }
       }
 
-      // 5. Inactivity Trigger
+      // 5. Inactivity Trigger (Idle)
       if (triggers.inactivity && triggers.inactivity > 0) {
         let inactivityTimer;
         const resetTimer = () => {
           clearTimeout(inactivityTimer);
           inactivityTimer = setTimeout(() => {
             console.log('Engagement: Inactivity trigger fired');
-            this.showBubble();
+            this.executeTriggerAction('inactivity', 'inactivity');
           }, triggers.inactivity * 1000);
         };
 
+        // Reset on any activity
         ['mousemove', 'keypress', 'scroll', 'click', 'touchstart'].forEach(event => {
-          const handler = debounce(resetTimer, 500);
-          document.addEventListener(event, handler);
-          this.listeners.push({ event, handler, target: document });
+          document.addEventListener(event, resetTimer, { passive: true });
+          this.listeners.push({ event, handler: resetTimer, target: document });
         });
-
         resetTimer();
       }
+
+      // 6. Time on Page (New)
+      if (triggers.timeOnPage && triggers.timeOnPage > 0) {
+        const timer = setTimeout(() => {
+          console.log('Engagement: Time on Page trigger fired');
+          this.executeTriggerAction('timeOnPage', 'timeOnPage');
+        }, triggers.timeOnPage * 1000);
+        this.timers.push(timer);
+      }
+
+      // 7. Click Count (New)
+      if (triggers.clickCount && triggers.clickCount > 0) {
+        let clicks = 0;
+        const clickHandler = () => {
+          clicks++;
+          if (clicks >= triggers.clickCount) {
+            console.log('Engagement: Click count trigger fired', clicks);
+            this.executeTriggerAction('clickCount', 'clickCount');
+            document.removeEventListener('click', clickHandler);
+          }
+        };
+        document.addEventListener('click', clickHandler);
+        this.listeners.push({ event: 'click', handler: clickHandler, target: document });
+      }
+
+      // 8. Copy Trigger (New)
+      if (triggers.copyTrigger) {
+        const copyHandler = () => {
+          console.log('Engagement: Copy trigger fired');
+          this.executeTriggerAction('copyTrigger', 'copyTrigger');
+        };
+        document.addEventListener('copy', copyHandler);
+        this.listeners.push({ event: 'copy', handler: copyHandler, target: document });
+      }
+
     }
 
     async fetchContextBubble() {
@@ -255,7 +692,7 @@
             console.log('Engagement: Context bubble received:', data.bubble);
             // Show it after a short delay (e.g. 2 seconds) to grab attention
             setTimeout(() => {
-              this.showBubble({ text: data.bubble });
+              this.showBubble({ text: data.bubble }, 'contextBubble'); // Pass source
             }, 2000);
           }
         }
@@ -264,12 +701,25 @@
       }
     }
 
-    showBubble(specificMsg = null) {
+    showBubble(specificMsg = null, triggerSource = null) {
       // Check if widget is already open
       const container = document.getElementById('userex-chatbot-container');
       const isWidgetOpen = container && container.style.display && container.style.display !== 'none';
 
       if (isWidgetOpen) return;
+
+      // Check if bubble already exists and is visible in DOM
+      const existingBubble = document.getElementById('userex-engagement-bubble');
+      if (existingBubble) {
+        console.log('Engagement: Bubble already visible, skipping');
+        return;
+      }
+
+      // Clean up stale reference if it exists but not in DOM
+      if (this.bubble && !document.body.contains(this.bubble)) {
+        this.bubble = null;
+        this.currentMessageText = null;
+      }
 
       // Determine message
       let message = specificMsg;
@@ -289,7 +739,7 @@
       this.currentMessageText = message.text;
       this.hasShown = true;
 
-      // Increment session counter
+      // Increment session counter (no per-page restriction anymore)
       const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
       sessionStorage.setItem(this.shownCountKey, (shownCount + 1).toString());
 
@@ -299,7 +749,7 @@
         iframe.contentWindow.postMessage({
           type: 'USEREX_ENGAGEMENT_SHOWN',
           message: message.text,
-          trigger: 'auto'
+          trigger: triggerSource || 'auto'
         }, '*');
       }
 
@@ -324,9 +774,34 @@
             const animationClass = this.isBubbleCentered ? `userex-eng-${animation}-center` : `userex-eng-${animation}`;
             this.bubble.classList.add(animationClass);
           }
-          return;
+          // Reset auto-dismiss timer if updated
+          // (This logic below handles the timer, but we should clear PREVIOUS timer if updating bubble? 
+          //  Usually showBubble creates new timer. Yes.)
         }
+      } else {
+        // Create bubble element (Logic mostly same, just ensuring else block covers creation)
+        // Actually, lines 477-549 in original handle creation. I am replacing the WHOLE showBubble function start to end?
+        // No, I am replacing lines 413-570.
+        // Wait, 'else' block logic is needed?
+        // Line 461 checks `if (this.bubble)`. If true, it updates and returns. 
+        // Wait, line 473 is `return;`.
+        // So if bubble exists, it updates and returns.
+        // The auto-dismiss logic is at the END of function (lines 564+).
+        // If we return early at 473, auto-dismiss logic IS NOT REACHED?
+        // This is a bug in original code if updating bubble doesn't reset timer.
+        // I should fix that.
       }
+
+      // ... I need to be careful. The replacement chunks should be precise.
+      // I will replace the start of function signature.
+      // And then replace the end of function (auto-dismiss).
+      // Splitting this into smaller chunks is safer.
+
+      // Chunk 3a: Signature
+      // Chunk 3b: Event dispatch (triggerSource)
+      // Chunk 3c: Auto-dismiss logic
+
+      // Let's restart the arguments for this tool call to be safer.
 
       const messageText = message.text;
 
@@ -335,7 +810,7 @@
       this.bubble.id = 'userex-engagement-bubble';
       this.bubble.innerHTML = `
         <div class="bubble-content">${messageText}</div>
-        ${bubble.showCloseButton ? '<button class="bubble-close" aria-label="Close">×</button>' : ''}
+        <button class="bubble-close" aria-label="Close">×</button>
       `;
 
       // Apply styles
@@ -344,36 +819,71 @@
         'none': 'none',
         'small': '0 2px 8px rgba(0,0,0,0.1)',
         'medium': '0 4px 12px rgba(0,0,0,0.15)',
-        'large': '0 8px 24px rgba(0,0,0,0.2)'
+        'large': '0 8px 24px rgba(0,0,0,0.2)',
+        'glow': `0 0 15px ${style.backgroundColor || '#000000'}60`
       };
+
+      // Effect Logic
+      let backgroundStyle = `background-color: ${style.backgroundColor || '#000000'};`;
+      let backdropFilter = '';
+      let borderStyle = 'border: 1px solid rgba(0,0,0,0.05);'; /* Subtle default border */
+      let boxShadow = shadows[style.shadow] || shadows.medium;
+      let textColor = style.textColor || '#FFFFFF';
+
+      if (style.effect === 'glass') {
+        // Glassmorphism
+        backgroundStyle = `background: ${this.hexToRgba(style.backgroundColor || '#000000', 0.65)};`;
+        backdropFilter = `backdrop-filter: blur(${style.backdropBlur || 12}px); -webkit-backdrop-filter: blur(${style.backdropBlur || 12}px);`;
+        borderStyle = `border: 1px solid ${this.hexToRgba(style.textColor || '#FFFFFF', 0.15)};`;
+      } else if (style.effect === 'gradient') {
+        // Advanced Gradient Generation
+        const baseColor = style.backgroundColor || '#000000';
+        const color2 = this.adjustColorBrightness(baseColor, -40); // Darker variant
+        backgroundStyle = `background: linear-gradient(135deg, ${baseColor} 0%, ${color2} 100%);`;
+        borderStyle = 'border: none;';
+      } else if (style.effect === 'outline') {
+        // Outline Style
+        backgroundStyle = `background-color: ${style.backgroundColor || '#FFFFFF'};`; // Should usually be white or transparent
+        borderStyle = `border: 2px solid ${textColor};`;
+        // Ensure text color is used for border if no specific border color is set (usually same)
+      }
+
+      // Shape Logic
+      let borderRad = `${borderRadius}px`;
+      if (style.shape === 'pill') borderRad = '9999px';
+      if (style.shape === 'square') borderRad = '0px'; // Strictly square
+      if (style.shape === 'speech') borderRad = `${borderRadius}px ${borderRadius}px ${borderRadius}px 4px`;
 
       this.bubble.style.cssText = `
         position: fixed;
         z-index: 9998;
-        background-color: ${style.backgroundColor || '#000000'};
-        color: ${style.textColor || '#FFFFFF'};
-        padding: 12px 16px;
-        border-radius: ${borderRadius}px;
-        box-shadow: ${shadows[style.shadow] || shadows.medium};
+        ${backgroundStyle}
+        ${backdropFilter}
+        color: ${textColor};
+        padding: 14px 18px;
+        border-radius: ${borderRad};
+        box-shadow: ${boxShadow};
         cursor: pointer;
-        max-width: 280px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        font-size: 14px;
-        line-height: 1.4;
+        max-width: 300px;
+        font-family: ${style.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'};
+        font-size: ${style.fontSize || 14}px;
+        line-height: 1.5;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         opacity: 0;
         transform: translateY(20px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Spring-like entry */
+        ${borderStyle}
       `;
 
       // Position bubble relative to launcher
       this.positionBubble(position);
 
-      // Style close button if exists
-      if (bubble.showCloseButton) {
-        const closeBtn = this.bubble.querySelector('.bubble-close');
+
+      // Style close button (always shown now)
+      const closeBtn = this.bubble.querySelector('.bubble-close');
+      if (closeBtn) {
         closeBtn.style.cssText = `
           background: none;
           border: none;
@@ -401,6 +911,9 @@
       // Add to DOM
       document.body.appendChild(this.bubble);
 
+      // Update last shown time for frequency tracking
+      sessionStorage.setItem(this.lastBubbleTimeKey, Date.now().toString());
+
       // Trigger animation entry
       setTimeout(() => {
         this.bubble.style.opacity = '1';
@@ -418,10 +931,14 @@
       // Click handler - open chat
       this.bubble.addEventListener('click', () => {
         console.log('Engagement bubble clicked - opening chat');
+        // Mark conversation as started - no more bubbles
+        sessionStorage.setItem(this.conversationStartedKey, 'true');
+
         const launcher = document.getElementById('userex-chatbot-launcher');
         if (launcher) {
           launcher.click();
         }
+        this.closeBubble();
 
         // Notify iframe
         const iframe = document.querySelector('#userex-chatbot-container iframe');
@@ -437,11 +954,32 @@
 
 
       // Auto dismiss
-      if (bubble.autoDismiss) {
-        const delay = (bubble.autoDismissDelay || 10) * 1000;
+      // 1. Check message-specific duration first
+      let dismissDelay = null;
+      if (typeof message === 'object' && message.duration !== undefined && message.duration > 0) {
+        dismissDelay = message.duration * 1000;
+        console.log(`Engagement: Using message-specific duration: ${message.duration}s`);
+      } else if (bubble.autoDismiss) {
+        // 2. Fallback to global setting
+        dismissDelay = (bubble.autoDismissDelay || 10) * 1000;
+      }
+
+      if (dismissDelay) {
         setTimeout(() => {
           this.hideBubble();
-        }, delay);
+
+          // Sequential Chaining: Show next message if available
+          if (triggerSource) {
+            const nextMsg = this.getNextMessage(triggerSource);
+            if (nextMsg) {
+              console.log(`Engagement: Chaining next message for ${triggerSource}`);
+              // Small delay for better UX (fade out then fade in)
+              setTimeout(() => {
+                this.showBubble(nextMsg, triggerSource);
+              }, 500);
+            }
+          }
+        }, dismissDelay);
       }
     }
 
@@ -1318,146 +1856,72 @@
     document.body.appendChild(launcherContainer);
     document.body.appendChild(iframeContainer);
 
-    // Initialize Engagement Controller AFTER launcher is in DOM
-    // Must fetch engagement settings from the global settings object
-    fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`)
-      .then(res => res.json())
-      .then(async data => {
-        console.log('Engagement data from API:', data.engagement);
+    // Initialize Engagement Controller if enabled
+    if (settings.engagement && settings.engagement.enabled) {
+      console.log('Initializing Engagement Controller with settings:', settings.engagement);
+      engagementController = new EngagementController(settings.engagement, baseUrl, chatbotId);
+    }
 
-        // Digital Waiter: Inject time-based bubbles
-        let engagementSettings = data.engagement || { enabled: false, bubble: { messages: [] }, triggers: {} };
+    // AI Smart Bubbles Logic - DISABLED (Replaced by AI Engagement PRO in EngagementController.fetchAIBubble)
+    // The new AI Engagement PRO system handles AI-powered bubbles with better context collection,
+    // behavior tracking, and intent detection. See EngagementController.init() -> fetchAIBubble()
+    /*
+    if (settings.engagement &&
+      settings.engagement.aiSmartBubbles &&
+      settings.engagement.aiSmartBubbles.enabled) {
 
-        if (data.digitalWaiter && data.digitalWaiter.aiSuggestionsEnabled) {
-          console.log('Digital Waiter: AI suggestions enabled, checking time...');
-          const now = new Date();
-          const currentHour = now.getHours();
-          const currentMinutes = now.getMinutes();
-          const currentTime = currentHour * 60 + currentMinutes; // Minutes since midnight
+      const smartConfig = settings.engagement.aiSmartBubbles;
+      const maxPerSession = smartConfig.maxPerSession || 3;
+      const aiCountKey = `userex_ai_smart_count_${chatbotId}`;
+      const currentCount = parseInt(sessionStorage.getItem(aiCountKey) || '0');
+      const cacheKey = `userex_ai_smart_cache_${chatbotId}_${window.location.pathname}`;
 
-          const parseTime = (timeStr) => {
-            if (!timeStr) return 0;
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-          };
+      if (currentCount < maxPerSession) {
+        let bubbleText = sessionStorage.getItem(cacheKey);
 
-          const breakfast = data.digitalWaiter.breakfastHours || { start: '07:00', end: '11:00' };
-          const lunch = data.digitalWaiter.lunchHours || { start: '11:00', end: '15:00' };
-          const dinner = data.digitalWaiter.dinnerHours || { start: '18:00', end: '23:00' };
+        if (!bubbleText) {
+          // Fetch new AI bubble
+          fetch(`${baseUrl}/api/generate-context-bubble`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chatbotId: chatbotId,
+              pageUrl: window.location.href,
+              pageTitle: document.title,
+              h1: document.querySelector('h1')?.innerText || '',
+              tone: smartConfig.tone || 'friendly'
+            })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.bubble) {
+                sessionStorage.setItem(cacheKey, data.bubble);
+                sessionStorage.setItem(aiCountKey, (currentCount + 1).toString());
 
-          let mealHint = null;
-
-          if (currentTime >= parseTime(breakfast.start) && currentTime < parseTime(breakfast.end)) {
-            mealHint = { text: '☀️ Günaydın! Kahvaltı menümüze göz atmak ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
-          } else if (currentTime >= parseTime(lunch.start) && currentTime < parseTime(lunch.end)) {
-            mealHint = { text: '🍽️ Öğle yemeği vakti! Bugünün spesiyalini sormak ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
-          } else if (currentTime >= parseTime(dinner.start) && currentTime < parseTime(dinner.end)) {
-            mealHint = { text: '🥂 İyi akşamlar! Şarap listesini veya şefin önerilerini görmek ister misiniz?', delay: 8, isActive: true, isAiGenerated: true };
-          }
-
-          if (mealHint) {
-            console.log('Digital Waiter: Injecting time-based bubble:', mealHint.text);
-            // Ensure engagement structure exists
-            if (!engagementSettings.enabled) {
-              engagementSettings.enabled = true;
-            }
-            if (!engagementSettings.bubble) {
-              engagementSettings.bubble = { messages: [], style: { backgroundColor: '#000', textColor: '#FFF' }, position: 'top', animation: 'bounce' };
-            }
-            if (!engagementSettings.bubble.messages) {
-              engagementSettings.bubble.messages = [];
-            }
-            // Add the AI-generated hint to the front
-            engagementSettings.bubble.messages.unshift(mealHint);
-          }
-
-          // Also add signature dishes hint if configured
-          if (data.digitalWaiter.signatureDishes && data.digitalWaiter.signatureDishes.length > 0) {
-            const sigDish = data.digitalWaiter.signatureDishes[Math.floor(Math.random() * data.digitalWaiter.signatureDishes.length)];
-            const sigHint = { text: `⭐ Bugün ${sigDish} tavsiye ederiz!`, delay: 15, isActive: true, isAiGenerated: true };
-            console.log('Digital Waiter: Injecting signature dish hint:', sigHint.text);
-            if (!engagementSettings.bubble.messages) engagementSettings.bubble.messages = [];
-            engagementSettings.bubble.messages.push(sigHint);
-          }
-        }
-
-        // AI Smart Bubbles (Premium): Real-time context-aware messages
-        if (data.engagement &&
-          data.engagement.aiSmartBubbles &&
-          data.engagement.aiSmartBubbles.enabled &&
-          data.engagement.aiSmartBubbles.granted !== false) { // Check granted permission
-          const smartConfig = data.engagement.aiSmartBubbles;
-          const maxPerSession = smartConfig.maxPerSession || 3;
-
-          // Storage keys
-          const aiCountKey = `userex_ai_smart_count_${chatbotId}`;
-          const currentCount = parseInt(sessionStorage.getItem(aiCountKey) || '0');
-
-          // Cache key based on URL to avoid re-generating for same page
-          const cacheKey = `userex_ai_smart_cache_${chatbotId}_${window.location.pathname}`;
-
-          if (currentCount < maxPerSession) {
-            let bubbleText = sessionStorage.getItem(cacheKey);
-            let fromCache = true;
-
-            if (!bubbleText) {
-              fromCache = false;
-              console.log('AI Smart Bubbles: context analysis for', window.location.pathname);
-              try {
-                const aiResponse = await fetch(`${baseUrl}/api/generate-context-bubble`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chatbotId: chatbotId,
-                    pageUrl: window.location.href,
-                    pageTitle: document.title,
-                    h1: document.querySelector('h1')?.innerText || '',
-                    tone: smartConfig.tone || 'friendly'
-                  })
-                });
-
-                if (aiResponse.ok) {
-                  const aiData = await aiResponse.json();
-                  if (aiData.bubble) {
-                    bubbleText = aiData.bubble;
-                    // Cache it
-                    sessionStorage.setItem(cacheKey, bubbleText);
-                    // Increment session count
-                    sessionStorage.setItem(aiCountKey, (currentCount + 1).toString());
-                  }
+                // Dynamically add to engagement controller
+                if (engagementController) {
+                  engagementController.showBubble({
+                    text: data.bubble,
+                    delay: smartConfig.delay || 5,
+                    isAiGenerated: true
+                  });
                 }
-              } catch (err) {
-                console.error('AI Smart Bubble generation failed:', err);
               }
-            }
-
-            if (bubbleText) {
-              console.log('AI Smart Bubbles: Injecting', fromCache ? '(cached)' : '(new)', bubbleText);
-
-              // Ensure engagement structure exists
-              if (!engagementSettings.enabled) engagementSettings.enabled = true;
-              if (!engagementSettings.bubble) engagementSettings.bubble = { messages: [] };
-              if (!engagementSettings.bubble.messages) engagementSettings.bubble.messages = [];
-
-              engagementSettings.bubble.messages.push({
-                id: 'ai-smart-' + Date.now(),
-                text: bubbleText,
-                delay: smartConfig.delay || 8,
-                isActive: true,
-                isAiGenerated: true
-              });
-            }
+            })
+            .catch(err => console.error('AI Smart Bubble failed:', err));
+        } else {
+          // Use cached
+          if (engagementController) {
+            engagementController.showBubble({
+              text: bubbleText,
+              delay: smartConfig.delay || 5,
+              isAiGenerated: true
+            });
           }
         }
-
-        if (engagementSettings && engagementSettings.enabled) {
-          console.log('Initializing Engagement Controller after launcher creation...');
-          engagementController = new EngagementController(engagementSettings, baseUrl, chatbotId);
-        } else {
-          console.log('Engagement disabled or not configured:', engagementSettings?.enabled);
-        }
-      })
-      .catch(err => console.error('Failed to load engagement settings:', err));
+      }
+    }
+    */
 
     // --- Triggers ---
     if (isAvailable) {
@@ -1548,7 +2012,9 @@
           timezone: data.timezone || 'UTC',
           businessHoursStart: data.businessHoursStart || '09:00',
           businessHoursEnd: data.businessHoursEnd || '17:00',
-          offlineMessage: data.offlineMessage || 'Şu anda çevrimdışıyız.'
+          offlineMessage: data.offlineMessage || 'Şu anda çevrimdışıyız.',
+          // Proactive Engagement
+          engagement: data.engagement || null
         };
         console.log('Final settings object:', settings);
         console.log('Launcher Debug:', 'type:', settings.launcherType, 'imageMode:', settings.launcherImageMode, 'lottieUrl:', settings.launcherLottieUrl?.substring(0, 60));

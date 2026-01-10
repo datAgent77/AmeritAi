@@ -214,6 +214,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+    console.log("POST /api/widget-settings called");
     const adminDb = getAdminDb();
     const adminAuth = getAdminAuth();
 

@@ -9,11 +9,11 @@ export function HeroBackground() {
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none bg-black">
             {/* Ambient Spotlights for depth */}
             <Spotlight
-                className="-top-40 left-0 md:left-60 md:-top-20 opacity-50"
-                fill="white"
+                className="-top-40 left-0 md:left-60 md:-top-20 opacity-10"
+                fill="#3b82f6"
             />
             <Spotlight
-                className="top-10 right-0 h-[80vh] w-[50vw] md:right-20 md:top-0 opacity-40"
+                className="top-10 right-0 h-[80vh] w-[50vw] md:right-20 md:top-0 opacity-20"
                 fill="purple"
             />
 
