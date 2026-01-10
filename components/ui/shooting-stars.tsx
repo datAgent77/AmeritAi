@@ -111,11 +111,16 @@ export const ShootingStars = ({
 
                 // Update Trail Opacity
                 star.trail.forEach((point) => {
-                    point.opacity -= 0.015; // Fade speed
+                    point.opacity -= 0.03; // Faster fade speed (was 0.015)
                 });
 
                 // Remove invisible trail points
                 star.trail = star.trail.filter((p) => p.opacity > 0);
+
+                // Limit trail length strictly to avoid memory issues
+                if (star.trail.length > 20) {
+                    star.trail.shift(); // Remove oldest point
+                }
 
                 // Check bounds/distance
                 const dx = star.x - prevX;
