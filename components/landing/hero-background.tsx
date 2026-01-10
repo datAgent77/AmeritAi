@@ -38,17 +38,6 @@ export function HeroBackground() {
                 starHeight={1.5}
                 className="opacity-40"
             />
-            <ShootingStars
-                starColor="#FFFFFF"
-                trailColor="#FFFFFF"
-                minSpeed={8}
-                maxSpeed={20}
-                minDelay={5000}
-                maxDelay={15000}
-                starWidth={10}
-                starHeight={1}
-                className="opacity-20"
-            />
 
             {/* Very Subtle Noise/Grain for texture */}
             <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03] mix-blend-overlay" />

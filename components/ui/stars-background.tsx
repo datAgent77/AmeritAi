@@ -26,7 +26,7 @@ interface StarsBackgroundProps {
 }
 
 export const StarsBackground = ({
-    starDensity = 0.00015,
+    starDensity = 0.00010, // Optimized from 0.00015
     allStarsTwinkle = true,
     twinkleProbability = 0.7,
     minTwinkleSpeed = 0.5,
@@ -129,7 +129,7 @@ export const StarsBackground = ({
     return (
         <canvas
             ref={canvasRef}
-            className={cn("h-full w-full absolute inset-0 z-0", className)}
+            className={cn("h-full w-full absolute inset-0 z-0 will-change-transform", className)}
         />
     );
 };
