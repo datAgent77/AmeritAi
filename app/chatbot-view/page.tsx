@@ -1923,10 +1923,13 @@ function ChatbotViewContent() {
                                                 {/* Show image if present */}
                                                 {displayImage && (
                                                     <div className="mb-2">
-                                                        <img
+                                                        <Image
                                                             src={`data:${displayMime || 'image/jpeg'};base64,${displayImage}`}
                                                             alt="Uploaded"
-                                                            className="max-w-full max-h-48 rounded-lg object-contain"
+                                                            width={500}
+                                                            height={300}
+                                                            className="max-w-full max-h-48 rounded-lg object-contain w-auto h-auto"
+                                                            unoptimized
                                                             onLoad={() => scrollToBottom("smooth")}
                                                         />
                                                     </div>
@@ -2014,10 +2017,12 @@ function ChatbotViewContent() {
                         {selectedImage && (
                             <div className="mb-3 flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-200">
                                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
-                                    <img
+                                    <Image
                                         src={`data:${selectedImageMimeType};base64,${selectedImage}`}
                                         alt="Preview"
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        className="object-cover"
+                                        unoptimized
                                         onLoad={() => scrollToBottom("smooth")}
                                     />
                                 </div>

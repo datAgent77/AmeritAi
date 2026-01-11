@@ -24,6 +24,32 @@ interface EngagementSettingsFormProps {
     isSuperAdmin?: boolean
 }
 
+// Sector Templates
+const sectorTemplates: Record<string, BubbleMessage[]> = {
+    'e-commerce': [
+        { id: 'ec1', text: '👀 Bu ürüne bakanlar şunları da inceledi...', delay: 5, isActive: true },
+        { id: 'ec2', text: '⚡️ Sadece bugüne özel %10 indirim kodunuz: VION10', delay: 30, isActive: true },
+        { id: 'ec3', text: '📦 Kargo bedava fırsatını kaçırmayın!', delay: 60, isActive: true }
+    ],
+    'health': [
+        { id: 'h1', text: '👋 Merhaba, randevu almak ister misiniz?', delay: 3, isActive: true },
+        { id: 'h2', text: '🩺 Uzman doktorlarımız sorularınızı bekliyor.', delay: 20, isActive: true },
+        { id: 'h3', text: '🚑 Acil bir durum mu var? Bize hemen ulaşın.', delay: 45, isActive: true }
+    ],
+    'education': [
+        { id: 'ed1', text: '🎓 Hangi eğitim programı size uygun? Testi çözün.', delay: 5, isActive: true },
+        { id: 'ed2', text: '📚 Ücretsiz deneme dersi almak için tıklayın.', delay: 25, isActive: true }
+    ],
+    'corporate': [
+        { id: 'c1', text: '🤝 Projeniz için fiyat teklifi almak ister misiniz?', delay: 5, isActive: true },
+        { id: 'c2', text: '💼 Referanslarımızı incelediniz mi?', delay: 20, isActive: true }
+    ],
+    'booking': [ // Travel/Tourism
+        { id: 'b1', text: '🌴 Erken rezervasyon fırsatlarını gördünüz mü?', delay: 5, isActive: true },
+        { id: 'b2', text: '✈️ Uçak bileti aramalarında yardımcı olabilirim.', delay: 15, isActive: true }
+    ]
+}
+
 export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: EngagementSettingsFormProps) {
     const { user } = useAuth()
     const { t } = useLanguage()
@@ -36,31 +62,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
     const [activeTab, setActiveTab] = useState("design")
     const [sector, setSector] = useState<string>("")
 
-    // Sector Templates
-    const sectorTemplates: Record<string, BubbleMessage[]> = {
-        'e-commerce': [
-            { id: 'ec1', text: '👀 Bu ürüne bakanlar şunları da inceledi...', delay: 5, isActive: true },
-            { id: 'ec2', text: '⚡️ Sadece bugüne özel %10 indirim kodunuz: VION10', delay: 30, isActive: true },
-            { id: 'ec3', text: '📦 Kargo bedava fırsatını kaçırmayın!', delay: 60, isActive: true }
-        ],
-        'health': [
-            { id: 'h1', text: '👋 Merhaba, randevu almak ister misiniz?', delay: 3, isActive: true },
-            { id: 'h2', text: '🩺 Uzman doktorlarımız sorularınızı bekliyor.', delay: 20, isActive: true },
-            { id: 'h3', text: '🚑 Acil bir durum mu var? Bize hemen ulaşın.', delay: 45, isActive: true }
-        ],
-        'education': [
-            { id: 'ed1', text: '🎓 Hangi eğitim programı size uygun? Testi çözün.', delay: 5, isActive: true },
-            { id: 'ed2', text: '📚 Ücretsiz deneme dersi almak için tıklayın.', delay: 25, isActive: true }
-        ],
-        'corporate': [
-            { id: 'c1', text: '🤝 Projeniz için fiyat teklifi almak ister misiniz?', delay: 5, isActive: true },
-            { id: 'c2', text: '💼 Referanslarımızı incelediniz mi?', delay: 20, isActive: true }
-        ],
-        'booking': [ // Travel/Tourism
-            { id: 'b1', text: '🌴 Erken rezervasyon fırsatlarını gördünüz mü?', delay: 5, isActive: true },
-            { id: 'b2', text: '✈️ Uçak bileti aramalarında yardımcı olabilirim.', delay: 15, isActive: true }
-        ]
-    }
+
 
     const loadSettings = useCallback(async () => {
         if (!effectiveUserId) return

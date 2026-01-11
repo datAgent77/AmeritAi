@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Camera, AlertCircle, CheckCircle, Scan } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
 interface VisualDiagnosisToolProps {
     // Note: The original implementation didn't strictly require user ID for the analysis itself 
@@ -114,7 +115,13 @@ export function VisualDiagnosisTool({ targetUserId, isSuperAdmin = false }: Visu
                             className="border-2 border-dashed rounded-lg p-12 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer relative overflow-hidden"
                         >
                             {selectedImage ? (
-                                <img src={selectedImage} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                                <Image 
+                                    src={selectedImage} 
+                                    alt="Preview" 
+                                    fill
+                                    className="absolute inset-0 object-cover opacity-50" 
+                                    unoptimized
+                                />
                             ) : null}
                             <Camera className="h-12 w-12 text-muted-foreground mb-4 z-10" />
                             <p className="font-medium z-10">Click to upload or take photo</p>

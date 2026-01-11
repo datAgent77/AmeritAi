@@ -241,7 +241,7 @@
           this.hasShown = false;
 
           // Close existing bubble
-          this.closeBubble();
+          this.hideBubble();
 
           // Trigger AI bubble for new page after delay
           const delay = (this.settings.delay || 5) * 1000;
@@ -510,7 +510,7 @@
         console.log('Engagement: Opening widget via trigger action');
         // Mark conversation as started - no more bubbles after this
         sessionStorage.setItem(this.conversationStartedKey, 'true');
-        this.closeBubble();
+        this.hideBubble();
         launcher.click();
       }
     }
@@ -938,7 +938,7 @@
         if (launcher) {
           launcher.click();
         }
-        this.closeBubble();
+        this.hideBubble();
 
         // Notify iframe
         const iframe = document.querySelector('#userex-chatbot-container iframe');

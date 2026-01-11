@@ -125,7 +125,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                         {settings.aiSmartBubbles.targeting === 'custom' && (
                             <CardContent className="space-y-3 animate-in fade-in slide-in-from-top-2">
                                 <div className="space-y-2">
-                                    <Label className="text-xs text-muted-foreground">Hedef URL'ler (Her satıra bir tane)</Label>
+                                    <Label className="text-xs text-muted-foreground">Hedef URL&apos;ler (Her satıra bir tane)</Label>
                                     <div className="space-y-2">
                                         {settings.aiSmartBubbles.targetUrls.map((url, idx) => (
                                             <div key={idx} className="flex gap-2">
@@ -216,7 +216,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                                         </div>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground mt-2">
-                                        Seçilen saatler arasında (örn: gece yarısından sabah 8'e kadar) AI baloncukları gösterilmez.
+                                        Seçilen saatler arasında (örn: gece yarısından sabah 8&apos;e kadar) AI baloncukları gösterilmez.
                                     </p>
                                 </div>
                             )}
