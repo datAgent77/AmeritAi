@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Copy, ExternalLink, Check, MessageCircle, Send, Loader2, ArrowLeft, Search, Plus, BookOpen, MessageSquare, Hash, Link2, Globe, Code2 } from "lucide-react"
+import { Copy, ExternalLink, Check, MessageCircle, Send, Loader2, ArrowLeft, Search, Plus, BookOpen, MessageSquare, Hash, Link2, Globe, Code2, Calendar, ShoppingCart, Mail, Building2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 import { useLanguage } from "@/context/LanguageContext"
@@ -20,7 +20,8 @@ interface Integration {
     id: string
     name: string
     description: string
-    icon: React.ReactNode
+    icon?: React.ReactNode
+    logo?: string
     iconBg: string
     features?: string[]
     connected?: boolean
@@ -34,7 +35,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [brandColor, setBrandColor] = useState("#000000")
     const [copied, setCopied] = useState<string | null>(null)
     const [settings, setSettings] = useState<any>(null)
-    const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
 
@@ -60,19 +60,51 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [slackConnected, setSlackConnected] = useState(false)
     const [slackTeamName, setSlackTeamName] = useState("")
 
+    // Salesforce State
+    const [salesforceClientId, setSalesforceClientId] = useState("")
+    const [salesforceClientSecret, setSalesforceClientSecret] = useState("")
+    const [salesforceUsername, setSalesforceUsername] = useState("")
+    const [salesforcePassword, setSalesforcePassword] = useState("")
+    const [salesforceSecurityToken, setSalesforceSecurityToken] = useState("")
+    const [isConnectingSalesforce, setIsConnectingSalesforce] = useState(false)
+    const [salesforceConnected, setSalesforceConnected] = useState(false)
+
+    // Google Calendar State
+    const [isConnectingGoogleCalendar, setIsConnectingGoogleCalendar] = useState(false)
+    const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false)
+
+    // Outlook Calendar State
+    const [isConnectingOutlookCalendar, setIsConnectingOutlookCalendar] = useState(false)
+    const [outlookCalendarConnected, setOutlookCalendarConnected] = useState(false)
+
+    // Shopify State
+    const [shopifyShopDomain, setShopifyShopDomain] = useState("")
+    const [shopifyApiKey, setShopifyApiKey] = useState("")
+    const [shopifyApiSecret, setShopifyApiSecret] = useState("")
+    const [isConnectingShopify, setIsConnectingShopify] = useState(false)
+    const [shopifyConnected, setShopifyConnected] = useState(false)
+
+    // Mailchimp State
+    const [mailchimpApiKey, setMailchimpApiKey] = useState("")
+    const [mailchimpServerPrefix, setMailchimpServerPrefix] = useState("")
+    const [mailchimpListId, setMailchimpListId] = useState("")
+    const [isConnectingMailchimp, setIsConnectingMailchimp] = useState(false)
+    const [mailchimpConnected, setMailchimpConnected] = useState(false)
+
+    // SendGrid State
+    const [sendgridApiKey, setSendgridApiKey] = useState("")
+    const [sendgridFromEmail, setSendgridFromEmail] = useState("")
+    const [isConnectingSendgrid, setIsConnectingSendgrid] = useState(false)
+    const [sendgridConnected, setSendgridConnected] = useState(false)
+
+    // Constant Contact State
+    const [constantContactApiKey, setConstantContactApiKey] = useState("")
+    const [constantContactApiSecret, setConstantContactApiSecret] = useState("")
+    const [isConnectingConstantContact, setIsConnectingConstantContact] = useState(false)
+    const [constantContactConnected, setConstantContactConnected] = useState(false)
+
     const whatsAppConnected = settings?.integrations?.whatsapp?.connected
 
-    // Only integrations we actually support
-    const categories = [
-        { id: "all", name: t('allIntegrations'), count: 7 },
-        { id: "website", name: t('websiteWidget'), count: 0 },
-        { id: "iframe", name: "iFrame", count: 0 },
-        { id: "direct-link", name: t('directLink'), count: 0 },
-        { id: "wordpress", name: "WordPress", count: 0 },
-        { id: "telegram", name: "Telegram", count: telegramConnected ? 1 : 0 },
-        { id: "whatsapp", name: "WhatsApp", count: whatsAppConnected ? 1 : 0 },
-        { id: "slack", name: "Slack", count: slackConnected ? 1 : 0 },
-    ]
 
     // Only our actual integrations
     const integrations: Integration[] = [
@@ -80,8 +112,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             id: "website",
             name: t('websiteWidget'),
             description: t('widgetScriptDescription'),
-            icon: <MessageSquare className="h-6 w-6 text-blue-500" />,
-            iconBg: "bg-blue-100",
+            icon: <MessageSquare className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
             features: [
                 t('widgetAppear'),
                 t('copyCode'),
@@ -92,8 +124,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             id: "iframe",
             name: t('iframeEmbed'),
             description: t('iframeEmbedDescription'),
-            icon: <Code2 className="h-6 w-6 text-purple-500" />,
-            iconBg: "bg-purple-100",
+            icon: <Code2 className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
             features: [
                 t('copyIframeCode'),
                 t('pasteIframeCode'),
@@ -104,8 +136,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             id: "direct-link",
             name: t('directLink'),
             description: t('directLinkDescription'),
-            icon: <Link2 className="h-6 w-6 text-green-500" />,
-            iconBg: "bg-green-100",
+            icon: <Link2 className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
             features: [
                 t('shareLink')
             ]
@@ -114,18 +146,18 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             id: "wordpress",
             name: t('wordpress'),
             description: t('wordpressDescription'),
-            icon: <Globe className="h-6 w-6 text-blue-700" />,
-            iconBg: "bg-blue-100",
+            logo: "/integrations/wordpress.svg",
+            iconBg: "bg-gray-100",
             features: [
-                t('wordpressInstructions')?.split('\n')[0] || "Install plugin",
+                t('wordpressInstructions')?.split('\n')[0] || t('installPlugin'),
             ]
         },
         {
             id: "telegram",
-            name: "Telegram",
+            name: t('telegramName') || "Telegram",
             description: t('telegramDescription'),
-            icon: <Send className="h-6 w-6 text-sky-500" />,
-            iconBg: "bg-sky-100",
+            logo: "/integrations/telegram.svg",
+            iconBg: "bg-gray-100",
             connected: telegramConnected,
             connectedInfo: telegramBotName,
             features: [
@@ -134,10 +166,10 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         },
         {
             id: "whatsapp",
-            name: "WhatsApp Business",
+            name: t('whatsappName') || "WhatsApp Business",
             description: t('whatsappDescription'),
-            icon: <MessageCircle className="h-6 w-6 text-green-600" />,
-            iconBg: "bg-green-100",
+            logo: "/integrations/whatsapp.svg",
+            iconBg: "bg-gray-100",
             connected: whatsAppConnected,
             features: [
                 t('whatsappInstructions')
@@ -145,12 +177,68 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         },
         {
             id: "slack",
-            name: "Slack",
+            name: t('slackName') || "Slack",
             description: t('slackDescription'),
-            icon: <Hash className="h-6 w-6 text-purple-600" />,
-            iconBg: "bg-purple-100",
+            logo: "/integrations/slack.svg",
+            iconBg: "bg-gray-100",
             connected: slackConnected,
             connectedInfo: slackTeamName,
+        },
+        {
+            id: "salesforce",
+            name: t('salesforce') || "Salesforce",
+            description: t('salesforceDescription'),
+            logo: "/integrations/salesforce.svg",
+            iconBg: "bg-gray-100",
+            connected: salesforceConnected,
+        },
+        {
+            id: "google-calendar",
+            name: t('googleCalendar') || "Google Calendar",
+            description: t('googleCalendarDescription'),
+            logo: "/integrations/google-calendar.svg",
+            iconBg: "bg-gray-100",
+            connected: googleCalendarConnected,
+        },
+        {
+            id: "outlook-calendar",
+            name: t('outlookCalendar') || "Outlook Calendar",
+            description: t('outlookCalendarDescription'),
+            logo: "/integrations/outlook.svg",
+            iconBg: "bg-gray-100",
+            connected: outlookCalendarConnected,
+        },
+        {
+            id: "shopify",
+            name: t('shopify') || "Shopify",
+            description: t('shopifyDescription'),
+            logo: "/integrations/shopify.svg",
+            iconBg: "bg-gray-100",
+            connected: shopifyConnected,
+        },
+        {
+            id: "mailchimp",
+            name: t('mailchimp') || "Mailchimp",
+            description: t('mailchimpDescription'),
+            logo: "/integrations/mailchimp.svg",
+            iconBg: "bg-gray-100",
+            connected: mailchimpConnected,
+        },
+        {
+            id: "sendgrid",
+            name: t('sendgrid') || "SendGrid",
+            description: t('sendgridDescription'),
+            logo: "/integrations/sendgrid.svg",
+            iconBg: "bg-gray-100",
+            connected: sendgridConnected,
+        },
+        {
+            id: "constant-contact",
+            name: t('constantContact') || "Constant Contact",
+            description: t('constantContactDescription'),
+            logo: "/integrations/constant-contact.svg",
+            iconBg: "bg-gray-100",
+            connected: constantContactConnected,
         },
     ]
 
@@ -167,7 +255,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ chatbotId: userId, phoneNumberId: waPhoneNumberId, accessToken: waAccessToken, verifyToken: waVerifyToken })
             })
-            if (!response.ok) throw new Error("Failed to connect")
+            if (!response.ok) throw new Error(t('failedToConnect') || "Failed to connect")
             toast({ title: t('success'), description: t('whatsappConnected') })
             setIsWhatsAppOpen(false)
             const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
@@ -195,7 +283,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 body: JSON.stringify({ userId, botToken: slackBotToken, signingSecret: slackSigningSecret })
             })
             const data = await response.json()
-            if (!response.ok) throw new Error(data.error || "Failed to connect Slack")
+            if (!response.ok) throw new Error(data.error || t('failedToConnectSlack') || "Failed to connect Slack")
             setSlackConnected(true)
             setSlackTeamName(data.team)
             toast({ title: t('success'), description: t('connected') })
@@ -224,7 +312,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 body: JSON.stringify({ userId, botToken: telegramToken })
             })
             const data = await response.json()
-            if (!response.ok) throw new Error(data.error || "Failed to connect Telegram")
+            if (!response.ok) throw new Error(data.error || t('failedToConnectTelegram') || "Failed to connect Telegram")
             setTelegramConnected(true)
             setTelegramBotName(data.botName)
             toast({ title: t('success'), description: t('connected') })
@@ -234,6 +322,266 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             toast({ title: t('error'), description: error.message, variant: "destructive" })
         } finally {
             setIsConnectingTelegram(false)
+        }
+    }
+
+    const handleConnectSalesforce = async () => {
+        if (!salesforceClientId || !salesforceClientSecret || !salesforceUsername || !salesforcePassword) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingSalesforce(true)
+        try {
+            const response = await fetch("/api/integrations/salesforce/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    clientId: salesforceClientId,
+                    clientSecret: salesforceClientSecret,
+                    username: salesforceUsername,
+                    password: salesforcePassword,
+                    securityToken: salesforceSecurityToken
+                })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            setSalesforceConnected(true)
+            toast({ title: t('success'), description: t('salesforceConnected') })
+            setSalesforceClientId("")
+            setSalesforceClientSecret("")
+            setSalesforceUsername("")
+            setSalesforcePassword("")
+            setSalesforceSecurityToken("")
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingSalesforce(false)
+        }
+    }
+
+    const handleConnectGoogleCalendar = async () => {
+        setIsConnectingGoogleCalendar(true)
+        try {
+            const response = await fetch("/api/integrations/google-calendar/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId })
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                const errorMsg = data.message || data.error || t('failedToConnect') || "Failed to connect"
+                throw new Error(errorMsg)
+            }
+            if (data.authUrl) {
+                window.location.href = data.authUrl
+                return
+            }
+            setGoogleCalendarConnected(true)
+            toast({ title: t('success'), description: t('googleCalendarConnected') })
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ 
+                title: t('error'), 
+                description: error.message, 
+                variant: "destructive",
+                duration: 10000 // Show longer for configuration errors
+            })
+        } finally {
+            setIsConnectingGoogleCalendar(false)
+        }
+    }
+
+    const handleConnectOutlookCalendar = async () => {
+        setIsConnectingOutlookCalendar(true)
+        try {
+            const response = await fetch("/api/integrations/outlook-calendar/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId })
+            })
+            const data = await response.json()
+            if (!response.ok) {
+                const errorMsg = data.message || data.error || t('failedToConnect') || "Failed to connect"
+                throw new Error(errorMsg)
+            }
+            if (data.authUrl) {
+                window.location.href = data.authUrl
+                return
+            }
+            setOutlookCalendarConnected(true)
+            toast({ title: t('success'), description: t('outlookCalendarConnected') })
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ 
+                title: t('error'), 
+                description: error.message, 
+                variant: "destructive",
+                duration: 10000 // Show longer for configuration errors
+            })
+        } finally {
+            setIsConnectingOutlookCalendar(false)
+        }
+    }
+
+    const handleConnectShopify = async () => {
+        if (!shopifyShopDomain || !shopifyApiKey || !shopifyApiSecret) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingShopify(true)
+        try {
+            const response = await fetch("/api/integrations/shopify/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    shopDomain: shopifyShopDomain,
+                    apiKey: shopifyApiKey,
+                    apiSecret: shopifyApiSecret
+                })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            if (data.authUrl) {
+                window.location.href = data.authUrl
+                return
+            }
+            setShopifyConnected(true)
+            toast({ title: t('success'), description: t('shopifyConnected') })
+            setShopifyShopDomain("")
+            setShopifyApiKey("")
+            setShopifyApiSecret("")
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingShopify(false)
+        }
+    }
+
+    const handleConnectMailchimp = async () => {
+        if (!mailchimpApiKey || !mailchimpServerPrefix) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingMailchimp(true)
+        try {
+            const response = await fetch("/api/integrations/mailchimp/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    apiKey: mailchimpApiKey,
+                    serverPrefix: mailchimpServerPrefix,
+                    listId: mailchimpListId
+                })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            setMailchimpConnected(true)
+            toast({ title: t('success'), description: t('mailchimpConnected') })
+            setMailchimpApiKey("")
+            setMailchimpServerPrefix("")
+            setMailchimpListId("")
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingMailchimp(false)
+        }
+    }
+
+    const handleConnectSendgrid = async () => {
+        if (!sendgridApiKey || !sendgridFromEmail) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingSendgrid(true)
+        try {
+            const response = await fetch("/api/integrations/sendgrid/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    apiKey: sendgridApiKey,
+                    fromEmail: sendgridFromEmail
+                })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            setSendgridConnected(true)
+            toast({ title: t('success'), description: t('sendgridConnected') })
+            setSendgridApiKey("")
+            setSendgridFromEmail("")
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingSendgrid(false)
+        }
+    }
+
+    const handleConnectConstantContact = async () => {
+        if (!constantContactApiKey || !constantContactApiSecret) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingConstantContact(true)
+        try {
+            const response = await fetch("/api/integrations/constant-contact/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId,
+                    apiKey: constantContactApiKey,
+                    apiSecret: constantContactApiSecret
+                })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            if (data.authUrl) {
+                window.location.href = data.authUrl
+                return
+            }
+            setConstantContactConnected(true)
+            toast({ title: t('success'), description: t('constantContactConnected') })
+            setConstantContactApiKey("")
+            setConstantContactApiSecret("")
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingConstantContact(false)
         }
     }
 
@@ -253,6 +601,27 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     if (data.integrations?.slack?.connected) {
                         setSlackConnected(true)
                         setSlackTeamName(data.integrations.slack.teamName || "")
+                    }
+                    if (data.integrations?.salesforce?.connected) {
+                        setSalesforceConnected(true)
+                    }
+                    if (data.integrations?.googleCalendar?.connected) {
+                        setGoogleCalendarConnected(true)
+                    }
+                    if (data.integrations?.outlookCalendar?.connected) {
+                        setOutlookCalendarConnected(true)
+                    }
+                    if (data.integrations?.shopify?.connected) {
+                        setShopifyConnected(true)
+                    }
+                    if (data.integrations?.mailchimp?.connected) {
+                        setMailchimpConnected(true)
+                    }
+                    if (data.integrations?.sendgrid?.connected) {
+                        setSendgridConnected(true)
+                    }
+                    if (data.integrations?.constantContact?.connected) {
+                        setConstantContactConnected(true)
                     }
                 }
             } catch (error) {
@@ -277,8 +646,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const filteredIntegrations = integrations.filter(integration => {
         const matchesSearch = integration.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             integration.description.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = selectedCategory === "all" || integration.id === selectedCategory
-        return matchesSearch && matchesCategory
+        return matchesSearch
     })
 
     const currentIntegration = selectedIntegration ? integrations.find(i => i.id === selectedIntegration) : null
@@ -304,8 +672,17 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     <Card className="border-0 shadow-none bg-muted/30">
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between mb-4">
-                                <div className={cn("p-3 rounded-xl", currentIntegration.iconBg)}>
-                                    {currentIntegration.icon}
+                                <div className={cn("p-3 rounded-xl flex items-center justify-center w-12 h-12", currentIntegration.iconBg)}>
+                                    {currentIntegration.logo ? (
+                                        <img 
+                                            src={currentIntegration.logo} 
+                                            alt={currentIntegration.name}
+                                            className="w-6 h-6 object-contain"
+                                            style={{ filter: 'brightness(0)' }}
+                                        />
+                                    ) : currentIntegration.icon ? (
+                                        currentIntegration.icon
+                                    ) : null}
                                 </div>
                                 {currentIntegration.connected && (
                                     <div className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
@@ -427,7 +804,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                     <CardDescription>
                                         {telegramConnected
                                             ? `${t('connected')}: @${telegramBotName}`
-                                            : t('connectTelegram')
+                                            : t('telegramDescription')
                                         }
                                     </CardDescription>
                                 </CardHeader>
@@ -444,7 +821,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 <p className="text-xs text-muted-foreground">{t('botTokenHelp')}</p>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
-                                                <p className="font-medium mb-1">Webhook URL:</p>
+                                                <p className="font-medium mb-1">{t('webhookUrl') || 'Webhook URL'}:</p>
                                                 <code className="break-all">{origin}/api/integrations/telegram/webhook?chatbotId={userId}</code>
                                             </div>
                                         </>
@@ -507,7 +884,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 <p className="text-xs text-muted-foreground">{t('verifyTokenHelp')}</p>
                                             </div>
                                             <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
-                                                <p className="font-medium mb-1">Webhook URL:</p>
+                                                <p className="font-medium mb-1">{t('webhookUrl') || 'Webhook URL'}:</p>
                                                 <code className="break-all">{origin}/api/integrations/whatsapp/webhook?chatbotId={userId}</code>
                                             </div>
                                         </>
@@ -543,7 +920,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                     {!slackConnected && (
                                         <>
                                             <div className="space-y-2">
-                                                <Label>Bot User OAuth Token</Label>
+                                                <Label>{t('slackBotToken') || 'Bot User OAuth Token'}</Label>
                                                 <Input
                                                     type="password"
                                                     placeholder="xoxb-..."
@@ -552,7 +929,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Signing Secret</Label>
+                                                <Label>{t('slackSigningSecret') || 'Signing Secret'}</Label>
                                                 <Input
                                                     type="password"
                                                     placeholder="e.g. 8f7d..."
@@ -561,7 +938,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 />
                                             </div>
                                             <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
-                                                <p className="font-medium mb-1">Request URL:</p>
+                                                <p className="font-medium mb-1">{t('requestUrl') || 'Request URL'}:</p>
                                                 <code className="break-all">{origin}/api/integrations/slack/webhook?chatbotId={userId}</code>
                                             </div>
                                         </>
@@ -576,6 +953,387 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                     >
                                         {isConnectingSlack && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         {slackConnected ? t('manageSettings') : t('connect')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Salesforce Dialog */}
+                        {currentIntegration.id === "salesforce" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('salesforceConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {salesforceConnected
+                                            ? t('connected')
+                                            : t('salesforceDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!salesforceConnected && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>{t('salesforceClientId')}</Label>
+                                                <Input
+                                                    placeholder="e.g. 3MVG9..."
+                                                    value={salesforceClientId}
+                                                    onChange={(e) => setSalesforceClientId(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('salesforceClientSecret')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="e.g. ABC123..."
+                                                    value={salesforceClientSecret}
+                                                    onChange={(e) => setSalesforceClientSecret(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('salesforceUsername')}</Label>
+                                                <Input
+                                                    placeholder="your-email@example.com"
+                                                    value={salesforceUsername}
+                                                    onChange={(e) => setSalesforceUsername(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('salesforcePassword')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Your password"
+                                                    value={salesforcePassword}
+                                                    onChange={(e) => setSalesforcePassword(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('salesforceSecurityToken')} (Optional)</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Security token if required"
+                                                    value={salesforceSecurityToken}
+                                                    onChange={(e) => setSalesforceSecurityToken(e.target.value)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectSalesforce}
+                                        disabled={isConnectingSalesforce || (!salesforceClientId || !salesforceClientSecret || !salesforceUsername || !salesforcePassword) && !salesforceConnected}
+                                        className="w-full"
+                                        variant={salesforceConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingSalesforce && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {salesforceConnected ? t('manageSettings') : t('connectSalesforce')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Google Calendar Dialog */}
+                        {currentIntegration.id === "google-calendar" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('googleCalendarConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {googleCalendarConnected
+                                            ? t('connected')
+                                            : t('googleCalendarDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!googleCalendarConnected && (
+                                        <div className="space-y-3">
+                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                                <p className="mb-2">You will be redirected to Google to authorize access to your calendar.</p>
+                                                <p className="text-xs mt-2">Note: Google Calendar requires OAuth2 authentication for security. This is the standard and most secure method.</p>
+                                            </div>
+                                            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-xs">
+                                                <p className="font-medium text-blue-900 mb-1">Setup Required:</p>
+                                                <p className="text-blue-800">To use Google Calendar integration, you need to:</p>
+                                                <ol className="list-decimal list-inside mt-2 space-y-1 text-blue-800">
+                                                    <li>Create OAuth credentials at <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console</a></li>
+                                                    <li>Add <code className="bg-blue-100 px-1 rounded">GOOGLE_CLIENT_ID</code> and <code className="bg-blue-100 px-1 rounded">GOOGLE_CLIENT_SECRET</code> to your environment variables</li>
+                                                    <li>Set redirect URI: <code className="bg-blue-100 px-1 rounded">{origin}/api/integrations/google-calendar/callback</code></li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectGoogleCalendar}
+                                        disabled={isConnectingGoogleCalendar || googleCalendarConnected}
+                                        className="w-full"
+                                        variant={googleCalendarConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingGoogleCalendar && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {googleCalendarConnected ? t('manageSettings') : t('connectGoogleCalendar')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Outlook Calendar Dialog */}
+                        {currentIntegration.id === "outlook-calendar" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('outlookCalendarConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {outlookCalendarConnected
+                                            ? t('connected')
+                                            : t('outlookCalendarDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!outlookCalendarConnected && (
+                                        <div className="space-y-3">
+                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                                <p className="mb-2">You will be redirected to Microsoft to authorize access to your Outlook calendar.</p>
+                                            </div>
+                                            <div className="bg-blue-50 border border-blue-200 p-3 rounded-md text-xs">
+                                                <p className="font-medium text-blue-900 mb-1">Setup Required:</p>
+                                                <p className="text-blue-800">To use Outlook Calendar integration, you need to:</p>
+                                                <ol className="list-decimal list-inside mt-2 space-y-1 text-blue-800">
+                                                    <li>Register your app at <a href="https://portal.azure.com/" target="_blank" rel="noopener noreferrer" className="underline">Azure Portal</a></li>
+                                                    <li>Add <code className="bg-blue-100 px-1 rounded">MICROSOFT_CLIENT_ID</code> and <code className="bg-blue-100 px-1 rounded">MICROSOFT_CLIENT_SECRET</code> to your environment variables</li>
+                                                    <li>Set redirect URI: <code className="bg-blue-100 px-1 rounded">{origin}/api/integrations/outlook-calendar/callback</code></li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectOutlookCalendar}
+                                        disabled={isConnectingOutlookCalendar || outlookCalendarConnected}
+                                        className="w-full"
+                                        variant={outlookCalendarConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingOutlookCalendar && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {outlookCalendarConnected ? t('manageSettings') : t('connectOutlookCalendar')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Shopify Dialog */}
+                        {currentIntegration.id === "shopify" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('shopifyConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {shopifyConnected
+                                            ? t('connected')
+                                            : t('shopifyDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!shopifyConnected && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>{t('shopifyShopDomain')}</Label>
+                                                <Input
+                                                    placeholder="your-shop.myshopify.com"
+                                                    value={shopifyShopDomain}
+                                                    onChange={(e) => setShopifyShopDomain(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('shopifyApiKey')}</Label>
+                                                <Input
+                                                    placeholder="API Key"
+                                                    value={shopifyApiKey}
+                                                    onChange={(e) => setShopifyApiKey(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('shopifyApiSecret')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="API Secret"
+                                                    value={shopifyApiSecret}
+                                                    onChange={(e) => setShopifyApiSecret(e.target.value)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectShopify}
+                                        disabled={isConnectingShopify || (!shopifyShopDomain || !shopifyApiKey || !shopifyApiSecret) && !shopifyConnected}
+                                        className="w-full"
+                                        variant={shopifyConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingShopify && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {shopifyConnected ? t('manageSettings') : t('connectShopify')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Mailchimp Dialog */}
+                        {currentIntegration.id === "mailchimp" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('mailchimpConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {mailchimpConnected
+                                            ? t('connected')
+                                            : t('mailchimpDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!mailchimpConnected && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>{t('mailchimpApiKey')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="e.g. abc123def456..."
+                                                    value={mailchimpApiKey}
+                                                    onChange={(e) => setMailchimpApiKey(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('mailchimpServerPrefix')}</Label>
+                                                <Input
+                                                    placeholder="e.g. us1, us2, us3..."
+                                                    value={mailchimpServerPrefix}
+                                                    onChange={(e) => setMailchimpServerPrefix(e.target.value)}
+                                                />
+                                                <p className="text-xs text-muted-foreground">Found in your Mailchimp API key (e.g., us1 in abc123def456-us1)</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('mailchimpListId')} (Optional)</Label>
+                                                <Input
+                                                    placeholder="Default list ID"
+                                                    value={mailchimpListId}
+                                                    onChange={(e) => setMailchimpListId(e.target.value)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectMailchimp}
+                                        disabled={isConnectingMailchimp || (!mailchimpApiKey || !mailchimpServerPrefix) && !mailchimpConnected}
+                                        className="w-full"
+                                        variant={mailchimpConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingMailchimp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {mailchimpConnected ? t('manageSettings') : t('connectMailchimp')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* SendGrid Dialog */}
+                        {currentIntegration.id === "sendgrid" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('sendgridConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {sendgridConnected
+                                            ? t('connected')
+                                            : t('sendgridDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!sendgridConnected && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>{t('sendgridApiKey')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="SG.abc123..."
+                                                    value={sendgridApiKey}
+                                                    onChange={(e) => setSendgridApiKey(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('sendgridFromEmail')}</Label>
+                                                <Input
+                                                    type="email"
+                                                    placeholder="noreply@yourdomain.com"
+                                                    value={sendgridFromEmail}
+                                                    onChange={(e) => setSendgridFromEmail(e.target.value)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectSendgrid}
+                                        disabled={isConnectingSendgrid || (!sendgridApiKey || !sendgridFromEmail) && !sendgridConnected}
+                                        className="w-full"
+                                        variant={sendgridConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingSendgrid && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {sendgridConnected ? t('manageSettings') : t('connectSendgrid')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Constant Contact Dialog */}
+                        {currentIntegration.id === "constant-contact" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('constantContactConnection')}</CardTitle>
+                                    <CardDescription>
+                                        {constantContactConnected
+                                            ? t('connected')
+                                            : t('constantContactDescription')
+                                        }
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!constantContactConnected && (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>{t('constantContactApiKey')}</Label>
+                                                <Input
+                                                    placeholder="API Key"
+                                                    value={constantContactApiKey}
+                                                    onChange={(e) => setConstantContactApiKey(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>{t('constantContactApiSecret')}</Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="API Secret"
+                                                    value={constantContactApiSecret}
+                                                    onChange={(e) => setConstantContactApiSecret(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                                <p className="mb-2">You will be redirected to Constant Contact to authorize access.</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={handleConnectConstantContact}
+                                        disabled={isConnectingConstantContact || (!constantContactApiKey || !constantContactApiSecret) && !constantContactConnected}
+                                        className="w-full"
+                                        variant={constantContactConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingConstantContact && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {constantContactConnected ? t('manageSettings') : t('connectConstantContact')}
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -612,8 +1370,17 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                         onClick={() => setSelectedIntegration(integration.id)}
                     >
                         <CardContent className="p-5">
-                            <div className={cn("p-3 rounded-xl w-fit mb-4", integration.iconBg)}>
-                                {integration.icon}
+                            <div className={cn("p-3 rounded-xl mb-4 flex items-center justify-center w-12 h-12", integration.iconBg)}>
+                                {integration.logo ? (
+                                    <img 
+                                        src={integration.logo} 
+                                        alt={integration.name}
+                                        className="w-6 h-6 object-contain"
+                                        style={{ filter: 'brightness(0)' }}
+                                    />
+                                ) : integration.icon ? (
+                                    integration.icon
+                                ) : null}
                             </div>
                             <h3 className="font-semibold mb-1">{integration.name}</h3>
                             <p className="text-sm text-muted-foreground line-clamp-2">
@@ -634,40 +1401,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
 
     return (
         <div className="flex h-full bg-white rounded-xl overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-56 border-r bg-muted/30 flex-shrink-0">
-                <div className="p-4">
-                    <h2 className="font-semibold mb-3 px-2">{t('integrations')}</h2>
-                    <nav className="space-y-0.5">
-                        {categories.map((category) => (
-                            <button
-                                key={category.id}
-                                onClick={() => {
-                                    setSelectedCategory(category.id)
-                                    setSelectedIntegration(category.id === "all" ? null : category.id)
-                                }}
-                                className={cn(
-                                    "w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors",
-                                    (selectedCategory === category.id || selectedIntegration === category.id)
-                                        ? "bg-primary text-primary-foreground"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                <span>{category.name}</span>
-                                <span className={cn(
-                                    "text-xs",
-                                    (selectedCategory === category.id || selectedIntegration === category.id)
-                                        ? "text-primary-foreground/70"
-                                        : "text-muted-foreground"
-                                )}>
-                                    {category.count}
-                                </span>
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-            </div>
-
             {/* Main Content */}
             {selectedIntegration ? renderDetailView() : renderGridView()}
         </div>
