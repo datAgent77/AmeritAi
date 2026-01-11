@@ -56,7 +56,7 @@ import {
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { doc, updateDoc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
@@ -455,7 +455,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
     // Check if module is included in the plan based on the TENANT'S sector
     // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
-    const isModuleIncluded = (moduleId: string) => {
+    const isModuleIncluded = useCallback((moduleId: string) => {
         const registryModule = getAllRegistryModules().find(m => m.id === moduleId)
         if (!registryModule) return false
 
@@ -467,7 +467,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         }
 
         return false
-    }
+    }, [userIndustry])
 
     const isPremiumModule = (moduleId: ModuleId) => {
         if (moduleId === 'generalChatbot') return false // Core, not premium
@@ -519,7 +519,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, industryFilter, language])
+    }, [searchQuery, industryFilter, language, isModuleIncluded])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {

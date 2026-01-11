@@ -75,8 +75,8 @@ export default function WhyPage() {
             userex = true
         } else {
             // Check if module is ready
-            const module = getModule(item.moduleId)
-            userex = module?.status === 'ready' || false
+            const moduleData = getModule(item.moduleId)
+            userex = moduleData?.status === 'ready' || false
         }
 
         return {

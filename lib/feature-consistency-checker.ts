@@ -24,8 +24,8 @@ export function getAvailableFeatures(): ModuleId[] {
  * Check if a feature is available (ready status)
  */
 export function isFeatureAvailable(featureId: string): boolean {
-    const module = getModule(featureId as ModuleId)
-    return module?.status === 'ready' || false
+    const moduleData = getModule(featureId as ModuleId)
+    return moduleData?.status === 'ready' || false
 }
 
 /**
@@ -51,11 +51,11 @@ export function validateFeature(featureId: string): {
     isReady: boolean
     module: ReturnType<typeof getModule> | null
 } {
-    const module = getModule(featureId as ModuleId)
+    const moduleData = getModule(featureId as ModuleId)
     return {
-        exists: !!module,
-        isReady: module?.status === 'ready' || false,
-        module
+        exists: !!moduleData,
+        isReady: moduleData?.status === 'ready' || false,
+        module: moduleData
     }
 }
 
@@ -63,9 +63,9 @@ export function validateFeature(featureId: string): {
  * Get feature name by ID (for comparison tables)
  */
 export function getFeatureName(featureId: string, language: 'en' | 'tr' = 'tr'): string | null {
-    const module = getModule(featureId as ModuleId)
-    if (!module) return null
-    return language === 'tr' ? module.name.tr : module.name.en
+    const moduleData = getModule(featureId as ModuleId)
+    if (!moduleData) return null
+    return language === 'tr' ? moduleData.name.tr : moduleData.name.en
 }
 
 /**
