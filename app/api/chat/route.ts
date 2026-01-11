@@ -253,12 +253,14 @@ export async function POST(req: Request) {
                                             createdAt: new Date().toISOString()
                                         };
 
-                                        const docRef = await adminDb.collection("appointments").add(appointmentData);
+                                        // TypeScript: adminDb is checked above, safe to use
+                                        const docRef = await adminDb!.collection("appointments").add(appointmentData);
                                         console.log("Chat API: ✅ Appointment saved successfully");
 
                                         // Sync to Google Calendar if connected
                                         try {
-                                            const chatbotDoc = await adminDb.collection("chatbots").doc(chatbotId).get();
+                                            // TypeScript: adminDb is checked above, safe to use
+                                            const chatbotDoc = await adminDb!.collection("chatbots").doc(chatbotId).get();
                                             const integrations = chatbotDoc.data()?.integrations || {};
 
                                             // Sync to Google Calendar if connected
