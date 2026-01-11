@@ -83,6 +83,12 @@ export function ModuleDetailsDialog({
                             <DialogDescription className="text-base leading-relaxed text-muted-foreground">
                                 {description}
                             </DialogDescription>
+                            {/* Premium Price Display */}
+                            {moduleConfig.isPremium && moduleConfig.price > 0 && (
+                                <div className="mt-2 text-lg font-semibold text-violet-600 dark:text-violet-400">
+                                    ${moduleConfig.price}{t('month') || '/mo'}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </DialogHeader>

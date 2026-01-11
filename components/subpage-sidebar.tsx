@@ -27,7 +27,15 @@ export function SubpageSidebar({ title, items, className }: SubpageSidebarProps)
             <h2 className="font-semibold mb-4 px-2">{title}</h2>
             <nav className="space-y-1">
                 {items.map((item) => {
-                    const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+                    // Special handling for overview/home page
+                    let isActive = false
+                    if (item.id === 'overview') {
+                        // For overview, match exact path or path ending with /knowledge
+                        isActive = pathname === item.href || pathname === item.href + '/' || pathname?.endsWith('/knowledge')
+                    } else {
+                        // For other items, match exact or starts with
+                        isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+                    }
                     return (
                         <Link
                             key={item.id}

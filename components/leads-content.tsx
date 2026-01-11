@@ -160,7 +160,11 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                                     {lead.phone || "-"}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{lead.source}</TableCell>
+                                            <TableCell>
+                                                {lead.source === "In-Chat Conversation" || lead.source === "Sohbet İçi Konuşma" 
+                                                    ? (t('inChatConversation') || lead.source)
+                                                    : lead.source}
+                                            </TableCell>
                                             <TableCell className="text-right text-muted-foreground text-xs">
                                                 {new Date(lead.createdAt).toLocaleString()}
                                             </TableCell>

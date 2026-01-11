@@ -249,10 +249,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                 toast({
                     variant: "destructive",
-                    title: language === 'tr' ? "Modül Çakışması" : "Module Conflict",
-                    description: language === 'tr'
-                        ? `Bu modül, şu anda aktif olan "${conflictName}" modülü ile çakışmaktadır. Lütfen önce diğer modülü kapatın.`
-                        : `This module conflicts with the currently active "${conflictName}" module. Please disable it first.`
+                    title: t('moduleConflict') || "Module Conflict",
+                    description: (t('moduleConflictDesc') || "This module conflicts with the currently active \"{moduleName}\" module. Please disable it first.").replace('{moduleName}', conflictName)
                 });
                 setIsLoading(null); // Stop loading state
                 return; // Prevent toggle
@@ -294,8 +292,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             setModuleStates(prev => ({ ...prev, [moduleId]: checked }))
 
             toast({
-                title: checked ? (t('moduleEnabled') || "Modül Aktif Edildi") : (t('moduleDisabled') || "Modül Pasif Edildi"),
-                description: t('settingsSavedDesc') || "Ayarlarınız güncellendi."
+                title: checked ? (t('moduleEnabled') || "Module Enabled") : (t('moduleDisabled') || "Module Disabled"),
+                description: t('settingsSavedDesc') || "Your settings have been successfully updated."
             })
         } catch (error) {
             console.error("Error updating module:", error)
@@ -352,7 +350,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     // For all other modules which don't have a dedicated Admin page yet
                     toast({
                         title: t('comingSoon'),
-                        description: t('moduleUnderDevelopment') || "Bu modülün yönetim sayfası henüz hazırlanmaktadır."
+                        description: t('moduleUnderDevelopment') || "This module's settings page is currently under development."
                     })
             }
             return
@@ -438,14 +436,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             }
 
             toast({
-                title: t('requestSent') || "Talep Gönderildi",
-                description: t('requestSentDesc') || "Modül talebiniz yöneticiye iletildi. En kısa sürede sizinle iletişime geçeceğiz.",
+                title: t('requestSent') || "Request Sent",
+                description: t('requestSentDesc') || "Your module request has been forwarded to the administrator. We will contact you shortly.",
             })
         } catch (error) {
             console.error("Error sending request:", error)
             toast({
-                title: t('error') || "Hata",
-                description: t('requestFailedDesc') || "Talep gönderilemedi. Lütfen tekrar deneyin.",
+                title: t('error') || "Error",
+                description: t('requestFailedDesc') || "Failed to send request. Please try again.",
                 variant: "destructive"
             })
         } finally {
@@ -480,6 +478,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const filteredModules = useMemo(() => {
         const lang = language as 'en' | 'tr'
         return ORDERED_MODULES.filter(module => {
+            // Exclude core modules (they are always included, no need to show as separate modules)
+            if (module.isCore) {
+                return false
+            }
+
             const name = module.name[lang] || module.name.en
             const description = module.description[lang] || module.description.en
             const query = searchQuery.toLowerCase()
@@ -505,7 +508,13 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             if (a.status === 'coming_soon' && b.status !== 'coming_soon') return 1
             if (a.status !== 'coming_soon' && b.status === 'coming_soon') return -1
 
-            // 2. Within same status group, sort alphabetically by name
+            // 2. Included modules come first (before premium modules)
+            const aIncluded = isModuleIncluded(a.id)
+            const bIncluded = isModuleIncluded(b.id)
+            if (aIncluded && !bIncluded) return -1
+            if (!aIncluded && bIncluded) return 1
+
+            // 3. Within same group (included/premium), sort alphabetically by name
             const nameA = (a.name[lang] || a.name.en).toLowerCase()
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
@@ -544,14 +553,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{t('modules') || "Modüller"}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('modules') || "Modules"}</h2>
                     <p className="text-muted-foreground mt-1">
-                        {t('modulesDescription') || "Yapay zeka asistanlarını ve araçlarını yönetin."}
+                        {t('modulesDescription') || "Manage your active AI agents and tools."}
                     </p>
                 </div>
                 {!isSuperAdminViewingTenant && (
                     <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground font-medium">{t('activeSector') || 'Aktif Sektör'}:</span>
+                        <span className="text-muted-foreground font-medium">{t('activeSector') || 'Active Sector'}:</span>
                         <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 rounded-full border border-indigo-100 dark:border-indigo-500/20 font-semibold shadow-sm">
                             <Zap className="w-3.5 h-3.5 fill-indigo-700/20" />
                             {(industryConfig as any).names?.[language] || industryConfig.label}
@@ -566,7 +575,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     <div className="relative flex-1 md:max-w-xs">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder={t('searchModules') || "Modül ara..."}
+                            placeholder={t('searchModules') || "Search modules..."}
                             className="pl-9 h-10 w-full"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -576,10 +585,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     <Select value={industryFilter} onValueChange={setIndustryFilter}>
                         <SelectTrigger className="w-[180px] h-10">
                             <Filter className="w-4 h-4 mr-2" />
-                            <SelectValue placeholder={t('filterByIndustry') || "Sektör Filtrele"} />
+                            <SelectValue placeholder={t('filterByIndustry') || "Filter by Industry"} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">{t('allIndustries') || "Tüm Sektörler"}</SelectItem>
+                            <SelectItem value="all">{t('allIndustries') || "All Industries"}</SelectItem>
                             {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
                                 <SelectItem key={key} value={key}>
                                     {(config as any).names?.[language] || config.label}
@@ -597,7 +606,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         onClick={() => setViewMode('grid')}
                     >
                         <LayoutGrid className="h-4 w-4 lg:mr-2" />
-                        <span className="hidden lg:inline">{t('gridView') || "Grid"}</span>
+                        <span className="hidden lg:inline">{t('gridView') || "Grid View"}</span>
                     </Button>
                     <Button
                         variant={viewMode === 'list' ? 'secondary' : 'ghost'}
@@ -606,7 +615,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         onClick={() => setViewMode('list')}
                     >
                         <List className="h-4 w-4 lg:mr-2" />
-                        <span className="hidden lg:inline">{t('listView') || "Liste"}</span>
+                        <span className="hidden lg:inline">{t('listView') || "List View"}</span>
                     </Button>
                 </div>
             </div>
@@ -617,9 +626,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     <div className="flex justify-center mb-4">
                         <Search className="w-12 h-12 opacity-20" />
                     </div>
-                    <p>{t('noModulesFound') || "Modül bulunamadı."}</p>
+                    <p>{t('noModulesFound') || "No modules found"}</p>
                     <Button variant="link" onClick={() => { setSearchQuery(""); setIndustryFilter("all") }}>
-                        {t('clearFilters') || "Filtreleri Temizle"}
+                        {t('clearFilters') || "Clear Filters"}
                     </Button>
                 </div>
             ) : viewMode === 'grid' ? (
@@ -643,7 +652,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                     }`}
                             >
                                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-0">
-                                    <div className={`p-2 rounded-lg ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                                    <div className="p-2 rounded-lg bg-gray-100 text-gray-900">
                                         <IconComponent className="w-6 h-6" />
                                     </div>
                                     {isCoreModule ? (
@@ -674,7 +683,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             )}
                                             {isIncluded && !module.isCore && (
                                                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
-                                                    {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
+                                                    {t('included') || 'Included'}
                                                 </Badge>
                                             )}
                                             {module.isPremium && !isIncluded && (
@@ -704,6 +713,13 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         {module.description[language as 'en' | 'tr'] || module.description.en}
                                     </CardDescription>
 
+                                    {/* Premium Price Display */}
+                                    {module.isPremium && !isIncluded && module.price > 0 && (
+                                        <div className="mt-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
+                                            ${module.price}{t('month') || '/mo'}
+                                        </div>
+                                    )}
+
                                     <div className="mt-4 flex items-center gap-2 text-sm font-medium">
                                         {module.status === 'coming_soon' ? (
                                             <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
@@ -727,7 +743,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             className="flex-1 h-9 text-xs font-medium bg-black text-white hover:bg-zinc-800 rounded-full shadow-sm"
                                             disabled={!isActive}
                                         >
-                                            {language === 'tr' ? 'Yönet' : 'Manage'}
+                                            {t('manage') || 'Manage'}
                                             <ArrowRight className="w-3 h-3 ml-1.5" />
                                         </Button>
                                     ) : module.status === 'coming_soon' ? (
@@ -736,7 +752,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             variant="secondary"
                                             disabled
                                         >
-                                            {t('comingSoon') || "Yakında"}
+                                            {t('comingSoon') || "Coming Soon"}
                                         </Button>
                                     ) : (
                                         <Button
@@ -745,7 +761,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             onClick={() => handleRequest(module.id)}
                                             disabled={isLoading === module.id}
                                         >
-                                            {isLoading === module.id ? "..." : (t('requestAccess') || "Talep Oluştur")}
+                                            {isLoading === module.id ? "..." : (t('requestAccess') || "Request Access")}
                                         </Button>
                                     )}
                                     <Button
@@ -757,7 +773,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             setIsDetailsOpen(true)
                                         }}
                                     >
-                                        {language === 'tr' ? 'Detaylar' : 'Details'}
+                                        {t('details') || 'Details'}
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -780,7 +796,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                         return (
                             <div key={module.id} className={`flex items-center p-4 border rounded-xl gap-4 bg-white dark:bg-zinc-950 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 ${!isAccessGranted ? 'opacity-90' : ''}`}>
-                                <div className={`p-3 rounded-lg flex-shrink-0 ${isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-200 text-gray-500'}`}>
+                                <div className="p-3 rounded-lg flex-shrink-0 bg-gray-100 text-gray-900">
                                     <IconComponent className="w-6 h-6" />
                                 </div>
 
@@ -804,13 +820,19 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                     <div className="flex items-center gap-2 mt-1">
                                         {isIncluded && !module.isCore && (
                                             <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
-                                                {t('included') || (language === 'tr' ? 'Dahil' : 'Included')}
+                                                {t('included') || 'Included'}
                                             </Badge>
                                         )}
                                         {isPremiumAddOn && !isIncluded && (
                                             <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
                                                 Premium
                                             </Badge>
+                                        )}
+                                        {/* Premium Price Display */}
+                                        {isPremiumAddOn && !isIncluded && registryModule?.price > 0 && (
+                                            <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                                                ${registryModule.price}{t('month') || '/mo'}
+                                            </span>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
@@ -865,7 +887,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 className="h-9 bg-black text-white hover:bg-zinc-800 rounded-full px-4"
                                                 disabled={!isActive}
                                             >
-                                                {language === 'tr' ? 'Yönet' : 'Manage'}
+                                                {t('manage') || 'Manage'}
                                             </Button>
                                         ) : module.status === 'coming_soon' ? (
                                             <Button
@@ -873,7 +895,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 variant="secondary"
                                                 disabled
                                             >
-                                                {t('comingSoon') || "Yakında"}
+                                                {t('comingSoon') || "Coming Soon"}
                                             </Button>
                                         ) : (
                                             <Button
@@ -882,7 +904,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 onClick={() => handleRequest(module.id)}
                                                 disabled={isLoading === module.id}
                                             >
-                                                {isLoading === module.id ? "..." : (t('requestAccess') || "Talep Oluştur")}
+                                                {isLoading === module.id ? "..." : (t('requestAccess') || "Request Access")}
                                             </Button>
                                         )}
 

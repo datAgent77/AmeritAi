@@ -101,21 +101,8 @@ chrome.runtime.onMessage.addListener((request: any, sender: chrome.runtime.Messa
         });
     }
     else if (request.type === 'EXPORT_DATA') {
-        getAllEvents().then(events => {
-            fetch('http://localhost:3000/api/analyze-flow', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    url: sender.tab?.url || 'unknown-url',
-                    events: events
-                })
-            }).then(res => res.json())
-                .then(data => {
-                    console.log('Analysis started:', data);
-                    chrome.tabs.create({ url: 'http://localhost:3000/console/ui-ux-auditor/user-flow?source=extension' });
-                })
-                .catch(err => console.error('Export failed:', err));
-        });
+        // UI/UX Auditor feature has been removed
+        console.log('UI/UX Auditor feature has been removed');
         return true;
     }
     else if (request.type === 'GET_COUNT') {

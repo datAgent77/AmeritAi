@@ -12,6 +12,23 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: false,
     },
+    // Image configuration for external domains
+    images: {
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'images.unsplash.com',
+                port: '',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
+                hostname: 'images.pexels.com',
+                port: '',
+                pathname: '/**',
+            },
+        ],
+    },
     async headers() {
         return [
             {

@@ -129,8 +129,22 @@ function extractName(userMessages: string[]): string {
         }
 
         // Check for simple name (2-3 words, no numbers)
+        // BUT: Only if it doesn't look like a question or common chat phrase
         if (/^[a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+){0,2}$/i.test(trimmed) && !containsNonNameContent(trimmed)) {
-            return formatName(trimmed);
+            // Additional validation: reject common questions/phrases
+            const questionPatterns = [
+                /^(neler|ne|nasıl|neden|nerede|kim|hangi|kaç|ne zaman)/i, // Turkish questions
+                /^(what|how|why|where|who|which|when|can|will|do|does|is|are)/i, // English questions
+                /^(selam|merhaba|hello|hi|hey|merhabalar)/i, // Greetings
+                /^(evet|hayır|tamam|ok|yes|no|okay|okey)/i, // Simple responses
+                /^(bir|iki|üç|dört|beş|one|two|three|four|five)/i, // Numbers
+                /^(vion|nedir|yaparsın|yapıyor|yapabilir|neden|ne demek)/i, // Common chatbot phrases
+            ];
+            
+            const isQuestionOrPhrase = questionPatterns.some(pattern => pattern.test(trimmed));
+            if (!isQuestionOrPhrase) {
+                return formatName(trimmed);
+            }
         }
     }
 
@@ -147,6 +161,9 @@ function containsNonNameContent(text: string): boolean {
         /\d{4}/, // year or long number
         /pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar/i, // days
         /randevu|merhaba|evet|hayır|tamam|ok|teşekkür|demo|fiyat|bilgi/i, // common words
+        /[?!.,;:]/g, // punctuation (names usually don't have these)
+        /^(neler|ne|nasıl|neden|nerede|kim|hangi|kaç|ne zaman|vion|nedir|yaparsın|yapıyor|yapabilir)/i, // questions/phrases
+        /^(what|how|why|where|who|which|when|can|will|do|does|is|are)/i, // English questions
     ];
 
     return nonNamePatterns.some(p => p.test(text));

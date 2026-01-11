@@ -60,32 +60,40 @@ export function KnowledgeStats({ userId, refreshTrigger }: KnowledgeStatsProps) 
 
     const statCards = [
         {
+            id: "text",
             title: t('knowledgeText') || "Metin",
             value: stats.text,
             icon: Type,
-            color: "text-blue-600",
-            bgColor: "bg-blue-50"
+            color: "text-gray-900",
+            bgColor: "bg-gray-100",
+            label: t('knowledgeText') || "Metin"
         },
         {
+            id: "url",
             title: t('knowledgeUrl') || "URL",
             value: stats.url,
             icon: Globe,
-            color: "text-green-600",
-            bgColor: "bg-green-50"
+            color: "text-gray-900",
+            bgColor: "bg-gray-100",
+            label: t('knowledgeUrl') || "URL"
         },
         {
+            id: "file",
             title: t('knowledgeFile') || "Dosya",
             value: stats.file,
             icon: FileText,
-            color: "text-orange-600",
-            bgColor: "bg-orange-50"
+            color: "text-gray-900",
+            bgColor: "bg-gray-100",
+            label: t('knowledgeFile') || "Dosya"
         },
         {
+            id: "qa",
             title: t('knowledgeQa') || "Soru-Cevap",
             value: stats.qa,
             icon: MessageSquare,
-            color: "text-purple-600",
-            bgColor: "bg-purple-50"
+            color: "text-gray-900",
+            bgColor: "bg-gray-100",
+            label: t('knowledgeQa') || "Soru-Cevap"
         }
     ]
 
@@ -94,7 +102,7 @@ export function KnowledgeStats({ userId, refreshTrigger }: KnowledgeStatsProps) 
             {statCards.map((stat) => {
                 const IconComponent = stat.icon
                 return (
-                    <Card key={stat.title} className="hover:shadow-md transition-shadow">
+                    <Card key={stat.id} className="hover:shadow-md transition-shadow">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 {stat.title}
@@ -106,7 +114,7 @@ export function KnowledgeStats({ userId, refreshTrigger }: KnowledgeStatsProps) 
                         <CardContent>
                             <div className="text-2xl font-bold">{stat.value}</div>
                             <p className="text-xs text-muted-foreground mt-1">
-                                {t('documents') || "döküman"}
+                                {stat.label}
                             </p>
                         </CardContent>
                     </Card>

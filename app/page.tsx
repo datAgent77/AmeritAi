@@ -6,7 +6,12 @@ import { ArrowRight } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
+// Alternative versions available:
+// import { HeroBackgroundPremium } from "@/components/landing/hero-background-premium" // Aurora + Beams + Orbs
+// import { HeroBackgroundGeometric } from "@/components/landing/hero-background-geometric" // Clean geometric shapes
+// import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient" // Lightweight gradient
+// import { HeroBackground } from "@/components/landing/hero-background" // Old canvas-based (heavy)
 import { TextRotate } from "@/components/ui/text-rotate"
 
 // Modular Components
@@ -43,7 +48,7 @@ export default function LandingPage() {
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-                <HeroBackground />
+                <HeroBackgroundModern />
 
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-4xl mx-auto text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

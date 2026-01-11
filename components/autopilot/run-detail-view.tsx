@@ -119,7 +119,7 @@ export function RunDetailView({ run, isOpen, onClose }: RunDetailViewProps) {
                             <div className="text-center py-12 text-muted-foreground">
                                 <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-20" />
                                 <p>No AI analysis available for this run.</p>
-                                <Button variant="outline" className="mt-4" disabled>Coming Soon: On-Demand Analysis</Button>
+                                <p className="text-sm mt-2">AI analysis is generated automatically during test execution.</p>
                             </div>
                         )}
                     </TabsContent>

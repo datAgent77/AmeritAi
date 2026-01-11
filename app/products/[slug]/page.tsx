@@ -6,7 +6,7 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { getModule, ModuleDefinition } from "@/lib/modules-registry"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Check, Globe, Zap, Shield, BarChart } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, Globe, Zap, Shield, BarChart } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +63,42 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
                     <h1 className="text-2xl font-bold mb-4">Module Loading...</h1>
                     <Link href="/" className="text-zinc-500 hover:text-white">Return Home</Link>
                 </div>
+            </div>
+        )
+    }
+
+    // Check if module is coming soon - show coming soon page instead
+    if (module.status === 'coming_soon') {
+        return (
+            <div className="min-h-screen bg-black text-white font-sans">
+                <PublicHeader />
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="text-center max-w-2xl mx-auto px-4">
+                        <div className="mb-8">
+                            <div className="w-20 h-20 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center mx-auto mb-6">
+                                <Zap className="w-10 h-10 text-zinc-400" />
+                            </div>
+                            <Badge variant="outline" className="mb-4 border-zinc-500/30 text-zinc-400">
+                                {language === 'tr' ? 'Yakında' : 'Coming Soon'}
+                            </Badge>
+                            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                                {language === 'tr' ? module.name.tr : module.name.en}
+                            </h1>
+                            <p className="text-xl text-zinc-400 mb-8">
+                                {language === 'tr'
+                                    ? 'Bu modül şu anda geliştirilme aşamasındadır. Yakında kullanıma sunulacak!'
+                                    : 'This module is currently under development. It will be available soon!'}
+                            </p>
+                        </div>
+                        <Link href="/products">
+                            <Button className="h-12 px-8 rounded-full bg-white text-black hover:bg-zinc-200">
+                                {language === 'tr' ? 'Tüm Modülleri Gör' : 'View All Modules'}
+                                <ArrowRight className="ml-2 w-4 h-4" />
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+                <PublicFooter />
             </div>
         )
     }

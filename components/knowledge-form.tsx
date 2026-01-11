@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { db } from "@/lib/firebase"
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore"
@@ -14,14 +14,15 @@ import { useToast } from "@/hooks/use-toast"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/context/LanguageContext"
 import { useDropzone } from "react-dropzone"
-import { Card, CardContent } from "@/components/ui/card"
 
 interface KnowledgeFormProps {
     targetUserId?: string
     onSuccess?: () => void
+    defaultTab?: string
+    hideTabs?: boolean // Hide tab selector and show only the specified tab
 }
 
-export function KnowledgeForm({ targetUserId, onSuccess }: KnowledgeFormProps) {
+export function KnowledgeForm({ targetUserId, onSuccess, defaultTab = "text", hideTabs = false }: KnowledgeFormProps) {
     const { user } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
@@ -29,7 +30,14 @@ export function KnowledgeForm({ targetUserId, onSuccess }: KnowledgeFormProps) {
     // If targetUserId is provided (admin override), use it. Otherwise use current user.
     const effectiveUserId = targetUserId || user?.uid;
 
-    const [activeTab, setActiveTab] = useState("text")
+    const [activeTab, setActiveTab] = useState(defaultTab)
+
+    // Update activeTab when defaultTab changes (e.g., when modal opens with different tab)
+    useEffect(() => {
+        if (defaultTab) {
+            setActiveTab(defaultTab)
+        }
+    }, [defaultTab])
     const [isAdding, setIsAdding] = useState(false)
 
     // Form States
@@ -211,15 +219,16 @@ export function KnowledgeForm({ targetUserId, onSuccess }: KnowledgeFormProps) {
     }
 
     return (
-        <Card className="border-zinc-200 shadow-sm">
-            <CardContent className="p-6">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 mb-6">
-                        <TabsTrigger value="text" className="gap-2"><FileText className="w-4 h-4" /> {t('knowledgeText')}</TabsTrigger>
-                        <TabsTrigger value="url" className="gap-2"><LinkIcon className="w-4 h-4" /> {t('knowledgeUrl')}</TabsTrigger>
-                        <TabsTrigger value="file" className="gap-2"><UploadCloud className="w-4 h-4" /> {t('knowledgeFile')}</TabsTrigger>
-                        <TabsTrigger value="qa" className="gap-2"><HelpCircle className="w-4 h-4" /> {t('knowledgeQa')}</TabsTrigger>
-                    </TabsList>
+        <div className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    {!hideTabs && (
+                        <TabsList className="grid w-full grid-cols-4 mb-6">
+                            <TabsTrigger value="text" className="gap-2"><FileText className="w-4 h-4" /> {t('knowledgeText')}</TabsTrigger>
+                            <TabsTrigger value="url" className="gap-2"><LinkIcon className="w-4 h-4" /> {t('knowledgeUrl')}</TabsTrigger>
+                            <TabsTrigger value="file" className="gap-2"><UploadCloud className="w-4 h-4" /> {t('knowledgeFile')}</TabsTrigger>
+                            <TabsTrigger value="qa" className="gap-2"><HelpCircle className="w-4 h-4" /> {t('knowledgeQa')}</TabsTrigger>
+                        </TabsList>
+                    )}
 
                     {/* TEXT TAB */}
                     <TabsContent value="text" className="space-y-4">
@@ -346,7 +355,6 @@ export function KnowledgeForm({ targetUserId, onSuccess }: KnowledgeFormProps) {
                         )}
                     </Button>
                 </Tabs>
-            </CardContent>
-        </Card>
+        </div>
     )
 }

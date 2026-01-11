@@ -30,7 +30,8 @@ import {
     STEP_CONFIG,
     STEP_INDEX,
     OnboardingData,
-    canAccessStep
+    canAccessStep,
+    getCompletionPercentage
 } from "@/lib/onboarding-config"
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
 import {
@@ -458,35 +459,41 @@ export default function OnboardingPage() {
                     <VionLogo variant="black" className="text-xl dark:hidden" />
                     <VionLogo variant="white" className="text-xl hidden dark:block" />
 
-                    {/* Step Indicator */}
-                    <div className="flex items-center gap-2">
-                        {ONBOARDING_STEPS.map((step, i) => {
-                            const isCompleted = completedSteps.includes(step)
-                            const isCurrent = step === currentStep
+                    {/* Step Indicator with Progress */}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            {ONBOARDING_STEPS.map((step, i) => {
+                                const isCompleted = completedSteps.includes(step)
+                                const isCurrent = step === currentStep
 
-                            return (
-                                <div key={step} className="flex items-center">
-                                    <button
-                                        onClick={() => goToStep(step)}
-                                        disabled={!canAccessStep(step, completedSteps) && !isCompleted}
-                                        className={cn(
-                                            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                                            isCompleted && "bg-green-500 text-white",
-                                            isCurrent && !isCompleted && "bg-primary text-white ring-4 ring-primary/20",
-                                            !isCurrent && !isCompleted && "bg-gray-200 text-gray-500 dark:bg-zinc-700"
+                                return (
+                                    <div key={step} className="flex items-center">
+                                        <button
+                                            onClick={() => goToStep(step)}
+                                            disabled={!canAccessStep(step, completedSteps) && !isCompleted}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                                isCompleted && "bg-green-500 text-white",
+                                                isCurrent && !isCompleted && "bg-primary text-white ring-4 ring-primary/20",
+                                                !isCurrent && !isCompleted && "bg-gray-200 text-gray-500 dark:bg-zinc-700"
+                                            )}
+                                        >
+                                            {isCompleted ? <Check className="w-4 h-4" /> : i + 1}
+                                        </button>
+                                        {i < ONBOARDING_STEPS.length - 1 && (
+                                            <div className={cn(
+                                                "w-8 h-0.5 mx-1",
+                                                completedSteps.includes(step) ? "bg-green-500" : "bg-gray-200 dark:bg-zinc-700"
+                                            )} />
                                         )}
-                                    >
-                                        {isCompleted ? <Check className="w-4 h-4" /> : i + 1}
-                                    </button>
-                                    {i < ONBOARDING_STEPS.length - 1 && (
-                                        <div className={cn(
-                                            "w-8 h-0.5 mx-1",
-                                            completedSteps.includes(step) ? "bg-green-500" : "bg-gray-200 dark:bg-zinc-700"
-                                        )} />
-                                    )}
-                                </div>
-                            )
-                        })}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                        {/* Progress Percentage */}
+                        <div className="text-sm text-muted-foreground font-medium">
+                            {getCompletionPercentage(completedSteps)}%
+                        </div>
                     </div>
                 </div>
             </header>
@@ -628,6 +635,13 @@ export default function OnboardingPage() {
                                             <p className="text-sm text-muted-foreground leading-relaxed">
                                                 {module.description[language === 'tr' ? 'tr' : 'en']}
                                             </p>
+
+                                            {/* Premium Price Display */}
+                                            {isLocked && module.isPremium && module.price > 0 && (
+                                                <div className="mt-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
+                                                    ${module.price}{t('month') || '/mo'}
+                                                </div>
+                                            )}
 
                                             {/* Lock Hint */}
                                             {isLocked && (

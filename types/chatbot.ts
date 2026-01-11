@@ -40,7 +40,6 @@ export interface ChatbotSettings {
     enableAutoSpeak: boolean;
     preferredVoice: string;
     enablePersonalShopper: boolean;
-    enableUiUxAuditor: boolean;
     enableVisualDiagnosis: boolean;
     leadCustomFields: {
         id: string;

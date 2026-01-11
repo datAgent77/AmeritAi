@@ -1,5 +1,5 @@
 import React from "react"
-import { Type, Globe, FileText, MessageSquare, Settings2 } from "lucide-react"
+import { Type, Globe, FileText, MessageSquare, Settings2, LayoutDashboard } from "lucide-react"
 
 export interface KnowledgeMenuItem {
     id: string
@@ -16,6 +16,12 @@ export function getKnowledgeMenuItems(
     const normalizedBasePath = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
 
     return [
+        {
+            id: "overview",
+            label: t('knowledgeOverview') || "Genel Bakış",
+            href: normalizedBasePath,
+            icon: <LayoutDashboard className="w-4 h-4" />
+        },
         {
             id: "text",
             label: t('knowledgeText') || "Metin",

@@ -25,7 +25,7 @@ import {
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient"
 
 type SupportedLanguage = 'en' | 'tr'
 
@@ -160,7 +160,7 @@ export default function AiSupportPage() {
 
             {/* Hero Section */}
             <section className="relative pt-12 pb-20 md:pt-24 md:pb-28 overflow-hidden border-b border-white/5">
-                <HeroBackground />
+                <HeroBackgroundGradient />
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-4xl mx-auto text-center space-y-8 animate-in fade-in zoom-in-95 duration-700">
                         <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">

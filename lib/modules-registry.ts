@@ -681,10 +681,10 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         isCore: false,
         isPremium: true,
         price: 29,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: ['restaurant'],
         defaultEnabledBySector: ['restaurant'],
-        showOnLandingPage: false,
+        showOnLandingPage: true,
         legacyFirestoreField: 'enableDigitalWaiter',
         longDescription: {
             en: 'More than a menu. A digital waiter that greets your guests, recommends specialties, answers questions about allergens, and takes orders instantly via QR code.',
@@ -874,13 +874,13 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.knowledgeBase,     // Core
     MODULES_REGISTRY.productCatalog,    // Personal Shopper
     MODULES_REGISTRY.leadCollection,    // Lead Collection
-    MODULES_REGISTRY.voiceAssistant,    // Voice
     MODULES_REGISTRY.visualDiagnosis,   // Visual Analysis (Ready)
+    MODULES_REGISTRY.salesOptimization, // Sales Optimization (Ready)
+    MODULES_REGISTRY.proactiveMessaging, // Proactive Engagement (Ready)
+    MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
 
     // --- 2. COMING SOON MODULES ---
-    MODULES_REGISTRY.salesOptimization, // Coming Soon
-    MODULES_REGISTRY.proactiveMessaging, // Coming Soon
-    MODULES_REGISTRY.digitalWaiter,     // Coming Soon
+    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Coming Soon)
     MODULES_REGISTRY.appointments,      // Coming Soon
     // MODULES_REGISTRY.emailMarketing,    // Coming Soon - Not yet implemented
     // MODULES_REGISTRY.reviewManagement,  // Coming Soon - Removed

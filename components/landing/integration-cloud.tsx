@@ -1,10 +1,58 @@
 "use client"
 
 import { useLanguage } from "@/context/LanguageContext"
-import { MessageCircle, Instagram, ShoppingBag, Zap, Calendar as CalendarIcon } from "lucide-react"
+import Image from "next/image"
+import { Code2, Link2 } from "lucide-react"
 
 export function IntegrationCloud() {
     const { language } = useLanguage()
+
+    // Real brand integrations with official logos
+    const integrations = [
+        { 
+            name: 'WhatsApp Business', 
+            logo: '/integrations/whatsapp.svg',
+            bgColor: 'bg-[#25D366]',
+            isSvg: true
+        },
+        { 
+            name: 'Telegram', 
+            logo: '/integrations/telegram.svg',
+            bgColor: 'bg-[#0088cc]',
+            isSvg: true
+        },
+        { 
+            name: 'Slack', 
+            logo: '/integrations/slack.svg',
+            bgColor: 'bg-[#4A154B]',
+            isSvg: true
+        },
+        { 
+            name: 'Google Calendar', 
+            logo: '/integrations/google-calendar.svg',
+            bgColor: 'bg-[#4285F4]',
+            isSvg: true
+        },
+        { 
+            name: 'WordPress', 
+            logo: '/integrations/wordpress.svg',
+            bgColor: 'bg-[#21759B]',
+            isSvg: true,
+            noInvert: true
+        },
+        { 
+            name: 'Web Widget', 
+            icon: Code2,
+            bgColor: 'bg-indigo-600',
+            isSvg: false
+        },
+        { 
+            name: 'Direct Link', 
+            icon: Link2,
+            bgColor: 'bg-emerald-600',
+            isSvg: false
+        }
+    ]
 
     return (
         <section className="py-24 border-t border-white/5 relative overflow-hidden">
@@ -21,18 +69,21 @@ export function IntegrationCloud() {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-6 md:gap-12">
-                    {[
-                        { name: 'WhatsApp', icon: MessageCircle, color: 'text-green-500' },
-                        { name: 'Instagram', icon: Instagram, color: 'text-pink-500' },
-                        { name: 'Shopify', icon: ShoppingBag, color: 'text-lime-500' },
-                        { name: 'Zapier', icon: Zap, color: 'text-orange-500' },
-                        { name: 'Google Calendar', icon: CalendarIcon, color: 'text-blue-400' }
-                    ].map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-3 grayscale hover:grayscale-0 transition-all cursor-default">
-                            <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center hover:bg-zinc-800 hover:border-white/10 transition-all">
-                                <item.icon className={`w-10 h-10 ${item.color}`} />
+                    {integrations.map((item, i) => (
+                        <div key={i} className="flex flex-col items-center gap-3 hover:scale-110 transition-all cursor-default group">
+                            <div className={`w-20 h-20 rounded-2xl ${item.bgColor} flex items-center justify-center hover:shadow-2xl transition-all border border-white/10 group-hover:border-white/20`}>
+                                {item.isSvg ? (
+                                    <img 
+                                        src={item.logo} 
+                                        alt={item.name}
+                                        className="w-12 h-12 object-contain"
+                                        style={item.noInvert ? {} : { filter: 'brightness(0) invert(1)' }}
+                                    />
+                                ) : (
+                                    <item.icon className="w-10 h-10 text-white" />
+                                )}
                             </div>
-                            <span className="text-zinc-500 text-sm font-medium">{item.name}</span>
+                            <span className="text-zinc-400 text-sm font-medium group-hover:text-white transition-colors">{item.name}</span>
                         </div>
                     ))}
                 </div>

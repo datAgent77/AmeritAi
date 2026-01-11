@@ -35,7 +35,7 @@ const iconMapping: Record<string, any> = {
 
 export default function ModulesPage() {
     const { language } = useLanguage()
-    const modules = getAllModules()
+    const modules = getAllModules().filter(m => m.status === 'ready')
 
     return (
         <div className="min-h-screen bg-black text-white font-sans">

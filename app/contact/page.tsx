@@ -11,7 +11,7 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient"
 
 export default function ContactPage() {
     const { language } = useLanguage()
@@ -62,7 +62,7 @@ export default function ContactPage() {
             <PublicHeader transparent={true} />
 
             <div className="absolute top-0 left-0 w-full h-[120vh] min-h-[800px] overflow-hidden -z-10">
-                <HeroBackground />
+                <HeroBackgroundGradient />
             </div>
 
             {/* Breadcrumb */}

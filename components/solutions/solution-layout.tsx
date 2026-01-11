@@ -3,7 +3,7 @@
 
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -49,7 +49,7 @@ export function SolutionLayout({
         <div className="min-h-screen bg-black text-white font-sans selection:bg-purple-500/30 relative">
             {/* Full Screen Fixed Background */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <HeroBackground />
+                <HeroBackgroundModern />
             </div>
 
             {/* Relative z-10 content to sit on top of background */}

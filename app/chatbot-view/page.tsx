@@ -461,6 +461,8 @@ function ChatbotViewContent() {
             createdAt: new Date()
         }
         setMessages((prev: any) => [...prev, userMessage])
+        setChatStatus('submitted')
+        setIsTyping(true) // Show typing animation
 
         try {
             const controller = new AbortController()
@@ -486,10 +488,12 @@ function ChatbotViewContent() {
 
             if (!response.ok) throw new Error('Chat API error')
 
+            setChatStatus('streaming')
             const reader = response.body?.getReader()
             const decoder = new TextDecoder()
             let assistantContent = ''
             const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+            let hasReceivedFirstChunk = false
 
             // Add placeholder assistant message
             setMessages((prev: any) => [...prev, { id: assistantMsgId, role: 'assistant', content: '', createdAt: new Date() }])
@@ -499,8 +503,19 @@ function ChatbotViewContent() {
                 if (done) break
                 const chunk = decoder.decode(value, { stream: true })
                 assistantContent += chunk
+                
+                // Hide typing indicator when first chunk arrives
+                if (!hasReceivedFirstChunk && chunk.trim()) {
+                    hasReceivedFirstChunk = true
+                    setIsTyping(false)
+                }
+                
                 setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
             }
+
+            // Hide typing indicator when response is complete (fallback if no chunks received)
+            setIsTyping(false)
+            setChatStatus('idle')
 
             // If content is empty (e.g. paused session or error), remove the placeholder
             if (!assistantContent.trim()) {
@@ -535,21 +550,14 @@ function ChatbotViewContent() {
                 // For now, let's add a visual cue in the next section
             }
 
-            // Check if AI suggested a UI/UX Audit
-            if (settings.enableUiUxAuditor && (
-                assistantContent.toLowerCase().includes('analiz') ||
-                assistantContent.toLowerCase().includes('denetim') ||
-                assistantContent.toLowerCase().includes('ux') ||
-                assistantContent.toLowerCase().includes('ui') ||
-                assistantContent.toLowerCase().includes('audit')
-            )) {
-                setShowAuditSuggestion(true)
-            }
-
             return assistantContent
 
         } catch (error: any) {
             console.error('Chat error:', error)
+
+            // Hide typing indicator on error
+            setIsTyping(false)
+            setChatStatus('idle')
 
             // Remove the placeholder on error so we don't leave an empty bubble
             // We can't access assistantMsgId here easily due to scope, 
@@ -905,7 +913,6 @@ function ChatbotViewContent() {
         enableAutoSpeak: false,
         preferredVoice: "",
         enablePersonalShopper: false,
-        enableUiUxAuditor: false,
         enableVisualDiagnosis: false,
         leadCustomFields: [] as { id: string; label: string; type: string; required: boolean; placeholder?: string; options?: string[] }[],
         salesOptimizationConfig: {
@@ -961,7 +968,6 @@ function ChatbotViewContent() {
                         enableAutoSpeak: data.enableAutoSpeak || false,
                         preferredVoice: data.preferredVoice || "",
                         enablePersonalShopper: data.enablePersonalShopper || false,
-                        enableUiUxAuditor: data.enableUiUxAuditor || false,
                         enableVisualDiagnosis: data.enableVisualDiagnosis || false,
                         leadCustomFields: data.leadCustomFields || [],
                         salesOptimizationConfig: data.salesOptimizationConfig || {},
@@ -1410,7 +1416,6 @@ function ChatbotViewContent() {
         notes: ""
     })
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
-    const [showAuditSuggestion, setShowAuditSuggestion] = useState(false)
 
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -1998,10 +2003,18 @@ function ChatbotViewContent() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1.5">
-                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                    <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
+                                        {/* Typing dots animation */}
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                                        </div>
+                                        
+                                        {/* Thinking text */}
+                                        <span className="text-xs text-gray-400">
+                                            {language === 'tr' ? 'Düşünüyor...' : 'Thinking...'}
+                                        </span>
                                     </div>
                                 </div>
                             )}

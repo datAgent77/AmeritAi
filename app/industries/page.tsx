@@ -24,7 +24,7 @@ import {
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
 
 export default function IndustriesPage() {
     const { t, language } = useLanguage()
@@ -162,7 +162,7 @@ export default function IndustriesPage() {
         <div className="min-h-screen bg-black text-white selection:bg-purple-500/30 font-sans relative overflow-x-hidden">
             {/* BACKGROUND ANIMATION - Fixed to cover full screen behind everything */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <HeroBackground />
+                <HeroBackgroundModern />
             </div>
 
             <div className="relative z-10">

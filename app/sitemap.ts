@@ -37,7 +37,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         'ai-sales-chatbot',
         'ai-copywriter',
         'ai-lead-finder',
-        'ui-ux-auditor',
         'ai-social-media', // Removed if deleted, but keeping checking
     ]
 

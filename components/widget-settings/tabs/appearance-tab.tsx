@@ -13,6 +13,17 @@ import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { WidgetSettings } from "@/hooks/use-widget-settings"
 import { uploadHeaderLogo, uploadLauncherIcon, uploadLauncherFullImage } from "@/lib/widget-settings-utils"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Textarea } from "@/components/ui/textarea"
+import { Trash2 } from "lucide-react"
+import { INDUSTRY_CONFIG } from "@/lib/industry-config"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 interface AppearanceTabProps {
     settings: WidgetSettings
@@ -23,10 +34,47 @@ interface AppearanceTabProps {
 }
 
 export function AppearanceTab({ settings, setSettings, userId, isUploading, setIsUploading }: AppearanceTabProps) {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
     const { user } = useAuth()
     const { toast } = useToast()
     const [searchTerm, setSearchTerm] = useState("")
+
+    // Branding functions
+    const addSuggestedQuestion = () => {
+        if (settings.suggestedQuestions.length >= 4) {
+            return
+        }
+
+        let nextQuestion = ""
+        const industryConfig = settings.industry ? INDUSTRY_CONFIG[settings.industry] : INDUSTRY_CONFIG['other']
+        const pool = (industryConfig as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || []
+
+        const unusedQuestion = pool.find((q: string) => !settings.suggestedQuestions.includes(q))
+
+        if (unusedQuestion) {
+            nextQuestion = unusedQuestion
+        } else {
+            const otherPool = (INDUSTRY_CONFIG['other'] as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || []
+            const otherUnused = otherPool.find((q: string) => !settings.suggestedQuestions.includes(q))
+            if (otherUnused) nextQuestion = otherUnused
+        }
+
+        setSettings(prev => ({
+            ...prev,
+            suggestedQuestions: [...prev.suggestedQuestions, nextQuestion]
+        }))
+    }
+
+    const updateSuggestedQuestion = (index: number, value: string) => {
+        const newQuestions = [...settings.suggestedQuestions]
+        newQuestions[index] = value
+        setSettings(prev => ({ ...prev, suggestedQuestions: newQuestions }))
+    }
+
+    const removeSuggestedQuestion = (index: number) => {
+        const newQuestions = settings.suggestedQuestions.filter((_, i) => i !== index)
+        setSettings(prev => ({ ...prev, suggestedQuestions: newQuestions }))
+    }
 
     const handleHeaderLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -134,10 +182,78 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
     }
 
     return (
-        <div className="space-y-8">
-            {/* Position & View */}
-            <div className="space-y-6">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('positionLayout')}</h4>
+        <Accordion type="single" collapsible defaultValue="brand-settings" className="w-full space-y-2">
+            {/* Marka Ayarları */}
+            <AccordionItem value="brand-settings" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('branding') || 'Marka Ayarları'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="grid gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="company-name">{t('companyName')}</Label>
+                            <Input
+                                id="company-name"
+                                placeholder="Enter your company name"
+                                value={settings.companyName}
+                                onChange={(e) => setSettings(prev => ({ ...prev, companyName: e.target.value }))}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="welcome-message">{t('welcomeMessage')}</Label>
+                            <Textarea
+                                id="welcome-message"
+                                placeholder="Enter the first message the user sees..."
+                                value={settings.welcomeMessage}
+                                onChange={(e) => setSettings(prev => ({ ...prev, welcomeMessage: e.target.value }))}
+                                className="resize-none min-h-[100px]"
+                            />
+                        </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+
+            {/* Önerilen Sorular */}
+            <AccordionItem value="suggested-questions" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('suggestedQuestions') || 'Önerilen Sorular'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-4">
+                        {settings.suggestedQuestions.map((question, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                <Input
+                                    value={question}
+                                    onChange={(e) => updateSuggestedQuestion(index, e.target.value)}
+                                    placeholder={`Question ${index + 1}`}
+                                />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeSuggestedQuestion(index)}
+                                    className="shrink-0"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        {settings.suggestedQuestions.length < 4 && (
+                            <Button variant="outline" size="sm" onClick={addSuggestedQuestion}>
+                                + {t('addQuestion')}
+                            </Button>
+                        )}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+
+            {/* Widget Position */}
+            <AccordionItem value="widget-position" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('positionLayout') || 'Widget Pozisyonu'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-6">
                 <div className="grid gap-4">
                     <div className="grid gap-2">
                         <Label>{t('widgetPosition')}</Label>
@@ -177,11 +293,17 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                         </div>
                     )}
                 </div>
-            </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
 
             {/* Header Customization */}
-            <div className="space-y-6">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('headerCustomization') || 'Header Özelleştirme'}</h4>
+            <AccordionItem value="header-customization" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('headerCustomization') || 'Header Özelleştirme'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-6">
                 <div className="grid gap-4">
                     <div className="grid gap-2">
                         <Label>{t('headerLogo') || 'Header Logo'}</Label>
@@ -267,11 +389,17 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                         </div>
                     </div>
                 </div>
-            </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
 
             {/* Launcher Settings */}
-            <div className="space-y-6">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('launcherAppearance')}</h4>
+            <AccordionItem value="launcher-settings" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('launcherAppearance') || 'Launcher Ayarları'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-6">
 
                 {/* Launcher Type Selection */}
                 <div className="grid gap-2">
@@ -546,11 +674,17 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                         )}
                     </div>
                 )}
-            </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
 
             {/* Effects & Spacing */}
-            <div className="space-y-6">
-                <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('effectsSpacing')}</h4>
+            <AccordionItem value="effects-spacing" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <span className="text-sm font-medium">{t('effectsSpacing') || 'Efektler ve Boşluklar'}</span>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-6">
                 <div className="grid gap-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
@@ -597,7 +731,84 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+
+            {/* Çalışma Saatleri */}
+            <AccordionItem value="business-hours" className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-4">
+                        <span className="text-sm font-medium">{t('availability') || 'Çalışma Saatleri'}</span>
+                        <Switch
+                            checked={settings.enableBusinessHours}
+                            onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableBusinessHours: checked }))}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-4 pb-6">
+                    <div className="space-y-6">
+                        <div className="text-sm text-muted-foreground">
+                            {t('enableBusinessHoursDesc')}
+                        </div>
+
+                        {settings.enableBusinessHours && (
+                            <div className="grid gap-4">
+                                <div className="grid gap-2">
+                                    <Label>{t('timezone')}</Label>
+                                    <Select
+                                        value={settings.timezone}
+                                        onValueChange={(value) => setSettings(prev => ({ ...prev, timezone: value }))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={t('selectTimezone')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="UTC">UTC</SelectItem>
+                                            <SelectItem value="America/New_York">New York (EST)</SelectItem>
+                                            <SelectItem value="Europe/London">London (GMT)</SelectItem>
+                                            <SelectItem value="Europe/Istanbul">Istanbul (TRT)</SelectItem>
+                                            <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2">
+                                        <Label>{t('startTime')}</Label>
+                                        <Input
+                                            type="time"
+                                            value={settings.businessHoursStart}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, businessHoursStart: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label>{t('endTime')}</Label>
+                                        <Input
+                                            type="time"
+                                            value={settings.businessHoursEnd}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, businessHoursEnd: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label>{t('offlineMessage')}</Label>
+                                    <Textarea
+                                        placeholder={t('offlineMessagePlaceholder')}
+                                        value={settings.offlineMessage}
+                                        onChange={(e) => setSettings(prev => ({ ...prev, offlineMessage: e.target.value }))}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('offlineMessageDesc')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     )
 }

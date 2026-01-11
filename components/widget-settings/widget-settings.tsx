@@ -1,11 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Loader2, Save, MessageSquare, Sparkles, X, Send, Palette, Eye, Clock } from "lucide-react"
+import { Loader2, Save, MessageSquare, Sparkles, X, Send, Eye } from "lucide-react"
 import { icons } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -13,9 +11,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useWidgetSettings } from "@/hooks/use-widget-settings"
 import { uploadLogo } from "@/lib/widget-settings-utils"
-import { BrandingTab } from "./tabs/branding-tab"
 import { AppearanceTab } from "./tabs/appearance-tab"
-import { AvailabilityTab } from "./tabs/availability-tab"
 import Lottie from "lottie-react"
 
 interface WidgetSettingsProps {
@@ -27,24 +23,12 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
     const userId = propUserId || user?.uid
     const { toast } = useToast()
     const { t } = useLanguage()
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
 
     const { settings, setSettings, isLoading, isSaving, saveSettings } = useWidgetSettings(userId)
     const [isUploading, setIsUploading] = useState(false)
     const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-    const [activeTab, setActiveTab] = useState("branding")
     const [lottieData, setLottieData] = useState<any>(null)
-
-    // Sync active tab with URL parameter
-    useEffect(() => {
-        const tabParam = searchParams.get('tab')
-        if (tabParam && ['branding', 'appearance', 'availability'].includes(tabParam)) {
-            setActiveTab(tabParam)
-        }
-    }, [searchParams])
 
     // Fetch Lottie animation data for preview
     useEffect(() => {
@@ -60,13 +44,6 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
             setLottieData(null)
         }
     }, [settings.launcherLottieUrl])
-
-    const handleTabChange = (value: string) => {
-        setActiveTab(value)
-        const params = new URLSearchParams(searchParams)
-        params.set('tab', value)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -124,25 +101,10 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
     }
 
     const getHeaderInfo = (tab: string) => {
-        switch (tab) {
-            case 'branding':
-                return { title: t('brandingTitle'), desc: t('brandingDesc') }
-            case 'appearance':
-                return { title: t('appearanceTitle'), desc: t('appearanceDesc') }
-            case 'availability':
-                return { title: t('availabilityTitle'), desc: t('availabilityDesc') }
-            default:
-                return { title: t('chatbotConfiguration'), desc: t('configureChatbotDesc') }
-        }
+        return { title: t('appearanceTitle'), desc: t('appearanceDesc') }
     }
 
-    const { title: headerTitle, desc: headerDesc } = getHeaderInfo(activeTab)
-
-    const menuItems = [
-        { id: 'branding', label: t('branding') || 'Marka Ayarları', icon: <Palette className="w-4 h-4" /> },
-        { id: 'appearance', label: t('appearance') || 'Görünüm', icon: <Eye className="w-4 h-4" /> },
-        { id: 'availability', label: t('availabilityTitle') || 'Müsaitlik', icon: <Clock className="w-4 h-4" /> },
-    ]
+    const { title: headerTitle, desc: headerDesc } = getHeaderInfo('appearance')
 
     const renderIcon = (iconName: string, className?: string) => {
         const IconComponent = (icons as any)[iconName] || (LucideIcons as any)[iconName]
@@ -160,26 +122,6 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
 
     return (
         <div className="flex h-full bg-white">
-            {/* Sidebar Menu */}
-            <div className="w-56 border-r bg-muted/30 p-4 flex-shrink-0">
-                <h2 className="font-semibold mb-4 px-2">{t('widgetSettings')}</h2>
-                <nav className="space-y-1">
-                    {menuItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => handleTabChange(item.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${activeTab === item.id
-                                ? "bg-primary text-primary-foreground"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                }`}
-                        >
-                            <span>{item.icon}</span>
-                            <span className="truncate overflow-hidden text-ellipsis whitespace-nowrap">{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
-            </div>
-
             {/* Main Content */}
             <div className="flex flex-1 flex-col lg:flex-row gap-6 py-6 px-6 bg-white overflow-auto">
                 {/* Settings Panel */}
@@ -195,27 +137,15 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                         </Button>
                     </div>
 
-                    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                        <TabsContent value="branding" className="space-y-8 mt-6">
-                            <BrandingTab settings={settings} setSettings={setSettings} />
-                        </TabsContent>
+                    <AppearanceTab
+                        settings={settings}
+                        setSettings={setSettings}
+                        userId={userId || ''}
+                        isUploading={isUploading}
+                        setIsUploading={setIsUploading}
+                    />
 
-                        <TabsContent value="appearance" className="space-y-8 mt-6">
-                            <AppearanceTab
-                                settings={settings}
-                                setSettings={setSettings}
-                                userId={userId || ''}
-                                isUploading={isUploading}
-                                setIsUploading={setIsUploading}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="availability" className="space-y-8 mt-6">
-                            <AvailabilityTab settings={settings} setSettings={setSettings} />
-                        </TabsContent>
-                    </Tabs>
-
-                    <div className="flex items-center gap-3 pt-4 border-t">
+                    <div className="flex items-center gap-3 pt-4">
                         <Button onClick={handleSave} disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             <Save className="mr-2 h-4 w-4" />

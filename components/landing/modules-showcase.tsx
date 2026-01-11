@@ -26,7 +26,7 @@ export function ModulesShowcase() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {ORDERED_MODULES.filter(m => m && m.showOnLandingPage).map((mod) => {
+                    {ORDERED_MODULES.filter(m => m && m.showOnLandingPage && m.status === 'ready').map((mod) => {
                         // Map icon name to component
                         const IconComponent = {
                             ShoppingBag, Eye, Gamepad2, Megaphone, Utensils, MessageSquare,
@@ -40,6 +40,18 @@ export function ModulesShowcase() {
                             coming_soon: 'text-zinc-500'
                         }[mod.status];
 
+                        // Status translation
+                        const getStatusText = (status: string) => {
+                            if (status === 'ready') {
+                                return t('moduleReady') || (language === 'tr' ? 'Hazır' : 'Ready');
+                            } else if (status === 'beta') {
+                                return t('moduleBeta') || (language === 'tr' ? 'Beta' : 'Beta');
+                            } else if (status === 'coming_soon') {
+                                return t('comingSoon') || (language === 'tr' ? 'Yakında' : 'Coming Soon');
+                            }
+                            return status.replace('_', ' ');
+                        };
+
                         return (
                             <div key={mod.id} className="group relative p-8 rounded-3xl bg-zinc-900/30 border border-white/5 hover:border-white/10 transition-all duration-500 overflow-hidden">
                                 {/* Glass reflection effect */}
@@ -51,7 +63,7 @@ export function ModulesShowcase() {
                                             <IconComponent className="w-8 h-8 text-white" />
                                         </div>
                                         <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-white/5 border border-white/10 ${statusColor}`}>
-                                            {mod.status.replace('_', ' ')}
+                                            {getStatusText(mod.status)}
                                         </span>
                                     </div>
 
@@ -67,7 +79,7 @@ export function ModulesShowcase() {
                                         href={`/products/${mod.id}`}
                                         className="inline-flex items-center text-sm font-medium text-zinc-300 hover:text-white transition-colors gap-2"
                                     >
-                                        {language === 'tr' ? 'İncele' : 'Learn More'}
+                                        {t('learnMore') || (language === 'tr' ? 'İncele' : 'Learn More')}
                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </Link>
                                 </div>

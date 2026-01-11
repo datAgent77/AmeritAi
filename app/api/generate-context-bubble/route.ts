@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         const userData = userDoc.data()
 
         // Check both plan and subscription status
-        const isPremium = userData?.plan === 'premium' || userData?.subscription?.status === 'active' || true // TODO: Remove true bypass in production
+        const isPremium = userData?.plan === 'premium' || userData?.subscription?.status === 'active'
 
         if (!isPremium) {
             return NextResponse.json({ error: "Premium subscription required" }, { status: 403 })

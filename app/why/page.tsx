@@ -21,25 +21,84 @@ import {
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { HeroBackground } from "@/components/landing/hero-background"
+import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient"
+import { getModule } from "@/lib/feature-consistency-checker"
+import { ModuleId } from "@/lib/modules-registry"
 
 export default function WhyPage() {
     const { t, language } = useLanguage()
 
-    const comparisonData = [
-        { feature: language === 'tr' ? 'Satış Optimizasyonu' : 'Sales Optimization', userex: true, tawkto: false, intercom: 'partial', drift: 'partial' },
-        { feature: language === 'tr' ? 'Sektöre Özel AI' : 'Industry-Specific AI', userex: true, tawkto: false, intercom: false, drift: false },
-        { feature: language === 'tr' ? 'Marka Özelleştirme' : 'Brand Customization', userex: 'free', tawkto: '$29/mo', intercom: '$$$', drift: '$$$' },
-        { feature: language === 'tr' ? 'XML Feed Sync' : 'XML Feed Sync', userex: true, tawkto: false, intercom: false, drift: false },
-        { feature: language === 'tr' ? 'Stok Uyarıları' : 'Stock Alerts', userex: true, tawkto: false, intercom: false, drift: false },
-        { feature: language === 'tr' ? 'Sepet Kurtarma' : 'Cart Recovery', userex: true, tawkto: false, intercom: 'partial', drift: true },
-        { feature: language === 'tr' ? 'Randevu Sistemi' : 'Appointment System', userex: true, tawkto: false, intercom: true, drift: true },
-        { feature: language === 'tr' ? 'UI/UX Auditor' : 'UI/UX Auditor', userex: true, tawkto: false, intercom: false, drift: false },
-        { feature: language === 'tr' ? 'Canlı Destek (Takeover)' : 'Live Chat (Takeover)', userex: true, tawkto: true, intercom: true, drift: true },
-        { feature: language === 'tr' ? 'Knowledge Base' : 'Knowledge Base', userex: true, tawkto: true, intercom: true, drift: false },
-        { feature: language === 'tr' ? 'Lead Toplama' : 'Lead Collection', userex: true, tawkto: true, intercom: true, drift: true },
-        { feature: language === 'tr' ? 'Çok Kanallı' : 'Omnichannel', userex: 'partial', tawkto: true, intercom: true, drift: true },
+    // Feature mapping: feature name -> module ID (for ready status check)
+    const featureModuleMap: Record<string, ModuleId | 'core' | 'widget'> = {
+        'Sales Optimization': 'salesOptimization',
+        'Satış Optimizasyonu': 'salesOptimization',
+        'Industry-Specific AI': 'core', // Core feature, always available
+        'Sektöre Özel AI': 'core',
+        'Brand Customization': 'widget', // Widget settings, always available
+        'Marka Özelleştirme': 'widget',
+        'XML Feed Sync': 'productCatalog',
+        'Stok Uyarıları': 'productCatalog',
+        'Stock Alerts': 'productCatalog',
+        'Cart Recovery': 'salesOptimization',
+        'Sepet Kurtarma': 'salesOptimization',
+        'Appointment System': 'appointments',
+        'Randevu Sistemi': 'appointments',
+        'Live Chat (Takeover)': 'core', // Core feature
+        'Canlı Destek (Takeover)': 'core',
+        'Knowledge Base': 'knowledgeBase',
+        'Lead Collection': 'leadCollection',
+        'Lead Toplama': 'leadCollection',
+        'Omnichannel': 'core', // Core feature
+        'Çok Kanallı': 'core'
+    }
+
+    // Build comparison data dynamically from MODULES_REGISTRY
+    const baseComparisonData = [
+        { featureKey: 'Sales Optimization', moduleId: 'salesOptimization' as ModuleId, tawkto: false, intercom: 'partial' as const, drift: 'partial' as const },
+        { featureKey: 'Industry-Specific AI', moduleId: 'core' as const, tawkto: false, intercom: false, drift: false },
+        { featureKey: 'Brand Customization', moduleId: 'widget' as const, tawkto: '$29/mo', intercom: '$$$', drift: '$$$' },
+        { featureKey: 'XML Feed Sync', moduleId: 'productCatalog' as ModuleId, tawkto: false, intercom: false, drift: false },
+        { featureKey: 'Stock Alerts', moduleId: 'productCatalog' as ModuleId, tawkto: false, intercom: false, drift: false },
+        { featureKey: 'Cart Recovery', moduleId: 'salesOptimization' as ModuleId, tawkto: false, intercom: 'partial' as const, drift: true },
+        { featureKey: 'Appointment System', moduleId: 'appointments' as ModuleId, tawkto: false, intercom: true, drift: true },
+        { featureKey: 'Live Chat (Takeover)', moduleId: 'core' as const, tawkto: true, intercom: true, drift: true },
+        { featureKey: 'Knowledge Base', moduleId: 'knowledgeBase' as ModuleId, tawkto: true, intercom: true, drift: false },
+        { featureKey: 'Lead Collection', moduleId: 'leadCollection' as ModuleId, tawkto: true, intercom: true, drift: true },
+        { featureKey: 'Omnichannel', moduleId: 'core' as const, tawkto: true, intercom: true, drift: true },
     ]
+
+    const comparisonData = baseComparisonData.map(item => {
+        let userex: boolean | string = true
+        
+        if (item.moduleId === 'core' || item.moduleId === 'widget') {
+            // Core features and widget settings are always available
+            userex = true
+        } else {
+            // Check if module is ready
+            const module = getModule(item.moduleId)
+            userex = module?.status === 'ready' || false
+        }
+
+        return {
+            feature: language === 'tr' 
+                ? (item.featureKey === 'Sales Optimization' ? 'Satış Optimizasyonu' :
+                   item.featureKey === 'Industry-Specific AI' ? 'Sektöre Özel AI' :
+                   item.featureKey === 'Brand Customization' ? 'Marka Özelleştirme' :
+                   item.featureKey === 'XML Feed Sync' ? 'XML Feed Sync' :
+                   item.featureKey === 'Stock Alerts' ? 'Stok Uyarıları' :
+                   item.featureKey === 'Cart Recovery' ? 'Sepet Kurtarma' :
+                   item.featureKey === 'Appointment System' ? 'Randevu Sistemi' :
+                   item.featureKey === 'Live Chat (Takeover)' ? 'Canlı Destek (Takeover)' :
+                   item.featureKey === 'Knowledge Base' ? 'Knowledge Base' :
+                   item.featureKey === 'Lead Collection' ? 'Lead Toplama' :
+                   item.featureKey === 'Omnichannel' ? 'Çok Kanallı' : item.featureKey)
+                : item.featureKey,
+            userex,
+            tawkto: item.tawkto,
+            intercom: item.intercom,
+            drift: item.drift
+        }
+    })
 
     const renderStatus = (status: boolean | string) => {
         if (status === true) return <CheckCircle2 className="w-5 h-5 text-white" />
@@ -53,7 +112,7 @@ export default function WhyPage() {
             <PublicHeader transparent={true} />
 
             <div className="absolute top-0 left-0 w-full h-[120vh] min-h-[800px] overflow-hidden -z-10">
-                <HeroBackground />
+                <HeroBackgroundGradient />
             </div>
 
             {/* Breadcrumb */}

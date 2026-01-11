@@ -6,8 +6,9 @@ import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const AccordionContext = React.createContext<{
-    value?: string
+    value?: string | string[]
     onValueChange?: (value: string) => void
+    type?: "single" | "multiple"
 }>({})
 
 const Accordion = React.forwardRef<
@@ -15,17 +16,32 @@ const Accordion = React.forwardRef<
     React.HTMLAttributes<HTMLDivElement> & {
         type?: "single" | "multiple",
         collapsible?: boolean,
-        defaultValue?: string
+        defaultValue?: string | string[]
     }
->(({ className, type, collapsible, defaultValue, children, ...props }, ref) => {
-    const [value, setValue] = React.useState<string>(defaultValue || "")
+>(({ className, type = "single", collapsible, defaultValue, children, ...props }, ref) => {
+    const [value, setValue] = React.useState<string | string[]>(
+        type === "multiple" 
+            ? (Array.isArray(defaultValue) ? defaultValue : (defaultValue ? [defaultValue] : []))
+            : (typeof defaultValue === "string" ? defaultValue : (Array.isArray(defaultValue) ? defaultValue[0] : ""))
+    )
 
     const handleValueChange = (newValue: string) => {
-        setValue(prev => (prev === newValue && collapsible) ? "" : newValue)
+        if (type === "multiple") {
+            setValue(prev => {
+                const prevArray = Array.isArray(prev) ? prev : []
+                if (prevArray.includes(newValue)) {
+                    return prevArray.filter(v => v !== newValue)
+                } else {
+                    return [...prevArray, newValue]
+                }
+            })
+        } else {
+            setValue(prev => (prev === newValue && collapsible) ? "" : newValue)
+        }
     }
 
     return (
-        <AccordionContext.Provider value={{ value, onValueChange: handleValueChange }}>
+        <AccordionContext.Provider value={{ value, onValueChange: handleValueChange, type }}>
             <div ref={ref} className={cn("", className)} {...props}>
                 {children}
             </div>
@@ -46,7 +62,7 @@ const AccordionTrigger = React.forwardRef<
     HTMLButtonElement,
     React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, children, ...props }, ref) => {
-    const { value, onValueChange } = React.useContext(AccordionContext)
+    const { value, onValueChange, type } = React.useContext(AccordionContext)
     // Find parent item value (hacky without context for item, but let's assume direct child or use ref)
     // Actually, for a proper implementation without Radix, we need ItemContext. 
     // Let's rely on simple composition where Trigger is inside Item.
@@ -56,7 +72,9 @@ const AccordionTrigger = React.forwardRef<
     return (
         <AccordionItemContext.Consumer>
             {({ value: itemValue }) => {
-                const isOpen = value === itemValue
+                const isOpen = type === "multiple" 
+                    ? (Array.isArray(value) ? value.includes(itemValue) : false)
+                    : (value === itemValue)
                 return (
                     <div className="flex">
                         <button
@@ -84,11 +102,13 @@ const AccordionContent = React.forwardRef<
     HTMLDivElement,
     React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-    const { value } = React.useContext(AccordionContext)
+    const { value, type } = React.useContext(AccordionContext)
     return (
         <AccordionItemContext.Consumer>
             {({ value: itemValue }) => {
-                const isOpen = value === itemValue
+                const isOpen = type === "multiple"
+                    ? (Array.isArray(value) ? value.includes(itemValue) : false)
+                    : (value === itemValue)
                 if (!isOpen) return null
                 return (
                     <div

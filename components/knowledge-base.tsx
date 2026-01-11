@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/table"
 import { KnowledgeForm } from "@/components/knowledge-form"
 import { useLanguage } from "@/context/LanguageContext"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Plus } from "lucide-react"
 
 interface KnowledgeDoc {
     id: string
@@ -42,6 +44,7 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
     const [docs, setDocs] = useState<KnowledgeDoc[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [selectedDoc, setSelectedDoc] = useState<KnowledgeDoc | null>(null)
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false)
 
     const fetchDocs = useCallback(async () => {
         if (!userId) return
@@ -105,11 +108,29 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
             )}
 
             <div className="grid gap-8 md:grid-cols-2">
-                {/* Left: Add New Data (Form) */}
+                {/* Left: Add New Data Button */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-medium">{t('addNewData')}</h3>
-                    {/* Using the new extracted component */}
-                    <KnowledgeForm targetUserId={userId} onSuccess={fetchDocs} />
+                    <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="w-full" size="lg">
+                                <Plus className="mr-2 h-5 w-5" />
+                                {t('addNewData') || "Yeni Eğitim Ekle"}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>{t('addNewData') || "Yeni Eğitim Ekle"}</DialogTitle>
+                            </DialogHeader>
+                            <KnowledgeForm 
+                                targetUserId={userId} 
+                                onSuccess={() => {
+                                    fetchDocs()
+                                    setIsFormModalOpen(false)
+                                }} 
+                            />
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 {/* Right: List Data */}
