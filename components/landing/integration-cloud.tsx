@@ -69,23 +69,26 @@ export function IntegrationCloud() {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-6 md:gap-12">
-                    {integrations.map((item, i) => (
-                        <div key={i} className="flex flex-col items-center gap-3 hover:scale-110 transition-all cursor-default group">
-                            <div className={`w-20 h-20 rounded-2xl ${item.bgColor} flex items-center justify-center hover:shadow-2xl transition-all border border-white/10 group-hover:border-white/20`}>
-                                {item.isSvg ? (
-                                    <img 
-                                        src={item.logo} 
-                                        alt={item.name}
-                                        className="w-12 h-12 object-contain"
-                                        style={item.noInvert ? {} : { filter: 'brightness(0) invert(1)' }}
-                                    />
-                                ) : (
-                                    <item.icon className="w-10 h-10 text-white" />
-                                )}
+                    {integrations.map((item, i) => {
+                        const IconComponent = item.icon
+                        return (
+                            <div key={i} className="flex flex-col items-center gap-3 hover:scale-110 transition-all cursor-default group">
+                                <div className={`w-20 h-20 rounded-2xl ${item.bgColor} flex items-center justify-center hover:shadow-2xl transition-all border border-white/10 group-hover:border-white/20`}>
+                                    {item.isSvg ? (
+                                        <img 
+                                            src={item.logo} 
+                                            alt={item.name}
+                                            className="w-12 h-12 object-contain"
+                                            style={item.noInvert ? {} : { filter: 'brightness(0) invert(1)' }}
+                                        />
+                                    ) : (
+                                        IconComponent && <IconComponent className="w-10 h-10 text-white" />
+                                    )}
+                                </div>
+                                <span className="text-zinc-400 text-sm font-medium group-hover:text-white transition-colors">{item.name}</span>
                             </div>
-                            <span className="text-zinc-400 text-sm font-medium group-hover:text-white transition-colors">{item.name}</span>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
             </div>
         </section>
