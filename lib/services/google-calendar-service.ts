@@ -77,11 +77,11 @@ export class GoogleCalendarService {
                     description: event.description || "",
                     start: {
                         ...event.start,
-                        timeZone: event.start.timeZone || "UTC"
+                        ...('dateTime' in event.start ? { timeZone: event.start.timeZone || "UTC" } : {})
                     },
                     end: {
                         ...event.end,
-                        timeZone: event.end.timeZone || "UTC"
+                        ...('dateTime' in event.end ? { timeZone: event.end.timeZone || "UTC" } : {})
                     },
                     location: event.location,
                     attendees: event.attendees || []
