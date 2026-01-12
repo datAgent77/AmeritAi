@@ -45,6 +45,9 @@ export default function AdminLayout({
     // The path should contain /admin/tenant/ and have a segment after it
     const isTenantDetail = pathname && pathname.startsWith("/admin/tenant/") && pathname.split("/").length > 3
 
+    // Check if we are in the content management page
+    const isContentPage = pathname && pathname.startsWith("/admin/content")
+
     // For tenant detail pages, let the nested layout handle everything
     if (isTenantDetail) {
         return <>{children}</>
@@ -64,7 +67,7 @@ export default function AdminLayout({
                     <SiteHeader />
 
                     {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto w-full p-0">
+                    <main className={`flex-1 overflow-y-auto w-full ${isContentPage ? 'p-0' : 'p-8'}`}>
                         <div className="w-full">
                             {children}
                         </div>

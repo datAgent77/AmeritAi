@@ -79,7 +79,7 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
                     onClick={() => window.open(`/widget-test?id=${user?.uid}`, "_blank")}
                     className="hidden md:flex items-center gap-2"
                 >
-                    Widget Test
+                    {t('widgetTest') || "Widget Test"}
                 </Button>
                 <NotificationBell />
             </div>

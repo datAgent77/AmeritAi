@@ -120,7 +120,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
 
     const tenantGroups = [
         {
-            label: "Build",
+            label: t('build') || "Build",
             items: [
                 {
                     title: t('training') || "Training",
@@ -138,7 +138,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
             ]
         },
         {
-            label: "Connect",
+            label: t('connect') || "Connect",
             items: [
                 {
                     title: t('widgetSettings') || "Web Widget",
@@ -155,7 +155,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
             ]
         },
         {
-            label: "Grow",
+            label: t('grow') || "Grow",
             items: [
                 {
                     title: t('chats') || "Inbox", // Label change for clarity
@@ -218,7 +218,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="bg-[#000000] px-2 py-4">
+                <SidebarContent className="bg-[#000000] px-2 py-1.5 gap-0">
                     {/* Super Admin Back Button */}
                     {targetUserId && (
                         <SidebarMenu className="mb-4">
@@ -396,6 +396,24 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={pathname.startsWith("/admin/subscriptions")}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            pathname.startsWith("/admin/subscriptions")
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/admin/subscriptions">
+                                            <CreditCard className={cn("size-4", pathname.startsWith("/admin/subscriptions") ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('customerAdmin') || "Abonelik yönetimi"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
                             </SidebarMenu>
                         </>
                     )}
@@ -439,7 +457,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                             {user?.email?.[0].toUpperCase() || 'U'}
                                         </div>
                                         <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                            <span className="truncate font-semibold">{user?.displayName || 'User'}</span>
+                                            <span className="truncate font-semibold">{user?.displayName || t('user') || 'Kullanıcı'}</span>
                                             <span className="truncate text-xs text-zinc-400">{user?.email}</span>
                                         </div>
                                     </SidebarMenuButton>
@@ -457,7 +475,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                                 {user?.email?.[0].toUpperCase() || 'U'}
                                             </div>
                                             <div className="flex flex-col overflow-hidden">
-                                                <span className="truncate font-semibold text-sm">{user?.displayName || 'User'}</span>
+                                                <span className="truncate font-semibold text-sm">{user?.displayName || t('user') || 'Kullanıcı'}</span>
                                                 <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                                             </div>
                                         </div>

@@ -197,7 +197,7 @@ export default function AdminRequestsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-8">
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">{t('moduleRequests') || "Modül Erişim Talepleri"}</h2>
                 <p className="text-muted-foreground">{t('moduleRequestsDesc') || "Kullanıcıların modül taleplerini yönetin."}</p>

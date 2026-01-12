@@ -1,11 +1,12 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { Users, LogOut, Shield, Home, Settings } from "lucide-react"
+import { Users, LogOut, Shield, Home, Settings, CreditCard } from "lucide-react"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import Link from "next/link"
 
 import {
@@ -34,7 +35,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
     const router = useRouter()
     const params = useParams()
     const { toast } = useToast()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
+    const { t } = useLanguage()
 
     // Check if we are in tenant detail view
     const userId = params?.userId as string
@@ -79,21 +81,41 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 </SidebarGroup>
 
                 {userId && (
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Tenant Management</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton asChild>
-                                        <Link href={`/admin/tenant/${userId}?tab=settings`}>
-                                            <Settings />
-                                            <span>Assistant Settings</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                    <>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Tenant Management</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <SidebarMenuItem>
+                                        <SidebarMenuButton asChild>
+                                            <Link href={`/admin/tenant/${userId}?tab=settings`}>
+                                                <Settings />
+                                                <span>Assistant Settings</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        {role === 'SUPER_ADMIN' && (
+                            <SidebarGroup>
+                                <SidebarGroupLabel>{t('administration') || 'Yönetim'}</SidebarGroupLabel>
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton asChild>
+                                                <Link href={`/admin/tenant/${userId}/settings/customer-admin`}>
+                                                    <CreditCard />
+                                                    <span>{t('customerAdmin') || 'Abonelik yönetimi'}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        )}
+                    </>
                 )}
             </SidebarContent>
             <SidebarFooter>

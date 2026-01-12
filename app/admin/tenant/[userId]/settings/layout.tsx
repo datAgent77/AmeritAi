@@ -49,12 +49,6 @@ export default function TenantSettingsLayout({
                 label: t('accountSettings') || "Hesap Ayarları",
                 href: `/admin/tenant/${userId}/settings/account`,
                 icon: <UserCog className="w-4 h-4" />
-            },
-            {
-                id: "customer-admin",
-                label: t('customerAdmin') || "Müşteri Yönetimi",
-                href: `/admin/tenant/${userId}/settings/customer-admin`,
-                icon: <ShieldCheck className="w-4 h-4" />
             }
         ] : [])
 

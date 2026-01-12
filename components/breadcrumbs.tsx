@@ -38,7 +38,7 @@ export function Breadcrumbs() {
         <Breadcrumb className="hidden md:flex">
             <BreadcrumbList>
                 <BreadcrumbItem>
-                    <BreadcrumbLink href="/platform">Platform</BreadcrumbLink>
+                    <BreadcrumbLink href="/platform">{t('platformTitle') || "Platform"}</BreadcrumbLink>
                 </BreadcrumbItem>
                 {segments.map((segment, index) => {
                     // Skip redundant segments
@@ -71,7 +71,9 @@ export function Breadcrumbs() {
                         "catalog": t('productCatalog'),
                         "settings": t('settings'),
                         "modules": t('modules') || "Modules",
-                        "appointments": t('appointments') || "Appointments"
+                        "appointments": t('appointments') || "Appointments",
+                        "customer-admin": t('customerAdmin') || "Abonelik yönetimi",
+                        "subscriptions": t('subscriptions') || "Abonelikler"
                     }
 
                     // Skip "leads" and "voice" if the previous segment is "modules"
