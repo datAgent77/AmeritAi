@@ -829,7 +829,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             </Badge>
                                         )}
                                         {/* Premium Price Display */}
-                                        {isPremiumAddOn && !isIncluded && registryModule?.price > 0 && (
+                                        {isPremiumAddOn && !isIncluded && registryModule?.price && registryModule.price > 0 && (
                                             <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
                                                 ${registryModule.price}{t('month') || '/mo'}
                                             </span>
