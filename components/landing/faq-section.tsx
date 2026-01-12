@@ -32,6 +32,23 @@ export function FAQSection() {
                         </AccordionItem>
                     ))}
                 </Accordion>
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "FAQPage",
+                            "mainEntity": [1, 2, 3, 4, 5].map(num => ({
+                                "@type": "Question",
+                                "name": t(`faqQ${num}`),
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": t(`faqA${num}`)
+                                }
+                            }))
+                        })
+                    }}
+                />
             </div>
         </section>
     )

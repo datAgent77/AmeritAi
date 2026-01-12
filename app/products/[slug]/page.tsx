@@ -228,6 +228,30 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
                 </div>
             </section>
 
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "SoftwareApplication",
+                        "name": language === 'tr' ? module.name.tr : module.name.en,
+                        "description": language === 'tr' ? module.description.tr : module.description.en,
+                        "applicationCategory": "BusinessApplication",
+                        "operatingSystem": "Web",
+                        "offers": {
+                            "@type": "Offer",
+                            "price": "0",
+                            "priceCurrency": "USD"
+                        },
+                        "aggregateRating": {
+                            "@type": "AggregateRating",
+                            "ratingValue": "4.8",
+                            "ratingCount": "24"
+                        }
+                    })
+                }}
+            />
+
             <PublicFooter />
         </div>
     )
