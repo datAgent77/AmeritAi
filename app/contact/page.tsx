@@ -44,12 +44,13 @@ export default function ContactPage() {
                     description: language === 'tr' ? 'En kısa sürede size dönüş yapacağız.' : 'We will get back to you soon.'
                 })
             } else {
-                throw new Error('Failed to send')
+                const data = await response.json()
+                throw new Error(data.details || 'Failed to send')
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: language === 'tr' ? 'Hata' : 'Error',
-                description: language === 'tr' ? 'Mesaj gönderilemedi. Lütfen tekrar deneyin.' : 'Failed to send message. Please try again.',
+                description: error.message || (language === 'tr' ? 'Mesaj gönderilemedi. Lütfen tekrar deneyin.' : 'Failed to send message. Please try again.'),
                 variant: 'destructive'
             })
         } finally {
