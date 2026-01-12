@@ -87,7 +87,6 @@ export function getFeatureModuleMapping(): Record<string, ModuleId | null> {
         'Satış Optimizasyonu': 'salesOptimization',
         'Sektöre Özel AI': 'generalChatbot',
         'Marka Özelleştirme': 'generalChatbot',
-        'XML Feed Sync': 'productCatalog',
         'Stok Uyarıları': 'productCatalog',
         'Sepet Kurtarma': 'salesOptimization',
         'Randevu Sistemi': 'appointments',
