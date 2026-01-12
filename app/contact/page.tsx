@@ -45,7 +45,7 @@ export default function ContactPage() {
                 })
             } else {
                 const data = await response.json()
-                throw new Error(data.details || 'Failed to send')
+                throw new Error(data.details || data.error || 'Failed to send')
             }
         } catch (error: any) {
             toast({
