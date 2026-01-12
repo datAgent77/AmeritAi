@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { SEED_BLOG_POSTS } from '@/lib/seed-cms-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://userex-ai.com' // Replace with your actual domain
+    const baseUrl = 'https://getvion.com' // Updated to actual domain
 
     // Static pages
     const routes = [

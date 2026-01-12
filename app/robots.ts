@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/console/', '/api/'],
         },
-        sitemap: 'https://userex-ai.com/sitemap.xml', // Replace with your actual domain
+        sitemap: 'https://getvion.com/sitemap.xml',
     }
 }
