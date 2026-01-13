@@ -1,6 +1,8 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     const adminDb = getAdminDb();
     try {

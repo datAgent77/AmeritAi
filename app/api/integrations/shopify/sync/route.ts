@@ -1,6 +1,8 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { ShopifyService } from "@/lib/services/shopify-service";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     const adminDb = getAdminDb();
     try {
