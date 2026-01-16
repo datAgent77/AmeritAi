@@ -70,11 +70,12 @@ export function extractLeadData(messages: ChatMessage[]): ExtractedLeadData {
 
 /**
  * Extract customer name from user messages
+ * STRICT: Only accepts explicit name statements or name combined with contact info
  */
 function extractName(userMessages: string[]): string {
     const combinedText = userMessages.join(' ');
 
-    // Strategy 1: Look for explicit name statements
+    // Strategy 1: Look for EXPLICIT name statements (highest confidence)
     const explicitPatterns = [
         /(?:adım|ismim|ben)\s+([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+)?)/i,
         /(?:my name is|i am|i'm)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i,
@@ -82,73 +83,89 @@ function extractName(userMessages: string[]): string {
 
     for (const pattern of explicitPatterns) {
         const match = combinedText.match(pattern);
-        if (match && match[1]) {
+        if (match && match[1] && looksLikeName(match[1])) {
             return formatName(match[1]);
         }
     }
 
-    // Strategy 2: Look for name followed by contact info
-    // Pattern: "Name Surname, phone" or "Name Surname email@..."
+    // Strategy 2: Look for name ONLY when combined with valid contact info
     for (const msg of userMessages) {
         const trimmed = msg.trim();
 
-        // Skip if it looks like just a question or command
-        if (trimmed.length < 3 || trimmed.length > 100) continue;
-        if (/^(evet|hayır|tamam|ok|merhaba|selam|hello|hi)\s*$/i.test(trimmed)) continue;
+        // Skip short or long messages
+        if (trimmed.length < 5 || trimmed.length > 80) continue;
 
-        // Check for: "Name Surname, phone_number"
-        const nameWithPhoneMatch = trimmed.match(/^([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+)?)\s*[,\s]+(\+?[\d\s\-]+)$/i);
-        if (nameWithPhoneMatch && nameWithPhoneMatch[1].length > 2) {
+        // Check for: "Name Surname, phone_number" pattern
+        const nameWithPhoneMatch = trimmed.match(/^([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+)?)\s*[,\s]+(\+?[\d\s\-]{8,})$/i);
+        if (nameWithPhoneMatch && nameWithPhoneMatch[1] && looksLikeName(nameWithPhoneMatch[1])) {
             return formatName(nameWithPhoneMatch[1]);
         }
 
-        // Check for: "Name Surname email@..."
+        // Check for: "Name Surname email@..." pattern
         const nameWithEmailMatch = trimmed.match(/^([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+)?)\s+[a-zA-Z0-9._-]+@/i);
-        if (nameWithEmailMatch) {
+        if (nameWithEmailMatch && looksLikeName(nameWithEmailMatch[1])) {
             return formatName(nameWithEmailMatch[1]);
-        }
-
-        // Check for: "Company Name Surname, phone" (3 word pattern)
-        const companyNamePhoneMatch = trimmed.match(/^([a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+){1,3})\s*[,\s]+(\+?[\d\s\-]+)$/i);
-        if (companyNamePhoneMatch) {
-            const words = companyNamePhoneMatch[1].split(/\s+/);
-            if (words.length >= 2) {
-                // Try to separate company from name (common patterns)
-                const companyKeywords = ['firması', 'şirketi', 'ltd', 'a.ş', 'inc', 'company', 'corp'];
-                const hasCompanyWord = words.some(w => companyKeywords.some(k => w.toLowerCase().includes(k)));
-
-                if (hasCompanyWord) {
-                    // First word is likely company, rest is name
-                    const name = words.slice(1).join(' ');
-                    if (name.length > 2) return formatName(name);
-                } else if (words.length >= 2) {
-                    // Assume last 2 words are name
-                    return formatName(words.slice(-2).join(' '));
-                }
-            }
-        }
-
-        // Check for simple name (2-3 words, no numbers)
-        // BUT: Only if it doesn't look like a question or common chat phrase
-        if (/^[a-zA-ZğüşöçıİĞÜŞÖÇ]+(?:\s+[a-zA-ZğüşöçıİĞÜŞÖÇ]+){0,2}$/i.test(trimmed) && !containsNonNameContent(trimmed)) {
-            // Additional validation: reject common questions/phrases
-            const questionPatterns = [
-                /^(neler|ne|nasıl|neden|nerede|kim|hangi|kaç|ne zaman)/i, // Turkish questions
-                /^(what|how|why|where|who|which|when|can|will|do|does|is|are)/i, // English questions
-                /^(selam|merhaba|hello|hi|hey|merhabalar)/i, // Greetings
-                /^(evet|hayır|tamam|ok|yes|no|okay|okey)/i, // Simple responses
-                /^(bir|iki|üç|dört|beş|one|two|three|four|five)/i, // Numbers
-                /^(vion|nedir|yaparsın|yapıyor|yapabilir|neden|ne demek)/i, // Common chatbot phrases
-            ];
-            
-            const isQuestionOrPhrase = questionPatterns.some(pattern => pattern.test(trimmed));
-            if (!isQuestionOrPhrase) {
-                return formatName(trimmed);
-            }
         }
     }
 
+    // DO NOT accept random standalone text as names anymore
+    // This prevents garbage like "selam", "adfadf", "hangi sektör odaklısın" from being saved
     return "";
+}
+
+/**
+ * Validate if text actually looks like a human name
+ */
+function looksLikeName(text: string): boolean {
+    const cleaned = text.trim();
+    
+    // Minimum 3 characters
+    if (cleaned.length < 3) return false;
+    
+    // Maximum 40 characters (names shouldn't be too long)
+    if (cleaned.length > 40) return false;
+    
+    // Single word names must be between 3-15 chars
+    if (!cleaned.includes(' ') && (cleaned.length < 3 || cleaned.length > 15)) return false;
+    
+    // Must start with a letter
+    if (!/^[a-zA-ZğüşöçıİĞÜŞÖÇ]/i.test(cleaned)) return false;
+    
+    // Only letters and spaces allowed
+    if (!/^[a-zA-ZğüşöçıİĞÜŞÖÇ\s]+$/.test(cleaned)) return false;
+    
+    // Blacklist of common non-name words
+    const blacklist = [
+        // Greetings
+        'selam', 'merhaba', 'merhabalar', 'hello', 'hi', 'hey',
+        // Responses
+        'evet', 'hayır', 'tamam', 'ok', 'okay', 'yes', 'no',
+        // Test/spam
+        'test', 'deneme', 'adfadf', 'asdf', 'asdfasdf', 'xxx', 'aaa', 'bbb', 'abc', 'qwerty',
+        // Common questions (Turkish)
+        'nedir', 'nasıl', 'neden', 'nerede', 'hangi', 'yaparsın', 'yapıyor', 'yapabilir',
+        // Common questions (English)
+        'what', 'how', 'why', 'where', 'which', 'when', 'can', 'will', 'are', 'you', 'sure',
+        // Brands/products
+        'vion', 'chatbot', 'robot', 'yapay', 'zeka',
+    ];
+    
+    const lowerText = cleaned.toLowerCase();
+    if (blacklist.some(word => lowerText === word || lowerText.startsWith(word + ' ') || lowerText.endsWith(' ' + word))) {
+        return false;
+    }
+    
+    // Check for question patterns
+    if (/^(ne |neler |nasıl |neden |nerede |kim |hangi |kaç |what |how |why |where |who |which |when |can |will |do |does |is |are )/i.test(cleaned)) {
+        return false;
+    }
+    
+    // Check for common chat phrases
+    if (/profil|design|sektör|test|odaklı|yapabilir|performed|profiles|features/i.test(cleaned)) {
+        return false;
+    }
+    
+    return true;
 }
 
 /**
