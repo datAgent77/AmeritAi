@@ -47,7 +47,7 @@ export function FeaturesGrid() {
     ]
 
     return (
-        <section className="py-32 bg-zinc-950 border-t border-white/5">
+        <section className="py-32 bg-background border-t border-border">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {features.map((feature, i) => (
@@ -59,15 +59,15 @@ export function FeaturesGrid() {
                             transition={{ duration: 0.5, delay: i * 0.05 }}
                             className="group relative"
                         >
-                            <div className="h-full p-6 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-white/10 hover:bg-zinc-900 transition-all duration-300">
+                            <div className="h-full p-6 rounded-xl bg-card border border-border hover:border-foreground/20 hover:bg-accent hover:shadow-lg transition-all duration-300">
                                 {/* Top accent line */}
-                                <div className="w-12 h-px bg-white/20 mb-6 group-hover:bg-white/40 group-hover:w-16 transition-all duration-300" />
+                                <div className="w-12 h-px bg-foreground/20 mb-6 group-hover:bg-foreground/40 group-hover:w-16 transition-all duration-300" />
                                 
-                                <h3 className="text-lg font-bold mb-3 text-white group-hover:text-zinc-300 transition-colors">
+                                <h3 className="text-lg font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
                                     {t(feature.titleKey)}
                                 </h3>
                                 
-                                <p className="text-zinc-500 leading-relaxed font-light text-sm group-hover:text-zinc-400 transition-colors">
+                                <p className="text-muted-foreground leading-relaxed font-light text-sm group-hover:text-foreground transition-colors">
                                     {t(feature.descKey)}
                                 </p>
                             </div>
@@ -83,7 +83,7 @@ export function FeaturesGrid() {
                     transition={{ duration: 0.5, delay: 0.5 }}
                     className="text-center mt-12 pt-8"
                 >
-                    <p className="text-zinc-500 text-sm font-light max-w-2xl mx-auto">
+                    <p className="text-muted-foreground text-sm font-light max-w-2xl mx-auto">
                         {language === 'tr' 
                             ? 'Ve daha fazlası... Vion, işletmenizin ihtiyaçlarına göre özelleştirilebilir onlarca özellik sunar. Tüm özellikleri keşfetmek için modüller sayfasını ziyaret edin.'
                             : 'And much more... Vion offers dozens of customizable features tailored to your business needs. Visit the modules page to explore all features.'}

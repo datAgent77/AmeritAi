@@ -12,21 +12,21 @@ export function FAQSection() {
     const { t } = useLanguage()
 
     return (
-        <section className="py-32 bg-zinc-950/30 border-t border-white/5">
+        <section className="py-32 bg-muted/30 border-t border-border">
             <div className="container mx-auto px-4 max-w-3xl">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                         {t('faqTitle')}
                     </h2>
                 </div>
 
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {[1, 2, 3, 4, 5].map((num) => (
-                        <AccordionItem key={num} value={`item-${num}`} className="border-white/5 bg-zinc-900/30 px-6 rounded-2xl overflow-hidden">
-                            <AccordionTrigger className="text-white hover:no-underline text-left py-6">
+                        <AccordionItem key={num} value={`item-${num}`} className="border-border bg-card px-6 rounded-2xl overflow-hidden shadow-sm">
+                            <AccordionTrigger className="text-foreground hover:no-underline text-left py-6">
                                 {t(`faqQ${num}`)}
                             </AccordionTrigger>
-                            <AccordionContent className="text-zinc-400 pb-6 leading-relaxed">
+                            <AccordionContent className="text-muted-foreground pb-6 leading-relaxed">
                                 {t(`faqA${num}`)}
                             </AccordionContent>
                         </AccordionItem>

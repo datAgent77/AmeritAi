@@ -43,7 +43,7 @@ export default function LandingPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white selection:bg-purple-500/30 font-sans">
+        <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30 font-sans">
             <PublicHeader transparent={true} />
 
             {/* Hero Section */}
@@ -52,7 +52,7 @@ export default function LandingPage() {
 
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-4xl mx-auto text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-zinc-400 backdrop-blur-sm">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-muted-foreground backdrop-blur-sm">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -61,7 +61,7 @@ export default function LandingPage() {
                         </div>
 
                         <div className="h-[120px] md:h-[180px] flex items-center justify-center">
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-white leading-tight min-h-[80px] flex flex-col items-center justify-center">
+                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-foreground leading-tight min-h-[80px] flex flex-col items-center justify-center">
                                 <TextRotate
                                     texts={language === 'tr' ? slogans.tr : slogans.en}
                                     duration={6000}
@@ -69,7 +69,7 @@ export default function LandingPage() {
                             </h1>
                         </div>
 
-                        <p className="text-xl md:text-2xl text-zinc-400 max-w-2xl mx-auto leading-relaxed font-light">
+                        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
                             {language === 'tr'
                                 ? "Vion, müşteri sorularını cevaplayan değil, işletme hedeflerine (satış, randevu, lead) göre hareket eden akıllı bir AI asistandır."
                                 : "Vion is not just a chatbot that answers questions, but an intelligent AI assistant that acts based on your business goals (sales, leads, appointments)."}
@@ -77,7 +77,7 @@ export default function LandingPage() {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
                             <Link href="/signup">
-                                <Button className="h-14 px-8 text-lg bg-white text-black hover:bg-zinc-200 transition-all rounded-full font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
+                                <Button className="h-14 px-8 text-lg bg-foreground text-background hover:bg-foreground/90 transition-all rounded-full font-medium shadow-xl dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
                                     {language === 'tr' ? 'Ücretsiz Başlayın' : 'Start for Free'}
                                     <ArrowRight className="ml-2 w-5 h-5" />
                                 </Button>

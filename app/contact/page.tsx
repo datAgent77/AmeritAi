@@ -11,7 +11,7 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
-import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient"
+import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
 
 export default function ContactPage() {
     const { language } = useLanguage()
@@ -59,33 +59,33 @@ export default function ContactPage() {
     }
 
     return (
-        <div className="dark min-h-screen bg-black text-white selection:bg-white/20 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-purple-500/30 relative flex flex-col">
             <PublicHeader transparent={true} />
 
-            <div className="absolute top-0 left-0 w-full h-[120vh] min-h-[800px] overflow-hidden -z-10">
-                <HeroBackgroundGradient />
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <HeroBackgroundModern />
             </div>
 
             {/* Breadcrumb */}
             <div className="container mx-auto px-4 pt-24 pb-4 relative z-10">
-                <div className="flex items-center gap-2 text-sm text-zinc-500">
-                    <Link href="/" className="hover:text-white transition-colors flex items-center gap-1">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Link href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
                         <Home className="w-4 h-4" />
                         Home
                     </Link>
                     <ChevronRight className="w-4 h-4" />
-                    <span className="text-white">{language === 'tr' ? 'İletişim' : 'Contact'}</span>
+                    <span className="text-foreground">{language === 'tr' ? 'İletişim' : 'Contact'}</span>
                 </div>
             </div>
 
             {/* Hero */}
-            <section className="relative pt-12 pb-16 overflow-hidden border-b border-white/5">
+            <section className="relative pt-12 pb-16 overflow-hidden border-b border-border">
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="max-w-2xl mx-auto text-center space-y-4 animate-in fade-in zoom-in-95 duration-700">
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
                             {language === 'tr' ? 'Bize Ulaşın' : 'Contact Us'}
                         </h1>
-                        <p className="text-lg text-zinc-400 font-light">
+                        <p className="text-lg text-muted-foreground font-light">
                             {language === 'tr'
                                 ? 'Sorularınız için buradayız. Demo talep edin veya destek alın.'
                                 : 'We\'re here for your questions. Request a demo or get support.'}
@@ -95,19 +95,19 @@ export default function ContactPage() {
             </section>
 
             {/* Contact Section */}
-            <section className="py-16 relative z-10">
+            <section className="py-16 relative z-10 flex-1">
                 <div className="container mx-auto px-4">
                     <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
 
                         {/* Contact Form */}
-                        <div className="bg-white/5 border border-white/5 rounded-3xl p-8 backdrop-blur-sm">
+                        <div className="bg-card/80 border border-border rounded-3xl p-8 backdrop-blur-sm shadow-lg">
                             {isSubmitted ? (
                                 <div className="text-center py-12 animate-in fade-in zoom-in">
-                                    <CheckCircle2 className="w-16 h-16 text-white mx-auto mb-4" />
-                                    <h3 className="text-2xl font-bold mb-2">
+                                    <CheckCircle2 className="w-16 h-16 text-primary mx-auto mb-4" />
+                                    <h3 className="text-2xl font-bold mb-2 text-foreground">
                                         {language === 'tr' ? 'Teşekkürler!' : 'Thank You!'}
                                     </h3>
-                                    <p className="text-zinc-500">
+                                    <p className="text-muted-foreground">
                                         {language === 'tr'
                                             ? 'Mesajınızı aldık. En kısa sürede size dönüş yapacağız.'
                                             : 'We received your message. We will get back to you soon.'}
@@ -117,25 +117,25 @@ export default function ContactPage() {
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="name" className="text-zinc-400">{language === 'tr' ? 'İsim' : 'Name'} *</Label>
+                                            <Label htmlFor="name" className="text-muted-foreground">{language === 'tr' ? 'İsim' : 'Name'} *</Label>
                                             <Input
                                                 id="name"
                                                 required
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="bg-black/50 border-white/10 focus:border-white/20 text-white placeholder:text-zinc-600"
+                                                className="bg-background/50 border-input focus:border-ring text-foreground placeholder:text-muted-foreground"
                                                 placeholder={language === 'tr' ? 'Adınız Soyadınız' : 'Your Name'}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="email" className="text-zinc-400">{language === 'tr' ? 'E-posta' : 'Email'} *</Label>
+                                            <Label htmlFor="email" className="text-muted-foreground">{language === 'tr' ? 'E-posta' : 'Email'} *</Label>
                                             <Input
                                                 id="email"
                                                 type="email"
                                                 required
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                className="bg-black/50 border-white/10 focus:border-white/20 text-white placeholder:text-zinc-600"
+                                                className="bg-background/50 border-input focus:border-ring text-foreground placeholder:text-muted-foreground"
                                                 placeholder="you@company.com"
                                             />
                                         </div>
@@ -143,22 +143,22 @@ export default function ContactPage() {
 
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="company" className="text-zinc-400">{language === 'tr' ? 'Şirket' : 'Company'}</Label>
+                                            <Label htmlFor="company" className="text-muted-foreground">{language === 'tr' ? 'Şirket' : 'Company'}</Label>
                                             <Input
                                                 id="company"
                                                 value={formData.company}
                                                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                                                className="bg-black/50 border-white/10 focus:border-white/20 text-white placeholder:text-zinc-600"
+                                                className="bg-background/50 border-input focus:border-ring text-foreground placeholder:text-muted-foreground"
                                                 placeholder={language === 'tr' ? 'Şirket Adı' : 'Company Name'}
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="subject" className="text-zinc-400">{language === 'tr' ? 'Konu' : 'Subject'}</Label>
+                                            <Label htmlFor="subject" className="text-muted-foreground">{language === 'tr' ? 'Konu' : 'Subject'}</Label>
                                             <select
                                                 id="subject"
                                                 value={formData.subject}
                                                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                                className="w-full h-10 rounded-md bg-black/50 border border-white/10 px-3 text-sm text-white focus:outline-none focus:border-white/20"
+                                                className="w-full h-10 rounded-md bg-background/50 border border-input px-3 text-sm text-foreground focus:outline-none focus:border-ring"
                                             >
                                                 <option value="general">{language === 'tr' ? 'Genel Soru' : 'General Question'}</option>
                                                 <option value="demo">{language === 'tr' ? 'Demo Talebi' : 'Demo Request'}</option>
@@ -169,21 +169,21 @@ export default function ContactPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="message" className="text-zinc-400">{language === 'tr' ? 'Mesaj' : 'Message'} *</Label>
+                                        <Label htmlFor="message" className="text-muted-foreground">{language === 'tr' ? 'Mesaj' : 'Message'} *</Label>
                                         <Textarea
                                             id="message"
                                             required
                                             rows={5}
                                             value={formData.message}
                                             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                                            className="bg-black/50 border-white/10 focus:border-white/20 text-white placeholder:text-zinc-600"
+                                            className="bg-background/50 border-input focus:border-ring text-foreground placeholder:text-muted-foreground"
                                             placeholder={language === 'tr' ? 'Mesajınızı buraya yazın...' : 'Write your message here...'}
                                         />
                                     </div>
 
                                     <Button
                                         type="submit"
-                                        className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-medium"
+                                        className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? (
@@ -202,41 +202,41 @@ export default function ContactPage() {
                         {/* Contact Info */}
                         <div className="space-y-8">
                             <div>
-                                <h2 className="text-2xl font-bold mb-6 text-white">
+                                <h2 className="text-2xl font-bold mb-6 text-foreground">
                                     {language === 'tr' ? 'İletişim Bilgileri' : 'Contact Information'}
                                 </h2>
                                 <div className="space-y-6">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                            <Mail className="w-6 h-6 text-white" />
+                                        <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center flex-shrink-0 border border-border">
+                                            <Mail className="w-6 h-6 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold mb-1 text-white">{language === 'tr' ? 'E-posta' : 'Email'}</h3>
-                                            <a href="mailto:info@userex.com.tr" className="text-zinc-400 hover:text-white transition-colors">
+                                            <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'E-posta' : 'Email'}</h3>
+                                            <a href="mailto:info@userex.com.tr" className="text-muted-foreground hover:text-foreground transition-colors">
                                                 info@userex.com.tr
                                             </a>
                                         </div>
                                     </div>
 
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                            <Phone className="w-6 h-6 text-white" />
+                                        <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center flex-shrink-0 border border-border">
+                                            <Phone className="w-6 h-6 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold mb-1 text-white">{language === 'tr' ? 'Telefon' : 'Phone'}</h3>
-                                            <a href="tel:+905443357784" className="text-zinc-400 hover:text-white transition-colors">
+                                            <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'Telefon' : 'Phone'}</h3>
+                                            <a href="tel:+905443357784" className="text-muted-foreground hover:text-foreground transition-colors">
                                                 0 544 335 77 84
                                             </a>
                                         </div>
                                     </div>
 
                                     <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 border border-white/10">
-                                            <MapPin className="w-6 h-6 text-white" />
+                                        <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center flex-shrink-0 border border-border">
+                                            <MapPin className="w-6 h-6 text-primary" />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold mb-1 text-white">{language === 'tr' ? 'Adres' : 'Address'}</h3>
-                                            <p className="text-zinc-400">
+                                            <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'Adres' : 'Address'}</h3>
+                                            <p className="text-muted-foreground">
                                                 Caferağa Mh. Şifa Sk. No:19<br />
                                                 Kadıköy / İstanbul / Turkey
                                             </p>
@@ -246,18 +246,18 @@ export default function ContactPage() {
                             </div>
 
                             {/* Quick Links */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <h3 className="font-semibold mb-4 text-white">
+                            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+                                <h3 className="font-semibold mb-4 text-foreground">
                                     {language === 'tr' ? 'Hızlı Bağlantılar' : 'Quick Links'}
                                 </h3>
                                 <div className="space-y-3">
-                                    <a href="/pricing" className="block text-zinc-400 hover:text-white transition-colors">
+                                    <a href="/pricing" className="block text-muted-foreground hover:text-foreground transition-colors">
                                         → {language === 'tr' ? 'Fiyatlandırma' : 'Pricing'}
                                     </a>
-                                    <a href="/why-us" className="block text-zinc-400 hover:text-white transition-colors">
+                                    <a href="/why-us" className="block text-muted-foreground hover:text-foreground transition-colors">
                                         → {language === 'tr' ? 'Neden Vion?' : 'Why Vion?'}
                                     </a>
-                                    <a href="/industries" className="block text-zinc-400 hover:text-white transition-colors">
+                                    <a href="/industries" className="block text-muted-foreground hover:text-foreground transition-colors">
                                         → {language === 'tr' ? 'Sektörler' : 'Industries'}
                                     </a>
                                 </div>
@@ -267,7 +267,9 @@ export default function ContactPage() {
                 </div>
             </section>
 
-            <PublicFooter />
+            <div className="relative z-10">
+                <PublicFooter />
+            </div>
         </div>
     )
 }

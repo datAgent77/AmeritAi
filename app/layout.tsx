@@ -58,6 +58,7 @@ export const metadata: Metadata = {
 };
 
 import { ConditionalAuthProvider } from "@/components/conditional-auth-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { CookieConsent } from "@/components/cookie-consent";
 
@@ -87,20 +88,27 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning style={{ backgroundColor: '#000000' }}>
-      <body className={`${inter.className} antialiased bg-black`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <LanguageProvider>
-          <ConditionalAuthProvider>
-            <CookieConsent />
-            {children}
-            <PublicChatbot />
-            <Toaster />
-          </ConditionalAuthProvider>
-        </LanguageProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+        >
+          <LanguageProvider>
+            <ConditionalAuthProvider>
+              <CookieConsent />
+              {children}
+              <PublicChatbot />
+              <Toaster />
+            </ConditionalAuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

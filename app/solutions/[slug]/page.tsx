@@ -1,4 +1,3 @@
-
 "use client"
 
 import { SolutionLayout } from "@/components/solutions/solution-layout"
@@ -37,17 +36,17 @@ export default function SolutionPage({ params }: { params: { slug: string } }) {
         <SolutionLayout
             title={language === 'tr' ? content.title.tr : content.title.en}
             subtitle={language === 'tr' ? content.subtitle.tr : content.subtitle.en}
-            icon={<MainIcon className={`w-5 h-5 ${params.slug === 'ecommerce' ? 'text-blue-400' :
-                params.slug === 'booking' ? 'text-sky-400' :
-                    params.slug === 'real-estate' ? 'text-indigo-400' :
-                        'text-white'
+            icon={<MainIcon className={`w-5 h-5 ${params.slug === 'ecommerce' ? 'text-blue-600 dark:text-blue-400' :
+                params.slug === 'booking' ? 'text-sky-600 dark:text-sky-400' :
+                    params.slug === 'real-estate' ? 'text-indigo-600 dark:text-indigo-400' :
+                        'text-foreground'
                 }`} />}
             features={content.features.map(f => {
                 const FIcon = iconMap[f.iconName] || Star
                 return {
                     title: language === 'tr' ? f.title.tr : f.title.en,
                     description: language === 'tr' ? f.description.tr : f.description.en,
-                    icon: <FIcon className="w-6 h-6 text-white" />
+                    icon: <FIcon className="w-6 h-6 text-foreground" />
                 }
             })}
             promptExample={{

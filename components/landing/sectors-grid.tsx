@@ -33,13 +33,13 @@ export function SectorsGrid() {
     ]
 
     return (
-        <section className="py-24 bg-zinc-950/50">
+        <section className="py-24 bg-muted/30">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
                         {language === 'tr' ? "Her Sektör İçin Özelleşmiş Zeka" : "Specialized Intelligence for Every Industry"}
                     </h2>
-                    <p className="text-zinc-400 max-w-2xl mx-auto">
+                    <p className="text-muted-foreground max-w-2xl mx-auto">
                         {language === 'tr'
                             ? "İşletmeniz ne olursa olsun, Vion o sektörün uzmanı gibi davranır. Size özel bağlam, ton ve hedefler."
                             : "Whatever your business, Vion acts like an expert in that field. Custom context, tone, and goals."}
@@ -49,11 +49,11 @@ export function SectorsGrid() {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {sectors.map((sector, i) => (
                         <Link key={i} href={sector.href} className="group">
-                            <div className="bg-zinc-900/50 border border-white/5 hover:border-white/20 rounded-xl p-6 text-center transition-all hover:-translate-y-1 hover:bg-zinc-900">
-                                <div className={`w-10 h-10 mx-auto mb-3 rounded-lg bg-black flex items-center justify-center ${sector.color}`}>
+                            <div className="bg-card border border-border hover:border-foreground/20 rounded-xl p-6 text-center transition-all hover:-translate-y-1 hover:bg-accent hover:shadow-md">
+                                <div className={`w-10 h-10 mx-auto mb-3 rounded-lg bg-background flex items-center justify-center ${sector.color} border border-border/50`}>
                                     <sector.icon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">
+                                <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                                     {language === 'tr' ? sector.label.tr : sector.label.en}
                                 </h3>
                             </div>

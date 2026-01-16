@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useLanguage } from "@/context/LanguageContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { VionLogo } from "@/components/vion-logo"
+import { useTheme } from "next-themes"
 
 interface Message {
     role: 'user' | 'ai';
@@ -16,6 +17,7 @@ interface AnimatedChatProps {
 
 export function AnimatedChat({ conversation }: AnimatedChatProps) {
     const { language } = useLanguage()
+    const { resolvedTheme } = useTheme()
     const [visibleMessages, setVisibleMessages] = useState<number>(0)
     const [isTyping, setIsTyping] = useState(false)
 
@@ -79,24 +81,27 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                             {msg.role === 'ai' ? (
                                 <div className="flex gap-3 max-w-[85%] md:max-w-[80%]">
                                     <div className="flex-shrink-0 mt-1">
-                                        <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center p-1.5">
-                                            <VionLogo className="w-full h-full text-white" />
+                                        <div className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center p-1.5">
+                                            <VionLogo 
+                                                className="w-full h-full text-foreground" 
+                                                variant={resolvedTheme === 'dark' ? 'white' : 'black'}
+                                            />
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-semibold text-white">Vion AI</span>
+                                            <span className="text-sm font-semibold text-foreground">Vion AI</span>
                                             <div className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-[10px] font-medium text-blue-300 border border-blue-500/20">
                                                 AI Agent
                                             </div>
                                         </div>
-                                        <div className="bg-zinc-900/90 border border-white/10 text-zinc-100 px-5 py-3 rounded-2xl rounded-tl-sm shadow-xl backdrop-blur-sm">
+                                        <div className="bg-card border border-border text-foreground px-5 py-3 rounded-2xl rounded-tl-sm shadow-xl backdrop-blur-sm">
                                             {msg.content[language as 'en' | 'tr']}
                                         </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="bg-blue-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm shadow-lg max-w-[85%] md:max-w-[70%]">
+                                <div className="bg-primary text-primary-foreground px-5 py-3 rounded-2xl rounded-tr-sm shadow-lg max-w-[85%] md:max-w-[70%]">
                                     {msg.content[language as 'en' | 'tr']}
                                 </div>
                             )}
@@ -112,16 +117,19 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                         className="flex gap-3 max-w-[80%]"
                     >
                         <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center p-1.5">
-                                <VionLogo className="w-full h-full text-white" />
+                            <div className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center p-1.5">
+                                <VionLogo 
+                                    className="w-full h-full text-foreground" 
+                                    variant={resolvedTheme === 'dark' ? 'white' : 'black'}
+                                />
                             </div>
                         </div>
                         <div>
-                            <span className="text-sm font-semibold text-white block mb-1">Vion AI</span>
-                            <div className="bg-zinc-900/90 border border-white/10 px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center w-fit shadow-xl">
-                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                <span className="w-2 h-2 bg-zinc-500 rounded-full animate-bounce"></span>
+                            <span className="text-sm font-semibold text-foreground block mb-1">Vion AI</span>
+                            <div className="bg-card border border-border px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center w-fit shadow-xl">
+                                <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"></span>
                             </div>
                         </div>
                     </motion.div>

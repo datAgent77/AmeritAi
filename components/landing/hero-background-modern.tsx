@@ -1,6 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 /**
  * Modern Hero Background - Geometric & Fluid Animation
@@ -11,8 +13,22 @@ import { cn } from "@/lib/utils"
  * - Minimalist premium feel
  */
 export function HeroBackgroundModern() {
+    const { resolvedTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) {
+        return <div className="absolute inset-0 bg-background" />
+    }
+
+    const isLight = resolvedTheme === 'light'
+    const gridColor = isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)'
+
     return (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none bg-black">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none bg-background transition-colors duration-500">
             {/* Morphing Blob Shapes */}
             <div className="absolute inset-0">
                 {/* Primary Blob - Blue */}
@@ -56,8 +72,8 @@ export function HeroBackgroundModern() {
                 className="absolute inset-0 opacity-[0.04]"
                 style={{
                     backgroundImage: `
-                        linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+                        linear-gradient(${gridColor} 1px, transparent 1px),
+                        linear-gradient(90deg, ${gridColor} 1px, transparent 1px)
                     `,
                     backgroundSize: '60px 60px',
                     backgroundPosition: '0 0, 0 0',
@@ -129,7 +145,7 @@ export function HeroBackgroundModern() {
             <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.01] mix-blend-overlay" />
 
             {/* Bottom Fade */}
-            <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black via-black/70 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-background via-background/70 to-transparent" />
 
             <style jsx>{`
                 @keyframes morphBlob1 {

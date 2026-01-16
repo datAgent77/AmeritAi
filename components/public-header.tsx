@@ -25,8 +25,9 @@ import { getAllModules } from "@/lib/modules-registry"
 
 import {
     ShoppingBag, Plane, Home, Code2, Briefcase, HeartPulse, GraduationCap, School, Banknote, ChefHat, Sprout,
-    Eye, Gamepad2, Megaphone, ScanBarcode, MessageSquare, BookOpen, UserPlus, Mic, TrendingUp, Share2, Mail, Utensils, Star, Award, Zap, Languages, Scan, CalendarDays
+    Eye, Gamepad2, Megaphone, ScanBarcode, MessageSquare, BookOpen, UserPlus, Mic, TrendingUp, Share2, Mail, Utensils, Star, Award, Zap, Languages, Scan, CalendarDays, Sun, Moon
 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 // Icon Mapping for Dynamic Modules
 const iconMapping: Record<string, any> = {
@@ -54,9 +55,15 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ transparent = false }: PublicHeaderProps) {
     const { t, language, setLanguage } = useLanguage()
+    const { theme, resolvedTheme } = useTheme()
     const { user } = useAuth()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     useEffect(() => {
         const handleScroll = () => {
@@ -110,7 +117,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
         <nav className={cn(
             "fixed top-0 w-full z-50 border-b transition-all duration-300",
             isScrolled || !transparent
-                ? "border-white/10 bg-black/80 backdrop-blur-xl supports-[backdrop-filter]:bg-black/50 shadow-lg shadow-black/5"
+                ? "border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50 shadow-sm"
                 : "border-transparent bg-transparent supports-[backdrop-filter]:bg-transparent"
         )}>
             <div className="container mx-auto px-4 h-20 flex items-center justify-between md:justify-start">
@@ -118,32 +125,36 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                 {/* Logo */}
                 <div className="flex items-center gap-2 mr-12">
                     <Link href="/" onClick={() => setIsOpen(false)}>
-                        <VionLogo />
+                        {mounted ? (
+                            <VionLogo variant={resolvedTheme === 'dark' ? 'white' : 'black'} />
+                        ) : (
+                             <div className="h-7 w-24" />
+                        )}
                     </Link>
                 </div>
 
                 {/* Desktop Nav - MEGA MENUS */}
-                <div className="hidden lg:flex items-center gap-1 text-sm font-medium text-zinc-400">
+                <div className="hidden lg:flex items-center gap-1 text-sm font-medium text-muted-foreground">
 
                     {/* 1. SOLUTIONS DROPDOWN */}
                     <div className="group relative px-4 py-8">
-                        <button className="flex items-center gap-1 hover:text-white transition-colors group-hover:text-white">
+                        <button className="flex items-center gap-1 hover:text-foreground transition-colors group-hover:text-foreground">
                             {language === 'tr' ? 'Sektörler' : 'Industries'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
-                        <div className="absolute top-full left-0 w-[600px] bg-[#0A0A0C] border border-white/10 rounded-xl p-6 shadow-2xl shadow-black/80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
+                        <div className="absolute top-full left-0 w-[600px] bg-popover border border-border rounded-xl p-6 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 {solutions.map((item, i) => (
-                                    <Link key={i} href={item.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors group/item">
-                                        <div className={`p-2 rounded-md bg-white/5 ${item.color} group-hover/item:bg-white/10 transition-colors`}>
+                                    <Link key={i} href={item.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group/item">
+                                        <div className={`p-2 rounded-md bg-muted/50 ${item.color} group-hover/item:bg-muted transition-colors`}>
                                             <item.icon className="w-4 h-4" />
                                         </div>
-                                        <span className="text-zinc-300 group-hover/item:text-white text-sm">
+                                        <span className="text-muted-foreground group-hover/item:text-foreground text-sm">
                                             {language === 'tr' ? item.label.tr : item.label.en}
                                         </span>
                                     </Link>
                                 ))}
                             </div>
-                            <div className="pt-4 border-t border-white/10 text-center">
+                            <div className="pt-4 border-t border-border text-center">
                                 <Link href="/industries" className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
                                     {language === 'tr' ? 'Tüm Sektörleri Gör' : 'View All Industries'} <ArrowRight className="ml-1 w-4 h-4" />
                                 </Link>
@@ -153,23 +164,23 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
 
                     {/* 2. MODULES DROPDOWN */}
                     <div className="group relative px-4 py-8">
-                        <button className="flex items-center gap-1 hover:text-white transition-colors group-hover:text-white">
+                        <button className="flex items-center gap-1 hover:text-foreground transition-colors group-hover:text-foreground">
                             {language === 'tr' ? 'Modüller' : 'Modules'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
-                        <div className="absolute top-full left-0 w-[900px] bg-[#0A0A0C] border border-white/10 rounded-xl p-6 shadow-2xl shadow-black/80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
+                        <div className="absolute top-full left-0 w-[900px] bg-popover border border-border rounded-xl p-6 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                             <div className="grid grid-cols-3 gap-4 mb-4">
                                 {getAllModules().slice(0, 6).map((module) => {
                                     const IconComponent = iconMapping[module.icon] || Globe
                                     return (
-                                        <Link key={module.id} href={`/products/${module.id}`} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group/item">
-                                            <div className="p-2 rounded-md bg-white/5 text-zinc-400 group-hover/item:text-blue-400 group-hover/item:bg-white/10 transition-colors shrink-0">
+                                        <Link key={module.id} href={`/products/${module.id}`} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted transition-colors group/item">
+                                            <div className="p-2 rounded-md bg-muted/50 text-muted-foreground group-hover/item:text-blue-400 group-hover/item:bg-muted transition-colors shrink-0">
                                                 <IconComponent className="w-5 h-5" />
                                             </div>
                                             <div>
-                                                <div className="text-zinc-200 font-medium group-hover/item:text-white transition-colors mb-1">
+                                                <div className="text-foreground/80 font-medium group-hover/item:text-foreground transition-colors mb-1">
                                                     {language === 'tr' ? module.name.tr : module.name.en}
                                                 </div>
-                                                <div className="text-zinc-500 text-xs leading-relaxed line-clamp-2">
+                                                <div className="text-muted-foreground text-xs leading-relaxed line-clamp-2">
                                                     {language === 'tr' ? module.description.tr : module.description.en}
                                                 </div>
                                             </div>
@@ -177,7 +188,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                     )
                                 })}
                             </div>
-                            <div className="pt-4 border-t border-white/10 text-center">
+                            <div className="pt-4 border-t border-border text-center">
                                 <Link href="/products" className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
                                     {language === 'tr' ? 'Tüm Modülleri Gör' : 'View All Modules'} <ArrowRight className="ml-1 w-4 h-4" />
                                 </Link>
@@ -187,16 +198,16 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
 
                     {/* 3. RESOURCES DROPDOWN */}
                     <div className="group relative px-4 py-8">
-                        <button className="flex items-center gap-1 hover:text-white transition-colors group-hover:text-white">
+                        <button className="flex items-center gap-1 hover:text-foreground transition-colors group-hover:text-foreground">
                             {language === 'tr' ? 'Kaynaklar' : 'Resources'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
-                        <div className="absolute top-full left-0 w-[400px] bg-[#0A0A0C] border border-white/10 rounded-xl p-4 shadow-2xl shadow-black/80 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 grid gap-2 z-50">
+                        <div className="absolute top-full left-0 w-[400px] bg-popover border border-border rounded-xl p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 grid gap-2 z-50">
                             {resources.map((item, i) => (
-                                <Link key={i} href={item.href} className="flex flex-col p-3 rounded-lg hover:bg-white/5 transition-colors group/item">
-                                    <span className="text-white font-medium mb-1 group-hover/item:text-blue-400 transition-colors">
+                                <Link key={i} href={item.href} className="flex flex-col p-3 rounded-lg hover:bg-muted transition-colors group/item">
+                                    <span className="text-foreground font-medium mb-1 group-hover/item:text-blue-400 transition-colors">
                                         {language === 'tr' ? item.title.tr : item.title.en}
                                     </span>
-                                    <span className="text-zinc-500 text-xs">
+                                    <span className="text-muted-foreground text-xs">
                                         {language === 'tr' ? item.desc.tr : item.desc.en}
                                     </span>
                                 </Link>
@@ -204,13 +215,13 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                         </div>
                     </div>
 
-                    <Link href="/pricing" className="px-4 py-8 hover:text-white transition-colors">
+                    <Link href="/pricing" className="px-4 py-8 hover:text-foreground transition-colors">
                         {t('landingPricing')}
                     </Link>
-                    <Link href="/why-us" className="px-4 py-8 hover:text-white transition-colors">
+                    <Link href="/why-us" className="px-4 py-8 hover:text-foreground transition-colors">
                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
                     </Link>
-                    <Link href="/contact" className="px-4 py-8 hover:text-white transition-colors">
+                    <Link href="/contact" className="px-4 py-8 hover:text-foreground transition-colors">
                         {language === 'tr' ? 'İletişim' : 'Contact'}
                     </Link>
                 </div>
@@ -221,16 +232,16 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     <div className="hidden md:flex">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 gap-1 h-9">
+                                <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted gap-1 h-9">
                                     <Globe className="w-4 h-4" />
                                     <span className="uppercase">{language}</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-black border-white/10">
-                                <DropdownMenuItem onClick={() => setLanguage('en')} className="text-white hover:bg-white/10 cursor-pointer">
+                            <DropdownMenuContent align="end" className="bg-popover border-border">
+                                <DropdownMenuItem onClick={() => setLanguage('en')} className="text-foreground hover:bg-muted cursor-pointer">
                                     English
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setLanguage('tr')} className="text-white hover:bg-white/10 cursor-pointer">
+                                <DropdownMenuItem onClick={() => setLanguage('tr')} className="text-foreground hover:bg-muted cursor-pointer">
                                     Türkçe
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -241,19 +252,19 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     <div className="hidden md:flex items-center gap-3">
                         {user ? (
                             <Link href="/platform">
-                                <Button className="bg-white text-black hover:bg-white/90 font-medium shadow-lg shadow-white/10 h-9 rounded-full px-6">
+                                <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-lg h-9 rounded-full px-6">
                                     {language === 'tr' ? 'Panele Git' : 'Go to Console'}
                                 </Button>
                             </Link>
                         ) : (
                             <>
                                 <Link href="/login">
-                                    <Button variant="ghost" className="text-sm font-medium text-white hover:text-white hover:bg-white/10 h-9 rounded-full px-4">
+                                    <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-foreground hover:bg-muted h-9 rounded-full px-4">
                                         {t('login')}
                                     </Button>
                                 </Link>
                                 <Link href="/signup">
-                                    <Button className="bg-white text-black hover:bg-white/90 font-medium shadow-lg shadow-white/10 h-9 rounded-full px-5 text-sm">
+                                    <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-lg h-9 rounded-full px-5 text-sm">
                                         {t('landingGetStarted')}
                                     </Button>
                                 </Link>
@@ -265,39 +276,39 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     <div className="lg:hidden">
                         <Sheet open={isOpen} onOpenChange={setIsOpen}>
                             <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                                <Button variant="ghost" size="icon" className="text-foreground hover:bg-muted">
                                     <Menu className="w-6 h-6" />
                                     <span className="sr-only">Toggle menu</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="bg-zinc-950 border-l border-white/10 text-white w-[300px] p-0 flex flex-col overflow-y-auto">
-                                <SheetHeader className="p-6 border-b border-white/5">
-                                    <SheetTitle className="text-left text-white flex items-center justify-between">
-                                        <VionLogo />
-                                        <button onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')} className="text-xs border border-white/20 rounded px-2 py-1 uppercase hover:bg-white/10 mr-8">
+                            <SheetContent side="right" className="bg-background border-l border-border text-foreground w-[300px] p-0 flex flex-col overflow-y-auto">
+                                <SheetHeader className="p-6 border-b border-border">
+                                    <SheetTitle className="text-left text-foreground flex items-center justify-between">
+                                        <VionLogo variant={resolvedTheme === 'dark' ? 'white' : 'black'} />
+                                        <button onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')} className="text-xs border border-border rounded px-2 py-1 uppercase hover:bg-muted mr-8">
                                             {language}
                                         </button>
                                     </SheetTitle>
                                 </SheetHeader>
 
                                 {/* Authentication Buttons (Top) */}
-                                <div className="p-4 bg-zinc-900/50 border-b border-white/5">
+                                <div className="p-4 bg-muted/50 border-b border-border">
                                     {!user ? (
                                         <div className="flex gap-2">
                                             <Link href="/login" onClick={() => setIsOpen(false)} className="flex-1">
-                                                <Button variant="outline" className="w-full border-white/10 text-white bg-transparent hover:bg-white/5 h-9">
+                                                <Button variant="outline" className="w-full border-border text-foreground bg-transparent hover:bg-muted h-9">
                                                     {t('login')}
                                                 </Button>
                                             </Link>
                                             <Link href="/signup" onClick={() => setIsOpen(false)} className="flex-1">
-                                                <Button className="w-full bg-white text-black hover:bg-zinc-200 h-9">
+                                                <Button className="w-full bg-foreground text-background hover:bg-muted-foreground/20 h-9">
                                                     {t('landingGetStarted')}
                                                 </Button>
                                             </Link>
                                         </div>
                                     ) : (
                                         <Link href="/platform" onClick={() => setIsOpen(false)}>
-                                            <Button className="w-full bg-white text-black hover:bg-zinc-200">
+                                            <Button className="w-full bg-foreground text-background hover:bg-muted-foreground/20">
                                                 {language === 'tr' ? 'Panele Git' : 'Go to Console'}
                                             </Button>
                                         </Link>
@@ -306,18 +317,18 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
 
                                 <div className="flex-1 px-4 py-6 space-y-1">
                                     {/* Mobile Solutions Accordion */}
-                                    <div className="border-b border-white/5">
+                                    <div className="border-b border-border">
                                         <button
                                             onClick={() => toggleAccordion('solutions')}
-                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground"
                                         >
                                             {language === 'tr' ? 'Sektörler' : 'Industries'}
                                             <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'solutions' ? "rotate-180" : "")} />
                                         </button>
                                         <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'solutions' ? "max-h-[500px] pb-3" : "max-h-0")}>
                                             {solutions.map((item, i) => (
-                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-zinc-400 hover:text-white rounded-md hover:bg-white/5">
-                                                    <item.icon className="w-4 h-4 text-zinc-500" />
+                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+                                                    <item.icon className="w-4 h-4 text-muted-foreground" />
                                                     {language === 'tr' ? item.label.tr : item.label.en}
                                                 </Link>
                                             ))}
@@ -325,10 +336,10 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                     </div>
 
                                     {/* Mobile Modules Accordion */}
-                                    <div className="border-b border-white/5">
+                                    <div className="border-b border-border">
                                         <button
                                             onClick={() => toggleAccordion('modules')}
-                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground"
                                         >
                                             {language === 'tr' ? 'Modüller' : 'Modules'}
                                             <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'modules' ? "rotate-180" : "")} />
@@ -337,8 +348,8 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                             {getAllModules().map((module) => {
                                                 const IconComponent = iconMapping[module.icon] || Globe
                                                 return (
-                                                    <Link key={module.id} href={`/products/${module.id}`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-zinc-400 hover:text-white rounded-md hover:bg-white/5">
-                                                        <IconComponent className="w-4 h-4 text-zinc-500" />
+                                                    <Link key={module.id} href={`/products/${module.id}`} onClick={() => setIsOpen(false)} className="flex items-center gap-3 px-2 py-2 text-sm text-muted-foreground hover:text-foreground rounded-md hover:bg-muted">
+                                                        <IconComponent className="w-4 h-4 text-muted-foreground" />
                                                         {language === 'tr' ? module.name.tr : module.name.en}
                                                     </Link>
                                                 )
@@ -347,31 +358,31 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                     </div>
 
                                     {/* Mobile Resources Accordion */}
-                                    <div className="border-b border-white/5">
+                                    <div className="border-b border-border">
                                         <button
                                             onClick={() => toggleAccordion('resources')}
-                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-white"
+                                            className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground"
                                         >
                                             {language === 'tr' ? 'Kaynaklar' : 'Resources'}
                                             <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'resources' ? "rotate-180" : "")} />
                                         </button>
                                         <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'resources' ? "max-h-[300px] pb-3" : "max-h-0")}>
                                             {resources.map((item, i) => (
-                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex flex-col px-2 py-2 rounded-md hover:bg-white/5">
-                                                    <span className="text-sm text-zinc-300">{language === 'tr' ? item.title.tr : item.title.en}</span>
+                                                <Link key={i} href={item.href} onClick={() => setIsOpen(false)} className="flex flex-col px-2 py-2 rounded-md hover:bg-muted">
+                                                    <span className="text-sm text-muted-foreground group-hover/item:text-foreground transition-colors">{language === 'tr' ? item.title.tr : item.title.en}</span>
                                                 </Link>
                                             ))}
                                         </div>
                                     </div>
 
                                     {/* Direct Links */}
-                                    <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white border-b border-white/5">
+                                    <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border">
                                         {t('landingPricing')}
                                     </Link>
-                                    <Link href="/why-us" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white border-b border-white/5">
+                                    <Link href="/why-us" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border">
                                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
                                     </Link>
-                                    <Link href="/contact" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-white">
+                                    <Link href="/contact" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground">
                                         {language === 'tr' ? 'İletişim' : 'Contact'}
                                     </Link>
                                 </div>
