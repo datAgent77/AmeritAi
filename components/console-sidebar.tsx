@@ -495,7 +495,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                                 </div>
                                             </div>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => router.push("/console/settings/developers")} className="px-2 py-2 cursor-pointer">
+                                        <DropdownMenuItem disabled className="px-2 py-2 cursor-pointer">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center justify-center size-8 rounded-full bg-gray-100 dark:bg-zinc-800">
                                                     <Code className="size-4" />
