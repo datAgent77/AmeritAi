@@ -88,13 +88,13 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
         try {
             await saveSettings()
             toast({
-                title: "Success",
-                description: "Settings saved successfully.",
+                title: t('success') || "Başarılı",
+                description: t('settingsSaved') || "Ayarlar başarıyla kaydedildi.",
             })
         } catch (error) {
             toast({
-                title: "Error",
-                description: "Failed to save settings.",
+                title: t('error') || "Hata",
+                description: t('settingsSaveFailed') || "Ayarlar kaydedilemedi.",
                 variant: "destructive",
             })
         }
