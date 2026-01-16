@@ -201,6 +201,19 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                         </div>
 
                         <div className="grid gap-2">
+                            <Label htmlFor="welcome-title">{t('welcomeTitle') || 'Hoş Geldiniz Başlığı'}</Label>
+                            <Input
+                                id="welcome-title"
+                                placeholder={language === 'tr' ? "Örn: Vion AI'a Hoş Geldiniz" : "E.g: Welcome to Vion AI"}
+                                value={settings.welcomeTitle || ''}
+                                onChange={(e) => setSettings(prev => ({ ...prev, welcomeTitle: e.target.value }))}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {language === 'tr' ? 'Boş bırakılırsa otomatik oluşturulur' : 'Leave empty for auto-generated title'}
+                            </p>
+                        </div>
+
+                        <div className="grid gap-2">
                             <Label htmlFor="welcome-message">{t('welcomeMessage')}</Label>
                             <Textarea
                                 id="welcome-message"

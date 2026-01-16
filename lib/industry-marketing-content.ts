@@ -557,6 +557,44 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
             { role: 'ai', content: { tr: "Bodrum için 'Sea Breeze' ve 'Azure Dream' yatlarımız uygun. Her ikisi de mürettebatlı ve tam donanımlı. Fiyat ve müsaitlik için detayları paylaşayım mı?", en: "For Bodrum, our 'Sea Breeze' and 'Azure Dream' yachts are available. Both are crewed and fully equipped. Shall I share pricing and availability details?" } }
         ]
     },
+    manufacturing: {
+        id: 'manufacturing',
+        title: { tr: "Üretim & Fabrika", en: "Manufacturing" },
+        subtitle: {
+            tr: "Üretim süreçleri, ürün grupları, sipariş yönetimi ve kalite sertifikaları hakkında 7/24 destek.",
+            en: "24/7 support for production processes, product groups, order management, and quality certifications."
+        },
+        iconName: 'Factory',
+        features: [
+            {
+                title: { tr: "Ürün Grupları Tanıtımı", en: "Product Group Presentation" },
+                description: { tr: "Tüm ürün gruplarını teknik özellikleri ve kapasiteleriyle sunar.", en: "Presents all product groups with technical specs and capacities." },
+                iconName: 'BarChart'
+            },
+            {
+                title: { tr: "Sipariş & Teklif Yönetimi", en: "Order & Quote Management" },
+                description: { tr: "Minimum sipariş miktarları, teslimat süreleri ve fiyat teklifleri.", en: "Minimum order quantities, delivery times, and price quotes." },
+                iconName: 'DollarSign'
+            },
+            {
+                title: { tr: "Kalite Sertifikaları", en: "Quality Certifications" },
+                description: { tr: "ISO, CE ve diğer kalite belgeleri hakkında bilgi verir.", en: "Provides info about ISO, CE, and other quality certificates." },
+                iconName: 'Shield'
+            }
+        ],
+        promptExample: {
+            user: { tr: "Minimum sipariş miktarınız nedir?", en: "What is your minimum order quantity?" },
+            ai: { tr: "Ürün grubuna göre değişmekle birlikte, standart üretim hattımızda minimum 500 adet sipariş kabul ediyoruz. Özel tasarımlar için bu miktar 1000 adettir. Hangi ürün grubuyla ilgileniyorsunuz?", en: "It varies by product group, but our standard production line accepts minimum 500 units. For custom designs, this amount is 1000 units. Which product group are you interested in?" }
+        },
+        conversation: [
+            { role: 'user', content: { tr: "Plastik enjeksiyon ürünleri üretiyor musunuz?", en: "Do you manufacture plastic injection products?" } },
+            { role: 'ai', content: { tr: "Evet, plastik enjeksiyon ana üretim alanlarımızdan biri. Otomotiv parçaları, beyaz eşya komponentleri ve ambalaj ürünleri üretiyoruz. Hangi sektör için ürün arıyorsunuz?", en: "Yes, plastic injection is one of our main production areas. We manufacture automotive parts, white goods components, and packaging products. Which sector are you looking for products?" } },
+            { role: 'user', content: { tr: "Otomotiv sektörü için kapı iç paneli lazım.", en: "I need door inner panels for the automotive sector." } },
+            { role: 'ai', content: { tr: "Otomotiv için IATF 16949 sertifikamız var. Kapı iç panelleri için PP veya ABS hammadde kullanıyoruz. Teknik çiziminizi paylaşır mısınız? Üretim fizibilite raporu ve fiyat teklifi hazırlayalım.", en: "We have IATF 16949 certification for automotive. We use PP or ABS raw materials for door inner panels. Can you share your technical drawing? We'll prepare a production feasibility report and price quote." } },
+            { role: 'user', content: { tr: "Teslimat süresi ne kadar?", en: "What is the delivery time?" } },
+            { role: 'ai', content: { tr: "Kalıp hazırlık süreci dahil ilk seri üretim 8-10 hafta, tekrar siparişlerde ise 3-4 hafta teslimat sağlıyoruz. Acil siparişler için ekspres üretim seçeneğimiz de var. Fabrika turumuza katılmak ister misiniz?", en: "Including mold preparation, first batch production takes 8-10 weeks, repeat orders are delivered in 3-4 weeks. We also have express production for urgent orders. Would you like to join our factory tour?" } }
+        ]
+    },
 
 }
 

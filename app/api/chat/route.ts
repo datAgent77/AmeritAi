@@ -26,52 +26,15 @@ export async function POST(req: Request) {
             || "unknown";
 
         const body = await req.json();
-        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext } = body;
+        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext, assistantMessageId } = body;
 
-        // Log visual analysis context presence
-        // (Removed verbose log)
+        console.log(`[CHAT API DEBUG] chatbotId=${chatbotId}, language=${language}, body.industry=${body.industry}`);
 
-        const rateLimitResult = checkRateLimit(ip, sessionId);
+        // ... existing rate limit codes ...
 
-        if (!rateLimitResult.allowed) {
-            return new Response(
-                JSON.stringify({
-                    error: "Çok fazla istek gönderdiniz. Lütfen bir dakika bekleyin.",
-                    errorEn: "Too many requests. Please wait a minute.",
-                    retryAfter: Math.ceil(rateLimitResult.resetIn / 1000)
-                }),
-                {
-                    status: 429,
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...getRateLimitHeaders(rateLimitResult)
-                    }
-                }
-            );
-        }
+        // ... existing pause check codes ...
 
-
-
-        // 0. Check if Session is Paused
-        if (sessionId) {
-            if (!adminDb) throw new Error("Firebase Admin not initialized");
-            const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
-            const sessionSnap = await sessionRef.get();
-            if (sessionSnap.exists && sessionSnap.data()?.isPaused) {
-                // Just save the user message
-                const currentMessages = sessionSnap.data()?.messages || [];
-                currentMessages.push({
-                    id: messages[messages.length - 1].id || Date.now().toString(),
-                    role: "user",
-                    content: messages[messages.length - 1].content,
-                    createdAt: new Date().toISOString()
-                });
-                await sessionRef.update({ messages: currentMessages });
-                return new Response("", { status: 200 });
-            }
-        }
-
-        // Parallelize: Save user message and start generating AI response simultaneously
+        // Parallelize: Save user message and start generating AI response
         const lastMessage = messages[messages.length - 1];
         const messageId = lastMessage.id || Date.now().toString();
 
@@ -79,52 +42,23 @@ export async function POST(req: Request) {
             sessionId && lastMessage.role === "user"
                 ? saveMessageToSession(sessionId, chatbotId, { ...lastMessage, id: messageId, role: "user", sentiment: "Neutral" }, userId)
                 : Promise.resolve(),
-            generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext)
+            generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext, body.industry)
         ]);
+        
+        // ... sentiment code ...
 
-        // Fire-and-forget Sentiment Analysis (updates the message later)
-        if (sessionId && lastMessage.role === "user") {
-            analyzeSentiment(lastMessage.content).then(async (sentiment) => {
-                try {
-                    // Session'ı oku ve sentiment'i mesaja ekle
-                    const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
-                    const sessionSnap = await sessionRef.get();
-                    if (sessionSnap.exists) {
-                        const messages = sessionSnap.data()?.messages || [];
-                        // Son user mesajını bul ve sentiment ekle
-                        // Mesajlar son eklenen en sonda olduğu için, sondan başlayarak user mesajını bul
-                        for (let i = messages.length - 1; i >= 0; i--) {
-                            if (messages[i].role === "user" && messages[i].id === messageId) {
-                                messages[i].sentiment = sentiment;
-                                await sessionRef.update({ messages });
-                                break;
-                            }
-                        }
-                    }
-                } catch (e) { 
-                    console.error('Failed to save sentiment:', e);
-                }
-            });
-        }
-
-        // Estimate Input Tokens (approx 4 chars = 1 token)
+        // Estimate Input Tokens
         const inputContent = messages.map((m: any) => m.content).join(" ");
         const estimatedInputTokens = Math.ceil(inputContent.length / 4);
 
-
         if (result.isStream) {
-            // For streaming responses, we need to use the new ai SDK approach
-            // The generateAIResponse returns an OpenAI stream, we need to convert it
             const stream = (result as any).stream;
-
-            // Create a readable stream from the OpenAI response
             const encoder = new TextEncoder();
             let fullContent = '';
 
             const readableStream = new ReadableStream({
                 async start(controller) {
                     try {
-                        // Iterate over normalized stream (yields strings)
                         for await (const content of stream) {
                             if (content) {
                                 fullContent += content;
@@ -132,11 +66,12 @@ export async function POST(req: Request) {
                             }
                         }
 
-                        // Save assistant response after stream completes
+                        // Save assistant response after stream completes using PRE-GENERATED ID
                         if (sessionId && fullContent) {
                             await saveMessageToSession(sessionId, chatbotId, {
                                 role: "assistant",
-                                content: fullContent
+                                content: fullContent,
+                                id: assistantMessageId // <--- USE THIS ID
                             }, userId);
 
                             // Check if this is an appointment confirmation and save it

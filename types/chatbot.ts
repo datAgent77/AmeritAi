@@ -1,5 +1,6 @@
 export interface ChatbotSettings {
     companyName: string;
+    welcomeTitle: string;
     welcomeMessage: string;
     brandColor: string;
     brandLogo: string;

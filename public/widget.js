@@ -1386,11 +1386,6 @@
     if (settings.launcherIcon === 'custom' && settings.launcherIconUrl) {
       // Custom uploaded icon
       iconHtml = `<img src="${settings.launcherIconUrl}" style="width: 24px; height: 24px; object-fit: contain;" alt="Icon" />`;
-    } else if (settings.launcherIconUrl && settings.launcherIconUrl.trim() !== '') {
-      // Legacy: Custom icon URL (for backward compatibility)
-      iconHtml = `<img src="${settings.launcherIconUrl}" style="width: 24px; height: 24px; object-fit: contain;" alt="Icon" />`;
-    } else if (settings.launcherIcon === 'sparkles') {
-      iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
     } else if (settings.launcherIcon === 'library' && settings.launcherLibraryIcon) {
       // Fetch icon SVG from lucide (we'll use a simple mapping or fetch for now, or just embed a few common ones.
       // For a full library in vanilla JS without a bundler, we might need a CDN or a large mapping.

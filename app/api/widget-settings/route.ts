@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { MODULES_REGISTRY } from "@/lib/modules-registry";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
@@ -33,76 +34,92 @@ export async function GET(req: Request) {
                 const docSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
 
                 if (docSnap.exists) {
-                    const data = docSnap.data() || {};
-                    // Return only public settings
-                    return NextResponse.json({
-                        isEnabled: shouldEnable,
-                        companyName: data.companyName || "Acme Corp",
-                        welcomeMessage: data.welcomeMessage || "Hello! How can I help you today?",
-                        brandColor: data.brandColor || "#000000",
-                        brandLogo: data.brandLogo || "",
-                        headerLogo: data.headerLogo || "",
-                        headerLogoWidth: data.headerLogoWidth || 32,
-                        headerLogoHeight: data.headerLogoHeight || 32,
-                        headerBackgroundColor: data.headerBackgroundColor || "",
-                        headerTextColor: data.headerTextColor || "#FFFFFF",
-                        suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
-                        enableLeadCollection: data.enableLeadCollection || false,
-                        enableInitialLeadCollection: data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false,
-                        enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
-                        leadFormConfig: data.leadFormConfig || null,
-                        leadCustomFields: data.leadCustomFields || [],
-                        position: data.position || "bottom-right", // 'bottom-right' | 'bottom-left'
-                        viewMode: data.viewMode || "classic", // 'classic' | 'wide'
-                        modalSize: data.modalSize || "half", // 'half' | 'full'
-                        launcherStyle: data.launcherStyle || "circle",
-                        launcherCollapse: data.launcherCollapse || false,
-                        launcherText: data.launcherText || "Chat",
-                        launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
-                        launcherHeight: data.launcherHeight || 60,
-                        launcherWidth: data.launcherWidth || 60,
-                        fullImageLauncherWidth: data.fullImageLauncherWidth || 60,
-                        fullImageLauncherHeight: data.fullImageLauncherHeight || 60,
-                        launcherIcon: data.launcherIcon || "message",
-                        launcherIconUrl: data.launcherIconUrl || "",
-                        launcherLibraryIcon: data.launcherLibraryIcon || "MessageSquare",
-                        launcherIconColor: data.launcherIconColor || "#FFFFFF",
-                        launcherBackgroundColor: data.launcherBackgroundColor || "",
-                        bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : 20,
-                        sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : 20,
-                        launcherShadow: data.launcherShadow || "medium",
-                        launcherAnimation: data.launcherAnimation || "none",
-                        // Full Image / Lottie Mode
-                        launcherType: data.launcherType || "standard",
-                        launcherImageMode: data.launcherImageMode || "image",
-                        launcherFullImageUrl: data.launcherFullImageUrl || "",
-                        launcherLottieUrl: data.launcherLottieUrl || "",
-                        launcherHoverEffect: data.launcherHoverEffect || "scale",
-                        initialLanguage: data.initialLanguage || "auto",
-                        // Triggers
-                        autoOpenDelay: data.autoOpenDelay || 0,
-                        openOnExitIntent: data.openOnExitIntent || false,
-                        openOnScroll: data.openOnScroll || 0,
-                        // Availability
-                        enableBusinessHours: data.enableBusinessHours || false,
-                        timezone: data.timezone || "UTC",
-                        businessHoursStart: data.businessHoursStart || "09:00",
-                        businessHoursEnd: data.businessHoursEnd || "17:00",
-                        offlineMessage: data.offlineMessage || "We are currently offline.",
-                        // Engagement
-                        engagement: data.engagement || null,
-                        // Digital Waiter (Restaurant)
-                        digitalWaiter: data.digitalWaiter || null,
-                        enableVoiceAssistant: data.enableVoiceAssistant || false,
-                        voiceProvider: data.voiceProvider || "klassifier",
-                        elevenLabsVoiceId: data.elevenLabsVoiceId || "",
-                        enablePersonalShopper: data.enablePersonalShopper || false,
-                        enableVisualDiagnosis: data.enableVisualDiagnosis || false,
-                        enableIndustryGreeting: data.enableIndustryGreeting || false,
-                        industry: data.industry || "ecommerce",
-                        customPrompts: data.customPrompts || "",
-                        salesOptimizationConfig: data.salesOptimizationConfig || null,
-                        theme: data.theme || "classic",
+                const data = docSnap.data() || {};
+                
+                // Merge data: Chatbot settings first, then User settings override (for module flags)
+                // This ensures module toggles from the Console (written to users) take precedence
+                const mergedData = {
+                    ...data,
+                    ...userData
+                };
+
+                const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
+                const isAccountActive = mergedData.isActive !== false;
+                
+                // Force-disable modules that are 'coming_soon' in the registry
+                const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status !== 'coming_soon';
+
+                // Return only public settings
+                return NextResponse.json({
+                    isEnabled: isChatbotEnabled && isAccountActive,
+                    companyName: mergedData.companyName || "Acme Corp",
+                    welcomeTitle: mergedData.welcomeTitle || "",
+                    welcomeMessage: mergedData.welcomeMessage || "Hello! How can I help you today?",
+                    brandColor: mergedData.brandColor || "#000000",
+                    brandLogo: mergedData.brandLogo || "",
+                    headerLogo: mergedData.headerLogo || "",
+                    headerLogoWidth: mergedData.headerLogoWidth || 32,
+                    headerLogoHeight: mergedData.headerLogoHeight || 32,
+                    headerBackgroundColor: mergedData.headerBackgroundColor || "",
+                    headerTextColor: mergedData.headerTextColor || "#FFFFFF",
+                    suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
+                    enableLeadCollection: mergedData.enableLeadCollection || false,
+                    enableInitialLeadCollection: mergedData.enableInitialLeadCollection ?? mergedData.enableLeadCollection ?? false,
+                    enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
+                    leadFormConfig: mergedData.leadFormConfig || null,
+                    leadCustomFields: mergedData.leadCustomFields || [],
+                    position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
+                    viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
+                    modalSize: mergedData.modalSize || "half", // 'half' | 'full'
+                    launcherStyle: mergedData.launcherStyle || "circle",
+                    launcherCollapse: mergedData.launcherCollapse || false,
+                    launcherText: mergedData.launcherText || "Chat",
+                    launcherRadius: mergedData.launcherRadius !== undefined ? mergedData.launcherRadius : 50,
+                    launcherHeight: mergedData.launcherHeight || 60,
+                    launcherWidth: mergedData.launcherWidth || 60,
+                    fullImageLauncherWidth: mergedData.fullImageLauncherWidth || 60,
+                    fullImageLauncherHeight: mergedData.fullImageLauncherHeight || 60,
+                    launcherIcon: mergedData.launcherIcon || "message",
+                    launcherIconUrl: mergedData.launcherIconUrl || "",
+                    launcherLibraryIcon: mergedData.launcherLibraryIcon || "MessageSquare",
+                    launcherIconColor: mergedData.launcherIconColor || "#FFFFFF",
+                    launcherBackgroundColor: mergedData.launcherBackgroundColor || "",
+                    bottomSpacing: mergedData.bottomSpacing !== undefined ? mergedData.bottomSpacing : 20,
+                    sideSpacing: mergedData.sideSpacing !== undefined ? mergedData.sideSpacing : 20,
+                    launcherShadow: mergedData.launcherShadow || "medium",
+                    launcherAnimation: mergedData.launcherAnimation || "none",
+                    // Full Image / Lottie Mode
+                    launcherType: mergedData.launcherType || "standard",
+                    launcherImageMode: mergedData.launcherImageMode || "image",
+                    launcherFullImageUrl: mergedData.launcherFullImageUrl || "",
+                    launcherLottieUrl: mergedData.launcherLottieUrl || "",
+                    launcherHoverEffect: mergedData.launcherHoverEffect || "scale",
+                    initialLanguage: mergedData.initialLanguage || "auto",
+                    // Triggers
+                    autoOpenDelay: mergedData.autoOpenDelay || 0,
+                    openOnExitIntent: mergedData.openOnExitIntent || false,
+                    openOnScroll: mergedData.openOnScroll || 0,
+                    // Availability
+                    enableBusinessHours: mergedData.enableBusinessHours || false,
+                    timezone: mergedData.timezone || "UTC",
+                    businessHoursStart: mergedData.businessHoursStart || "09:00",
+                    businessHoursEnd: mergedData.businessHoursEnd || "17:00",
+                    offlineMessage: mergedData.offlineMessage || "We are currently offline.",
+                    // Engagement
+                    engagement: mergedData.engagement || null,
+                    // Digital Waiter (Restaurant)
+                    digitalWaiter: mergedData.digitalWaiter || null,
+                    // Voice Assistant - only enable if module is available AND user has it enabled
+                    enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
+                    voiceProvider: mergedData.voiceProvider || "klassifier",
+                    elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
+                    enablePersonalShopper: mergedData.enablePersonalShopper || false,
+                    enableVisualDiagnosis: mergedData.enableVisualDiagnosis || false,
+                    enableIndustryGreeting: mergedData.enableIndustryGreeting || false,
+                    industry: data.industry || mergedData.industry || "ecommerce",
+                    customPrompts: mergedData.customPrompts || "",
+                    salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
+                    theme: mergedData.theme || "classic",
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
@@ -148,7 +165,7 @@ export async function GET(req: Request) {
                 initialLanguage: "tr",
                 engagement: null,
                 digitalWaiter: null,
-                enableVoiceAssistant: true,
+                enableVoiceAssistant: false,
                 voiceProvider: "klassifier",
                 elevenLabsVoiceId: "",
                 enablePersonalShopper: false,

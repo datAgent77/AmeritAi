@@ -136,6 +136,11 @@ function normalizeIndustry(input: string | undefined): keyof typeof INDUSTRY_CON
         return 'agriculture';
     }
 
+    // Manufacturing / Üretim
+    if (lower.includes('manufacturing') || lower.includes('production') || lower.includes('factory') || lower.includes('uretim') || lower.includes('fabrika') || lower.includes('sanayi')) {
+        return 'manufacturing';
+    }
+
     // E-commerce (check last as fallback for many terms)
     if (lower.includes('ecommerce') || lower.includes('commerce') || lower.includes('shop') || lower.includes('store')) {
         return 'ecommerce';
@@ -153,7 +158,8 @@ export async function generateAIResponse(
     userContext?: { url: string, title: string, desc: string },
     isVoice?: boolean,
     language?: string,
-    visualAnalysisContext?: string
+    visualAnalysisContext?: string,
+    forcedIndustry?: string
 ) {
     try {
         const adminDb = getAdminDb();
@@ -198,8 +204,8 @@ export async function generateAIResponse(
         const rawIndustry = chatbotData?.industry;
         const rawSector = chatbotData?.sector;
         // Prioritize 'sector' (Admin Panel) over 'sectorId' (Legacy)
-        const sectorId = rawSector || rawSectorId || rawIndustry;
-        console.log(`AI Service [SECTOR DEBUG]: chatbotId=${chatbotId}, rawSectorId=${rawSectorId}, rawIndustry=${rawIndustry}, rawSector=${rawSector}, using=${sectorId}`);
+        const sectorId = forcedIndustry || rawSector || rawSectorId || rawIndustry;
+        console.log(`AI Service [SECTOR DEBUG]: chatbotId=${chatbotId}, forcedIndustry=${forcedIndustry}, rawSectorId=${rawSectorId}, rawIndustry=${rawIndustry}, rawSector=${rawSector}, using=${sectorId}`);
         const industry = normalizeIndustry(sectorId);
         console.log(`AI Service [SECTOR DEBUG]: Normalized to: ${industry}`);
         const industryConfig = INDUSTRY_CONFIG[industry as keyof typeof INDUSTRY_CONFIG];
@@ -281,10 +287,19 @@ ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the c
             systemPrompt += `\n# PERSONAL SHOPPER\nTone: ${shopperConfig.salesTone || "friendly"}. Recommend products.`;
         }
 
-        if (language && language !== 'auto') {
-            const langs: any = { 'en': 'English', 'tr': 'Turkish' };
-            systemPrompt += `\n# LANGUAGE\nMust respond in ${langs[language] || 'English'}.`;
-        }
+        // Language Mirroring: AI responds in whatever language the user writes
+        systemPrompt += `\n# LANGUAGE - CRITICAL
+Detect the language and script the user is writing in. ALWAYS respond in that SAME language.
+RULES:
+1. If user writes in German → respond in German.
+2. If user writes in Russian (Cyrillic script like "Привет") → respond in Russian.
+3. If user writes in Turkish → respond in Turkish.
+4. If user writes in French → respond in French.
+5. If user writes in Spanish → respond in Spanish.
+6. If user writes in Arabic → respond in Arabic.
+7. If user writes in any other language, mirror that language.
+8. FALLBACK: If you cannot determine the language, respond in English.
+Mirror the user's language exactly. Do NOT default to Turkish or another language unless the user wrote in that language.`;
 
         // Add User Context
         if (userContext) {

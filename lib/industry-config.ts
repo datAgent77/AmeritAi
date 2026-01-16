@@ -1,4 +1,4 @@
-export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'automotive' | 'insurance' | 'logistics' | 'beauty' | 'legal' | 'fitness' | 'maritime' | 'other';
+export type IndustryType = 'ecommerce' | 'booking' | 'real_estate' | 'saas' | 'service' | 'healthcare' | 'education' | 'academic' | 'finance' | 'restaurant' | 'agriculture' | 'automotive' | 'insurance' | 'logistics' | 'beauty' | 'legal' | 'fitness' | 'maritime' | 'manufacturing' | 'other';
 
 export const INDUSTRY_CONFIG = {
     ecommerce: {
@@ -854,6 +854,54 @@ export const INDUSTRY_CONFIG = {
         suggestedQuestions: {
             en: ["What are the terms for chartering a vessel?", "What are your cargo shipping rates?", "Which ports do you operate in?", "What maritime services do you offer?"],
             tr: ["Gemi kiralama şartlarınız nelerdir?", "Deniz kargo fiyatlarınız nedir?", "Hangi limanlara hizmet veriyorsunuz?", "Hangi denizcilik hizmetlerini sunuyorsunuz?"]
+        }
+    },
+    manufacturing: {
+        names: {
+            en: "Manufacturing",
+            tr: "Üretim ve Fabrika"
+        },
+        label: "Manufacturing",
+        role: "Production Assistant",
+        systemPrompt: `Sen bir Üretim ve Fabrika Asistanısın.
+
+**Temel Görevlerin:**
+- Üretim süreçleri hakkında bilgi ver
+- Ürün grupları ve kapasiteleri tanıt
+- Sipariş ve teklif süreçlerini yönet
+- Kalite standartları ve sertifikalar hakkında bilgi ver
+
+**Konuşma Kuralları:**
+1. Müşterinin ihtiyacını anla (toptan satış, özel üretim, kısmi üretim?)
+2. Ürün grupları ve minimum sipariş miktarlarını açıkla
+3. Teslimat sürelerini ve lojistik bilgilerini paylaş
+4. Kalite sertifikaları ve standartları vurgula
+
+**Ton:** Profesyonel, teknik bilgili, güvenilir
+**Emojiler:** 🏭 ⚙️ 📦 🔧`,
+        defaultModules: {
+            knowledgeBase: true,
+        },
+        behaviorSummary: {
+            en: "Helps with production inquiries, product specifications, order processes, and quality certifications.",
+            tr: "Üretim sorguları, ürün özellikleri, sipariş süreçleri ve kalite sertifikaları konusunda yardımcı olur."
+        },
+        greeting_product: {
+            en: "🏭 Interested in this product group? I can provide specifications and production details.",
+            tr: "🏭 Bu ürün grubuyla ilgileniyor musunuz? Teknik özellikler ve üretim detayları verebilirim."
+        },
+        greeting_cart: {
+            en: "📦 Ready to request a quote or place an order?",
+            tr: "📦 Teklif almak veya sipariş vermek ister misiniz?"
+        },
+        greeting_general: {
+            en: "👋 Hello! Looking for manufacturing solutions or product information? I can help!",
+            tr: "👋 Merhaba! Üretim çözümleri veya ürün bilgisi mi arıyorsunuz? Size yardımcı olabilirim!"
+        },
+        contextKeys: ["productGroup", "productionCapacity", "minimumOrder", "certifications"],
+        suggestedQuestions: {
+            en: ["What are your product groups?", "What is the minimum order quantity?", "What are your production stages?", "What quality certifications do you have?"],
+            tr: ["Ürün gruplarınız nelerdir?", "Minimum sipariş miktarınız nedir?", "Üretim aşamalarınız nelerdir?", "Hangi kalite sertifikalarına sahipsiniz?"]
         }
     },
     other: {

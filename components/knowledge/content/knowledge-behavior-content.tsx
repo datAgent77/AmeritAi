@@ -152,7 +152,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder={t('selectIndustry')} />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-80 overflow-y-auto">
                                         {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => {
                                             const translationKey = 'industry' + key.split('_').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
                                             return (
@@ -211,26 +211,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                         </div>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label>{t('chatbotLanguage')}</Label>
-                        <Select
-                            value={settings.initialLanguage}
-                            onValueChange={(value) => setSettings(prev => ({ ...prev, initialLanguage: value }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder={t('selectLanguage')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="auto">{t('langAuto')}</SelectItem>
-                                <SelectItem value="en">English</SelectItem>
-                                <SelectItem value="es">Spanish</SelectItem>
-                                <SelectItem value="fr">French</SelectItem>
-                                <SelectItem value="de">German</SelectItem>
-                                <SelectItem value="tr">Turkish</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground">{t('langDesc')}</p>
-                    </div>
+                    {/* Language selector removed - now using browser language automatically */}
                 </div>
             </div>
         </div>

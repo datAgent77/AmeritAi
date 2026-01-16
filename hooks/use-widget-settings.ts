@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext"
 export interface WidgetSettings {
     // Branding settings
     companyName: string
+    welcomeTitle: string
     welcomeMessage: string
     brandColor: string
     brandLogo: string
@@ -66,6 +67,7 @@ export interface WidgetSettings {
 
 const defaultSettings: WidgetSettings = {
     companyName: "Acme Corp",
+    welcomeTitle: "",
     welcomeMessage: "Merhaba! Bugün size nasıl yardımcı olabilirim?",
     brandColor: "#000000",
     brandLogo: "",
@@ -138,6 +140,7 @@ export function useWidgetSettings(userId?: string) {
                 setSettings(prev => ({
                     ...prev,
                     companyName: data.companyName || prev.companyName,
+                    welcomeTitle: data.welcomeTitle || prev.welcomeTitle,
                     welcomeMessage: data.welcomeMessage || prev.welcomeMessage,
                     brandColor: data.brandColor || prev.brandColor,
                     brandLogo: data.brandLogo || prev.brandLogo,

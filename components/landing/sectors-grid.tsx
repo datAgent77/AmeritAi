@@ -5,7 +5,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import {
     ShoppingBag, Plane, Home, Code2, Briefcase, HeartPulse, GraduationCap,
     School, Banknote, ChefHat, Sprout, Car, ShieldCheck, Truck, Sparkles,
-    Scale, Dumbbell, Anchor
+    Scale, Dumbbell, Anchor, Factory
 } from "lucide-react"
 
 export function SectorsGrid() {
@@ -30,6 +30,7 @@ export function SectorsGrid() {
         { icon: Scale, label: { en: "Legal", tr: "Hukuk" }, href: "/solutions/legal", color: "text-gray-400" },
         { icon: Dumbbell, label: { en: "Fitness", tr: "Spor" }, href: "/solutions/fitness", color: "text-red-400" },
         { icon: Anchor, label: { en: "Maritime", tr: "Denizcilik" }, href: "/solutions/maritime", color: "text-cyan-400" },
+        { icon: Factory, label: { en: "Manufacturing", tr: "Üretim" }, href: "/solutions/manufacturing", color: "text-stone-400" },
     ]
 
     return (

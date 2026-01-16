@@ -19,7 +19,8 @@ import {
     Sparkles,
     Scale,
     Dumbbell,
-    Anchor
+    Anchor,
+    Factory
 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
@@ -155,6 +156,13 @@ export default function IndustriesPage() {
             descKey: "sectorDesc_maritime",
             href: "/solutions/maritime",
             color: "text-cyan-400"
+        },
+        {
+            icon: Factory,
+            label: { en: "Manufacturing", tr: "Üretim" },
+            descKey: "sectorDesc_manufacturing",
+            href: "/solutions/manufacturing",
+            color: "text-stone-400"
         },
     ]
 

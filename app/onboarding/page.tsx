@@ -16,7 +16,7 @@ import {
     ShoppingBag, Calendar, Home, Briefcase, Heart,
     GraduationCap, BookOpen, Landmark, HelpCircle, Wrench,
     MessageSquare, UserPlus, Mic, PenTool, Lock,
-    ExternalLink, TrendingUp, Share2, Mail, Info,
+    ExternalLink, TrendingUp, Share2, Mail, Info, Send, Bot,
     ChefHat, Sprout, Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +24,8 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
+import confetti from "canvas-confetti"
 import {
     ONBOARDING_STEPS,
     OnboardingStep,
@@ -40,7 +42,8 @@ import {
 } from "@/lib/modules-registry"
 import {
     createInitialEntitlements,
-    getModuleStatusForUI
+    getModuleStatusForUI,
+    canEnableModule
 } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/upgrade-modal"
 
@@ -117,6 +120,29 @@ export default function OnboardingPage() {
     // Upgrade Modal State
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
     const [selectedPremiumModule, setSelectedPremiumModule] = useState<{ name: string; description: string; icon?: any } | null>(null)
+
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    }
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: {
+                type: "spring" as const,
+                stiffness: 100
+            }
+        }
+    }
 
     // Load existing onboarding state
     useEffect(() => {
@@ -195,6 +221,7 @@ export default function OnboardingPage() {
         setIsLoading(true)
 
         try {
+            console.log("Submitting sector:", selectedSector)
             const token = await getToken()
             const response = await fetch("/api/onboarding/sector", {
                 method: "POST",
@@ -205,14 +232,22 @@ export default function OnboardingPage() {
                 body: JSON.stringify({ sector: selectedSector })
             })
 
-            if (!response.ok) throw new Error("Failed to save sector")
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || "Failed to save sector")
+            }
 
             const data = await response.json()
             setModules(data.modules)
             setCompletedSteps(prev => [...prev, 'sector'])
             setCurrentStep('modules')
-        } catch (error) {
+        } catch (error: any) {
             console.error("Sector error:", error)
+            toast({
+                title: language === 'tr' ? 'Hata' : 'Error',
+                description: error.message || (language === 'tr' ? 'Sektör kaydedilemedi.' : 'Failed to save sector.'),
+                variant: "destructive"
+            })
         } finally {
             setIsLoading(false)
         }
@@ -294,15 +329,20 @@ export default function OnboardingPage() {
         try {
             const token = await getToken()
 
-            // 1. Bulk Ingest selected pages if any
+            // 1. Bulk Ingest logic with batching
             if (selectedUrls.length > 0) {
                 setScanProgress(0)
-                let successCount = 0
-                for (let i = 0; i < selectedUrls.length; i++) {
-                    const urlToImport = selectedUrls[i]
+                let completedCount = 0
+                const BATCH_SIZE = 5
+
+                // Helper for processing a single URL with timeout
+                const processUrl = async (urlToImport: string) => {
+                    const controller = new AbortController()
+                    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout
+
                     try {
                         const docId = crypto.randomUUID()
-                        await fetch("/api/knowledge", {
+                        const response = await fetch("/api/knowledge", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -310,27 +350,48 @@ export default function OnboardingPage() {
                                 docId,
                                 type: "url",
                                 url: urlToImport
-                            })
+                            }),
+                            signal: controller.signal
                         })
-                        successCount++
-                    } catch (e) {
-                        console.error("Failed to ingest:", urlToImport, e)
+                        if (!response.ok) throw new Error(`Status ${response.status}`)
+                    } catch (e: any) {
+                        console.error(`Failed to ingest ${urlToImport}:`, e.name === 'AbortError' ? 'Timeout' : e.message)
+                    } finally {
+                        clearTimeout(timeoutId)
+                        completedCount++
+                        setScanProgress(Math.round((completedCount / selectedUrls.length) * 100))
                     }
-                    setScanProgress(Math.round(((i + 1) / selectedUrls.length) * 100))
+                }
+
+                // Process in batches
+                for (let i = 0; i < selectedUrls.length; i += BATCH_SIZE) {
+                    const batch = selectedUrls.slice(i, i + BATCH_SIZE)
+                    // Wait for the entire batch to finish (parallel within batch)
+                    await Promise.all(batch.map(url => processUrl(url)))
                 }
             } else {
-                // Single URL Ingestion (Fallthrough if no full crawl or no matches)
-                const docId = crypto.randomUUID()
-                await fetch("/api/knowledge", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        chatbotId: user?.uid,
-                        docId,
-                        type: "url",
-                        url: knowledgeUrl
+                // Single URL Ingestion with timeout
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 15000)
+
+                try {
+                    const docId = crypto.randomUUID()
+                    await fetch("/api/knowledge", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            chatbotId: user?.uid,
+                            docId,
+                            type: "url",
+                            url: knowledgeUrl
+                        }),
+                        signal: controller.signal
                     })
-                })
+                } catch (e: any) {
+                     console.error("Single URL ingest failed:", e)
+                } finally {
+                    clearTimeout(timeoutId)
+                }
             }
 
             // 2. Mark onboarding step as done
@@ -443,7 +504,7 @@ export default function OnboardingPage() {
     // Loading state
     if (pageLoading || authLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 flex items-center justify-center">
+            <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
@@ -452,7 +513,7 @@ export default function OnboardingPage() {
     const stepConfig = STEP_CONFIG[currentStep]
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+        <div className="min-h-screen bg-white dark:bg-zinc-950">
             {/* Header */}
             <header className="border-b bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
                 <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -499,7 +560,7 @@ export default function OnboardingPage() {
             </header>
 
             {/* Content */}
-            <main className="max-w-3xl mx-auto px-6 py-12">
+            <main className="max-w-7xl mx-auto px-6 py-12 transition-all duration-300 ease-in-out">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-tight">
                         {stepConfig.title[language === 'tr' ? 'tr' : 'en']}
@@ -512,20 +573,28 @@ export default function OnboardingPage() {
                 {/* STEP 1: SECTOR */}
                 {currentStep === 'sector' && (
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <motion.div 
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                        >
                             {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => {
                                 const Icon = INDUSTRY_ICONS[key] || HelpCircle
                                 const isSelected = selectedSector === key
 
                                 return (
-                                    <button
+                                    <motion.button
                                         key={key}
+                                        variants={itemVariants}
+                                        whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => setSelectedSector(key as IndustryType)}
                                         className={cn(
-                                            "p-4 rounded-xl border-2 text-left transition-all hover:shadow-md",
+                                            "p-4 rounded-xl border-2 text-left transition-colors shadow-sm hover:shadow-md bg-white dark:bg-zinc-900",
                                             isSelected
                                                 ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                                : "border-gray-200 dark:border-zinc-700 hover:border-primary/50"
+                                                : "border-gray-200 dark:border-zinc-800 hover:border-primary/50"
                                         )}
                                     >
                                         <Icon className={cn(
@@ -535,21 +604,21 @@ export default function OnboardingPage() {
                                         <p className="font-medium">
                                             {(config as any).names?.[language] || config.label}
                                         </p>
-                                    </button>
+                                    </motion.button>
                                 )
                             })}
-                        </div>
+                        </motion.div>
 
-                        <div className="flex justify-end">
+                        <div className="flex justify-end pt-4">
                             <Button
                                 size="lg"
                                 onClick={handleSectorSubmit}
                                 disabled={!selectedSector || isLoading}
-                                className="gap-2"
+                                className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
                             >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                                 {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-5 h-5 ml-2" />
                             </Button>
                         </div>
                     </div>
@@ -567,8 +636,30 @@ export default function OnboardingPage() {
                             </span>
                         </div>
 
-                        <div className="grid gap-3">
-                            {getAllModules().map((module) => {
+                        <motion.div 
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="grid gap-3"
+                        >
+                            {getAllModules()
+                                .filter(module => {
+                                    // 1. Hide "coming_soon" modules completely
+                                    if (module.status === 'coming_soon') return false
+
+                                    // 2. Hide modules not supported by the selected sector
+                                    if (selectedSector) {
+                                        const tempEntitlements = createInitialEntitlements(
+                                            user?.uid || 'temp',
+                                            selectedSector
+                                        )
+                                        const access = canEnableModule(tempEntitlements, module.id)
+                                        if (access.status === 'not_supported') return false
+                                    }
+
+                                    return true
+                                })
+                                .map((module) => {
                                 const Icon = MODULE_ICON_MAP[module.icon] || MessageSquare
 
                                 // Calculate status using entitlements logic
@@ -586,19 +677,26 @@ export default function OnboardingPage() {
                                             icon: Icon
                                         })
                                         setUpgradeModalOpen(true)
+                                        return
                                     }
+                                    
+                                    // Normally we would allow toggling here if we implemented state for it,
+                                    // but for now we rely on the default entitlements.
+                                    // If we want to allow users to toggle "available" modules, we need local state.
                                 }
 
                                 return (
-                                    <div
+                                    <motion.div
                                         key={module.id}
+                                        variants={itemVariants}
+                                        whileHover={{ scale: 1.01 }}
                                         onClick={handleModuleClick}
                                         className={cn(
-                                            "flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer relative overflow-hidden bg-white dark:bg-zinc-900",
+                                            "flex items-start gap-4 p-4 rounded-xl border transition-all relative overflow-hidden bg-white dark:bg-zinc-900",
                                             isEnabled
                                                 ? "border-green-500/50 shadow-sm"
                                                 : isLocked
-                                                    ? "border-gray-200 dark:border-zinc-800 opacity-75 hover:opacity-100"
+                                                    ? "border-gray-200 dark:border-zinc-800 opacity-75 hover:opacity-100 cursor-pointer"
                                                     : "border-gray-200 dark:border-zinc-800 opacity-60"
                                         )}
                                     >
@@ -666,20 +764,29 @@ export default function OnboardingPage() {
                                                 <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-zinc-700" />
                                             )}
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )
                             })}
-                        </div>
+                        </motion.div>
 
-                        <div className="flex justify-between">
-                            <Button variant="ghost" onClick={() => goToStep('sector')}>
-                                <ArrowLeft className="w-4 h-4 mr-2" />
+                        <div className="flex justify-between items-center pt-4">
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => goToStep('sector')}
+                                className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
+                            >
+                                <ArrowLeft className="w-5 h-5 mr-2" />
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
-                            <Button size="lg" onClick={handleModulesContinue} disabled={isLoading} className="gap-2">
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            <Button 
+                                size="lg" 
+                                onClick={handleModulesContinue} 
+                                disabled={isLoading} 
+                                className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                                 {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-5 h-5 ml-2" />
                             </Button>
                         </div>
                     </div>
@@ -688,9 +795,9 @@ export default function OnboardingPage() {
 
                 {/* STEP 3: KNOWLEDGE BASE */}
                 {currentStep === 'knowledge' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Card className="border-none shadow-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-                            <CardContent className="pt-6 space-y-6">
+                    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <Card className="border-none shadow-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm ring-1 ring-border/50">
+                            <CardContent className="p-8 space-y-8">
                                 {/* Input Area: Only show if not scanning and no results yet */}
                                 {!isScanning && discoveredUrls.length === 0 && (
                                     <div className="space-y-6">
@@ -700,16 +807,16 @@ export default function OnboardingPage() {
                                             </Label>
                                             <div className="relative group">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <ExternalLink className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                    <ExternalLink className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                                 </div>
                                                 <Input
                                                     value={knowledgeUrl}
                                                     onChange={(e) => setKnowledgeUrl(e.target.value)}
                                                     placeholder="https://example.com"
-                                                    className="pl-10 h-12 text-base border-zinc-200 dark:border-zinc-800 focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                                                    className="pl-10 h-14 text-lg bg-white/60 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 focus:ring-4 focus:ring-primary/10 transition-all shadow-sm rounded-xl"
                                                 />
                                             </div>
-                                            <p className="text-xs text-muted-foreground italic">
+                                            <p className="text-sm text-muted-foreground">
                                                 {language === 'tr'
                                                     ? 'Yapay zekanız bu adresteki içerikleri okuyarak kendini eğitecektir.'
                                                     : 'Your AI will read the content at this address to train itself.'}
@@ -724,8 +831,8 @@ export default function OnboardingPage() {
                                                 </Label>
                                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                                     {language === 'tr'
-                                                        ? 'Web sitenizdeki tüm sayfalar otomatik olarak bulunur ve seçiminize sunulur.'
-                                                        : 'All pages on your website will be found and presented for your selection.'}
+                                                        ? 'Web sitenizdeki tüm sayfalar otomatik olarak bulunur.'
+                                                        : 'All pages on your website will be found automatically.'}
                                                 </p>
                                             </div>
                                             <Switch
@@ -761,8 +868,8 @@ export default function OnboardingPage() {
 
                                 {/* URL Selection List */}
                                 {!isScanning && discoveredUrls.length > 0 && (
-                                    <div className="space-y-4 animate-in fade-in zoom-in-95 duration-500">
-                                        <div className="flex items-center justify-between bg-zinc-100/50 dark:bg-zinc-800/50 p-3 rounded-lg">
+                                    <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
                                             <div className="space-y-0.5">
                                                 <h4 className="font-bold text-sm">
                                                     {language === 'tr' ? 'Sayfalar Bulundu' : 'Pages Found'}: {discoveredUrls.length}
@@ -843,10 +950,9 @@ export default function OnboardingPage() {
                             </CardContent>
                         </Card>
 
-                        <div className="flex justify-between items-center bg-white/30 dark:bg-zinc-900/30 p-2 rounded-2xl backdrop-blur-sm">
+                        <div className="flex justify-between items-center pt-2">
                             <Button
                                 variant="ghost"
-                                size="lg"
                                 onClick={() => {
                                     if (discoveredUrls.length > 0) {
                                         setDiscoveredUrls([])
@@ -855,83 +961,120 @@ export default function OnboardingPage() {
                                         goToStep('modules')
                                     }
                                 }}
-                                className="font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                                className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
                             >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                <ArrowLeft className="w-5 h-5 mr-2" />
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
                             <Button
                                 size="lg"
                                 onClick={handleKnowledgeSubmit}
                                 disabled={!knowledgeUrl || isLoading || isScanning || (discoveredUrls.length > 0 && selectedUrls.length === 0)}
-                                className="px-8 font-bold gap-2 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-white bg-primary hover:bg-primary/90"
+                                className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
                             >
-                                {isLoading || isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                                {isLoading || isScanning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                                 {discoveredUrls.length > 0
-                                    ? (language === 'tr' ? 'Seçilenleri Kaydet ve Devam Et' : 'Save & Continue')
+                                    ? (language === 'tr' ? 'Seçilenleri Kaydet' : 'Save & Continue')
                                     : (language === 'tr' ? 'Devam Et' : 'Continue')}
-                                {!isLoading && !isScanning && <ChevronRight className="w-5 h-5" />}
+                                {!isLoading && !isScanning && <ChevronRight className="w-5 h-5 ml-2" />}
                             </Button>
                         </div>
                     </div>
                 )}
 
                 {/* STEP 4: WIDGET */}
+                {/* STEP 4: WIDGET */}
+                {/* STEP 4: WIDGET */}
                 {
                     currentStep === 'widget' && (
-                        <div className="space-y-6">
-                            <Card>
-                                <CardContent className="pt-6 space-y-4">
-                                    <div className="space-y-2">
-                                        <Label>{language === 'tr' ? 'Marka Adı' : 'Brand Name'}</Label>
-                                        <Input
-                                            value={widget.brandName}
-                                            onChange={(e) => setWidget(prev => ({ ...prev, brandName: e.target.value }))}
-                                            placeholder={language === 'tr' ? 'Şirket adınız' : 'Your company name'}
-                                        />
-                                    </div>
+                        <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <Card className="border-none shadow-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm ring-1 ring-border/50">
+                                <CardContent className="p-8 space-y-8">
+                                        <div className="grid gap-6">
+                                        <div className="grid gap-3">
+                                            <Label className="text-base font-semibold">
+                                                {language === 'tr' ? 'Marka Adı' : 'Brand Name'}
+                                            </Label>
+                                            <div className="relative">
+                                                <Input
+                                                    value={widget.brandName}
+                                                    onChange={(e) => setWidget(prev => ({ ...prev, brandName: e.target.value }))}
+                                                    placeholder={language === 'tr' ? 'Örn: Vion AI' : 'Ex: Vion AI'}
+                                                    className="h-12 text-base bg-white/60 dark:bg-zinc-950/50 transition-all focus:ring-2 focus:ring-primary/20"
+                                                />
+                                            </div>
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label>{language === 'tr' ? 'Karşılama Mesajı' : 'Welcome Message'}</Label>
-                                        <Input
-                                            value={widget.welcomeMessage}
-                                            onChange={(e) => setWidget(prev => ({ ...prev, welcomeMessage: e.target.value }))}
-                                        />
-                                    </div>
+                                        <div className="grid gap-3">
+                                            <Label className="text-base font-semibold">
+                                                {language === 'tr' ? 'Karşılama Mesajı' : 'Welcome Message'}
+                                            </Label>
+                                            <div className="relative">
+                                                <Input
+                                                    value={widget.welcomeMessage}
+                                                    onChange={(e) => setWidget(prev => ({ ...prev, welcomeMessage: e.target.value }))}
+                                                    placeholder={language === 'tr' ? 'Merhaba! Size nasıl yardımcı olabilirim?' : 'Hello! How can I help you?'}
+                                                    className="h-12 text-base bg-white/60 dark:bg-zinc-950/50 transition-all focus:ring-2 focus:ring-primary/20"
+                                                />
+                                            </div>
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <Label>{language === 'tr' ? 'Marka Rengi' : 'Brand Color'}</Label>
-                                        <div className="flex gap-3">
-                                            <Input
-                                                type="color"
-                                                value={widget.brandColor}
-                                                onChange={(e) => setWidget(prev => ({ ...prev, brandColor: e.target.value }))}
-                                                className="w-14 h-10 p-1 cursor-pointer"
-                                            />
-                                            <Input
-                                                value={widget.brandColor}
-                                                onChange={(e) => setWidget(prev => ({ ...prev, brandColor: e.target.value }))}
-                                                className="flex-1"
-                                            />
+                                        <div className="grid gap-3">
+                                            <Label className="text-base font-semibold flex items-center justify-between">
+                                                {language === 'tr' ? 'Marka Rengi' : 'Brand Color'}
+                                                <span className="text-xs font-mono text-muted-foreground bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
+                                                    {widget.brandColor}
+                                                </span>
+                                            </Label>
+                                            <div className="flex gap-4 items-center p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 bg-white/40 dark:bg-zinc-900/40">
+                                                <div className="relative w-12 h-12 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950 ring-zinc-100 dark:ring-zinc-800 overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                                                    <div 
+                                                        className="absolute inset-0 w-full h-full"
+                                                        style={{ backgroundColor: widget.brandColor || '#6366f1' }}
+                                                    />
+                                                    <Input
+                                                        type="color"
+                                                        value={widget.brandColor}
+                                                        onChange={(e) => setWidget(prev => ({ ...prev, brandColor: e.target.value }))}
+                                                        className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] p-0 opacity-0 cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <Input
+                                                        value={widget.brandColor}
+                                                        onChange={(e) => setWidget(prev => ({ ...prev, brandColor: e.target.value }))}
+                                                        className="h-10 font-mono uppercase text-base bg-transparent border-none shadow-none focus-visible:ring-0 px-0 text-foreground/90 font-medium"
+                                                        placeholder="#000000"
+                                                        maxLength={7}
+                                                    />
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {language === 'tr' ? 'Değiştirmek için renge tıklayın' : 'Click color to change'}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <div className="flex justify-between">
-                                <Button variant="ghost" onClick={() => goToStep('knowledge')}>
-                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                            <div className="flex justify-between items-center pt-2">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => goToStep('knowledge')}
+                                    className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
+                                >
+                                    <ArrowLeft className="w-5 h-5 mr-2" />
                                     {language === 'tr' ? 'Geri' : 'Back'}
                                 </Button>
                                 <Button
                                     size="lg"
                                     onClick={handleWidgetSubmit}
                                     disabled={!widget.brandName || isLoading}
-                                    className="gap-2"
+                                    className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
                                 >
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                                     {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                    <ChevronRight className="w-4 h-4" />
+                                    <ChevronRight className="w-5 h-5 ml-2" />
                                 </Button>
                             </div>
                         </div>
@@ -1039,12 +1182,19 @@ export default function OnboardingPage() {
                                     </Button>
                                     <Button
                                         size="lg"
-                                        onClick={() => handleComplete('full')}
+                                        onClick={() => {
+                                            confetti({
+                                                particleCount: 100,
+                                                spread: 70,
+                                                origin: { y: 0.6 }
+                                            })
+                                            handleComplete('full')
+                                        }}
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto font-bold shadow-lg shadow-primary/20"
+                                        className="w-full sm:w-auto font-bold shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white"
                                     >
                                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Rocket className="w-4 h-4 mr-2" />}
-                                        {language === 'tr' ? 'Panele Git' : 'Go to Console'}
+                                        {language === 'tr' ? 'Asistanı Başlat' : 'Launch Assistant'}
                                     </Button>
                                 </div>
                             </div>

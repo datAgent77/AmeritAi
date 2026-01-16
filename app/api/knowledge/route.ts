@@ -160,20 +160,35 @@ export async function POST(req: Request) {
             try {
                 // If text is already provided (from preview), use it. Otherwise scrape.
                 if (!text) {
-                    const response = await fetch(url);
-                    const html = await response.text();
-                    const $ = cheerio.load(html);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-                    // Remove scripts, styles, etc.
-                    $('script').remove();
-                    $('style').remove();
-                    $('nav').remove();
-                    $('footer').remove();
-                    $('header').remove();
+                    try {
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        
+                        if (!response.ok) throw new Error(`Status ${response.status}`);
+                        
+                        const html = await response.text();
+                        const $ = cheerio.load(html);
 
-                    title = $('title').text() || url;
-                    // Get text content
-                    contentToEmbed = $('body').text().replace(/\s+/g, ' ').trim();
+                        // Remove scripts, styles, etc.
+                        $('script').remove();
+                        $('style').remove();
+                        $('nav').remove();
+                        $('footer').remove();
+                        $('header').remove();
+
+                        title = $('title').text() || url;
+                        // Get text content
+                        contentToEmbed = $('body').text().replace(/\s+/g, ' ').trim();
+                    } catch (e: any) {
+                        clearTimeout(timeoutId);
+                        if (e.name === 'AbortError') {
+                            throw new Error("Scraping timed out (10s limit)");
+                        }
+                        throw e;
+                    }
                 }
 
                 preview = contentToEmbed.substring(0, 200) + "...";

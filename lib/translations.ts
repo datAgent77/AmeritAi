@@ -20,6 +20,7 @@ export const translations = {
         sectorDesc_legal: "Legal consultations, appointment scheduling, and case status inquiries.",
         sectorDesc_fitness: "Gym memberships, class schedules, personal training sessions, and facility tours.",
         sectorDesc_maritime: "Vessel booking, cargo shipping, port information, and maritime certifications.",
+        sectorDesc_manufacturing: "Production processes, product groups, order management, and quality certifications.",
 
         industriesPageTitle: "All Industries",
         industriesPageDesc: "Artificial intelligence solutions specialized for every sector.",
@@ -167,6 +168,12 @@ export const translations = {
         passwordsDoNotMatch: "Passwords do not match.",
         accountUpdated: "Account updated successfully.",
         customerAdmin: "Subscription Management",
+        
+        clearHistoryTitle: "Clear History?",
+        clearHistoryDesc: "This will delete your current conversation. This action cannot be undone.",
+        clearChat: "Clear Chat",
+        aiOnline: "AI Online",
+        aiDisclaimer: "AI can make mistakes. Verify important info.",
 
 
         // Sidebar
@@ -333,6 +340,7 @@ export const translations = {
         industryLegal: "Legal",
         industryFitness: "Fitness & Gym",
         industryMaritime: "Maritime & Shipping",
+        industryManufacturing: "Manufacturing",
         feature10Title: "Voice Interaction",
         feature10Desc: "Speak to your chatbot naturally. It supports bidirectional voice conversations with human-like latency.",
         feature11Title: "Appointment Booking",
@@ -1468,7 +1476,13 @@ export const translations = {
         passwordTooShort: "Şifre en az 6 karakter olmalıdır.",
         passwordsDoNotMatch: "Şifreler uyuşmuyor.",
         accountUpdated: "Hesap başarıyla güncellendi.",
-        customerAdmin: "Abonelik yönetimi",
+        customerAdmin: "Abonelik Yönetimi",
+
+        clearHistoryTitle: "Sohbeti Temizle",
+        clearHistoryDesc: "Tüm mesaj geçmişiniz silinecek. Bu işlem geri alınamaz.",
+        clearChat: "Temizle",
+        aiOnline: "AI Çevrimiçi",
+        aiDisclaimer: "AI hata yapabilir. Önemli bilgileri kontrol edin.",
 
         visitors: "Ziyaretçiler",
         training: "Eğitim",
@@ -1771,6 +1785,8 @@ export const translations = {
         industryLegal: "Hukuk",
         industryFitness: "Spor & Fitness",
         industryMaritime: "Denizcilik & Gemi",
+        industryManufacturing: "Üretim & Fabrika",
+        sectorDesc_manufacturing: "Üretim süreçleri, ürün grupları, sipariş yönetimi ve kalite sertifikaları.",
         industryDesc: "İşletmenize en uygun sektörü seçin, yapay zeka yanıtlarını buna göre uyarlar.",
         chatbotRole: "Chatbot Rolü",
         behaviorSummary: "Davranış Özeti",
