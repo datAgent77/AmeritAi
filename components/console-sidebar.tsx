@@ -555,7 +555,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
 
                                     <div className="p-1 border-t">
                                         <DropdownMenuItem onClick={handleLogout} className="px-2 py-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20">
-                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <LogOut className="mr-2 h-4 w-4 text-red-600" />
                                             <span className="font-medium text-sm">{t('logout')}</span>
                                         </DropdownMenuItem>
                                     </div>
