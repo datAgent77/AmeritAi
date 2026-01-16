@@ -26,7 +26,6 @@ export function SectorsGrid() {
         { icon: Car, label: { en: "Automotive", tr: "Otomotiv" }, href: "/solutions/automotive", color: "text-slate-400" },
         { icon: ShieldCheck, label: { en: "Insurance", tr: "Sigorta" }, href: "/solutions/insurance", color: "text-blue-500" },
         { icon: Truck, label: { en: "Logistics", tr: "Lojistik" }, href: "/solutions/logistics", color: "text-yellow-500" },
-        { icon: Sparkles, label: { en: "Beauty", tr: "Güzellik" }, href: "/solutions/beauty", color: "text-pink-500" },
         { icon: Scale, label: { en: "Legal", tr: "Hukuk" }, href: "/solutions/legal", color: "text-gray-400" },
         { icon: Dumbbell, label: { en: "Fitness", tr: "Spor" }, href: "/solutions/fitness", color: "text-red-400" },
         { icon: Anchor, label: { en: "Maritime", tr: "Denizcilik" }, href: "/solutions/maritime", color: "text-cyan-400" },
