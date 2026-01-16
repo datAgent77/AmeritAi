@@ -212,10 +212,7 @@ export default function ChatbotContainer() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                        {t('outsideBusinessHours') || 'Mesai Saatleri Dışındayız'}
-                    </h2>
-                    <p className="text-gray-600 max-w-sm">
+                    <p className="text-gray-600 max-w-sm text-lg font-medium">
                         {decodeURIComponent(offlineMessage)}
                     </p>
                 </div>
