@@ -52,6 +52,7 @@ export type SectorId =
     | 'legal'
     | 'fitness'
     | 'maritime'
+    | 'manufacturing'
     | 'other';
 
 export interface ModuleDefinition {
