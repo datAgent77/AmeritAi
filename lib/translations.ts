@@ -174,6 +174,8 @@ export const translations = {
         clearChat: "Clear Chat",
         aiOnline: "AI Online",
         aiDisclaimer: "AI can make mistakes. Verify important info.",
+        offline: "Offline",
+        outsideBusinessHours: "We're Outside Business Hours",
 
 
         // Sidebar
@@ -1483,6 +1485,8 @@ export const translations = {
         clearChat: "Temizle",
         aiOnline: "AI Çevrimiçi",
         aiDisclaimer: "AI hata yapabilir. Önemli bilgileri kontrol edin.",
+        offline: "Çevrimdışı",
+        outsideBusinessHours: "Mesai Saatleri Dışındayız",
 
         visitors: "Ziyaretçiler",
         training: "Eğitim",

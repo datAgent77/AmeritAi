@@ -38,6 +38,10 @@ export default function ChatbotContainer() {
     const [showBooking, setShowBooking] = useState(false)
     const [bookingData, setBookingData] = useState({ type: "", date: "", time: "", notes: "" })
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
+    
+    // Offline mode - when business hours are not active
+    const offlineMessage = searchParams?.get("offlineMessage") || null
+    const isOffline = !!offlineMessage
 
     // 4. Initialization Effects
     useEffect(() => {
@@ -168,6 +172,55 @@ export default function ChatbotContainer() {
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-white">Loading...</div>
+    }
+
+    // Show offline message when outside business hours
+    if (isOffline) {
+        return (
+            <div className={`flex flex-col h-screen overflow-hidden font-sans text-gray-800 ${settings.theme === 'dark' ? 'dark bg-gray-900' : 'bg-white'}`}>
+                {/* Header */}
+                <div 
+                    className="p-4 flex items-center gap-3"
+                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                >
+                    {settings.headerLogo && (
+                        <img 
+                            src={settings.headerLogo} 
+                            alt={settings.companyName} 
+                            className="h-8 w-auto object-contain"
+                        />
+                    )}
+                    <div className="text-white">
+                        <h1 className="font-semibold text-sm">{settings.companyName}</h1>
+                        <p className="text-xs opacity-80">{t('offline') || 'Çevrimdışı'}</p>
+                    </div>
+                </div>
+                
+                {/* Offline Content */}
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                    <div 
+                        className="w-16 h-16 rounded-full flex items-center justify-center mb-6"
+                        style={{ backgroundColor: `${settings.brandColor}20` }}
+                    >
+                        <svg 
+                            className="w-8 h-8" 
+                            style={{ color: settings.brandColor }}
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                        {t('outsideBusinessHours') || 'Mesai Saatleri Dışındayız'}
+                    </h2>
+                    <p className="text-gray-600 max-w-sm">
+                        {decodeURIComponent(offlineMessage)}
+                    </p>
+                </div>
+            </div>
+        )
     }
 
     return (
