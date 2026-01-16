@@ -32,12 +32,6 @@ export default function SettingsLayout({
             icon: <CreditCard className="w-4 h-4" />
         },
         {
-            id: "developers",
-            label: t('developers') || "Geliştiriciler",
-            href: "/console/settings/developers",
-            icon: <Code className="w-4 h-4" />
-        },
-        {
             id: "notifications",
             label: t('notificationSettings') || "Bildirimler",
             href: "/console/settings/notifications",

@@ -31,12 +31,6 @@ export default function TenantSettingsLayout({
             icon: <Bot className="w-4 h-4" />
         },
         {
-            id: "developers",
-            label: t('developers') || "Geliştiriciler",
-            href: `/admin/tenant/${userId}/settings/developers`,
-            icon: <Code className="w-4 h-4" />
-        },
-        {
             id: "notifications",
             label: t('notificationSettings') || "Bildirimler",
             href: `/admin/tenant/${userId}/settings/notifications`,
