@@ -10,7 +10,7 @@ import { getAdminDb } from './firebase-admin';
 export interface Notification {
     id?: string;
     userId: string;
-    type: 'invoice_reminder' | 'payment_due' | 'payment_overdue' | 'general';
+    type: 'invoice_reminder' | 'payment_due' | 'payment_overdue' | 'general' | 'trial_expired';
     title: string;
     message: string;
     isRead: boolean;

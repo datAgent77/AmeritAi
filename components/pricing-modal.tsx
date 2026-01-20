@@ -15,7 +15,9 @@ import { getPublicPlansSorted, getPlan, formatPlanPrice, PlanConfig } from '@/li
 import { BillingToggle } from '@/components/pricing/billing-toggle'
 import { ModuleId } from '@/lib/modules-registry'
 import { cn } from '@/lib/utils'
-import { Check, Crown } from 'lucide-react'
+import { Check, Crown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { useToast } from '@/hooks/use-toast'
 
 interface PricingModalProps {
     isOpen: boolean
@@ -34,14 +36,60 @@ export function PricingModal({
     const { t, language } = useLanguage()
     const router = useRouter()
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+    const [isLoading, setIsLoading] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
+    const { user } = useAuth()
+    const { toast } = useToast()
 
     const allPlans = getPublicPlansSorted()
     const currentPlan = getPlan(currentPlanId)
     const currentSortOrder = currentPlan?.sortOrder ?? 0
 
-    const handleUpgrade = (planId: string) => {
-        router.push(`/signup?plan=${planId}&cycle=${billingCycle}`)
-        onClose()
+    const handleUpgrade = async (planId: string) => {
+        if (!user) {
+            toast({
+                variant: "destructive",
+                title: language === 'tr' ? 'Hata' : 'Error',
+                description: language === 'tr' ? 'Lütfen önce giriş yapın' : 'Please login first'
+            })
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            const token = await user.getIdToken()
+            const response = await fetch('/api/upgrade-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    targetPlan: planId
+                })
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setShowSuccess(true)
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: language === 'tr' ? 'Hata' : 'Error',
+                    description: data.error || 'Bir hata oluştu'
+                })
+            }
+        } catch (error) {
+            console.error('Upgrade request error:', error)
+            toast({
+                variant: "destructive",
+                title: language === 'tr' ? 'Hata' : 'Error',
+                description: language === 'tr' ? 'İstek gönderilemedi' : 'Failed to send request'
+            })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const handleContact = () => {
@@ -59,13 +107,32 @@ export function PricingModal({
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-[1400px] sm:max-w-[1400px] max-h-[90vh] py-0 overflow-hidden">
-                <DialogHeader className="px-6 pt-6 pb-4">
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        {language === 'tr' ? 'Planı Yükselt' : 'Upgrade Plan'}
-                    </DialogTitle>
-                </DialogHeader>
+                {showSuccess ? (
+                    <div className="flex flex-col items-center justify-center p-12 text-center h-full min-h-[400px]">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                            <CheckCircle2 className="w-10 h-10 text-green-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                            {language === 'tr' ? 'Talebiniz Alındı! 🚀' : 'Request Received!'}
+                        </h2>
+                        <p className="text-gray-500 max-w-md mb-8 text-lg">
+                            {language === 'tr' 
+                                ? 'Plan yükseltme talebiniz başarıyla bize ulaştı. Müşteri temsilcilerimiz en kısa sürede sizinle iletişime geçerek süreci tamamlayacaktır.' 
+                                : 'Your upgrade request has been received successfully. Our customer representatives will contact you shortly to complete the process.'}
+                        </p>
+                        <Button onClick={onClose} size="lg" className="min-w-[150px]">
+                            {language === 'tr' ? 'Tamam, Anlaşıldı' : 'Got it'}
+                        </Button>
+                    </div>
+                ) : (
+                    <>
+                        <DialogHeader className="px-6 pt-6 pb-4">
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                {language === 'tr' ? 'Planı Yükselt' : 'Upgrade Plan'}
+                            </DialogTitle>
+                        </DialogHeader>
 
-                <div className="p-6 space-y-6 overflow-y-auto w-full" style={{ width: '100%' }}>
+                        <div className="p-6 space-y-6 overflow-y-auto w-full" style={{ width: '100%' }}>
                     {/* Billing Toggle */}
                     <div className="flex justify-center items-end">
                         <BillingToggle 
@@ -135,23 +202,27 @@ export function PricingModal({
                                     </div>
 
                                     {/* CTA Button */}
-                                    <Button 
-                                        variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
-                                        className={cn(
-                                            "w-full mb-4",
-                                            isPopular && !isCurrentPlan && "bg-primary hover:bg-primary/90"
-                                        )}
-                                        disabled={isCurrentPlan || (!!currentPlan && plan.sortOrder < currentSortOrder)}
-                                        onClick={() => isContact ? handleContact() : handleUpgrade(plan.planId)}
-                                    >
-                                        {isCurrentPlan 
-                                            ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
-                                            : isContact
-                                                ? (language === 'tr' ? 'İletişime Geç' : 'Contact Sales')
-                                                : (currentPlan && plan.sortOrder < currentSortOrder)
-                                                    ? getPlanDisplayName(plan)
-                                                    : (language === 'tr' ? 'Planı Yükselt' : 'Upgrade')}
-                                    </Button>
+                                        <Button 
+                                            variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
+                                            className={cn(
+                                                "w-full mb-4",
+                                                isPopular && !isCurrentPlan && "bg-primary hover:bg-primary/90"
+                                            )}
+                                            disabled={isCurrentPlan || (!!currentPlan && plan.sortOrder < currentSortOrder) || isLoading}
+                                            onClick={() => isContact ? handleContact() : handleUpgrade(plan.planId)}
+                                        >
+                                            {isLoading && !isContact && !isCurrentPlan ? (
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            ) : null}
+                                            
+                                            {isCurrentPlan 
+                                                ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
+                                                : isContact
+                                                    ? (language === 'tr' ? 'İletişime Geç' : 'Contact Sales')
+                                                    : (currentPlan && plan.sortOrder < currentSortOrder)
+                                                        ? getPlanDisplayName(plan)
+                                                        : (language === 'tr' ? 'Planı Yükselt' : 'Upgrade')}
+                                        </Button>
 
                                     {/* Features List */}
                                     <div className="flex-1 space-y-2">
@@ -199,6 +270,8 @@ export function PricingModal({
                         {t('fairUseWarning')}
                     </p>
                 </div>
+                </>
+                )}
             </DialogContent>
         </Dialog>
     )

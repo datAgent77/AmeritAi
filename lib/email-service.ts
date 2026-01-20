@@ -526,3 +526,375 @@ export async function sendPaymentReminderToCustomer(data: PaymentReminderData): 
         return false;
     }
 }
+
+export interface TrialExpiredNotificationData {
+    adminEmail: string;
+    customerEmail: string;
+    customerName?: string;
+    planName: string;
+    trialEndDate: string;
+}
+
+/**
+ * Send trial expired notification to Super Admin
+ */
+export async function sendTrialExpiredAdminNotification(data: TrialExpiredNotificationData): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const { adminEmail, customerEmail, customerName, planName, trialEndDate } = data;
+
+    const formattedDate = new Date(trialEndDate).toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Deneme Süresi Sona Erdi</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); padding: 40px; text-align: center;">
+                            <div style="font-size: 40px; margin-bottom: 15px;">⏳</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Deneme Süresi Sona Erdi</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Aşağıdaki müşterinin 14 günlük deneme süresi doldu:
+                            </p>
+                            
+                            <!-- Customer Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-radius: 8px; padding: 25px; margin-bottom: 30px; border-left: 4px solid #ef4444;">
+                                <tr>
+                                    <td>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #991b1b; font-size: 13px;">MÜŞTERİ</span><br>
+                                                    <span style="color: #7f1d1d; font-size: 16px; font-weight: 600;">${customerName || customerEmail}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #991b1b; font-size: 13px;">E-POSTA</span><br>
+                                                    <span style="color: #7f1d1d; font-size: 14px;">${customerEmail}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #991b1b; font-size: 13px;">PLAN</span><br>
+                                                    <span style="color: #7f1d1d; font-size: 14px; font-weight: 600;">${planName}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #991b1b; font-size: 13px;">BİTİŞ TARİHİ</span><br>
+                                                    <span style="color: #7f1d1d; font-size: 16px; font-weight: 600;">📅 ${formattedDate}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                Lütfen müşteriyle iletişime geçin veya hesap durumunu kontrol edin.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 13px; margin: 0;">
+                                <span style="color: #adb5bd;">Vion AI Admin Bildirimi</span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+
+    try {
+        await transporter.sendMail({
+            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
+            to: adminEmail,
+            subject: `⏳ Deneme Süresi Bitti - ${customerName || customerEmail}`,
+            text: `Deneme Süresi Sona Erdi\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nBitiş Tarihi: ${formattedDate}`,
+            html: htmlContent,
+        });
+
+        console.log(`Email Service: Trial expired notification sent to admin ${adminEmail} for customer ${customerEmail}`);
+        return true;
+    } catch (error) {
+        console.error('Email Service: Failed to send trial expired notification:', error);
+        return false;
+    }
+}
+
+/**
+ * Send trial expired notification to Customer
+ */
+export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpiredNotificationData, 'adminEmail'>): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const { customerEmail, customerName, planName, trialEndDate } = data;
+
+    const formattedDate = new Date(trialEndDate).toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Deneme Süreniz Sona Erdi</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); padding: 40px; text-align: center;">
+                            <div style="font-size: 40px; margin-bottom: 15px;">🚀</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Vion AI Deneme Süreniz Sona Erdi</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Sayın <strong>${customerName || 'Kullanıcımız'}</strong>,
+                            </p>
+                            <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+                                <strong>Vion AI ${planName}</strong> planındaki 14 günlük deneme süreniz <strong>${formattedDate}</strong> tarihinde sona ermiştir.
+                            </p>
+                            <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Hizmetlerimizden kesintisiz yararlanmaya devam etmek ve verilerinizi kaybetmemek için hesabınızı hemen yükseltin.
+                            </p>
+                            
+                            <!-- Action Button -->
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <a href="https://app.getvion.com/console/settings" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+                                    Planı Yükselt
+                                </a>
+                            </div>
+
+                            <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                Sorularınız için bizimle iletişime geçebilirsiniz.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 13px; margin: 0;">
+                                Vion AI Ekibi<br>
+                                <span style="color: #adb5bd;">Powered by Vion AI</span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+
+    try {
+        await transporter.sendMail({
+            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
+            to: customerEmail,
+            subject: `🚀 Deneme Süreniz Sona Erdi - Paketinizi Yükseltin`,
+            text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: https://app.getvion.com/console/settings`,
+            html: htmlContent,
+        });
+
+        console.log(`Email Service: Trial expired notification sent to customer ${customerEmail}`);
+        return true;
+    } catch (error) {
+        console.error('Email Service: Failed to send trial expired notification to customer:', error);
+        return false;
+    }
+}
+
+export interface UpgradeRequestData {
+    adminEmail?: string; // Optional, defaults to env or info@userex.com.tr
+    customerEmail: string;
+    customerName: string;
+    currentUserParams: {
+        userId: string;
+        currentPlan: string;
+    };
+    targetPlan: string;
+}
+
+/**
+ * Send plan upgrade request to Admin
+ */
+export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const { adminEmail, customerEmail, customerName, currentUserParams, targetPlan } = data;
+    const recipientEmail = adminEmail || 'info@userex.com.tr';
+
+    const formattedDate = new Date().toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Plan Yükseltme Talebi</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px; text-align: center;">
+                            <div style="font-size: 40px; margin-bottom: 15px;">🚀</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Yeni Plan Yükseltme Talebi</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Aşağıdaki müşterimiz planını yükseltmek istiyor:
+                            </p>
+                            
+                            <!-- Request Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ecfdf5; border-radius: 8px; padding: 25px; margin-bottom: 30px; border-left: 4px solid #10b981;">
+                                <tr>
+                                    <td>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #047857; font-size: 13px;">MÜŞTERİ</span><br>
+                                                    <span style="color: #064e3b; font-size: 16px; font-weight: 600;">${customerName}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #047857; font-size: 13px;">E-POSTA</span><br>
+                                                    <span style="color: #064e3b; font-size: 14px;">${customerEmail}</span>
+                                                </td>
+                                            </tr>
+                                             <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #047857; font-size: 13px;">MEVCUT PLAN</span><br>
+                                                    <span style="color: #064e3b; font-size: 14px;">${currentUserParams.currentPlan}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #047857; font-size: 13px;">İSTENEN PLAN</span><br>
+                                                    <span style="color: #064e3b; font-size: 18px; font-weight: 700;">${targetPlan}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0;">
+                                                    <span style="color: #047857; font-size: 13px;">TALEP TARİHİ</span><br>
+                                                    <span style="color: #064e3b; font-size: 14px;">📅 ${formattedDate}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                             <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0;">
+                                Müşteri ID: <code style="background-color: #f1f5f9; padding: 2px 4px; border-radius: 4px;">${currentUserParams.userId}</code>
+                            </p>
+
+                            <div style="text-align: center; margin-top: 30px;">
+                                <a href="https://app.getvion.com/admin/tenant/${currentUserParams.userId}/settings/customer-admin" style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px;">
+                                    Müşteri Ayarlarına Git
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
+                            <p style="color: #6c757d; font-size: 13px; margin: 0;">
+                                <span style="color: #adb5bd;">Vion AI Admin Bildirimi</span>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
+
+    try {
+        await transporter.sendMail({
+            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
+            to: recipientEmail,
+            subject: `🚀 Yeni Plan Yükseltme Talebi - ${customerName}`,
+            text: `Yeni Plan Yükseltme Talebi\n\nMüşteri: ${customerName} (${customerEmail})\nMevcut Plan: ${currentUserParams.currentPlan}\nİstenen Plan: ${targetPlan}\nTarih: ${formattedDate}`,
+            html: htmlContent,
+        });
+
+        console.log(`Email Service: Upgrade request sent to admin ${recipientEmail}`);
+        return true;
+    } catch (error) {
+        console.error('Email Service: Failed to send upgrade request:', error);
+        return false;
+    }
+}
+

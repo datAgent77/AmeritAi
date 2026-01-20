@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { createNotification } from "@/lib/notification-service";
-import { sendInvoiceReminderToAdmin, sendPaymentReminderToCustomer } from "@/lib/email-service";
+import { sendInvoiceReminderToAdmin, sendPaymentReminderToCustomer, sendTrialExpiredAdminNotification, sendTrialExpiredCustomerNotification } from "@/lib/email-service";
 
 // Super Admin email (should be from env or fetched from DB)
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "";
@@ -180,6 +180,76 @@ export async function GET(request: Request) {
                     });
 
                     paymentRemindersProcessed++;
+                }
+            }
+
+
+            // =========================================================================
+            // 3. TRIAL EXPIRY NOTIFICATIONS TO SUPER ADMIN
+            // Check for customers whose trialEndsAt has passed
+            // and trialExpiredNotificationSent is false
+            // =========================================================================
+
+            const trialEndsAt = subscription.trialEndsAt;
+            const trialExpiredNotificationSent = subscription.trialExpiredNotificationSent;
+
+            if (trialEndsAt && subscription.status === 'trial' && !trialExpiredNotificationSent) {
+                const trialEndDate = new Date(trialEndsAt);
+                trialEndDate.setHours(0, 0, 0, 0);
+
+                // Check if today is the trial end date or we've passed it
+                if (today >= trialEndDate) {
+                    console.log(`Billing Cron: Sending trial expired notification for ${userData.email}`);
+
+                    // Send email to Super Admin
+                    if (superAdminEmail) {
+                        await sendTrialExpiredAdminNotification({
+                            adminEmail: superAdminEmail,
+                            customerEmail: userData.email,
+                            customerName: userData.companyName || userData.email,
+                            planName: PLAN_NAMES[subscription.planId] || subscription.planId,
+                            trialEndDate: trialEndsAt
+                        });
+                    }
+
+                    // Create panel notification for Super Admin
+                    if (superAdminId) {
+                        await createNotification({
+                            userId: superAdminId,
+                            type: 'trial_expired',
+                            title: 'Deneme Süresi Sona Erdi',
+                            message: `${userData.email} müşterisinin deneme süresi doldu.`,
+                            metadata: {
+                                customerId: userDoc.id,
+                                customerEmail: userData.email,
+                                invoiceDate: trialEndsAt // reusing field for display
+                            }
+                        });
+                    }
+
+                    // Send email to Customer
+                    await sendTrialExpiredCustomerNotification({
+                        customerEmail: userData.email,
+                        customerName: userData.companyName || userData.email,
+                        planName: PLAN_NAMES[subscription.planId] || subscription.planId,
+                        trialEndDate: trialEndsAt
+                    });
+
+                    // Create panel notification for Customer
+                    await createNotification({
+                        userId: userDoc.id,
+                        type: 'trial_expired',
+                        title: '⚠️ Deneme Süreniz Doldu',
+                        message: `14 günlük deneme süreniz sona erdi. Hizmet kesintisi yaşamamak için lütfen paketinizi yükseltin.`,
+                        metadata: {
+                            invoiceDate: trialEndsAt // reusing field
+                        }
+                    });
+
+                    // Mark notification as sent
+                    await adminDb.collection("users").doc(userDoc.id).update({
+                        "subscription.trialExpiredNotificationSent": true
+                    });
                 }
             }
         }
