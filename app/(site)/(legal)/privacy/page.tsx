@@ -119,8 +119,8 @@ export default function PrivacyPage() {
       <section className="mb-8">
         <h2>8. Değişiklikler</h2>
         <p>
-          Bu Gizlilik Sözleşmesi'ni zaman zaman güncelleyebiliriz. Önemli değişiklikler 
-          olması durumunda kayıtlı e-posta adresinize bildirim göndereceğiz.
+          {`Bu Gizlilik Sözleşmesi'ni zaman zaman güncelleyebiliriz. Önemli değişiklikler 
+          olması durumunda kayıtlı e-posta adresinize bildirim göndereceğiz.`}
         </p>
       </section>
     </article>
