@@ -124,10 +124,10 @@ export default function AboutPage() {
             2018 yılından bu yana, yerli ve uluslararası markalar için kullanıcı odaklı dijital deneyimler tasarlıyoruz.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            "İşimizi seviyoruz, bu yüzden iyi yapıyoruz" mottosuyla yola çıktık. Arayüzde basit, içerikte derin, 
+            {`"İşimizi seviyoruz, bu yüzden iyi yapıyoruz" mottosuyla yola çıktık. Arayüzde basit, içerikte derin, 
             çözümlerde net olmak ana prensibimiz. Marketplaces, e-ticaret platformları, SaaS ürünleri... Ne olursa olsun, 
             bizi ilgilendiren her zaman "kullanıcı"dır. Çünkü tasarımın merkezine insanı koyarsanız, teknoloji sadece 
-            bir araç olur ve bu araç doğru yönde hareket eder.
+            bir araç olur ve bu araç doğru yönde hareket eder.`}
           </p>
           <p className="text-muted-foreground leading-relaxed">
             İyi iş, iyi niyetle başlar. Ve biz hem müşterilerimize hem de işimize duyduğumuz saygıyla, 

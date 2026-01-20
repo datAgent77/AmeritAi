@@ -78,7 +78,7 @@ export default function TermsPage() {
         <ul>
           <li>Aboneliğinizi istediğiniz zaman iptal edebilirsiniz.</li>
           <li>İptal, mevcut fatura döneminin sonunda geçerli olur.</li>
-          <li>İptal işlemi için kontrol panelinizdeki "Ayarlar" bölümünü kullanabilirsiniz.</li>
+          <li>{`İptal işlemi için kontrol panelinizdeki "Ayarlar" bölümünü kullanabilirsiniz.`}</li>
         </ul>
 
         <h3>4.3 İade Koşulları</h3>
@@ -93,10 +93,10 @@ export default function TermsPage() {
 
         <h3>4.4 Cayma Hakkı</h3>
         <p>
-          6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 48. maddesi ve Mesafeli Sözleşmeler 
+          {`6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 48. maddesi ve Mesafeli Sözleşmeler 
           Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca; elektronik ortamda anında ifa edilen 
           hizmetler ve tüketiciye anında teslim edilen gayri maddi mallara ilişkin cayma hakkı 
-          kullanılamaz.
+          kullanılamaz.`}
         </p>
       </section>
 

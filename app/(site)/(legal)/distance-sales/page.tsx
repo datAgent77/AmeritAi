@@ -46,11 +46,11 @@ export default function DistanceSalesPage() {
       <section className="mb-8">
         <h2>2. Sözleşmenin Konusu</h2>
         <p>
-          Bu sözleşmenin konusu, ALICI'nın SATICI'ya ait www.getvion.com internet sitesinden 
+          {`Bu sözleşmenin konusu, ALICI'nın SATICI'ya ait www.getvion.com internet sitesinden 
           elektronik ortamda sipariş ettiği Vion AI SaaS hizmet aboneliğinin satışı ve 
           teslimi ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve 
           Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve 
-          yükümlülüklerinin belirlenmesidir.
+          yükümlülüklerinin belirlenmesidir.`}
         </p>
       </section>
 
@@ -108,10 +108,10 @@ export default function DistanceSalesPage() {
         <div className="not-prose bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-6 my-4">
           <p className="text-amber-800 dark:text-amber-200 font-medium mb-2">Yasal Bilgilendirme</p>
           <p className="text-amber-700 dark:text-amber-100/80">
-            6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 48. maddesi ve Mesafeli 
+            {`6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 48. maddesi ve Mesafeli 
             Sözleşmeler Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca; elektronik 
             ortamda anında ifa edilen hizmetler ve tüketiciye anında teslim edilen 
-            gayri maddi mallara ilişkin sözleşmelerde cayma hakkı kullanılamaz.
+            gayri maddi mallara ilişkin sözleşmelerde cayma hakkı kullanılamaz.`}
           </p>
         </div>
         <p>

@@ -14,12 +14,12 @@ export default function PrivacyPage() {
       <section className="mb-8">
         <h2>1. Giriş</h2>
         <p>
-          Bu Gizlilik Sözleşmesi, Userex Design Studio ("Şirket", "biz", "bizim") tarafından işletilen 
+          {`Bu Gizlilik Sözleşmesi, Userex Design Studio ("Şirket", "biz", "bizim") tarafından işletilen 
           Vion AI platformu ("Hizmet") kullanıcılarının kişisel verilerinin nasıl toplandığını, 
-          kullanıldığını ve korunduğunu açıklamaktadır.
+          kullanıldığını ve korunduğunu açıklamaktadır.`}
         </p>
         <p>
-          Hizmetimizi kullanarak, bu Gizlilik Sözleşmesi'nde belirtilen uygulamaları kabul etmiş olursunuz.
+          {`Hizmetimizi kullanarak, bu Gizlilik Sözleşmesi'nde belirtilen uygulamaları kabul etmiş olursunuz.`}
         </p>
       </section>
 

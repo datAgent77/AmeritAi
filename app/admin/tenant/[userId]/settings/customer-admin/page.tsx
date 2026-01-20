@@ -586,7 +586,7 @@ export default function CustomerAdminPage() {
                                         <div className="space-y-0.5">
                                             <div className="text-sm font-medium text-zinc-900">Deneme Modu (Trial Mode)</div>
                                             <div className="text-xs text-muted-foreground">
-                                                Aktif edildiğinde abonelik durumu 'trial' olarak ayarlanır.
+                                                {`Aktif edildiğinde abonelik durumu 'trial' olarak ayarlanır.`}
                                             </div>
                                         </div>
                                         <Switch 
