@@ -59,15 +59,21 @@ export function normalizePlanId(rawPlanId: any): string {
         'business': 'enterprise',
         'trial': 'trial',
         'starter': 'starter',
+        'growth': 'growth',
         'pro': 'pro',
         'enterprise': 'enterprise'
     };
 
     const mapped = planMap[normalized];
 
-    // Validate plan exists in pricing-config
+    // 1. If mapped found and valid
     if (mapped && planExists(mapped)) {
         return mapped;
+    }
+
+    // 2. If raw normalized value is a valid plan
+    if (planExists(normalized)) {
+        return normalized;
     }
 
     // Fallback to starter if unknown
@@ -284,7 +290,7 @@ export function extractEntitlementsFromDoc(
 
     // Otherwise, extract from legacy fields
     return normalizeEntitlements(docId, {
-        plan: docData.plan,
+        plan: docData.plan || docData.planId,
         industry: docData.industry,
         sector: docData.sector,
         sectorId: docData.sectorId,

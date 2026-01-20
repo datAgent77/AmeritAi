@@ -103,14 +103,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                                 <SidebarGroupLabel>{t('administration') || 'Yönetim'}</SidebarGroupLabel>
                                 <SidebarGroupContent>
                                     <SidebarMenu>
-                                        <SidebarMenuItem>
-                                            <SidebarMenuButton asChild>
-                                                <Link href={`/admin/tenant/${userId}/settings/customer-admin`}>
-                                                    <CreditCard />
-                                                    <span>{t('customerAdmin') || 'Abonelik yönetimi'}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
+                                        {/* Removed SidebarMenuItem for "Modül Erişim Talepleri" */}
                                     </SidebarMenu>
                                 </SidebarGroupContent>
                             </SidebarGroup>

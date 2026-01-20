@@ -75,6 +75,9 @@ import {
 } from "@/components/ui/dialog"
 import { getAllModules as getAllRegistryModules } from "@/lib/modules-registry"
 import { ModuleDetailsDialog } from "@/components/modules/module-details-dialog"
+import { getModuleAccess, isModuleIncluded } from "@/lib/module-access"
+import { PlanUpgradePrompt } from "@/components/plan-upgrade-prompt"
+import { getModuleUpgradeTarget } from "@/lib/pricing-config"
 
 // Lucide Icon Mapping
 export const ICON_MAP = {
@@ -154,6 +157,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [selectedModuleId, setSelectedModuleId] = useState<ModuleId | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+    const [upgradeTargetModuleId, setUpgradeTargetModuleId] = useState<ModuleId | null>(null)
 
     // Search and Filter States
     const [searchQuery, setSearchQuery] = useState("")
@@ -166,6 +171,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     // Determine User Industry - Default to ecommerce if not set
     const userIndustry: IndustryType = (user as any)?.industry || DEFAULT_INDUSTRY
     const industryConfig = INDUSTRY_CONFIG[userIndustry]
+    
+    // Get user plan ID - Default to starter if not set
+    const userPlanId = (user as any)?.planId || (user as any)?.entitlements?.planId || 'starter'
 
     useEffect(() => {
         const loadModuleStates = async () => {
@@ -405,73 +413,20 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         }
     }
 
-    const handleRequest = async (moduleId: ModuleId) => {
-        if (!effectiveUserId) return
-        setIsLoading(moduleId)
-
-        const moduleConfig = MODULE_DEFINITIONS[moduleId]
-        const lang = language as 'en' | 'tr'
-        const moduleName = moduleConfig?.name ? moduleConfig.name[lang] || moduleConfig.name.en : moduleId
-
-        try {
-            // Get ID token for authorization
-            const idToken = await user?.getIdToken()
-
-            const response = await fetch("/api/console/request-module", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${idToken}`
-                },
-                body: JSON.stringify({
-                    moduleKey: moduleId,
-                    moduleName: moduleName,
-                    industry: userIndustry
-                })
-            })
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || "Failed to submit request")
-            }
-
-            toast({
-                title: t('requestSent') || "Request Sent",
-                description: t('requestSentDesc') || "Your module request has been forwarded to the administrator. We will contact you shortly.",
-            })
-        } catch (error) {
-            console.error("Error sending request:", error)
-            toast({
-                title: t('error') || "Error",
-                description: t('requestFailedDesc') || "Failed to send request. Please try again.",
-                variant: "destructive"
-            })
-        } finally {
-            setIsLoading(null)
-        }
+    const handleUpgrade = (moduleId: ModuleId) => {
+        setUpgradeTargetModuleId(moduleId)
+        setIsPricingModalOpen(true)
     }
 
-    // Check if module is included in the plan based on the TENANT'S sector
-    // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
-    // Check if module is included in the plan based on the TENANT'S sector
-    // We must use the tenant's actual sector, not a hardcoded one or default behavior that might be wrong
-    const isModuleIncluded = useCallback((moduleId: string) => {
-        const registryModule = getAllRegistryModules().find(m => m.id === moduleId)
-        if (!registryModule) return false
-
-        // If we have a specific tenant sector (passed via props/context), use it.
-        // If not, fall back to checking if it's default enabled generally (which might be risky if sector is 'other')
-        // Ideally we should always have a sector if we are in this view.
-        if (userIndustry && registryModule.defaultEnabledBySector.includes(userIndustry as any)) {
-            return true
-        }
-
-        return false
-    }, [userIndustry])
+    // Check if module is included in the plan (package-based check)
+    const checkModuleIncluded = useCallback((moduleId: string) => {
+        // Check if module is included in user's plan
+        return isModuleIncluded(userPlanId, moduleId as any)
+    }, [userPlanId])
 
     const isPremiumModule = (moduleId: ModuleId) => {
         if (moduleId === 'generalChatbot') return false // Core, not premium
-        return !isModuleIncluded(moduleId)
+        return !checkModuleIncluded(moduleId)
     }
 
     // Filter Logic
@@ -509,8 +464,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             if (a.status !== 'coming_soon' && b.status === 'coming_soon') return -1
 
             // 2. Included modules come first (before premium modules)
-            const aIncluded = isModuleIncluded(a.id)
-            const bIncluded = isModuleIncluded(b.id)
+            const aIncluded = checkModuleIncluded(a.id)
+            const bIncluded = checkModuleIncluded(b.id)
             if (aIncluded && !bIncluded) return -1
             if (!aIncluded && bIncluded) return 1
 
@@ -519,12 +474,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, industryFilter, language, isModuleIncluded])
+    }, [searchQuery, industryFilter, language, checkModuleIncluded])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
         return (
-            <div className="flex-1 space-y-4 p-8 pt-6">
+            <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
                 <div className="flex items-center justify-between space-y-2">
                     <div>
                         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-2" />
@@ -549,7 +504,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     }
 
     return (
-        <div className="flex-1 space-y-6 p-8 animate-in fade-in duration-500">
+        <div className="flex-1 space-y-6 p-4 md:p-8 animate-in fade-in duration-500">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
@@ -583,7 +538,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     </div>
 
                     <Select value={industryFilter} onValueChange={setIndustryFilter}>
-                        <SelectTrigger className="w-[180px] h-10">
+                        <SelectTrigger className="w-full md:w-[180px] h-10">
                             <Filter className="w-4 h-4 mr-2" />
                             <SelectValue placeholder={t('filterByIndustry') || "Filter by Industry"} />
                         </SelectTrigger>
@@ -634,14 +589,19 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
                     {filteredModules.map((module) => {
-                        const isIncluded = isModuleIncluded(module.id)
+                        // Get module access info - single source of truth
+                        const access = getModuleAccess(
+                            userPlanId,
+                            module.id,
+                            userIndustry,
+                            moduleStates[module.id] || false,
+                            language as 'en' | 'tr'
+                        )
+                        
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
-                        const isCoreModule = module.isCore
-                        const isAccessGranted = isSuperAdmin || isIncluded || isActive
+                        const isAccessGranted = isSuperAdmin || access.status === 'included' || access.status === 'core' || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
-                        const isEnabled = moduleStates[module.id] || false;
-                        const isCore = module.isCore || (module.id === 'generalChatbot')
 
                         return (
                             <Card
@@ -655,7 +615,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                     <div className="p-2 rounded-lg bg-gray-100 text-gray-900">
                                         <IconComponent className="w-6 h-6" />
                                     </div>
-                                    {isCoreModule ? (
+                                    {access.isCore ? (
                                         <TooltipProvider>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
@@ -669,26 +629,20 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
-                                    ) : module.status === 'coming_soon' ? (
+                                    ) : access.isComingSoon ? (
                                         <Badge variant="secondary" className="bg-zinc-100 text-zinc-700 hover:bg-zinc-100 border-none">
                                             {t('comingSoon') || 'Yakında'}
                                         </Badge>
                                     ) : (
-                                        /* Access Granted & No Access Case - Both Show Badges next to Switch/Lock */
                                         <div className="flex items-center gap-2">
                                             {module.status === 'beta' && (
                                                 <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
                                                     Beta
                                                 </Badge>
                                             )}
-                                            {isIncluded && !module.isCore && (
+                                            {access.badge === 'included' && (
                                                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
-                                                    {t('included') || 'Included'}
-                                                </Badge>
-                                            )}
-                                            {module.isPremium && !isIncluded && (
-                                                <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
-                                                    Premium
+                                                    {t('included') || 'Dahil'}
                                                 </Badge>
                                             )}
 
@@ -696,7 +650,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 <Switch
                                                     checked={isActive}
                                                     onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                    disabled={isLoading === module.id || isCoreModule || !isAccessGranted}
+                                                    disabled={isLoading === module.id || access.isCore || !access.canToggle}
                                                     className={isLoading === module.id ? 'opacity-50' : ''}
                                                 />
                                             ) : (
@@ -713,10 +667,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         {module.description[language as 'en' | 'tr'] || module.description.en}
                                     </CardDescription>
 
-                                    {/* Premium Price Display */}
-                                    {module.isPremium && !isIncluded && module.price > 0 && (
-                                        <div className="mt-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
-                                            ${module.price}{t('month') || '/mo'}
+                                    {/* Upgrade Message */}
+                                    {access.upgradeMessage && (
+                                        <div className="mt-2">
+                                            <div className="text-xs text-muted-foreground bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700">
+                                                {access.upgradeMessage}
+                                            </div>
                                         </div>
                                     )}
 
@@ -757,11 +713,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                     ) : (
                                         <Button
                                             className="w-full gap-2"
-                                            variant="secondary"
-                                            onClick={() => handleRequest(module.id)}
-                                            disabled={isLoading === module.id}
+                                            variant="default"
+                                            onClick={() => handleUpgrade(module.id)}
                                         >
-                                            {isLoading === module.id ? "..." : (t('requestAccess') || "Request Access")}
+                                            {language === 'tr' ? 'Planı Yükselt' : 'Upgrade Plan'}
+                                            <ArrowRight className="w-3 h-3 ml-1" />
                                         </Button>
                                     )}
                                     <Button
@@ -783,16 +739,19 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             ) : (
                 <div className="flex flex-col gap-4 pt-2">
                     {filteredModules.map((module) => {
-                        const isIncluded = isModuleIncluded(module.id)
+                        // Get module access info - single source of truth
+                        const access = getModuleAccess(
+                            userPlanId,
+                            module.id,
+                            userIndustry,
+                            moduleStates[module.id] || false,
+                            language as 'en' | 'tr'
+                        )
+                        
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
-                        const isCoreModule = module.isCore
-                        const isAccessGranted = isSuperAdmin || isIncluded || isActive
+                        const isAccessGranted = isSuperAdmin || access.status === 'included' || access.status === 'core' || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
-                        const isEnabled = moduleStates[module.id] || false;
-                        const isCore = module.isCore || (module.id === 'generalChatbot')
-                        const registryModule = getAllRegistryModules().find(m => m.id === module.id)
-                        const isPremiumAddOn = registryModule?.isPremium || false
 
                         return (
                             <div key={module.id} className={`flex items-center p-4 border rounded-xl gap-4 bg-white dark:bg-zinc-950 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900 ${!isAccessGranted ? 'opacity-90' : ''}`}>
@@ -803,7 +762,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3">
                                         <h3 className="font-semibold text-base">{module.name[language as 'en' | 'tr'] || module.name.en}</h3>
-                                        {isCoreModule ? (
+                                        {access.isCore ? (
                                             <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none">
                                                 {t('coreModule') || 'Temel'}
                                             </Badge>
@@ -811,38 +770,32 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none">
                                                 Beta
                                             </Badge>
-                                        ) : (
+                                        ) : access.isComingSoon ? (
                                             <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-100 border-none">
                                                 {t('comingSoon') || 'Yakında'}
                                             </Badge>
-                                        )}
+                                        ) : null}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
-                                        {isIncluded && !module.isCore && (
+                                        {access.badge === 'included' && (
                                             <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
-                                                {t('included') || 'Included'}
+                                                {t('included') || 'Dahil'}
                                             </Badge>
-                                        )}
-                                        {isPremiumAddOn && !isIncluded && (
-                                            <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-medium">
-                                                Premium
-                                            </Badge>
-                                        )}
-                                        {/* Premium Price Display */}
-                                        {isPremiumAddOn && !isIncluded && registryModule?.price && registryModule.price > 0 && (
-                                            <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
-                                                ${registryModule.price}{t('month') || '/mo'}
-                                            </span>
                                         )}
                                     </div>
                                     <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                                         {module.description[language as 'en' | 'tr'] || module.description.en}
                                     </p>
+                                    {access.upgradeMessage && (
+                                        <div className="mt-2 text-xs text-muted-foreground bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700">
+                                            {access.upgradeMessage}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 text-sm font-medium mr-4 hidden md:flex">
-                                        {module.status === 'coming_soon' ? (
+                                        {access.isComingSoon ? (
                                             <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                                                 <Lock className="h-3.5 w-3.5" />
                                                 {t('inDevelopment') || 'Geliştiriliyor'}
@@ -859,11 +812,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                                     {/* Switch or Lock */}
                                     <div className="flex items-center">
-                                        {isCoreModule ? (
+                                        {access.isCore ? (
                                             <div className="w-10 h-6 flex items-center justify-center">
                                                 <Lock className="w-4 h-4 text-gray-400 opacity-50" />
                                             </div>
-                                        ) : module.status === 'coming_soon' ? (
+                                        ) : access.isComingSoon ? (
                                             <div className="w-10 h-6 flex items-center justify-center">
                                                 <Lock className="w-4 h-4 text-gray-400 opacity-50" />
                                             </div>
@@ -871,7 +824,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             <Switch
                                                 checked={isActive}
                                                 onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                disabled={isLoading === module.id}
+                                                disabled={isLoading === module.id || !access.canToggle}
                                             />
                                         ) : (
                                             <Lock className="w-5 h-5 text-muted-foreground" />
@@ -880,7 +833,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
                                     {/* Actions */}
                                     <div className="flex items-center gap-2 pl-4 border-l">
-                                        {isAccessGranted && module.status !== 'coming_soon' ? (
+                                        {isAccessGranted && !access.isComingSoon ? (
                                             <Button
                                                 onClick={() => handleManage(module.id)}
                                                 size="sm"
@@ -889,7 +842,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             >
                                                 {t('manage') || 'Manage'}
                                             </Button>
-                                        ) : module.status === 'coming_soon' ? (
+                                        ) : access.isComingSoon ? (
                                             <Button
                                                 size="sm"
                                                 variant="secondary"
@@ -900,11 +853,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                         ) : (
                                             <Button
                                                 size="sm"
-                                                variant="secondary"
-                                                onClick={() => handleRequest(module.id)}
-                                                disabled={isLoading === module.id}
+                                                variant="default"
+                                                onClick={() => handleUpgrade(module.id)}
                                             >
-                                                {isLoading === module.id ? "..." : (t('requestAccess') || "Request Access")}
+                                                {language === 'tr' ? 'Planı Yükselt' : 'Upgrade Plan'}
+                                                <ArrowRight className="w-3 h-3 ml-1" />
                                             </Button>
                                         )}
 
@@ -935,25 +888,56 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 selectedModuleId={selectedModuleId}
                 moduleStates={moduleStates}
                 onManage={(moduleId) => {
-                    const selectedModuleDef = selectedModuleId ? MODULE_DEFINITIONS[selectedModuleId] : null
-                    const isSelectedIncluded = selectedModuleId ? isModuleIncluded(selectedModuleId) : false
-                    const isSelectedActive = selectedModuleId ? (moduleStates[selectedModuleId] || false) : false
-                    const canAccessSelected = selectedModuleId
-                        ? (role === 'SUPER_ADMIN' || isSelectedIncluded || isSelectedActive || selectedModuleDef?.isCore)
-                        : false
+                    if (!selectedModuleId) return
+                    
+                    const selectedAccess = getModuleAccess(
+                        userPlanId,
+                        selectedModuleId,
+                        userIndustry,
+                        moduleStates[selectedModuleId] || false,
+                        language as 'en' | 'tr'
+                    )
+                    const canAccessSelected = role === 'SUPER_ADMIN' || 
+                        selectedAccess.status === 'included' || 
+                        selectedAccess.status === 'core' || 
+                        moduleStates[selectedModuleId] || false
 
                     setIsDetailsOpen(false)
                     if (canAccessSelected) {
-                        handleManage(selectedModuleId!)
+                        handleManage(selectedModuleId)
                     } else {
-                        handleRequest(selectedModuleId!)
+                        handleUpgrade(selectedModuleId)
                     }
                 }}
                 registryModules={getAllRegistryModules()}
                 firestoreMap={MODULE_FIRESTORE_MAP}
                 iconMap={ICON_MAP}
-                canAccess={selectedModuleId ? (role === 'SUPER_ADMIN' || isModuleIncluded(selectedModuleId) || moduleStates[selectedModuleId] || MODULE_DEFINITIONS[selectedModuleId]?.isCore) : false}
-                onRequest={handleRequest}
+                canAccess={selectedModuleId ? (() => {
+                    const selectedAccess = getModuleAccess(
+                        userPlanId,
+                        selectedModuleId,
+                        userIndustry,
+                        moduleStates[selectedModuleId] || false,
+                        language as 'en' | 'tr'
+                    )
+                    return role === 'SUPER_ADMIN' || 
+                        selectedAccess.status === 'included' || 
+                        selectedAccess.status === 'core' || 
+                        moduleStates[selectedModuleId] || false
+                })() : false}
+                onRequest={handleUpgrade}
+            />
+            
+            {/* Plan Upgrade Prompt */}
+            <PlanUpgradePrompt
+                isOpen={isPricingModalOpen}
+                onOpenChange={(open) => {
+                    setIsPricingModalOpen(open)
+                    if (!open) setUpgradeTargetModuleId(null)
+                }}
+                currentPlanId={userPlanId}
+                requiredPlanId={upgradeTargetModuleId ? getModuleUpgradeTarget(userPlanId, upgradeTargetModuleId) : null}
+                featureName={upgradeTargetModuleId ? (getAllRegistryModules().find(m => m.id === upgradeTargetModuleId)?.name[language as 'en' | 'tr'] || upgradeTargetModuleId) : ''}
             />
         </div>
     )

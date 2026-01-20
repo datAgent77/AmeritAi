@@ -25,7 +25,8 @@ import { getAllModules } from "@/lib/modules-registry"
 
 import {
     ShoppingBag, Plane, Home, Code2, Briefcase, HeartPulse, GraduationCap, School, Banknote, ChefHat, Sprout,
-    Eye, Gamepad2, Megaphone, ScanBarcode, MessageSquare, BookOpen, UserPlus, Mic, TrendingUp, Share2, Mail, Utensils, Star, Award, Zap, Languages, Scan, CalendarDays, Sun, Moon
+    Eye, Gamepad2, Megaphone, ScanBarcode, MessageSquare, BookOpen, UserPlus, Mic, TrendingUp, Share2, Mail, Utensils, Star, Award, Zap, Languages, Scan, CalendarDays, Sun, Moon,
+    Car, ShieldCheck, Truck, Factory
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -91,6 +92,10 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
         { icon: Banknote, label: { en: "Banking & Finance", tr: "Bankacılık ve Finans" }, href: "/solutions/finance", color: "text-emerald-500" },
         { icon: ChefHat, label: { en: "Restaurant", tr: "Restoran & Kafe" }, href: "/solutions/restaurant", color: "text-orange-500" },
         { icon: Sprout, label: { en: "Agriculture", tr: "Tarım & Hayvancılık" }, href: "/solutions/agriculture", color: "text-green-500" },
+        { icon: Car, label: { en: "Automotive", tr: "Otomotiv" }, href: "/solutions/automotive", color: "text-slate-400" },
+        { icon: ShieldCheck, label: { en: "Insurance", tr: "Sigorta" }, href: "/solutions/insurance", color: "text-blue-500" },
+        { icon: Truck, label: { en: "Logistics", tr: "Lojistik" }, href: "/solutions/logistics", color: "text-yellow-500" },
+        { icon: Factory, label: { en: "Manufacturing", tr: "Üretim" }, href: "/solutions/manufacturing", color: "text-stone-400" },
     ]
 
     const products = [
@@ -141,11 +146,11 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                         <button className="flex items-center gap-1 hover:text-foreground transition-colors group-hover:text-foreground">
                             {language === 'tr' ? 'Sektörler' : 'Industries'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
-                        <div className="absolute top-full left-0 w-[600px] bg-popover border border-border rounded-xl p-6 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
-                            <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="absolute top-full left-0 w-[900px] bg-popover border border-border rounded-xl p-6 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
+                            <div className="grid grid-cols-3 gap-4 mb-4">
                                 {solutions.map((item, i) => (
                                     <Link key={i} href={item.href} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group/item">
-                                        <div className={`p-2 rounded-md bg-muted/50 ${item.color} group-hover/item:bg-muted transition-colors`}>
+                                        <div className="p-2 rounded-md bg-transparent text-foreground group-hover/item:text-foreground transition-colors">
                                             <item.icon className="w-4 h-4" />
                                         </div>
                                         <span className="text-muted-foreground group-hover/item:text-foreground text-sm">
@@ -230,7 +235,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                 <div className="flex items-center gap-4 ml-auto">
                     {/* Language Selector */}
                     <div className="hidden md:flex">
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted gap-1 h-9">
                                     <Globe className="w-4 h-4" />

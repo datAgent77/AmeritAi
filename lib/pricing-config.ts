@@ -43,6 +43,11 @@ export interface PlanLimits {
     maxPremiumAddOns: LimitValue;
     messageLimit: LimitValue;
     // Future: maxUsers, maxWebsites, etc.
+    knowledge?: {
+        websites: number | 'unlimited' | string;
+        files: number | 'unlimited';
+        text: number | 'unlimited';
+    };
 }
 
 export interface PlanModules {
@@ -77,11 +82,17 @@ export interface PlanConfig {
 
     /** Feature highlights for pricing page */
     highlights?: string[];
+    
+    /** Meta data for highlights (e.g. coming soon features) */
+    highlights_meta?: {
+        coming_soon?: string[];
+    };
 }
 
 // =============================================================================
 // PRICING SCENARIOS
 // =============================================================================
+
 
 /**
  * SCENARIO A: Current Production Pricing
@@ -318,20 +329,186 @@ const SCENARIO_C: PlanConfig[] = [
     }
 ];
 
+/**
+ * SCENARIO D: Vion AI New Pricing (USD)
+ * - Starter: $29/mo
+ * - Growth: $79/mo
+ * - Pro: $149/mo
+ * - Enterprise: Contact
+ */
+const SCENARIO_D: PlanConfig[] = [
+    {
+        planId: 'starter',
+        displayName: 'Starter',
+        sortOrder: 1,
+        availability: 'public',
+        billing: {
+            monthly: { amount: 29, currency: 'USD' },
+            annual: { amount: 290, currency: 'USD', discountLabel: '2 months free' }
+        },
+        limits: {
+            maxPremiumAddOns: 0,
+            messageLimit: 'unlimited',
+            // Custom limits for knowledge base
+            knowledge: { websites: '1', files: 1, text: 3 }
+        } as any, // Using 'any' to bypass strict type check for now or update interface later
+        modules: {
+            included: [
+                'generalChatbot',
+                'knowledgeBase',
+                'leadCollection',
+                'proactiveMessaging'
+                // 'liveChat' implied as core feature
+            ],
+            defaultEnabled: ['generalChatbot', 'leadCollection'],
+            premiumEligible: []
+        },
+        copy: {
+            ctaLabel: '14 Gün Ücretsiz Dene',
+            subtitle: 'Küçük işletmeler ve şahıs şirketleri için ideal.'
+        },
+        highlights: [
+            'featureUnlimitedMessages',
+            'featureGeneralAssistant',
+            'featureLiveSupport',
+            'featureLeadCollection',
+            'featureKnowledgeBase',
+            'featureCustomizableWidget'
+        ],
+        trialDays: 14
+    },
+    {
+        planId: 'growth',
+        displayName: 'Growth',
+        sortOrder: 2,
+        availability: 'public',
+        billing: {
+            monthly: { amount: 79, currency: 'USD' },
+            annual: { amount: 790, currency: 'USD', discountLabel: 'billingDiscountBadge' }
+        },
+        limits: {
+            maxPremiumAddOns: 0,
+            messageLimit: 'unlimited',
+            knowledge: { websites: '1', files: 10, text: 20 }
+        } as any,
+        modules: {
+            included: [
+                'generalChatbot', 'knowledgeBase', 'leadCollection', 'proactiveMessaging',
+                'productCatalog', 'digitalWaiter'
+            ],
+            defaultEnabled: ['generalChatbot', 'productCatalog'],
+            premiumEligible: []
+        },
+        copy: {
+            ctaLabel: 'ctaTryFree',
+            subtitle: 'planGrowthDesc'
+        },
+        highlights: [
+            'featureUnlimitedMessages',
+            'featureEverythingInStarter',
+            'featureProductCatalog',
+            'featureDigitalWaiter',
+            'featureMultiChannel',
+            'featureKnowledgeBase',
+            'featureAdvancedReporting',
+            'featureCustomizableWidget'
+        ],
+        trialDays: 14,
+        highlights_meta: {
+            coming_soon: ['Kampanya Sihirbazı']
+        }
+    },
+    {
+        planId: 'pro',
+        displayName: 'Pro',
+        sortOrder: 3,
+        availability: 'public',
+        billing: {
+            monthly: { amount: 149, currency: 'USD' },
+            annual: { amount: 1490, currency: 'USD', discountLabel: 'billingDiscountBadge' }
+        },
+        limits: {
+            maxPremiumAddOns: 0,
+            messageLimit: 'unlimited',
+            knowledge: { websites: '1', files: 100, text: 'unlimited' }
+        } as any,
+        modules: {
+            included: [
+                'generalChatbot', 'knowledgeBase', 'leadCollection', 'proactiveMessaging',
+                'productCatalog', 'digitalWaiter',
+                'salesOptimization', 'visualDiagnosis'
+            ],
+            defaultEnabled: ['generalChatbot', 'salesOptimization'],
+            premiumEligible: []
+        },
+        copy: {
+            badge: 'recommended',
+            ctaLabel: 'ctaTryFree',
+            subtitle: 'planProDesc'
+        },
+        highlights: [
+            'featureUnlimitedMessages',
+            'featureEverythingInGrowth',
+            'featureSalesOptimization',
+            'featureVisualDiagnosis',
+            'featurePrioritySupport',
+            'featureKnowledgeBase',
+            'featureAdvancedReporting',
+            'featureCustomizableWidget'
+        ],
+        trialDays: 14,
+        highlights_meta: {
+            coming_soon: ['Oyunlaştırma', 'Sesli Asistan', 'White Label', 'Takım Yönetimi']
+        }
+    },
+    {
+        planId: 'enterprise',
+        displayName: 'Enterprise',
+        sortOrder: 4,
+        availability: 'public',
+        billing: { contact: true },
+        limits: {
+            maxPremiumAddOns: 'unlimited',
+            messageLimit: 'unlimited',
+            knowledge: { websites: 'unlimited', files: 'unlimited', text: 'unlimited' }
+        } as any,
+        modules: {
+            included: ['all'],
+            defaultEnabled: [],
+            premiumEligible: []
+        },
+        copy: {
+            ctaLabel: 'ctaContactUs',
+            subtitle: 'planEnterpriseDesc'
+        },
+        highlights: [
+            'featureUnlimitedMessages',
+            'featureAllFeaturesUnlimited',
+            'featureCustomIntegration',
+            'featureSlaGuarantee',
+            'featurePrioritySupport',
+            'featureWhiteLabel',
+            'featureAdvancedReporting',
+            'featureCustomizableWidget'
+        ]
+    }
+];
+
 // =============================================================================
 // ACTIVE SCENARIO SELECTOR
 // =============================================================================
 
 /**
  * Change this to switch pricing scenarios.
- * Options: 'A' | 'B' | 'C'
+ * Options: 'A' | 'B' | 'C' | 'D'
  */
-export const ACTIVE_PRICING_SCENARIO: 'A' | 'B' | 'C' = 'A';
+export const ACTIVE_PRICING_SCENARIO: 'A' | 'B' | 'C' | 'D' = 'D';
 
 const SCENARIOS = {
     A: SCENARIO_A,
     B: SCENARIO_B,
-    C: SCENARIO_C
+    C: SCENARIO_C,
+    D: SCENARIO_D
 };
 
 /**
@@ -365,6 +542,9 @@ export function getPublicPlansSorted(): PlanConfig[] {
 export function getPlan(planId: string): PlanConfig | undefined {
     return PRICING_PLANS.find(p => p.planId === planId);
 }
+
+// Alias for getPlan - used in AuthContext
+export const getPlanConfig = getPlan;
 
 /**
  * Check if plan exists
@@ -526,6 +706,83 @@ export function hasAnnualBilling(planId: string): boolean {
 export function getAnnualDiscountLabel(planId: string): string | undefined {
     const plan = getPlan(planId);
     return plan?.billing.annual?.discountLabel;
+}
+
+/**
+ * Check if a module is included in a plan
+ */
+export function isModuleIncludedInPlan(planId: string, moduleId: string): boolean {
+    const plan = getPlan(planId);
+    if (!plan) return false;
+    
+    // Enterprise plan includes all modules
+    if (plan.modules.included.includes('all')) {
+        return true;
+    }
+    
+    return plan.modules.included.includes(moduleId);
+}
+
+/**
+ * Find which plan includes a module (for upgrade targeting)
+ * Returns the plan ID that includes the module, or null if not found
+ */
+export function getModuleUpgradeTarget(
+    currentPlanId: string,
+    moduleId: string
+): string | null {
+    const plans = ['starter', 'growth', 'pro', 'enterprise'];
+    const currentPlanIndex = plans.indexOf(currentPlanId);
+    
+    // If current plan is enterprise, no upgrade needed
+    if (currentPlanIndex === plans.length - 1) {
+        return null;
+    }
+    
+    // Check each plan from current plan + 1 to enterprise
+    for (let i = currentPlanIndex + 1; i < plans.length; i++) {
+        const targetPlanId = plans[i];
+        const targetPlan = getPlan(targetPlanId);
+        
+        if (!targetPlan) continue;
+        
+        // Enterprise includes all modules
+        if (targetPlan.modules.included.includes('all')) {
+            return targetPlanId;
+        }
+        
+        // Check if module is included in this plan
+        if (targetPlan.modules.included.includes(moduleId)) {
+            return targetPlanId;
+        }
+    }
+    
+    // Module not found in any plan, return enterprise as fallback
+    return 'enterprise';
+}
+
+/**
+ * Get upgrade message for a module
+ */
+export function getModuleUpgradeMessage(
+    currentPlanId: string,
+    moduleId: string,
+    lang: 'en' | 'tr' = 'tr'
+): string {
+    const targetPlan = getModuleUpgradeTarget(currentPlanId, moduleId);
+    
+    if (!targetPlan) {
+        return lang === 'tr' 
+            ? 'Bu modül mevcut planınızda dahil değil'
+            : 'This module is not included in your current plan';
+    }
+    
+    const plan = getPlan(targetPlan);
+    const planName = plan?.displayName || targetPlan;
+    
+    return lang === 'tr'
+        ? `${planName} planına geçerek bu modüle erişin`
+        : `Upgrade to ${planName} to access this module`;
 }
 
 // =============================================================================

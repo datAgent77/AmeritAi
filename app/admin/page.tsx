@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, ShieldCheck, Search } from "lucide-react"
+import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, ShieldCheck, Search, CreditCard, Settings } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -493,8 +493,9 @@ export default function AdminPage() {
                                 <TableRow>
                                     <TableHead>{t('email')}</TableHead>
                                     <TableHead>{t('role')}</TableHead>
+                                    {/* Merged Subscription Columns */}
+                                    <TableHead>{t('plan') || "Plan"}</TableHead>
                                     <TableHead>{t('status')}</TableHead>
-                                    <TableHead>{t('createdAt')}</TableHead>
                                     <TableHead className="text-right">{t('actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -525,36 +526,70 @@ export default function AdminPage() {
                                                 {user.role}
                                             </Badge>
                                         </TableCell>
+                                        {/* Plan & Subscription Status */}
                                         <TableCell>
-                                            <Badge
-                                                variant={user.isActive ? 'outline' : 'destructive'}
-                                                className={`rounded-full px-3 ${user.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}
-                                            >
-                                                {user.isActive ? t('active') : t('inactive')}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-medium text-sm">
+                                                    {(user as any).subscription?.planId ? (
+                                                        (user as any).subscription.planId.charAt(0).toUpperCase() + (user as any).subscription.planId.slice(1)
+                                                    ) : '-'}
+                                                </span>
+                                                <span className="textxs text-muted-foreground">
+                                                    {(user as any).subscription?.billingPeriod === 'monthly' ? (t('monthly') || 'Aylık') : (user as any).subscription?.billingPeriod === 'yearly' ? (t('yearly') || 'Yıllık') : ''}
+                                                </span>
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">
-                                            {user.createdAt ? ((typeof user.createdAt === 'string') ? new Date(user.createdAt).toLocaleDateString() : (user.createdAt as any).toDate().toLocaleDateString()) : 'N/A'}
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                 <Badge
+                                                    variant={user.isActive ? 'outline' : 'destructive'}
+                                                    className={`rounded-full px-3 ${user.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}
+                                                >
+                                                    {user.isActive ? t('active') : t('inactive')}
+                                                </Badge>
+                                                {/* Subscription Status Badge */}
+                                                {(user as any).subscription?.status === 'trial' && (
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 rounded-full">
+                                                        {t('trial') || 'Deneme'}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </TableCell>
+                                        
                                         <TableCell className="text-right">
                                             {user.role !== 'SUPER_ADMIN' && (
-                                                <div className="flex justify-end gap-2">
+                                                <div className="flex justify-end gap-2 items-center">
+                                                    {/* Subscription Management Button */}
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}`}
+                                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}/settings/customer-admin`}
+                                                        title={t('manageSubscription') || "Abonelik Yönetimi"}
                                                     >
-                                                        {t('manage')}
+                                                        <CreditCard className="h-4 w-4 mr-1" />
+                                                        <span className="hidden sm:inline">{t('subscription') || "Abonelik"}</span>
                                                     </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="hover:bg-gray-100"
+                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}`}
+                                                        title={t('manage') || "Yönet"}
+                                                    >
+                                                        <Settings className="h-4 w-4" />
+                                                    </Button>
+
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
                                                         className={user.isActive ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
                                                         onClick={() => toggleStatus(user.id, user.isActive)}
                                                         disabled={user.isArchived}
+                                                        title={user.isActive ? t('deactivate') : t('activate')}
                                                     >
-                                                        {user.isActive ? t('deactivate') : t('activate')}
+                                                        <Activity className="h-4 w-4" />
                                                     </Button>
                                                     {user.isArchived ? (
                                                         <Button
@@ -567,10 +602,7 @@ export default function AdminPage() {
                                                             {isArchiving === user.id ? (
                                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                                             ) : (
-                                                                <>
-                                                                    <ArchiveRestore className="h-4 w-4 mr-1" />
-                                                                    Geri Yükle
-                                                                </>
+                                                                <ArchiveRestore className="h-4 w-4" />
                                                             )}
                                                         </Button>
                                                     ) : (

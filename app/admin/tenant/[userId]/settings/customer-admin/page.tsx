@@ -1,115 +1,188 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
+import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
+import { doc, getDoc, updateDoc, collection, addDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase" // Client SDK
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Loader2, ShieldAlert, Calendar, Mail, Clock, CreditCard, Settings2, Shield, Save, Crown, Snowflake, StickyNote, User, Gift, Star, Rocket, Building2, CircleDollarSign, CreditCard as CardIcon, Hourglass, XCircle, BarChart3, Infinity, Receipt, CalendarClock, CalendarCheck } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { 
+    CreditCard, 
+    Calendar, 
+    Shield, 
+    User, 
+    Clock, 
+    CheckCircle2, 
+    AlertTriangle,
+    Mail,
+    Hash,
+    MoreHorizontal,
+    Bot,
+    Zap,
+    History,
+    FileText,
+    ArrowUpRight,
+    AlertCircle,
+    Check
+} from "lucide-react"
+import { getPlanConfig } from "@/lib/pricing-config"
+import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 
+// Feature flag to toggle billing UI elements
+const SHOW_BILLING = true
+
+// Types
 interface UserInfo {
-    id: string
     email: string
-    createdAt: string
-    role: string
-    isActive: boolean
-    isArchived: boolean
+    createdAt: any
+    lastLoginAt: any
+    displayName?: string
+    photoURL?: string
 }
 
 interface Subscription {
     planId: string
-    billingStatus: string
-    trialDays: number
+    status: 'active' | 'trial' | 'past_due' | 'canceled' | 'unpaid'
     trialEndsAt: string | null
-    paidSince: string | null
-    messageLimitOverride: number | null
-    moduleOverrides: { enabled?: string[]; disabled?: string[] } | null
-    isPriority: boolean
-    isFrozen: boolean
-    adminNotes: string
-    // Billing fields
+    currentPeriodEnd: string | null
+    cancelAtPeriodEnd: boolean
+    billingStatus: 'free' | 'paid' | 'pending' | 'cancelled'
+    trialDays: number
+    // Admin Overrides
+    messageLimitOverride?: number
+    adminNotes?: string
+    isFrozen?: boolean
+    prioritySupport?: boolean
+}
+
+interface BillingInfo {
     billingPeriod: 'monthly' | 'yearly'
-    nextInvoiceDate: string | null
-    nextPaymentDueDate: string | null
-    lastInvoiceDate: string | null
-    lastPaymentDate: string | null
-    invoiceAmount: number | null
+    amount: number
     currency: string
-    reminderDaysBefore: number
+    nextBillingDate: string | null
+    lastPaymentDate: string | null
+    paymentMethod?: string
+    billingAddress?: string
+    taxId?: string
 }
 
 export default function CustomerAdminPage() {
+    const { t, language } = useLanguage()
+    const { user: currentUser, role: currentRole } = useAuth()
+    const { toast } = useToast()
     const params = useParams()
     const userId = params.userId as string
-    const { user, role } = useAuth()
-    const { t } = useLanguage()
-    const { toast } = useToast()
 
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
     const [subscription, setSubscription] = useState<Subscription>({
-        planId: 'trial',
+        planId: 'starter',
+        status: 'trial',
+        trialEndsAt: null,
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
         billingStatus: 'free',
         trialDays: 14,
-        trialEndsAt: null,
-        paidSince: null,
-        messageLimitOverride: null,
-        moduleOverrides: null,
-        isPriority: false,
         isFrozen: false,
-        adminNotes: '',
-        // Billing fields
+        prioritySupport: false
+    })
+    const [billingInfo, setBillingInfo] = useState<BillingInfo>({
         billingPeriod: 'monthly',
-        nextInvoiceDate: null,
-        nextPaymentDueDate: null,
-        lastInvoiceDate: null,
-        lastPaymentDate: null,
-        invoiceAmount: null,
+        amount: 0,
         currency: 'TRY',
-        reminderDaysBefore: 3
+        nextBillingDate: null,
+        lastPaymentDate: null
     })
 
+    const [resourceUsage, setResourceUsage] = useState({
+        messageCount: 0,
+        conversationCount: 0,
+        knowledgeFiles: 0,
+        knowledgeWebsites: 0,
+        leadsCount: 0,
+        appointmentsCount: 0
+    })
+
+    // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
-            if (!user || !userId || role !== 'SUPER_ADMIN') return
-
+            if (!userId || !currentUser) return
             setIsLoading(true)
             try {
-                const token = await user.getIdToken()
+                // In a real app, this would be a single API call to an admin endpoint
+                // simulating fetch from Firestore directly for now (security rules permitting or use Admin SDK API)
+                
+                // Get ID token for authentication
+                const token = await currentUser.getIdToken()
+                
+                // For this demo, we'll fetch via a mock API call or direct firestore if rules allow reading other users
+                // Assuming we use an API endpoint usually:
                 const response = await fetch(`/api/admin/customer-admin?userId=${userId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 })
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch customer data')
+                
+                if (response.ok) {
+                    const data = await response.json()
+                    setUserInfo(data.user)
+                    setSubscription(data.subscription)
+                    setBillingInfo(data.billing || {
+                        billingPeriod: 'monthly',
+                        amount: 0,
+                        currency: 'TRY',
+                        nextBillingDate: null,
+                        lastPaymentDate: null
+                    })
+                    if (data.resourceUsage) {
+                        setResourceUsage(data.resourceUsage)
+                    }
+                } else {
+                    // Fallback to direct firestore read if API not ready or for demo
+                     const userDoc = await getDoc(doc(db, "users", userId))
+                     if (userDoc.exists()) {
+                         const userData = userDoc.data()
+                         setUserInfo({
+                             email: userData.email,
+                             createdAt: userData.createdAt,
+                             lastLoginAt: userData.lastLoginAt,
+                             displayName: userData.displayName,
+                             photoURL: userData.photoURL
+                         })
+                         setSubscription({
+                             planId: userData.planId || 'starter',
+                             status: userData.subscriptionStatus || 'trial',
+                             trialEndsAt: userData.trialEndsAt || null,
+                             currentPeriodEnd: userData.currentPeriodEnd || null,
+                             cancelAtPeriodEnd: userData.cancelAtPeriodEnd || false,
+                             billingStatus: userData.billingStatus || 'free',
+                             trialDays: userData.trialDays || 14,
+                             messageLimitOverride: userData.messageLimitOverride,
+                             adminNotes: userData.adminNotes,
+                             isFrozen: userData.isFrozen,
+                             prioritySupport: userData.prioritySupport
+                         })
+                         // Billing info might be in a subcollection or separate doc, mocking for now
+                     }
                 }
-
-                const data = await response.json()
-                setUserInfo(data.user)
-                setSubscription(data.subscription)
-            } catch (error: any) {
-                console.error('Error fetching customer data:', error)
+            } catch (error) {
+                console.error("Error fetching customer data:", error)
                 toast({
                     title: t('error'),
-                    description: error.message,
-                    variant: 'destructive'
+                    description: t('fetchFailedDesc') || "Müşteri verileri alınamadı.",
+                    variant: "destructive"
                 })
             } finally {
                 setIsLoading(false)
@@ -117,449 +190,638 @@ export default function CustomerAdminPage() {
         }
 
         fetchData()
-    }, [user, userId, role, t, toast])
-
-    // Only SUPER_ADMIN can access this page
-    if (role !== 'SUPER_ADMIN') {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-                <div className="bg-destructive/10 p-4 rounded-full">
-                    <ShieldAlert className="h-12 w-12 text-destructive" />
-                </div>
-                <h2 className="text-xl font-semibold">{t('error')}</h2>
-                <p className="text-muted-foreground">{t('accessDenied') || 'Bu sayfaya erişim izniniz yok.'}</p>
-            </div>
-        )
-    }
+    }, [userId, t, toast])
 
     const handleSave = async () => {
-        if (!user || !userId) return
-
         setIsSaving(true)
         try {
-            const token = await user.getIdToken()
             const response = await fetch('/api/admin/customer-admin', {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await currentUser?.getIdToken()}`
                 },
                 body: JSON.stringify({
                     userId,
-                    subscription
+                    subscription,
+                    billing: billingInfo
                 })
             })
 
-            if (!response.ok) {
-                throw new Error('Failed to save settings')
-            }
+            if (!response.ok) throw new Error('Failed to update settings')
 
             toast({
                 title: t('success'),
-                description: t('settingsSaved')
+                description: t('settingsSavedDesc') || "Ayarlar başarıyla güncellendi."
             })
-        } catch (error: any) {
-            console.error('Error saving settings:', error)
+        } catch (error) {
+            console.error("Error saving settings:", error)
             toast({
                 title: t('error'),
-                description: error.message,
-                variant: 'destructive'
+                description: t('updateFailedDesc') || "Failed to update settings.",
+                variant: "destructive"
             })
         } finally {
             setIsSaving(false)
         }
     }
 
-    const calculateUsageDays = (createdAt: string) => {
-        return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24))
+    // Helper to format dates
+    const formatDate = (date: any) => {
+        if (!date) return '-'
+        // Handle Firestore Timestamp or ISO string
+        const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date)
+        return d.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
     }
 
+    const planConfig = getPlanConfig(subscription.planId)
+
     if (isLoading) {
-        return (
-            <div className="flex justify-center items-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-        )
+        return <div className="p-8 text-center">Loading...</div>
     }
 
     return (
-        <div className="space-y-8">
-            {/* Modern Header */}
-            <div className="flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-xl">
-                    <Shield className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight">{t('customerAdmin')}</h1>
-                    <p className="text-muted-foreground">{t('customerAdminDesc')}</p>
-                </div>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header */}
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Plan ve Abonelik Yönetimi</h1>
+                <p className="text-muted-foreground mt-2">
+                    Müşterinin abonelik, plan ve fatura süreçlerini yönetin.
+                </p>
             </div>
 
-            {/* General Info Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <User className="w-5 h-5" />
-                        {t('generalInfo')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                            <Mail className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                                <p className="text-xs text-muted-foreground font-medium">{t('email')}</p>
-                                <p className="font-semibold text-sm">{userInfo?.email}</p>
+            {/* Modern Summary Bento Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* 1. User Profile Card */}
+                <Card className="lg:col-span-1 border border-gray-200 shadow-sm bg-white overflow-hidden relative">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wide text-xs">
+                            Müşteri Bilgileri
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6 relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="h-16 w-16 rounded-full bg-zinc-100 flex items-center justify-center text-xl font-bold text-zinc-500 border border-zinc-200">
+                                {userInfo?.displayName?.[0] || userInfo?.email?.[0]?.toUpperCase() || 'U'}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-lg text-zinc-900">{userInfo?.displayName || 'İsimsiz Kullanıcı'}</span>
+                                <span className="text-sm text-muted-foreground">{userInfo?.email}</span>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                            <Calendar className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                                <p className="text-xs text-muted-foreground font-medium">{t('createdAt')}</p>
-                                <p className="font-semibold text-sm">
-                                    {userInfo?.createdAt ? new Date(userInfo.createdAt).toLocaleDateString() : '-'}
-                                </p>
+                        
+                        <div className="grid grid-cols-1 gap-4 pt-2">
+                            <div className="flex items-center gap-3 text-sm">
+                                <div className="h-8 w-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <Calendar size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground">Kayıt Tarihi</div>
+                                    <div className="font-medium text-zinc-900">{formatDate(userInfo?.createdAt)}</div>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-sm">
+                                <div className="h-8 w-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+                                    <CheckCircle2 size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground">Durum</div>
+                                    <Badge variant="outline" className={cn("mt-0.5 font-medium border-0 px-2 py-0.5 bg-green-100 text-green-700", subscription.isFrozen && "bg-red-100 text-red-700")}>
+                                        {subscription.isFrozen ? "Dondurulmuş" : "Aktif"}
+                                    </Badge>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-sm">
+                                <div className="h-8 w-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                                    <Hash size={16} />
+                                </div>
+                                <div>
+                                    <div className="text-xs text-muted-foreground">Kullanıcı ID</div>
+                                    <div className="font-mono text-xs text-zinc-600 truncate max-w-[180px]" title={userId}>{userId}</div>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                            <Clock className="h-5 w-5 text-primary mt-0.5" />
-                            <div>
-                                <p className="text-xs text-muted-foreground font-medium">{t('usageDays')}</p>
-                                <p className="font-semibold text-sm">
-                                    {userInfo?.createdAt ? `${calculateUsageDays(userInfo.createdAt)} ${t('days')}` : '-'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                            <p className="text-xs text-muted-foreground font-medium mb-2">{t('status')}</p>
-                            <div className="flex gap-2">
-                                <Badge variant={userInfo?.isActive ? 'outline' : 'destructive'}
-                                    className={userInfo?.isActive ? "bg-green-50 text-green-700 border-green-200" : ""}>
-                                    {userInfo?.isActive ? t('active') : t('inactive')}
-                                </Badge>
-                                {userInfo?.isArchived && (
-                                    <Badge variant="secondary">{t('archived')}</Badge>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
 
-            {/* Plan & Billing Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="w-5 h-5" />
-                        {t('planAndBilling')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('planBadge')}</Label>
-                            <Select
-                                value={subscription.planId}
-                                onValueChange={(value) => setSubscription({ ...subscription, planId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="trial">
-                                        <span className="flex items-center gap-2"><Gift className="w-4 h-4" /> Trial</span>
-                                    </SelectItem>
-                                    <SelectItem value="starter">
-                                        <span className="flex items-center gap-2"><Star className="w-4 h-4" /> Starter</span>
-                                    </SelectItem>
-                                    <SelectItem value="pro">
-                                        <span className="flex items-center gap-2"><Rocket className="w-4 h-4" /> Pro</span>
-                                    </SelectItem>
-                                    <SelectItem value="enterprise">
-                                        <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> Enterprise</span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                {/* 2. Plan & Limits Summary Card */}
+                <Card className="lg:col-span-2 border-none shadow-sm bg-gradient-to-br from-zinc-900 to-zinc-950 text-white overflow-hidden relative">
+                    <CardHeader className="pb-2 relative z-10">
+                         <div className="flex justify-between items-start">
+                             <div>
+                                <CardTitle className="text-base font-medium text-zinc-400 uppercase tracking-wide text-xs mb-1">
+                                    Aktif Paket
+                                </CardTitle>
+                                <div className="flex items-end gap-3">
+                                    <h2 className="text-4xl font-bold text-white capitalize">{subscription.planId} Plan</h2>
+                                    {subscription.status === 'trial' && (
+                                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 mb-1.5 hover:bg-blue-500/30">Deneme Sürümü</Badge>
+                                    )}
+                                    {subscription.prioritySupport && (
+                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/50 mb-1.5">Öncelikli Destek</Badge>
+                                    )}
+                                </div>
+                             </div>
+                             <div className="text-right">
+                                    <div className="text-sm text-zinc-400">Aylık Tutar</div>
+                                    <div className="text-2xl font-bold">
+                                        {planConfig?.billing?.contact 
+                                            ? 'Özel Teklif' 
+                                            : `$${planConfig?.billing?.monthly?.amount || 0}`
+                                        }
+                                    </div>
+                                    {planConfig?.billing?.annual && !planConfig?.billing?.contact && (
+                                        <div className="text-xs text-zinc-400 mt-1">
+                                            Yıllık: ${planConfig.billing.annual.amount}
+                                        </div>
+                                    )}
+                             </div>
+                         </div>
+                    </CardHeader>
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('billingStatus')}</Label>
-                            <Select
-                                value={subscription.billingStatus}
-                                onValueChange={(value) => setSubscription({ ...subscription, billingStatus: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="free">
-                                        <span className="flex items-center gap-2"><CircleDollarSign className="w-4 h-4" /> {t('billingFree')}</span>
-                                    </SelectItem>
-                                    <SelectItem value="paid">
-                                        <span className="flex items-center gap-2"><CardIcon className="w-4 h-4" /> {t('billingPaid')}</span>
-                                    </SelectItem>
-                                    <SelectItem value="pending">
-                                        <span className="flex items-center gap-2"><Hourglass className="w-4 h-4" /> {t('billingPending')}</span>
-                                    </SelectItem>
-                                    <SelectItem value="cancelled">
-                                        <span className="flex items-center gap-2"><XCircle className="w-4 h-4" /> {t('billingCancelled')}</span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <CardContent className="relative z-10 pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             {/* Features List */}
+                             <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Paket Özellikleri</h3>
+                                <ul className="space-y-2">
+                                    {planConfig?.modules?.included?.map((module: string) => {
+                                        const moduleTranslations: Record<string, string> = {
+                                            generalChatbot: "Genel Chatbot",
+                                            knowledgeBase: "Bilgi Bankası",
+                                            leadCollection: "Müşteri Bilgi Toplama",
+                                            proactiveMessaging: "Proaktif Mesajlaşma",
+                                            productCatalog: "Ürün Kataloğu",
+                                            digitalWaiter: "Dijital Garson",
+                                            salesOptimization: "Satış Optimizasyonu",
+                                            visualDiagnosis: "Görsel Teşhis",
+                                            generalAssistant: "Genel Asistan",
+                                            knowledgeEducation: "Bilgi Eğitimi",
+                                            salesCatalog: "Satış Kataloğu",
+                                            voiceAppointments: "Sesli Randevu",
+                                            aiCopywriter: "AI Metin Yazarı",
+                                            emailMarketing: "E-posta Pazarlama",
+                                            all: "Tüm Özellikler"
+                                        }
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('trialDays')}</Label>
-                            <Input
-                                type="number"
-                                value={subscription.trialDays}
-                                onChange={(e) => setSubscription({ ...subscription, trialDays: parseInt(e.target.value) || 0 })}
-                            />
-                        </div>
+                                        if (module === 'all') return (
+                                            <li key="all" className="flex items-center gap-2 text-sm text-zinc-300">
+                                                <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                                                    <Check size={10} className="text-white" />
+                                                </div>
+                                                <span className="capitalize">Tüm Özellikler</span>
+                                            </li>
+                                        )
+                                        return (
+                                            <li key={module} className="flex items-center gap-2 text-sm text-zinc-300">
+                                                <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                                                    <Check size={10} className="text-white" />
+                                                </div>
+                                                <span className="capitalize">
+                                                    {moduleTranslations[module] || module.replace(/([A-Z])/g, ' $1').trim()}
+                                                </span>
+                                            </li>
+                                        )
+                                    })}
+                                    {(!planConfig?.modules?.included || planConfig.modules.included.length === 0) && (
+                                        <li className="text-sm text-zinc-500">Özel özellik tanımlanmamış.</li>
+                                    )}
+                                </ul>
+                             </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('trialEndsAt')}</Label>
-                            <Input
-                                type="date"
-                                value={subscription.trialEndsAt ? subscription.trialEndsAt.split('T')[0] : ''}
-                                onChange={(e) => setSubscription({ ...subscription, trialEndsAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                             {/* Limits Summary */}
+                             <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Kullanım Limitleri</h3>
+                                
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-zinc-400">Mesaj Limiti</span>
+                                            <span className="text-white font-medium">
+                                                {(subscription.messageLimitOverride || planConfig?.limits.messageLimit) === 'unlimited' 
+                                                    ? `${resourceUsage.messageCount} / Sınırsız` 
+                                                    : `${resourceUsage.messageCount} / ${subscription.messageLimitOverride || planConfig?.limits.messageLimit || 0}`}
+                                            </span>
+                                        </div>
+                                        {/* Progress bar for messages - arbitrary 10000 scale for unlimited or percentage for fixed */}
+                                        <Progress 
+                                            value={(() => {
+                                                const limit = subscription.messageLimitOverride || planConfig?.limits.messageLimit;
+                                                if (limit === 'unlimited') return Math.min((resourceUsage.messageCount / 1000) * 100, 100);
+                                                const numLimit = Number(limit) || 1;
+                                                return Math.min((resourceUsage.messageCount / numLimit) * 100, 100);
+                                            })()}
+                                            className="h-1.5 bg-white/10 [&>div]:bg-indigo-500" 
+                                        />
+                                        <div className="text-[10px] text-zinc-500 text-right">
+                                            {resourceUsage.messageCount} mesaj gönderildi
+                                        </div>
+                                    </div>
 
-            {/* Billing Information Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Receipt className="w-5 h-5" />
-                        {t('billingInfo')}
-                    </CardTitle>
-                    <CardDescription>{t('billingInfoDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('billingPeriodLabel')}</Label>
-                            <Select
-                                value={subscription.billingPeriod}
-                                onValueChange={(value: 'monthly' | 'yearly') => setSubscription({ ...subscription, billingPeriod: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="monthly">
-                                        <span className="flex items-center gap-2"><Calendar className="w-4 h-4" /> {t('billingMonthly')}</span>
-                                    </SelectItem>
-                                    <SelectItem value="yearly">
-                                        <span className="flex items-center gap-2"><CalendarCheck className="w-4 h-4" /> {t('billingYearly')}</span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                     <div className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-zinc-400">Bilgi Bankası Döküman</span>
+                                            <span className="text-white font-medium">
+                                                {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} Adet
+                                            </span>
+                                        </div>
+                                        <Progress 
+                                            value={(() => {
+                                                const limit = planConfig?.limits.knowledge?.files;
+                                                if (limit === 'unlimited') return Math.min((resourceUsage.knowledgeFiles / 1000) * 100, 100);
+                                                const numLimit = Number(limit) || 1;
+                                                return Math.min((resourceUsage.knowledgeFiles / numLimit) * 100, 100);
+                                            })()} 
+                                            className="h-1.5 bg-white/10 [&>div]:bg-emerald-500" 
+                                        />
+                                        <div className="text-[10px] text-zinc-500 text-right">
+                                            {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} kullanıldı
+                                        </div>
+                                    </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('invoiceAmount')}</Label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={subscription.invoiceAmount || ''}
-                                onChange={(e) => setSubscription({ ...subscription, invoiceAmount: e.target.value ? parseFloat(e.target.value) : null })}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium">{t('currency')}</Label>
-                            <Select
-                                value={subscription.currency}
-                                onValueChange={(value) => setSubscription({ ...subscription, currency: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="TRY">TRY (₺)</SelectItem>
-                                    <SelectItem value="USD">USD ($)</SelectItem>
-                                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium flex items-center gap-2">
-                                <CalendarClock className="w-4 h-4" />
-                                {t('nextInvoiceDate')}
-                            </Label>
-                            <Input
-                                type="date"
-                                value={subscription.nextInvoiceDate ? subscription.nextInvoiceDate.split('T')[0] : ''}
-                                onChange={(e) => setSubscription({ ...subscription, nextInvoiceDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-sm font-medium flex items-center gap-2">
-                                <CalendarCheck className="w-4 h-4" />
-                                {t('nextPaymentDueDate')}
-                            </Label>
-                            <Input
-                                type="date"
-                                value={subscription.nextPaymentDueDate ? subscription.nextPaymentDueDate.split('T')[0] : ''}
-                                onChange={(e) => setSubscription({ ...subscription, nextPaymentDueDate: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="rounded-lg border p-4 bg-muted/30">
-                        <Label className="text-sm font-medium">{t('reminderDaysBefore')}</Label>
-                        <p className="text-xs text-muted-foreground mb-3">{t('reminderDaysBeforeDesc')}</p>
-                        <Input
-                            type="number"
-                            min={0}
-                            max={30}
-                            className="w-24"
-                            value={subscription.reminderDaysBefore}
-                            onChange={(e) => setSubscription({ ...subscription, reminderDaysBefore: parseInt(e.target.value) || 0 })}
-                        />
-                    </div>
-
-                    {/* Read-only last dates */}
-                    {(subscription.lastInvoiceDate || subscription.lastPaymentDate) && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                            {subscription.lastInvoiceDate && (
-                                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                                    <Receipt className="h-5 w-5 text-muted-foreground" />
-                                    <div>
-                                        <p className="text-xs text-muted-foreground font-medium">{t('lastInvoiceDate')}</p>
-                                        <p className="font-semibold text-sm">
-                                            {new Date(subscription.lastInvoiceDate).toLocaleDateString()}
-                                        </p>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-zinc-400">Web Sayfası Tarama</span>
+                                            <span className="text-white font-medium">
+                                                {resourceUsage.knowledgeWebsites} / {planConfig?.limits.knowledge?.websites || 0} Sayfa
+                                            </span>
+                                        </div>
+                                        <Progress 
+                                            value={(() => {
+                                                const limit = planConfig?.limits.knowledge?.websites;
+                                                if (limit === 'unlimited') return Math.min((resourceUsage.knowledgeWebsites / 1000) * 100, 100);
+                                                const numLimit = Number(limit) || 1;
+                                                return Math.min((resourceUsage.knowledgeWebsites / numLimit) * 100, 100);
+                                            })()} 
+                                            className="h-1.5 bg-white/10 [&>div]:bg-amber-500" 
+                                        />
+                                        <div className="text-[10px] text-zinc-500 text-right">
+                                            {resourceUsage.knowledgeWebsites} / {planConfig?.limits.knowledge?.websites || 0} kullanıldı
+                                        </div>
                                     </div>
                                 </div>
-                            )}
-                            {subscription.lastPaymentDate && (
-                                <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50">
-                                    <CircleDollarSign className="h-5 w-5 text-green-600" />
-                                    <div>
-                                        <p className="text-xs text-muted-foreground font-medium">{t('lastPaymentDate')}</p>
-                                        <p className="font-semibold text-sm text-green-700">
-                                            {new Date(subscription.lastPaymentDate).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
+                             </div>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
 
-            {/* Overrides Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Settings2 className="w-5 h-5" />
-                        {t('overrides')}
-                    </CardTitle>
-                    <CardDescription>{t('overridesDesc')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium">{t('messageLimitOverride')}</Label>
-                        <Select
-                            value={subscription.messageLimitOverride === null ? 'default' : subscription.messageLimitOverride === -1 ? 'unlimited' : 'custom'}
-                            onValueChange={(value) => {
-                                if (value === 'default') {
-                                    setSubscription({ ...subscription, messageLimitOverride: null })
-                                } else if (value === 'unlimited') {
-                                    setSubscription({ ...subscription, messageLimitOverride: -1 })
-                                }
-                            }}
+            {/* Simplified Tabs */}
+            <Tabs defaultValue="plan" className="w-full">
+                <TabsList className="w-full justify-start h-auto p-0 bg-transparent">
+                    <TabsTrigger 
+                        value="plan" 
+                        className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
+                    >
+                        Plan ve Ücretlendirme
+                    </TabsTrigger>
+                    {SHOW_BILLING && (
+                        <TabsTrigger 
+                            value="billing" 
+                            className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
                         >
-                            <SelectTrigger className="w-[250px]">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="default"><span className="flex items-center gap-2"><BarChart3 className="w-4 h-4" /> {t('useDefault')}</span></SelectItem>
-                                <SelectItem value="unlimited"><span className="flex items-center gap-2"><Infinity className="w-4 h-4" /> {t('unlimited')}</span></SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
+                            Faturalama Bilgileri
+                        </TabsTrigger>
+                    )}
+                    <TabsTrigger 
+                        value="admin" 
+                        className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
+                    >
+                        Yönetici Ayarları
+                    </TabsTrigger>
+                </TabsList>
 
-            {/* Admin Controls Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Shield className="w-5 h-5" />
-                        {t('adminControls')}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-amber-100 p-2 rounded-lg">
-                                <Crown className="h-5 w-5 text-amber-600" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <Label className="text-base font-medium">{t('prioritySupport')}</Label>
-                                <p className="text-sm text-muted-foreground">{t('prioritySupportDesc')}</p>
-                            </div>
-                        </div>
-                        <Switch
-                            checked={subscription.isPriority}
-                            onCheckedChange={(checked) => setSubscription({ ...subscription, isPriority: checked })}
-                        />
-                    </div>
+                {/* Tab 1: Plan Configuration */}
+                <TabsContent value="plan" className="mt-8 space-y-6">
+                    <Card className="border border-gray-200 shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap className="w-5 h-5" />
+                                Plan Durumu
+                            </CardTitle>
+                            <CardDescription>
+                                Müşterinin aktif planını ve deneme süresi detaylarını buradan yönetebilirsiniz.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Plan Selection */}
+                                <div className="space-y-4">
+                                     <div className="space-y-2">
+                                        <Label>Plan Seçimi</Label>
+                                        <Select
+                                            value={subscription.planId}
+                                            onValueChange={(value) => setSubscription({ ...subscription, planId: value })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="starter">Başlangıç (Starter)</SelectItem>
+                                                <SelectItem value="growth">Büyüme (Growth)</SelectItem>
+                                                <SelectItem value="pro">Profesyonel (Pro)</SelectItem>
+                                                <SelectItem value="enterprise">Kurumsal (Enterprise)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Plan değişikliği anında uygulanır ve limitler güncellenir.
+                                        </p>
+                                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-destructive/30 p-4 hover:bg-destructive/5 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-red-100 p-2 rounded-lg">
-                                <Snowflake className="h-5 w-5 text-red-600" />
-                            </div>
-                            <div className="space-y-0.5">
-                                <Label className="text-base font-medium text-destructive">{t('freezeAccount')}</Label>
-                                <p className="text-sm text-muted-foreground">{t('freezeAccountDesc')}</p>
-                            </div>
-                        </div>
-                        <Switch
-                            checked={subscription.isFrozen}
-                            onCheckedChange={(checked) => setSubscription({ ...subscription, isFrozen: checked })}
-                        />
-                    </div>
+                                     <div className="space-y-2">
+                                        <Label>Faturalama Durumu</Label>
+                                        <Select
+                                            value={subscription.billingStatus}
+                                            onValueChange={(value) => setSubscription({ ...subscription, billingStatus: value as any })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="free">Free</SelectItem>
+                                                <SelectItem value="paid">Paid</SelectItem>
+                                                <SelectItem value="pending">Pending</SelectItem>
+                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                     </div>
+                                </div>
 
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                            <StickyNote className="h-4 w-4 text-muted-foreground" />
-                            <Label className="text-sm font-medium">{t('adminNotes')}</Label>
-                        </div>
-                        <Textarea
-                            placeholder={t('adminNotesPlaceholder')}
-                            value={subscription.adminNotes}
-                            onChange={(e) => setSubscription({ ...subscription, adminNotes: e.target.value })}
-                            rows={4}
-                            className="resize-none"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
+                                {/* Trial Configuration */}
+                                <div className="p-6 bg-zinc-50 rounded-xl space-y-4 border border-zinc-100">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Clock className="w-4 h-4 text-zinc-500" />
+                                        <h4 className="font-semibold text-sm text-zinc-700">Deneme Süresi Ayarları</h4>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Deneme Süresi (Gün)</Label>
+                                            <Input 
+                                                type="number" 
+                                                value={subscription.trialDays} 
+                                                onChange={(e) => setSubscription({ ...subscription, trialDays: parseInt(e.target.value) || 0 })}
+                                                className="bg-white"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs">Bitiş Tarihi</Label>
+                                            <Input 
+                                                type="date" 
+                                                value={subscription.trialEndsAt?.split('T')[0] || ''} 
+                                                onChange={(e) => setSubscription({ ...subscription, trialEndsAt: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                                                className="bg-white"
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between pt-2 border-t border-zinc-200 mt-4">
+                                        <div className="space-y-0.5">
+                                            <div className="text-sm font-medium text-zinc-900">Deneme Modu (Trial Mode)</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                Aktif edildiğinde abonelik durumu 'trial' olarak ayarlanır.
+                                            </div>
+                                        </div>
+                                        <Switch 
+                                            checked={subscription.status === 'trial'}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    // Enable Trial
+                                                    const endDate = new Date();
+                                                    endDate.setDate(endDate.getDate() + (subscription.trialDays || 14));
+                                                    
+                                                    setSubscription({
+                                                        ...subscription,
+                                                        status: 'trial',
+                                                        trialEndsAt: endDate.toISOString()
+                                                    });
+                                                } else {
+                                                    // Disable Trial
+                                                    setSubscription({
+                                                        ...subscription,
+                                                        status: 'active', // Or 'free' based on billing status, but 'active' implies non-trial
+                                                        trialEndsAt: null
+                                                    });
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Tab 2: Billing Information */}
+                {SHOW_BILLING && (
+                    <TabsContent value="billing" className="mt-8">
+                    <Card className="border border-gray-200 shadow-sm">
+                        <CardHeader>
+                             <CardTitle className="flex items-center gap-2">
+                                <CreditCard className="w-5 h-5" />
+                                Fatura Detayları
+                            </CardTitle>
+                            <CardDescription>
+                                Müşterinin fatura adres ve ödeme bilgilerini düzenleyin.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Fatura Adresi</Label>
+                                    <Input  
+                                        value={billingInfo.billingAddress || ''} 
+                                        onChange={(e) => setBillingInfo({ ...billingInfo, billingAddress: e.target.value })}
+                                        placeholder="Açık adres giriniz..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Vergi Numarası / T.C.</Label>
+                                    <Input 
+                                        value={billingInfo.taxId || ''} 
+                                        onChange={(e) => setBillingInfo({ ...billingInfo, taxId: e.target.value })}
+                                        placeholder="Vergi No veya T.C. Kimlik No"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ödeme Yöntemi</Label>
+                                    <Select
+                                        value={billingInfo.paymentMethod || 'credit_card'}
+                                        onValueChange={(value) => setBillingInfo({ ...billingInfo, paymentMethod: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="credit_card">Kredi Kartı (Stripe)</SelectItem>
+                                            <SelectItem value="bank_transfer">Banka Havalesi</SelectItem>
+                                            <SelectItem value="other">Diğer</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-4">
+                                <h4 className="font-medium text-sm text-zinc-900">Otomatik Yenileme ve Döngü</h4>
+                                <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-lg border border-zinc-100">
+                                    <div className="space-y-0.5">
+                                        <div className="text-sm font-medium text-zinc-900">Otomatik Yenileme</div>
+                                        <div className="text-xs text-muted-foreground">Periyot sonunda abonelik otomatik yenilenir.</div>
+                                    </div>
+                                    <Switch 
+                                        checked={!subscription.cancelAtPeriodEnd} 
+                                        onCheckedChange={(checked) => setSubscription({ ...subscription, cancelAtPeriodEnd: !checked })} 
+                                    />
+                                </div>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-medium text-sm text-zinc-900 flex items-center gap-2">
+                                        <History className="w-4 h-4 text-muted-foreground" />
+                                        Fatura Geçmişi
+                                    </h4>
+                                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                                        <ArrowUpRight className="w-3 h-3 mr-1" />
+                                        Tümünü İndir
+                                    </Button>
+                                </div>
+                                
+                                <div className="rounded-lg border border-zinc-200 overflow-hidden">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500 font-medium">
+                                            <tr>
+                                                <th className="px-4 py-3">Tarih</th>
+                                                <th className="px-4 py-3">Tutar</th>
+                                                <th className="px-4 py-3">Durum</th>
+                                                <th className="px-4 py-3 text-right">İşlem</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-100">
+                                            {/* Mock Data for Billing History */}
+                                            {[
+                                                { date: '2024-01-01', amount: '799.00 TRY', status: 'Paid' },
+                                                { date: '2023-12-01', amount: '799.00 TRY', status: 'Paid' },
+                                                { date: '2023-11-01', amount: '299.00 TRY', status: 'Paid' },
+                                            ].map((invoice, i) => (
+                                                <tr key={i} className="hover:bg-zinc-50/50 transition-colors bg-white">
+                                                    <td className="px-4 py-3 text-zinc-600 font-mono text-xs">{invoice.date}</td>
+                                                    <td className="px-4 py-3 font-medium text-zinc-900">{invoice.amount}</td>
+                                                    <td className="px-4 py-3">
+                                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-normal">
+                                                            {invoice.status === 'Paid' ? 'Ödendi' : invoice.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-zinc-900">
+                                                            <FileText className="w-3 h-3" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    </TabsContent>
+                )}
+
+                {/* Tab 3: Admin Settings */}
+                <TabsContent value="admin" className="mt-8 space-y-6">
+                    <Card className="border border-gray-200 shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Shield className="w-5 h-5" />
+                                Yönetici Kontrolleri
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Mesaj Limiti (Override)</Label>
+                                        <div className="flex gap-2">
+                                            <Input 
+                                                type="number" 
+                                                value={subscription.messageLimitOverride || ''} 
+                                                onChange={(e) => setSubscription({ ...subscription, messageLimitOverride: e.target.value ? parseInt(e.target.value) : undefined })}
+                                                placeholder={`Varsayılan: ${planConfig?.limits.messageLimit || 0}`}
+                                            />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Boş bırakılırsa plan varsayılanı kullanılır.</p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Yönetici Notları</Label>
+                                        <textarea 
+                                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={subscription.adminNotes || ''} 
+                                            onChange={(e) => setSubscription({ ...subscription, adminNotes: e.target.value })}
+                                            placeholder="Bu müşteri hakkında özel notlar..."
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100">
+                                        <div className="space-y-0.5">
+                                            <div className="text-sm font-medium text-red-900">Hesabı Dondur</div>
+                                            <div className="text-xs text-red-600/80">Giriş ve API erişimini geçici olarak durdurur.</div>
+                                        </div>
+                                        <Switch 
+                                            checked={subscription.isFrozen || false} 
+                                            onCheckedChange={(checked) => setSubscription({ ...subscription, isFrozen: checked })} 
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
+                                        <div className="space-y-0.5">
+                                            <div className="text-sm font-medium text-amber-900">Öncelikli Destek</div>
+                                            <div className="text-xs text-amber-700/80">Müşteri ticketlarına öncelik tanınır.</div>
+                                        </div>
+                                        <Switch 
+                                            checked={subscription.prioritySupport || false} 
+                                            onCheckedChange={(checked) => setSubscription({ ...subscription, prioritySupport: checked })} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
 
             {/* Save Button */}
-            <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={isSaving} size="lg">
+            <div className="flex justify-end pt-4">
+                <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving}
+                    size="lg"
+                    className="min-w-[150px]"
+                >
                     {isSaving ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <>
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
+                            Kaydediliyor...
+                        </>
                     ) : (
-                        <Save className="mr-2 h-4 w-4" />
+                        "Ayarları Kaydet"
                     )}
-                    {t('saveSettings')}
                 </Button>
             </div>
         </div>
     )
 }
-

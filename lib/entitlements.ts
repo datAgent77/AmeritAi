@@ -28,7 +28,9 @@ import {
 import {
     getPlan as getPlanConfig,
     canSelectPremiumAddOn,
-    planExists
+    planExists,
+    isModuleIncludedInPlan,
+    getModuleUpgradeTarget
 } from './pricing-config';
 
 // =============================================================================
@@ -110,7 +112,7 @@ export const TRIAL_CONFIG = {
      * Decision A: During trial, premium add-ons are LOCKED.
      * Set to true to allow premium modules during trial (Decision B).
      */
-    allowPremiumDuringTrial: false
+    allowPremiumDuringTrial: true
 };
 
 // =============================================================================
@@ -122,24 +124,6 @@ export const TRIAL_CONFIG = {
  * 
  * Firestore path: users/{tenantId}
  * This structure is stored as part of the user document.
- * 
- * Example JSON:
- * {
- *   "tenantId": "abc123",
- *   "planId": "trial",
- *   "sectorId": "ecommerce",
- *   "trial": {
- *     "isActive": true,
- *     "startAt": "2024-12-27T10:00:00Z",
- *     "endAt": "2025-01-10T10:00:00Z"
- *   },
- *   "modules": {
- *     "enabled": ["generalAssistant", "knowledgeEducation", "salesCatalog", "leadCollection"],
- *     "addOns": []
- *   },
- *   "createdAt": "2024-12-27T10:00:00Z",
- *   "updatedAt": "2024-12-27T10:00:00Z"
- * }
  */
 export interface TenantEntitlements {
     tenantId: string;
@@ -278,66 +262,49 @@ export function canEnableModule(
         return { moduleId, status: 'enabled' };
     }
 
-    // Check sector support
-    if (mod.supportedSectors.length > 0 &&
-        !mod.supportedSectors.includes(entitlements.sectorId)) {
-        return {
-            moduleId,
-            status: 'not_supported',
-            reason: `Not available for ${entitlements.sectorId} sector`
-        };
-    }
-
-    // If already in enabled list
-    if (entitlements.modules.enabled.includes(moduleId)) {
+    // Check if module is included in current plan OR if user is in Trial Mode
+    const isIncludedInterms = isModuleIncludedInPlan(entitlements.planId, moduleId);
+    const isTrialOverride = isTrialActive(entitlements) && TRIAL_CONFIG.allowPremiumDuringTrial;
+    const isHasAccess = isIncludedInterms || isTrialOverride;
+    
+    // If already in enabled list and user has access, it's enabled
+    if (entitlements.modules.enabled.includes(moduleId) && isHasAccess) {
         return { moduleId, status: 'enabled' };
     }
 
-    // Check if it's a sector default (free to enable)
-    if (isModuleDefaultForSector(moduleId, entitlements.sectorId)) {
+    // Check sector support (informational only, not blocking)
+    const isSectorCompatible = mod.supportedSectors.length === 0 || 
+        mod.supportedSectors.includes(entitlements.sectorId);
+
+    // If module is included in plan (or trial)
+    if (isHasAccess) {
         return { moduleId, status: 'available' };
     }
 
-    // It's a premium module - check access
-    if (mod.isPremium) {
-        // Check if user has this add-on
-        if (entitlements.modules.addOns.includes(moduleId)) {
-            return { moduleId, status: 'available' };
-        }
-
-        // Check if plan allows premium
-        if (!canAccessPremiumModules(entitlements)) {
-            return {
-                moduleId,
-                status: 'premium_locked',
-                reason: 'Premium module requires upgrade',
-                upgradeHint: getUpgradeHint(moduleId)
-            };
-        }
-
-        // Plan allows premium but needs add-on
-        const plan = getPlan(entitlements.planId);
-        const currentAddOns = entitlements.modules.addOns.length;
-
-        if (plan.maxAddOns !== -1 && currentAddOns >= plan.maxAddOns) {
-            return {
-                moduleId,
-                status: 'addon_required',
-                reason: 'Add-on limit reached',
-                upgradeHint: 'Upgrade to Enterprise for unlimited add-ons'
-            };
-        }
-
+    // Module is NOT included in plan - check upgrade path
+    const upgradeTarget = getModuleUpgradeTarget(entitlements.planId, moduleId);
+    
+    if (upgradeTarget) {
+        const targetPlan = getPlan(upgradeTarget);
+        const upgradeHint = targetPlan 
+            ? `Upgrade to ${targetPlan.name.en} to unlock this module`
+            : 'Upgrade required';
+            
         return {
             moduleId,
-            status: 'addon_required',
-            reason: 'Requires add-on purchase',
-            upgradeHint: getUpgradeHint(moduleId)
+            status: 'premium_locked',
+            reason: 'Module not included in current plan',
+            upgradeHint
         };
     }
 
-    // Non-premium, non-default module - available to enable
-    return { moduleId, status: 'available' };
+    // Fallback: module not found in any plan
+    return {
+        moduleId,
+        status: 'premium_locked',
+        reason: 'Module not available',
+        upgradeHint: 'Contact support for more information'
+    };
 }
 
 /**
@@ -387,7 +354,8 @@ export function getUpgradeHint(moduleId: ModuleId): string {
  */
 export function createInitialEntitlements(
     tenantId: string,
-    sectorId: SectorId
+    sectorId: SectorId,
+    targetPlanId: PlanId = 'trial'
 ): TenantEntitlements {
     const now = new Date();
     const trialEnd = new Date(now.getTime() + TRIAL_CONFIG.durationDays * 24 * 60 * 60 * 1000);
@@ -396,7 +364,7 @@ export function createInitialEntitlements(
 
     return {
         tenantId,
-        planId: 'trial',
+        planId: targetPlanId,
         sectorId,
         trial: {
             isActive: true,
@@ -421,19 +389,120 @@ export function getModuleStatusForUI(
 ): {
     isEnabled: boolean;
     isLocked: boolean;
-    badge: 'included' | 'premium' | 'addon' | null;
+    badge: 'included' | 'premium' | 'addon' | 'trial' | null;
     canToggle: boolean;
+    upgradeTarget?: string | null;
 } {
     const access = canEnableModule(entitlements, moduleId);
+    const mod = getModule(moduleId);
+    const isIncludedInPlan = isModuleIncludedInPlan(entitlements.planId, moduleId);
+    const isTrialOverride = isTrialActive(entitlements) && TRIAL_CONFIG.allowPremiumDuringTrial;
+    const upgradeTarget = (isIncludedInPlan || isTrialOverride) ? null : getModuleUpgradeTarget(entitlements.planId, moduleId);
+
+    // Determine badge
+    let badge: 'included' | 'premium' | 'addon' | 'trial' | null = null;
+    
+    if (mod?.isCore) {
+        // Core modules don't show badge
+        badge = null;
+    } else if (isIncludedInPlan) {
+        badge = 'included';
+    } else if (isTrialOverride && mod?.isPremium) {
+        badge = 'trial';
+    } else if (access.status === 'premium_locked' || mod?.isPremium) {
+        badge = 'premium';
+    }
 
     return {
         isEnabled: access.status === 'enabled',
         isLocked: access.status === 'premium_locked' || access.status === 'addon_required',
-        badge: access.status === 'premium_locked' ? 'premium'
-            : access.status === 'addon_required' ? 'addon'
-                : access.status === 'enabled' || access.status === 'available' ? 'included'
-                    : null,
-        canToggle: access.status === 'enabled' || access.status === 'available'
+        badge,
+        canToggle: access.status === 'enabled' || access.status === 'available',
+        upgradeTarget
+    };
+}
+
+/**
+ * Get module display status for UI (with more details)
+ */
+export function getModuleDisplayStatus(
+    entitlements: TenantEntitlements,
+    moduleId: ModuleId
+): {
+    type: 'core' | 'included' | 'premium' | 'coming_soon';
+    badge: string;
+    canToggle: boolean;
+    isLocked: boolean;
+    upgradeTarget: string | null;
+    price?: number;
+    isSectorCompatible: boolean;
+} {
+    const mod = getModule(moduleId);
+    if (!mod) {
+        return {
+            type: 'premium',
+            badge: 'Premium',
+            canToggle: false,
+            isLocked: true,
+            upgradeTarget: null,
+            isSectorCompatible: false
+        };
+    }
+
+    // Core module
+    if (mod.isCore) {
+        return {
+            type: 'core',
+            badge: 'Temel',
+            canToggle: false,
+            isLocked: false,
+            upgradeTarget: null,
+            isSectorCompatible: mod.supportedSectors.length === 0 || 
+                mod.supportedSectors.includes(entitlements.sectorId)
+        };
+    }
+
+    // Coming soon
+    if (mod.status === 'coming_soon') {
+        return {
+            type: 'coming_soon',
+            badge: 'Yakında',
+            canToggle: false,
+            isLocked: true,
+            upgradeTarget: null,
+            isSectorCompatible: mod.supportedSectors.length === 0 || 
+                mod.supportedSectors.includes(entitlements.sectorId)
+        };
+    }
+
+    // Check if included in plan
+    const isIncludedInPlan = isModuleIncludedInPlan(entitlements.planId, moduleId);
+    const upgradeTarget = isIncludedInPlan ? null : getModuleUpgradeTarget(entitlements.planId, moduleId);
+    const isSectorCompatible = mod.supportedSectors.length === 0 || 
+        mod.supportedSectors.includes(entitlements.sectorId);
+
+    // Included in plan
+    if (isIncludedInPlan) {
+        const access = canEnableModule(entitlements, moduleId);
+        return {
+            type: 'included',
+            badge: 'Dahil',
+            canToggle: access.status === 'enabled' || access.status === 'available',
+            isLocked: false,
+            upgradeTarget: null,
+            isSectorCompatible
+        };
+    }
+
+    // Premium (not included in plan)
+    return {
+        type: 'premium',
+        badge: 'Premium',
+        canToggle: entitlements.modules.enabled.includes(moduleId), // Only if already enabled
+        isLocked: !entitlements.modules.enabled.includes(moduleId),
+        upgradeTarget,
+        price: mod.price,
+        isSectorCompatible
     };
 }
 

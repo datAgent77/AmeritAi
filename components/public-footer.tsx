@@ -39,9 +39,15 @@ export function PublicFooter() {
             { label: t('footerContact'), href: "/contact" },
         ],
         company: [
+            { label: t('footerAbout'), href: "/about" },
             { label: t('footerWhyUs'), href: "/why-us" },
             { label: t('footerLogin'), href: "/login" },
             { label: t('footerSignup'), href: "/signup" },
+        ],
+        legal: [
+            { label: t('footerPrivacy'), href: "/privacy" },
+            { label: t('footerTerms'), href: "/terms" },
+            { label: t('footerDistanceSales'), href: "/distance-sales" },
         ]
     }
 
@@ -132,28 +138,58 @@ export function PublicFooter() {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-sm text-muted-foreground">
-                        {new Date().getFullYear()} Vion AI. {t('footerRights')}
-                    </p>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        {mounted && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                                className="rounded-full w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-                            >
-                                {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                                <span className="sr-only">Toggle theme</span>
-                            </Button>
-                        )}
-                        <Link href="/privacy" className="hover:text-foreground transition-colors">
-                            {t('footerPrivacy')}
-                        </Link>
-                        <Link href="/terms" className="hover:text-foreground transition-colors">
-                            {t('footerTerms')}
-                        </Link>
+                <div className="border-t border-border pt-8 space-y-6">
+                    {/* Payment Logos */}
+                    <div className="flex flex-wrap items-center justify-center gap-6">
+                        <span className="text-xs text-muted-foreground">Güvenli Ödeme:</span>
+                        <div className="flex items-center gap-6">
+                            {/* Visa */}
+                            <div className="flex items-center justify-center h-8 px-3 bg-white rounded">
+                                <span className="text-[#1A1F71] font-bold text-xl italic tracking-tight">VISA</span>
+                            </div>
+                            {/* MasterCard */}
+                            <div className="flex items-center gap-0.5">
+                                <div className="w-6 h-6 rounded-full bg-[#EB001B]" />
+                                <div className="w-6 h-6 rounded-full bg-[#F79E1B] -ml-3" />
+                            </div>
+                            {/* iyzico */}
+                            <div className="flex items-center">
+                                <span className="text-foreground font-semibold text-lg">iy</span>
+                                <span className="text-[#00C853] font-semibold text-lg">zico</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Links Row */}
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <p className="text-sm text-muted-foreground">
+                            {new Date().getFullYear()} Vion AI. {t('footerRights')}
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
+                            {mounted && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                                    className="rounded-full w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                                >
+                                    {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                                    <span className="sr-only">Toggle theme</span>
+                                </Button>
+                            )}
+                            <Link href="/about" className="hover:text-foreground transition-colors">
+                                {t('footerAbout')}
+                            </Link>
+                            <Link href="/privacy" className="hover:text-foreground transition-colors">
+                                {t('footerPrivacy')}
+                            </Link>
+                            <Link href="/terms" className="hover:text-foreground transition-colors">
+                                {t('footerTerms')}
+                            </Link>
+                            <Link href="/distance-sales" className="hover:text-foreground transition-colors">
+                                {t('footerDistanceSales')}
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

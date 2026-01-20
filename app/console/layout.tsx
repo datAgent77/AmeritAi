@@ -16,14 +16,22 @@ import { getExperienceState, needsOnboardingRedirect, UserContext, OnboardingSta
 import { getUIExperienceAction } from "@/lib/experience-ui-adapter"
 import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization"
 import { getTrialDaysRemaining } from "@/lib/entitlements"
+import { ThemeProvider } from "next-themes"
+import { TrialExpiredOverlay } from "@/components/trial-expired-overlay"
+
+import { AlertTriangle, LogOut, Mail } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { signOut } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 
 function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
-    const { user, loading: authLoading } = useAuth()
-    const { language } = useLanguage()
+    const { user, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
+    const { language, t } = useLanguage() // Get t function
     const router = useRouter()
     const pathname = usePathname()
     const [userContext, setUserContext] = useState<UserContext | null>(null)
     const [isInitializing, setIsInitializing] = useState(true)
+    const [isTerminated, setIsTerminated] = useState(false)
 
     // Fetch user data and build context
     useEffect(() => {
@@ -52,6 +60,13 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 }
 
                 const data = await response.json();
+
+                // Check termination status
+                if (data.status === 'archived' || data.status === 'deleted' || data.isDeleted === true) {
+                    setIsTerminated(true)
+                    setIsInitializing(false)
+                    return
+                }
 
                 // Extract entitlements
                 const entitlements = extractEntitlementsFromDoc(user.uid, data)
@@ -87,11 +102,60 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         initialize()
     }, [user, authLoading, router])
 
+    const handleLogout = async () => {
+        await signOut(auth)
+        router.push("/login")
+    }
+
     // Show loading while initializing
     if (isInitializing || authLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8]">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    // Show Termination Modal
+    if (isTerminated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#f4f6f8] p-4">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
+                    <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                        <AlertTriangle className="w-8 h-8 text-red-600" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            {language === 'tr' ? 'Hesabınız Sonlandırıldı' : 'Account Terminated'}
+                        </h2>
+                        <p className="text-gray-500">
+                            {language === 'tr' 
+                                ? 'Bu hesap arşivlenmiş veya silinmiştir. Yeniden aktifleştirmek için lütfen destek ekibimizle iletişime geçin.'
+                                : 'This account has been archived or deleted. Please contact our support team to reactivate.'}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-4">
+                        <Button 
+                            variant="outline" 
+                            className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => window.location.href = 'mailto:support@vion.ai'}
+                        >
+                            <Mail className="w-4 h-4" />
+                            {language === 'tr' ? 'Destek ile İletişime Geç' : 'Contact Support'}
+                        </Button>
+                        
+                        <Button 
+                            onClick={handleLogout}
+                            variant="ghost" 
+                            className="w-full gap-2 text-gray-500 hover:text-gray-900"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            {language === 'tr' ? 'Çıkış Yap' : 'Sign Out'}
+                        </Button>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -107,37 +171,71 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
     const showOnboardingSoftBanner = userContext?.onboardingStatus === 'completed_soft'
     const showUpgradeBanner = uiAction?.type === 'show-upgrade-banner'
 
+    // DEBUG: Log subscription status for trial banner debugging (moved outside hooks)
+    console.log('ConsoleLayout DEBUG:', { subscriptionStatus, isTrial: subscriptionStatus === 'trial', trialDaysLeft, planId })
+
     return (
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full bg-[#f4f6f8]">
-                {/* Sidebar - full height on left */}
-                <ConsoleSidebar sectorId={userContext?.sectorId} />
+        <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
+            <SidebarProvider>
+                <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                    {/* Sidebar - full height on left */}
+                    <ConsoleSidebar 
+                        sectorId={userContext?.sectorId} 
+                        daysLeft={trialDaysLeft}
+                        planId={planId}
+                        isTrial={subscriptionStatus === 'trial'}
+                    />
 
-                {/* Right side: Banners + Header + Content */}
-                <div className="flex flex-col flex-1 min-w-0">
-                    {/* Onboarding soft reminder */}
-                    {showOnboardingSoftBanner && (
-                        <OnboardingBanner />
-                    )}
+                    {/* Right side: Banners + Header + Content */}
+                    <div className="flex flex-col flex-1 min-w-0">
+                        {/* Onboarding soft reminder */}
+                        {showOnboardingSoftBanner && (
+                            <OnboardingBanner />
+                        )}
 
-                    {/* Upgrade banner (trial expiring, etc) */}
-                    {showUpgradeBanner && uiAction.type === 'show-upgrade-banner' && (
-                        <UpgradeBanner prompt={uiAction.prompt} />
-                    )}
+                        {/* Upgrade banner (trial expiring, etc) */}
+                        {showUpgradeBanner && uiAction.type === 'show-upgrade-banner' && (
+                            <UpgradeBanner prompt={uiAction.prompt} />
+                        )}
 
-                    {/* Announcement banner */}
-                    <AnnouncementBanner />
+                        {/* Announcement banner */}
+                        <AnnouncementBanner />
 
-                    {/* Header */}
-                    <SiteHeader />
+                        {/* Header */}
+                        <SiteHeader />
 
-                    {/* Main content */}
-                    <main className="flex-1 overflow-y-auto bg-[#f4f6f8] relative">
-                        {children}
-                    </main>
+                        {/* Main content */}
+                        {/* Trial Expiration Guard */}
+                        {(() => {
+                            // Debug log for trial guard
+                            console.log('Trial Guard Debug:', { isTrialExpired, isPaidPlan, subscriptionStatus, planId })
+                            
+                            // Show overlay if trial is expired AND subscription is not 'active' (paid)
+                            // subscriptionStatus should be 'trial' or 'expired' for trial users
+                            const shouldShowOverlay = isTrialExpired && subscriptionStatus !== 'active'
+                            
+                            if (!shouldShowOverlay) return null
+                            
+                            // Define allowed paths that are NOT blocked
+                            const allowedPaths = [
+                                '/console/dashboard', 
+                                '/console/settings/subscription', 
+                                '/console/settings/account'
+                            ]
+                            
+                            const isAllowed = allowedPaths.some(path => pathname?.startsWith(path))
+                            
+                            if (isAllowed) return null
+                            return <TrialExpiredOverlay />
+                        })()}
+                        
+                        <main className="flex-1 overflow-y-auto bg-[#f4f6f8] relative">
+                            {children}
+                        </main>
+                    </div>
                 </div>
-            </div>
-        </SidebarProvider>
+            </SidebarProvider>
+        </ThemeProvider>
     )
 }
 

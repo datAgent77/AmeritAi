@@ -11,7 +11,7 @@ import { getExperienceState, UserContext, OnboardingStatus } from "@/lib/experie
 import { getUIExperienceAction, isEmptyStateAction, isModalAction } from "@/lib/experience-ui-adapter"
 import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization"
 import { getTrialDaysRemaining } from "@/lib/entitlements"
-import { UpgradeModal } from "@/components/upgrade-modal"
+import { PricingModal } from "@/components/pricing-modal"
 import { Loader2 } from "lucide-react"
 
 export default function ChatbotConsolePage() {
@@ -20,7 +20,7 @@ export default function ChatbotConsolePage() {
     const [userContext, setUserContext] = useState<UserContext | null>(null)
     const [hasData, setHasData] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
+    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
     const [upgradeModalData, setUpgradeModalData] = useState<any>(null)
 
     // Fetch user context and check if dashboard has data
@@ -79,7 +79,7 @@ export default function ChatbotConsolePage() {
     useEffect(() => {
         if (uiAction && isModalAction(uiAction)) {
             setUpgradeModalData(uiAction.prompt)
-            setUpgradeModalOpen(true)
+            setIsPricingModalOpen(true)
         }
     }, [uiAction])
 
@@ -134,15 +134,15 @@ export default function ChatbotConsolePage() {
                 <DashboardStats />
             </div>
 
-            {/* Upgrade Modal */}
-            {upgradeModalData && (
-                <UpgradeModal
-                    isOpen={upgradeModalOpen}
-                    onClose={() => setUpgradeModalOpen(false)}
-                    moduleName={upgradeModalData.title || 'Premium Feature'}
-                    description={upgradeModalData.description || ''}
-                />
-            )}
+            {/* Pricing Modal */}
+            <PricingModal
+                isOpen={isPricingModalOpen}
+                onClose={() => {
+                    setIsPricingModalOpen(false)
+                    setUpgradeModalData(null)
+                }}
+                currentPlanId={userContext?.planId || 'starter'}
+            />
         </>
     );
 }

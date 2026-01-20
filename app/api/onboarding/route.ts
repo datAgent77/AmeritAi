@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { step } = body;
+        const { step, modules } = body;
 
         if (step !== 'modules') {
             return NextResponse.json({ error: "Use specific endpoint for this step" }, { status: 400 });
@@ -94,11 +94,18 @@ export async function POST(req: Request) {
             }, { status: 403 });
         }
 
-        // Just mark as completed and move to next
-        await adminDb.collection("users").doc(decoded.uid).update({
+        const updates: any = {
             "onboarding.currentStep": STEP_INDEX.widget,
             "onboarding.completedSteps": FieldValue.arrayUnion("modules")
-        });
+        };
+
+        // Save selected modules if provided
+        if (modules && Array.isArray(modules)) {
+            updates["modules.enabled"] = modules;
+        }
+
+        // Just mark as completed and move to next
+        await adminDb.collection("users").doc(decoded.uid).update(updates);
 
         return NextResponse.json({
             success: true,

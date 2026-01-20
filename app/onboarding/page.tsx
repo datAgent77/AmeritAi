@@ -40,12 +40,8 @@ import {
     getAllModules,
     getModule
 } from "@/lib/modules-registry"
-import {
-    createInitialEntitlements,
-    getModuleStatusForUI,
-    canEnableModule
-} from "@/lib/entitlements"
-import { UpgradeModal } from "@/components/upgrade-modal"
+import { getModuleAccess } from "@/lib/module-access"
+import { PricingModal } from "@/components/pricing-modal"
 
 // Industry icons
 const INDUSTRY_ICONS: Record<string, any> = {
@@ -98,6 +94,7 @@ export default function OnboardingPage() {
     // Form state
     const [selectedSector, setSelectedSector] = useState<IndustryType | null>(null)
     const [modules, setModules] = useState<Record<string, any>>({})
+    const [userPlanId, setUserPlanId] = useState<string>('starter') // Default to starter
     const [knowledgeUrl, setKnowledgeUrl] = useState("")
     const [fullCrawl, setFullCrawl] = useState(false)
     const [isScanning, setIsScanning] = useState(false)
@@ -116,10 +113,11 @@ export default function OnboardingPage() {
     const [verifying, setVerifying] = useState(false)
     const [verifyUrl, setVerifyUrl] = useState("")
     const [verifyResult, setVerifyResult] = useState<{ installed: boolean; message: string } | null>(null)
+    const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([])
 
-    // Upgrade Modal State
-    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
-    const [selectedPremiumModule, setSelectedPremiumModule] = useState<{ name: string; description: string; icon?: any } | null>(null)
+    // Pricing Modal State
+    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
+    const [upgradeTargetModuleId, setUpgradeTargetModuleId] = useState<string | null>(null)
 
     // Animation Variants
     const containerVariants = {
@@ -176,7 +174,12 @@ export default function OnboardingPage() {
 
                     // Restore state
                     if (data.sector) setSelectedSector(data.sector)
-                    if (data.modules) setModules(data.modules)
+                    if (data.entitlements?.planId) setUserPlanId(data.entitlements.planId)
+                    if (data.planId) setUserPlanId(data.planId) // Fallback
+                    if (data.modules) {
+                        setModules(data.modules)
+                        if (data.modules.enabled) setSelectedModuleIds(data.modules.enabled)
+                    }
                     if (data.widget) {
                         setWidget(prev => ({ ...prev, ...data.widget }))
                     }
@@ -239,6 +242,7 @@ export default function OnboardingPage() {
 
             const data = await response.json()
             setModules(data.modules)
+            if (data.modules?.enabled) setSelectedModuleIds(data.modules.enabled)
             setCompletedSteps(prev => [...prev, 'sector'])
             setCurrentStep('modules')
         } catch (error: any) {
@@ -265,7 +269,10 @@ export default function OnboardingPage() {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ step: 'modules' })
+                body: JSON.stringify({ 
+                    step: 'modules',
+                    modules: selectedModuleIds
+                })
             })
 
             setCompletedSteps(prev => [...prev, 'modules'])
@@ -516,7 +523,7 @@ export default function OnboardingPage() {
         <div className="min-h-screen bg-white dark:bg-zinc-950">
             {/* Header */}
             <header className="border-b bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                     <VionLogo variant="black" className="text-xl dark:hidden" />
                     <VionLogo variant="white" className="text-xl hidden dark:block" />
 
@@ -609,7 +616,14 @@ export default function OnboardingPage() {
                             })}
                         </motion.div>
 
-                        <div className="flex justify-end pt-4">
+                        <div className="flex justify-end pt-4 gap-3">
+                            <Button 
+                                variant="ghost" 
+                                onClick={() => handleComplete('soft')}
+                                className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
+                            >
+                                {language === 'tr' ? 'Daha Sonra Tamamla' : 'Complete Later'}
+                            </Button>
                             <Button
                                 size="lg"
                                 onClick={handleSectorSubmit}
@@ -640,49 +654,46 @@ export default function OnboardingPage() {
                             variants={containerVariants}
                             initial="hidden"
                             animate="visible"
-                            className="grid gap-3"
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                         >
                             {getAllModules()
                                 .filter(module => {
-                                    // 1. Hide "coming_soon" modules completely
                                     if (module.status === 'coming_soon') return false
-
-                                    // 2. Hide modules not supported by the selected sector
-                                    if (selectedSector) {
-                                        const tempEntitlements = createInitialEntitlements(
-                                            user?.uid || 'temp',
-                                            selectedSector
-                                        )
-                                        const access = canEnableModule(tempEntitlements, module.id)
-                                        if (access.status === 'not_supported') return false
-                                    }
-
                                     return true
                                 })
                                 .map((module) => {
                                 const Icon = MODULE_ICON_MAP[module.icon] || MessageSquare
 
-                                // Calculate status using entitlements logic
-                                const tempEntitlements = createInitialEntitlements(
-                                    user?.uid || 'temp',
-                                    (selectedSector || 'other') as any
+                                // Get module access info - single source of truth
+                                const access = getModuleAccess(
+                                    userPlanId,
+                                    module.id,
+                                    (selectedSector || 'other') as any,
+                                    selectedModuleIds.includes(module.id),
+                                    language === 'tr' ? 'tr' : 'en',
+                                    true // Always in trial/setup mode during onboarding
                                 )
-                                const { isEnabled, isLocked, badge, canToggle } = getModuleStatusForUI(tempEntitlements, module.id)
+
+                                // Check current user selection
+                                const isSelected = selectedModuleIds.includes(module.id)
+
+                                // Determine if module can be selected
+                                const canSelect = access.status === 'included' || access.status === 'core'
 
                                 const handleModuleClick = () => {
-                                    if (isLocked) {
-                                        setSelectedPremiumModule({
-                                            name: module.name[language === 'tr' ? 'tr' : 'en'],
-                                            description: module.description[language === 'tr' ? 'tr' : 'en'],
-                                            icon: Icon
-                                        })
-                                        setUpgradeModalOpen(true)
+                                    // If not included in plan, show pricing modal
+                                    if (!canSelect && access.upgradeTarget) {
+                                        setUpgradeTargetModuleId(module.id)
+                                        setIsPricingModalOpen(true)
                                         return
                                     }
                                     
-                                    // Normally we would allow toggling here if we implemented state for it,
-                                    // but for now we rely on the default entitlements.
-                                    // If we want to allow users to toggle "available" modules, we need local state.
+                                    // Toggle selection
+                                    if (isSelected) {
+                                        setSelectedModuleIds(prev => prev.filter(id => id !== module.id))
+                                    } else {
+                                        setSelectedModuleIds(prev => [...prev, module.id])
+                                    }
                                 }
 
                                 return (
@@ -692,76 +703,68 @@ export default function OnboardingPage() {
                                         whileHover={{ scale: 1.01 }}
                                         onClick={handleModuleClick}
                                         className={cn(
-                                            "flex items-start gap-4 p-4 rounded-xl border transition-all relative overflow-hidden bg-white dark:bg-zinc-900",
-                                            isEnabled
-                                                ? "border-green-500/50 shadow-sm"
-                                                : isLocked
-                                                    ? "border-gray-200 dark:border-zinc-800 opacity-75 hover:opacity-100 cursor-pointer"
-                                                    : "border-gray-200 dark:border-zinc-800 opacity-60"
+                                            "flex flex-col gap-4 p-5 rounded-xl border transition-all relative overflow-hidden bg-white dark:bg-zinc-900 cursor-pointer",
+                                            isSelected
+                                                ? "border-zinc-300 dark:border-zinc-700 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
+                                                : "border-zinc-200 dark:border-zinc-800 opacity-60 hover:opacity-80"
                                         )}
                                     >
-                                        <div className={cn(
-                                            "p-2.5 rounded-lg mt-0.5 border",
-                                            isEnabled
-                                                ? "bg-green-50 text-green-600 border-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30"
-                                                : "bg-gray-50 text-gray-500 border-gray-100 dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700"
-                                        )}>
-                                            <Icon className="w-5 h-5" />
+                                        <div className="flex justify-between items-start">
+                                            <div className={cn(
+                                                "p-2.5 rounded-lg border",
+                                                isSelected
+                                                    ? "bg-zinc-50 text-zinc-900 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700"
+                                                    : "bg-zinc-50 text-zinc-400 border-zinc-100 dark:bg-zinc-800/50 dark:text-zinc-600 dark:border-zinc-800"
+                                            )}>
+                                                <Icon className="w-5 h-5" />
+                                            </div>
+
+                                            {/* Status Indicator */}
+                                            <div className="flex-shrink-0">
+                                                {isSelected ? (
+                                                    <div className="w-6 h-6 rounded-full bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+                                                        <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-6 h-6 rounded-full border-2 border-zinc-200 dark:border-zinc-800" />
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                                <p className="font-semibold text-sm">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className={cn(
+                                                    "font-semibold text-base",
+                                                    isSelected ? "text-foreground" : "text-muted-foreground"
+                                                )}>
                                                     {module.name[language === 'tr' ? 'tr' : 'en']}
                                                 </p>
-
-                                                {/* Badges */}
-                                                {badge === 'included' && (
-                                                    <Badge variant="secondary" className="gap-1 bg-green-50 text-green-700 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
-                                                        <CheckCircle2 className="w-3 h-3" />
-                                                        {language === 'tr' ? 'Aktif' : 'Active'}
+                                                
+                                                {/* Labels */}
+                                                {access.badge === 'included' && (
+                                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800">
+                                                        {language === 'tr' ? 'Dahil' : 'Included'}
                                                     </Badge>
                                                 )}
-                                                {badge === 'premium' && (
-                                                    <Badge variant="outline" className="gap-1 text-violet-600 border-violet-200 bg-violet-50 dark:bg-violet-900/10 dark:text-violet-400 dark:border-violet-800">
-                                                        <Lock className="w-3 h-3" />
-                                                        Premium
+                                                
+                                                {access.isSectorCompatible && (
+                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 text-xs">
+                                                        {language === 'tr' ? 'Sektörünüze Uygun' : 'Recommended'}
                                                     </Badge>
                                                 )}
                                             </div>
 
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-[2.5rem]">
                                                 {module.description[language === 'tr' ? 'tr' : 'en']}
                                             </p>
 
-                                            {/* Premium Price Display */}
-                                            {isLocked && module.isPremium && module.price > 0 && (
-                                                <div className="mt-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
-                                                    ${module.price}{t('month') || '/mo'}
+                                            {/* Upgrade Info */}
+                                            {access.upgradeMessage && (
+                                                <div className="mt-2">
+                                                    <div className="text-xs text-muted-foreground bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700">
+                                                        {access.upgradeMessage}
+                                                    </div>
                                                 </div>
-                                            )}
-
-                                            {/* Lock Hint */}
-                                            {isLocked && (
-                                                <div className="flex items-center gap-1.5 mt-2 text-xs text-violet-600 dark:text-violet-500 font-medium">
-                                                    <Lock className="w-3 h-3" />
-                                                    <span>
-                                                        {language === 'tr'
-                                                            ? 'Bu modül Premium pakete dahildir'
-                                                            : 'This module requires Premium plan'}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Status Indicator */}
-                                        <div className="flex-shrink-0 mt-1">
-                                            {isEnabled ? (
-                                                <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                                                    <Check className="w-3 h-3 text-white" />
-                                                </div>
-                                            ) : (
-                                                <div className="w-5 h-5 rounded-full border-2 border-gray-300 dark:border-zinc-700" />
                                             )}
                                         </div>
                                     </motion.div>
@@ -778,16 +781,25 @@ export default function OnboardingPage() {
                                 <ArrowLeft className="w-5 h-5 mr-2" />
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
-                            <Button 
-                                size="lg" 
-                                onClick={handleModulesContinue} 
-                                disabled={isLoading} 
-                                className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
-                            >
-                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                <ChevronRight className="w-5 h-5 ml-2" />
-                            </Button>
+                            <div className="flex items-center gap-3">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => handleComplete('soft')}
+                                    className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
+                                >
+                                    {language === 'tr' ? 'Daha Sonra Tamamla' : 'Complete Later'}
+                                </Button>
+                                <Button 
+                                    size="lg" 
+                                    onClick={handleModulesContinue} 
+                                    disabled={isLoading} 
+                                    className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
+                                >
+                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                                    {language === 'tr' ? 'Devam Et' : 'Continue'}
+                                    <ChevronRight className="w-5 h-5 ml-2" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )
@@ -951,7 +963,7 @@ export default function OnboardingPage() {
                         </Card>
 
                         <div className="flex justify-between items-center pt-2">
-                            <Button
+                             <Button
                                 variant="ghost"
                                 onClick={() => {
                                     if (discoveredUrls.length > 0) {
@@ -966,18 +978,27 @@ export default function OnboardingPage() {
                                 <ArrowLeft className="w-5 h-5 mr-2" />
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
-                            <Button
-                                size="lg"
-                                onClick={handleKnowledgeSubmit}
-                                disabled={!knowledgeUrl || isLoading || isScanning || (discoveredUrls.length > 0 && selectedUrls.length === 0)}
-                                className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
-                            >
-                                {isLoading || isScanning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                {discoveredUrls.length > 0
-                                    ? (language === 'tr' ? 'Seçilenleri Kaydet' : 'Save & Continue')
-                                    : (language === 'tr' ? 'Devam Et' : 'Continue')}
-                                {!isLoading && !isScanning && <ChevronRight className="w-5 h-5 ml-2" />}
-                            </Button>
+                            <div className="flex items-center gap-3">
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => handleComplete('soft')}
+                                    className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
+                                >
+                                    {language === 'tr' ? 'Daha Sonra Tamamla' : 'Complete Later'}
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    onClick={handleKnowledgeSubmit}
+                                    disabled={!knowledgeUrl || isLoading || isScanning || (discoveredUrls.length > 0 && selectedUrls.length === 0)}
+                                    className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
+                                >
+                                    {isLoading || isScanning ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                                    {discoveredUrls.length > 0
+                                        ? (language === 'tr' ? 'Seçilenleri Kaydet' : 'Save & Continue')
+                                        : (language === 'tr' ? 'Devam Et' : 'Continue')}
+                                    {!isLoading && !isScanning && <ChevronRight className="w-5 h-5 ml-2" />}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1066,16 +1087,25 @@ export default function OnboardingPage() {
                                     <ArrowLeft className="w-5 h-5 mr-2" />
                                     {language === 'tr' ? 'Geri' : 'Back'}
                                 </Button>
-                                <Button
-                                    size="lg"
-                                    onClick={handleWidgetSubmit}
-                                    disabled={!widget.brandName || isLoading}
-                                    className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
-                                >
-                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                    {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                    <ChevronRight className="w-5 h-5 ml-2" />
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => handleComplete('soft')}
+                                        className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
+                                    >
+                                        {language === 'tr' ? 'Daha Sonra Tamamla' : 'Complete Later'}
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        onClick={handleWidgetSubmit}
+                                        disabled={!widget.brandName || isLoading}
+                                        className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
+                                    >
+                                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+                                        {language === 'tr' ? 'Devam Et' : 'Continue'}
+                                        <ChevronRight className="w-5 h-5 ml-2" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )
@@ -1203,12 +1233,14 @@ export default function OnboardingPage() {
                 }
 
                 {/* Upgrade Modal */}
-                <UpgradeModal
-                    isOpen={upgradeModalOpen}
-                    onClose={() => setUpgradeModalOpen(false)}
-                    moduleName={selectedPremiumModule?.name || ''}
-                    description={selectedPremiumModule?.description || ''}
-                    icon={selectedPremiumModule?.icon}
+                <PricingModal
+                    isOpen={isPricingModalOpen}
+                    onClose={() => {
+                        setIsPricingModalOpen(false)
+                        setUpgradeTargetModuleId(null)
+                    }}
+                    currentPlanId={userPlanId}
+                    targetModuleId={upgradeTargetModuleId as any}
                 />
             </main>
         </div>

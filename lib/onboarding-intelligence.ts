@@ -20,7 +20,7 @@
  */
 
 import { SectorId, getDefaultModulesForSector } from './modules-registry';
-import { getPlan } from './pricing-config';
+import { getPlan, getPlanIncludedModules, isModuleIncludedInPlan } from './pricing-config';
 
 // =============================================================================
 // TYPES
@@ -185,31 +185,36 @@ export function getOnboardingConfig(context: OnboardingContext, lang: 'en' | 'tr
 // HELPER FUNCTIONS
 // =============================================================================
 
-type PlanType = 'starter' | 'pro' | 'enterprise';
+type PlanType = 'starter' | 'growth' | 'pro' | 'enterprise';
 
 function getPlanType(planId: string): PlanType {
     if (planId === 'enterprise') return 'enterprise';
     if (planId === 'pro') return 'pro';
+    if (planId === 'growth') return 'growth';
     return 'starter'; // trial, starter, or unknown
 }
 
 function buildDefaultModules(context: OnboardingContext, planType: PlanType): string[] {
-    const sectorDefaults = getDefaultModulesForSector(context.sectorId);
-
-    switch (planType) {
-        case 'enterprise':
-            // Enterprise: All sector defaults, no restrictions
-            return sectorDefaults;
-
-        case 'pro':
-            // Pro: Sector defaults + first 2 premium-eligible
-            return sectorDefaults;
-
-        case 'starter':
-        default:
-            // Starter: Only sector defaults (core modules)
-            return sectorDefaults;
+    const plan = getPlan(context.planId);
+    if (!plan) {
+        // Fallback to sector defaults if plan not found
+        return getDefaultModulesForSector(context.sectorId);
     }
+
+    // Get modules included in the plan
+    const planIncludedModules = getPlanIncludedModules(context.planId);
+    
+    // Get sector default modules
+    const sectorDefaults = getDefaultModulesForSector(context.sectorId);
+    
+    // Combine: plan included modules + sector defaults that are compatible
+    // Remove duplicates and return
+    const allModules = new Set<string>([
+        ...planIncludedModules,
+        ...sectorDefaults
+    ]);
+
+    return Array.from(allModules);
 }
 
 function getSectorGuidance(planType: PlanType, lang: 'en' | 'tr'): string {

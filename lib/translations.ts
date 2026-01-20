@@ -24,6 +24,8 @@ export const translations = {
 
         industriesPageTitle: "All Industries",
         industriesPageDesc: "Artificial intelligence solutions specialized for every sector.",
+        navHome: "Home",
+        navPricing: "Pricing",
         dashboard: "Dashboard",
         chats: "Chats",
         chatsDescription: "View and manage your conversations with users.",
@@ -47,6 +49,7 @@ export const translations = {
         appearance: "Appearance",
         developers: "Developers",
         subscription: "Subscription",
+        viewPlan: "View Plan",
         invoices: "Invoices",
         billingCycle: "Billing Cycle",
         currentPlan: "Current Plan",
@@ -278,6 +281,8 @@ export const translations = {
         personalShopper: "Personal Shopper",
         communication: "Communication",
         upgradePlan: "Upgrade Plan",
+        freeTrial: "Free Trial",
+        daysRemaining: "Days Remaining",
 
         // Widget Settings
         chatbotConfiguration: "Assistant Configuration",
@@ -677,6 +682,71 @@ export const translations = {
         pricingDedicatedAccountManager: "Dedicated Account Manager",
         pricingSlaGuarantees: "SLA Guarantees",
         pricingOnPremise: "On-Premise Deployment",
+        recommended: "Recommended",
+
+        // Pricing Page V2
+        pricingMainTitle: "Flexible Plans That",
+        pricingMainTitleHighlight: "Grow With Your Business",
+        pricingMainSubtitle: "Create your AI assistant today. Try free for 14 days, no credit card required.",
+        
+        // Billing Toggle (Renamed to avoid conflict)
+        billingToggleMonthly: "Monthly",
+        billingToggleAnnual: "Annual",
+        billingDiscountBadge: "2 months gift on annual payment",
+
+        // Fair Use
+        fairUsePolicy: "Fair Use Policy:",
+        fairUseUnlimited: "Messaging is unlimited on all plans.",
+        fairUseWarning: "For system security, usage over 50,000 messages/month is monitored.",
+
+        // Trust Badges
+        trustRapidSetup: "Rapid Setup",
+        trustRapidSetupDesc: "Train with your own data and add to your site in minutes.",
+        trustSecurity: "Enterprise Security",
+        trustSecurityDesc: "Your data is encrypted and never used without permission.",
+        trustSupport: "24/7 Support",
+        trustSupportDesc: "Our expert team is with you at every step.",
+
+        // Plan Features (Scenario D)
+        featureUnlimitedMessages: "Unlimited Messaging",
+        featureGeneralAssistant: "General AI Assistant",
+        featureLiveSupport: "Live Support (AI Pause)",
+        featureLeadCollection: "Lead Collection",
+        featureKnowledgeBase: "Knowledge Base",
+        featureWebsiteCrawling: "Website Crawling",
+        featureProductCatalog: "Sales & Product Catalog",
+        featureDigitalWaiter: "Digital Waiter",
+        featureMultiChannel: "Omnichannel Support",
+        featureSalesOptimization: "Sales Optimization",
+        featureVisualDiagnosis: "Visual Diagnosis & Analysis",
+        featurePrioritySupport: "Priority Support",
+        featureCustomIntegration: "Custom Integrations (CRM/ERP)",
+        featureSlaGuarantee: "SLA Guarantee",
+        featureWhiteLabel: "White Label (Remove Branding)",
+        featureEverythingInStarter: "Everything in Starter",
+        featureEverythingInGrowth: "Everything in Growth",
+        featureAllFeaturesUnlimited: "All features unlimited",
+        featureAdvancedReporting: "Advanced Reporting",
+        featureCustomizableWidget: "Customizable Chat Widget",
+
+        // Plan Names
+        planStarter: "Starter",
+        planStarterDesc: "Ideal for small businesses and individuals.",
+        planGrowth: "Growth",
+        planGrowthDesc: "For growing e-commerce sites and restaurants.",
+        planPro: "Pro",
+        planProDesc: "High volume businesses wanting full automation.",
+        planEnterprise: "Enterprise",
+        planEnterpriseDesc: "Custom integration and corporate solutions.",
+        
+        ctaTryFree: "Try Free 14 Days",
+        ctaContactUs: "Get a Quote",
+
+        // Limits
+        limitKnowledgeTitle: "Knowledge Base Limits",
+        limitWebsitesLabel: "Website Crawling",
+        limitFilesLabel: "Files (PDF/Doc)",
+        limitTextLabel: "Text / Q&A",
 
         // FAQ
         faqTitle: "Frequently Asked Questions",
@@ -755,8 +825,11 @@ export const translations = {
         footerWhyUs: "Why Vion AI?",
         footerLogin: "Login",
         footerSignup: "Sign Up",
+        footerAbout: "About",
         footerPrivacy: "Privacy Policy",
         footerTerms: "Terms of Service",
+        footerDistanceSales: "Distance Sales",
+        footerLegal: "Legal",
         footerRights: "All rights reserved.",
         footerDesc: "Transform visitors into customers with AI-powered engagement.",
         error: "Error",
@@ -898,6 +971,7 @@ export const translations = {
         phoneNumber: "Phone Number",
         companyInformation: "Company Information",
         companyDetails: "Details about your organization.",
+        subscriptionManagement: "Subscription Management",
         address: "Address",
         website: "Website",
         securitySettings: "Security Settings",
@@ -1476,6 +1550,8 @@ export const translations = {
         industriesPageDesc: "Her sektör için özelleşmiş yapay zeka çözümleri.",
         welcome: "Hoş Geldiniz",
         welcomeTo: "Hoş Geldiniz:",
+        navHome: "Anasayfa",
+        navPricing: "Fiyatlandırma",
         dashboard: "Panel",
         chats: "Sohbetler",
         chatsDescription: "Kullanıcılarla olan sohbetlerinizi görüntüleyin ve yönetin.",
@@ -1520,6 +1596,7 @@ export const translations = {
         appearance: "Görünüm",
         developers: "Geliştiriciler",
         subscription: "Abonelik",
+        viewPlan: "Planı Göster",
         invoices: "Faturalar",
         billingCycle: "Fatura Dönemi",
         currentPlan: "Mevcut Plan",
@@ -1692,6 +1769,8 @@ export const translations = {
         personalShopper: "Kişisel Alışveriş Asistanı",
         communication: "İletişim",
         upgradePlan: "Planı Yükselt",
+        freeTrial: "Ücretsiz Deneme",
+        daysRemaining: "Kalan Gün",
         totalChats: "Toplam Sohbet",
         messagesProcessed: "İşlenen Mesajlar",
         lifetimeConversations: "Ömür boyu konuşmalar",
@@ -1824,7 +1903,7 @@ export const translations = {
         customPromptsPlaceholder: "Chatbot'a vermek istediğiniz ek talimatları yazın...",
         customPromptsDesc: "Bu talimatlar sektör promptuna ek olarak chatbota verilecektir.",
         applyCustomPrompts: "Özel Talimatları Uygula",
-        recommended: "Önerilir",
+        recommended: "Önerilen",
         includedInPackage: "Paket Dahilinde",
         coreModule: "Temel",
         coreModuleTooltip: "Bu temel bir modüldür ve kapatılamaz.",
@@ -2279,8 +2358,11 @@ export const translations = {
         footerWhyUs: "Neden Vion AI?",
         footerLogin: "Giriş Yap",
         footerSignup: "Kayıt Ol",
+        footerAbout: "Hakkımızda",
         footerPrivacy: "Gizlilik Politikası",
         footerTerms: "Kullanım Şartları",
+        footerDistanceSales: "Mesafeli Satış",
+        footerLegal: "Yasal",
         footerRights: "Tüm hakları saklıdır.",
         footerDesc: "Yapay zeka destekli etkileşim ile ziyaretçileri müşteriye dönüştürün.",
 
@@ -2421,6 +2503,7 @@ export const translations = {
         companyInformation: "Şirket Bilgileri",
 
         companyDetails: "Şirket Bilgileri",
+        subscriptionManagement: "Abonelik Yönetimi",
         address: "Adres",
         website: "Web Sitesi",
         securitySettings: "Güvenlik Ayarları",
@@ -2716,8 +2799,8 @@ export const translations = {
         featureCompetitorDesc: "Gerçek zamanlı fiyat takibi ve karşılaştırma.",
         featureTrendTitle: "Trend Önerileri",
         featureTrendDesc: "Pazar trendlerine göre popüler ürün önerileri.",
+        
 
-        // Signup
         signupTitle: "Erişim Başvurusu",
         signupDesc: "Hesap başvurusu için aşağıdaki formu doldurun.",
 
@@ -3018,8 +3101,71 @@ export const translations = {
         'voiceSelectionTip': 'Tarayıcınızın desteklediği seslerden birini seçebilirsiniz.',
         'auditSuggestion': 'Bu sayfanın kullanıcı deneyimini (UI/UX) analiz etmemi ister misiniz?',
         'auditNow': 'Şimdi Denetle',
-    },
-    de: {
+
+        // Pricing Page V2
+        pricingMainTitle: "Büyüyen İşletmeler İçin",
+        pricingMainTitleHighlight: "Esnek Planlar",
+        pricingMainSubtitle: "Yapay zeka asistanınızı bugün oluşturun. Kredi kartı gerekmeden 14 gün ücretsiz deneyin.",
+        
+        // Billing Toggle
+        billingToggleMonthly: "Aylık",
+        billingToggleAnnual: "Yıllık",
+        billingDiscountBadge: "Yıllık ödemede 2 ay hediye",
+
+        // Fair Use
+        fairUsePolicy: "Adil Kullanım Politikası:",
+        fairUseUnlimited: "Tüm paketlerde mesajlaşma sınırsızdır.",
+        fairUseWarning: "Sadece sistem güvenliği için aylık 50.000 mesaj üzeri kullanımlar incelenir.",
+
+        // Trust Badges
+        trustRapidSetup: "Hızlı Kurulum",
+        trustRapidSetupDesc: "Dakikalar içinde kendi verilerinizle eğitin ve sitenize ekleyin.",
+        trustSecurity: "Kurumsal Güvenlik",
+        trustSecurityDesc: "Verileriniz şifrelenir ve izniniz olmadan asla kullanılmaz.",
+        trustSupport: "7/24 Destek",
+        trustSupportDesc: "Uzman ekibimiz her adımda yanınızda.",
+
+        // Plan Features
+        featureUnlimitedMessages: "Sınırsız Mesajlaşma",
+        featureGeneralAssistant: "Genel AI Asistanı",
+        featureLiveSupport: "Canlı Destek (AI Duraklatma)",
+        featureLeadCollection: "Potansiyel Müşteri Toplama",
+        featureKnowledgeBase: "Bilgi Tabanı",
+        featureWebsiteCrawling: "Web Sitesi Tarama",
+        featureProductCatalog: "Satış ve Ürün Kataloğu",
+        featureDigitalWaiter: "Dijital Garson",
+        featureMultiChannel: "Çoklu Kanal Desteği",
+        featureSalesOptimization: "Satış Optimizasyonu",
+        featureVisualDiagnosis: "Görsel Tanı ve Analiz",
+        featurePrioritySupport: "Öncelikli Destek",
+        featureCustomIntegration: "Özel Entegrasyonlar (CRM/ERP)",
+        featureSlaGuarantee: "SLA Garantisi",
+        featureWhiteLabel: "White Label (Marka Kaldırma)",
+        featureEverythingInStarter: "Starter paketindeki her şey",
+        featureEverythingInGrowth: "Growth paketindeki her şey",
+        featureAllFeaturesUnlimited: "Tüm özellikler sınırsız",
+        featureAdvancedReporting: "Gelişmiş Raporlama",
+        featureCustomizableWidget: "Özelleştirilebilir Sohbet Widgetı",
+
+        // Plan Names
+        planStarter: "Starter",
+        planStarterDesc: "Küçük işletmeler ve şahıs şirketleri için ideal.",
+        planGrowth: "Growth",
+        planGrowthDesc: "Büyüyen e-ticaret siteleri ve restoranlar için.",
+        planPro: "Pro",
+        planProDesc: "Tam otomasyon isteyen yüksek hacimli işletmeler.",
+        planEnterprise: "Enterprise",
+        planEnterpriseDesc: "Özel entegrasyon ve kurumsal çözümler.",
+        
+        ctaTryFree: "14 Gün Ücretsiz Dene",
+        ctaContactUs: "Teklif Alın",
+
+        // Limits
+        limitKnowledgeTitle: "Bilgi Tabanı Limitleri",
+        limitWebsitesLabel: "Web Sitesi Tarama",
+        limitFilesLabel: "Dosya (PDF/Doc)",
+        limitTextLabel: "Metin / Soru-Cevap",
+    },de: {
         dashboard: "Armaturenbrett",
         chats: "Chats",
         tenants: "Mandanten",

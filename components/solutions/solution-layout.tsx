@@ -2,7 +2,7 @@
 
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
-import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
+
 import { Button } from "@/components/ui/button"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
@@ -32,6 +32,10 @@ interface SolutionLayoutProps {
     children?: ReactNode; // For extra content
 }
 
+import { PublicBreadcrumb } from "@/components/public-breadcrumb"
+
+// ... imports remain the same ...
+
 export function SolutionLayout({
     title,
     subtitle,
@@ -45,44 +49,46 @@ export function SolutionLayout({
     const { t, language } = useLanguage()
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans selection:bg-purple-500/30 relative">
-            {/* Full Screen Fixed Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <HeroBackgroundModern />
-            </div>
+        <div className="min-h-screen bg-background text-foreground font-sans relative">
+            <PublicHeader />
 
-            {/* Relative z-10 content to sit on top of background */}
-            <div className="relative z-10">
-                <PublicHeader />
+            {/* Hero Section */}
+            <section className="pt-0 pb-20 relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-                {/* Hero Section */}
-                <section className="pt-32 pb-20 relative overflow-hidden">
-                    <div className="container mx-auto px-4 relative z-10">
-                        <div className="max-w-4xl mx-auto text-center">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground backdrop-blur-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                {icon}
-                                <span>{language === 'tr' ? 'Sektörel Çözüm' : 'Industry Solution'}</span>
-                            </div>
+                <PublicBreadcrumb 
+                    items={[
+                        { label: language === 'tr' ? 'Sektörler' : 'Industries', href: '/industries' },
+                        { label: title }
+                    ]} 
+                />
 
-                            <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700">
-                                {title}
-                            </h1>
+                <div className="container mx-auto px-4 relative z-10">
+                    <div className="max-w-4xl mx-auto text-center">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border text-sm font-medium text-foreground backdrop-blur-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            {icon}
+                            <span>{language === 'tr' ? 'Sektörel Çözüm' : 'Industry Solution'}</span>
+                        </div>
 
-                            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 font-light leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700">
-                                {subtitle}
-                            </p>
+                        <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700">
+                            {title}
+                        </h1>
 
-                            <div className="flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700">
-                                <Link href={demoLink}>
-                                    <Button className="h-14 px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 text-lg shadow-xl dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:scale-105">
-                                        {language === 'tr' ? 'Hemen Başla' : 'Get Started'} <ArrowRight className="ml-2 w-5 h-5" />
-                                    </Button>
-                                </Link>
-                                {/* Secondary Button Removed */}
-                            </div>
+                        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 font-light leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700">
+                            {subtitle}
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700">
+                            <Link href={demoLink}>
+                                <Button className="h-14 px-8 rounded-full bg-foreground text-background hover:bg-foreground/90 text-lg shadow-xl dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:scale-105">
+                                    {language === 'tr' ? 'Hemen Başla' : 'Get Started'} <ArrowRight className="ml-2 w-5 h-5" />
+                                </Button>
+                            </Link>
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
                 {/* Animated Chat Simulation Section */}
                 {(conversation || promptExample) && (
@@ -168,8 +174,7 @@ export function SolutionLayout({
                     </div>
                 </section>
 
-                <PublicFooter />
-            </div>
+            <PublicFooter />
         </div>
     )
 }

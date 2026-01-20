@@ -30,6 +30,39 @@ export async function POST(req: Request) {
 
         console.log(`[CHAT API DEBUG] chatbotId=${chatbotId}, language=${language}, body.industry=${body.industry}`);
 
+        // === TRIAL EXPIRATION CHECK ===
+        // Check if the tenant's trial has expired and block the widget
+        if (userId) {
+            try {
+                const userDoc = await adminDb.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const subscriptionStatus = userData?.subscriptionStatus;
+                    const trialEndsAt = userData?.trialEndsAt;
+                    
+                    // If subscription is 'trial' and trial has expired, block the request
+                    if (subscriptionStatus === 'trial' && trialEndsAt) {
+                        const now = new Date();
+                        const endDate = new Date(trialEndsAt);
+                        const isExpired = endDate.getTime() < now.getTime();
+                        
+                        if (isExpired) {
+                            console.log(`[CHAT API] Trial expired for user ${userId}, blocking widget`);
+                            return NextResponse.json({
+                                error: "trial_expired",
+                                message: "Deneme süreniz sona erdi. Devam etmek için lütfen bir plan seçin.",
+                                shouldUpgrade: true
+                            }, { status: 402 }); // 402 Payment Required
+                        }
+                    }
+                }
+            } catch (trialCheckError) {
+                console.error('[CHAT API] Error checking trial status:', trialCheckError);
+                // Don't block on error, just log and continue
+            }
+        }
+        // === END TRIAL EXPIRATION CHECK ===
+
         // ... existing rate limit codes ...
 
         // ... existing pause check codes ...

@@ -4,13 +4,17 @@ import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Copy, ExternalLink, Check, MessageCircle, Send, Loader2, ArrowLeft, Search, Plus, BookOpen, MessageSquare, Hash, Link2, Globe, Code2, Calendar, ShoppingCart, Mail, Building2 } from "lucide-react"
+import { Copy, ExternalLink, Check, MessageCircle, Send, Loader2, ArrowLeft, Search, Plus, BookOpen, MessageSquare, Hash, Link2, Globe, Code2, Calendar, ShoppingCart, Mail, Building2, Lock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 import { useLanguage } from "@/context/LanguageContext"
+import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { getPlan } from "@/lib/pricing-config"
+import { hasIntegrationAccess, getIntegrationMinPlan, INTEGRATION_ACCESS } from "@/lib/integration-access-config"
+import { PricingModal } from "@/components/pricing-modal"
 
 interface IntegrationPageProps {
     userId: string
@@ -30,13 +34,22 @@ interface Integration {
 
 export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const { toast } = useToast()
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
+    const { planId, role } = useAuth()
     const [origin, setOrigin] = useState("")
     const [brandColor, setBrandColor] = useState("#000000")
     const [copied, setCopied] = useState<string | null>(null)
     const [settings, setSettings] = useState<any>(null)
     const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
+    
+    // Plan access state
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+    const [upgradeTargetIntegration, setUpgradeTargetIntegration] = useState<string | null>(null)
+    
+    // Get current plan sortOrder
+    const currentPlanConfig = getPlan(planId)
+    const currentPlanSortOrder = currentPlanConfig?.sortOrder ?? 1
 
     // Telegram State
     const [telegramToken, setTelegramToken] = useState("")
@@ -1363,46 +1376,90 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredIntegrations.map((integration) => (
-                    <Card
-                        key={integration.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow border py-0"
-                        onClick={() => setSelectedIntegration(integration.id)}
-                    >
-                        <CardContent className="p-5">
-                            <div className={cn("p-3 rounded-xl mb-4 flex items-center justify-center w-12 h-12", integration.iconBg)}>
-                                {integration.logo ? (
-                                    <img 
-                                        src={integration.logo} 
-                                        alt={integration.name}
-                                        className="w-6 h-6 object-contain"
-                                        style={{ filter: 'brightness(0)' }}
-                                    />
-                                ) : integration.icon ? (
-                                    integration.icon
-                                ) : null}
-                            </div>
-                            <h3 className="font-semibold mb-1">{integration.name}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                                {integration.description}
-                            </p>
-                            {integration.connected && (
-                                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-green-600">
-                                    <Check className="h-3 w-3" />
-                                    {t('connected')}
-                                </div>
+                {filteredIntegrations.map((integration) => {
+                    // Check if user has access to this integration
+                    const hasAccess = role === 'SUPER_ADMIN' || hasIntegrationAccess(integration.id, currentPlanSortOrder)
+                    const minPlan = getIntegrationMinPlan(integration.id)
+                    
+                    return (
+                        <Card
+                            key={integration.id}
+                            className={cn(
+                                "cursor-pointer hover:shadow-md transition-shadow border py-0",
+                                !hasAccess && "opacity-60"
                             )}
-                        </CardContent>
-                    </Card>
-                ))}
+                            onClick={() => {
+                                if (hasAccess) {
+                                    setSelectedIntegration(integration.id)
+                                } else {
+                                    // Show upgrade modal
+                                    setUpgradeTargetIntegration(integration.id)
+                                    setShowUpgradeModal(true)
+                                }
+                            }}
+                        >
+                            <CardContent className="p-5 relative">
+                                {/* Lock badge for restricted integrations */}
+                                {!hasAccess && (
+                                    <div className="absolute top-3 right-3 flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+                                        <Lock className="h-3 w-3" />
+                                        {minPlan?.charAt(0).toUpperCase()}{minPlan?.slice(1)}+
+                                    </div>
+                                )}
+                                
+                                <div className={cn("p-3 rounded-xl mb-4 flex items-center justify-center w-12 h-12", integration.iconBg)}>
+                                    {integration.logo ? (
+                                        <img 
+                                            src={integration.logo} 
+                                            alt={integration.name}
+                                            className="w-6 h-6 object-contain"
+                                            style={{ filter: !hasAccess ? 'grayscale(1) brightness(0.5)' : 'brightness(0)' }}
+                                        />
+                                    ) : integration.icon ? (
+                                        integration.icon
+                                    ) : null}
+                                </div>
+                                <h3 className="font-semibold mb-1">{integration.name}</h3>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                    {integration.description}
+                                </p>
+                                {integration.connected && hasAccess && (
+                                    <div className="mt-3 flex items-center gap-1 text-xs font-medium text-green-600">
+                                        <Check className="h-3 w-3" />
+                                        {t('connected')}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )
+                })}
             </div>
         </div>
     )
 
+    // Get feature name for upgrade modal
+    const getIntegrationName = (id: string) => {
+        const config = INTEGRATION_ACCESS[id]
+        if (!config) return id
+        return config.displayName[language as 'en' | 'tr'] || id
+    }
+
     return (
-        <div className="flex h-full bg-white rounded-xl overflow-hidden">
-            {/* Main Content */}
-            {selectedIntegration ? renderDetailView() : renderGridView()}
-        </div>
+        <>
+            <div className="flex h-full bg-white rounded-xl overflow-hidden">
+                {/* Main Content */}
+                {selectedIntegration ? renderDetailView() : renderGridView()}
+            </div>
+            
+            {/* Pricing Modal for Upgrade */}
+            <PricingModal
+                isOpen={showUpgradeModal}
+                onClose={() => {
+                    setShowUpgradeModal(false)
+                    setUpgradeTargetIntegration(null)
+                }}
+                currentPlanId={planId}
+            />
+        </>
     )
 }

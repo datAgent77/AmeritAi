@@ -70,6 +70,36 @@ export async function GET(request: Request) {
         // Return user info with subscription (use defaults if not set)
         const subscription = targetUserData?.subscription || DEFAULT_SUBSCRIPTION;
 
+        // Fetch detailed usage stats (parallel)
+        const [knowledgeDocs, sessions, leads, appointments] = await Promise.all([
+            adminDb.collection("knowledge_docs").where("chatbotId", "==", targetUserId).get(),
+            adminDb.collection("chat_sessions").where("chatbotId", "==", targetUserId).get(), // Consider date filtering for 'monthly' later
+            adminDb.collection("leads").where("chatbotId", "==", targetUserId).get(),
+            adminDb.collection("appointments").where("chatbotId", "==", targetUserId).get()
+        ]);
+
+        // Calculate stats
+        const filesCount = knowledgeDocs.docs.filter(d => d.data().type === 'file').length;
+        const websitesCount = knowledgeDocs.docs.filter(d => d.data().type === 'url').length;
+        
+        // Sum messages from sessions (assuming 'messages' array exists)
+        let totalMessages = 0;
+        sessions.docs.forEach(doc => {
+            const msgs = doc.data().messages;
+            if (Array.isArray(msgs)) {
+                totalMessages += msgs.length;
+            }
+        });
+
+        const usageData = {
+            messageCount: totalMessages,
+            conversationCount: sessions.size,
+            knowledgeFiles: filesCount,
+            knowledgeWebsites: websitesCount,
+            leadsCount: leads.size,
+            appointmentsCount: appointments.size
+        };
+
         return NextResponse.json({
             user: {
                 id: targetUserDoc.id,
@@ -82,7 +112,8 @@ export async function GET(request: Request) {
             subscription: {
                 ...DEFAULT_SUBSCRIPTION,
                 ...subscription
-            }
+            },
+            resourceUsage: usageData
         });
 
     } catch (error: any) {
@@ -119,8 +150,9 @@ export async function PUT(request: Request) {
         }
 
         // Parse request body
-        const body = await request.json();
-        const { userId, subscription } = body;
+        const body = await request.json()
+        console.log("Admin Save Request Body:", JSON.stringify(body, null, 2))
+        const { userId, subscription, billing } = body;
 
         if (!userId) {
             return NextResponse.json({ error: "userId is required" }, { status: 400 });
@@ -143,9 +175,39 @@ export async function PUT(request: Request) {
             updatedBy: decodedToken.uid
         };
 
-        // Update user document with new subscription data
+        const targetUserData = targetUserDoc.data();
+
+        // Create entitlements object (normalized)
+        const entitlements = {
+            planId: subscription.planId || 'starter',
+            sectorId: targetUserData?.industry ? (targetUserData.industry.toLowerCase().includes('commerce') ? 'ecommerce' : targetUserData.industry.toLowerCase()) : 'ecommerce', // simple fallback
+            trial: {
+                isActive: subscription.status === 'trial',
+                startAt: null, // Keep existing if possible, but for update we care about status/end
+                endAt: subscription.trialEndsAt || null
+            },
+            modules: {
+                enabled: [], // Keep existing or default
+                addOns: []
+            },
+            updatedAt: new Date().toISOString()
+        };
+
+        // Update user document with new subscription data AND root level fields for compatibility
         await adminDb.collection("users").doc(userId).update({
-            subscription: subscriptionUpdate
+            subscription: subscriptionUpdate,
+            // Sync critical fields to root level as functionality relies on them
+            planId: subscription.planId || 'starter',
+            subscriptionStatus: subscription.status || 'trial',
+            isFrozen: subscription.isFrozen ?? false,
+            // Also update trial info if present
+            trialEndsAt: subscription.trialEndsAt || null,
+            currentPeriodEnd: subscription.currentPeriodEnd || null,
+            // FORCE UPDATE entitlements to ensure extractEntitlementsFromDoc works
+            "entitlements.planId": subscription.planId || 'starter',
+            "entitlements.updatedAt": new Date().toISOString(),
+            "entitlements.trial.isActive": subscription.status === 'trial',
+            "entitlements.trial.endAt": subscription.trialEndsAt || null
         });
 
         return NextResponse.json({

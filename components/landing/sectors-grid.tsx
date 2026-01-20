@@ -50,8 +50,8 @@ export function SectorsGrid() {
                     {sectors.map((sector, i) => (
                         <Link key={i} href={sector.href} className="group">
                             <div className="bg-card border border-border hover:border-foreground/20 rounded-xl p-6 text-center transition-all hover:-translate-y-1 hover:bg-accent hover:shadow-md">
-                                <div className={`w-10 h-10 mx-auto mb-3 rounded-lg bg-background flex items-center justify-center ${sector.color} border border-border/50`}>
-                                    <sector.icon className="w-6 h-6" />
+                                <div className="mb-4 flex items-center justify-center text-foreground group-hover:scale-110 transition-transform duration-300">
+                                    <sector.icon className="w-8 h-8" />
                                 </div>
                                 <h3 className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                                     {language === 'tr' ? sector.label.tr : sector.label.en}

@@ -1,14 +1,35 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
-import { doc, getDoc, onSnapshot } from "firebase/firestore"
+import { doc, onSnapshot } from "firebase/firestore"
+import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
+
+// Extended user data interface
+export interface UserData {
+    planId: string
+    subscriptionStatus: 'trial' | 'active' | 'cancelled' | 'expired'
+    trialEndsAt: string | null
+    billingCycle: 'monthly' | 'annual'
+    industry?: string
+    [key: string]: any
+}
 
 interface AuthContextType {
     user: User | null
+    userData: UserData | null
     role: string | null
+    // Plan & Subscription
+    planId: string
+    planConfig: PlanConfig | null
+    subscriptionStatus: 'trial' | 'active' | 'cancelled' | 'expired'
+    isTrialExpired: boolean
+    trialDaysLeft: number
+    trialEndsAt: string | null
+    isPaidPlan: boolean
+    // Module flags (legacy support)
     enablePersonalShopper: boolean
     visiblePersonalShopper: boolean
     enableChatbot: boolean
@@ -27,9 +48,21 @@ interface AuthContextType {
     loading: boolean
 }
 
+const PAID_PLANS = ['growth', 'pro', 'enterprise']
+
 const AuthContext = createContext<AuthContextType>({
     user: null,
+    userData: null,
     role: null,
+    // Plan & Subscription defaults
+    planId: 'starter',
+    planConfig: null,
+    subscriptionStatus: 'trial',
+    isTrialExpired: false,
+    trialDaysLeft: 14,
+    trialEndsAt: null,
+    isPaidPlan: false,
+    // Module flags defaults
     enablePersonalShopper: false,
     visiblePersonalShopper: true,
     enableChatbot: true,
@@ -50,7 +83,13 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)
+    const [userData, setUserData] = useState<UserData | null>(null)
     const [role, setRole] = useState<string | null>(null)
+    // Plan states
+    const [planId, setPlanId] = useState<string>('starter')
+    const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired'>('trial')
+    const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
+    // Module flags
     const [enablePersonalShopper, setEnablePersonalShopper] = useState(false)
     const [visiblePersonalShopper, setVisiblePersonalShopper] = useState(true)
     const [enableChatbot, setEnableChatbot] = useState(true)
@@ -69,8 +108,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true)
     const pathname = usePathname()
 
+    // Computed values
+    const planConfig = useMemo(() => getPlanConfig(planId) || null, [planId])
+    const isPaidPlan = useMemo(() => PAID_PLANS.includes(planId.toLowerCase()), [planId])
+    
+    const { isTrialExpired, trialDaysLeft } = useMemo(() => {
+        // If subscription is explicitly 'active' (and paid), then no trial
+        if (subscriptionStatus === 'active' && isPaidPlan) {
+            return { isTrialExpired: false, trialDaysLeft: 0 }
+        }
+        
+        // If no trial end date, assume still in trial with default days ONLY if status is trial
+        if (!trialEndsAt) {
+             if (subscriptionStatus === 'trial') {
+                return { isTrialExpired: false, trialDaysLeft: 14 }
+             }
+             return { isTrialExpired: false, trialDaysLeft: 0 }
+        }
+        
+        const now = new Date()
+        const endDate = new Date(trialEndsAt)
+        const diffMs = endDate.getTime() - now.getTime()
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+        
+        return {
+            isTrialExpired: diffDays <= 0,
+            trialDaysLeft: Math.max(0, diffDays)
+        }
+    }, [trialEndsAt, isPaidPlan, subscriptionStatus])
+
     useEffect(() => {
-        // Skip auth for public widget routes - they don't need user context
+        // Skip auth for public widget routes
         if (pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')) {
             console.log("AuthProvider: Skipping auth for widget view")
             setLoading(false)
@@ -78,76 +146,74 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         console.log("AuthProvider: Setting up auth listener")
-
-        // Local variable to track the current snapshot unsubscribe function
         let unsubscribeSnapshot: (() => void) | null = null;
 
-        // Subscribe to Firebase auth state changes
         const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             console.log("AuthProvider: Auth State Changed. User:", currentUser?.uid)
 
-            // Clean up previous snapshot listener if it exists (e.g. user switching accounts)
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
                 unsubscribeSnapshot = null;
             }
 
             if (currentUser) {
-                // User is signed in - subscribe to Firestore document for real-time updates
                 const userDocRef = doc(db, "users", currentUser.uid)
 
                 unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
                     let userRole = 'USER'
-                    let userData: any = {}
+                    let data: any = {}
 
                     if (docSnap.exists()) {
-                        userData = docSnap.data()
-                        userRole = userData.role || 'USER'
+                        data = docSnap.data()
+                        userRole = data.role || 'USER'
                     }
 
-                    // Super admin override (Case-insensitive)
+                    // Super admin override
                     if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
                         userRole = 'SUPER_ADMIN'
                     }
 
-                    console.log(`AuthProvider: User Data Updated. ID: ${currentUser.uid}, Role: ${userRole}`)
+                    console.log(`AuthProvider: User Data Updated. ID: ${currentUser.uid}, Role: ${userRole}, Plan: ${data.planId || 'starter'}`)
 
-                    // Merge Firestore data into user object to ensure 'industry' is available
-                    // Merge Firestore data into user object to ensure 'industry' is available
-                    // This is CRITICAL for the Modules page sector logic
-                    // We must preserve the prototype to keep methods like getIdToken() working
-                    const mergedUser: any = { ...currentUser, ...userData }
+                    // Merge Firestore data into user object
+                    const mergedUser: any = { ...currentUser, ...data }
                     Object.setPrototypeOf(mergedUser, Object.getPrototypeOf(currentUser))
 
-                    // Specific fix for industry: ensure it's on the top level of the user object if needed by consumers
-                    if (userData.industry) {
-                        mergedUser.industry = userData.industry
+                    if (data.industry) {
+                        mergedUser.industry = data.industry
                     }
 
+                    console.log("AuthContext Update - PlanID from Firestore:", data.planId)
+
                     setUser(mergedUser as User)
+                    setUserData(data as UserData)
                     setRole(userRole)
 
-                    // Set flags based on userData (with defaults)
-                    setEnableChatbot(userData.enableChatbot !== false)
-                    setVisibleChatbot(userData.visibleChatbot !== false)
-                    setEnablePersonalShopper(userData.enablePersonalShopper === true)
-                    setVisiblePersonalShopper(userData.visiblePersonalShopper !== false)
-                    setEnableCopywriter(userData.enableCopywriter !== false)
-                    setVisibleCopywriter(userData.visibleCopywriter !== false)
-                    setEnableLeadCollection(userData.enableLeadCollection !== false)
-                    setVisibleLeadCollection(userData.visibleLeadCollection !== false)
-                    setEnableVoiceAssistant(userData.enableVoiceAssistant === true)
-                    setVisibleVoiceAssistant(userData.visibleVoiceAssistant !== false)
-                    setEnableKnowledgeBase(userData.enableKnowledgeBase !== false)
-                    setVisibleKnowledgeBase(userData.visibleKnowledgeBase !== false)
-                    setEnableSalesOptimization(userData.enableSalesOptimization === true)
-                    setVisibleSalesOptimization(userData.visibleSalesOptimization !== false)
-                    setCanManageModules(userData.canManageModules === true || userRole === 'SUPER_ADMIN')
+                    // Set plan & subscription data
+                    setPlanId(data.planId || 'starter')
+                    setSubscriptionStatus(data.subscriptionStatus || 'trial')
+                    setTrialEndsAt(data.trialEndsAt || null)
+
+                    // Set module flags (legacy support)
+                    setEnableChatbot(data.enableChatbot !== false)
+                    setVisibleChatbot(data.visibleChatbot !== false)
+                    setEnablePersonalShopper(data.enablePersonalShopper === true)
+                    setVisiblePersonalShopper(data.visiblePersonalShopper !== false)
+                    setEnableCopywriter(data.enableCopywriter !== false)
+                    setVisibleCopywriter(data.visibleCopywriter !== false)
+                    setEnableLeadCollection(data.enableLeadCollection !== false)
+                    setVisibleLeadCollection(data.visibleLeadCollection !== false)
+                    setEnableVoiceAssistant(data.enableVoiceAssistant === true)
+                    setVisibleVoiceAssistant(data.visibleVoiceAssistant !== false)
+                    setEnableKnowledgeBase(data.enableKnowledgeBase !== false)
+                    setVisibleKnowledgeBase(data.visibleKnowledgeBase !== false)
+                    setEnableSalesOptimization(data.enableSalesOptimization === true)
+                    setVisibleSalesOptimization(data.visibleSalesOptimization !== false)
+                    setCanManageModules(data.canManageModules === true || userRole === 'SUPER_ADMIN')
 
                     setLoading(false)
                 }, (error) => {
                     console.error("AuthProvider: Firestore listener error", error)
-                    // Fallback to basic auth user if Firestore fails (e.g. permission denied)
                     setUser(currentUser)
                     setLoading(false)
                 })
@@ -155,24 +221,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else {
                 // No user signed in
                 setUser(null)
+                setUserData(null)
                 setRole(null)
+                setPlanId('starter')
+                setSubscriptionStatus('trial')
+                setTrialEndsAt(null)
                 setLoading(false)
             }
         })
 
         return () => {
             console.log("AuthProvider: Cleanup")
-            unsubscribeAuth() // Changed from unsubscribe() to unsubscribeAuth() for correctness
+            unsubscribeAuth()
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
             }
         }
-    }, [pathname]) // Added pathname to dependency array to re-run effect if pathname changes
+    }, [pathname])
 
     return (
         <AuthContext.Provider value={{
             user,
+            userData,
             role,
+            // Plan & Subscription
+            planId,
+            planConfig,
+            subscriptionStatus,
+            isTrialExpired,
+            trialDaysLeft,
+            trialEndsAt,
+            isPaidPlan,
+            // Module flags
             loading,
             enablePersonalShopper,
             visiblePersonalShopper,
@@ -183,7 +263,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             enableLeadCollection,
             visibleLeadCollection,
             enableVoiceAssistant,
-
             visibleVoiceAssistant,
             enableKnowledgeBase,
             visibleKnowledgeBase,

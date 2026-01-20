@@ -10,7 +10,7 @@ import { getExperienceState, UserContext, OnboardingStatus } from "@/lib/experie
 import { getUIExperienceAction, isEmptyStateAction, isModalAction } from "@/lib/experience-ui-adapter"
 import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization"
 import { getTrialDaysRemaining } from "@/lib/entitlements"
-import { UpgradeModal } from "@/components/upgrade-modal"
+import { PricingModal } from "@/components/pricing-modal"
 import { Loader2 } from "lucide-react"
 
 export default function ChatsPage() {
@@ -19,7 +19,7 @@ export default function ChatsPage() {
     const [userContext, setUserContext] = useState<UserContext | null>(null)
     const [hasData, setHasData] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
-    const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
+    const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
     const [upgradeModalData, setUpgradeModalData] = useState<any>(null)
 
     // Fetch user context
@@ -73,7 +73,7 @@ export default function ChatsPage() {
     useEffect(() => {
         if (uiAction && isModalAction(uiAction)) {
             setUpgradeModalData(uiAction.prompt)
-            setUpgradeModalOpen(true)
+            setIsPricingModalOpen(true)
         }
     }, [uiAction])
 
@@ -125,14 +125,15 @@ export default function ChatsPage() {
                 </div>
             </div>
 
-            {/* Upgrade Modal */}
-            {upgradeModalData && (
-                <UpgradeModal
-                    isOpen={upgradeModalOpen}
-                    onClose={() => setUpgradeModalOpen(false)}
-                    prompt={upgradeModalData}
-                />
-            )}
+            {/* Pricing Modal */}
+            <PricingModal
+                isOpen={isPricingModalOpen}
+                onClose={() => {
+                    setIsPricingModalOpen(false)
+                    setUpgradeModalData(null)
+                }}
+                currentPlanId={userContext?.planId || 'starter'}
+            />
         </>
     )
 }

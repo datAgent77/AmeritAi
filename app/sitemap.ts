@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { SEED_BLOG_POSTS } from '@/lib/seed-cms-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://getvion.com' // Updated to actual domain
+    const baseUrl = 'https://www.getvion.com' // Updated to actual domain
 
     // Static pages
     const routes = [
@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         '/pricing',
         '/contact',
         '/blog',
+        '/why-us',
     ].map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date(),

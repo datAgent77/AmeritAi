@@ -1,121 +1,195 @@
 "use client"
 
-import { useLanguage } from "@/context/LanguageContext"
-import { ContactForm } from "@/components/contact-form"
-import { MessageSquare, Shield, Zap, ArrowRight, Check } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from 'react'
+import { useLanguage } from '@/context/LanguageContext'
+import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { getPublicPlansSorted, formatPlanPrice, PlanConfig } from '@/lib/pricing-config'
+import { BillingToggle } from '@/components/pricing/billing-toggle'
+import { Check, Zap } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function SubscriptionPage() {
-    const { language } = useLanguage()
+    const { t, language } = useLanguage()
+    const { planId: authPlanId } = useAuth()
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+
+    const allPlans = getPublicPlansSorted()
+    const currentPlanId = authPlanId || 'starter'
+    const currentPlanConfig = allPlans.find(p => p.planId === currentPlanId)
+
+    // Get plan display name
+    const getPlanDisplayName = (plan: PlanConfig) => {
+        const key = `plan${plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)}`
+        const translated = t(key)
+        return translated !== key ? translated : plan.displayName
+    }
+
+    const handleUpgrade = (planId: string) => {
+        // TODO: Implement upgrade flow
+        console.log('Upgrade to:', planId)
+    }
+
+    const handleContact = () => {
+        window.location.href = '/contact'
+    }
 
     return (
-        <div className="space-y-8 max-w-5xl mx-auto">
-            {/* Hero Section inspired by Pricing Page */}
-            <div className="text-center space-y-6 py-8 relative">
-                {/* Background effects similar to pricing page but subtle for console */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary/5 rounded-full blur-[100px] -z-10" />
-
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-sm text-primary mb-4">
-                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    {language === 'tr' ? 'Özel Çözümler' : 'Custom Solutions'}
-                </div>
-
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-3xl mx-auto leading-tight">
-                    {language === 'tr'
-                        ? 'İşletmeniz İçin En Uygun Planı Oluşturalım'
-                        : 'Let\'s Build the Perfect Plan for Your Business'}
+        <div className="space-y-6 max-w-[1200px] mx-auto">
+            {/* Header */}
+            <div className="text-center">
+                <h1 className="text-2xl font-bold">
+                    {language === 'tr' ? 'Planınızı Yönetin' : 'Manage Your Plan'}
                 </h1>
-
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                    {language === 'tr'
-                        ? 'Her işletmenin ihtiyaçları farklıdır. Size özel ölçeklenebilir çözümler ve avantajlı fiyatlar için satış ekibimizle görüşün.'
-                        : 'Every business is unique. Contact our sales team for scalable solutions and custom pricing tailored to your needs.'}
+                <p className="text-muted-foreground mt-1">
+                    {language === 'tr' 
+                        ? 'Mevcut planınızı görüntüleyin veya yükseltin.'
+                        : 'View or upgrade your current plan.'}
                 </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 items-start">
+            {/* Billing Toggle */}
+            <div className="flex justify-center">
+                <BillingToggle 
+                    billingCycle={billingCycle} 
+                    onChange={setBillingCycle} 
+                />
+            </div>
 
-                {/* Left Column: Value Props (Trust Indicators from Pricing Page + More) */}
-                <div className="space-y-6">
-                    <div className="grid gap-6">
-                        <Card className="bg-card/50 border-primary/10">
-                            <CardContent className="p-6 flex items-start gap-4">
-                                <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500 shrink-0">
-                                    <Zap className="w-6 h-6" />
+            {/* Plans Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {allPlans.map((plan) => {
+                    const isCurrentPlan = plan.planId === currentPlanId
+                    const isContact = plan.billing.contact
+                    const price = formatPlanPrice(plan.planId, billingCycle, language as 'en' | 'tr')
+                    const isPopular = plan.copy.badge === 'recommended' || plan.copy.badge === 'Önerilen'
+                    const isUnlimitedMsg = (feature: string) => 
+                        feature === 'featureUnlimitedMessages' || 
+                        feature.includes('Sınırsız Mesajlaşma') || 
+                        feature.includes('Unlimited Messaging')
+
+                    return (
+                        <div 
+                            key={plan.planId}
+                            className={cn(
+                                "relative flex flex-col p-5 rounded-xl border transition-all",
+                                (isCurrentPlan || isPopular) && "pt-6",
+                                isCurrentPlan 
+                                    ? "border-primary/50 bg-primary/5" 
+                                    : isPopular
+                                        ? "border-primary shadow-lg shadow-primary/10"
+                                        : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                            )}
+                        >
+                            {/* Badges */}
+                            {isCurrentPlan && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                                    <span className="text-xs font-semibold text-white bg-zinc-500 px-2 py-1 rounded-full shadow-sm">
+                                        {language === 'tr' ? 'Mevcut Plan' : 'Current'}
+                                    </span>
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold mb-1">{language === 'tr' ? 'Hızlı Kurulum' : 'Fast Setup'}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {language === 'tr' ? 'Dakikalar içinde başlayın ve entegre olun.' : 'Get started and integrated in minutes.'}
+                            )}
+                            {isPopular && !isCurrentPlan && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                                    <span className="text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-800 px-2 py-1 rounded-full shadow-sm">
+                                        {language === 'tr' ? 'Önerilen' : 'Recommended'}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Plan Name & Price */}
+                            <div className="mb-4">
+                                <h3 className="text-lg font-bold mb-1">{getPlanDisplayName(plan)}</h3>
+                                <p className="text-sm text-muted-foreground mb-3 h-10">{t(plan.copy.subtitle || '')}</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-bold">
+                                        {isContact 
+                                            ? (language === 'tr' ? 'Özel Teklif' : 'Custom')
+                                            : price.split('/')[0]}
+                                    </span>
+                                    {!isContact && price.includes('/') && (
+                                        <span className="text-sm text-muted-foreground">/{price.split('/')[1]}</span>
+                                    )}
+                                </div>
+                                {billingCycle === 'annual' && plan.billing.annual?.discountLabel && (
+                                    <p className="text-xs text-green-600 mt-1 font-medium">
+                                        {t(plan.billing.annual.discountLabel)}
                                     </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                )}
+                            </div>
 
-                        <Card className="bg-card/50 border-primary/10">
-                            <CardContent className="p-6 flex items-start gap-4">
-                                <div className="p-3 bg-purple-500/10 rounded-xl text-purple-500 shrink-0">
-                                    <Shield className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold mb-1">{language === 'tr' ? 'Kurumsal Güvenlik' : 'Enterprise Security'}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {language === 'tr' ? 'Verileriniz en yüksek güvenlik standartlarıyla korunur.' : 'Your data is protected with highest security standards.'}
+                            {/* CTA Button */}
+                            <Button 
+                                variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
+                                className={cn(
+                                    "w-full mb-4",
+                                    isPopular && !isCurrentPlan && "bg-primary hover:bg-primary/90"
+                                )}
+                                disabled={isCurrentPlan || (!!currentPlanConfig && plan.sortOrder < currentPlanConfig.sortOrder)}
+                                onClick={() => isContact ? handleContact() : handleUpgrade(plan.planId)}
+                            >
+                                {isCurrentPlan 
+                                    ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
+                                    : isContact
+                                        ? (language === 'tr' ? 'İletişime Geç' : 'Contact Sales')
+                                        : (currentPlanConfig && plan.sortOrder < currentPlanConfig.sortOrder)
+                                            ? getPlanDisplayName(plan)
+                                            : (language === 'tr' ? 'Planı Yükselt' : 'Upgrade')}
+                            </Button>
+
+                            {/* Features List */}
+                            <div className="flex-1 space-y-2">
+                                {plan.highlights?.map((feature, i) => (
+                                    <div key={i} className="flex items-start gap-2 text-sm">
+                                        {isUnlimitedMsg(feature) ? (
+                                            <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
+                                        ) : (
+                                            <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                        )}
+                                        <span className={cn(
+                                            "text-muted-foreground",
+                                            isUnlimitedMsg(feature) && "font-semibold text-foreground"
+                                        )}>
+                                            {t(feature)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Limits Section */}
+                            {plan.limits.knowledge && (
+                                <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                        {t('limitKnowledgeTitle') || 'Bilgi Tabanı Limitleri'}
                                     </p>
+                                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                                        <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
+                                            <span className="font-semibold block">
+                                                {plan.limits.knowledge.websites === 'unlimited' ? '∞' : plan.limits.knowledge.websites}
+                                            </span>
+                                            <span className="text-muted-foreground text-[10px]">{t('limitWebsitesLabel') || 'Web Sitesi'}</span>
+                                        </div>
+                                        <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
+                                            <span className="font-semibold block">
+                                                {plan.limits.knowledge.files === 'unlimited' ? '∞' : plan.limits.knowledge.files}
+                                            </span>
+                                            <span className="text-muted-foreground text-[10px]">{t('limitFilesLabel') || 'Dosya'}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card/50 border-primary/10">
-                            <CardContent className="p-6 flex items-start gap-4">
-                                <div className="p-3 bg-green-500/10 rounded-xl text-green-500 shrink-0">
-                                    <MessageSquare className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold mb-1">{language === 'tr' ? '7/24 Destek' : '24/7 Support'}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {language === 'tr' ? 'Uzman ekibimiz her an yanınızda.' : 'Our expert team is always here to help.'}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Additional bullet points if needed to fill space */}
-                    <div className="px-4">
-                        <ul className="space-y-3">
-                            {[
-                                language === 'tr' ? 'Özel API Entegrasyonları' : 'Custom API Integrations',
-                                language === 'tr' ? 'Öncelikli Özellik Geliştirme' : 'Priority Feature Development',
-                                language === 'tr' ? 'Kişiselleştirilmiş Onboarding' : 'Personalized Onboarding'
-                            ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Check className="w-4 h-4 text-primary" />
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Right Column: Contact Form */}
-                <Card className="border-primary/20 shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10" />
-                    <CardContent className="p-6 sm:p-8">
-                        <div className="mb-6">
-                            <h3 className="text-xl font-semibold mb-2">
-                                {language === 'tr' ? 'Bize Ulaşın' : 'Contact Us'}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                                {language === 'tr'
-                                    ? 'Formu doldurun, size özel teklifimizle geri dönelim.'
-                                    : 'Fill out the form and we\'ll get back to you with a custom offer.'}
-                            </p>
+                            )}
                         </div>
-                        <ContactForm />
-                    </CardContent>
-                </Card>
+                    )
+                })}
+            </div>
 
+            {/* Footer Note */}
+            <div className="text-center pt-4 border-t border-border/50">
+                <p className="text-xs text-muted-foreground">
+                    {t('fairUseUnlimited')}{' '}
+                    <span className="opacity-70">|</span>{' '}
+                    {t('fairUseWarning')}
+                </p>
             </div>
         </div>
     )

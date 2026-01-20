@@ -130,7 +130,14 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                 throw new Error("Failed to toggle pause")
             }
 
-            // No need to update local state manually as onSnapshot will handle it
+            // Update local state immediately
+            setSessions(prevSessions =>
+                prevSessions.map(session =>
+                    session.id === selectedSessionId
+                        ? { ...session, isPaused: newStatus }
+                        : session
+                )
+            )
         } catch (error) {
             console.error("Error toggling pause:", error)
             alert("Failed to update AI status")
@@ -343,11 +350,11 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                 <Input
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
-                                    placeholder={t('typeReply')}
+                                    placeholder={selectedSession?.isPaused ? t('aiPaused') : t('typeReply')}
                                     className="flex-1"
-                                    disabled={isSending}
+                                    disabled={isSending || selectedSession?.isPaused}
                                 />
-                                <Button type="submit" disabled={isSending || !replyText.trim()}>
+                                <Button type="submit" disabled={isSending || !replyText.trim() || selectedSession?.isPaused}>
                                     {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                                 </Button>
                             </form>

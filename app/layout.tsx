@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://getvion.com'),
+  metadataBase: new URL('https://www.getvion.com'),
   title: {
     default: "Vion AI | AI-Powered Business Assistant",
     template: "%s | Vion AI"
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://getvion.com',
+    url: 'https://www.getvion.com',
     title: 'Vion AI | AI-Powered Business Assistant',
     description: 'Transform your business with Vion AI. Automate sales, support, and booking with our intelligent, multi-lingual AI assistant.',
     siteName: 'Vion AI',
@@ -58,10 +58,8 @@ export const metadata: Metadata = {
 };
 
 import { ConditionalAuthProvider } from "@/components/conditional-auth-provider";
-import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { CookieConsent } from "@/components/cookie-consent";
-
 import { Toaster } from "@/components/ui/toaster"
 import { PublicChatbot } from "@/components/public-chatbot"
 
@@ -74,15 +72,15 @@ export default function RootLayout({
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Vion AI',
-    url: 'https://getvion.com',
-    logo: 'https://getvion.com/vion-logo-icon-dark.png',
+    url: 'https://www.getvion.com',
+    logo: 'https://www.getvion.com/vion-logo-icon-dark.png',
     description: 'AI-Powered Business Assistant for Sales and Support',
     address: {
       '@type': 'PostalAddress',
-      addressCountry: 'TR' // Assuming primarily TR based on context, or omit
+      addressCountry: 'TR'
     },
     sameAs: [
-      'https://www.linkedin.com/company/vion-ai', // Placeholder if exists
+      'https://www.linkedin.com/company/vion-ai',
       'https://twitter.com/vion_ai'
     ]
   }
@@ -94,12 +92,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-        >
           <LanguageProvider>
             <ConditionalAuthProvider>
               <CookieConsent />
@@ -108,7 +100,6 @@ export default function RootLayout({
               <Toaster />
             </ConditionalAuthProvider>
           </LanguageProvider>
-        </ThemeProvider>
       </body>
     </html>
   );

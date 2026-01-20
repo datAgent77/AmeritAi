@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
         const { uid, email } = decodedToken;
         const body = await req.json();
-        const { fullName, phoneNumber, industry, authProvider } = body;
+        const { fullName, phoneNumber, industry, authProvider, plan, billingCycle } = body;
 
         // Name parsing
         const nameParts = (fullName || "").trim().split(' ');
@@ -41,7 +41,8 @@ export async function POST(req: Request) {
         const sectorId: SectorId = normalizeSectorId(industry || 'ecommerce');
 
         // Create initial entitlements using the entitlements system
-        const entitlements = createInitialEntitlements(uid, sectorId);
+        // Pass the requested plan ID (or default to 'trial' if not provided)
+        const entitlements = createInitialEntitlements(uid, sectorId, plan || 'trial');
 
         // Calculate trial end date from entitlements
         const trialEndDate = entitlements.trial.endAt
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
             sector: sectorId,
             sectorId,
             plan: entitlements.planId,
-            billingCycle: "monthly",
+            billingCycle: billingCycle || "monthly",
             subscriptionStatus: entitlements.trial.isActive ? "trial" : "active",
             trialEndsAt: trialEndDate.toISOString(),
 

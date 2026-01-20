@@ -4,7 +4,7 @@ import { useParams } from "next/navigation"
 import { SubpageSidebar } from "@/components/subpage-sidebar"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { CreditCard, Code, Bell, Bot, ShieldCheck, UserCog } from "lucide-react"
+import { CreditCard, Code, Bell, Bot, ShieldCheck, UserCog, Shield } from "lucide-react"
 
 
 export default function TenantSettingsLayout({
@@ -38,6 +38,12 @@ export default function TenantSettingsLayout({
         },
         // Super Admin Only
         ...(role === 'SUPER_ADMIN' ? [
+            {
+                id: "customer-admin",
+                label: t('customerAdmin') || "Planı Göster",
+                href: `/admin/tenant/${userId}/settings/customer-admin`,
+                icon: <Shield className="w-4 h-4" />
+            },
             {
                 id: "account",
                 label: t('accountSettings') || "Hesap Ayarları",

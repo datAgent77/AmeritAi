@@ -60,8 +60,6 @@ export function FeaturesGrid() {
                             className="group relative"
                         >
                             <div className="h-full p-6 rounded-xl bg-card border border-border hover:border-foreground/20 hover:bg-accent hover:shadow-lg transition-all duration-300">
-                                {/* Top accent line */}
-                                <div className="w-12 h-px bg-foreground/20 mb-6 group-hover:bg-foreground/40 group-hover:w-16 transition-all duration-300" />
                                 
                                 <h3 className="text-lg font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
                                     {t(feature.titleKey)}

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Check, X, Sparkles, Building2, Rocket } from "lucide-react";
+import { Check, X, Sparkles, Building2, Rocket, Zap } from "lucide-react";
 import { ContactSalesForm } from './contact-sales-form';
 
 interface PricingModalProps {
@@ -16,45 +16,69 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
 
     const plans = [
         {
-            id: 'free',
-            name: 'Free Trial',
-            price: 'Free',
-            period: '/ 14 Days',
+            id: 'starter',
+            name: 'Starter',
+            price: '$29',
+            period: '/mo',
             icon: Rocket,
-            description: 'Full access to test Vion before you commit.',
+            description: 'Ideal for small businesses and individuals.',
             features: [
-                '50 Test Conversations',
-                'Basic Proactive Triggers',
-                'Standard Analytics',
-                'Standard Support',
-                'Multi-language (EN, TR, DE, ES)'
+                'Unlimited Messaging',
+                'General AI Assistant',
+                'Live Support',
+                'Lead Collection',
+                'Knowledge Base (1 File)'
             ],
             missing: [
-                'No "Powered by" Removal',
-                'Personal Shopper AI',
-                'Advanced Analytics',
+                'Product Catalog',
+                'Digital Waiter',
+                'Sales Optimization',
+                'Review Management'
             ],
-            buttonText: 'Start Trial',
+            buttonText: 'Upgrade to Starter',
             isPopular: false
         },
         {
-            id: 'pro',
-            name: 'Pro Business',
-            price: '₺950',
-            period: '/ month',
+            id: 'growth',
+            name: 'Growth',
+            price: '$79',
+            period: '/mo',
             icon: Sparkles,
-            description: 'For growing businesses needing AI sales power.',
+            description: 'For growing e-commerce sites and restaurants.',
             features: [
-                '2,000 Conversations / month',
-                '✨ AI Personal Shopper Mode',
-                'Advanced Proactive Engagement',
-                'Remove "Powered by" Branding',
-                'Priority Email Support',
-                'Multi-language (EN, TR, DE, ES)'
+                'Everything in Starter',
+                'Product Catalog',
+                'Digital Waiter',
+                'Multi-Channel Support',
+                'Knowledge Base (10 Files)',
+                'Advanced Reporting'
+            ],
+            missing: [
+                'Sales Optimization',
+                'Visual Diagnosis',
+                'Priority Support'
+            ],
+            buttonText: 'Upgrade to Growth',
+            isPopular: true
+        },
+        {
+            id: 'pro',
+            name: 'Pro',
+            price: '$149',
+            period: '/mo',
+            icon: Zap,
+            description: 'Tam otomasyon isteyen yüksek hacimli işletmeler.',
+            features: [
+                'Everything in Growth',
+                'Sales Optimization',
+                'Visual Diagnosis',
+                'Priority Support',
+                'Knowledge Base (100 Files)',
+                'Advanced Reporting'
             ],
             missing: [],
             buttonText: 'Upgrade to Pro',
-            isPopular: true
+            isPopular: false
         },
         {
             id: 'enterprise',
@@ -62,14 +86,13 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
             price: 'Custom',
             period: '',
             icon: Building2,
-            description: 'For large teams requiring custom limits & SLA.',
+            description: 'Custom integration and corporate solutions.',
             features: [
-                'Custom Conversation Vol.',
-                'Dedicated Account Manager',
-                'Custom AI Training',
-                'API Access',
-                'SLA & Uptime Guarantee',
-                'Multi-language (EN, TR, DE, ES)'
+                'All Features Unlimited',
+                'Custom Integration',
+                'SLA Guarantee',
+                'White Label',
+                'Advanced Reporting'
             ],
             missing: [],
             buttonText: 'Contact Sales',
@@ -169,6 +192,15 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
                             </button>
                         </div>
                     ))}
+                </div>
+
+                {/* Footer Note */}
+                <div className="py-4 border-t border-gray-100">
+                    <p className="text-xs text-center text-muted-foreground">
+                        Tüm paketlerde mesajlaşma sınırsızdır.{' '}
+                        <span className="opacity-70">|</span>{' '}
+                        Sadece sistem güvenliği için aylık 50.000 mesaj üzeri kullanımlar incelenir.
+                    </p>
                 </div>
             </DialogContent>
         </Dialog>

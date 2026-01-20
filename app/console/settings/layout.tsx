@@ -27,7 +27,7 @@ export default function SettingsLayout({
         },
         {
             id: "subscription",
-            label: t('subscription') || "Abonelik",
+            label: t('viewPlan') || "Planı Göster",
             href: "/console/settings/subscription",
             icon: <CreditCard className="w-4 h-4" />
         },

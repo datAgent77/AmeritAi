@@ -132,7 +132,7 @@ export function UpgradeModal({
                 if (!open) handleDismiss()
             }}
         >
-            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-lg">
+            <DialogContent className="sm:max-w-[420px] px-6 py-0 overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-lg">
 
                 {/* HEADER */}
                 <div className="bg-white dark:bg-zinc-950 p-6 pt-8 text-center border-b border-zinc-100 dark:border-zinc-800/50">

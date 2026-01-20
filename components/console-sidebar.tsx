@@ -30,14 +30,15 @@ import {
     Inbox,
     Activity,
     Utensils,
-    FileText
+    FileText,
+    Rocket
 } from "lucide-react"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { PricingModal } from "./billing/pricing-modal"
+import { PricingModal } from "@/components/pricing-modal"
 import { useState } from "react"
 import {
     Sidebar,
@@ -74,9 +75,12 @@ interface ConsoleSidebarProps {
     targetUserId?: string
     targetEmail?: string
     sectorId?: string
+    daysLeft?: number
+    planId?: string
+    isTrial?: boolean
 }
 
-export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleSidebarProps) {
+export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, planId, isTrial = false }: ConsoleSidebarProps) {
     const pathname = usePathname() || ""
     const router = useRouter()
     const { t, language, setLanguage } = useLanguage()
@@ -218,7 +222,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="bg-[#000000] px-2 py-1.5 gap-0">
+                <SidebarContent className="bg-[#000000] px-2 py-1.5 gap-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-zinc-800 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-zinc-700">
                     {/* Super Admin Back Button */}
                     {targetUserId && (
                         <SidebarMenu className="mb-4">
@@ -342,24 +346,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {/* ... other admin links ... */}
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={pathname === "/admin/requests"}
-                                        className={cn(
-                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                            "hover:bg-white/10 hover:text-white",
-                                            pathname === "/admin/requests"
-                                                ? "bg-white/15 text-white shadow-sm"
-                                                : "text-zinc-400 group-hover:text-white"
-                                        )}
-                                    >
-                                        <Link href="/admin/requests">
-                                            <Inbox className={cn("size-4", pathname === "/admin/requests" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('moduleRequests') || "Requests"}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                {/* Removed Module Requests Link */}
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         asChild
@@ -396,54 +383,66 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton
-                                        asChild
-                                        isActive={pathname.startsWith("/admin/subscriptions")}
-                                        className={cn(
-                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                            "hover:bg-white/10 hover:text-white",
-                                            pathname.startsWith("/admin/subscriptions")
-                                                ? "bg-white/15 text-white shadow-sm"
-                                                : "text-zinc-400 group-hover:text-white"
-                                        )}
-                                    >
-                                        <Link href="/admin/subscriptions">
-                                            <CreditCard className={cn("size-4", pathname.startsWith("/admin/subscriptions") ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('customerAdmin') || "Abonelik yönetimi"}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                {/* Removed Subscription Management Link */}
                             </SidebarMenu>
                         </>
                     )}
 
-                    {/* Settings Link (Outside Groups) */}
-                    <SidebarGroup className="mt-auto group-data-[collapsible=icon]:p-0">
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={isActive("/console/settings")}
-                                    className={cn(
-                                        "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                        "hover:bg-white/10 hover:text-white",
-                                        isActive("/console/settings")
-                                            ? "bg-white/15 text-white shadow-sm"
-                                            : "text-zinc-400 group-hover:text-white"
-                                    )}
-                                >
-                                    <Link href={buildLink("/console/settings")}>
-                                        <Settings className="size-4" />
-                                        <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('settings')}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroup>
+                    {/* Settings Link Removed */}
                 </SidebarContent>
 
                 <SidebarFooter className="bg-[#000000] border-t border-white/10 p-2">
+                    {/* Trial / Upgrade Status (Only for users on free/trial plan, not paid users) */}
+                    {(() => {
+                        // Show banner only for users who are NOT on a paid plan
+                        // Show banner ONLY if isTrial is explicitly true (regardless of plan)
+                        // AND we are not in super-admin view (targetUserId)
+                        const shouldShowBanner = !targetUserId && isTrial
+                        
+                        // Debug log for trial banner
+                        if (isTrial) {
+                             console.log('ConsoleSidebar: Trial Banner Debug', { shouldShowBanner, targetUserId, isTrial, planId, daysLeft })
+                        }
+                        
+                        if (!shouldShowBanner) return null
+                        
+                        return (
+                            <div className="mx-2 mt-4 mb-2 p-3 rounded-xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-white/10 group-data-[collapsible=icon]:hidden">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Rocket className="w-4 h-4 text-violet-400" />
+                                    <span className="text-xs font-semibold text-white">
+                                        {planId ? `${planId.charAt(0).toUpperCase() + planId.slice(1)} Deneme` : (t('freeTrial') || 'Ücretsiz Deneme')}
+                                    </span>
+                                </div>
+                                
+                                {daysLeft !== undefined && daysLeft <= 14 && (
+                                    <div className="mb-3">
+                                        <div className="text-xs text-zinc-400 mb-1">{t('daysRemaining') || 'Days Remaining'}:</div>
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-2 flex-1 bg-zinc-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full rounded-full ${daysLeft < 3 ? 'bg-red-500' : 'bg-violet-500'}`} 
+                                                    style={{ width: `${Math.max(0, (daysLeft / 14) * 100)}%` }}
+                                                />
+                                            </div>
+                                            <span className={`text-xs font-bold ${daysLeft < 3 ? 'text-red-400' : 'text-white'}`}>
+                                                {Math.max(0, daysLeft)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={() => setShowPricing(true)}
+                                    className="w-full py-2 px-3 bg-white text-black text-xs font-bold rounded-lg hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Zap className="w-3.5 h-3.5 fill-black" />
+                                    {t('upgradePlan') || 'Upgrade Plan'}
+                                </button>
+                            </div>
+                        )
+                    })()}
+
                     <SidebarMenu className="gap-1">
                         {/* Profile / User */}
                         <SidebarMenuItem>
@@ -531,10 +530,16 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                                 </DropdownMenuItem>
                                             </DropdownMenuSubContent>
                                         </DropdownMenuSub>
+                                        <DropdownMenuItem onClick={() => router.push("/console/settings/account")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <UserCircle className="size-4 text-muted-foreground" />
+                                                <span className="flex-1 font-medium text-sm">{t('accountSettings') || "Hesap Ayarları"}</span>
+                                            </div>
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => router.push("/console/settings/subscription")} className="px-2 py-2.5 cursor-pointer">
                                             <div className="flex items-center gap-3 w-full">
                                                 <CreditCard className="size-4 text-black dark:text-white" />
-                                                <span className="flex-1 font-medium text-sm">{t('subscription') || "Subscription"}</span>
+                                                <span className="flex-1 font-medium text-sm">{t('viewPlan') || "Planı Göster"}</span>
                                             </div>
                                         </DropdownMenuItem>
 
@@ -551,6 +556,16 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
                                                 <span className="font-medium text-sm">{t('companyDetails') || "Company details"}</span>
                                             </div>
                                         </DropdownMenuItem>
+
+                                        {/* Subscription Management - Super Admin Only */}
+                                        {role === 'SUPER_ADMIN' && (
+                                            <DropdownMenuItem onClick={() => router.push("/admin")} className="px-2 py-2.5 cursor-pointer">
+                                                <div className="flex items-center gap-3">
+                                                    <Package className="size-4 text-muted-foreground" />
+                                                    <span className="font-medium text-sm">{t('subscriptionManagement') || "Abonelik Yönetimi"}</span>
+                                                </div>
+                                            </DropdownMenuItem>
+                                        )}
                                     </div>
 
                                     <div className="p-1 border-t">
@@ -570,7 +585,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId }: ConsoleS
             <PricingModal
                 isOpen={showPricing}
                 onClose={() => setShowPricing(false)}
-                currentPlan="free"
+                currentPlanId={planId || 'starter'}
             />
         </>
     )

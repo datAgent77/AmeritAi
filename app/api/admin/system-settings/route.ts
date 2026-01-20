@@ -35,7 +35,7 @@ export async function GET(req: Request) {
             // Return defaults if not configured
             return NextResponse.json({
                 provider: "openai",
-                model: "gpt-3.5-turbo",
+                model: "gpt-4o-mini",
                 apiKey: "", // Don't return actual key if possible, or mask it
                 isConfigured: false
             });

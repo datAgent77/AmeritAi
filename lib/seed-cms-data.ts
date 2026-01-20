@@ -1132,7 +1132,7 @@ export const SEED_FAQS = [
         question: { en: "Can I change my plan later?", tr: "Planımı sonradan değiştirebilir miyim?" },
         answer: {
             en: "Absolutely. You can upgrade or downgrade your plan at any time directly from the dashboard. Changes take effect immediately, and billing is prorated automatically.",
-            tr: "Kesinlikle. Paneliniden istediğiniz zaman paketinizi yükseltebilir veya düşürebilirsiniz. Değişiklikler anında geçerli olur ve faturalandırma otomatik olarak güncellenir."
+            tr: "Kesinlikle. Paneliniden istediğiniz zaman planınızı yükseltebilir veya düşürebilirsiniz. Değişiklikler anında geçerli olur ve faturalandırma otomatik olarak güncellenir."
         },
         category: "pricing"
     },
