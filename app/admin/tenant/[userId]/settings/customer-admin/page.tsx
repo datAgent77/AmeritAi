@@ -539,7 +539,20 @@ export default function CustomerAdminPage() {
                                         <Label>Faturalama Durumu</Label>
                                         <Select
                                             value={subscription.billingStatus}
-                                            onValueChange={(value) => setSubscription({ ...subscription, billingStatus: value as any })}
+                                            onValueChange={(value) => {
+                                                // If setting to 'paid', automatically set status to 'active' (disable trial mode)
+                                                if (value === 'paid') {
+                                                    setSubscription({ 
+                                                        ...subscription, 
+                                                        billingStatus: value as any,
+                                                        status: 'active',
+                                                        trialEndsAt: null  // Clear trial end date
+                                                    })
+                                                } else {
+                                                    setSubscription({ ...subscription, billingStatus: value as any })
+                                                }
+                                            }}
+
                                         >
                                             <SelectTrigger>
                                                 <SelectValue />

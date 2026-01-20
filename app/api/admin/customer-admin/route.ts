@@ -168,9 +168,20 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
+        // Logic to enforce active status if paid (Fix for sync issue)
+        let finalStatus = subscription.status;
+        let finalTrialEndsAt = subscription.trialEndsAt;
+
+        if (subscription.billingStatus === 'paid' && subscription.status === 'trial') {
+             finalStatus = 'active';
+             finalTrialEndsAt = null;
+        }
+
         // Prepare subscription update with timestamp
         const subscriptionUpdate = {
             ...subscription,
+            status: finalStatus,
+            trialEndsAt: finalTrialEndsAt,
             updatedAt: new Date().toISOString(),
             updatedBy: decodedToken.uid
         };
@@ -182,9 +193,9 @@ export async function PUT(request: Request) {
             planId: subscription.planId || 'starter',
             sectorId: targetUserData?.industry ? (targetUserData.industry.toLowerCase().includes('commerce') ? 'ecommerce' : targetUserData.industry.toLowerCase()) : 'ecommerce', // simple fallback
             trial: {
-                isActive: subscription.status === 'trial',
+                isActive: finalStatus === 'trial',
                 startAt: null, // Keep existing if possible, but for update we care about status/end
-                endAt: subscription.trialEndsAt || null
+                endAt: finalTrialEndsAt || null
             },
             modules: {
                 enabled: [], // Keep existing or default
@@ -198,16 +209,16 @@ export async function PUT(request: Request) {
             subscription: subscriptionUpdate,
             // Sync critical fields to root level as functionality relies on them
             planId: subscription.planId || 'starter',
-            subscriptionStatus: subscription.status || 'trial',
+            subscriptionStatus: finalStatus || 'trial',
             isFrozen: subscription.isFrozen ?? false,
             // Also update trial info if present
-            trialEndsAt: subscription.trialEndsAt || null,
+            trialEndsAt: finalTrialEndsAt || null,
             currentPeriodEnd: subscription.currentPeriodEnd || null,
             // FORCE UPDATE entitlements to ensure extractEntitlementsFromDoc works
             "entitlements.planId": subscription.planId || 'starter',
             "entitlements.updatedAt": new Date().toISOString(),
-            "entitlements.trial.isActive": subscription.status === 'trial',
-            "entitlements.trial.endAt": subscription.trialEndsAt || null
+            "entitlements.trial.isActive": finalStatus === 'trial',
+            "entitlements.trial.endAt": finalTrialEndsAt || null
         });
 
         return NextResponse.json({
