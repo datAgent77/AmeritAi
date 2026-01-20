@@ -83,6 +83,28 @@ const COPY = {
             tr: 'Canlıya geçmek için bu kodu web sitenize ekleyin.'
         }
     },
+    growth: {
+        introTitle: {
+            en: 'Welcome to Vion Growth',
+            tr: 'Vion Growth\'a Hoş Geldiniz'
+        },
+        introDescription: {
+            en: 'Let\'s set up your AI assistant with enhanced features.',
+            tr: 'AI asistanınızı gelişmiş özelliklerle kuralım.'
+        },
+        moduleHelper: {
+            en: 'You have access to advanced modules. Select the ones that fit your needs.',
+            tr: 'Gelişmiş modüllere erişiminiz var. İhtiyaçlarınıza uygun olanları seçin.'
+        },
+        widgetHelper: {
+            en: 'Customize your AI assistant with more branding options.',
+            tr: 'AI asistanınızı daha fazla markalama seçeneğiyle özelleştirin.'
+        },
+        launchHelper: {
+            en: 'Deploy your AI assistant and start growing.',
+            tr: 'AI asistanınızı dağıtın ve büyümeye başlayın.'
+        }
+    },
     pro: {
         introTitle: {
             en: 'Welcome to Vion Pro',
@@ -222,6 +244,10 @@ function getSectorGuidance(planType: PlanType, lang: 'en' | 'tr'): string {
         starter: {
             en: 'Select your industry to get the most relevant AI features.',
             tr: 'En uygun AI özelliklerini almak için sektörünüzü seçin.'
+        },
+        growth: {
+            en: 'Your industry helps us provide better AI recommendations.',
+            tr: 'Sektörünüz daha iyi AI önerileri sunmamıza yardımcı olur.'
         },
         pro: {
             en: 'Your industry selection helps us optimize AI responses.',

@@ -828,8 +828,6 @@ export const translations = {
         footerAbout: "About",
         footerPrivacy: "Privacy Policy",
         footerTerms: "Terms of Service",
-        footerDistanceSales: "Distance Sales",
-        footerLegal: "Legal",
         footerRights: "All rights reserved.",
         footerDesc: "Transform visitors into customers with AI-powered engagement.",
         error: "Error",
@@ -2362,7 +2360,6 @@ export const translations = {
         footerPrivacy: "Gizlilik Politikası",
         footerTerms: "Kullanım Şartları",
         footerDistanceSales: "Mesafeli Satış",
-        footerLegal: "Yasal",
         footerRights: "Tüm hakları saklıdır.",
         footerDesc: "Yapay zeka destekli etkileşim ile ziyaretçileri müşteriye dönüştürün.",
 
