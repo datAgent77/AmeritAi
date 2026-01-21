@@ -82,6 +82,11 @@ export const translations = {
         language: "Language",
         branding: "Branding",
         knowledgeBase: "Knowledge Base",
+        behavior: "Behavior",
+        industryWelcomeMessage: "Industry Welcome Message",
+        behaviorTitle: "Chat Behavior",
+        behaviorDesc: "Configure chatbot behavior and language settings",
+
         integration: "Integration",
 
         // Appointments
@@ -1376,15 +1381,12 @@ export const translations = {
         notifyOnLead: "Notify on new lead",
         notifyOnAppointment: "Notify on new appointment request",
 
-        behavior: "Behavior",
         // Widget Settings Titles
         configureChatbotDesc: "Configure your chatbot's settings and appearance.",
         brandingTitle: "Brand Settings",
         brandingDesc: "Customize your chatbot's identity and voice.",
         appearanceTitle: "Widget Appearance",
         appearanceDesc: "Customize how the widget looks on your site.",
-        behaviorTitle: "Chat Behavior",
-        behaviorDesc: "Control how the chatbot interacts with users.",
         triggersTitle: "Automatic Triggers",
         triggersDesc: "Set up rules for when the chat opens automatically.",
         engagementTitle: "Proactive Engagement",
@@ -1989,8 +1991,14 @@ export const translations = {
         included: "Dahil",
         inDevelopment: "Geliştiriliyor",
 
-        enableIndustryGreeting: "Endüstri Karşılama Mesajı",
-        enableIndustryGreetingDesc: "Varsayılan marka mesajı yerine sektöre özel karşılama mesajını göster.",
+        enableIndustryGreeting: "Sektör Yapılandırması",
+        enableIndustryGreetingDesc: "İşletmenize en uygun sektörü seçerek yapay zeka davranışını ve karşılama mesajını otomatik yapılandırın.",
+        
+        behavior: "Davranış",
+        industryWelcomeMessage: "Sektör Yapılandırması",
+        behaviorTitle: "Sohbet Davranışı",
+        behaviorDesc: "Chatbot davranışını ve dil ayarlarını yapılandırın",
+
         leadCollection: "Potansiyel Müşteri Toplama",
         leadCollectionDesc: "Sohbet sırasında kullanıcılardan iletişim bilgilerini isteyin.",
         leadNotificationsDesc: "Yeni lead geldiğinde email bildirimi alın.",
@@ -2921,15 +2929,14 @@ export const translations = {
         notifyOnLead: "Yeni lead geldiğinde bildir",
         notifyOnAppointment: "Yeni randevu talebinde bildir",
 
-        behavior: "Davranış",
+
         // Widget Settings Titles
         configureChatbotDesc: "Chatbot ayarlarını ve görünümünü yapılandırın.",
         brandingTitle: "Marka Ayarları",
         brandingDesc: "Chatbotunuzun kimliğini ve ses tonunu özelleştirin.",
         appearanceTitle: "Widget Görünümü",
         appearanceDesc: "Widget'ın sitenizde nasıl göründüğünü özelleştirin.",
-        behaviorTitle: "Sohbet Davranışı",
-        behaviorDesc: "Chatbotun kullanıcılarla nasıl etkileşime gireceğini kontrol edin.",
+
         triggersTitle: "Otomatik Tetikleyiciler",
         triggersDesc: "Sohbetin ne zaman otomatik açılacağıyla ilgili kuralları belirleyin.",
         engagementTitle: "Proaktif Etkileşim",

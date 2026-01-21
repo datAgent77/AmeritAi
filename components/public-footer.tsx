@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import NextImage from "next/image"
 import { VionLogo } from "@/components/vion-logo"
 import { useLanguage } from "@/context/LanguageContext"
 import { Twitter, Linkedin, Github, Instagram, Sun, Moon } from "lucide-react"
@@ -140,22 +141,27 @@ export function PublicFooter() {
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 space-y-6">
                     {/* Payment Logos */}
-                    <div className="flex flex-wrap items-center justify-center gap-6">
-                        <span className="text-xs text-muted-foreground">Güvenli Ödeme:</span>
+                    <div className="flex flex-wrap items-center justify-start gap-6">
                         <div className="flex items-center gap-6">
-                            {/* Visa */}
-                            <div className="flex items-center justify-center h-8 px-3 bg-white rounded">
-                                <span className="text-[#1A1F71] font-bold text-xl italic tracking-tight">VISA</span>
+                            {/* Light Mode Logo */}
+                            <div className="block dark:hidden">
+                                <NextImage 
+                                    src="/payment-methods-light.png" 
+                                    alt="Güvenli Ödeme Yöntemleri" 
+                                    width={280} 
+                                    height={28} 
+                                    className="h-7 w-auto object-contain"
+                                />
                             </div>
-                            {/* MasterCard */}
-                            <div className="flex items-center gap-0.5">
-                                <div className="w-6 h-6 rounded-full bg-[#EB001B]" />
-                                <div className="w-6 h-6 rounded-full bg-[#F79E1B] -ml-3" />
-                            </div>
-                            {/* iyzico */}
-                            <div className="flex items-center">
-                                <span className="text-foreground font-semibold text-lg">iy</span>
-                                <span className="text-[#00C853] font-semibold text-lg">zico</span>
+                            {/* Dark Mode Logo */}
+                            <div className="hidden dark:block">
+                                <NextImage 
+                                    src="/payment-methods-dark.png" 
+                                    alt="Güvenli Ödeme Yöntemleri" 
+                                    width={280} 
+                                    height={28} 
+                                    className="h-7 w-auto object-contain opacity-90"
+                                />
                             </div>
                         </div>
                     </div>

@@ -39,9 +39,19 @@ export async function POST(req: Request) {
         }
 
         // Validate input
-        const body = await req.json();
+        const rawBody = await req.json();
+        console.log("[Widget API] Received body:", JSON.stringify(rawBody, null, 2));
+
+        const body = {
+            ...rawBody,
+            brandName: rawBody.brandName?.trim(),
+            welcomeMessage: rawBody.welcomeMessage?.trim(),
+            brandColor: rawBody.brandColor?.trim(),
+        };
+
         const validation = WidgetSchema.safeParse(body);
         if (!validation.success) {
+            console.error("[Widget API] Validation failed:", JSON.stringify(validation.error.issues, null, 2));
             return NextResponse.json({
                 error: "Validation failed",
                 details: validation.error.issues

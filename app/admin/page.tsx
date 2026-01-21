@@ -633,7 +633,7 @@ export default function AdminPage() {
 
             {/* Add Tenant Dialog (Inherited from previous version) */}
             <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl p-10">
                     <DialogHeader>
                         <DialogTitle>{t('addNewTenant') || "Yeni Müşteri Ekle"}</DialogTitle>
                         <DialogDescription>
@@ -718,9 +718,9 @@ export default function AdminPage() {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="pt-4 border-t mt-4">
                         <Button variant="outline" onClick={() => setIsAddTenantOpen(false)}>{t('cancel')}</Button>
-                        <Button onClick={handleCreateTenant} disabled={isCreating} className="bg-indigo-600 hover:bg-indigo-700">
+                        <Button onClick={handleCreateTenant} disabled={isCreating} className="bg-zinc-900 hover:bg-zinc-800 text-white">
                             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {t('createTenant')}
                         </Button>

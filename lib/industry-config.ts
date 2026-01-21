@@ -7,7 +7,7 @@ export const INDUSTRY_CONFIG = {
             tr: "E-Ticaret"
         },
         label: "E-Commerce",
-        role: "Sales Assistant",
+        role: "Satış Asistanı",
         systemPrompt: `Sen bir E-Ticaret Satış Asistanısın.
 
 **Temel Görevlerin:**
@@ -56,7 +56,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Seyahat ve Rezervasyon"
         },
         label: "Travel & Booking",
-        role: "Travel Assistant",
+        role: "Seyahat Asistanı",
         systemPrompt: `Sen bir Seyahat ve Rezervasyon Asistanısın.
 
 **Uzmanlık Alanların:**
@@ -107,7 +107,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Emlak ve Gayrimenkul"
         },
         label: "Real Estate",
-        role: "Real Estate Agent",
+        role: "Emlak Danışmanı",
         systemPrompt: `Sen bir Emlak Danışmanısın.
 
 **Temel Görevlerin:**
@@ -151,7 +151,7 @@ export const INDUSTRY_CONFIG = {
             tr: "SaaS ve Yazılım"
         },
         label: "SaaS / Software",
-        role: "Product Specialist",
+        role: "Ürün Uzmanı",
         systemPrompt: `Sen bir SaaS Ürün Uzmanısın.
 
 **Temel Görevlerin:**
@@ -194,7 +194,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Hizmet ve Ajans"
         },
         label: "Service & Agency",
-        role: "Consultant",
+        role: "Danışman",
         systemPrompt: `Sen bir Hizmet Danışmanısın.
 
 **Temel Görevlerin:**
@@ -237,7 +237,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Sağlık"
         },
         label: "Healthcare",
-        role: "Health Assistant",
+        role: "Sağlık Asistanı",
         systemPrompt: `Sen bir Sağlık Hizmetleri Asistanısın.
 
 ⚠️ ÖNEMLİ: Tıbbi tavsiye VERME. Her zaman doktora yönlendir.
@@ -282,7 +282,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Online Eğitim"
         },
         label: "Online Education",
-        role: "Education Counselor",
+        role: "Eğitim Danışmanı",
         systemPrompt: `Sen bir Eğitim Danışmanısın.
 
 **Temel Görevlerin:**
@@ -325,7 +325,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Üniversite ve Okullar"
         },
         label: "Universities & Schools",
-        role: "Academic Counselor",
+        role: "Akademik Danışman",
         systemPrompt: `Sen bir Akademik Danışmansın.
 
 **Uzmanlık Alanların:**
@@ -383,7 +383,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Bankacılık ve Finans"
         },
         label: "Banking & Finance",
-        role: "Banking Advisor",
+        role: "Bankacılık Danışmanı",
         systemPrompt: `Sen bir Bankacılık ve Finans Danışmanısın.
 
 ⚠️ ÖNEMLİ: Yatırım tavsiyesi VERME. Genel bilgi sun.
@@ -428,7 +428,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Restoran ve Kafe"
         },
         label: "Restaurant & Cafe",
-        role: "Digital Waiter",
+        role: "Dijital Garson",
         systemPrompt: `Sen bir Restoranın Dijital Garsonusun (AI Waiter). 
         
 **Temel Görevlerin:**
@@ -477,7 +477,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Tarım ve Hayvancılık"
         },
         label: "Agriculture",
-        role: "Agri-Advisor",
+        role: "Tarım Danışmanı",
         systemPrompt: `Sen bir Tarım ve Hayvancılık Danışmanısın.
 
 **Temel Görevlerin:**
@@ -524,7 +524,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Otomotiv"
         },
         label: "Automotive",
-        role: "Automotive Advisor",
+        role: "Otomotiv Danışmanı",
         systemPrompt: `Sen bir Otomotiv Danışmanısın.
 
 **Temel Görevlerin:**
@@ -572,7 +572,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Sigorta"
         },
         label: "Insurance",
-        role: "Insurance Advisor",
+        role: "Sigorta Danışmanı",
         systemPrompt: `Sen bir Sigorta Danışmanısın.
 
 **Temel Görevlerin:**
@@ -620,7 +620,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Lojistik ve Kargo"
         },
         label: "Logistics",
-        role: "Logistics Assistant",
+        role: "Lojistik Asistanı",
         systemPrompt: `Sen bir Lojistik ve Kargo Asistanısın.
 
 **Temel Görevlerin:**
@@ -668,7 +668,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Güzellik ve Wellness"
         },
         label: "Beauty & Wellness",
-        role: "Beauty Consultant",
+        role: "Güzellik Danışmanı",
         systemPrompt: `Sen bir Güzellik ve Wellness Danışmanısın.
 
 **Temel Görevlerin:**
@@ -716,7 +716,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Hukuk ve Avukatlık"
         },
         label: "Legal",
-        role: "Legal Assistant",
+        role: "Hukuk Asistanı",
         systemPrompt: `Sen bir Hukuk Danışmanlığı Asistanısın.
 
 ⚠️ ÖNEMLİ: Kesin hukuki tavsiye VERME. Her zaman avukata yönlendir.
@@ -766,7 +766,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Spor ve Fitness"
         },
         label: "Sports & Fitness",
-        role: "Fitness Advisor",
+        role: "Fitness Danışmanı",
         systemPrompt: `Sen bir Spor ve Fitness Danışmanısın.
 
 **Temel Görevlerin:**
@@ -814,7 +814,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Denizcilik ve Gemi"
         },
         label: "Maritime",
-        role: "Maritime Advisor",
+        role: "Denizcilik Danışmanı",
         systemPrompt: `Sen bir Denizcilik ve Gemi Danışmanısın.
 
 **Temel Görevlerin:**
@@ -862,7 +862,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Üretim ve Fabrika"
         },
         label: "Manufacturing",
-        role: "Production Assistant",
+        role: "Üretim Asistanı",
         systemPrompt: `Sen bir Üretim ve Fabrika Asistanısın.
 
 **Temel Görevlerin:**
@@ -910,7 +910,7 @@ export const INDUSTRY_CONFIG = {
             tr: "Genel İşletme"
         },
         label: "General Business",
-        role: "AI Assistant",
+        role: "AI Asistanı",
         systemPrompt: `Sen bir İşletme Asistanısın.
 
 **Temel Görevlerin:**

@@ -9,12 +9,17 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing URL" }, { status: 400 });
         }
 
-        console.log("Sitemap API: Processing", url);
+        let targetUrl = url;
+        if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+            targetUrl = "https://" + targetUrl;
+        }
 
-        const baseUrl = new URL(url);
+        console.log("Sitemap API: Processing", targetUrl);
+
+        const baseUrl = new URL(targetUrl);
         const origin = baseUrl.origin;
         // Always include the initial URL
-        const urls: string[] = [url];
+        const urls: string[] = [targetUrl];
 
         async function fetchWithTimeout(targetUrl: string, timeout = 8000) {
             const controller = new AbortController();
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
 
                 // Fetch up to 5 sub-sitemaps
                 for (const sitemapUrl of Array.from(new Set(sitemaps)).slice(0, 5)) {
-                    if (sitemapUrl === url) continue;
+                    if (sitemapUrl === targetUrl) continue;
                     const res = await fetchWithTimeout(sitemapUrl);
                     if (res?.ok) {
                         const subXml = await res.text();
@@ -78,7 +83,7 @@ export async function POST(req: Request) {
         }
 
         // 1. Try provided URL as sitemap/HTML
-        const mainRes = await fetchWithTimeout(url);
+        const mainRes = await fetchWithTimeout(targetUrl);
         if (mainRes?.ok) {
             const text = await mainRes.text();
             const contentType = (mainRes.headers.get("content-type") || "").toLowerCase();
@@ -92,7 +97,7 @@ export async function POST(req: Request) {
                     const href = $(el).attr('href');
                     if (href && !href.startsWith('#') && !href.startsWith('javascript:')) {
                         try {
-                            const absoluteUrl = new URL(href, url).toString();
+                            const absoluteUrl = new URL(href, targetUrl).toString();
                             const normalizedAbsolute = absoluteUrl.split('#')[0].replace(/\/$/, "");
                             const normalizedOrigin = origin.replace("www.", "").replace(/\/$/, "");
 

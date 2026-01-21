@@ -473,7 +473,7 @@ export function TenantManagement() {
             </Card>
 
             <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-[550px]">
                     <DialogHeader>
                         <DialogTitle>{t('addNewTenant')}</DialogTitle>
                         <DialogDescription>
@@ -488,85 +488,114 @@ export function TenantManagement() {
                         </div>
                     )}
 
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="firstName">First Name</Label>
-                                <Input
-                                    id="firstName"
-                                    value={newTenantFirstName}
-                                    onChange={(e) => setNewTenantFirstName(e.target.value)}
-                                    placeholder="John"
-                                />
+                    <div className="grid gap-6 py-6 px-1">
+                        {/* COMPANY INFORMATION */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Company Information
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="companyName">Company Name</Label>
+                                    <Input
+                                        id="companyName"
+                                        value={newTenantCompanyName}
+                                        onChange={(e) => setNewTenantCompanyName(e.target.value)}
+                                        placeholder="Acme Inc."
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="industry">Industry</Label>
+                                    <Select value={newTenantIndustry} onValueChange={setNewTenantIndustry}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select industry" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
+                                                <SelectItem key={key} value={key}>
+                                                    {config.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="lastName">Last Name</Label>
+                                <Label htmlFor="website">Website</Label>
                                 <Input
-                                    id="lastName"
-                                    value={newTenantLastName}
-                                    onChange={(e) => setNewTenantLastName(e.target.value)}
-                                    placeholder="Doe"
+                                    id="website"
+                                    value={newTenantWebsite}
+                                    onChange={(e) => setNewTenantWebsite(e.target.value)}
+                                    placeholder="https://example.com"
                                 />
                             </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="companyName">Company Name</Label>
-                            <Input
-                                id="companyName"
-                                value={newTenantCompanyName}
-                                onChange={(e) => setNewTenantCompanyName(e.target.value)}
-                                placeholder="Acme Inc."
-                            />
+
+                        {/* CONTACT INFORMATION */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Contact Information
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="firstName">First Name</Label>
+                                    <Input
+                                        id="firstName"
+                                        value={newTenantFirstName}
+                                        onChange={(e) => setNewTenantFirstName(e.target.value)}
+                                        placeholder="John"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="lastName">Last Name</Label>
+                                    <Input
+                                        id="lastName"
+                                        value={newTenantLastName}
+                                        onChange={(e) => setNewTenantLastName(e.target.value)}
+                                        placeholder="Doe"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="website">Website</Label>
-                            <Input
-                                id="website"
-                                value={newTenantWebsite}
-                                onChange={(e) => setNewTenantWebsite(e.target.value)}
-                                placeholder="https://example.com"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">{t('email')}</Label>
-                            <Input
-                                id="email"
-                                value={newTenantEmail}
-                                onChange={(e) => setNewTenantEmail(e.target.value)}
-                                placeholder="tenant@example.com"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">{t('password')}</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={newTenantPassword}
-                                onChange={(e) => setNewTenantPassword(e.target.value)}
-                                placeholder="******"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="industry">Industry</Label>
-                            <Select value={newTenantIndustry} onValueChange={setNewTenantIndustry}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select industry" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
-                                        <SelectItem key={key} value={key}>
-                                            {config.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+
+                        {/* ACCOUNT INFORMATION */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Account Information
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">{t('email')}</Label>
+                                    <Input
+                                        id="email"
+                                        value={newTenantEmail}
+                                        onChange={(e) => setNewTenantEmail(e.target.value)}
+                                        placeholder="tenant@example.com"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password">{t('password')}</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={newTenantPassword}
+                                        onChange={(e) => setNewTenantPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="pt-4 border-t">
                         <Button variant="outline" onClick={() => setIsAddTenantOpen(false)}>
                             {t('cancel')}
                         </Button>
-                        <Button onClick={handleCreateTenant} disabled={isCreating}>
+                        <Button 
+                            onClick={handleCreateTenant} 
+                            disabled={isCreating}
+                            style={{ backgroundColor: '#18181b', color: 'white' }}
+                            className="hover:opacity-90"
+                        >
                             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {t('createTenant')}
                         </Button>

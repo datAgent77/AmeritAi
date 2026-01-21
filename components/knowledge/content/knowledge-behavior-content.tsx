@@ -51,7 +51,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                     ...prev,
                     initialLanguage: data.initialLanguage || prev.initialLanguage,
                     industry: data.industry || prev.industry,
-                    enableIndustryGreeting: data.enableIndustryGreeting ?? prev.enableIndustryGreeting,
+                    enableIndustryGreeting: true, // Always force true
                     customPrompts: data.customPrompts || prev.customPrompts,
                 }))
             }
@@ -70,7 +70,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
             await setDoc(chatbotDocRef, {
                 initialLanguage: settings.initialLanguage,
                 industry: settings.industry,
-                enableIndustryGreeting: settings.enableIndustryGreeting,
+                enableIndustryGreeting: true, // Always save as true
                 customPrompts: settings.customPrompts,
             }, { merge: true })
 
@@ -118,31 +118,21 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                     {/* Industry Settings Group */}
                     <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
                         <div className="p-4 space-y-4">
-                            <div className="flex items-center justify-between space-x-2">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base font-medium">{t('enableIndustryGreeting') || "Industry Greeting"}</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        {t('enableIndustryGreetingDesc') || "Show industry-specific welcome message"}
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={settings.enableIndustryGreeting ?? false}
-                                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableIndustryGreeting: checked }))}
-                                />
+                            <div className="space-y-0.5">
+                                <Label className="text-base font-medium">{t('industryWelcomeMessage') || "Endüstri Karşılama Mesajı"}</Label>
+                                <p className="text-sm text-muted-foreground">
+                                    {t('enableIndustryGreetingDesc') || "Show industry-specific welcome message"}
+                                </p>
                             </div>
+                            
+                            {/* Toggle removed - Always active */}
 
-                            <div className={`grid gap-2 transition-opacity ${!settings.enableIndustryGreeting ? 'opacity-50' : ''}`}>
+                            <div className="grid gap-2">
                                 <Label>{t('industry')}</Label>
                                 <Select
-                                    disabled={!settings.enableIndustryGreeting}
                                     value={settings.industry}
                                     onValueChange={(value) => {
                                         const selectedIndustry = value as IndustryType;
-                                        const industryConfig = INDUSTRY_CONFIG[selectedIndustry];
-
-                                        // Get suggested questions based on current language or default to English
-                                        const questions = (industryConfig as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || [];
-
                                         setSettings(prev => ({
                                             ...prev,
                                             industry: selectedIndustry,
@@ -166,7 +156,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                 <p className="text-xs text-muted-foreground">{t('industryDesc')}</p>
 
                                 {/* Industry Behavior Display */}
-                                {settings.enableIndustryGreeting && settings.industry && (
+                                {settings.industry && (
                                     <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-3">
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-medium">{t('chatbotRole') || 'Rol'}:</span>

@@ -18,14 +18,14 @@ export type OnboardingStatus =
 
 export type OnboardingStep =
     | 'sector'           // Step 1: Select industry (mandatory)
-    | 'modules'          // Step 2: Review enabled/locked modules
+    | 'plan'             // Step 2: Select plan (mandatory)
     | 'knowledge'        // Step 3: Add website URL (mandatory)
     | 'widget'           // Step 4: Brand setup (mandatory)
     | 'launch';          // Step 5: Copy snippet + optional verify
 
 export const ONBOARDING_STEPS: OnboardingStep[] = [
     'sector',
-    'modules',
+    'plan',
     'knowledge',
     'widget',
     'launch'
@@ -33,14 +33,14 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
 
 export const STEP_INDEX: Record<OnboardingStep, number> = {
     sector: 0,
-    modules: 1,
+    plan: 1,
     knowledge: 2,
     widget: 3,
     launch: 4
 };
 
 // Steps that MUST be completed (not skippable)
-export const MANDATORY_STEPS: OnboardingStep[] = ['sector', 'knowledge', 'widget'];
+export const MANDATORY_STEPS: OnboardingStep[] = ['sector', 'plan', 'knowledge', 'widget'];
 
 // =============================================================================
 // STEP CONFIGURATION
@@ -63,15 +63,16 @@ export const STEP_CONFIG: Record<OnboardingStep, StepConfig> = {
         },
         isMandatory: true
     },
-    modules: {
-        id: 'modules',
-        title: { en: 'Your AI Modules', tr: 'AI Modülleriniz' },
+    plan: {
+        id: 'plan',
+        title: { en: 'Choose Your Plan', tr: 'Planınızı Seçin' },
         description: {
-            en: 'Review modules included with your industry',
-            tr: 'Sektörünüzle dahil edilen modülleri inceleyin'
+            en: 'Select a plan that fits your business needs',
+            tr: 'İşletmenizin ihtiyaçlarına uygun bir plan seçin'
         },
-        isMandatory: false
+        isMandatory: true
     },
+
     knowledge: {
         id: 'knowledge',
         title: { en: 'Train Your AI', tr: 'Yapay Zekanızı Eğitin' },
@@ -116,7 +117,7 @@ export const SectorSchema = z.object({
 export const WidgetSchema = z.object({
     brandName: z.string().min(1, "Brand name is required").max(100),
     welcomeMessage: z.string().min(1, "Welcome message is required").max(500),
-    brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid color format"),
+    brandColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, "Invalid color format"),
     position: z.enum(['bottom-right', 'bottom-left']).default('bottom-right')
 });
 

@@ -14,18 +14,47 @@ import nodemailer from 'nodemailer';
 
 // Create reusable transporter
 const createTransporter = () => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-        console.warn('Email Service: EMAIL_USER or EMAIL_PASSWORD not set');
+    // Check for credentials (support both naming conventions)
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const emailPass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
+
+    // Development Mode / Missing Credentials Check
+    if (!emailUser || !emailPass) {
+        console.warn('Email Service: SMTP_USER/EMAIL_USER or SMTP_PASS/EMAIL_PASSWORD not set. Running in MOCK mode.');
         return null;
     }
 
     return nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASSWORD,
+            user: emailUser,
+            pass: emailPass,
         },
     });
+};
+
+// Helper: Handle email sending (Real or Mock)
+const sendEmailOrMock = async (transporter: nodemailer.Transporter | null, mailOptions: nodemailer.SendMailOptions): Promise<boolean> => {
+    if (!transporter) {
+        // Mock Mode: Log to console
+        console.log('\n🔵 [MOCK EMAIL SERVICE] ---------------------------------------------------');
+        console.log(`To: ${mailOptions.to}`);
+        console.log(`Subject: ${mailOptions.subject}`);
+        console.log('--- Body Preview ---');
+        const textContent = typeof mailOptions.text === 'string' ? mailOptions.text : '[Non-text content]';
+        console.log(textContent.substring(0, 200) + (textContent.length > 200 ? '...' : ''));
+        console.log('--------------------------------------------------------------------------\n');
+        return true; // Pretend we sent it successfully
+    }
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Email Service: Email sent to ${mailOptions.to}`);
+        return true;
+    } catch (error) {
+        console.error('Email Service: Failed to send email:', error);
+        return false;
+    }
 };
 
 export interface AppointmentEmailData {
@@ -160,21 +189,14 @@ Herhangi bir değişiklik veya iptal için lütfen bizimle iletişime geçin.
 ${companyName}
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"${companyName}" <${process.env.EMAIL_USER}>`,
-            to: customerEmail,
-            subject: `✅ Randevunuz Onaylandı - ${formattedDate}`,
-            text: textContent,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Confirmation email sent to ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send email:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"${companyName}" <${emailUser}>`,
+        to: customerEmail,
+        subject: `✅ Randevunuz Onaylandı - ${formattedDate}`,
+        text: textContent,
+        html: htmlContent,
+    });
 }
 
 /**
@@ -242,21 +264,14 @@ export async function sendAppointmentCancellationEmail(data: AppointmentEmailDat
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"${companyName}" <${process.env.EMAIL_USER}>`,
-            to: customerEmail,
-            subject: `❌ Randevunuz İptal Edildi - ${formattedDate}`,
-            text: `Sayın ${customerName}, ${formattedDate} tarihli, saat ${time}'deki randevunuz iptal edilmiştir.`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Cancellation email sent to ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send cancellation email:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"${companyName}" <${emailUser}>`,
+        to: customerEmail,
+        subject: `❌ Randevunuz İptal Edildi - ${formattedDate}`,
+        text: `Sayın ${customerName}, ${formattedDate} tarihli, saat ${time}'deki randevunuz iptal edilmiştir.`,
+        html: htmlContent,
+    });
 }
 
 // ============================================================================
@@ -384,21 +399,14 @@ export async function sendInvoiceReminderToAdmin(data: InvoiceReminderData): Pro
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
-            to: adminEmail,
-            subject: `📋 Fatura Kesim Hatırlatması - ${customerName || customerEmail}`,
-            text: `Fatura Kesim Zamanı\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nFatura Tarihi: ${formattedDate}\nTutar: ${amountText}`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Invoice reminder sent to admin ${adminEmail} for customer ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send invoice reminder:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"Vion AI" <${emailUser}>`,
+        to: adminEmail,
+        subject: `📋 Fatura Kesim Hatırlatması - ${customerName || customerEmail}`,
+        text: `Fatura Kesim Zamanı\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nFatura Tarihi: ${formattedDate}\nTutar: ${amountText}`,
+        html: htmlContent,
+    });
 }
 
 export interface PaymentReminderData {
@@ -510,21 +518,14 @@ export async function sendPaymentReminderToCustomer(data: PaymentReminderData): 
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"${companyName}" <${process.env.EMAIL_USER}>`,
-            to: customerEmail,
-            subject: `💳 Ödeme Hatırlatması - ${formattedDate}`,
-            text: `Ödeme Hatırlatması\n\nSayın ${customerName || 'Değerli Müşterimiz'},\n\n${planName} planınız için ödeme zamanı yaklaşıyor.\n\nSon Ödeme Tarihi: ${formattedDate}\n${amount ? `Tutar: ${amountText}` : ''}\n\nHizmetlerinizin kesintisiz devam etmesi için lütfen ödemenizi zamanında yapınız.\n\n${companyName}`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Payment reminder sent to ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send payment reminder:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"${companyName}" <${emailUser}>`,
+        to: customerEmail,
+        subject: `💳 Ödeme Hatırlatması - ${formattedDate}`,
+        text: `Ödeme Hatırlatması\n\nSayın ${customerName || 'Değerli Müşterimiz'},\n\n${planName} planınız için ödeme zamanı yaklaşıyor.\n\nSon Ödeme Tarihi: ${formattedDate}\n${amount ? `Tutar: ${amountText}` : ''}\n\nHizmetlerinizin kesintisiz devam etmesi için lütfen ödemenizi zamanında yapınız.\n\n${companyName}`,
+        html: htmlContent,
+    });
 }
 
 export interface TrialExpiredNotificationData {
@@ -637,21 +638,14 @@ export async function sendTrialExpiredAdminNotification(data: TrialExpiredNotifi
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
-            to: adminEmail,
-            subject: `⏳ Deneme Süresi Bitti - ${customerName || customerEmail}`,
-            text: `Deneme Süresi Sona Erdi\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nBitiş Tarihi: ${formattedDate}`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Trial expired notification sent to admin ${adminEmail} for customer ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send trial expired notification:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"Vion AI" <${emailUser}>`,
+        to: adminEmail,
+        subject: `⏳ Deneme Süresi Bitti - ${customerName || customerEmail}`,
+        text: `Deneme Süresi Sona Erdi\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nBitiş Tarihi: ${formattedDate}`,
+        html: htmlContent,
+    });
 }
 
 /**
@@ -736,21 +730,14 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
-            to: customerEmail,
-            subject: `🚀 Deneme Süreniz Sona Erdi - Paketinizi Yükseltin`,
-            text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: https://app.getvion.com/console/settings`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Trial expired notification sent to customer ${customerEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send trial expired notification to customer:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"Vion AI" <${emailUser}>`,
+        to: customerEmail,
+        subject: `🚀 Deneme Süreniz Sona Erdi - Paketinizi Yükseltin`,
+        text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: https://app.getvion.com/console/settings`,
+        html: htmlContent,
+    });
 }
 
 export interface UpgradeRequestData {
@@ -770,10 +757,7 @@ export interface UpgradeRequestData {
 export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promise<boolean> {
     const transporter = createTransporter();
 
-    if (!transporter) {
-        console.error('Email Service: Transporter not configured');
-        return false;
-    }
+    // Transporter check handled in sendEmailOrMock
 
     const { adminEmail, customerEmail, customerName, currentUserParams, targetPlan } = data;
     const recipientEmail = adminEmail || 'info@userex.com.tr';
@@ -881,20 +865,13 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
 </html>
     `;
 
-    try {
-        await transporter.sendMail({
-            from: `"Vion AI" <${process.env.EMAIL_USER}>`,
-            to: recipientEmail,
-            subject: `🚀 Yeni Plan Yükseltme Talebi - ${customerName}`,
-            text: `Yeni Plan Yükseltme Talebi\n\nMüşteri: ${customerName} (${customerEmail})\nMevcut Plan: ${currentUserParams.currentPlan}\nİstenen Plan: ${targetPlan}\nTarih: ${formattedDate}`,
-            html: htmlContent,
-        });
-
-        console.log(`Email Service: Upgrade request sent to admin ${recipientEmail}`);
-        return true;
-    } catch (error) {
-        console.error('Email Service: Failed to send upgrade request:', error);
-        return false;
-    }
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"Vion AI" <${emailUser}>`,
+        to: recipientEmail,
+        subject: `🚀 Yeni Plan Yükseltme Talebi - ${customerName}`,
+        text: `Yeni Plan Yükseltme Talebi\n\nMüşteri: ${customerName} (${customerEmail})\nMevcut Plan: ${currentUserParams.currentPlan}\nİstenen Plan: ${targetPlan}\nTarih: ${formattedDate}`,
+        html: htmlContent,
+    });
 }
 

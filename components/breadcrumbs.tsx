@@ -73,7 +73,8 @@ export function Breadcrumbs() {
                         "modules": t('modules') || "Modules",
                         "appointments": t('appointments') || "Appointments",
                         "customer-admin": t('customerAdmin') || "Abonelik yönetimi",
-                        "subscriptions": t('subscriptions') || "Abonelikler"
+                        "subscriptions": t('subscriptions') || "Abonelikler",
+                        "behavior": t('behavior') || "Davranış"
                     }
 
                     // Skip "leads" and "voice" if the previous segment is "modules"

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
+import { translations } from "@/lib/translations"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,11 +37,7 @@ import {
     getCompletionPercentage
 } from "@/lib/onboarding-config"
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
-import {
-    getAllModules,
-    getModule
-} from "@/lib/modules-registry"
-import { getModuleAccess } from "@/lib/module-access"
+import { getPublicPlansSorted, formatPlanPrice, getPlanBadge, PlanConfig } from "@/lib/pricing-config"
 import { PricingModal } from "@/components/pricing-modal"
 
 // Industry icons
@@ -93,7 +90,6 @@ export default function OnboardingPage() {
 
     // Form state
     const [selectedSector, setSelectedSector] = useState<IndustryType | null>(null)
-    const [modules, setModules] = useState<Record<string, any>>({})
     const [userPlanId, setUserPlanId] = useState<string>('starter') // Default to starter
     const [knowledgeUrl, setKnowledgeUrl] = useState("")
     const [fullCrawl, setFullCrawl] = useState(false)
@@ -113,7 +109,6 @@ export default function OnboardingPage() {
     const [verifying, setVerifying] = useState(false)
     const [verifyUrl, setVerifyUrl] = useState("")
     const [verifyResult, setVerifyResult] = useState<{ installed: boolean; message: string } | null>(null)
-    const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([])
 
     // Pricing Modal State
     const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
@@ -176,10 +171,6 @@ export default function OnboardingPage() {
                     if (data.sector) setSelectedSector(data.sector)
                     if (data.entitlements?.planId) setUserPlanId(data.entitlements.planId)
                     if (data.planId) setUserPlanId(data.planId) // Fallback
-                    if (data.modules) {
-                        setModules(data.modules)
-                        if (data.modules.enabled) setSelectedModuleIds(data.modules.enabled)
-                    }
                     if (data.widget) {
                         setWidget(prev => ({ ...prev, ...data.widget }))
                     }
@@ -241,10 +232,8 @@ export default function OnboardingPage() {
             }
 
             const data = await response.json()
-            setModules(data.modules)
-            if (data.modules?.enabled) setSelectedModuleIds(data.modules.enabled)
             setCompletedSteps(prev => [...prev, 'sector'])
-            setCurrentStep('modules')
+            setCurrentStep('plan')
         } catch (error: any) {
             console.error("Sector error:", error)
             toast({
@@ -257,36 +246,56 @@ export default function OnboardingPage() {
         }
     }
 
-    // === STEP 2: MODULES (Just Continue) ===
-    const handleModulesContinue = async () => {
+    // === STEP 2: PLAN ===
+    const handlePlanSubmit = async (planId: string) => {
         setIsLoading(true)
-
         try {
             const token = await getToken()
-            await fetch("/api/onboarding", {
+            const response = await fetch("/api/onboarding/plan", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ 
-                    step: 'modules',
-                    modules: selectedModuleIds
-                })
+                body: JSON.stringify({ planId })
             })
 
-            setCompletedSteps(prev => [...prev, 'modules'])
+            if (!response.ok) {
+                throw new Error("Failed to save plan")
+            }
+
+            // Update local state
+            setUserPlanId(planId)
+            setCompletedSteps(prev => [...prev, 'plan'])
             setCurrentStep('knowledge')
+            
+            toast({
+                title: language === 'tr' ? "Plan Seçildi" : "Plan Selected",
+                description: language === 'tr' ? "Eğitim adımına yönlendiriliyorsunuz..." : "Redirecting to training step..."
+            })
         } catch (error) {
-            console.error("Modules error:", error)
+            console.error("Plan submit error:", error)
+            toast({
+                title: "Error",
+                description: "Failed to save plan selection",
+                variant: "destructive"
+            })
         } finally {
             setIsLoading(false)
         }
     }
 
+
+
     // === STEP 3: KNOWLEDGE BASE ===
     const handleKnowledgeSubmit = async () => {
         if (!knowledgeUrl) return
+
+        // Create formatted URL with protocol if missing
+        let formattedUrl = knowledgeUrl.trim();
+        if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+            formattedUrl = "https://" + formattedUrl;
+        }
 
         // If "Full Site Scan" is enabled and we haven't discovered URLs yet, trigger Sitemap Scan
         if (fullCrawl && discoveredUrls.length === 0) {
@@ -295,7 +304,7 @@ export default function OnboardingPage() {
                 const response = await fetch("/api/admin/sitemap", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ url: knowledgeUrl })
+                    body: JSON.stringify({ url: formattedUrl })
                 })
                 if (!response.ok) {
                     const errorData = await response.json()
@@ -433,16 +442,34 @@ export default function OnboardingPage() {
 
         try {
             const token = await getToken()
+            
+            // Use default message if empty
+            const defaultWelcome = language === 'tr' 
+                ? "Merhaba! Size nasıl yardımcı olabilirim?" 
+                : "Hello! How can I help you?"; // Using 'Hello' to match English placeholder in UI if needed, or 'Hi' based on init state. 
+                // Wait, initial state said "Hi! How can I help you?". Placeholder in Step 301 says "Hello! How can I help you?". 
+                // Checking line 986 in Step 259: "Hello! How can I help you?"
+            
+            const payload = {
+                ...widget,
+                welcomeMessage: widget.welcomeMessage?.trim() ? widget.welcomeMessage.trim() : defaultWelcome
+            };
+
+            console.log("[Widget Payload]", JSON.stringify(payload));
             const response = await fetch("/api/onboarding/widget", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(widget)
+                body: JSON.stringify(payload)
             })
 
-            if (!response.ok) throw new Error("Failed to save widget")
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("[Widget Error Response FULL]", JSON.stringify(errorData, null, 2));
+                throw new Error(errorData.error || "Failed to save widget");
+            }
 
             setCompletedSteps(prev => [...prev, 'widget'])
             setCurrentStep('launch')
@@ -467,12 +494,12 @@ export default function OnboardingPage() {
                 },
                 body: JSON.stringify({ completionType: type })
             })
-
-            router.replace("/console/chatbot")
         } catch (error) {
             console.error("Complete error:", error)
         } finally {
             setIsLoading(false)
+            // Always redirect to panel, even if API call fails
+            router.replace("/console/chatbot")
         }
     }
 
@@ -542,7 +569,7 @@ export default function OnboardingPage() {
                                             className={cn(
                                                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
                                                 isCompleted && "bg-green-500 text-white",
-                                                isCurrent && !isCompleted && "bg-primary text-white ring-4 ring-primary/20",
+                                                isCurrent && !isCompleted && "bg-primary text-white dark:text-black ring-4 ring-primary/20",
                                                 !isCurrent && !isCompleted && "bg-gray-200 text-gray-500 dark:bg-zinc-700"
                                             )}
                                         >
@@ -618,6 +645,7 @@ export default function OnboardingPage() {
 
                         <div className="flex justify-end pt-4 gap-3">
                             <Button 
+                                type="button"
                                 variant="ghost" 
                                 onClick={() => handleComplete('soft')}
                                 className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
@@ -638,141 +666,103 @@ export default function OnboardingPage() {
                     </div>
                 )}
 
-                {/* STEP 2: MODULES */}
-                {currentStep === 'modules' && (
-                    <div className="space-y-6">
-                        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 p-3 rounded-lg flex gap-2 text-sm text-blue-800 dark:text-blue-200 mb-2">
-                            <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                            <span>
-                                {language === 'tr'
-                                    ? 'Seçtiğiniz sektöre göre en uygun modüller otomatik olarak aktif edildi.'
-                                    : 'The most suitable modules have been automatically enabled based on your selected sector.'}
-                            </span>
-                        </div>
-
-                        <motion.div 
-                            variants={containerVariants}
-                            initial="hidden"
-                            animate="visible"
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-                        >
-                            {getAllModules()
-                                .filter(module => {
-                                    if (module.status === 'coming_soon') return false
-                                    return true
-                                })
-                                .map((module) => {
-                                const Icon = MODULE_ICON_MAP[module.icon] || MessageSquare
-
-                                // Get module access info - single source of truth
-                                const access = getModuleAccess(
-                                    userPlanId,
-                                    module.id,
-                                    (selectedSector || 'other') as any,
-                                    selectedModuleIds.includes(module.id),
-                                    language === 'tr' ? 'tr' : 'en',
-                                    true // Always in trial/setup mode during onboarding
-                                )
-
-                                // Check current user selection
-                                const isSelected = selectedModuleIds.includes(module.id)
-
-                                // Determine if module can be selected
-                                const canSelect = access.status === 'included' || access.status === 'core'
-
-                                const handleModuleClick = () => {
-                                    // If not included in plan, show pricing modal
-                                    if (!canSelect && access.upgradeTarget) {
-                                        setUpgradeTargetModuleId(module.id)
-                                        setIsPricingModalOpen(true)
-                                        return
-                                    }
-                                    
-                                    // Toggle selection
-                                    if (isSelected) {
-                                        setSelectedModuleIds(prev => prev.filter(id => id !== module.id))
-                                    } else {
-                                        setSelectedModuleIds(prev => [...prev, module.id])
-                                    }
-                                }
+                {/* STEP 2: PLAN */}
+                {currentStep === 'plan' && (
+                    <motion.div 
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="space-y-6"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                            {getPublicPlansSorted().map((plan) => {
+                                const badge = getPlanBadge(plan.planId)
+                                const isPopular = badge === 'recommended' || badge === 'Önerilen'
 
                                 return (
                                     <motion.div
-                                        key={module.id}
+                                        key={plan.planId}
                                         variants={itemVariants}
-                                        whileHover={{ scale: 1.01 }}
-                                        onClick={handleModuleClick}
+                                        whileHover={{ y: -5 }}
                                         className={cn(
-                                            "flex flex-col gap-4 p-5 rounded-xl border transition-all relative overflow-hidden bg-white dark:bg-zinc-900 cursor-pointer",
-                                            isSelected
-                                                ? "border-zinc-300 dark:border-zinc-700 shadow-sm ring-1 ring-black/5 dark:ring-white/5"
-                                                : "border-zinc-200 dark:border-zinc-800 opacity-60 hover:opacity-80"
+                                            "relative flex flex-col p-6 bg-white dark:bg-zinc-900 rounded-2xl border-2 transition-all shadow-sm",
+                                            isPopular 
+                                                ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary/20" 
+                                                : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                                         )}
                                     >
-                                        <div className="flex justify-between items-start">
-                                            <div className={cn(
-                                                "p-2.5 rounded-lg border",
-                                                isSelected
-                                                    ? "bg-zinc-50 text-zinc-900 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700"
-                                                    : "bg-zinc-50 text-zinc-400 border-zinc-100 dark:bg-zinc-800/50 dark:text-zinc-600 dark:border-zinc-800"
-                                            )}>
-                                                <Icon className="w-5 h-5" />
+                                        {isPopular && (
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold shadow-md">
+                                                {language === 'tr' ? 'Önerilen' : 'Recommended'}
                                             </div>
+                                        )}
 
-                                            {/* Status Indicator */}
-                                            <div className="flex-shrink-0">
-                                                {isSelected ? (
-                                                    <div className="w-6 h-6 rounded-full bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
-                                                        <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-6 h-6 rounded-full border-2 border-zinc-200 dark:border-zinc-800" />
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <p className={cn(
-                                                    "font-semibold text-base",
-                                                    isSelected ? "text-foreground" : "text-muted-foreground"
-                                                )}>
-                                                    {module.name[language === 'tr' ? 'tr' : 'en']}
-                                                </p>
-                                                
-                                                {/* Labels */}
-                                                {access.badge === 'included' && (
-                                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800">
-                                                        {language === 'tr' ? 'Dahil' : 'Included'}
-                                                    </Badge>
-                                                )}
-                                                
-                                                {access.isSectorCompatible && (
-                                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800 text-xs">
-                                                        {language === 'tr' ? 'Sektörünüze Uygun' : 'Recommended'}
-                                                    </Badge>
-                                                )}
-                                            </div>
-
-                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 min-h-[2.5rem]">
-                                                {module.description[language === 'tr' ? 'tr' : 'en']}
+                                        <div className="mb-6 space-y-1 text-center">
+                                            <h3 className="text-xl font-bold">{plan.displayName}</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {(() => {
+                                                    const lang = language === 'tr' ? 'tr' : 'en'
+                                                    const subtitleKey = plan.copy.subtitle || ''
+                                                    // @ts-ignore
+                                                    return translations[lang]?.[subtitleKey] || subtitleKey
+                                                })()}
                                             </p>
-
-                                            {/* Upgrade Info */}
-                                            {access.upgradeMessage && (
-                                                <div className="mt-2">
-                                                    <div className="text-xs text-muted-foreground bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700">
-                                                        {access.upgradeMessage}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
+
+                                        <div className="mb-6 text-center">
+                                            <div className="flex items-baseline justify-center gap-1">
+                                                <span className="text-4xl font-bold tracking-tight">
+                                                    {plan.billing.contact 
+                                                        ? (language === 'tr' ? 'Özel' : 'Custom')
+                                                        : formatPlanPrice(plan.planId, 'monthly', language === 'tr' ? 'tr' : 'en')}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <ul className="space-y-3 mb-8 flex-1">
+                                            <li className="flex items-start gap-3 text-sm">
+                                                <Check className="w-5 h-5 text-green-500 shrink-0" />
+                                                <span>
+                                                    {plan.limits.messageLimit === 'unlimited' 
+                                                        ? (language === 'tr' ? 'Sınırsız Mesaj' : 'Unlimited Messages')
+                                                        : (language === 'tr' ? `${plan.limits.messageLimit} Mesaj/ay` : `${plan.limits.messageLimit} Messages/mo`)}
+                                                </span>
+                                            </li>
+                                            {plan.highlights
+                                                ?.filter(h => h !== 'featureUnlimitedMessages')
+                                                .slice(0, 3)
+                                                .map((highlight, idx) => {
+                                                const lang = language === 'tr' ? 'tr' : 'en'
+                                                const translatedText = (translations as Record<string, Record<string, string>>)[lang]?.[highlight] || highlight
+                                                return (
+                                                    <li key={idx} className="flex items-start gap-3 text-sm">
+                                                        <Check className="w-5 h-5 text-green-500 shrink-0" />
+                                                        <span>{translatedText}</span>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+
+                                        <Button
+                                            onClick={() => handlePlanSubmit(plan.planId)}
+                                            className={cn(
+                                                "w-full h-11 rounded-xl font-semibold shadow-sm",
+                                                isPopular 
+                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                                    : "bg-white dark:bg-zinc-800 text-foreground border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                                            )}
+                                            variant={isPopular ? "default" : "outline"}
+                                            disabled={isLoading}
+                                        >
+                                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                            {language === 'tr' ? 'Seç ve Devam Et' : 'Select & Continue'}
+                                        </Button>
                                     </motion.div>
                                 )
                             })}
-                        </motion.div>
-
-                        <div className="flex justify-between items-center pt-4">
+                        </div>
+                        
+                        <div className="flex justify-start">
                             <Button 
                                 variant="ghost" 
                                 onClick={() => goToStep('sector')}
@@ -781,29 +771,11 @@ export default function OnboardingPage() {
                                 <ArrowLeft className="w-5 h-5 mr-2" />
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
-                            <div className="flex items-center gap-3">
-                                <Button 
-                                    variant="ghost" 
-                                    onClick={() => handleComplete('soft')}
-                                    className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
-                                >
-                                    {language === 'tr' ? 'Daha Sonra Tamamla' : 'Complete Later'}
-                                </Button>
-                                <Button 
-                                    size="lg" 
-                                    onClick={handleModulesContinue} 
-                                    disabled={isLoading} 
-                                    className="h-12 px-8 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all rounded-xl"
-                                >
-                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
-                                    {language === 'tr' ? 'Devam Et' : 'Continue'}
-                                    <ChevronRight className="w-5 h-5 ml-2" />
-                                </Button>
-                            </div>
                         </div>
-                    </div>
-                )
-                }
+                    </motion.div>
+                )}
+
+
 
                 {/* STEP 3: KNOWLEDGE BASE */}
                 {currentStep === 'knowledge' && (
@@ -970,7 +942,7 @@ export default function OnboardingPage() {
                                         setDiscoveredUrls([])
                                         setSelectedUrls([])
                                     } else {
-                                        goToStep('modules')
+                                        goToStep('plan')
                                     }
                                 }}
                                 className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
@@ -980,6 +952,7 @@ export default function OnboardingPage() {
                             </Button>
                             <div className="flex items-center gap-3">
                                 <Button 
+                                    type="button"
                                     variant="ghost" 
                                     onClick={() => handleComplete('soft')}
                                     className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
@@ -1089,6 +1062,7 @@ export default function OnboardingPage() {
                                 </Button>
                                 <div className="flex items-center gap-3">
                                     <Button 
+                                        type="button"
                                         variant="ghost" 
                                         onClick={() => handleComplete('soft')}
                                         className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
@@ -1221,7 +1195,7 @@ export default function OnboardingPage() {
                                             handleComplete('full')
                                         }}
                                         disabled={isLoading}
-                                        className="w-full sm:w-auto font-bold shadow-lg shadow-primary/20 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white"
+                                        className="w-full sm:w-auto font-bold shadow-lg shadow-black/20 bg-black hover:bg-zinc-800 text-white transition-all transform hover:scale-105"
                                     >
                                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Rocket className="w-4 h-4 mr-2" />}
                                         {language === 'tr' ? 'Asistanı Başlat' : 'Launch Assistant'}

@@ -94,7 +94,7 @@ export async function POST(req: Request) {
 
             // Update onboarding status
             "onboarding.status": "in_progress",
-            "onboarding.currentStep": STEP_INDEX.modules,
+            "onboarding.currentStep": STEP_INDEX.plan,
             "onboarding.completedSteps": FieldValue.arrayUnion("sector"),
             "onboarding.startedAt": FieldValue.serverTimestamp()
         });
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
             sector: sectorId,
             modules,
             enabledModules: sectorModules,
-            nextStep: "modules"
+            nextStep: "plan"
         });
 
     } catch (error: any) {
