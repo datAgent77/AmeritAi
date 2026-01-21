@@ -301,6 +301,12 @@ RULES:
 8. FALLBACK: If you cannot determine the language, respond in English.
 Mirror the user's language exactly. Do NOT default to Turkish or another language unless the user wrote in that language.`;
 
+        // Custom Prompts (Special Instructions from Admin Panel)
+        if (chatbotData?.customPrompts) {
+            systemPrompt += `\n\n# SPECIAL INSTRUCTIONS (FROM ADMIN)\n${chatbotData.customPrompts}`;
+            console.log("AI Service: Injected custom prompts length:", chatbotData.customPrompts.length);
+        }
+
         // Add User Context
         if (userContext) {
             systemPrompt += `\n# USER CONTEXT\nURL: ${userContext.url}\nTitle: ${userContext.title}`;
