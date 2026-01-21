@@ -397,7 +397,8 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                         // Show banner only for users who are NOT on a paid plan
                         // Show banner ONLY if isTrial is explicitly true (regardless of plan)
                         // AND we are not in super-admin view (targetUserId)
-                        const shouldShowBanner = !targetUserId && isTrial
+                        // AND user is NOT a SUPER_ADMIN
+                        const shouldShowBanner = !targetUserId && isTrial && role !== 'SUPER_ADMIN'
                         
                         // Debug log for trial banner
                         if (isTrial) {
