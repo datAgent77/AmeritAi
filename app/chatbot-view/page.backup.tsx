@@ -962,7 +962,10 @@ function ChatbotViewContent() {
         },
         launcherIcon: "message",
         launcherIconUrl: "",
-        launcherLibraryIcon: ""
+        launcherLibraryIcon: "",
+        mobileBottomSpacing: 20,
+        mobileSideSpacing: 20,
+        mobileLauncherAnimation: "none"
     })
     const [isLoading, setIsLoading] = useState(true)
 
@@ -1010,6 +1013,9 @@ function ChatbotViewContent() {
                         launcherIcon: data.launcherIcon || "library",
                         launcherIconUrl: data.launcherIconUrl || "",
                         launcherLibraryIcon: data.launcherLibraryIcon || "",
+                        mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : 20,
+                        mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : 20,
+                        mobileLauncherAnimation: data.mobileLauncherAnimation || "none",
                     })
                 }
             } catch (error) {
