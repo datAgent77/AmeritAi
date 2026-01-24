@@ -53,7 +53,10 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         },
         launcherIcon: "message",
         launcherIconUrl: "",
-        launcherLibraryIcon: ""
+        launcherLibraryIcon: "",
+        mobileBottomSpacing: 20,
+        mobileSideSpacing: 20,
+        mobileLauncherAnimation: "none"
     })
 
     useEffect(() => {
@@ -99,6 +102,9 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         launcherIcon: data.launcherIcon || "library",
                         launcherIconUrl: data.launcherIconUrl || "",
                         launcherLibraryIcon: data.launcherLibraryIcon || "",
+                        mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : 20,
+                        mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : 20,
+                        mobileLauncherAnimation: data.mobileLauncherAnimation || "none",
                     })
                 }
             } catch (error) {
