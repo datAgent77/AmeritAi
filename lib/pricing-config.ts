@@ -436,7 +436,8 @@ const SCENARIO_D: PlanConfig[] = [
             included: [
                 'generalChatbot', 'knowledgeBase', 'leadCollection', 'proactiveMessaging',
                 'productCatalog', 'digitalWaiter',
-                'salesOptimization', 'visualDiagnosis'
+                'salesOptimization', 'visualDiagnosis',
+                'dynamicContext'
             ],
             defaultEnabled: ['generalChatbot', 'salesOptimization'],
             premiumEligible: []

@@ -155,7 +155,7 @@ export async function generateAIResponse(
     messages: AIMessage[],
     sessionId?: string,
     streamResponse: boolean = true,
-    userContext?: { url: string, title: string, desc: string },
+    userContext?: { url: string, title: string, desc: string, dynamicData?: Record<string, any> },
     isVoice?: boolean,
     language?: string,
     visualAnalysisContext?: string,
@@ -450,6 +450,25 @@ Mirror the user's language exactly. Do NOT default to Turkish or another languag
                     }
                 }
 
+
+                // Dynamic Context Module
+                if (mod.id === 'dynamicContext') {
+                    // This module relies on data passed from the client, not Firestore settings
+                    const dynamicData = userContext?.dynamicData;
+                    if (dynamicData) {
+                        instruction += langKey === 'tr'
+                            ? `\n\n📊 CANLI KULLANICI VERİLERİ (SİSTEMDEN):\n`
+                            : `\n\n📊 LIVE USER DATA (FROM SYSTEM):\n`;
+
+                        for (const [key, value] of Object.entries(dynamicData)) {
+                            instruction += `- ${key}: ${value}\n`;
+                        }
+
+                        instruction += langKey === 'tr'
+                            ? `\nBu verileri kullanarak "Kaç görevim var?" veya "Bakiyem nedir?" gibi soruları yanıtla.`
+                            : `\nUse this data to answer questions like "How many tasks do I have?" or "What is my balance?".`;
+                    }
+                }
 
                 if (instruction) {
                     activeModuleInstructions.push(instruction);

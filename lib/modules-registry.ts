@@ -31,7 +31,8 @@ export type ModuleId =
     | 'gamification'
     | 'visualDiagnosis'
     | 'digitalWaiter'
-    | 'proactiveMessaging';
+    | 'proactiveMessaging'
+    | 'dynamicContext';
 
 export type SectorId =
     | 'ecommerce'
@@ -762,6 +763,47 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
             { en: 'Increase conversion rates by 15%', tr: 'Dönüşüm oranlarını %15 artırın' },
             { en: 'Reduce bounce rates', tr: 'Hemen çıkma oranlarını düşürün' }
         ]
+    },
+
+    dynamicContext: {
+        id: 'dynamicContext',
+        name: {
+            en: 'Dynamic Data Context',
+            tr: 'Dinamik Veri Bağlamı'
+        },
+        description: {
+            en: 'Inject real-time user data into AI context',
+            tr: 'Gerçek zamanlı kullanıcı verilerini AI bağlamına aktarın'
+        },
+        icon: 'Database', // or 'Cpu' or 'Activity'
+        isCore: false,
+        isPremium: true,
+        price: 39,
+        status: 'ready',
+        supportedSectors: ['saas', 'ecommerce', 'booking'],
+        defaultEnabledBySector: [],
+        showOnLandingPage: false,
+        legacyFirestoreField: 'enableDynamicContext',
+        longDescription: {
+            en: 'Empower your AI to answer personal questions like "How many tasks do I have?" or "What is my current balance?" by injecting dynamic data from your application directly into the chat context.',
+            tr: 'Uygulamanızdan gelen dinamik verileri doğrudan sohbet bağlamına aktararak, yapay zekanızın "Kaç görevim var?" veya "Güncel bakiyem nedir?" gibi kişisel soruları yanıtlamasını sağlayın.'
+        },
+        features: [
+            {
+                title: { en: 'Real-time Data', tr: 'Gerçek Zamanlı Veri' },
+                description: { en: 'AI reads live data passed from your frontend.', tr: 'AI, ön yüzden gönderilen canlı verileri okur.' },
+                icon: 'Activity'
+            },
+            {
+                title: { en: 'Personalized Answers', tr: 'Kişiselleştirilmiş Yanıtlar' },
+                description: { en: 'Give specific answers based on user state.', tr: 'Kullanıcı durumuna göre özel yanıtlar verin.' },
+                icon: 'UserCheck'
+            }
+        ],
+        benefits: [
+            { en: 'Eliminate need for navigation', tr: 'Gezinme ihtiyacını ortadan kaldırın' },
+            { en: 'Provide hyper-personalized support', tr: 'Hiper-kişiselleştirilmiş destek sağlayın' }
+        ]
     }
 };
 
@@ -879,6 +921,7 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.salesOptimization, // Sales Optimization (Ready)
     MODULES_REGISTRY.proactiveMessaging, // Proactive Engagement (Ready)
     MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
+    MODULES_REGISTRY.dynamicContext,    // Dynamic Data Context (Ready)
 
     // --- 2. COMING SOON MODULES ---
     MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Coming Soon)

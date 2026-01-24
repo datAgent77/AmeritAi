@@ -339,10 +339,10 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                             <div
                                                 className="absolute"
                                                 style={{
-                                                    ...(settings.position.includes('bottom') ? { bottom: `${settings.bottomSpacing}px` } : {}),
-                                                    ...(settings.position.includes('top') ? { top: `${settings.bottomSpacing + 30}px` } : {}),
-                                                    ...(settings.position.includes('right') ? { right: `${settings.sideSpacing}px` } : {}),
-                                                    ...(settings.position.includes('left') ? { left: `${settings.sideSpacing}px` } : {}),
+                                                    ...(settings.position.includes('bottom') ? { bottom: `${previewMode === 'mobile' ? (settings.mobileBottomSpacing ?? 20) : settings.bottomSpacing}px` } : {}),
+                                                    ...(settings.position.includes('top') ? { top: `${(previewMode === 'mobile' ? (settings.mobileBottomSpacing ?? 20) : settings.bottomSpacing) + 30}px` } : {}),
+                                                    ...(settings.position.includes('right') ? { right: `${previewMode === 'mobile' ? (settings.mobileSideSpacing ?? 20) : settings.sideSpacing}px` } : {}),
+                                                    ...(settings.position.includes('left') ? { left: `${previewMode === 'mobile' ? (settings.mobileSideSpacing ?? 20) : settings.sideSpacing}px` } : {}),
                                                     ...(settings.position.includes('center') ? { left: '50%', transform: 'translateX(-50%)' } : {}),
                                                 }}
                                             >
@@ -362,9 +362,10 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                                                         padding: (settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text') ? '0 12px' : 0,
                                                         overflow: 'hidden',
                                                     }}
-                                                    className={`flex items-center justify-center gap-2 text-white font-medium transition-transform hover:scale-105 ${settings.launcherAnimation === 'pulse' ? 'animate-pulse' :
-                                                        settings.launcherAnimation === 'bounce' ? 'animate-bounce' : ''
-                                                        }`}
+                                                    className={`flex items-center justify-center gap-2 text-white font-medium transition-transform hover:scale-105 ${
+                                                        (previewMode === 'mobile' ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none')) === 'pulse' ? 'animate-pulse' :
+                                                        (previewMode === 'mobile' ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none')) === 'bounce' ? 'animate-bounce' : ''
+                                                    }`}
                                                 >
                                                     {settings.launcherType === 'fullImage' ? (
                                                         settings.launcherImageMode === 'lottie' && settings.launcherLottieUrl ? (

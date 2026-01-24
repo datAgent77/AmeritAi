@@ -111,7 +111,8 @@ export const ICON_MAP = {
     Gift,
     MousePointerClick,
     Lightbulb,
-    Camera
+    Camera,
+    Database: LayoutGrid // Fallback or imported icon for Database
 }
 
 // Map ModuleId to Firestore Field
@@ -131,7 +132,8 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     gamification: 'enableGamification',
     visualDiagnosis: 'enableVisualDiagnosis',
     digitalWaiter: 'enableDigitalWaiter',
-    proactiveMessaging: 'enableProactiveMessaging'
+    proactiveMessaging: 'enableProactiveMessaging',
+    dynamicContext: 'enableDynamicContext'
 }
 
 interface ModulesContentProps {
@@ -203,6 +205,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         visualDiagnosis: data.enableVisualDiagnosis ?? false,
                         digitalWaiter: data.enableDigitalWaiter ?? false,
                         proactiveMessaging: data.enableProactiveMessaging ?? false,
+                        dynamicContext: data.enableDynamicContext ?? false,
                     })
                 } else {
                     console.error("Failed to load settings via API")
@@ -224,6 +227,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         visualDiagnosis: false,
                         digitalWaiter: false,
                         proactiveMessaging: false,
+                        dynamicContext: false,
                     })
                 }
 
@@ -354,6 +358,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'salesOptimization':
                     router.push(`${basePath}/modules/sales-optimization`)
                     break
+                case 'dynamicContext':
+                    router.push(`${basePath}/modules/dynamic-context`)
+                    break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
                     toast({
@@ -404,6 +411,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'proactiveMessaging':
                 router.push(`/console/modules/engagement${queryParams}`)
+                break
+            case 'dynamicContext':
+                router.push(`/console/modules/dynamic-context${queryParams}`)
                 break
             default:
                 toast({
@@ -650,7 +660,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 <Switch
                                                     checked={isActive}
                                                     onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                    disabled={isLoading === module.id || access.isCore || !access.canToggle}
+                                                    disabled={isLoading === module.id || access.isCore || (!isSuperAdmin && !access.canToggle)}
                                                     className={isLoading === module.id ? 'opacity-50' : ''}
                                                 />
                                             ) : (

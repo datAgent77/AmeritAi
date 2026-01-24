@@ -38,6 +38,7 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
     const { user } = useAuth()
     const { toast } = useToast()
     const [searchTerm, setSearchTerm] = useState("")
+    const [activeDevice, setActiveDevice] = useState<'desktop' | 'mobile'>('desktop')
 
     // Branding functions
     const addSuggestedQuestion = () => {
@@ -699,48 +700,91 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                 <AccordionContent className="pt-4 pb-6">
                     <div className="space-y-6">
                 <div className="grid gap-4">
+                    {/* Device Toggle */}
+                    <div className="flex p-1 bg-muted rounded-lg w-full mb-4">
+                        <button
+                            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'desktop' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                            onClick={() => setActiveDevice('desktop')}
+                        >
+                            {t('desktop') || 'Desktop'}
+                        </button>
+                        <button
+                            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'mobile' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                            onClick={() => setActiveDevice('mobile')}
+                        >
+                            {t('mobile') || 'Mobile'}
+                        </button>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label className="text-xs">{t('verticalSpacing')}</Label>
+                            <Label className="text-xs">{t('verticalSpacing')} ({activeDevice === 'desktop' ? 'Desktop' : 'Mobile'})</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value={settings.bottomSpacing}
-                                    onChange={(e) => setSettings(prev => ({ ...prev, bottomSpacing: parseInt(e.target.value) }))}
+                                    value={activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20)}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        if (activeDevice === 'desktop') {
+                                            setSettings(prev => ({ ...prev, bottomSpacing: val }))
+                                        } else {
+                                            setSettings(prev => ({ ...prev, mobileBottomSpacing: val }))
+                                        }
+                                    }}
                                     className="flex-1"
                                 />
-                                <span className="text-xs w-8 text-right">{settings.bottomSpacing}</span>
+                                <span className="text-xs w-8 text-right">
+                                    {activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20)}
+                                </span>
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label className="text-xs">{t('sideSpacing')}</Label>
+                            <Label className="text-xs">{t('sideSpacing')} ({activeDevice === 'desktop' ? 'Desktop' : 'Mobile'})</Label>
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="range"
                                     min="0"
                                     max="100"
-                                    value={settings.sideSpacing}
-                                    onChange={(e) => setSettings(prev => ({ ...prev, sideSpacing: parseInt(e.target.value) }))}
+                                    value={activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20)}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value);
+                                        if (activeDevice === 'desktop') {
+                                            setSettings(prev => ({ ...prev, sideSpacing: val }))
+                                        } else {
+                                            setSettings(prev => ({ ...prev, mobileSideSpacing: val }))
+                                        }
+                                    }}
                                     className="flex-1"
                                 />
-                                <span className="text-xs w-8 text-right">{settings.sideSpacing}</span>
+                                <span className="text-xs w-8 text-right">
+                                    {activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20)}
+                                </span>
                             </div>
                         </div>
                     </div>
                     <div className="grid gap-2">
-                        <Label>{t('animationLoop') || 'Animasyon Döngüsü'}</Label>
+                        <Label>{t('animationLoop') || 'Animasyon Döngüsü'} ({activeDevice === 'desktop' ? 'Desktop' : 'Mobile'})</Label>
                         <div className="grid grid-cols-3 gap-2">
-                            {['none', 'pulse', 'bounce', 'wiggle', 'float', 'spin'].map((anim) => (
-                                <button
-                                    key={anim}
-                                    onClick={() => setSettings(prev => ({ ...prev, launcherAnimation: anim }))}
-                                    className={`p-2 rounded-md border text-xs capitalize transition-all ${settings.launcherAnimation === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
-                                >
-                                    {anim}
-                                </button>
-                            ))}
+                            {['none', 'pulse', 'bounce', 'wiggle', 'float', 'spin'].map((anim) => {
+                                const currentAnim = activeDevice === 'desktop' ? settings.launcherAnimation : (settings.mobileLauncherAnimation ?? 'none');
+                                return (
+                                    <button
+                                        key={anim}
+                                        onClick={() => {
+                                            if (activeDevice === 'desktop') {
+                                                setSettings(prev => ({ ...prev, launcherAnimation: anim }))
+                                            } else {
+                                                setSettings(prev => ({ ...prev, mobileLauncherAnimation: anim }))
+                                            }
+                                        }}
+                                        className={`p-2 rounded-md border text-xs capitalize transition-all ${currentAnim === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
+                                    >
+                                        {anim}
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>

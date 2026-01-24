@@ -47,6 +47,10 @@ export interface WidgetSettings {
     sideSpacing: number
     launcherShadow: string
     launcherAnimation: string
+    // Mobile Settings
+    mobileBottomSpacing: number
+    mobileSideSpacing: number
+    mobileLauncherAnimation: string
     // Full Image / Lottie Mode
     launcherType: "standard" | "fullImage"
     launcherImageMode: "image" | "lottie"
@@ -105,6 +109,9 @@ const defaultSettings: WidgetSettings = {
     sideSpacing: 20,
     launcherShadow: "medium",
     launcherAnimation: "none",
+    mobileBottomSpacing: 20,
+    mobileSideSpacing: 20,
+    mobileLauncherAnimation: "none",
     launcherType: "standard",
     launcherImageMode: "image",
     launcherFullImageUrl: "",
@@ -178,6 +185,9 @@ export function useWidgetSettings(userId?: string) {
                     sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : prev.sideSpacing,
                     launcherShadow: data.launcherShadow || prev.launcherShadow,
                     launcherAnimation: data.launcherAnimation || prev.launcherAnimation,
+                    mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : prev.mobileBottomSpacing,
+                    mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : prev.mobileSideSpacing,
+                    mobileLauncherAnimation: data.mobileLauncherAnimation || prev.mobileLauncherAnimation,
                     launcherType: data.launcherType || prev.launcherType,
                     launcherImageMode: data.launcherImageMode || prev.launcherImageMode,
                     launcherFullImageUrl: data.launcherFullImageUrl || prev.launcherFullImageUrl,

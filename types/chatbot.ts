@@ -76,4 +76,8 @@ export interface ChatbotSettings {
     launcherIcon: "message" | "library" | "custom";
     launcherIconUrl: string;
     launcherLibraryIcon: string;
+    // Mobile Settings
+    mobileBottomSpacing: number;
+    mobileSideSpacing: number;
+    mobileLauncherAnimation: string;
 }

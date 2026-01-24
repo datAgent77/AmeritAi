@@ -88,6 +88,9 @@ export async function GET(req: Request) {
                     sideSpacing: mergedData.sideSpacing !== undefined ? mergedData.sideSpacing : 20,
                     launcherShadow: mergedData.launcherShadow || "medium",
                     launcherAnimation: mergedData.launcherAnimation || "none",
+                    mobileBottomSpacing: mergedData.mobileBottomSpacing !== undefined ? mergedData.mobileBottomSpacing : 20,
+                    mobileSideSpacing: mergedData.mobileSideSpacing !== undefined ? mergedData.mobileSideSpacing : 20,
+                    mobileLauncherAnimation: mergedData.mobileLauncherAnimation || "none",
                     // Full Image / Lottie Mode
                     launcherType: mergedData.launcherType || "standard",
                     launcherImageMode: mergedData.launcherImageMode || "image",

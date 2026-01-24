@@ -1159,13 +1159,15 @@
 
     // Adjust spacing for mobile
     const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      settings.bottomSpacing = Math.max(settings.bottomSpacing, 20); // Ensure at least 20px
-      settings.sideSpacing = Math.max(settings.sideSpacing, 20); // Ensure at least 20px
-    }
+    
+    let verticalSpacing = settings.bottomSpacing !== undefined ? settings.bottomSpacing : 20;
+    let sideSpacing = settings.sideSpacing !== undefined ? settings.sideSpacing : 20;
 
-    const verticalSpacing = settings.bottomSpacing !== undefined ? settings.bottomSpacing : 20;
-    const sideSpacing = settings.sideSpacing !== undefined ? settings.sideSpacing : 20;
+    if (isMobile) {
+      // Use configured mobile spacing if available, otherwise default to 20 or desktop value (fallback)
+      verticalSpacing = settings.mobileBottomSpacing !== undefined ? settings.mobileBottomSpacing : 20;
+      sideSpacing = settings.mobileSideSpacing !== undefined ? settings.mobileSideSpacing : 20;
+    }
 
     // Mobile Styles Injection
     const addMobileStyles = () => {
@@ -1278,7 +1280,7 @@
       document.head.appendChild(style);
     };
 
-    if (settings.launcherAnimation !== 'none') {
+    if (settings.launcherAnimation !== 'none' || (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none')) {
       addAnimationStyles();
     }
 
@@ -1467,15 +1469,17 @@
       pointerEvents: 'auto'
     });
 
-    if (settings.launcherAnimation === 'pulse') {
+    const activeAnimation = isMobile ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none');
+
+    if (activeAnimation === 'pulse') {
       launcher.classList.add('userex-anim-pulse');
-    } else if (settings.launcherAnimation === 'bounce') {
+    } else if (activeAnimation === 'bounce') {
       launcher.classList.add('userex-anim-bounce');
-    } else if (settings.launcherAnimation === 'wiggle') {
+    } else if (activeAnimation === 'wiggle') {
       launcher.classList.add('userex-anim-wiggle');
-    } else if (settings.launcherAnimation === 'float') {
+    } else if (activeAnimation === 'float') {
       launcher.classList.add('userex-anim-float');
-    } else if (settings.launcherAnimation === 'spin') {
+    } else if (activeAnimation === 'spin') {
       launcher.classList.add('userex-anim-spin');
     }
 
@@ -1847,9 +1851,55 @@
 
     // Append to body
     // Append to body (Container wraps launcher)
-    launcherContainer.appendChild(launcher);
+    // Add Launcher to DOM
     document.body.appendChild(launcherContainer);
+    launcherContainer.appendChild(launcher);
     document.body.appendChild(iframeContainer);
+
+    // Initial Trigger Check
+    setTimeout(() => {
+        if (engagementController) {
+            engagementController.init();
+        }
+    }, 1000);
+
+    // Dynamic Resize Handler
+    window.addEventListener('resize', () => {
+        const isNowMobile = window.innerWidth < 768;
+        
+        // 1. Update Spacing
+        const newBottom = isNowMobile ? (settings.mobileBottomSpacing ?? 20) : (settings.bottomSpacing ?? 20);
+        const newSide = isNowMobile ? (settings.mobileSideSpacing ?? 20) : (settings.sideSpacing ?? 20);
+        
+        let newVertStyle = {};
+        if (isTop) {
+            newVertStyle = { top: `${newBottom}px`, bottom: 'auto' };
+        } else if (isBottom) {
+            newVertStyle = { bottom: `${newBottom}px`, top: 'auto' };
+        } else if (isMiddle) {
+             newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${settings.launcherHeight / 2}px))`, bottom: 'auto' }; // Approximate re-calc
+        }
+
+        let newHorizStyle = {};
+        if (isLeft) {
+            newHorizStyle = { left: `${newSide}px`, right: 'auto' };
+        } else if (isRight) {
+            newHorizStyle = { right: `${newSide}px`, left: 'auto' };
+        } else if (isCenter) {
+             newHorizStyle = { left: '50%', transform: 'translateX(-50%)', right: 'auto' };
+        }
+
+        // Apply new positioning
+        Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
+        
+        // 2. Update Animation
+        const newAnim = isNowMobile ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none');
+        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin');
+        
+        if (newAnim !== 'none') {
+            launcher.classList.add(`userex-anim-${newAnim}`);
+        }
+    });
 
     // Initialize Engagement Controller if enabled
     if (settings.engagement && settings.engagement.enabled) {
@@ -2264,6 +2314,39 @@
 
   function stopVoiceSession() {
     console.log('Voice Session Stopped');
+  }
+
+  // Helper: Fetch Settings
+  async function fetchSettings() {
+    try {
+      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`);
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      return await response.json();
+    } catch (error) {
+      console.warn('Userex Widget: Using default settings (Fetch failed)', error);
+      return {};
+    }
+  }
+
+  // Bootstrap Function
+  async function bootstrap() {
+    const fetchedSettings = await fetchSettings();
+    
+    // Merge fetched settings into global settings object
+    settings = {
+      ...settings,
+      ...fetchedSettings
+    };
+    
+    console.log('Userex Widget: Configuration loaded');
+    initWidget();
+  }
+
+  // Start Initialization
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    bootstrap();
+  } else {
+    document.addEventListener('DOMContentLoaded', bootstrap);
   }
 
 })();
