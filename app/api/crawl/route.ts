@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
+import { isSafeUrl } from "@/lib/security";
 
 export async function POST(req: Request) {
     try {
@@ -9,11 +10,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "URL is required" }, { status: 400 });
         }
 
-        // Validate URL
-        try {
-            new URL(url);
-        } catch (e) {
-            return NextResponse.json({ error: "Invalid URL format" }, { status: 400 });
+        // Validate URL and check for SSRF
+        if (!isSafeUrl(url)) {
+            return NextResponse.json({ error: "Invalid or restricted URL" }, { status: 400 });
         }
 
         const response = await fetch(url, {
