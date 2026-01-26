@@ -37,6 +37,18 @@ export async function POST(req: Request) {
                 const userDoc = await adminDb.collection('users').doc(userId).get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
+                    
+                    // === ACCOUNT STATUS CHECK ===
+                    // Explicitly check for false, default to true if undefined to be safe
+                    if (userData?.isActive === false) {
+                        console.log(`[CHAT API] Account is inactive for user ${userId}, blocking widget`);
+                        return NextResponse.json({
+                            error: "account_inactive",
+                            message: "Bu sohbet botu şu anda aktif değil. Lütfen site yöneticisi ile iletişime geçin.",
+                            isInactive: true
+                        }, { status: 403 });
+                    }
+
                     const subscriptionStatus = userData?.subscriptionStatus;
                     const trialEndsAt = userData?.trialEndsAt;
                     

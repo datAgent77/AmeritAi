@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { Switch } from "@/components/ui/switch"
 import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, ShieldCheck, Search, CreditCard, Settings } from "lucide-react"
 import {
     Dialog,
@@ -581,16 +582,14 @@ export default function AdminPage() {
                                                         <Settings className="h-4 w-4" />
                                                     </Button>
 
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className={user.isActive ? "text-orange-500 hover:bg-orange-50" : "text-green-600 hover:bg-green-50"}
-                                                        onClick={() => toggleStatus(user.id, user.isActive)}
-                                                        disabled={user.isArchived}
-                                                        title={user.isActive ? t('deactivate') : t('activate')}
-                                                    >
-                                                        <Activity className="h-4 w-4" />
-                                                    </Button>
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={user.isActive}
+                                                            onCheckedChange={() => toggleStatus(user.id, user.isActive)}
+                                                            disabled={user.isArchived}
+                                                            aria-label={user.isActive ? t('deactivate') : t('activate')}
+                                                        />
+                                                    </div>
                                                     {user.isArchived ? (
                                                         <Button
                                                             variant="ghost"

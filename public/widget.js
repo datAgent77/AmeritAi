@@ -2005,71 +2005,7 @@
     }
   }
 
-  // Fetch settings from API
-  fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`)
-    .then(res => res.json())
-    .then(data => {
-      console.log('Widget Settings API Response:', data);
 
-      if (data.isEnabled === false) {
-        console.warn('Userex Widget is disabled for this account.');
-        return;
-      }
-
-      if (!data.error) {
-        settings = {
-          brandColor: data.brandColor,
-          primaryColor: attrColor || data.brandColor || '#000000',
-          position: data.position || 'bottom-right',
-          viewMode: data.viewMode || 'classic',
-          modalSize: data.modalSize || 'half',
-          launcherStyle: data.launcherStyle || 'circle',
-          launcherCollapse: data.launcherCollapse || false,
-          launcherText: data.launcherText || 'Sohbet',
-          launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : 50,
-          launcherHeight: data.launcherHeight || 60,
-          launcherWidth: data.launcherWidth || 60,
-          fullImageLauncherWidth: data.fullImageLauncherWidth || 60,
-          fullImageLauncherHeight: data.fullImageLauncherHeight || 60,
-          launcherIcon: data.launcherIcon || 'message',
-          launcherIconColor: data.launcherIconColor || '#FFFFFF',
-          launcherBackgroundColor: (data.launcherBackgroundColor && data.launcherBackgroundColor.trim()) ? data.launcherBackgroundColor : '',
-          launcherIconUrl: data.launcherIconUrl || '',
-          launcherLibraryIcon: data.launcherLibraryIcon || 'MessageSquare',
-          bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : 20,
-          sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : 20,
-          launcherShadow: data.launcherShadow || 'medium',
-          launcherAnimation: data.launcherAnimation || 'none',
-          // Full Image / Lottie Mode
-          launcherType: data.launcherType || 'standard',
-          launcherImageMode: data.launcherImageMode || 'image',
-          launcherFullImageUrl: data.launcherFullImageUrl || '',
-          launcherLottieUrl: data.launcherLottieUrl || '',
-          launcherHoverEffect: data.launcherHoverEffect || 'scale',
-          // Triggers
-          autoOpenDelay: data.autoOpenDelay || 0,
-          openOnExitIntent: data.openOnExitIntent || false,
-          openOnScroll: data.openOnScroll || 0,
-          // Language
-          initialLanguage: data.initialLanguage || 'auto',
-          // Availability
-          enableBusinessHours: data.enableBusinessHours || false,
-          timezone: data.timezone || 'UTC',
-          businessHoursStart: data.businessHoursStart || '09:00',
-          businessHoursEnd: data.businessHoursEnd || '17:00',
-          offlineMessage: data.offlineMessage || 'Şu anda çevrimdışıyız.',
-          // Proactive Engagement
-          engagement: data.engagement || null
-        };
-        console.log('Final settings object:', settings);
-        console.log('Launcher Debug:', 'type:', settings.launcherType, 'imageMode:', settings.launcherImageMode, 'lottieUrl:', settings.launcherLottieUrl?.substring(0, 60));
-      }
-      initWidget();
-    })
-    .catch(err => {
-      console.error('Failed to load widget settings:', err);
-      initWidget(); // Fallback to defaults
-    });
 
   // --- Context Awareness & Proactive Logic ---
 
@@ -2319,7 +2255,7 @@
   // Helper: Fetch Settings
   async function fetchSettings() {
     try {
-      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`);
+      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`);
       if (!response.ok) throw new Error('Failed to fetch settings');
       return await response.json();
     } catch (error) {
@@ -2331,6 +2267,12 @@
   // Bootstrap Function
   async function bootstrap() {
     const fetchedSettings = await fetchSettings();
+    
+    // STRICT CHECK: If disabled, abort
+    if (fetchedSettings.isEnabled === false) {
+      console.warn('Userex Widget is disabled for this account.');
+      return; 
+    }
     
     // Merge fetched settings into global settings object
     settings = {
