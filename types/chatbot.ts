@@ -20,6 +20,15 @@ export interface ChatbotSettings {
         emailLabel?: string;
         phoneLabel?: string;
         submitButtonText?: string;
+        nameEnabled?: boolean;
+        emailEnabled?: boolean;
+        phoneEnabled?: boolean;
+        nameRequired?: boolean;
+        emailRequired?: boolean;
+        phoneRequired?: boolean;
+        namePlaceholder?: string;
+        emailPlaceholder?: string;
+        phonePlaceholder?: string;
     } | null;
     industry: string;
     enableVoiceAssistant: boolean;

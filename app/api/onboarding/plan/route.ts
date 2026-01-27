@@ -4,6 +4,8 @@ import { STEP_INDEX } from "@/lib/onboarding-config";
 import { planExists, getAllPlans } from "@/lib/pricing-config";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         const adminDb = getAdminDb();

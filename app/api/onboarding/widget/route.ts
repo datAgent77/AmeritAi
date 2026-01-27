@@ -3,6 +3,8 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { WidgetSchema, STEP_INDEX, canAccessStep, OnboardingStep } from "@/lib/onboarding-config";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         const adminDb = getAdminDb();

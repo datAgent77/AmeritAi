@@ -29,27 +29,42 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     const [leads, setLeads] = useState<Lead[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+    const [fieldLabels, setFieldLabels] = useState<Record<string, string>>({})
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
 
     useEffect(() => {
-        const fetchLeads = async () => {
+        const fetchData = async () => {
             if (!effectiveUserId) return
             try {
-                const res = await fetch(`/api/leads?chatbotId=${effectiveUserId}`)
-                if (res.ok) {
-                    const data = await res.json()
+                // Fetch Leads
+                const leadsRes = await fetch(`/api/leads?chatbotId=${effectiveUserId}`)
+                if (leadsRes.ok) {
+                    const data = await leadsRes.json()
                     setLeads(data.leads || [])
                 }
+
+                // Fetch Settings for Field Labels
+                const settingsRes = await fetch(`/api/widget-settings?chatbotId=${effectiveUserId}`)
+                if (settingsRes.ok) {
+                    const settings = await settingsRes.json()
+                    if (settings.leadCustomFields) {
+                        const labels: Record<string, string> = {}
+                        settings.leadCustomFields.forEach((field: any) => {
+                            labels[field.id] = field.label
+                        })
+                        setFieldLabels(labels)
+                    }
+                }
             } catch (error) {
-                console.error("Failed to fetch leads", error)
+                console.error("Failed to fetch data", error)
             } finally {
                 setIsLoading(false)
             }
         }
 
-        fetchLeads()
+        fetchData()
     }, [effectiveUserId])
 
     const toggleRowExpansion = (id: string) => {
@@ -76,7 +91,9 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
             // Merge custom fields into export
             if (l.customFields) {
                 Object.entries(l.customFields).forEach(([key, value]) => {
-                    (base as any)[key] = value
+                    const label = fieldLabels[key] || key.replace('field_', '')
+                    const typedBase = base as any
+                    typedBase[label] = value
                 })
             }
             return base
@@ -175,7 +192,9 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                                     <div className="py-2 px-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         {Object.entries(lead.customFields).map(([fieldId, value]) => (
                                                             <div key={fieldId} className="text-sm">
-                                                                <span className="font-medium text-muted-foreground">{fieldId.replace('field_', '')}:</span>
+                                                                <span className="font-medium text-muted-foreground">
+                                                                    {fieldLabels[fieldId] || fieldId.replace('field_', '')}:
+                                                                </span>
                                                                 <span className="ml-2">{value}</span>
                                                             </div>
                                                         ))}
