@@ -136,37 +136,103 @@ export function useVisualContext(chatbotId: string, language: string) {
         setSelectedImageMimeType("")
     }
 
-    const sendImageForAnalysis = async (userMessage: string): Promise<string> => {
-        if (!selectedImage) return ""
+    const sendImageForAnalysis = async (
+        userMessage: string,
+        imageData?: string,
+        mimeType?: string
+    ): Promise<{ success: boolean; context?: string; error?: string; analysis?: { diagnosis: string; confidence: string; treatment: string } }> => {
+        // Use provided image data or fall back to state
+        const imageToAnalyze = imageData || selectedImage
+        const mimeTypeToUse = mimeType || selectedImageMimeType
+        
+        console.log('[VISUAL DEBUG] sendImageForAnalysis called, image:', imageToAnalyze ? 'EXISTS (' + imageToAnalyze.substring(0, 50) + '...)' : 'NULL')
+        
+        if (!imageToAnalyze) {
+            console.log('[VISUAL DEBUG] No image to analyze, returning error')
+            return { 
+                success: false, 
+                error: language === 'tr' 
+                    ? "Görsel seçilmedi. Lütfen önce bir görsel yükleyin." 
+                    : "No image selected. Please upload an image first." 
+            }
+        }
 
         setIsAnalyzingImage(true)
+        console.log('[VISUAL DEBUG] Starting API call to /api/visual-diagnosis')
         try {
             const response = await fetch('/api/visual-diagnosis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    image: selectedImage,
-                    mimeType: selectedImageMimeType
+                    image: imageToAnalyze,
+                    mimeType: mimeTypeToUse
                 })
             })
 
             if (!response.ok) {
-                throw new Error('Visual diagnosis failed')
+                const errData = await response.json().catch(() => ({}));
+                const status = response.status;
+                const errMsg = errData.error || response.statusText || 'Unknown Error';
+                throw new Error(`[Status: ${status}] ${errMsg}`);
             }
 
             const result = await response.json()
+            console.log('[VISUAL DEBUG] API response:', result)
+
+            // Check if result contains error field
+            if (result.error) {
+                console.log('[VISUAL DEBUG] API returned error:', result.error)
+                throw new Error(result.error);
+            }
+
+            const diagnosis = result?.diagnosis || "Unknown"
+            const confidence = result?.confidence || "Unknown"
+            const treatment = result?.treatment || "No recommendation"
 
             const analysisContext = language === 'tr'
-                ? `[GÖRSEL ANALİZ SONUCU]\nTeşhis: ${result.diagnosis}\nGüven: ${result.confidence}\nÖnerilen Tedavi: ${result.treatment}\n\nKullanıcı mesajı: "${userMessage}"\n\nLütfen bu analiz sonucunu kullanıcıya uygun ve anlaşılır şekilde açıkla.`
-                : `[IMAGE ANALYSIS RESULT]\nDiagnosis: ${result.diagnosis}\nConfidence: ${result.confidence}\nRecommended Treatment: ${result.treatment}\n\nUser message: "${userMessage}"\n\nPlease explain this analysis to the user in a clear and helpful way.`
+                ? `[GÖRSEL ANALİZ SONUCU]\nTeşhis: ${diagnosis}\nGüven: ${confidence}\nÖnerilen Tedavi: ${treatment}\n\nKullanıcı mesajı: "${userMessage}"\n\nLütfen bu analiz sonucunu kullanıcıya uygun ve anlaşılır şekilde açıkla.`
+                : `[IMAGE ANALYSIS RESULT]\nDiagnosis: ${diagnosis}\nConfidence: ${confidence}\nRecommended Treatment: ${treatment}\n\nUser message: "${userMessage}"\n\nPlease explain this analysis to the user in a clear and helpful way.`
 
-            return analysisContext
+            return { success: true, context: analysisContext, analysis: { diagnosis, confidence, treatment } }
 
-        } catch (error) {
-            console.error('Visual diagnosis error:', error)
-            return language === 'tr'
-                ? '[GÖRSEL ANALİZ HATASI: Görsel analiz yapılamadı. Lütfen kullanıcıya teknik bir sorun olduğunu bildirin.]'
-                : '[IMAGE ANALYSIS ERROR: Could not analyze the image. Please inform the user about the technical issue.]'
+        } catch (error: any) {
+            console.error('[VISUAL DEBUG] Visual diagnosis error:', error)
+            console.log('[VISUAL DEBUG] Error message:', error.message)
+            
+            // Extract error message from response if available
+            let errorMessage = "Unknown error";
+            let userFriendlyMessage = "";
+            
+            try {
+                if (error.message) {
+                    errorMessage = error.message;
+                    
+                    // Parse error message to extract meaningful information
+                    if (errorMessage.includes("API key") || errorMessage.includes("authentication") || errorMessage.includes("Configuration Error")) {
+                        userFriendlyMessage = language === 'tr' 
+                            ? "API anahtarı yapılandırma hatası. Lütfen sistem yöneticisine bildirin."
+                            : "API key configuration error. Please contact system administrator.";
+                    } else if (errorMessage.includes("quota") || errorMessage.includes("rate limit")) {
+                        userFriendlyMessage = language === 'tr'
+                            ? "API kotası aşıldı. Lütfen daha sonra tekrar deneyin."
+                            : "API quota exceeded. Please try again later.";
+                    } else if (errorMessage.includes("model") || errorMessage.includes("Model configuration")) {
+                        userFriendlyMessage = language === 'tr'
+                            ? "Model yapılandırma hatası. Lütfen sistem yöneticisine bildirin."
+                            : "Model configuration error. Please contact system administrator.";
+                    } else {
+                        userFriendlyMessage = language === 'tr'
+                            ? "Görsel analiz sırasında bir hata oluştu. Lütfen tekrar deneyin."
+                            : "An error occurred during image analysis. Please try again.";
+                    }
+                }
+            } catch (parseError) {
+                userFriendlyMessage = language === 'tr'
+                    ? "Görsel analiz sırasında bir hata oluştu. Lütfen tekrar deneyin."
+                    : "An error occurred during image analysis. Please try again.";
+            }
+            
+            return { success: false, error: userFriendlyMessage }
         } finally {
             setIsAnalyzingImage(false)
             clearSelectedImage()

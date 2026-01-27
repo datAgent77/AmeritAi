@@ -1,3 +1,4 @@
+import React from "react"
 import { ChatbotSettings } from "@/types/chatbot"
 import { Send, ImageIcon, Mic, X } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
@@ -13,6 +14,7 @@ interface ChatInputProps {
     visualContext: ReturnType<typeof useVisualContext>
     language: string
     t: (key: string) => string
+    setMessages: React.Dispatch<React.SetStateAction<any[]>>
 }
 
 export function ChatInput({
@@ -24,19 +26,24 @@ export function ChatInput({
     isListening,
     visualContext,
     language,
-    t
+    t,
+    setMessages
 }: ChatInputProps) {
     const {
         selectedImage,
         selectedImageName,
         isAnalyzingImage,
-        imageInputRef,
         handleImageSelect,
         clearSelectedImage,
         sendImageForAnalysis,
         saveImageToCache,
         selectedImageMimeType
     } = visualContext
+    
+    // Ensure clearSelectedImage is available
+    const clearImage = clearSelectedImage || (() => {})
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -50,48 +57,80 @@ export function ChatInput({
 
         if (currentImage) {
             // Image Flow
-            // 1. Save to cache for optimistic UI recovery
-            // We need a temporary ID here, usually the parent generates it, but since we are decoupling...
-            // Actually, saveImageToCache is called in the original code inside the submit handler.
-            // But here, we can't easily generate the EXACT same ID as the message unless we move message creation here?
-            // "saveImageToCache" in useVisualContext expects msgId.
-            // The logic in page.tsx created the message ID *before* calling saveImageToCache.
-
-            // To support this, we might need to rely on the fact that sendMessage adds the message to the state.
-            // BUT sendMessage generates the ID internally.
+            // 1. Get Analysis - pass image data directly to avoid closure issues
+            const analysisResult = await sendImageForAnalysis(currentInput, currentImage, currentMimeType)
             
-            // Allow sendMessage to return the ID? Or handle image saving differently?
-            // "saveImageToCache" is mainly for "Firebase Sync Recovery".
-            // If we don't do it perfectly, we just lose the image on refresh until Firebase syncs.
+            // 2. Handle result
+            if (analysisResult.success && analysisResult.context) {
+                // Success: Send message with analysis context
+                try {
+                    const textToSend = currentInput.trim() || (language === 'tr' ? "Görseli analiz et" : "Analyze this image");
 
-            // Let's rely on standard flow:
-            // 1. Get Analysis
-            const analysisContext = await sendImageForAnalysis(currentInput)
-            
-            // 2. Send Message with Context
-            try {
-               await sendMessage(currentInput, false, analysisContext)
-               // Note: The specific image-caching logic for the *User Message* (displaying the image bubble) 
-               // depends on the message ID. 
-               // Since sendMessage generates the ID internally, we can't easily cache it *with that ID* here.
-               // However, `sendMessage` adds the message to `messages` state.
-               // Maybe `sendMessage` should handle the image caching if we pass the image data?
-               // That would require modifying `sendMessage` again.
-               
-               // Alternative: We generate ID here, pass it to sendMessage?
-               // Let's proceed without the complex local caching for now, and rely on `selectedImage` state clearing only after send.
-               // Actually, `sendImageForAnalysis` clears `selectedImage` in finally block.
-               
-               // WAIT: If we want the User Bubble to show the image, we need to pass the image to `sendMessage`.
-               // `sendMessage` currently only takes `content`.
-               // The original code MANUALLY added the message with `{ image: imageData }` to state.
-               
-               // I need to update `sendMessage` to accept `image` data if I want to display it locally!
-               // OR, I handle the optimistic update in `ChatInput`? No, `sendMessage` handles optimistic update.
-               
-               // FIX: I will add `image` and `imageMimeType` arguments to `sendMessage`.
-            } catch (error) {
-                console.error("Failed to send image message", error)
+                    // If user didn't ask a question, show analysis directly
+                    if (!currentInput.trim() && analysisResult.analysis) {
+                        const userMsg = {
+                            id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                            role: 'user',
+                            content: textToSend,
+                            image: currentImage,
+                            imageMimeType: currentMimeType,
+                            createdAt: new Date()
+                        };
+
+                        const assistantText = language === 'tr'
+                            ? `Görsel analiz sonucu:\nTeşhis: ${analysisResult.analysis.diagnosis}\nGüven: ${analysisResult.analysis.confidence}\nÖnerilen: ${analysisResult.analysis.treatment}`
+                            : `Image analysis result:\nDiagnosis: ${analysisResult.analysis.diagnosis}\nConfidence: ${analysisResult.analysis.confidence}\nRecommended: ${analysisResult.analysis.treatment}`;
+
+                        const assistantMsg = {
+                            id: 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                            role: 'assistant',
+                            content: assistantText,
+                            createdAt: new Date()
+                        };
+
+                        // Persist image for UI recovery
+                        if (currentImage && currentMimeType) {
+                            saveImageToCache(userMsg.id, currentImage, currentMimeType, textToSend);
+                        }
+
+                        setMessages((prev: any[]) => [...prev, userMsg, assistantMsg]);
+                        clearImage();
+                        return;
+                    }
+
+                    await sendMessage(textToSend, false, analysisResult.context)
+                } catch (error) {
+                    console.error("Failed to send image message", error)
+                }
+            } else if (analysisResult.error) {
+                // Error: Add error message directly as assistant message (don't send to AI)
+                // This prevents the error from being sent to AI and causing confusion
+                const errorMessage = analysisResult.error;
+                const errorText = language === 'tr' 
+                    ? `Maalesef görsel analiz gerçekleştirilemedi. ${errorMessage} Başka bir konuda size yardımcı olabilir miyim?`
+                    : `Unfortunately, I could not perform the image analysis. ${errorMessage} Can I help you with anything else?`;
+                
+                // Add user message (for the image upload attempt)
+                const userMsg = {
+                    id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                    role: 'user',
+                    content: currentInput.trim() || (language === 'tr' ? "Görseli analiz et" : "Analyze this image"),
+                    createdAt: new Date()
+                };
+                
+                // Add assistant error message directly (without calling AI)
+                const assistantMsg = {
+                    id: 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                    role: 'assistant',
+                    content: errorText,
+                    createdAt: new Date()
+                };
+                
+                // Add both messages directly to state (bypassing AI)
+                setMessages((prev: any[]) => [...prev, userMsg, assistantMsg]);
+                
+                // Clear the image since analysis failed
+                clearImage();
             }
         } else {
             // Text Flow
@@ -143,14 +182,14 @@ export function ChatInput({
                         <>
                             <input
                                 type="file"
-                                ref={imageInputRef}
-                                accept="image/*"
+                                ref={fileInputRef}
+                                accept="image/png, image/jpeg, image/webp"
                                 onChange={handleImageSelect}
                                 className="hidden"
                             />
                             <button
                                 type="button"
-                                onClick={() => imageInputRef.current?.click()}
+                                onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
                                 className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
                                     ? 'text-green-600 bg-green-50 border border-green-200'

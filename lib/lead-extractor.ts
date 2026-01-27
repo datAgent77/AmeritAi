@@ -22,21 +22,31 @@ export function isLeadConfirmation(aiResponse: string): boolean {
     const patterns = [
         // Turkish patterns
         /bilgileriniz.*kaydet/i,
+        /bilgiler.*kaydet/i,
         /bilgileriniz.*alın/i,
+        /bilgi.*alın/i,
         /iletişim.*kayd/i,
         /sizinle.*iletişime.*geçeceğ/i,
         /temsilci.*iletişime/i,
         /bilgilerinizi.*aldık/i,
+        /not.*edildi/i,
+        /not.*aldım/i,
         /kayd.*alınmıştır/i,
+        /kayd.*oluştur/i,
         /teşekkür.*bilgiler/i,
         /en kısa sürede.*iletişime/i,
+        /iletişime.*geçilecektir/i,
+        /ulaşacağız/i,
+        /arayacağız/i,
         // English patterns
         /contact.*details.*received/i,
         /information.*recorded/i,
         /we.*will.*contact/i,
         /representative.*will.*reach/i,
         /thank.*for.*your.*information/i,
+        /thank.*for.*info/i,
         /details.*have.*been.*saved/i,
+        /noted.*information/i,
     ];
 
     return patterns.some(p => p.test(aiResponse));

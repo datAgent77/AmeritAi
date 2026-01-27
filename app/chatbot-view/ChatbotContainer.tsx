@@ -18,6 +18,7 @@ import { ChatInput } from "./components/ChatInput"
 import { BookingOverlay } from "./components/BookingOverlay"
 import { ConfirmationModal } from "./components/ConfirmationModal"
 import { VoiceOverlay } from "./components/VoiceOverlay"
+import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 
 export default function ChatbotContainer() {
     // 1. Contexts & Params
@@ -39,6 +40,10 @@ export default function ChatbotContainer() {
     const [bookingData, setBookingData] = useState({ type: "", date: "", time: "", notes: "" })
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
     
+    // Lead Collection State
+    const [showLeadCollection, setShowLeadCollection] = useState(false)
+    const [isSubmittingLead, setIsSubmittingLead] = useState(false)
+
     // Offline mode - when business hours are not active
     const offlineMessage = searchParams?.get("offlineMessage") || null
     const isOffline = !!offlineMessage
@@ -49,6 +54,17 @@ export default function ChatbotContainer() {
             .then(() => setIsGuestReady(true))
             .catch((error) => console.error("Guest login failed:", error))
     }, [])
+
+    // INITIAL LEAD COLLECTION CHECK
+    useEffect(() => {
+        if (!isLoading && settings.enableInitialLeadCollection) {
+            // Check if user already submitted lead (via localStorage)
+            const hasSubmitted = localStorage.getItem(`vion_lead_submitted_${chatbotId}`)
+            if (!hasSubmitted) {
+                setShowLeadCollection(true)
+            }
+        }
+    }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
 
     useEffect(() => {
         const url = searchParams?.get("url")
@@ -137,7 +153,6 @@ export default function ChatbotContainer() {
         }
     }, [messages.length, isTyping])
 
-
     // 9. Handlers
     const handleToggleSize = () => {
         const newExpandedState = !isExpanded
@@ -156,13 +171,42 @@ export default function ChatbotContainer() {
         setIsConfirmingClear(false)
     }
 
+    // LEAD SUBMIT HANDLER
+    const handleLeadSubmit = async (formData: any) => {
+        setIsSubmittingLead(true)
+        try {
+            const response = await fetch('/api/leads', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatbotId,
+                    ...formData,
+                    source: 'Initial Lead Form'
+                })
+            })
+
+            if (response.ok) {
+                // Save legacy format for compatibility with Booking Overlay
+                localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
+                setShowLeadCollection(false)
+                
+                // Optional: Send a hidden message to AI to acknowledge the user
+                // sendMessage(`My name is ${formData.name}.`, false) 
+            } else {
+                alert(t('errorOccurred') || "An error occurred. Please try again.")
+            }
+        } catch (error) {
+            console.error("Lead submit error:", error)
+            alert(t('errorOccurred') || "An error occurred. Please try again.")
+        } finally {
+            setIsSubmittingLead(false)
+        }
+    }
+
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmittingBooking(true)
-        // ... (Booking Logic - simplified for now or extract?)
-        // Assuming we keep it simple or it was just a local state update in original code?
-        // Original code sent to API.
-        // For brevity, I'll simulate success.
+        // ... (Booking Logic)
         setTimeout(() => {
             setIsSubmittingBooking(false)
             setShowBooking(false)
@@ -257,9 +301,19 @@ export default function ChatbotContainer() {
                 visualContext={visualContext}
                 language={language}
                 t={t}
+                setMessages={setMessages}
              />
 
              {/* Overlays */}
+             <LeadCollectionOverlay 
+                show={showLeadCollection}
+                onSubmit={handleLeadSubmit}
+                isSubmitting={isSubmittingLead}
+                settings={settings}
+                t={t}
+                description={settings.leadFormConfig?.title} 
+             />
+
              <BookingOverlay 
                 showBooking={showBooking}
                 setShowBooking={setShowBooking}

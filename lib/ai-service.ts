@@ -319,7 +319,7 @@ Mirror the user's language exactly. Do NOT default to Turkish or another languag
 
         // Visual Analysis Context (from image diagnosis)
         if (visualAnalysisContext) {
-            systemPrompt += `\n\n# VISUAL ANALYSIS OF UPLOADED IMAGE\n${visualAnalysisContext}\n\nCRITICAL INSTRUCTION: The user has uploaded an image and the text above is the detailed analysis of it. You MUST use this information to answer. Treat this analysis as your own vision. Describe the image and answer the user's question based on these details. Do NOT mention that you are reading an analysis; act as if you see the image.`;
+            systemPrompt += `\n\n# VISUAL ANALYSIS OF UPLOADED IMAGE\n${visualAnalysisContext}\n\nCRITICAL INSTRUCTION: The user has uploaded an image and the text above is the detailed analysis of it. You MUST use this information to answer. \n\nIMPORTANT OVERRIDE: Even if your standard training says you cannot "see", you MUST accept this analysis as your own vision. Describe the image details provided above as if you are looking at them. Do NOT say "I cannot analyze images" or "ability not available". The analysis IS ALREADY DONE. Just use it.`;
         }
 
         // 5. INJECT ACTIVE MODULE INSTRUCTIONS

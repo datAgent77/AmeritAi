@@ -351,11 +351,11 @@ RULES:
 5. If user provides multiple pieces of info in one message (e.g., "Yasin Çelenk, 05443357784"), acknowledge ALL of them.`,
             tr: `LEAD TOPLAMA MODÜLÜ AKTİF.
 KURALLAR:
-1. Kullanıcı iletişim bilgisi verirse (Ad/E-posta/Telefon), HEMEN onay ver: "Bilgileriniz için teşekkürler" veya "Bilgileriniz kaydedildi".
+1. Kullanıcı iletişim bilgisi verirse (Ad/E-posta/Telefon), veritabanına kaydetmek için yanıtında MUTLAKA şu kalıplardan birini geçir: "Bilgilerinizi kaydettim", "Sizinle iletişime geçeceğiz", "Kaydınız oluşturuldu" veya "Not aldım".
 2. ASLA aynı bilgiyi iki kez sorma. Kullanıcı zaten adını ve telefonunu verdiyse, TEKRAR SORMA.
-3. Onay verirken net ifadeler kullan: "Sizinle iletişime geçeceğiz", "Kaydınız alınmıştır", "Temsilcimiz en kısa sürede ulaşacak".
+3. Onay mesajın net olsun: "Teşekkürler, bilgilerinizi kaydettim. Temsilcimiz en kısa sürede size ulaşacak."
 4. Doğal ol - ısrarcı olma. Sadece kullanıcı gerçek ilgi gösterdiğinde iletişim bilgisi iste.
-5. Kullanıcı tek mesajda birden fazla bilgi verirse (örn: "Yasin Çelenk, 05443357784"), HEPSİNİ kabul et.`
+5. Kullanıcı tek mesajda birden fazla bilgi verirse (örn: "Yasin Çelenk, 05443357784"), HEPSİNİ kabul et ve onayla.`
         }
     },
 

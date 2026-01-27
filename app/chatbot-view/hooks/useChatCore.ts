@@ -36,6 +36,16 @@ export function useChatCore({
     const [hasCapturedInChatLead, setHasCapturedInChatLead] = useState(false)
     const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
     const proactiveTimerRef = useRef<NodeJS.Timeout | null>(null)
+    
+    // Store callback refs to prevent infinite loops from recreated functions
+    const getImageFromCacheRef = useRef(getImageFromCache)
+    const findImageByContentRef = useRef(findImageByContent)
+    
+    // Update refs when callbacks change (but don't trigger re-renders)
+    useEffect(() => {
+        getImageFromCacheRef.current = getImageFromCache
+        findImageByContentRef.current = findImageByContent
+    })
 
     const isChatLoading = chatStatus === 'streaming' || chatStatus === 'submitted'
 
@@ -128,10 +138,11 @@ export function useChatCore({
                     return false
                 })
                 
+                // Use refs to access callbacks - prevents infinite loop from dependency changes
                 const mergedFirebaseMessages = initialMessages.map((msg: any) => {
-                    let cached = getImageFromCache(msg.id)
+                    let cached = getImageFromCacheRef.current(msg.id)
                     if (!cached && msg.role === 'user' && msg.content) {
-                        cached = findImageByContent(msg.content)
+                        cached = findImageByContentRef.current(msg.content)
                     }
                     if (cached) {
                         return { ...msg, image: cached.image, imageMimeType: cached.mimeType }
@@ -145,7 +156,7 @@ export function useChatCore({
                 return mergedFirebaseMessages
             })
         }
-    }, [initialMessages, getImageFromCache, findImageByContent]) // Added dependencies
+    }, [initialMessages]) // Only depend on initialMessages - callbacks accessed via refs
 
     // 4. Send Message
     const sendMessage = async (content: string, shouldSpeakResponse: boolean = false, visualAnalysisContext?: string): Promise<string> => {

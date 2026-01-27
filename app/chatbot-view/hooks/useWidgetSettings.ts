@@ -78,7 +78,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
-                        enableInitialLeadCollection: data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false,
+                        enableInitialLeadCollection: (data.enableLeadCollection && data.enableInitialLeadCollection) ?? false,
                         enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
                         leadFormConfig: data.leadFormConfig || null,
                         industry: data.industry || "ecommerce",
