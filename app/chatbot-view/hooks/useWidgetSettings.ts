@@ -118,11 +118,15 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
 
     // Sync language with browser language for widget UI
     useEffect(() => {
-        // Widget UI always follows browser language
-        const browserLang = typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
-        const supportedLang = ['en', 'tr', 'es', 'fr', 'de'].includes(browserLang) ? browserLang : 'en'
-        setLanguage(supportedLang as any)
-    }, [setLanguage])
+        if (settings.initialLanguage && settings.initialLanguage !== 'auto') {
+            setLanguage(settings.initialLanguage)
+        } else {
+            // Widget UI always follows browser language if auto
+            const browserLang = typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en'
+            const supportedLang = ['en', 'tr', 'es', 'fr', 'de'].includes(browserLang) ? browserLang : 'en'
+            setLanguage(supportedLang as any)
+        }
+    }, [setLanguage, settings.initialLanguage])
 
     return { settings, setSettings, isLoading }
 }

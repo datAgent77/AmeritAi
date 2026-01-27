@@ -1,5 +1,5 @@
 import { ChatbotSettings } from "@/types/chatbot"
-import { UserPlus, Mail, Phone, User, Building2 } from "lucide-react"
+import { UserPlus, Mail, Phone, User, Building2, ListOrdered, MessageSquare } from "lucide-react"
 import { useState } from "react"
 
 interface LeadCollectionOverlayProps {
@@ -23,33 +23,52 @@ export function LeadCollectionOverlay({
         name: string
         email: string
         phone: string
-        company: string
         customFields: Record<string, string>
     }>({
         name: "",
         email: "",
         phone: "",
-        company: "",
         customFields: {}
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
 
     if (!show) return null
 
+    // Get form config from settings
+    const formConfig = settings.leadFormConfig || {}
+    const nameEnabled = formConfig.nameEnabled !== false
+    const emailEnabled = formConfig.emailEnabled !== false
+    const phoneEnabled = formConfig.phoneEnabled !== false
+    const nameRequired = formConfig.nameRequired !== false
+    const emailRequired = formConfig.emailRequired !== false
+    const phoneRequired = formConfig.phoneRequired === true
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         const newErrors: Record<string, string> = {}
 
         // Name Validation
-        if (!formData.name) {
+        if (nameEnabled && nameRequired && !formData.name) {
             newErrors.name = t('nameRequired') || "Name is required"
         }
 
-        // Contact Info Validation
-        if (!formData.email && !formData.phone) {
-            const msg = t('contactRequired') || "Please provide either email or phone"
-            newErrors.email = msg
-            newErrors.phone = msg
+        // Email Validation
+        if (emailEnabled && emailRequired && !formData.email) {
+            newErrors.email = t('emailRequired') || "Email is required"
+        }
+
+        // Phone Validation  
+        if (phoneEnabled && phoneRequired && !formData.phone) {
+            newErrors.phone = t('phoneRequired') || "Phone is required"
+        }
+
+        // At least one contact method required (if both enabled)
+        if (emailEnabled && phoneEnabled && !emailRequired && !phoneRequired) {
+            if (!formData.email && !formData.phone) {
+                const msg = t('contactRequired') || "Please provide either email or phone"
+                newErrors.email = msg
+                newErrors.phone = msg
+            }
         }
 
         // Email Format Validation
@@ -60,7 +79,7 @@ export function LeadCollectionOverlay({
             }
         }
 
-        // Phone Validation
+        // Phone Format Validation
         if (formData.phone) {
             const phoneDigits = formData.phone.replace(/\D/g, '')
             const isValidChars = /^[\d\s\+\-\(\)]+$/.test(formData.phone)
@@ -103,168 +122,179 @@ export function LeadCollectionOverlay({
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Name */}
-                    <div className="space-y-1">
-                        <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder={t('fullName') || "Full Name"}
-                                required
-                                value={formData.name}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, name: e.target.value })
-                                    if (errors.name) setErrors({ ...errors, name: "" })
-                                }}
-                                className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                    errors.name ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
-                                style={{ '--tw-ring-color': errors.name ? '#EF4444' : settings.brandColor } as any}
-                            />
+                    {/* Name Field */}
+                    {nameEnabled && (
+                        <div className="space-y-1">
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder={formConfig.namePlaceholder || t('fullName') || "Ad Soyad"}
+                                    required={nameRequired}
+                                    value={formData.name}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, name: e.target.value })
+                                        if (errors.name) setErrors({ ...errors, name: "" })
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
+                                        errors.name ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    }`}
+                                    style={{ '--tw-ring-color': errors.name ? '#EF4444' : settings.brandColor } as any}
+                                />
+                            </div>
+                            {errors.name && <p className="text-xs text-red-500 ml-1">{errors.name}</p>}
                         </div>
-                        {errors.name && <p className="text-xs text-red-500 ml-1">{errors.name}</p>}
-                    </div>
+                    )}
 
-                    {/* Email */}
-                    <div className="space-y-1">
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="email"
-                                placeholder={t('email') || "Email Address"}
-                                value={formData.email}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, email: e.target.value })
-                                    if (errors.email) setErrors({ ...errors, email: "" })
-                                }}
-                                className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                    errors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
-                                style={{ '--tw-ring-color': errors.email ? '#EF4444' : settings.brandColor } as any}
-                            />
+                    {/* Email Field */}
+                    {emailEnabled && (
+                        <div className="space-y-1">
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="email"
+                                    placeholder={formConfig.emailPlaceholder || t('email') || "E-posta"}
+                                    required={emailRequired}
+                                    value={formData.email}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, email: e.target.value })
+                                        if (errors.email) setErrors({ ...errors, email: "" })
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
+                                        errors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    }`}
+                                    style={{ '--tw-ring-color': errors.email ? '#EF4444' : settings.brandColor } as any}
+                                />
+                            </div>
+                            {errors.email && <p className="text-xs text-red-500 ml-1">{errors.email}</p>}
                         </div>
-                        {errors.email && <p className="text-xs text-red-500 ml-1">{errors.email}</p>}
-                    </div>
+                    )}
 
-                    {/* Phone */}
-                    <div className="space-y-1">
-                        <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="tel"
-                                placeholder={t('phone') || "Phone Number"}
-                                value={formData.phone}
-                                onChange={(e) => {
-                                    setFormData({ ...formData, phone: e.target.value })
-                                    if (errors.phone) setErrors({ ...errors, phone: "" })
-                                }}
-                                className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                    errors.phone ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
-                                style={{ '--tw-ring-color': errors.phone ? '#EF4444' : settings.brandColor } as any}
-                            />
+                    {/* Phone Field */}
+                    {phoneEnabled && (
+                        <div className="space-y-1">
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="tel"
+                                    placeholder={formConfig.phonePlaceholder || t('phone') || "Telefon"}
+                                    required={phoneRequired}
+                                    value={formData.phone}
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, phone: e.target.value })
+                                        if (errors.phone) setErrors({ ...errors, phone: "" })
+                                    }}
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
+                                        errors.phone ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    }`}
+                                    style={{ '--tw-ring-color': errors.phone ? '#EF4444' : settings.brandColor } as any}
+                                />
+                            </div>
+                            {errors.phone && <p className="text-xs text-red-500 ml-1">{errors.phone}</p>}
                         </div>
-                        {errors.phone && <p className="text-xs text-red-500 ml-1">{errors.phone}</p>}
-                    </div>
+                    )}
 
-                    {/* Company (Optional) */}
-                    <div className="space-y-1">
-                        <div className="relative">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder={t('company') || "Company (Optional)"}
-                                value={formData.company}
-                                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white"
-                                style={{ '--tw-ring-color': settings.brandColor } as any}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Custom Fields Restoration */}
+                    {/* Custom Fields */}
                     {settings.leadCustomFields && settings.leadCustomFields.length > 0 && (
-                        <div className="space-y-3 pt-2 border-t border-gray-100">
-                             {settings.leadCustomFields.map((field: any) => (
-                                <div key={field.id} className="space-y-1">
-                                    <label className="text-xs font-semibold text-gray-600 ml-1">
-                                        {field.label}{field.required && <span className="text-red-500">*</span>}
-                                    </label>
-                                    {field.type === 'textarea' ? (
-                                        <textarea
-                                            required={field.required}
-                                            value={formData.customFields?.[field.id] || ''}
-                                            onChange={(e) => {
-                                                setFormData({ 
-                                                    ...formData, 
-                                                    customFields: { ...formData.customFields, [field.id]: e.target.value }
-                                                })
-                                                if (errors[field.id]) {
-                                                    const newErrors = {...errors}
-                                                    delete newErrors[field.id]
-                                                    setErrors(newErrors)
-                                                }
-                                            }}
-                                            className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white min-h-[80px] ${
-                                                errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                            }`}
-                                            style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
-                                            placeholder={field.placeholder || ''}
-                                        />
-                                    ) : field.type === 'select' ? (
-                                        <div className="relative">
-                                            <select
-                                                required={field.required}
-                                                value={formData.customFields?.[field.id] || ''}
-                                                onChange={(e) => {
-                                                    setFormData({ 
-                                                        ...formData, 
-                                                        customFields: { ...formData.customFields, [field.id]: e.target.value }
-                                                    })
-                                                    if (errors[field.id]) {
-                                                        const newErrors = {...errors}
-                                                        delete newErrors[field.id]
-                                                        setErrors(newErrors)
-                                                    }
-                                                }}
-                                                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white appearance-none ${
-                                                    errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                                }`}
-                                                style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
-                                            >
-                                                <option value="">{field.placeholder || (t('select') || 'Select...')}</option>
-                                                {(field.options || []).map((opt: string, i: number) => (
-                                                    <option key={i} value={opt}>{opt}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    ) : (
-                                        <input
-                                            type={field.type || 'text'}
-                                            required={field.required}
-                                            value={formData.customFields?.[field.id] || ''}
-                                            onChange={(e) => {
-                                                setFormData({ 
-                                                    ...formData, 
-                                                    customFields: { ...formData.customFields, [field.id]: e.target.value }
-                                                })
-                                                if (errors[field.id]) {
-                                                    const newErrors = {...errors}
-                                                    delete newErrors[field.id]
-                                                    setErrors(newErrors)
-                                                }
-                                            }}
-                                            className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                                errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                            }`}
-                                            style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
-                                            placeholder={field.placeholder || ''}
-                                        />
-                                    )}
-                                    {errors[field.id] && <p className="text-xs text-red-500 ml-1">{errors[field.id]}</p>}
-                                </div>
-                            ))}
-                        </div>
+                        <>
+                            {settings.leadCustomFields.map((field: any) => {
+                                // Choose icon based on field type
+                                const FieldIcon = field.type === 'email' ? Mail 
+                                    : field.type === 'phone' ? Phone 
+                                    : field.type === 'textarea' ? MessageSquare
+                                    : field.type === 'select' ? ListOrdered
+                                    : Building2;
+                                
+                                return (
+                                    <div key={field.id} className="space-y-1">
+                                        {field.type === 'textarea' ? (
+                                            // Textarea with label
+                                            <>
+                                                <label className="text-xs font-medium text-gray-500 ml-1">
+                                                    {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
+                                                </label>
+                                                <textarea
+                                                    required={field.required}
+                                                    value={formData.customFields?.[field.id] || ''}
+                                                    onChange={(e) => {
+                                                        setFormData({ 
+                                                            ...formData, 
+                                                            customFields: { ...formData.customFields, [field.id]: e.target.value }
+                                                        })
+                                                        if (errors[field.id]) {
+                                                            const newErrors = {...errors}
+                                                            delete newErrors[field.id]
+                                                            setErrors(newErrors)
+                                                        }
+                                                    }}
+                                                    className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white min-h-[80px] resize-none ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    }`}
+                                                    style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
+                                                    placeholder={field.placeholder || ''}
+                                                />
+                                            </>
+                                        ) : field.type === 'select' ? (
+                                            // Select with icon
+                                            <div className="relative">
+                                                <ListOrdered className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <select
+                                                    required={field.required}
+                                                    value={formData.customFields?.[field.id] || ''}
+                                                    onChange={(e) => {
+                                                        setFormData({ 
+                                                            ...formData, 
+                                                            customFields: { ...formData.customFields, [field.id]: e.target.value }
+                                                        })
+                                                        if (errors[field.id]) {
+                                                            const newErrors = {...errors}
+                                                            delete newErrors[field.id]
+                                                            setErrors(newErrors)
+                                                        }
+                                                    }}
+                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white appearance-none ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    }`}
+                                                    style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
+                                                >
+                                                    <option value="">{field.placeholder || field.label || (t('select') || 'Seçiniz...')}</option>
+                                                    {(field.options || []).map((opt: string, i: number) => (
+                                                        <option key={i} value={opt}>{opt}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        ) : (
+                                            // Text/Email/Phone input with icon (same style as default fields)
+                                            <div className="relative">
+                                                <FieldIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                                <input
+                                                    type={field.type || 'text'}
+                                                    required={field.required}
+                                                    value={formData.customFields?.[field.id] || ''}
+                                                    onChange={(e) => {
+                                                        setFormData({ 
+                                                            ...formData, 
+                                                            customFields: { ...formData.customFields, [field.id]: e.target.value }
+                                                        })
+                                                        if (errors[field.id]) {
+                                                            const newErrors = {...errors}
+                                                            delete newErrors[field.id]
+                                                            setErrors(newErrors)
+                                                        }
+                                                    }}
+                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    }`}
+                                                    style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
+                                                    placeholder={field.placeholder || field.label || ''}
+                                                />
+                                            </div>
+                                        )}
+                                        {errors[field.id] && <p className="text-xs text-red-500 ml-1">{errors[field.id]}</p>}
+                                    </div>
+                                )
+                            })}
+                        </>
                     )}
 
                     <button
@@ -276,10 +306,10 @@ export function LeadCollectionOverlay({
                         {isSubmitting ? (
                             <span className="flex items-center justify-center gap-2">
                                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                {t('processing') || "Processing..."}
+                                {t('processing') || "İşleniyor..."}
                             </span>
                         ) : (
-                            t('startChat') || "Start Chat"
+                            formConfig.submitButtonText || t('startChat') || "Sohbete Başla"
                         )}
                     </button>
                     

@@ -198,10 +198,32 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                     {t('customPromptsDesc') || 'Bu talimatlar sektör promptuna ek olarak chatbota verilecektir.'}
                                 </p>
                             </div>
+
+                            {/* Language Selector (Moved Inside Card) */}
+                            <div className="grid gap-2 pt-4 border-t">
+                                <Label>{t('chatbotLanguage') || 'Chatbot Dili'}</Label>
+                                <Select
+                                    value={settings.initialLanguage}
+                                    onValueChange={(value) => setSettings(prev => ({ ...prev, initialLanguage: value }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="auto">{t('langAuto') || 'Otomatik (Tarayıcı Dili)'}</SelectItem>
+                                        <SelectItem value="tr">Türkçe</SelectItem>
+                                        <SelectItem value="en">English</SelectItem>
+                                        <SelectItem value="es">Español</SelectItem>
+                                        <SelectItem value="de">Deutsch</SelectItem>
+                                        <SelectItem value="fr">Français</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">{t('langDesc') || 'Chatbot\'un varsayılan dilini belirleyin.'}</p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Language selector removed - now using browser language automatically */}
+
                 </div>
             </div>
         </div>
