@@ -165,7 +165,8 @@ export function useVisualContext(chatbotId: string, language: string) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     image: imageToAnalyze,
-                    mimeType: mimeTypeToUse
+                    mimeType: mimeTypeToUse,
+                    language: language // Pass language to API for localized responses
                 })
             })
 

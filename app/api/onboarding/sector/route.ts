@@ -6,6 +6,8 @@ import { canEnableModule, getModuleStatusForUI } from "@/lib/entitlements";
 import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     try {
         const adminDb = getAdminDb();

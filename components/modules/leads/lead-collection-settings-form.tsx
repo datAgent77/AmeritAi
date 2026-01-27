@@ -37,6 +37,8 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
     const [enableInitialLead, setEnableInitialLead] = useState(false)
     const [enableInChatLead, setEnableInChatLead] = useState(false)
     const [customFields, setCustomFields] = useState<CustomField[]>([])
+    // Raw string state for select options (to allow typing commas)
+    const [optionsInputs, setOptionsInputs] = useState<Record<string, string>>({})
     const [enableNotifications, setEnableNotifications] = useState(false)
     const [notificationEmail, setNotificationEmail] = useState("")
 
@@ -70,7 +72,16 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
 
                 setEnableInitialLead(data.enableInitialLeadCollection ?? data.enableLeadCollection ?? false)
                 setEnableInChatLead(data.enableInChatLeadCollection ?? false)
-                setCustomFields(data.leadCustomFields || [])
+                const fields = data.leadCustomFields || []
+                setCustomFields(fields)
+                // Initialize optionsInputs from loaded data
+                const inputs: Record<string, string> = {}
+                fields.forEach((f: CustomField) => {
+                    if (f.options && f.options.length > 0) {
+                        inputs[f.id] = f.options.join(', ')
+                    }
+                })
+                setOptionsInputs(inputs)
                 setEnableNotifications(data.enableLeadNotifications || false)
                 setNotificationEmail(data.leadNotificationEmail || "")
 
@@ -166,14 +177,16 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
     }
 
     const addCustomField = () => {
+        const fieldId = 'field_' + Date.now()
         const newField: CustomField = {
-            id: 'field_' + Date.now(),
+            id: fieldId,
             label: '',
             type: 'text',
             required: false,
             placeholder: ''
         }
         setCustomFields(prev => [...prev, newField])
+        setOptionsInputs(prev => ({ ...prev, [fieldId]: '' }))
     }
 
     const updateCustomField = (index: number, field: keyof CustomField, value: any) => {
@@ -183,7 +196,15 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
     }
 
     const removeCustomField = (index: number) => {
+        const fieldToRemove = customFields[index]
         setCustomFields(prev => prev.filter((_, i) => i !== index))
+        if (fieldToRemove) {
+            setOptionsInputs(prev => {
+                const newInputs = { ...prev }
+                delete newInputs[fieldToRemove.id]
+                return newInputs
+            })
+        }
     }
 
     if (isLoading) {
@@ -534,8 +555,16 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <div className="space-y-1.5">
                                             <Label className="text-xs text-muted-foreground">{t('dropdownOptions') || 'Seçenekler (virgülle ayırın)'}</Label>
                                             <Input
-                                                value={(field.options || []).join(', ')}
-                                                onChange={(e) => updateCustomField(index, 'options', e.target.value.split(',').map(s => s.trim()).filter(s => s))}
+                                                value={optionsInputs[field.id] ?? (field.options || []).join(', ')}
+                                                onChange={(e) => {
+                                                    // Store raw input value to allow typing commas
+                                                    setOptionsInputs(prev => ({ ...prev, [field.id]: e.target.value }))
+                                                }}
+                                                onBlur={(e) => {
+                                                    // Parse and save on blur
+                                                    const parsed = e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                                                    updateCustomField(index, 'options', parsed)
+                                                }}
                                                 placeholder={t('optionsPlaceholder') || 'Seçenek 1, Seçenek 2, Seçenek 3'}
                                             />
                                         </div>

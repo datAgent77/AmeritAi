@@ -68,6 +68,7 @@ export function useChatCore({
 
         let unsubscribe = () => { }
         let isMounted = true
+        let lastMessageHash = ''
 
         const setupListener = async () => {
             const docRef = doc(db, "chat_sessions", sessionId)
@@ -85,7 +86,15 @@ export function useChatCore({
                                 content: m.content,
                                 createdAt: m.createdAt ? (typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate() : new Date(m.createdAt)) : new Date()
                             }))
-                            setInitialMessages(history)
+                            
+                            // Create a hash to detect actual changes and prevent infinite loops
+                            const messageHash = JSON.stringify(history.map(m => ({ id: m.id, role: m.role, content: m.content })))
+                            
+                            // Only update if messages actually changed
+                            if (messageHash !== lastMessageHash) {
+                                lastMessageHash = messageHash
+                                setInitialMessages(history)
+                            }
                         }
                     }
                 })
@@ -108,30 +117,13 @@ export function useChatCore({
         if (initialMessages.length > 0) {
             setMessages((prevMessages: any[]) => {
                 const firebaseMessageIds = new Set(initialMessages.map((m: any) => m.id))
-                const firebaseMessageContents = new Set(
-                    initialMessages
-                        .filter((m: any) => m.role === 'assistant' && m.content)
-                        .map((m: any) => m.content.trim())
-                )
                 
                 const pendingLocalMessages = prevMessages.filter((m: any) => {
                     const isLocalAssistant = m.id && m.id.startsWith('assistant-')
-                    // Also preserve pending user messages that haven't synced yet
                     const isLocalUser = m.id && m.id.startsWith('user-')
-                    
                     const isNotInFirebaseById = !firebaseMessageIds.has(m.id)
-                    // Be careful with content check for user messages, as they might be exact matches.
-                    // Main check is ID.
                     
-                    if (isLocalAssistant) {
-                         // PRESERVE local assistant messages even if empty/partial (streaming)
-                         // The key is checking if it's already in Firebase by ID.
-                         // Content check is secondary but should NOT filter out if local has content and firebase doesn't (rare)
-                         // OR if local is empty/starting and firebase doesn't exist yet.
-                         return isNotInFirebaseById
-                    }
-
-                    if (isLocalUser) {
+                    if (isLocalAssistant || isLocalUser) {
                         return isNotInFirebaseById
                     }
 
@@ -150,10 +142,30 @@ export function useChatCore({
                     return msg
                 })
                 
-                if (pendingLocalMessages.length > 0) {
-                    return [...mergedFirebaseMessages, ...pendingLocalMessages]
+                const newMessages = pendingLocalMessages.length > 0 
+                    ? [...mergedFirebaseMessages, ...pendingLocalMessages]
+                    : mergedFirebaseMessages
+                
+                // Prevent unnecessary updates if messages are identical
+                if (prevMessages.length === newMessages.length) {
+                    const prevIds = prevMessages.map(m => m.id).join(',')
+                    const newIds = newMessages.map(m => m.id).join(',')
+                    if (prevIds === newIds) {
+                        // Check if content changed
+                        let contentChanged = false
+                        for (let i = 0; i < prevMessages.length; i++) {
+                            if (prevMessages[i].content !== newMessages[i].content) {
+                                contentChanged = true
+                                break
+                            }
+                        }
+                        if (!contentChanged) {
+                            return prevMessages // Return same reference to prevent re-render
+                        }
+                    }
                 }
-                return mergedFirebaseMessages
+                
+                return newMessages
             })
         }
     }, [initialMessages]) // Only depend on initialMessages - callbacks accessed via refs
