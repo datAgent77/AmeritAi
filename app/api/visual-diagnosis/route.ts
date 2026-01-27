@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
     try {
-        const { image, mimeType } = await req.json();
+        const { image, mimeType, language } = await req.json();
 
         if (!image || !mimeType) {
             return NextResponse.json({ error: "Image and mimeType are required" }, { status: 400 });
@@ -58,7 +58,22 @@ export async function POST(req: Request) {
         // Use gemini-2.0-flash for speed and vision capabilities
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        const prompt = `
+        // Determine response language
+        const isTurkish = language === 'tr' || (typeof language === 'string' && language.toLowerCase().includes('tr'));
+        
+        const prompt = isTurkish ? `
+        Bu görseli dikkatli bir şekilde analiz et. Bu bir bitki hastalığı, cilt rahatsızlığı, ürün kusuru veya genel bir nesne olabilir.
+        Sorunu, hastalığı veya ana görsel özelliği belirle.
+        
+        Sonucu STRICT JSON formatında (markdown formatı olmadan) şu anahtarlarla döndür:
+        - diagnosis: Durumun veya nesnenin kısa, net başlığı (Türkçe).
+        - confidence: Tahmini güven yüzdesi (örn: "95%").
+        - treatment: Önerilen eylemler, çözümler veya sonraki adımlar (Türkçe).
+
+        Görsel belirsiz veya ilgisizse, diagnosis'ı "Bilinmiyor" olarak ayarla ve treatment'ı "Lütfen daha net bir görsel sağlayın." olarak ayarla.
+        
+        ÖNEMLİ: Sadece geçerli JSON döndür, ek metin veya açıklama ekleme.
+        ` : `
         Analyze this image carefully. It may be a plant with a disease, a skin condition, a product defect, or general object.
         Identify the issue, disease, or main visual feature.
         

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 
+export const dynamic = 'force-dynamic';
+
 // GET: Get current onboarding status
 export async function GET(req: Request) {
     try {

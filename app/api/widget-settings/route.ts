@@ -53,12 +53,15 @@ export async function GET(req: Request) {
                 if (docSnap.exists) {
                 const data = docSnap.data() || {};
                 
-                // Merge data: Chatbot settings first, then User settings override (for module flags)
-                // This ensures module toggles from the Console (written to users) take precedence
+                // Merge data: Chatbot settings should take precedence for widget configuration
+                // User settings provide account status and global overrides
                 const mergedData = {
-                    ...data,
-                    ...userData
-                };
+                    ...userData, // Base: User account data
+                    ...data,     // Override: Chatbot specific settings (including leadCustomFields)
+                    // Keep isActive and enableChatbot from userData if critical
+                    isActive: userData?.isActive,
+                    enableChatbot: userData?.enableChatbot
+                } as any;
 
                 const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
                 const isAccountActive = mergedData.isActive !== false;
