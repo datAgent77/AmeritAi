@@ -322,7 +322,7 @@ export function useChatCore({
         }, 12000)
 
         return () => clearTimeout(timer)
-    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting])
+    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage])
 
     // 6. Reset Session
     const resetSession = () => {

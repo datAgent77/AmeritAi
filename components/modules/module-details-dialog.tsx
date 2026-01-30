@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Zap, TrendingUp, CheckCircle2, Info, MessageSquare, type LucideIcon } from "lucide-react"
 import { ModuleDefinition, ModuleId, MODULES_REGISTRY as MODULE_DEFINITIONS } from "@/lib/modules-registry"
+import { getAllPlans } from "@/lib/pricing-config"
 import { useLanguage } from "@/context/LanguageContext"
 
 interface ModuleDetailsDialogProps {
@@ -78,8 +79,6 @@ export function ModuleDetailsDialog({
                             {/* Plan Inclusion Display */}
                             {(() => {
                                 // Dynamic Plan Check
-                                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                                const { getAllPlans } = require("@/lib/pricing-config");
                                 const allPlans = getAllPlans().filter((p: any) => p.availability === 'public').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
                                 const minPlan = allPlans.find((plan: any) => 
                                     plan.modules.included.includes(selectedModuleId) || plan.modules.included.includes('all')
