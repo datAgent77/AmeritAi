@@ -79,6 +79,9 @@ export async function POST(req: Request) {
         if (!adminDb) {
             return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
         }
+        if (!process.env.PINECONE_API_KEY || !process.env.OPENAI_API_KEY) {
+            return NextResponse.json({ error: "Missing API Configuration (Pinecone or OpenAI)" }, { status: 500 });
+        }
         console.log("API: Received knowledge request");
         const body = await req.json();
 
@@ -164,7 +167,12 @@ export async function POST(req: Request) {
                     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
                     try {
-                        const response = await fetch(url, { signal: controller.signal });
+                        const response = await fetch(url, { 
+                            signal: controller.signal,
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            }
+                        });
                         clearTimeout(timeoutId);
                         
                         if (!response.ok) throw new Error(`Status ${response.status}`);
@@ -365,7 +373,9 @@ export async function POST(req: Request) {
 
     } catch (error) {
         console.error("Ingestion error:", error);
-        return NextResponse.json({ error: "Internal Server Error: " + error }, { status: 500 });
+        return NextResponse.json({ 
+            error: error instanceof Error ? error.message : "Internal Server Error" 
+        }, { status: 500 });
     }
 }
 

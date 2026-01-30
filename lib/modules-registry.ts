@@ -344,18 +344,18 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         aiSystemInstruction: {
             en: `LEAD COLLECTION MODULE ACTIVE.
 RULES:
-1. If user provides contact info (Name/Email/Phone), IMMEDIATELY confirm receipt with phrases like "Thank you for your information" or "Your details have been recorded".
-2. NEVER ask for the same information twice. If user already provided name and phone, DO NOT ask again.
-3. When confirming, use clear phrases: "We will contact you", "Your information has been saved", "A representative will reach out".
-4. Be natural - don't be pushy. Only ask for contact info when the user shows genuine interest.
-5. If user provides multiple pieces of info in one message (e.g., "Yasin Çelenk, 05443357784"), acknowledge ALL of them.`,
+1. If the user wants to be contacted, or you need to collect their details (Name, Email, Phone):
+   - You MUST output specifically: \`[SHOW_LEAD_FORM]\`
+   - Example response: "Sure, please fill out this form. [SHOW_LEAD_FORM]"
+2. DO NOT ask for details one by one in the chat.
+3. DO NOT ask user to type their phone/email. ALWAYS use the form.`,
             tr: `LEAD TOPLAMA MODÜLÜ AKTİF.
 KURALLAR:
-1. Kullanıcı iletişim bilgisi verirse (Ad/E-posta/Telefon), veritabanına kaydetmek için yanıtında MUTLAKA şu kalıplardan birini geçir: "Bilgilerinizi kaydettim", "Sizinle iletişime geçeceğiz", "Kaydınız oluşturuldu" veya "Not aldım".
-2. ASLA aynı bilgiyi iki kez sorma. Kullanıcı zaten adını ve telefonunu verdiyse, TEKRAR SORMA.
-3. Onay mesajın net olsun: "Teşekkürler, bilgilerinizi kaydettim. Temsilcimiz en kısa sürede size ulaşacak."
-4. Doğal ol - ısrarcı olma. Sadece kullanıcı gerçek ilgi gösterdiğinde iletişim bilgisi iste.
-5. Kullanıcı tek mesajda birden fazla bilgi verirse (örn: "Yasin Çelenk, 05443357784"), HEPSİNİ kabul et ve onayla.`
+1. Kullanıcı aranmak isterse veya iletişim bilgilerini alman gerekirse (Ad, E-posta, Telefon):
+   - MUTLAKA şu özel komutu kullan: \`[SHOW_LEAD_FORM]\`
+   - Örnek Yanıt: "Tabii, lütfen iletişim formunu doldurun. [SHOW_LEAD_FORM]"
+2. Sohbet içinde bilgileri tek tek sorma.
+3. Kullanıcıdan numarasını yazmasını isteme. HER ZAMAN formu aç.`
         }
     },
 
@@ -672,12 +672,12 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
     digitalWaiter: {
         id: 'digitalWaiter',
         name: {
-            en: 'Digital Waiter',
-            tr: 'Dijital Garson'
+            en: 'Restaurant & Cafe AI',
+            tr: 'Restoran ve Kafe AI'
         },
         description: {
-            en: 'Active QR menu assistant that takes orders',
-            tr: 'Sipariş alan aktif QR menü asistanı'
+            en: 'Smart assistant for menus, recommendations, and service flow',
+            tr: 'Menü, öneriler ve servis akışı için akıllı asistan'
         },
         icon: 'Utensils',
         isCore: false,
@@ -689,38 +689,32 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         showOnLandingPage: true,
         legacyFirestoreField: 'enableDigitalWaiter',
         longDescription: {
-            en: 'More than a menu. A digital waiter that greets your guests, recommends specialties, answers questions about allergens, and takes orders instantly via QR code.',
-            tr: 'Bir menüden fazlası. Misafirlerinizi karşılayan, spesiyalleri öneren, alerjen sorularını yanıtlayan ve QR kod üzerinden sipariş alan dijital garson.'
+            en: 'Transform your venue with an AI that understands your menu. Whether you run a fine dining restaurant (Table Service) or a coffee shop (Counter Service), this AI adapts to your service style to guide guests and boost sales.',
+            tr: 'Mekanınızı menünüzü anlayan bir yapay zeka ile dönüştürün. İster masaya servis yapan bir restoran, ister kasadan servis yapan bir kafe işletin; bu AI servis stilinize uyum sağlayarak misafirleri yönlendirir ve satışları artırır.'
         },
         aiSystemInstruction: {
-            en: `DIGITAL WAITER MODE ACTIVE. You are the digital waiter of this restaurant.
-            1. Greet guests warmly and present the menu.
-            2. Suggest specials and drink pairings.
-            3. Answer questions about ingredients/allergens accurately.
-            4. Take orders precisely and confirm them.
-            5. Ask if they need anything else (water, napkins, etc.).`,
-            tr: `DİJİTAL GARSON MODU AKTİF. Bu restoranın dijital garsonusun.
-            1. Misafirleri sıcak bir şekilde karşıla ve menüyü sun.
-            2. Günün spesiyallerini ve içecek eşleşmelerini öner.
-            3. İçerik ve alerjen sorularını doğru şekilde yanıtla.
-            4. Siparişleri eksiksiz al ve onayla.
-            5. Başka bir istekleri olup olmadığını sor (su, peçete vb.).`
+            en: `RESTAURANT & CAFE AI ACTIVE.
+Your role is to assist guests with the menu and service.
+Specific behavior (Waiter vs Barista) will be defined by the Service Mode settings.`,
+            tr: `RESTORAN VE KAFE AI AKTİF.
+Göreviniz, menü ve servis konularında misafirlere yardımcı olmaktır.
+Özel davranışınız (Garson veya Barista), Servis Modu ayarlarına göre belirlenecektir.`
         },
         features: [
             {
-                title: { en: 'Smart Recommendations', tr: 'Akıllı Öneriler' },
-                description: { en: 'Suggests high-margin items.', tr: 'Yüksek kârlı ürünleri önerir.' },
-                icon: 'Star'
+                title: { en: 'Smart Menu', tr: 'Akıllı Menü' },
+                description: { en: 'Explains dishes and ingredients in detail.', tr: 'Yemekleri ve içerikleri detaylıca anlatır.' },
+                icon: 'BookOpen'
             },
             {
-                title: { en: 'Order Taking', tr: 'Sipariş Alma' },
-                description: { en: 'Takes complete orders and sends to kitchen.', tr: 'Siparişi eksiksiz alır ve mutfağa iletir.' },
-                icon: 'CheckCircle'
+                title: { en: 'Service Modes', tr: 'Servis Modları' },
+                description: { en: 'Adapts to Table Service or Self Service.', tr: 'Masaya Servis veya Self Servis düzenine uyum sağlar.' },
+                icon: 'Settings'
             }
         ],
         benefits: [
-            { en: 'Increase table turnover by 20%', tr: 'Masa devir hızını %20 artırın' },
-            { en: 'Boost average ticket size', tr: 'Ortalama sepet tutarını yükseltin' }
+            { en: 'Increase upsells with smart recommendations', tr: 'Akıllı önerilerle ek satışları artırın' },
+            { en: 'Reduce staff workload', tr: 'Personel iş yükünü azaltın' }
         ]
     },
 

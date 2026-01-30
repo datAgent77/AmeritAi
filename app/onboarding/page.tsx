@@ -369,7 +369,10 @@ export default function OnboardingPage() {
                             }),
                             signal: controller.signal
                         })
-                        if (!response.ok) throw new Error(`Status ${response.status}`)
+                        if (!response.ok) {
+                            const errData = await response.json().catch(() => ({}));
+                            throw new Error(errData.error || `Status ${response.status}`);
+                        }
                     } catch (e: any) {
                         console.error(`Failed to ingest ${urlToImport}:`, e.name === 'AbortError' ? 'Timeout' : e.message)
                     } finally {

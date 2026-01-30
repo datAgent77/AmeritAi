@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Save, Loader2, Link2, Clock, Sparkles } from "lucide-react"
+import { Save, Loader2, Link2, Clock, Sparkles, Store, Coffee, Utensils } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface DigitalWaiterConfig {
+    serviceMode: 'table_service' | 'counter_service'
     menuUrl: string
     menuPdfUrl: string
     breakfastHours: { start: string; end: string }
@@ -23,6 +25,7 @@ interface DigitalWaiterConfig {
 }
 
 const defaultConfig: DigitalWaiterConfig = {
+    serviceMode: 'table_service',
     menuUrl: '',
     menuPdfUrl: '',
     breakfastHours: { start: '07:00', end: '11:00' },
@@ -137,10 +140,10 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
             <div className="flex items-center gap-4">
                 <div className="flex-1">
                     <h1 className="text-2xl font-bold flex items-center gap-2">
-                        {t('modules.digitalWaiter') || 'Dijital Garson'}
+                        {t('modules.digitalWaiter') || 'Restoran ve Kafe AI'}
                     </h1>
                     <p className="text-muted-foreground">
-                        Menünüzü AI&apos;ya öğretin ve akıllı öneriler sunun.
+                        {t('modules.digitalWaiterDesc') || 'Menünüzü AI\'ya öğretin, servis modunu seçin ve satışları artırın.'}
                     </p>
                 </div>
                 <Button onClick={saveConfig} disabled={isSaving}>
@@ -149,54 +152,114 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                 </Button>
             </div>
 
+            {/* Service Mode Selection */}
+            <Card className="border-l-4 border-l-primary">
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <Store className="w-5 h-5 text-primary" />
+                        <CardTitle>{t('serviceMode') || "Hizmet Modu"}</CardTitle>
+                    </div>
+                    <CardDescription>
+                        {t('serviceModeDesc') || "İşletmenizin çalışma şeklini seçin. AI buna göre davranacaktır."}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col gap-4">
+                        <div className="grid gap-2">
+                            <Label>{t('businessType') || "İşletme Tipi"}</Label>
+                            <Select
+                                value={config.serviceMode}
+                                onValueChange={(value: any) => setConfig(prev => ({ ...prev, serviceMode: value }))}
+                            >
+                                <SelectTrigger className="w-full md:w-[300px]">
+                                    <SelectValue placeholder={t('select') || "Seçiniz"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="table_service">
+                                        <div className="flex items-center gap-2">
+                                            <Utensils className="w-4 h-4" />
+                                            <span>{t('tableService') || "Restoran (Masaya Servis)"}</span>
+                                        </div>
+                                    </SelectItem>
+                                    <SelectItem value="counter_service">
+                                        <div className="flex items-center gap-2">
+                                            <Coffee className="w-4 h-4" />
+                                            <span>{t('counterService') || "Kafe (Kasadan/Self Servis)"}</span>
+                                        </div>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                            {config.serviceMode === 'table_service' ? (
+                                <p>
+                                    <strong>AI Davranışı:</strong> Garson gibi davranır. Masaya servisten bahseder, menüyü sunar, misafirleri masalarında ağırlar.
+                                </p>
+                            ) : (
+                                <p>
+                                    <strong>AI Davranışı:</strong> Barista gibi davranır. Ürün içeriklerini anlatır, sipariş için kasaya veya teslim noktasına yönlendirir.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* Menu Source */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Link2 className="w-5 h-5" />
-                        Menü Kaynağı
+                        {t('menuSource') || "Menü Kaynağı"}
                     </CardTitle>
                     <CardDescription>
-                        Mevcut QR menü linkinizi veya PDF&apos;inizi ekleyin. AI bu bilgiyi öğrenecek ve müşterilere yardımcı olacak.
+                        {t('menuSourceDesc') || "Mevcut QR menü linkinizi veya PDF'inizi ekleyin. AI bu bilgiyi öğrenecek ve müşterilere yardımcı olacak."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Menü URL&apos;si</Label>
+                        <Label>{t('menuUrl') || "Menü URL'si"}</Label>
                         <Input
                             value={config.menuUrl}
                             onChange={(e) => setConfig(prev => ({ ...prev, menuUrl: e.target.value }))}
                             placeholder="https://menu.example.com/restaurant"
                         />
-                        <p className="text-xs text-muted-foreground">Mevcut QR menü sisteminizin linki</p>
+                        <p className="text-xs text-muted-foreground">{t('modules.digitalWaiterDesc')}</p>
                     </div>
                     <div className="space-y-2">
-                        <Label>Menü PDF URL&apos;si (Opsiyonel)</Label>
+                        <Label>{t('menuPdfUrl') || "Menü PDF URL'si (Opsiyonel)"}</Label>
                         <Input
                             value={config.menuPdfUrl}
                             onChange={(e) => setConfig(prev => ({ ...prev, menuPdfUrl: e.target.value }))}
                             placeholder="https://example.com/menu.pdf"
                         />
-                        <p className="text-xs text-muted-foreground">PDF formatındaki menünüzün linki</p>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Business Hours */}
+            {/* Business/Meal Hours */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Clock className="w-5 h-5" />
-                        Yemek Saatleri
+                        {config.serviceMode === 'table_service' 
+                            ? (t('mealHours') || "Yemek Saatleri") 
+                            : (t('operatingHours') || "Hizmet Saatleri")}
                     </CardTitle>
                     <CardDescription>
-                        AI bu saatlere göre uygun öneriler yapacak (örn: sabah kahvaltı, akşam şarap).
+                        {config.serviceMode === 'table_service'
+                            ? (t('mealHoursDesc') || "AI bu saatlere göre uygun öneriler yapacak (örn: sabah kahvaltı).")
+                            : (t('operatingHoursDesc') || "Doğru AI önerileri için servis aralıklarınızı belirleyin.")}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>Kahvaltı Başlangıcı</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('breakfastStart') || "Kahvaltı Başlangıcı") 
+                                    : (t('morningStart') || "Sabah Servisi Başlangıcı")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.breakfastHours.start}
@@ -207,7 +270,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Kahvaltı Bitişi</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('breakfastEnd') || "Kahvaltı Bitişi") 
+                                    : (t('morningEnd') || "Sabah Servisi Bitişi")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.breakfastHours.end}
@@ -220,7 +287,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>Öğle Yemeği Başlangıcı</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('lunchStart') || "Öğle Yemeği Başlangıcı") 
+                                    : (t('dayStart') || "Gündüz Servisi Başlangıcı")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.lunchHours.start}
@@ -231,7 +302,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Öğle Yemeği Bitişi</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('lunchEnd') || "Öğle Yemeği Bitişi") 
+                                    : (t('dayEnd') || "Gündüz Servisi Bitişi")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.lunchHours.end}
@@ -244,7 +319,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>Akşam Yemeği Başlangıcı</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('dinnerStart') || "Akşam Yemeği Başlangıcı") 
+                                    : (t('eveningStart') || "Akşam Servisi Başlangıcı")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.dinnerHours.start}
@@ -255,7 +334,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Akşam Yemeği Bitişi</Label>
+                            <Label>
+                                {config.serviceMode === 'table_service' 
+                                    ? (t('dinnerEnd') || "Akşam Yemeği Bitişi") 
+                                    : (t('eveningEnd') || "Akşam Servisi Bitişi")}
+                            </Label>
                             <Input
                                 type="time"
                                 value={config.dinnerHours.end}
@@ -270,14 +353,17 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
             </Card>
 
             {/* Signature Dishes */}
+            {/* Signature Dishes */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5" />
-                        İmza Yemekler
+                        {config.serviceMode === 'table_service' 
+                                ? (t('signatureDishes') || "İmza Yemekler")
+                                : (t('popularItems') || "Öne Çıkan Ürünler")}
                     </CardTitle>
                     <CardDescription>
-                        Öne çıkarmak istediğiniz yemekleri ekleyin. AI bunları öncelikli olarak önerecek.
+                        {t('modules.digitalWaiterDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -285,12 +371,18 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                         <Input
                             value={newDish}
                             onChange={(e) => setNewDish(e.target.value)}
-                            placeholder="Yemek adı..."
+                            placeholder={config.serviceMode === 'table_service' 
+                                ? (t('addDishPlaceholder') || "Örn: Beef Wellington") 
+                                : (t('addProductPlaceholder') || "Örn: Latte, Cheesecake")}
                             onKeyDown={(e) => e.key === 'Enter' && addSignatureDish()}
                         />
-                        <Button onClick={addSignatureDish}>Ekle</Button>
+                        <Button variant="outline" size="sm" onClick={addSignatureDish}>
+                            {config.serviceMode === 'table_service' 
+                                ? (t('addDish') || "+ Yemek Ekle") 
+                                : (t('addItem') || "+ Ürün Ekle")}
+                        </Button>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                     <div className="flex flex-wrap gap-2">
                         {config.signatureDishes.map((dish, index) => (
                             <Badge
                                 key={index}
@@ -302,7 +394,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                             </Badge>
                         ))}
                         {config.signatureDishes.length === 0 && (
-                            <p className="text-sm text-muted-foreground">Henüz imza yemek eklenmedi.</p>
+                            <p className="text-sm text-muted-foreground">
+                                {config.serviceMode === 'table_service' 
+                                    ? "Henüz imza yemek eklenmedi." 
+                                    : "Henüz ürün eklenmedi."}
+                            </p>
                         )}
                     </div>
                 </CardContent>
@@ -313,9 +409,9 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>AI Önerileri</CardTitle>
+                            <CardTitle>{t('aiSuggestions') || "AI Önerileri"}</CardTitle>
                             <CardDescription>
-                                AI&apos;ın saate ve menüye göre otomatik balon mesajları oluşturmasına izin verin.
+                                {t('aiSuggestionsFormDesc') || "AI'ın saate ve menüye göre otomatik balon mesajları oluşturmasına izin verin."}
                             </CardDescription>
                         </div>
                         <Switch

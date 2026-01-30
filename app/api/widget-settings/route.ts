@@ -129,7 +129,7 @@ export async function GET(req: Request) {
                     businessHoursEnd: mergedData.businessHoursEnd || "17:00",
                     offlineMessage: mergedData.offlineMessage || "We are currently offline.",
                     // Engagement
-                    engagement: mergedData.engagement || null,
+                    engagement: mergedData.engagement || (mergedData.enableProactiveMessaging ? { enabled: true } : null),
                     // Digital Waiter (Restaurant)
                     digitalWaiter: mergedData.digitalWaiter || null,
                     // Voice Assistant - only enable if module is available AND user has it enabled

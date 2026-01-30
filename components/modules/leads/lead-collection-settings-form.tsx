@@ -280,7 +280,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                 </Card>
 
                 {/* Form Customization */}
-                {enableInitialLead && (
+                {(enableInitialLead || enableInChatLead) && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{t('leadFormCustomization') || "Form Özelleştirme"}</CardTitle>
@@ -364,7 +364,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                 )}
 
                 {/* Custom Fields */}
-                {enableInitialLead && (
+                {(enableInitialLead || enableInChatLead) && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{t('customFields') || "Özel Alanlar"}</CardTitle>

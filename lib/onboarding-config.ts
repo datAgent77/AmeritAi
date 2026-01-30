@@ -110,7 +110,9 @@ export const SectorSchema = z.object({
     sector: z.enum([
         'ecommerce', 'booking', 'real_estate', 'saas',
         'service', 'healthcare', 'education', 'academic',
-        'finance', 'other'
+        'finance', 'restaurant', 'agriculture', 'automotive',
+        'insurance', 'logistics', 'beauty', 'legal',
+        'fitness', 'maritime', 'manufacturing', 'other'
     ])
 });
 

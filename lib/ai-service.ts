@@ -280,6 +280,14 @@ ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the c
      - If you don't see contact info in context, say: "Would you like to leave a message?"
    - **CRITICAL**: Never send the user away. Keep them in the chat.
 
+6. **LEAD COLLECTION**:
+   - If the user wants to be contacted, asks for a callback, or if you need to capture their generic contact details (Name, Email, Phone):
+   - **DO NOT** ask for them in the chat one by one.
+   - **DO NOT** ask them to type it in the chat.
+   - **MUST** output specifically: \`[SHOW_LEAD_FORM]\`
+   - Example user: "Call me back." -> Your response: "Sure, please fill out this form. [SHOW_LEAD_FORM]"
+   - Example user: "I want to register." -> Your response: "I can help with that. [SHOW_LEAD_FORM]"
+
 5. **Formatting**: Use Markdown. Be concise.
 `;
 
@@ -398,6 +406,63 @@ Mirror the user's language exactly. Do NOT default to Turkish or another languag
                         }
                     } catch (e) {
                         console.error("AI Service: Failed to fetch appointment settings:", e);
+                    }
+                }
+
+                // Digital Waiter / Restaurant & Cafe AI Logic
+                if (mod.id === 'digitalWaiter') {
+                    const waiterConfig = chatbotData?.digitalWaiter;
+                    if (waiterConfig) {
+                        const serviceMode = waiterConfig.serviceMode || 'table_service';
+                        const isTR = langKey === 'tr';
+                        let waiterPrompt = "";
+
+                        if (serviceMode === 'table_service') {
+                            waiterPrompt = isTR
+                                ? `\n\n🍽️ RESTORAN SERVİS MODU AKTİF:\n` +
+                                `ROL: Sen bu restoranın dijital garsonusun.\n` +
+                                `GÖREVLER:\n` +
+                                `1. Masadaki misafirlere menü konusunda yardımcı ol.\n` +
+                                `2. Yemekleri ve içeriklerini detaylı anlat.\n` +
+                                `3. Asla "kasaya gidin" deme; burası masaya servis yapan bir restoran.\n`
+                                : `\n\n🍽️ RESTAURANT SERVICE MODE ACTIVE:\n` +
+                                `ROLE: You are the digital waiter of this restaurant.\n` +
+                                `TASKS:\n` +
+                                `1. Assist guests at their tables with the menu.\n` +
+                                `2. Explain dishes and ingredients in detail.\n` +
+                                `3. NEVER say "go to the counter"; this is a table-service restaurant.\n`;
+                        } else {
+                            // Counter Service
+                            waiterPrompt = isTR
+                                ? `\n\n☕ KAFE / SELF-SERVİS MODU AKTİF:\n` +
+                                `ROL: Sen bu kafenin dijital baristasısın.\n` +
+                                `GÖREVLER:\n` +
+                                `1. Kahve çekirdekleri, demleme yöntemleri ve tatlılar hakkında bilgi ver.\n` +
+                                `2. Misafirlere ürünleri seçmelerinde yardımcı ol.\n` +
+                                `3. Sipariş vermek istediklerinde: "Siparişinizi kasadan veya teslim noktasından verebilirsiniz" de.\n` +
+                                `4. Asla "masanıza getireceğiz" deme.\n`
+                                : `\n\n☕ CAFE / SELF-SERVICE MODE ACTIVE:\n` +
+                                `ROLE: You are the digital barista of this cafe.\n` +
+                                `TASKS:\n` +
+                                `1. Explain coffee beans, brewing methods, and pastries.\n` +
+                                `2. Help guests choose their items.\n` +
+                                `3. When they want to order: Say "Please place your order at the counter."\n` +
+                                `4. NEVER say "we will bring it to your table".\n`;
+                        }
+
+                        // Shared Menu Info
+                        if (waiterConfig.menuUrl) {
+                            waiterPrompt += isTR ? `📄 Dijital Menü Linki: ${waiterConfig.menuUrl}\n` : `📄 Digital Menu Link: ${waiterConfig.menuUrl}\n`;
+                        }
+
+                        if (waiterConfig.signatureDishes && waiterConfig.signatureDishes.length > 0) {
+                            const dishes = waiterConfig.signatureDishes.join(', ');
+                            waiterPrompt += isTR
+                                ? `🌟 ÖNERİLECEK İMZA ÜRÜNLER (Israrla tavsiye et): ${dishes}\n`
+                                : `🌟 SIGNATURE ITEMS TO RECOMMEND (Strongly suggest these): ${dishes}\n`;
+                        }
+
+                        instruction += waiterPrompt;
                     }
                 }
 

@@ -12,6 +12,7 @@ export interface UseChatCoreProps {
     speakText?: (text: string, id: string) => void
     getImageFromCache: (msgId: string) => any
     findImageByContent: (content: string) => any
+    onShowLeadForm?: () => void
 }
 
 export function useChatCore({
@@ -21,7 +22,8 @@ export function useChatCore({
     isGuestReady,
     speakText,
     getImageFromCache,
-    findImageByContent
+    findImageByContent,
+    onShowLeadForm
 }: UseChatCoreProps) {
     const [messages, setMessages] = useState<any[]>([])
     const [initialMessages, setInitialMessages] = useState<any[]>([])

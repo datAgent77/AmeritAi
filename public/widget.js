@@ -40,6 +40,9 @@
     launcherHoverEffect: 'scale'
   };
 
+  // Global Context Data
+  let dynamicContextData = {};
+
   // ============================================
   // PROACTIVE ENGAGEMENT CONTROLLER
   // ============================================
@@ -506,7 +509,15 @@
     // NEW: Open widget directly (Phase 1)
     openWidget() {
       const launcher = document.getElementById('userex-chatbot-launcher');
+      const container = document.getElementById('userex-chatbot-container');
+      
       if (launcher) {
+        // Check if already open to prevent toggle (closing)
+        if (container && container.style.display !== 'none') {
+             console.log('Engagement: Widget already open, skipping open action');
+             return;
+        }
+
         console.log('Engagement: Opening widget via trigger action');
         // Mark conversation as started - no more bubbles after this
         sessionStorage.setItem(this.conversationStartedKey, 'true');
@@ -1138,6 +1149,108 @@
     }
   }
 
+  // ============================================
+  // DYNAMIC CONTEXT OBSERVER (NO-CODE)
+  // ============================================
+  class DynamicContextObserver {
+    constructor(selectors) {
+      this.selectors = selectors || [];
+      this.observers = new Map(); // Map<Selector, MutationObserver>
+      this.elements = new Map(); // Map<Selector, Element>
+      this.data = {};
+      this.debounceTimer = null;
+    }
+
+    init() {
+      // console.log('DynamicContext: Initializing No-Code Observer', this.selectors);
+      this.scan();
+
+      // Watch for new elements appearing in the DOM
+      this.globalObserver = new MutationObserver((mutations) => {
+        // Just scan again if nodes are added/removed
+        let shouldScan = false;
+        for (const mut of mutations) {
+            if (mut.type === 'childList' && (mut.addedNodes.length > 0 || mut.removedNodes.length > 0)) {
+                shouldScan = true;
+                break;
+            }
+        }
+        if (shouldScan) this.scan();
+      });
+
+      this.globalObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    scan() {
+      let changed = false;
+
+      this.selectors.forEach(({ key, selector }) => {
+        if (!key || !selector) return;
+        
+        try {
+            const el = document.querySelector(selector);
+            
+            // Element found for the first time or changed reference
+            if (el && el !== this.elements.get(selector)) {
+                // console.log(`DynamicContext: Found element for "${key}"`, el);
+                this.elements.set(selector, el);
+                this.observeElement(el, key, selector);
+                
+                // Extract initial value
+                const val = el.innerText.trim();
+                // console.log(`DynamicContext: Initial value for "${key}" -> "${val}"`);
+                if (this.data[key] !== val) {
+                    this.data[key] = val;
+                    changed = true;
+                }
+            } else if (!el && this.elements.has(selector)) {
+                 // Element lost
+                 this.elements.delete(selector);
+                 const obs = this.observers.get(selector);
+                 if (obs) {
+                     obs.disconnect();
+                     this.observers.delete(selector);
+                 }
+            }
+        } catch (e) {
+            console.warn(`DynamicContext: Invalid selector "${selector}"`, e);
+        }
+      });
+
+      if (changed) {
+          this.triggerUpdate();
+      }
+    }
+
+    observeElement(el, key, selector) {
+        // Disconnect old observer if any
+        if (this.observers.has(selector)) {
+            this.observers.get(selector).disconnect();
+        }
+
+        const observer = new MutationObserver(() => {
+            const newVal = el.innerText.trim();
+            if (this.data[key] !== newVal) {
+                // console.log(`DynamicContext: Value changed for "${key}" -> "${newVal}"`);
+                this.data[key] = newVal;
+                this.triggerUpdate();
+            }
+        });
+
+        observer.observe(el, { characterData: true, subtree: true, childList: true });
+        this.observers.set(selector, observer);
+    }
+
+    triggerUpdate() {
+        if (this.debounceTimer) clearTimeout(this.debounceTimer);
+        this.debounceTimer = setTimeout(() => {
+            if (window.UserexWidget && window.UserexWidget.setContext) {
+                window.UserexWidget.setContext(this.data);
+            }
+        }, 500);
+    }
+  }
+
   // Global reference for cleanup
   let engagementController = null;
 
@@ -1595,6 +1708,9 @@
       }
     };
 
+    // Store dynamic context data - MOVED TO GLOBAL SCOPE
+    // let dynamicContextData = {};
+
     renderLauncherContent(false);
 
     // Hover effect
@@ -1906,6 +2022,20 @@
       console.log('Initializing Engagement Controller with settings:', settings.engagement);
       engagementController = new EngagementController(settings.engagement, baseUrl, chatbotId);
     }
+    
+    // Initialize No-Code Dynamic Context
+    if (settings.enableDynamicContext && settings.dynamicContextMode === 'nocode' && settings.dynamicContextSelectors) {
+         try {
+             // Ensure it's an array
+             const validSelectors = Array.isArray(settings.dynamicContextSelectors) ? settings.dynamicContextSelectors : [];
+             if (validSelectors.length > 0) {
+                 const contextObserver = new DynamicContextObserver(validSelectors);
+                 contextObserver.init();
+             }
+         } catch (e) {
+             console.error('Userex: Failed to init Dynamic Context Observer', e);
+         }
+    }
 
     // AI Smart Bubbles Logic - DISABLED (Replaced by AI Engagement PRO in EngagementController.fetchAIBubble)
     // The new AI Engagement PRO system handles AI-powered bubbles with better context collection,
@@ -2089,7 +2219,9 @@
       // NEW: Page type detection
       pageType: detectPageType(),
       // NEW: User login status
-      user: getUserData()
+      user: getUserData(),
+      // NEW: Dynamic Data
+      dynamicData: dynamicContextData
     };
   }
 
@@ -2098,6 +2230,17 @@
   window.UserexWidget.setUser = function (userData) {
     window.UserexWidget.userData = userData;
     sendContextUpdate(); // Immediately notify chatbot of user change
+  };
+
+  // NEW: setContext API
+  window.UserexWidget.setContext = function (data) {
+    if (typeof data !== 'object') {
+        console.warn('UserexWidget.setContext: data must be an object');
+        return;
+    }
+    dynamicContextData = { ...dynamicContextData, ...data };
+    console.log('UserexWidget: Context updated', dynamicContextData);
+    sendContextUpdate();
   };
 
   // Send context update to iframe

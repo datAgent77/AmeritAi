@@ -67,30 +67,40 @@ export function ModuleDetailsDialog({
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <div className="flex items-start gap-5 mb-4">
-                        <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 shrink-0">
-                            <IconComponent className="w-8 h-8" />
-                        </div>
-                        <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                             <div className="flex items-center gap-2">
                                 <DialogTitle className="text-2xl font-bold">{title}</DialogTitle>
-                                {moduleConfig.isPremium && (
-                                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400">
-                                        Premium
-                                    </Badge>
-                                )}
+
                             </div>
                             <DialogDescription className="text-base leading-relaxed text-muted-foreground">
                                 {description}
                             </DialogDescription>
-                            {/* Premium Price Display */}
-                            {moduleConfig.isPremium && moduleConfig.price > 0 && (
-                                <div className="mt-2 text-lg font-semibold text-violet-600 dark:text-violet-400">
-                                    ${moduleConfig.price}{t('month') || '/mo'}
-                                </div>
-                            )}
+                            {/* Plan Inclusion Display */}
+                            {(() => {
+                                // Dynamic Plan Check
+                                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                                const { getAllPlans } = require("@/lib/pricing-config");
+                                const allPlans = getAllPlans().filter((p: any) => p.availability === 'public').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+                                const minPlan = allPlans.find((plan: any) => 
+                                    plan.modules.included.includes(selectedModuleId) || plan.modules.included.includes('all')
+                                );
+
+                                if (minPlan) {
+                                    return (
+                                        <div className="mt-2 flex flex-col gap-1">
+                                            <div className="text-sm font-medium text-muted-foreground">
+                                                {language === 'tr' ? 'Dahil olduğu paket:' : 'Included in:'}
+                                            </div>
+                                            <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
+                                                {minPlan.displayName}
+                                                {/* Optional: Show plan price info if needed, but just plan name is cleaner for now */}
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
                         </div>
-                    </div>
                 </DialogHeader>
 
                 <div className="py-2 space-y-6">

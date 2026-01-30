@@ -121,7 +121,8 @@ export default function ChatbotContainer() {
         isGuestReady,
         speakText: (text, id) => speakText(text, id), // Wrap to match signature
         getImageFromCache: visualContext.getImageFromCache,
-        findImageByContent: visualContext.findImageByContent
+        findImageByContent: visualContext.findImageByContent,
+        onShowLeadForm: () => setShowLeadCollection(true)
     })
 
     // Assign real sendMessage to ref
@@ -190,8 +191,16 @@ export default function ChatbotContainer() {
                 localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
                 setShowLeadCollection(false)
                 
-                // Optional: Send a hidden message to AI to acknowledge the user
-                // sendMessage(`My name is ${formData.name}.`, false) 
+                // Add Thank You message from Assistant
+                const thankYouMsg = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: t('leadThankYou') === 'leadThankYou' 
+                        ? `Teşekkürler ${formData.name || ''}, bilgilerinizi aldım. Ekibimiz sizinle en kısa sürede iletişime geçecektir.` 
+                        : t('leadThankYou').replace('{name}', formData.name || ''),
+                    createdAt: new Date()
+                }
+                setMessages((prev: any) => [...prev, thankYouMsg])
             } else {
                 alert(t('errorOccurred') || "An error occurred. Please try again.")
             }
@@ -289,6 +298,7 @@ export default function ChatbotContainer() {
                 messagesContainerRef={messagesContainerRef}
                 messagesEndRef={messagesEndRef}
                 t={t}
+                onLeadSubmit={handleLeadSubmit}
              />
 
              <ChatInput 

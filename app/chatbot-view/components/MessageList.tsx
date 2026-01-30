@@ -17,7 +17,9 @@ interface MessageListProps {
     messagesContainerRef: RefObject<HTMLDivElement | null>
     messagesEndRef: RefObject<HTMLDivElement | null>
     t: (key: string) => string
+    onLeadSubmit: (data: any) => Promise<void>
 }
+import { InlineLeadForm } from "./InlineLeadForm"
 
 export function MessageList({
     messages,
@@ -29,7 +31,8 @@ export function MessageList({
     sendMessage,
     messagesContainerRef,
     messagesEndRef,
-    t
+    t,
+    onLeadSubmit
 }: MessageListProps) {
     return (
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
@@ -152,8 +155,17 @@ export function MessageList({
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
                                             }}
                                         >
-                                            {m.content}
+                                            {m.content.replace('[SHOW_LEAD_FORM]', '')}
                                         </ReactMarkdown>
+                                        
+                                        {/* Inline Lead Form */}
+                                        {m.content.includes('[SHOW_LEAD_FORM]') && (
+                                            <InlineLeadForm 
+                                                onSubmit={onLeadSubmit}
+                                                settings={settings}
+                                                t={t}
+                                            />
+                                        )}
                                         <div className={`text-[10px] mt-1 opacity-70 flex justify-end ${m.role === 'user' ? 'text-white' : 'text-gray-400'}`}>
                                             {m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
