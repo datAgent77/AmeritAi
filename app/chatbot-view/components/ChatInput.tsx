@@ -237,12 +237,11 @@ export function ChatInput({
                     </button>
                 </form>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mt-2">
-                    <p className="text-[10px] text-gray-400 text-center">
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">
+                    <p className="text-[10px] text-gray-400 text-center text-balance">
                         {t('aiDisclaimer')}
                     </p>
-                    <span className="text-[10px] text-gray-300 hidden sm:block">•</span>
-                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
                         <span className="text-[10px] text-gray-400">Powered by</span>
                         <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
                     </a>
