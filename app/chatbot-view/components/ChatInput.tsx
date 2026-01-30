@@ -146,7 +146,7 @@ export function ChatInput({
     }
 
     return (
-        <div className="p-4 bg-white border-t border-gray-100">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100">
             <div className="max-w-3xl mx-auto relative">
                 <form
                     onSubmit={handleSubmit}
