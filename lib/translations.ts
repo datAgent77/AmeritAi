@@ -3235,7 +3235,7 @@ export const translations = {
         featureKnowledgeBase: "Bilgi Tabanı",
         featureWebsiteCrawling: "Web Sitesi Tarama",
         featureProductCatalog: "Satış ve Ürün Kataloğu",
-        featureDigitalWaiter: "Dijital Garson",
+        featureDigitalWaiter: "Restoran ve Kafe AI",
         featureMultiChannel: "Çoklu Kanal Desteği",
         featureSalesOptimization: "Satış Optimizasyonu",
         featureVisualDiagnosis: "Görsel Tanı ve Analiz",
