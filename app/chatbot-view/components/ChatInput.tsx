@@ -210,7 +210,7 @@ export function ChatInput({
                             placeholder={selectedImage
                                 ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
                                 : t('messagePlaceholder')}
-                            className="w-full text-sm bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
+                            className="w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
                             style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
                         />
 
