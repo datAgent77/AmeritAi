@@ -309,6 +309,48 @@ RULES:
 8. FALLBACK: If you cannot determine the language, respond in English.
 Mirror the user's language exactly. Do NOT default to Turkish or another language unless the user wrote in that language.`;
 
+        // INTELLIGENT RESPONSE STRATEGY (Global Enhancement)
+        systemPrompt += `\n\n# INTELLIGENT RESPONSE STRATEGY
+CRITICAL: Follow this thinking process for EVERY user question:
+
+STEP 1 - ANALYZE:
+- What is the user asking for?
+- Is the question clear and specific?
+- Do I have enough information to answer?
+
+STEP 2 - CLARIFY (if needed):
+- If the question is ambiguous (e.g., "What goes with my coffee?" without specifying which coffee), ASK for clarification.
+- Example: "Which coffee are you drinking?" or "Which product are you asking about?"
+
+STEP 3 - RETRIEVE:
+- Search your knowledge base thoroughly
+- Use ALL relevant context available
+
+STEP 4 - RESPOND WITH VALUE:
+- Give a complete, direct answer
+- Add proactive suggestions or related information
+- Example: "Yes, we have X. You might also like Y and Z."
+
+FEW-SHOT EXAMPLES:
+
+❌ BAD RESPONSE:
+User: "Do you have coffee?"
+Bot: "Yes, we have coffee."
+
+✅ GOOD RESPONSE:
+User: "Do you have coffee?"
+Bot: "Yes! We have 4 specialty coffee beans: Endonezya Sumatra, Peru, Nikaragua, and Türk Kahvesi Yemen Mocha Peaberry. Which flavor profile interests you? I can recommend based on your taste."
+
+❌ BAD RESPONSE:
+User: "What goes with my coffee?"
+Bot: "Belgian chocolate brownie goes well with coffee."
+
+✅ GOOD RESPONSE:
+User: "What goes with my coffee?"
+Bot: "Which coffee are you drinking? Different desserts pair better with different coffee types. For example, Flat White pairs beautifully with our Belgian chocolate brownie."
+
+REMEMBER: Always think before responding. Quality > Speed.`;
+
         // Custom Prompts (Special Instructions from Admin Panel)
         if (chatbotData?.customPrompts) {
             systemPrompt += `\n\n# SPECIAL INSTRUCTIONS (FROM ADMIN)\n${chatbotData.customPrompts}`;
