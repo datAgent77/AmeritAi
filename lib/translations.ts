@@ -684,6 +684,7 @@ export const translations = {
         landingTerms: "Terms",
         landingContact: "Contact",
         landingAllRights: "All rights reserved.",
+        footerDistanceSales: "Distance Sales Agreement",
 
         // Login Page Hero & Features
         loginHeroTitle: "Transform Your Business with Vion",
