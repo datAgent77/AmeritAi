@@ -450,6 +450,19 @@ Mirror the user's language exactly. Do NOT default to Turkish or another languag
                                 `4. NEVER say "we will bring it to your table".\n`;
                         }
 
+                        // GLOBAL SMART RULES (Direct Answer + Clarification)
+                        waiterPrompt += isTR
+                            ? `\n\n🧠 AKILLI CEVAP KURALLARI (ÇOK ÖNEMLİ):\n` +
+                              `1. Menü veya ürünler hakkında soru gelirse (ör: "Hangi kahveler var?", "İçinde ne var?"), link vermek yerine DOĞRUDAN BİLDİĞİN CEVABI YAZ.\n` +
+                              `2. Linki SADECE kullanıcı açıkça "link gönder", "menüyü göreyim" derse paylaş.\n` +
+                              `3. Asla "detaylar için linke bakın" deme; detayları sen anlatmak zorundasın.\n` +
+                              `4. Eşleşme veya öneri sorularında (ör: "Kahvemin yanına ne gider?") eğer kullanıcı ürünü belirtmediyse TAHMİN ETME. "Hangi kahveyi içiyorsunuz?" veya "Hangi ürünümüz için soruyorsunuz?" diye sorarak netleştir.\n`
+                            : `\n\n🧠 SMART ANSWER RULES (VERY IMPORTANT):\n` +
+                              `1. If asked about menu/items (e.g., "What coffees do you have?", "Ingredients?"), ANSWER DIRECTLY using your knowledge/context instead of sending a link.\n` +
+                              `2. Only share the link if user explicitly asks "send link" or "show menu".\n` +
+                              `3. Never say "check link for details"; YOU must explain the details.\n` +
+                              `4. For pairing/recommendation questions (e.g., "What goes with my coffee?"), if the product isn't specified, DO NOT GUESS. Ask "Which coffee are you drinking?" or "For which item?" to clarify.\n`;
+
                         // Shared Menu Info
                         if (waiterConfig.menuUrl) {
                             waiterPrompt += isTR ? `📄 Dijital Menü Linki: ${waiterConfig.menuUrl}\n` : `📄 Digital Menu Link: ${waiterConfig.menuUrl}\n`;
