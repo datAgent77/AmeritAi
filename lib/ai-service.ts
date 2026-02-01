@@ -228,7 +228,7 @@ export async function generateAIResponse(
             const embedding = embeddingResponse.data[0].embedding;
             const queryResponse = await index.query({
                 vector: embedding,
-                topK: 10,
+                topK: 20,
                 includeMetadata: true,
                 filter: { chatbotId: chatbotId }
             });
@@ -328,6 +328,7 @@ STEP 3 - RETRIEVE:
 
 STEP 4 - RESPOND WITH VALUE:
 - Give a complete, direct answer
+- **CRITICAL**: If listing items (e.g., products, menu items), you MUST list ALL items found in the context. Do NOT summarize or limit. If context has 11 items, list all 11.
 - Add proactive suggestions or related information
 - Example: "Yes, we have X. You might also like Y and Z."
 
