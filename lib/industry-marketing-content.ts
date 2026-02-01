@@ -253,20 +253,108 @@ export const INDUSTRY_MARKETING_CONTENT: Record<string, IndustryMarketingContent
     },
     restaurant: {
         id: 'restaurant',
-        title: { tr: "Restoran", en: "Restaurant" },
-        subtitle: { tr: "Geleneksel menünün ötesinde.", en: "Beyond traditional menu." },
+        title: { tr: "Restoran ve Kafe AI", en: "Restaurant & Cafe AI" },
+        subtitle: {
+            tr: "Web sitenizde ve QR kod ile masa başında çalışan akıllı asistan. Sipariş alır, öneri yapar, ödeme işler.",
+            en: "Smart assistant working on your website and at tables via QR code. Takes orders, makes recommendations, processes payments."
+        },
         iconName: 'ChefHat',
         features: [
-            { title: { tr: "Dijital Menü", en: "Digital Menu" }, description: { tr: "Görsel ve içerik zengini menü.", en: "Visual and content rich menu." }, iconName: 'BookOpen' },
-            { title: { tr: "Rezervasyon", en: "Reservation" }, description: { tr: "Masa rezervasyonu yönetimi.", en: "Table reservation management." }, iconName: 'Calendar' },
-            { title: { tr: "Alerjen Uyarısı", en: "Allergen Alert" }, description: { tr: "Müşteri hassasiyetine göre öneri.", en: "Suggestions based on sensitivity." }, iconName: 'Info' }
+            {
+                title: { tr: "Akıllı Dijital Garson", en: "Smart Digital Waiter" },
+                description: {
+                    tr: "Masa başında QR kod ile sipariş alır, ödeme yapar. Garsonları meşgul etmeden hızlı hizmet.",
+                    en: "Takes orders and processes payments via QR code at the table. Fast service without bothering waiters."
+                },
+                iconName: 'ChefHat'
+            },
+            {
+                title: { tr: "Menü Keşif Asistanı", en: "Menu Discovery Assistant" },
+                description: {
+                    tr: "Yemek içerikleri, kalori bilgisi, alerjen uyarıları ve şef önerileriyle interaktif menü deneyimi.",
+                    en: "Interactive menu experience with ingredients, calorie info, allergen alerts, and chef recommendations."
+                },
+                iconName: 'Book'
+            },
+            {
+                title: { tr: "Kişiselleştirilmiş Öneriler", en: "Personalized Recommendations" },
+                description: {
+                    tr: "'Kahvemin yanına ne gider?' sorusuna akıllı eşleştirmeler yapar. Damak zevkine göre öneri sunar.",
+                    en: "Smart pairings for 'What goes with my coffee?' Suggests based on taste preferences."
+                },
+                iconName: 'Star'
+            },
+            {
+                title: { tr: "Çoklu Dil Desteği", en: "Multi-Language Support" },
+                description: {
+                    tr: "Turistler kendi dillerinde sipariş verebilir. 50+ dilde otomatik çeviri.",
+                    en: "Tourists can order in their native language. Auto-translation in 50+ languages."
+                },
+                iconName: 'Languages'
+            },
+            {
+                title: { tr: "Online Rezervasyon", en: "Online Reservation" },
+                description: {
+                    tr: "7/24 masa rezervasyonu. Müsaitlik kontrolü ve otomatik onay.",
+                    en: "24/7 table booking. Availability check and auto-confirmation."
+                },
+                iconName: 'Calendar'
+            },
+            {
+                title: { tr: "Paket Servis Sipariş", en: "Takeaway Orders" },
+                description: {
+                    tr: "Web sitesinden paket servis siparişi alır, hazırlık süresini bildirir.",
+                    en: "Takes takeaway orders from website, notifies preparation time."
+                },
+                iconName: 'ShoppingBag'
+            },
+            {
+                title: { tr: "Anında Ödeme", en: "Instant Payment" },
+                description: {
+                    tr: "QR kod ile masa başında ödeme. Hesap bekleme süresi sıfır.",
+                    en: "Pay at the table via QR code. Zero wait time for the bill."
+                },
+                iconName: 'DollarSign'
+            },
+            {
+                title: { tr: "Masa Servisi Talepleri", en: "Table Service Requests" },
+                description: {
+                    tr: "Su, peçete, hesap gibi talepleri chatbot üzerinden garsonlara iletir. Bekleme süresi azalır.",
+                    en: "Sends requests for water, napkins, bill to waiters via chatbot. Reduces wait time."
+                },
+                iconName: 'Bell'
+            },
+            {
+                title: { tr: "Kampanya ve Duyurular", en: "Promotions & Announcements" },
+                description: {
+                    tr: "Günün menüsü, happy hour, özel etkinlikler hakkında bilgi verir.",
+                    en: "Informs about daily menu, happy hour, special events."
+                },
+                iconName: 'Megaphone'
+            },
+            {
+                title: { tr: "Sadakat Programı", en: "Loyalty Program" },
+                description: {
+                    tr: "Puan biriktirme, indirim kuponu dağıtımı ve özel müşteri avantajları.",
+                    en: "Point accumulation, discount coupon distribution, and VIP customer benefits."
+                },
+                iconName: 'Award'
+            }
         ],
-        promptExample: { user: { tr: "Menüde ne var?", en: "Whats on menu?" }, ai: { tr: "Bugünün spesyali...", en: "Todays special..." } },
+        promptExample: {
+            user: { tr: "Kahvemin yanına hangi tatlı gider?", en: "What dessert goes with my coffee?" },
+            ai: {
+                tr: "Hangi kahveyi içiyorsunuz? Farklı tatlılar farklı kahve türleriyle daha iyi eşleşir. Örneğin Flat White, Belçika çikolatalı brownie ile harika uyum sağlar.",
+                en: "Which coffee are you drinking? Different desserts pair better with different coffee types. For example, Flat White pairs beautifully with our Belgian chocolate brownie."
+            }
+        },
         conversation: [
-            { role: 'user', content: { tr: "Bu akşam 2 kişi için yeriniz var mı?", en: "Do you have a table for 2 tonight?" } },
-            { role: 'ai', content: { tr: "Saat kaç için düşünüyorsunuz? Şu an 19:00 ve 21:00 saatlerinde müsaitliğimiz var.", en: "What time are you thinking? We currently have availability at 19:00 and 21:00." } },
-            { role: 'user', content: { tr: "19:00 uygun. Vegan menünüz var mı?", en: "19:00 works. Do you have a vegan menu?" } },
-            { role: 'ai', content: { tr: "Evet, oldukça geniş bir vegan menümüz var! Özellikle 'Kinoa Köftesi' ve 'Mantar Risotto'muz çok seviliyor. Rezervasyonunuzu 19:00 olarak 'Vegan Tercihli' notuyla oluşturuyorum?", en: "Yes, we have a quite extensive vegan menu! Our 'Quinoa Patties' and 'Mushroom Risotto' are especially popular. Shall I create your reservation for 19:00 with a 'Vegan Preference' note?" } }
+            { role: 'user', content: { tr: "Kahvemin yanına hangi tatlı gider?", en: "What dessert goes with my coffee?" } },
+            { role: 'ai', content: { tr: "Hangi kahveyi içiyorsunuz? Farklı tatlılar farklı kahve türleriyle daha iyi eşleşir.", en: "Which coffee are you drinking? Different desserts pair better with different coffee types." } },
+            { role: 'user', content: { tr: "Flat White içiyorum.", en: "I'm drinking Flat White." } },
+            { role: 'ai', content: { tr: "Flat White için Belçika çikolatalı brownie mükemmel bir seçim! Yoğun gövdeli kahvenin yanında çikolata harika uyum sağlar. Ayrıca cheesecake'imiz de hafif ve dengeli bir alternatif. Sipariş vermemi ister misiniz?", en: "Belgian chocolate brownie is a perfect choice for Flat White! The chocolate pairs wonderfully with the full-bodied coffee. Our cheesecake is also a light and balanced alternative. Shall I place an order?" } },
+            { role: 'user', content: { tr: "Brownie olsun.", en: "Brownie please." } },
+            { role: 'ai', content: { tr: "Harika! Brownie siparişinizi mutfağa ilettim. Yaklaşık 5 dakika içinde masanıza gelecek. Afiyet olsun! ☕🍫", en: "Great! I've sent your brownie order to the kitchen. It will arrive at your table in about 5 minutes. Enjoy! ☕🍫" } }
         ]
     },
     agriculture: {
