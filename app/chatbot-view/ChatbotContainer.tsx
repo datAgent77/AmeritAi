@@ -33,6 +33,7 @@ export default function ChatbotContainer() {
     // 3. Local State (Top Level)
     const [pageContext, setPageContext] = useState<{ url: string, title: string, desc: string } | null>(null)
     const [isGuestReady, setIsGuestReady] = useState(false)
+    const [isClient, setIsClient] = useState(false)
     const [localInput, setLocalInput] = useState("")
     const [isExpanded, setIsExpanded] = useState(false)
     const [isConfirmingClear, setIsConfirmingClear] = useState(false)
@@ -50,6 +51,7 @@ export default function ChatbotContainer() {
 
     // 4. Initialization Effects
     useEffect(() => {
+        setIsClient(true)
         signInAsGuest()
             .then(() => setIsGuestReady(true))
             .catch((error) => console.error("Guest login failed:", error))
@@ -266,15 +268,47 @@ export default function ChatbotContainer() {
                         </svg>
                     </div>
                     <p className="text-gray-600 max-w-sm text-lg font-medium">
-                        {decodeURIComponent(offlineMessage)}
+                        {decodeURIComponent(settings?.offlineMessage || "We are currently offline.")}
                     </p>
                 </div>
             </div>
         )
     }
 
+    // Mobile Keyboard Fix: Visual Viewport
+    const [viewportHeight, setViewportHeight] = useState('100%');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            const handleResize = () => {
+                // Only apply on mobile devices where keyboard shifts visual viewport
+                if (window.innerWidth < 768) {
+                    setViewportHeight(`${window.visualViewport?.height}px`);
+                } else {
+                    setViewportHeight('100%');
+                }
+            };
+
+            window.visualViewport.addEventListener('resize', handleResize);
+            window.visualViewport.addEventListener('scroll', handleResize);
+            
+            // Initial check
+            handleResize();
+
+            return () => {
+                window.visualViewport?.removeEventListener('resize', handleResize);
+                window.visualViewport?.removeEventListener('scroll', handleResize);
+            };
+        }
+    }, []);
+
+    if (!isClient || !settings) return null
+
     return (
-        <div className={`flex flex-col fixed inset-0 h-full w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}>
+        <div 
+            style={{ height: viewportHeight }}
+            className={`flex flex-col fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
+        >
              
              <ChatHeader 
                 settings={settings}

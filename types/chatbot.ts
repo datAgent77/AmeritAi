@@ -85,6 +85,7 @@ export interface ChatbotSettings {
     launcherIcon: "message" | "library" | "custom";
     // Error Handling
     errorMessage?: string;
+    offlineMessage?: string;
     launcherIconUrl: string;
     launcherLibraryIcon: string;
     // Mobile Settings
