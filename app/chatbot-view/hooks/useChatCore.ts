@@ -272,11 +272,22 @@ export function useChatCore({
             setIsTyping(false)
             setChatStatus('idle')
             setMessages((prev: any) => {
+                // Remove the stuck "empty" assistant message
                 const last = prev[prev.length - 1]
+                let newPrev = prev
                 if (last && last.role === 'assistant' && !last.content) {
-                    return prev.slice(0, -1)
+                    newPrev = prev.slice(0, -1)
                 }
-                return prev
+                
+                // Add System Error Message
+                const errorMsg = {
+                    id: 'system-error-' + Date.now(),
+                    role: 'assistant', // Use assistant role so it shows up in bubble
+                    content: settings.errorMessage || "⚠️ Bir bağlantı hatası oluştu. Lütfen tekrar deneyin.", // Fallback if setting missing
+                    createdAt: new Date(),
+                    isError: true // We can use this for styling if needed
+                }
+                return [...newPrev, errorMsg]
             })
             return ""
         }

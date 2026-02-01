@@ -274,7 +274,7 @@ export default function ChatbotContainer() {
     }
 
     return (
-        <div className={`flex flex-col fixed inset-0 h-[100dvh] w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}>
+        <div className={`flex flex-col fixed inset-0 h-full w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}>
              
              <ChatHeader 
                 settings={settings}
