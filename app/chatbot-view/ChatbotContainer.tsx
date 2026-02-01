@@ -50,16 +50,19 @@ export default function ChatbotContainer() {
     const isOffline = !!offlineMessage
 
     // Mobile Keyboard Fix: Visual Viewport
-    const [viewportHeight, setViewportHeight] = useState('100%');
+    const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0 });
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.visualViewport) {
             const handleResize = () => {
-                // Only apply on mobile devices where keyboard shifts visual viewport
+                // Only apply on mobile where keyboard creates visual viewport shift
                 if (window.innerWidth < 768) {
-                    setViewportHeight(`${window.visualViewport?.height}px`)
+                    setViewportStyle({
+                        height: `${window.visualViewport?.height}px`,
+                        top: window.visualViewport?.offsetTop || 0
+                    })
                 } else {
-                    setViewportHeight('100%')
+                    setViewportStyle({ height: '100%', top: 0 })
                 }
             }
 
@@ -306,7 +309,11 @@ export default function ChatbotContainer() {
 
     return (
         <div 
-            style={{ height: viewportHeight }}
+            style={{ 
+                height: viewportStyle.height,
+                top: viewportStyle.top,
+                position: viewportStyle.top > 0 ? 'fixed' : 'fixed' // Ensure fixed
+            }}
             className={`flex flex-col fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
         >
              
