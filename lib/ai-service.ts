@@ -228,7 +228,7 @@ export async function generateAIResponse(
             const embedding = embeddingResponse.data[0].embedding;
             const queryResponse = await index.query({
                 vector: embedding,
-                topK: 5,
+                topK: 10,
                 includeMetadata: true,
                 filter: { chatbotId: chatbotId }
             });
