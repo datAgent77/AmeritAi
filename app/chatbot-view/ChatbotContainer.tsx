@@ -49,6 +49,33 @@ export default function ChatbotContainer() {
     const offlineMessage = searchParams?.get("offlineMessage") || null
     const isOffline = !!offlineMessage
 
+    // Mobile Keyboard Fix: Visual Viewport
+    const [viewportHeight, setViewportHeight] = useState('100%');
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            const handleResize = () => {
+                // Only apply on mobile devices where keyboard shifts visual viewport
+                if (window.innerWidth < 768) {
+                    setViewportHeight(`${window.visualViewport?.height}px`)
+                } else {
+                    setViewportHeight('100%')
+                }
+            }
+
+            window.visualViewport.addEventListener('resize', handleResize)
+            window.visualViewport.addEventListener('scroll', handleResize)
+            
+            // Initial check
+            handleResize()
+
+            return () => {
+                window.visualViewport?.removeEventListener('resize', handleResize)
+                window.visualViewport?.removeEventListener('scroll', handleResize)
+            }
+        }
+    }, [])
+
     // 4. Initialization Effects
     useEffect(() => {
         setIsClient(true)
@@ -274,33 +301,6 @@ export default function ChatbotContainer() {
             </div>
         )
     }
-
-    // Mobile Keyboard Fix: Visual Viewport
-    const [viewportHeight, setViewportHeight] = useState('100%');
-
-    useEffect(() => {
-        if (typeof window !== 'undefined' && window.visualViewport) {
-            const handleResize = () => {
-                // Only apply on mobile devices where keyboard shifts visual viewport
-                if (window.innerWidth < 768) {
-                    setViewportHeight(`${window.visualViewport?.height}px`);
-                } else {
-                    setViewportHeight('100%');
-                }
-            };
-
-            window.visualViewport.addEventListener('resize', handleResize);
-            window.visualViewport.addEventListener('scroll', handleResize);
-            
-            // Initial check
-            handleResize();
-
-            return () => {
-                window.visualViewport?.removeEventListener('resize', handleResize);
-                window.visualViewport?.removeEventListener('scroll', handleResize);
-            };
-        }
-    }, []);
 
     if (!isClient || !settings) return null
 
