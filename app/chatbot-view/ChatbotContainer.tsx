@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { signInAsGuest } from "@/lib/firebase-guest"
+import { event as trackEvent } from "@/lib/gtag"
 
 // Hooks
 import { useWidgetSettings } from "./hooks/useWidgetSettings"
@@ -218,7 +219,16 @@ export default function ChatbotContainer() {
                 })
             })
 
+
             if (response.ok) {
+                // Track GA Event
+                trackEvent({
+                    action: 'lead_form_submit',
+                    category: 'Lead',
+                    label: chatbotId,
+                    value: 1
+                })
+
                 // Save legacy format for compatibility with Booking Overlay
                 localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
                 setShowLeadCollection(false)

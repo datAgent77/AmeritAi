@@ -1915,6 +1915,15 @@
     let isOpen = false;
     const toggleWidget = (forceState) => {
       isOpen = forceState !== undefined ? forceState : !isOpen;
+
+      // GA Tracking
+      if (isOpen && typeof window.gtag === 'function') {
+        window.gtag('event', 'chat_widget_open', {
+             'event_category': 'Chatbot',
+             'event_label': chatbotId
+        });
+      }
+
       iframeContainer.style.display = isOpen ? 'block' : 'none';
 
       // If opening, hide any engagement bubble

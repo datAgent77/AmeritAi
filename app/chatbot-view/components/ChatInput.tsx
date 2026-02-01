@@ -3,6 +3,7 @@ import { ChatbotSettings } from "@/types/chatbot"
 import { Send, ImageIcon, Mic, X } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import Image from "next/image"
+import { event as trackEvent } from "@/lib/gtag"
 
 interface ChatInputProps {
     settings: ChatbotSettings
@@ -134,6 +135,11 @@ export function ChatInput({
             }
         } else {
             // Text Flow
+            trackEvent({
+                action: 'chat_message_sent',
+                category: 'Chat',
+                label: 'User Message'
+            })
             sendMessage(currentInput)
         }
     }

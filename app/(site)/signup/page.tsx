@@ -18,6 +18,7 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { PasswordStrength, isPasswordStrong } from "@/components/auth/password-strength"
 import { PhoneInput } from "@/components/auth/phone-input"
+import { event as trackEvent } from "@/lib/gtag"
 
 type SignupStep = 'initial' | 'form' | 'success'
 
@@ -147,6 +148,13 @@ export default function SignUpForm() {
             toast({
                 title: t('success'),
                 description: t('accountCreatedRedirecting') || "Hesabınız oluşturuldu, yönlendiriliyorsunuz...",
+            })
+
+            // Track Signup Event
+            trackEvent({
+                action: 'user_signup',
+                category: 'Auth',
+                label: authProvider || 'email'
             })
 
             // Redirect to Onboarding

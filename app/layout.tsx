@@ -59,7 +59,9 @@ export const metadata: Metadata = {
 
 import { ConditionalAuthProvider } from "@/components/conditional-auth-provider";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { CookieConsentProvider } from "@/context/CookieConsentContext";
 import { CookieConsent } from "@/components/cookie-consent";
+import { GoogleTagManager } from "@/components/google-tag-manager";
 import { Toaster } from "@/components/ui/toaster"
 import { PublicChatbot } from "@/components/public-chatbot"
 
@@ -88,16 +90,27 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
+        <noscript>
+          <iframe 
+            src="https://www.googletagmanager.com/ns.html?id=GTM-K5ZJL5W2"
+            height="0" 
+            width="0" 
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
           <LanguageProvider>
             <ConditionalAuthProvider>
-              <CookieConsent />
-              {children}
-              <PublicChatbot />
-              <Toaster />
+              <CookieConsentProvider>
+                <CookieConsent />
+                <GoogleTagManager />
+                {children}
+                <PublicChatbot />
+                <Toaster />
+              </CookieConsentProvider>
             </ConditionalAuthProvider>
           </LanguageProvider>
       </body>
