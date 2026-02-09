@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { PlanConfig, formatPlanPrice } from '@/lib/pricing-config';
-import { Check, Info, Zap } from 'lucide-react';
+import { Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -104,20 +104,16 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
             <div className="flex-1 space-y-2">
                 {plan.highlights?.map((feature: string, i: number) => {
                     const isComingSoon = plan.highlights_meta?.coming_soon?.includes(feature);
-                    const isUnlimitedMsg = feature === 'featureUnlimitedMessages' || feature.includes('Sınırsız Mesajlaşma') || feature.includes('Unlimited Messaging');
                     
                     return (
                         <div key={i} className="flex items-start gap-2 text-sm">
                             {isComingSoon ? (
                                 <Info className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-                            ) : isUnlimitedMsg ? (
-                                <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
                             ) : (
                                 <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                             )}
                             <span className={cn(
-                                "text-muted-foreground",
-                                isUnlimitedMsg && "font-semibold text-foreground",
+                                "text-foreground",
                                 isComingSoon && "text-muted-foreground/80"
                             )}>
                                 {t(feature)}
@@ -141,19 +137,19 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
                     <div className="grid grid-cols-2 gap-1.5 text-xs">
                         <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
                             <span className="font-semibold block">
-                                {plan.limits.knowledge.websites === 'unlimited' ? '∞' : plan.limits.knowledge.websites}
+                                {plan.limits.knowledge.websites === 'unlimited' ? (language === 'tr' ? 'Sınırsız' : 'Unlimited') : plan.limits.knowledge.websites}
                             </span>
                             <span className="text-muted-foreground text-[10px]">{t('limitWebsitesLabel') || 'Web Sitesi Tarama'}</span>
                         </div>
                         <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
                             <span className="font-semibold block">
-                                {plan.limits.knowledge.files === 'unlimited' ? '∞' : plan.limits.knowledge.files}
+                                {plan.limits.knowledge.files === 'unlimited' ? (language === 'tr' ? 'Sınırsız' : 'Unlimited') : plan.limits.knowledge.files}
                             </span>
                             <span className="text-muted-foreground text-[10px]">{t('limitFilesLabel') || 'Dosya (PDF/Doc)'}</span>
                         </div>
                         <div className="col-span-2 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
                             <span className="font-semibold block">
-                                {plan.limits.knowledge.text === 'unlimited' ? '∞' : plan.limits.knowledge.text}
+                                {plan.limits.knowledge.text === 'unlimited' ? (language === 'tr' ? 'Sınırsız' : 'Unlimited') : plan.limits.knowledge.text}
                             </span>
                             <span className="text-muted-foreground text-[10px]">{t('limitTextLabel') || 'Metin / Soru-Cevap'}</span>
                         </div>

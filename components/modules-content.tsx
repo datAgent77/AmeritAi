@@ -518,7 +518,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{t('modules') || "Modules"}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('skills') || "Skills"}</h2>
                     <p className="text-muted-foreground mt-1">
                         {t('modulesDescription') || "Manage your active AI agents and tools."}
                     </p>

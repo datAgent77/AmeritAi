@@ -70,7 +70,7 @@ export function Breadcrumbs() {
                         "widget": "Widget",
                         "catalog": t('productCatalog'),
                         "settings": t('settings'),
-                        "modules": t('modules') || "Modules",
+                        "modules": t('skills') || "Skills",
                         "appointments": t('appointments') || "Appointments",
                         "customer-admin": t('customerAdmin') || "Abonelik yönetimi",
                         "subscriptions": t('subscriptions') || "Abonelikler",
@@ -95,7 +95,7 @@ export function Breadcrumbs() {
                                 <>
                                     <BreadcrumbSeparator />
                                     <BreadcrumbItem>
-                                        <BreadcrumbLink href="/console/modules">{t('modules') || "Modules"}</BreadcrumbLink>
+                                        <BreadcrumbLink href="/console/modules">{t('skills') || "Skills"}</BreadcrumbLink>
                                     </BreadcrumbItem>
                                 </>
                             )}

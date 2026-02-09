@@ -133,7 +133,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     active: isActive("/console/knowledge")
                 },
                 {
-                    title: t('modules') || "Modules",
+                    title: t('skills') || "Skills",
                     icon: Grid,
                     href: "/console/modules",
                     active: isActive("/console/modules")

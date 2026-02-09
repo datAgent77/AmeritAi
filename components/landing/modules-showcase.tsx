@@ -91,7 +91,7 @@ export function ModulesShowcase() {
                 <div className="flex justify-center mt-12">
                     <Link href="/products">
                         <Button className="h-12 px-8 rounded-full bg-secondary border border-border text-foreground hover:bg-accent hover:border-foreground/20 transition-all group backdrop-blur-sm">
-                            {t('viewAllModules')}
+                            {t('viewAllSkills') || "View All Skills"}
                             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
                     </Link>

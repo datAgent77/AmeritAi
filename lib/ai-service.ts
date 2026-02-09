@@ -390,9 +390,14 @@ REMEMBER: Always think before responding. Quality > Speed.`;
 
         for (const mod of allModules) {
             // Check if module is enabled
+            // 0. Skip modules that are not ready (coming_soon, beta)
             // 1. Core modules are always active
             // 2. Legacy field check in chatbotData
             // 3. For voiceAppointments, also check enableAppointments
+            if (mod.status !== 'ready') {
+                continue; // Skip coming_soon and beta modules
+            }
+            
             let isEnabled = mod.isCore || (mod.legacyFirestoreField && chatbotData?.[mod.legacyFirestoreField] === true);
 
             // Special case for appointments/voice - check multiple field names

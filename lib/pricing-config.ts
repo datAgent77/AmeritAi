@@ -331,9 +331,9 @@ const SCENARIO_C: PlanConfig[] = [
 
 /**
  * SCENARIO D: Vion AI New Pricing (USD)
- * - Starter: $29/mo
- * - Growth: $79/mo
- * - Pro: $149/mo
+ * - Starter: $19/mo (1,000 AI messages)
+ * - Growth: $49/mo (5,000 AI messages)
+ * - Pro: $99/mo (Unlimited)
  * - Enterprise: Contact
  */
 const SCENARIO_D: PlanConfig[] = [
@@ -343,12 +343,12 @@ const SCENARIO_D: PlanConfig[] = [
         sortOrder: 1,
         availability: 'public',
         billing: {
-            monthly: { amount: 29, currency: 'USD' },
-            annual: { amount: 290, currency: 'USD', discountLabel: '2 months free' }
+            monthly: { amount: 19, currency: 'USD' },
+            annual: { amount: 190, currency: 'USD', discountLabel: '2 months free' }
         },
         limits: {
             maxPremiumAddOns: 0,
-            messageLimit: 'unlimited',
+            messageLimit: 1000,
             // Custom limits for knowledge base
             knowledge: { websites: '1', files: 1, text: 3 }
         } as any, // Using 'any' to bypass strict type check for now or update interface later
@@ -364,11 +364,11 @@ const SCENARIO_D: PlanConfig[] = [
             premiumEligible: []
         },
         copy: {
-            ctaLabel: '14 Gün Ücretsiz Dene',
-            subtitle: 'Küçük işletmeler ve şahıs şirketleri için ideal.'
+            ctaLabel: 'ctaTryFree',
+            subtitle: 'planStarterDesc'
         },
         highlights: [
-            'featureUnlimitedMessages',
+            'featureMessagesStarter',
             'featureGeneralAssistant',
             'featureLiveSupport',
             'featureLeadCollection',
@@ -383,12 +383,12 @@ const SCENARIO_D: PlanConfig[] = [
         sortOrder: 2,
         availability: 'public',
         billing: {
-            monthly: { amount: 79, currency: 'USD' },
-            annual: { amount: 790, currency: 'USD', discountLabel: 'billingDiscountBadge' }
+            monthly: { amount: 49, currency: 'USD' },
+            annual: { amount: 490, currency: 'USD', discountLabel: 'billingDiscountBadge' }
         },
         limits: {
             maxPremiumAddOns: 0,
-            messageLimit: 'unlimited',
+            messageLimit: 5000,
             knowledge: { websites: '1', files: 10, text: 20 }
         } as any,
         modules: {
@@ -404,7 +404,7 @@ const SCENARIO_D: PlanConfig[] = [
             subtitle: 'planGrowthDesc'
         },
         highlights: [
-            'featureUnlimitedMessages',
+            'featureMessagesGrowth',
             'featureEverythingInStarter',
             'featureProductCatalog',
             'featureDigitalWaiter',
@@ -424,8 +424,8 @@ const SCENARIO_D: PlanConfig[] = [
         sortOrder: 3,
         availability: 'public',
         billing: {
-            monthly: { amount: 149, currency: 'USD' },
-            annual: { amount: 1490, currency: 'USD', discountLabel: 'billingDiscountBadge' }
+            monthly: { amount: 99, currency: 'USD' },
+            annual: { amount: 990, currency: 'USD', discountLabel: 'billingDiscountBadge' }
         },
         limits: {
             maxPremiumAddOns: 0,
@@ -448,7 +448,7 @@ const SCENARIO_D: PlanConfig[] = [
             subtitle: 'planProDesc'
         },
         highlights: [
-            'featureUnlimitedMessages',
+            'featureUnlimitedMessagesNote',
             'featureEverythingInGrowth',
             'featureSalesOptimization',
             'featureVisualDiagnosis',
@@ -483,7 +483,7 @@ const SCENARIO_D: PlanConfig[] = [
             subtitle: 'planEnterpriseDesc'
         },
         highlights: [
-            'featureUnlimitedMessages',
+            'featureUnlimitedMessagesNote',
             'featureAllFeaturesUnlimited',
             'featureCustomIntegration',
             'featureSlaGuarantee',

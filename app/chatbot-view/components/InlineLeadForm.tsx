@@ -169,7 +169,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
             >
                 {status === 'submitting' 
                     ? (t('sending') === 'sending' ? "Gönderiliyor..." : t('sending')) 
-                    : (config.submitButtonText || (t('send') === 'send' ? "Gönder" : t('send')))
+                    : (t('sendInfo') === 'sendInfo' ? "Bilgileri Gönder" : t('sendInfo'))
                 }
             </button>
         </form>

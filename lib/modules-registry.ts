@@ -797,7 +797,23 @@ Göreviniz, menü ve servis konularında misafirlere yardımcı olmaktır.
         benefits: [
             { en: 'Eliminate need for navigation', tr: 'Gezinme ihtiyacını ortadan kaldırın' },
             { en: 'Provide hyper-personalized support', tr: 'Hiper-kişiselleştirilmiş destek sağlayın' }
-        ]
+        ],
+        aiSystemInstruction: {
+            en: `DYNAMIC CONTEXT MODULE ACTIVE.
+You have access to real-time user data injected from the application.
+RULES:
+1. When the user asks personal questions (e.g., "What is my balance?", "How many orders do I have?"), check the DYNAMIC CONTEXT section for relevant data.
+2. If the data is available in context, answer directly and accurately.
+3. If the data is NOT in context, do NOT make up information. Instead say: "I don't have access to that information right now. Please check your dashboard."
+4. Always be specific when using dynamic data (mention exact numbers, dates, or values).`,
+            tr: `DİNAMİK BAĞLAM MODÜLÜ AKTİF.
+Uygulamadan aktarılan gerçek zamanlı kullanıcı verilerine erişiminiz var.
+KURALLAR:
+1. Kullanıcı kişisel sorular sorduğunda (örn. "Bakiyem ne?", "Kaç siparişim var?"), ilgili veri için DİNAMİK BAĞLAM bölümünü kontrol et.
+2. Veri bağlamda mevcutsa, doğrudan ve doğru şekilde yanıtla.
+3. Veri bağlamda YOKSA, bilgi uydurmayın. Bunun yerine şöyle söyle: "Şu anda bu bilgiye erişimim yok. Lütfen kontrol panelinize bakın."
+4. Dinamik veri kullanırken her zaman spesifik ol (tam sayıları, tarihleri veya değerleri belirt).`
+        }
     }
 };
 

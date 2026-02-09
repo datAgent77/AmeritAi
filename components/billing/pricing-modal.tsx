@@ -18,12 +18,12 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
         {
             id: 'starter',
             name: 'Starter',
-            price: '$29',
+            price: '$19',
             period: '/mo',
             icon: Rocket,
             description: 'Ideal for small businesses and individuals.',
             features: [
-                'Unlimited Messaging',
+                '1,000 AI Messages/mo',
                 'General AI Assistant',
                 'Live Support',
                 'Lead Collection',
@@ -41,11 +41,12 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
         {
             id: 'growth',
             name: 'Growth',
-            price: '$79',
+            price: '$49',
             period: '/mo',
             icon: Sparkles,
             description: 'For growing e-commerce sites and restaurants.',
             features: [
+                '5,000 AI Messages/mo',
                 'Everything in Starter',
                 'Product Catalog',
                 'Digital Waiter',
@@ -64,11 +65,12 @@ export function PricingModal({ isOpen, onClose, currentPlan = 'free' }: PricingM
         {
             id: 'pro',
             name: 'Pro',
-            price: '$149',
+            price: '$99',
             period: '/mo',
             icon: Zap,
             description: 'Tam otomasyon isteyen yüksek hacimli işletmeler.',
             features: [
+                'Unlimited Messaging*',
                 'Everything in Growth',
                 'Sales Optimization',
                 'Visual Diagnosis',
