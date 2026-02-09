@@ -21,7 +21,7 @@ export function ModulesShowcase() {
                         {t('landingAiSupport') || "Powerful AI Skills"}
                     </h2>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-light">
-                        {t('landingAiSupportDesc') || "Transform your customer experience with our advanced modules."}
+                        {t('landingAiSupportDesc') || "Transform your customer experience with our advanced skills."}
                     </p>
                 </div>
 
@@ -62,9 +62,7 @@ export function ModulesShowcase() {
                                         <div className="p-3 rounded-2xl bg-muted border border-border group-hover:scale-110 transition-transform duration-500">
                                             <IconComponent className="w-8 h-8 text-foreground" />
                                         </div>
-                                        <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-muted border border-border ${statusColor}`}>
-                                            {getStatusText(mod.status)}
-                                        </span>
+
                                     </div>
 
                                     <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
@@ -75,13 +73,21 @@ export function ModulesShowcase() {
                                         {mod.description[language === 'tr' ? 'tr' : 'en']}
                                     </p>
 
-                                    <Link
-                                        href={`/products/${mod.id}`}
-                                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-2"
-                                    >
-                                        {t('learnMore') || (language === 'tr' ? 'İncele' : 'Learn More')}
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </Link>
+                                    <div className="flex items-center gap-4 mt-6">
+                                        <Link
+                                            href={`/products/${mod.id}`}
+                                            className="inline-flex items-center text-sm font-medium text-foreground hover:text-primary transition-colors gap-2"
+                                        >
+                                            {t('learnMore') || (language === 'tr' ? 'İncele' : 'Learn More')}
+                                            <ArrowRight className="w-4 h-4" />
+                                        </Link>
+                                        <Link
+                                            href={`/products/${mod.id}#use-cases`}
+                                            className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full bg-muted/50 hover:bg-muted"
+                                        >
+                                            {t('viewUseCases') || "See Use Cases"}
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         );

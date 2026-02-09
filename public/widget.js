@@ -150,6 +150,8 @@
 
       // Initialize behavior tracking for AI
       this.initBehaviorTracking();
+      
+      // Custom logic starts here
 
       // Pre-select message to determine delay if needed
       this.selectMessage();
@@ -402,7 +404,9 @@
                 }, 500);
               }
             }
-          } else if (data.action === 'showBubble' && data.message) {
+          } else if ((data.action === 'showBubble' || data.action === 'showCard') && data.message) {
+            // Suggestion Card (Stealth Mode) removed as per user request. 
+            // Always falling back to standard proactive bubble.
             console.log('Engagement: AI bubble:', data.message);
             this.showBubble({ text: data.message }, 'aiBubble');
           }
@@ -1116,6 +1120,11 @@
       `;
       document.head.appendChild(style);
     }
+
+
+
+
+
 
     hideBubble() {
       if (!this.bubble) return;

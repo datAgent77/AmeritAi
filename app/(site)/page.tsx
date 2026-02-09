@@ -23,6 +23,7 @@ import { FeaturesGrid } from "@/components/landing/features-grid"
 import { IntegrationCloud } from "@/components/landing/integration-cloud"
 import { FAQSection } from "@/components/landing/faq-section"
 import { CTASection } from "@/components/landing/cta-section"
+import { LiveDemoSection } from "@/components/landing/live-demo-section"
 
 export default function LandingPage() {
     const { language } = useLanguage()
@@ -90,6 +91,7 @@ export default function LandingPage() {
             <SectorsGrid />
             <HowItWorks />
             <ModulesShowcase />
+            <LiveDemoSection />
             <AnalyticsPreview />
             <FeaturesGrid />
             <IntegrationCloud />

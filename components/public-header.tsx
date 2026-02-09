@@ -170,7 +170,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     {/* 2. MODULES DROPDOWN */}
                     <div className="group relative px-4 py-8">
                         <button className="flex items-center gap-1 hover:text-foreground transition-colors group-hover:text-foreground">
-                            {language === 'tr' ? 'Modüller' : 'Modules'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
+                            {language === 'tr' ? 'Skills' : 'Skills'} <ChevronDown className="w-3 h-3 transition-transform group-hover:rotate-180" />
                         </button>
                         <div className="absolute top-full left-0 w-[900px] bg-popover border border-border rounded-xl p-6 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                             <div className="grid grid-cols-3 gap-4 mb-4">
@@ -195,7 +195,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                             </div>
                             <div className="pt-4 border-t border-border text-center">
                                 <Link href="/products" className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 transition-colors">
-                                    {language === 'tr' ? 'Tüm Modülleri Gör' : 'View All Modules'} <ArrowRight className="ml-1 w-4 h-4" />
+                                    {language === 'tr' ? 'Tüm Skills\'leri Gör' : 'View All Skills'} <ArrowRight className="ml-1 w-4 h-4" />
                                 </Link>
                             </div>
                         </div>
@@ -346,7 +346,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                             onClick={() => toggleAccordion('modules')}
                                             className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground"
                                         >
-                                            {language === 'tr' ? 'Modüller' : 'Modules'}
+                                            {language === 'tr' ? 'Skills' : 'Skills'}
                                             <ChevronDown className={cn("w-4 h-4 transition-transform", activeAccordion === 'modules' ? "rotate-180" : "")} />
                                         </button>
                                         <div className={cn("grid gap-1 overflow-hidden transition-all duration-300", activeAccordion === 'modules' ? "max-h-[500px] pb-3" : "max-h-0")}>

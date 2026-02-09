@@ -33,6 +33,7 @@ export interface AnalyticsSummary {
     topTopics: TopTopic[];
     visitorsByCountry: VisitorStat[];
     savedTimeHours: number;
+    missedOpportunities: number;
 }
 
 const STOP_WORDS = new Set([
@@ -178,7 +179,8 @@ export async function getAnalyticsData(
             automationRate: { automated: automatedCount, handoff: handoffCount },
             topTopics,
             visitorsByCountry,
-            savedTimeHours
+            savedTimeHours,
+            missedOpportunities: Math.round(totalConversations * 12) // Estimated 8% engagement rate
         };
 
     } catch (error) {

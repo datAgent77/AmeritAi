@@ -532,7 +532,7 @@ export default function OnboardingPage() {
     }
 
     const copyEmbedCode = () => {
-        const code = `<script src="${window.location.origin}/widget.js" data-chatbot-id="${user?.uid}"></script>`
+        const code = `<script src="${window.location.origin}/widget.js?v=2.0" data-chatbot-id="${user?.uid}"></script>`
         navigator.clipboard.writeText(code)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)

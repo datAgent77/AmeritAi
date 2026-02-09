@@ -20,23 +20,24 @@ export function PublicFooter() {
 
     const footerLinks = {
         product: [
-            { label: t('footerFeatures'), href: "/#features" },
-            { label: "AI Chatbot", href: "/products/ai-support" },
+            { label: t('allModules') || (mounted && (resolvedTheme === 'dark' ? 'Modules' : 'Modules')), href: "/products" },
             { label: t('landingPersonalShopper'), href: "/products/personal-shopper" },
             { label: t('modules.visualDiagnosis'), href: "/products/visual-diagnosis" },
-            { label: t('footerPricing'), href: "/pricing" },
+            { label: t('modules.restaurantMenu') || "Smart Menu", href: "/products/restaurant-menu" },
+            { label: t('modules.gamification'), href: "/products/gamification" },
+            { label: t('modules.campaignManager'), href: "/products/campaign-manager" },
         ],
         solutions: [
             { label: t('footerEcommerce'), href: "/solutions/ecommerce" },
             { label: t('footerRealEstate'), href: "/solutions/real-estate" },
             { label: t('footerSaas'), href: "/solutions/saas" },
-            { label: t('footerTravel'), href: "/solutions/travel" },
+            { label: t('footerTravel'), href: "/solutions/booking" }, // Changed from travel to booking
             { label: t('allIndustries'), href: "/industries" },
         ],
         resources: [
             { label: t('footerBlog'), href: "/blog" },
             { label: t('footerFaq'), href: "/resources/faq" },
-            { label: t('footerHelp'), href: "/resources/education" },
+            // Removed /resources/education as it doesn't exist.
             { label: t('footerContact'), href: "/contact" },
         ],
         company: [

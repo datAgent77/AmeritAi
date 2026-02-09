@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, MessageSquare, Activity, Users, Download } from "lucide-react"
+import { Loader2, MessageSquare, Activity, Users, Download, UserX, Clock } from "lucide-react"
 import { AnalyticsSummary } from "@/lib/analytics"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
@@ -166,6 +166,34 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{data?.averageMessagesPerConversation || 0}</div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            {/* Business Impact Stats */}
+            <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{t('missedOpportunities') || "Missed Opportunities"}</CardTitle>
+                        <UserX className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{data?.missedOpportunities || 0}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {t('potentialLeadsLost') || "Potential customers who left without interacting"}
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{t('aiTimeSaved') || "AI Time Saved"}</CardTitle>
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                     <CardContent>
+                        <div className="text-2xl font-bold">{data?.savedTimeHours || 0} {t('hours') || "hours"}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {t('manualWorkSaved') || "Manual work automatically handled by AI"}
+                        </p>
                     </CardContent>
                 </Card>
             </div>

@@ -651,7 +651,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         setTimeout(() => setCopied(null), 2000)
     }
 
-    const scriptCode = `<script src="${origin}/widget.js" data-chatbot-id="${userId}" data-color="${brandColor}"></script>`
+    const scriptCode = `<script src="${origin}/widget.js?v=2.0" data-chatbot-id="${userId}" data-color="${brandColor}"></script>`
     const iframeCode = `<iframe src="${origin}/chatbot-view?id=${userId}" width="100%" height="600" frameborder="0"></iframe>`
     const directLink = `${origin}/chatbot-view?id=${userId}`
 
