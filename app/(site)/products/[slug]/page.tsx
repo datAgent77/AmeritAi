@@ -61,7 +61,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
         return (
             <div className="min-h-screen bg-background text-foreground font-sans flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-4">Module Loading...</h1>
+                    <h1 className="text-2xl font-bold mb-4">Skill Loading...</h1>
                     <Link href="/" className="text-muted-foreground hover:text-foreground">Return Home</Link>
                 </div>
             </div>
@@ -93,7 +93,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
                         </div>
                         <Link href="/products">
                             <Button className="h-12 px-8 rounded-full bg-foreground text-background hover:bg-foreground/90">
-                                {language === 'tr' ? 'Tüm Modülleri Gör' : 'View All Modules'}
+                                {language === 'tr' ? 'Tüm Yetenekleri Gör' : 'View All Skills'}
                                 <ArrowRight className="ml-2 w-4 h-4" />
                             </Button>
                         </Link>
@@ -117,7 +117,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
 
                 <PublicBreadcrumb 
                     items={[
-                        { label: language === 'tr' ? 'Modüller' : 'Modules', href: '/products' },
+                        { label: language === 'tr' ? 'Yetenekler' : 'Skills', href: '/products' },
                         { label: language === 'tr' ? module.name.tr : module.name.en }
                     ]} 
                 />
@@ -129,7 +129,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
                         </div>
 
                         <Badge variant="outline" className="mb-6 border-primary/30 text-primary">
-                            {module.isCore ? (language === 'tr' ? 'Çekirdek Modül' : 'Core Module') : (language === 'tr' ? 'Eklenti Modül' : 'Add-on Module')}
+                            {module.isCore ? (language === 'tr' ? 'Çekirdek Yetenek' : 'Core Skill') : (language === 'tr' ? 'Eklenti Yetenek' : 'Add-on Skill')}
                         </Badge>
 
                         <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-foreground">
@@ -156,7 +156,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
             <section className="py-20 bg-muted/30">
                 <div className="container mx-auto px-4">
                     <h2 className="text-3xl font-bold mb-12 text-center text-foreground">
-                        {language === 'tr' ? 'Modül Özellikleri & Avantajları' : 'Module Features & Benefits'}
+                        {language === 'tr' ? 'Yetenek Özellikleri & Avantajları' : 'Skill Features & Benefits'}
                     </h2>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -198,7 +198,7 @@ export default function ModuleDetailPage({ params }: { params: { slug: string } 
                     {/* Benefits List */}
                     {module.benefits && module.benefits.length > 0 && (
                         <div className="mt-16 max-w-4xl mx-auto">
-                            <h3 className="text-2xl font-bold mb-8 text-center text-foreground">{language === 'tr' ? 'Neden Bu Modülü Seçmelisiniz?' : 'Why Choose This Module?'}</h3>
+                            <h3 className="text-2xl font-bold mb-8 text-center text-foreground">{language === 'tr' ? 'Neden Bu Yeteneği Seçmelisiniz?' : 'Why Choose This Skill?'}</h3>
                             <div className="grid md:grid-cols-2 gap-4">
                                 {module.benefits.map((benefit, idx) => (
                                     <div key={idx} className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border shadow-sm">

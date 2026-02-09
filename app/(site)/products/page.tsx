@@ -48,13 +48,13 @@ export default function ModulesPage() {
                 
                 <PublicBreadcrumb 
                     items={[
-                        { label: language === 'tr' ? 'Modüller' : 'Modules' }
+                        { label: language === 'tr' ? 'Yetenekler' : 'Skills' }
                     ]} 
                 />
 
                 <div className="container mx-auto px-4 relative z-10 text-center pt-12 md:pt-20">
                     <Badge variant="outline" className="mb-6 border-primary/20 text-primary">
-                        {language === 'tr' ? 'Tüm Modüller' : 'All Modules'}
+                        {language === 'tr' ? 'Tüm Yetenekler' : 'All Skills'}
                     </Badge>
                     <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-foreground">
                         {language === 'tr' ? 'İşletmeniz İçin Güçlü Çözümler' : 'Powerful Solutions for Your Business'}

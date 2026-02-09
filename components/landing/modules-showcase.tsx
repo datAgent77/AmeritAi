@@ -18,7 +18,7 @@ export function ModulesShowcase() {
             <div className="container mx-auto px-4">
                 <div className="text-center mb-24 space-y-4">
                     <h2 className="text-3xl md:text-5xl font-bold text-foreground tracking-tight">
-                        {t('landingAiSupport') || "Powerful AI Modules"}
+                        {t('landingAiSupport') || "Powerful AI Skills"}
                     </h2>
                     <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-light">
                         {t('landingAiSupportDesc') || "Transform your customer experience with our advanced modules."}
