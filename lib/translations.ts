@@ -2253,7 +2253,6 @@ export const translations = {
         landingSmartRecommendations: "Akıllı Öneriler",
         landingVisualSearch: "Görsel Arama",
         landingUpselling: "Üst Satış & Çapraz Satış",
-        skillStatus: "Yetenek Durumu",
         skills: "Yetenekler",
         skillsDescription: "Yapay zeka asistanlarını ve araçlarını yönetin.",
         aiChatbot: "Genel Asistan",
