@@ -173,17 +173,6 @@ export function PublicFooter() {
                             {new Date().getFullYear()} Vion AI. {t('footerRights')}
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
-                            {mounted && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-                                    className="rounded-full w-8 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-                                >
-                                    {resolvedTheme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                                    <span className="sr-only">Toggle theme</span>
-                                </Button>
-                            )}
                             <Link href="/about" className="hover:text-foreground transition-colors">
                                 {t('footerAbout')}
                             </Link>

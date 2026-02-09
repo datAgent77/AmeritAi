@@ -56,7 +56,7 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ transparent = false }: PublicHeaderProps) {
     const { t, language, setLanguage } = useLanguage()
-    const { theme, resolvedTheme } = useTheme()
+    const { theme, resolvedTheme, setTheme } = useTheme()
     const { user } = useAuth()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
@@ -251,6 +251,21 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    </div>
+
+                    {/* Theme Toggle */}
+                    <div className="hidden md:flex">
+                        {mounted && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+                                className="rounded-full w-10 h-10 text-muted-foreground hover:text-foreground hover:bg-muted"
+                            >
+                                {resolvedTheme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                                <span className="sr-only">Toggle theme</span>
+                            </Button>
+                        )}
                     </div>
 
                     {/* Auth Buttons */}

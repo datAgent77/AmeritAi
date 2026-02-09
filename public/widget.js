@@ -1983,12 +1983,17 @@
       }
     });
 
-    // Append to body
     // Append to body (Container wraps launcher)
     // Add Launcher to DOM
     document.body.appendChild(launcherContainer);
     launcherContainer.appendChild(launcher);
     document.body.appendChild(iframeContainer);
+
+    // Expose public API for programmatic control
+    window.UserexWidget = window.UserexWidget || {};
+    window.UserexWidget.open = function() { toggleWidget(true); };
+    window.UserexWidget.close = function() { toggleWidget(false); };
+    window.UserexWidget.toggle = function() { toggleWidget(); };
 
     // Initial Trigger Check
     setTimeout(() => {

@@ -2,17 +2,14 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
-// Alternative versions available:
-// import { HeroBackgroundPremium } from "@/components/landing/hero-background-premium" // Aurora + Beams + Orbs
-// import { HeroBackgroundGeometric } from "@/components/landing/hero-background-geometric" // Clean geometric shapes
-// import { HeroBackgroundGradient } from "@/components/landing/hero-background-gradient" // Lightweight gradient
-// import { HeroBackground } from "@/components/landing/hero-background" // Old canvas-based (heavy)
-import { TextRotate } from "@/components/ui/text-rotate"
+
+import { HeroVisual } from "@/components/landing/hero-visual"
+import { SkillsTicker } from "@/components/landing/skills-ticker"
 
 // Modular Components
 import { SectorsGrid } from "@/components/landing/sectors-grid"
@@ -28,69 +25,104 @@ import { LiveDemoSection } from "@/components/landing/live-demo-section"
 export default function LandingPage() {
     const { language } = useLanguage()
 
-    const slogans = {
-        tr: [
-            "Ziyaretçileri Müşteriye Dönüştürür.",
-            "Her Dili Konuşan Satış Temsilciniz.",
-            "Satışları ve Randevuları Otomatize Eder.",
-            "Soruları Yanıtlar, Güven Verir."
-        ],
-        en: [
-            "Converts Visitors into Customers.",
-            "Your Multilingual Sales Representative.",
-            "Automates Sales and Appointments.",
-            "Answers Questions, Builds Trust."
-        ]
-    }
+
 
     return (
-        <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30 font-sans">
+        <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30 font-sans overflow-x-hidden">
             <PublicHeader transparent={true} />
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+            <section className="relative pt-32 pb-24 md:pt-40 md:pb-36 overflow-hidden">
                 <HeroBackgroundModern />
 
                 <div className="container mx-auto px-4 relative z-10">
-                    <div className="max-w-4xl mx-auto text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-medium text-muted-foreground backdrop-blur-sm">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            {language === 'tr' ? 'Yeni Nesil Satış ve Destek Asistanı' : 'Next-Gen Sales & Support Assistant'}
-                        </div>
+                    <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                        {/* Text Content */}
+                        <div className="flex-1 text-center lg:text-left space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-secondary text-xs font-medium text-secondary-foreground/80 backdrop-blur-sm mx-auto lg:mx-0">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                </span>
+                                {language === 'tr' ? 'Yapay Zeka Destekli İşletme Asistanı' : 'AI-Powered Business Assistant'}
+                            </div>
 
-                        <div className="h-[120px] md:h-[180px] flex items-center justify-center">
-                            <h1 className="text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight text-foreground leading-tight min-h-[80px] flex flex-col items-center justify-center">
-                                <TextRotate
-                                    texts={language === 'tr' ? slogans.tr : slogans.en}
-                                    duration={6000}
-                                />
-                            </h1>
-                        </div>
+                            <div className="space-y-4">
+                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
+                                    {language === 'tr' ? (
+                                        <>
+                                            Web Sitenizin<br />
+                                            <span className="text-foreground">
+                                                AI Satış Asistanı
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            Your Website&apos;s<br />
+                                            <span className="text-foreground">
+                                                AI Sales Assistant
+                                            </span>
+                                        </>
+                                    )}
+                                </h1>
+                                
+                                <p className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light">
+                                    {language === 'tr'
+                                        ? "Vion, web sitenize gelen ziyaretçileri karşılar, sorularını yanıtlar ve onları müşteriye dönüştürür. Kodlama gerekmez."
+                                        : "Vion welcomes visitors to your website, answers their questions, and converts them into customers. No coding required."}
+                                </p>
+                            </div>
 
-                        <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
-                            {language === 'tr'
-                                ? "Vion, müşteri sorularını cevaplayan değil, işletme hedeflerine (satış, randevu, lead) göre hareket eden akıllı bir AI asistandır."
-                                : "Vion is not just a chatbot that answers questions, but an intelligent AI assistant that acts based on your business goals (sales, leads, appointments)."}
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-                            <Link href="/signup">
-                                <Button className="h-14 px-8 text-lg bg-foreground text-background hover:bg-foreground/90 transition-all rounded-full font-medium shadow-xl dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:scale-105">
-                                    {language === 'tr' ? 'Ücretsiz Başlayın' : 'Start for Free'}
-                                    <ArrowRight className="ml-2 w-5 h-5" />
+                            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                                <Link href="/signup" className="w-full sm:w-auto">
+                                    <Button size="lg" className="w-full h-14 px-8 text-lg rounded-full font-medium shadow-lg shadow-cyan-500/20 hover:scale-105 transition-transform bg-foreground text-background hover:bg-foreground/90">
+                                        {language === 'tr' ? 'Ücretsiz Başlayın' : 'Start for Free'}
+                                        <ArrowRight className="ml-2 w-5 h-5" />
+                                    </Button>
+                                </Link>
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="w-full sm:w-auto h-14 px-8 text-lg rounded-full border-muted-foreground/20 hover:bg-secondary/50 backdrop-blur-sm"
+                                    onClick={() => {
+                                        const w = window as any
+                                        if (w.UserexWidget?.open) {
+                                            w.UserexWidget.open()
+                                        }
+                                    }}
+                                >
+                                    {language === 'tr' ? 'Canlı Demo' : 'Live Demo'}
                                 </Button>
-                            </Link>
+                            </div>
+
+                            <div className="pt-4 flex items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                    <span>{language === 'tr' ? 'Kredi kartı gerekmez' : 'No credit card required'}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                    <span>{language === 'tr' ? '14 gün ücretsiz deneme' : '14-day free trial'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Visual Content */}
+                        <div className="flex-1 w-full max-w-[500px] lg:max-w-none">
+                            <HeroVisual />
                         </div>
                     </div>
+                </div>
+
+                {/* Skills Ticker - Integrated into Hero */}
+                <div className="absolute bottom-0 w-full z-20">
+                     <SkillsTicker />
                 </div>
             </section>
 
             <SectorsGrid />
-            <HowItWorks />
             <ModulesShowcase />
+            <HowItWorks />
             <LiveDemoSection />
             <AnalyticsPreview />
             <FeaturesGrid />

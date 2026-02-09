@@ -89,6 +89,10 @@ const config: Config = {
                         transform: "translateX(200%)",
                     },
                 },
+                "infinite-scroll": {
+                    from: { transform: "translateX(0)" },
+                    to: { transform: "translateX(-50%)" },
+                },
             },
             animation: {
                 "accordion-down": "accordion-down 0.2s ease-out",
@@ -96,6 +100,7 @@ const config: Config = {
                 beam: "beam linear infinite",
                 spotlight: "spotlight 2s ease .75s 1 forwards",
                 shimmer: "shimmer 2s infinite",
+                "infinite-scroll": "infinite-scroll 40s linear infinite",
             },
         },
     },
