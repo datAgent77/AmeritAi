@@ -27,7 +27,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                     <Card className="border shadow-sm hover:shadow-md transition-all">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Bot className="w-4 h-4 text-purple-500" />
+                                <Bot className="w-4 h-4 text-primary" />
                                 Davranış & Ton
                             </CardTitle>
                         </CardHeader>
@@ -67,7 +67,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                     <Card className="border shadow-sm hover:shadow-md transition-all">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-blue-500" />
+                                <Clock className="w-4 h-4 text-primary" />
                                 Zamanlama & Limitler
                             </CardTitle>
                         </CardHeader>
@@ -102,7 +102,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                         <CardHeader className="pb-2">
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-base font-medium flex items-center gap-2">
-                                    <MousePointerClick className="w-4 h-4 text-green-500" />
+                                    <MousePointerClick className="w-4 h-4 text-primary" />
                                     Hedefleme
                                 </CardTitle>
                                 <div className="flex bg-muted p-1 rounded-lg">
@@ -166,7 +166,7 @@ export function EngagementAITab({ settings, setSettings }: EngagementAITabProps)
                     <Card className="border shadow-sm hover:shadow-md transition-all md:col-span-2">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium flex items-center gap-2">
-                                <Settings2 className="w-4 h-4 text-orange-500" />
+                                <Settings2 className="w-4 h-4 text-primary" />
                                 Kısıtlamalar
                             </CardTitle>
                         </CardHeader>

@@ -234,7 +234,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                                     className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background relative overflow-visible"
                                 >
                                     <span className="font-medium text-sm">AI Asistan</span>
-                                    <Badge className="absolute -top-2 -right-1 px-1.5 py-0 text-[9px] bg-gradient-to-r from-amber-500 to-orange-500 border-0 text-white shadow-sm ring-2 ring-background rounded-full">PRO</Badge>
+                                    <Badge className="absolute -top-2 -right-1 px-1.5 py-0 text-[9px] bg-zinc-900 border-0 text-white shadow-sm ring-2 ring-background rounded-full">PRO</Badge>
                                 </TabsTrigger>
                             </TabsList>
                         </div>
