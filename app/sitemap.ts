@@ -2,51 +2,56 @@ import { MetadataRoute } from 'next'
 import { SEED_BLOG_POSTS } from '@/lib/seed-cms-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://www.getvion.com' // Updated to actual domain
+    const baseUrl = 'https://www.getvion.com'
 
-    // Static pages
-    const routes = [
-        '',
-        '/about',
-        '/products',
-        '/solutions',
-        '/resources/faq',
-        '/industries',
-        '/pricing',
-        '/contact',
-        '/blog',
-        '/why-us',
-    ].map((route) => ({
+    // Core pages — highest priority
+    const coreRoutes = ['', '/pricing', '/products', '/solutions', '/industries', '/contact'].map((route) => ({
+        url: `${baseUrl}${route}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: route === '' ? 1.0 : 0.9,
+    }))
+
+    // Secondary pages
+    const secondaryRoutes = ['/blog', '/why-us', '/resources/faq', '/resources/education'].map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,
-        priority: 1,
+        priority: 0.7,
     }))
 
-    // Dynamic Blog Posts
-    // In a real app, you would fetch this from Firestore
-    // For now, we use the seed data which mirrors our "database"
-    const blogRoutes = SEED_BLOG_POSTS.map((post) => ({
-        url: `${baseUrl}/blog/${post.slug}`,
-        lastModified: new Date(post.date),
-        changeFrequency: 'weekly' as const,
-        priority: 0.8,
+    // Legal / Auth pages — low priority
+    const legalRoutes = ['/about', '/privacy', '/terms', '/distance-sales'].map((route) => ({
+        url: `${baseUrl}${route}`,
+        lastModified: new Date(),
+        changeFrequency: 'yearly' as const,
+        priority: 0.3,
     }))
 
-    // Dynamic Products (Hardcoded list based on directories if not in DB)
+    // Product pages (static slugs matching actual directories)
     const productSlugs = [
-        'ai-sales-chatbot',
-        'ai-copywriter',
-        'ai-lead-finder',
-        'ai-social-media', // Removed if deleted, but keeping checking
+        'ai-support',
+        'campaign-manager',
+        'gamification',
+        'personal-shopper',
+        'restaurant-menu',
+        'visual-diagnosis',
     ]
 
     const productRoutes = productSlugs.map((slug) => ({
         url: `${baseUrl}/products/${slug}`,
         lastModified: new Date(),
         changeFrequency: 'monthly' as const,
-        priority: 0.9,
+        priority: 0.8,
     }))
 
-    return [...routes, ...blogRoutes, ...productRoutes]
+    // Dynamic Blog Posts
+    const blogRoutes = SEED_BLOG_POSTS.map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: new Date(post.date),
+        changeFrequency: 'weekly' as const,
+        priority: 0.6,
+    }))
+
+    return [...coreRoutes, ...secondaryRoutes, ...productRoutes, ...blogRoutes, ...legalRoutes]
 }
