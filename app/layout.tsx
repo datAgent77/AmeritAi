@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   verification: {
     // Replace with actual Google Search Console verification code
-    google: 'YOUR_GOOGLE_VERIFICATION_CODE',
+    google: '_30_2DpjpK20QsJAjXqrMlw2k0AzdzmfX50MarS2100',
   },
   alternates: {
     canonical: 'https://www.getvion.com',
