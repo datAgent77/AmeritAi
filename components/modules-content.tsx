@@ -303,6 +303,19 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
             setModuleStates(prev => ({ ...prev, [moduleId]: checked }))
 
+            // If skill was just ENABLED (off → on), auto-redirect to settings page
+            if (checked && targetModule && !targetModule.isCore && targetModule.status !== 'coming_soon') {
+                toast({
+                    title: t('moduleEnabled') || "Module Enabled",
+                    description: language === 'tr' 
+                        ? "Ayarları yapılandırmak için yönlendiriliyorsunuz..." 
+                        : "Redirecting to configure settings..."
+                })
+                // Small delay so user sees the toast before redirect
+                setTimeout(() => handleManage(moduleId), 800)
+                return
+            }
+
             toast({
                 title: checked ? (t('moduleEnabled') || "Module Enabled") : (t('moduleDisabled') || "Module Disabled"),
                 description: t('settingsSavedDesc') || "Your settings have been successfully updated."
@@ -360,6 +373,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     break
                 case 'dynamicContext':
                     router.push(`${basePath}/modules/dynamic-context`)
+                    break
+                case 'voiceAssistant':
+                    router.push(`${basePath}/modules/voice`)
                     break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet

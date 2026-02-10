@@ -66,8 +66,8 @@ export async function GET(req: Request) {
                 const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
                 const isAccountActive = mergedData.isActive !== false;
                 
-                // Force-disable modules that are 'coming_soon' in the registry
-                const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status !== 'coming_soon';
+                // Only enable modules that are 'ready' in the registry
+                const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
 
                 // Return only public settings
                 return NextResponse.json({
@@ -142,6 +142,7 @@ export async function GET(req: Request) {
                     industry: data.industry || mergedData.industry || "ecommerce",
                     customPrompts: mergedData.customPrompts || "",
                     salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
+                    enableDynamicContext: mergedData.enableDynamicContext || false,
                     theme: mergedData.theme || "classic",
                     }, {
                         headers: {
