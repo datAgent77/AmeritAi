@@ -157,6 +157,14 @@ export default function SignUpForm() {
                 label: authProvider || 'email'
             })
 
+            // GTM Signup Conversion Event
+            if (typeof window !== 'undefined' && (window as any).dataLayer) {
+                (window as any).dataLayer.push({
+                    event: 'sign_up',
+                    method: authProvider || 'email'
+                })
+            }
+
             // Redirect to Onboarding
             router.push("/onboarding")
 

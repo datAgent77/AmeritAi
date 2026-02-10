@@ -90,6 +90,25 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
                 <Link 
                     href={`/signup?plan=${plan.planId}&cycle=${billingCycle}`} 
                     className="w-full mb-4 block"
+                    onClick={() => {
+                        if (typeof window !== 'undefined' && (window as any).dataLayer) {
+                            const price = billingCycle === 'annual' 
+                                ? plan.billing.annual?.amount 
+                                : plan.billing.monthly?.amount;
+                                
+                            (window as any).dataLayer.push({
+                                event: 'select_item',
+                                ecommerce: {
+                                    items: [{
+                                        item_name: plan.planId,
+                                        item_category: 'subscription',
+                                        price: price || 0,
+                                        quantity: 1
+                                    }]
+                                }
+                            })
+                        }
+                    }}
                 >
                     <Button 
                         variant={isPopular ? "default" : "outline"}

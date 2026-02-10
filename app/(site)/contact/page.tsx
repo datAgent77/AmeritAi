@@ -39,6 +39,14 @@ export default function ContactPage() {
 
             if (response.ok) {
                 setIsSubmitted(true)
+                // GTM Conversion Event
+                if (typeof window !== 'undefined' && (window as any).dataLayer) {
+                    (window as any).dataLayer.push({
+                        event: 'generate_lead',
+                        form_name: 'contact_form',
+                        subject: formData.subject
+                    })
+                }
                 toast({
                     title: language === 'tr' ? 'Mesaj Gönderildi' : 'Message Sent',
                     description: language === 'tr' ? 'En kısa sürede size dönüş yapacağız.' : 'We will get back to you soon.'
