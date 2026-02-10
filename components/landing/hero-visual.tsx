@@ -153,31 +153,61 @@ export function HeroVisual() {
     const lang = language === 'tr' ? 'tr' : 'en'
 
     const [currentIndustryIndex, setCurrentIndustryIndex] = useState(0)
-    const [visibleLines, setVisibleLines] = useState(0)
+    const [visibleLines, setVisibleLines] = useState(1) // Start with 1 line visible for LCP
+    const [isLoaded, setIsLoaded] = useState(false)
 
     const currentConversation = INDUSTRY_CONVERSATIONS[currentIndustryIndex]
     const lines = currentConversation.conversation[lang]
 
     // Stream lines one by one
     useEffect(() => {
-        setVisibleLines(0)
-        const lineTimers: NodeJS.Timeout[] = []
+        // Skip effect on initial mount if we want to show first line immediately
+        // But we need to handle subsequent switches
+        if (!isLoaded) {
+            setIsLoaded(true)
+            // Just set up timer for remaining lines
+            const lineTimers: NodeJS.Timeout[] = []
+            lines.slice(1).forEach((_, i) => {
+                 const timer = setTimeout(() => {
+                    setVisibleLines(prev => prev + 1)
+                 }, (i + 1) * 1200)
+                 lineTimers.push(timer)
+            })
+             // Switch timer
+            const switchTimer = setTimeout(() => {
+                setCurrentIndustryIndex(prev => (prev + 1) % INDUSTRY_CONVERSATIONS.length)
+                // Reset for next industry
+                setTimeout(() => setVisibleLines(0), 400) // Clear briefly before next
+            }, lines.length * 1200 + 3000)
 
-        lines.forEach((_, i) => {
-            const timer = setTimeout(() => {
-                setVisibleLines(i + 1)
-            }, (i + 1) * 1200) // 1.2s per message
-            lineTimers.push(timer)
-        })
+            return () => {
+                lineTimers.forEach(clearTimeout)
+                clearTimeout(switchTimer)
+            }
+        }
+    }, [isLoaded, lines])
 
-        // After all lines shown, wait 3s then switch industry
-        const switchTimer = setTimeout(() => {
-            setCurrentIndustryIndex(prev => (prev + 1) % INDUSTRY_CONVERSATIONS.length)
-        }, lines.length * 1200 + 3000)
+    // Effect for index change (industry switch)
+    useEffect(() => {
+        if (isLoaded) {
+            setVisibleLines(0)
+            const lineTimers: NodeJS.Timeout[] = []
+            
+            lines.forEach((_, i) => {
+                const timer = setTimeout(() => {
+                    setVisibleLines(prev => prev + 1)
+                }, (i + 1) * 1200)
+                lineTimers.push(timer)
+            })
 
-        return () => {
-            lineTimers.forEach(clearTimeout)
-            clearTimeout(switchTimer)
+            const switchTimer = setTimeout(() => {
+                setCurrentIndustryIndex(prev => (prev + 1) % INDUSTRY_CONVERSATIONS.length)
+            }, lines.length * 1200 + 3000)
+
+            return () => {
+                lineTimers.forEach(clearTimeout)
+                clearTimeout(switchTimer)
+            }
         }
     }, [currentIndustryIndex, lang])
 
@@ -213,7 +243,7 @@ export function HeroVisual() {
             <AnimatePresence mode="wait">
                 <motion.div
                     key={currentConversation.id}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 1, y: 0 }} // Visible immediately for LCP
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.4 }}
