@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
 
 interface ChatbotLoaderProps {
@@ -9,11 +9,37 @@ interface ChatbotLoaderProps {
 }
 
 export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
-    // Use a ref to track if script is already injected to avoid duplicates in strict mode
     const scriptRef = useRef<HTMLScriptElement | null>(null)
+    const [shouldLoad, setShouldLoad] = useState(false)
 
     useEffect(() => {
-        if (!chatbotId) return
+        const handleInteraction = () => {
+             setShouldLoad(true)
+        }
+
+        // Load on first user interaction to improve TBT (Total Blocking Time)
+        // 94KB widget script will only load when user actually interacts
+        window.addEventListener('click', handleInteraction, { once: true })
+        window.addEventListener('scroll', handleInteraction, { once: true })
+        window.addEventListener('mousemove', handleInteraction, { once: true })
+        window.addEventListener('touchstart', handleInteraction, { once: true })
+        
+        // Also load after 4 seconds automatically if no interaction (for SEO/bots/passive users)
+        const timer = setTimeout(() => {
+            setShouldLoad(true)
+        }, 4000)
+
+        return () => {
+            window.removeEventListener('click', handleInteraction)
+            window.removeEventListener('scroll', handleInteraction)
+            window.removeEventListener('mousemove', handleInteraction)
+            window.removeEventListener('touchstart', handleInteraction)
+            clearTimeout(timer)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!chatbotId || !shouldLoad) return
 
         // Cleanup function to remove existing widget elements
         const cleanup = () => {
@@ -39,7 +65,8 @@ export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
                 scriptRef.current = null
             } else {
                 // Fallback: try to find script by src if ref wasn't set (e.g. from previous nav)
-                const scripts = document.querySelectorAll(`script[src*="/widget.js"]`)
+                // Only remove exact widget.js matches to avoid removing other scripts
+                const scripts = document.querySelectorAll(`script[src="/widget.js"], script[src^="/widget.js?"]`)
                 scripts.forEach(s => s.remove())
             }
         }
@@ -53,6 +80,7 @@ export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
         script.dataset.chatbotId = chatbotId
         if (color) script.dataset.color = color
         script.async = true
+        script.defer = true // Defer execution
 
         scriptRef.current = script
         document.body.appendChild(script)
@@ -60,7 +88,7 @@ export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
         return () => {
             cleanup()
         }
-    }, [chatbotId, color])
+    }, [chatbotId, color, shouldLoad])
 
     return null
 }

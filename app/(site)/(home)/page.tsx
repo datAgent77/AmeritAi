@@ -11,21 +11,21 @@ import { HeroBackgroundModern } from "@/components/landing/hero-background-moder
 import { HeroVisual } from "@/components/landing/hero-visual"
 import { SkillsTicker } from "@/components/landing/skills-ticker"
 
-// Modular Components
-import { SectorsGrid } from "@/components/landing/sectors-grid"
-import { HowItWorks } from "@/components/landing/how-it-works"
-import { ModulesShowcase } from "@/components/landing/modules-showcase"
-import { AnalyticsPreview } from "@/components/landing/analytics-preview"
-import { FeaturesGrid } from "@/components/landing/features-grid"
-import { IntegrationCloud } from "@/components/landing/integration-cloud"
-import { FAQSection } from "@/components/landing/faq-section"
-import { CTASection } from "@/components/landing/cta-section"
-import { LiveDemoSection } from "@/components/landing/live-demo-section"
+// Modular Components - Dynamic Imports for Performance
+import dynamic from 'next/dynamic'
+
+const SectorsGrid = dynamic(() => import("@/components/landing/sectors-grid").then(mod => mod.SectorsGrid))
+const HowItWorks = dynamic(() => import("@/components/landing/how-it-works").then(mod => mod.HowItWorks))
+const ModulesShowcase = dynamic(() => import("@/components/landing/modules-showcase").then(mod => mod.ModulesShowcase))
+const AnalyticsPreview = dynamic(() => import("@/components/landing/analytics-preview").then(mod => mod.AnalyticsPreview))
+const FeaturesGrid = dynamic(() => import("@/components/landing/features-grid").then(mod => mod.FeaturesGrid))
+const IntegrationCloud = dynamic(() => import("@/components/landing/integration-cloud").then(mod => mod.IntegrationCloud))
+const FAQSection = dynamic(() => import("@/components/landing/faq-section").then(mod => mod.FAQSection))
+const CTASection = dynamic(() => import("@/components/landing/cta-section").then(mod => mod.CTASection))
+const LiveDemoSection = dynamic(() => import("@/components/landing/live-demo-section").then(mod => mod.LiveDemoSection))
 
 export default function LandingPage() {
     const { language } = useLanguage()
-
-
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30 font-sans overflow-x-hidden">
@@ -85,9 +85,16 @@ export default function LandingPage() {
                                     size="lg"
                                     className="w-full sm:w-auto h-14 px-8 text-lg rounded-full border-muted-foreground/20 hover:bg-secondary/50 backdrop-blur-sm"
                                     onClick={() => {
+                                        // Widget lazy loads on interaction, then opens
                                         const w = window as any
                                         if (w.UserexWidget?.open) {
                                             w.UserexWidget.open()
+                                        } else {
+                                            // Fallback if user clicks before 4s timeout or quick interaction
+                                            // The click itself triggers lazy load in ChatbotLoader
+                                            setTimeout(() => {
+                                                 if (w.UserexWidget?.open) w.UserexWidget.open()
+                                            }, 1000)
                                         }
                                     }}
                                 >
