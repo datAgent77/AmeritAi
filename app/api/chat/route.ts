@@ -28,7 +28,14 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext, assistantMessageId } = body;
 
-        console.log(`[CHAT API DEBUG] chatbotId=${chatbotId}, language=${language}, body.industry=${body.industry}`);
+        // Rate limiting check
+        const rateLimitResult = checkRateLimit(ip, sessionId);
+        if (!rateLimitResult.allowed) {
+            return new Response(
+                JSON.stringify({ error: "Too many requests", reason: rateLimitResult.reason }),
+                { status: 429, headers: { ...getRateLimitHeaders(rateLimitResult), 'Content-Type': 'application/json' } }
+            );
+        }
 
         // === TRIAL EXPIRATION CHECK ===
         // Check if the tenant's trial has expired and block the widget
@@ -147,9 +154,7 @@ export async function POST(req: Request) {
                                                 createdAt: new Date()
                                             };
 
-                                            console.log("Chat API: 📅 Saving appointment:", appointmentDoc);
                                             await adminDb.collection("appointments").add(appointmentDoc);
-                                            console.log("Chat API: ✅ Appointment saved successfully");
 
                                             // Sync to Google Calendar if connected
                                             try {
@@ -190,7 +195,7 @@ export async function POST(req: Request) {
                                                             }
                                                         })
                                                     });
-                                                    console.log("Chat API: ✅ Appointment synced to Google Calendar");
+
                                                 }
                                             } catch (syncError) {
                                                 console.error("Chat API: ❌ Google Calendar sync error:", syncError);
@@ -202,130 +207,6 @@ export async function POST(req: Request) {
                                 }
                             }
 
-                            // Legacy appointment save code (keeping for backward compatibility)
-                            if (false && isAppointmentConfirmation(fullContent)) {
-                                try {
-                                    // Extract appointment data using the clean extractor
-                                    const extractedData = extractAppointmentData(messages, fullContent);
-
-                                    // Validate we have minimum required data
-                                    if (!extractedData.customerEmail && !extractedData.customerPhone) {
-                                        // No contact info, skip save
-                                    } else {
-                                        // Double-check adminDb is available
-                                        if (!adminDb) {
-                                            console.error("Chat API: ❌ adminDb is null!");
-                                            throw new Error("Database not available");
-                                        }
-
-                                        const appointmentData = {
-                                            chatbotId,
-                                            customerName: extractedData.customerName,
-                                            customerEmail: extractedData.customerEmail,
-                                            customerPhone: extractedData.customerPhone,
-                                            date: extractedData.date,
-                                            time: extractedData.time,
-                                            type: "Chatbot Reservation",
-                                            notes: `Session: ${sessionId}`,
-                                            sessionId,
-                                            status: "pending",
-                                            source: "chatbot",
-                                            createdAt: new Date().toISOString()
-                                        };
-
-                                        // TypeScript: adminDb is checked above, safe to use
-                                        const docRef = await adminDb!.collection("appointments").add(appointmentData);
-                                        console.log("Chat API: ✅ Appointment saved successfully");
-
-                                        // Sync to Google Calendar if connected
-                                        try {
-                                            // TypeScript: adminDb is checked above, safe to use
-                                            const chatbotDoc = await adminDb!.collection("chatbots").doc(chatbotId).get();
-                                            const integrations = chatbotDoc.data()?.integrations || {};
-
-                                            // Sync to Google Calendar if connected
-                                            if (integrations.googleCalendar?.connected && extractedData.date && extractedData.time) {
-                                                try {
-                                                    // Parse date and time
-                                                    let startDateTime: string;
-                                                    let endDateTime: string;
-                                                    
-                                                    try {
-                                                        const date = new Date(`${extractedData.date}T${extractedData.time}`);
-                                                        startDateTime = date.toISOString();
-                                                        endDateTime = new Date(date.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour default
-                                                    } catch {
-                                                        // Fallback: use current date/time if parsing fails
-                                                        const now = new Date();
-                                                        startDateTime = now.toISOString();
-                                                        endDateTime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
-                                                    }
-
-                                                    await fetch(`${new URL(req.url).origin}/api/integrations/google-calendar/events`, {
-                                                        method: "POST",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({
-                                                            userId: chatbotId,
-                                                            eventData: {
-                                                                summary: `Appointment with ${extractedData.customerName || 'Guest'}`,
-                                                                description: `Appointment scheduled via chatbot\nEmail: ${extractedData.customerEmail || 'N/A'}\nPhone: ${extractedData.customerPhone || 'N/A'}`,
-                                                                start: { dateTime: startDateTime, timeZone: "UTC" },
-                                                                end: { dateTime: endDateTime, timeZone: "UTC" },
-                                                                attendees: extractedData.customerEmail ? [{ email: extractedData.customerEmail }] : []
-                                                            }
-                                                        })
-                                                    });
-                                                    console.log("Chat API: ✅ Appointment synced to Google Calendar");
-                                                } catch (err) {
-                                                    console.error("Chat API: ❌ Google Calendar sync error:", err);
-                                                }
-                                            }
-
-                                            // Sync to Outlook Calendar if connected
-                                            if (integrations.outlookCalendar?.connected && extractedData.date && extractedData.time) {
-                                                try {
-                                                    // Parse date and time
-                                                    let startDateTime: string;
-                                                    let endDateTime: string;
-                                                    
-                                                    try {
-                                                        const date = new Date(`${extractedData.date}T${extractedData.time}`);
-                                                        startDateTime = date.toISOString();
-                                                        endDateTime = new Date(date.getTime() + 60 * 60 * 1000).toISOString(); // 1 hour default
-                                                    } catch {
-                                                        // Fallback: use current date/time if parsing fails
-                                                        const now = new Date();
-                                                        startDateTime = now.toISOString();
-                                                        endDateTime = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
-                                                    }
-
-                                                    await fetch(`${new URL(req.url).origin}/api/integrations/outlook-calendar/events`, {
-                                                        method: "POST",
-                                                        headers: { "Content-Type": "application/json" },
-                                                        body: JSON.stringify({
-                                                            userId: chatbotId,
-                                                            eventData: {
-                                                                summary: `Appointment with ${extractedData.customerName || 'Guest'}`,
-                                                                description: `Appointment scheduled via chatbot\nEmail: ${extractedData.customerEmail || 'N/A'}\nPhone: ${extractedData.customerPhone || 'N/A'}`,
-                                                                start: { dateTime: startDateTime, timeZone: "UTC" },
-                                                                end: { dateTime: endDateTime, timeZone: "UTC" },
-                                                                attendees: extractedData.customerEmail ? [{ emailAddress: { address: extractedData.customerEmail }, type: "required" }] : []
-                                                            }
-                                                        })
-                                                    });
-                                                    console.log("Chat API: ✅ Appointment synced to Outlook Calendar");
-                                                } catch (err) {
-                                                    console.error("Chat API: ❌ Outlook Calendar sync error:", err);
-                                                }
-                                            }
-                                        } catch (syncError) {
-                                            console.error("Chat API: ❌ Google Calendar sync error:", syncError);
-                                        }
-                                    }
-                                } catch (extractError: any) {
-                                    console.error("Chat API: ❌ Appointment save failed:", extractError?.message || extractError);
-                                }
-                            }
 
                             // Check if this is a lead confirmation and save it
                             if (isLeadConfirmation(fullContent)) {
@@ -356,9 +237,7 @@ export async function POST(req: Request) {
                                                 createdAt: new Date()
                                             };
 
-                                            console.log("Chat API: 📝 Saving lead:", leadDoc);
                                             await adminDb.collection("leads").add(leadDoc);
-                                            console.log("Chat API: ✅ Lead saved successfully");
 
                                             // Sync to connected integrations
                                             try {
@@ -373,7 +252,7 @@ export async function POST(req: Request) {
                                                             headers: { "Content-Type": "application/json" },
                                                             body: JSON.stringify({ userId: chatbotId, leadData })
                                                         });
-                                                        console.log("Chat API: ✅ Lead synced to Salesforce");
+
                                                     } catch (err) {
                                                         console.error("Chat API: ❌ Salesforce sync failed:", err);
                                                     }
@@ -387,7 +266,7 @@ export async function POST(req: Request) {
                                                             headers: { "Content-Type": "application/json" },
                                                             body: JSON.stringify({ userId: chatbotId, leadData })
                                                         });
-                                                        console.log("Chat API: ✅ Lead synced to Mailchimp");
+
                                                     } catch (err) {
                                                         console.error("Chat API: ❌ Mailchimp sync failed:", err);
                                                     }
@@ -401,7 +280,7 @@ export async function POST(req: Request) {
                                                             headers: { "Content-Type": "application/json" },
                                                             body: JSON.stringify({ userId: chatbotId, leadData })
                                                         });
-                                                        console.log("Chat API: ✅ Lead synced to Constant Contact");
+
                                                     } catch (err) {
                                                         console.error("Chat API: ❌ Constant Contact sync failed:", err);
                                                     }
@@ -411,7 +290,7 @@ export async function POST(req: Request) {
                                             }
                                         }
                                     } else {
-                                        console.log("Chat API: ⚠️ Lead confirmation detected but no contact info extracted");
+
                                     }
                                 } catch (leadError: any) {
                                     console.error("Chat API: ❌ Lead save failed:", leadError?.message || leadError);
