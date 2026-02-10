@@ -373,7 +373,7 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate', 'maritime'],
         showOnLandingPage: true,
@@ -932,9 +932,9 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.proactiveMessaging, // Proactive Engagement (Ready)
     MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
     MODULES_REGISTRY.dynamicContext,    // Dynamic Data Context (Ready)
+    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Ready)
 
     // --- 2. COMING SOON MODULES ---
-    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Coming Soon)
     MODULES_REGISTRY.appointments,      // Coming Soon
     // MODULES_REGISTRY.emailMarketing,    // Coming Soon - Not yet implemented
     // MODULES_REGISTRY.reviewManagement,  // Coming Soon - Removed
