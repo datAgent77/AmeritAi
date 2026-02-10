@@ -48,19 +48,19 @@ export default function LandingPage() {
                             </div>
 
                             <div className="space-y-4">
-                                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.1]">
+                                <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
                                     {language === 'tr' ? (
                                         <>
-                                            Web Sitenizin<br />
+                                            Ziyaretçiyi Müşteriye<br />
                                             <span className="text-foreground">
-                                                AI Satış Asistanı
+                                                Dönüştüren AI
                                             </span>
                                         </>
                                     ) : (
                                         <>
-                                            Your Website&apos;s<br />
+                                            The AI That Converts<br />
                                             <span className="text-foreground">
-                                                AI Sales Assistant
+                                                Visitors to Customers
                                             </span>
                                         </>
                                     )}
