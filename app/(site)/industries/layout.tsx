@@ -1,14 +1,15 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sektörler | Vion AI — Her Sektöre Özel AI Çözümleri",
-  description: "Restoran, e-ticaret, sağlık, eğitim, hukuk ve daha fazlası. Vion AI, sektörünüze özel yapay zeka chatbot çözümleri sunar. Sektörünüzü keşfedin.",
+  title: "Industries — AI Chatbot Solutions for Every Sector",
+  description: "Custom AI chatbot solutions for restaurants, e-commerce, healthcare, education, law firms, real estate, and more. See how Vion AI transforms your industry.",
+  keywords: ["restaurant chatbot", "e-commerce chatbot", "healthcare AI", "education chatbot", "sektörel chatbot", "restoran chatbot"],
   alternates: {
     canonical: "https://www.getvion.com/industries",
   },
   openGraph: {
-    title: "Sektörler | Vion AI",
-    description: "Her sektöre özel AI chatbot çözümleri. Restoran, e-ticaret, sağlık ve daha fazlası.",
+    title: "Industries | Vion AI",
+    description: "Custom AI chatbot solutions for every industry. Restaurant, e-commerce, healthcare and more.",
     url: "https://www.getvion.com/industries",
   },
 };

@@ -1,14 +1,15 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sıkça Sorulan Sorular | Vion AI",
-  description: "Vion AI hakkında en çok sorulan sorular ve yanıtları. Kurulum, fiyatlandırma, entegrasyon, güvenlik ve daha fazlası hakkında bilgi alın.",
+  title: "FAQ — Frequently Asked Questions",
+  description: "Everything you need to know about Vion AI. Setup, pricing, integrations, security, multi-language support, and more. Get answers instantly.",
+  keywords: ["Vion AI FAQ", "chatbot FAQ", "AI chatbot help", "sıkça sorulan sorular", "chatbot yardım"],
   alternates: {
     canonical: "https://www.getvion.com/resources/faq",
   },
   openGraph: {
-    title: "SSS | Vion AI",
-    description: "Vion AI hakkında sıkça sorulan sorular ve yanıtları.",
+    title: "FAQ | Vion AI",
+    description: "Frequently asked questions about Vion AI setup, pricing, and features.",
     url: "https://www.getvion.com/resources/faq",
   },
 };

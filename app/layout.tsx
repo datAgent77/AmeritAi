@@ -7,11 +7,19 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.getvion.com'),
   title: {
-    default: "Vion AI | AI-Powered Business Assistant",
+    default: "Vion AI | AI-Powered Sales & Support Chatbot for Businesses",
     template: "%s | Vion AI"
   },
-  description: "Transform your business with Vion AI. Automate sales, support, and booking with our intelligent, multi-lingual AI assistant.",
-  keywords: ["AI assistant", "chatbot", "customer support", "sales automation", "artificial intelligence", "business automation"],
+  description: "Convert website visitors into customers with Vion AI. Intelligent chatbot for sales automation, customer support, and appointment booking. Works in 50+ languages.",
+  keywords: [
+    // English keywords
+    "AI chatbot", "sales automation", "customer support chatbot", "AI sales assistant",
+    "website chatbot", "lead generation AI", "appointment booking chatbot",
+    "business automation", "conversational AI", "multilingual chatbot",
+    // Turkish keywords
+    "yapay zeka chatbot", "AI satış asistanı", "müşteri destek chatbot",
+    "web sitesi chatbot", "satış otomasyonu", "randevu chatbot",
+  ],
   authors: [{ name: "Vion AI Team" }],
   creator: "Vion AI",
   publisher: "Vion AI",
@@ -26,6 +34,18 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  verification: {
+    // Replace with actual Google Search Console verification code
+    google: 'YOUR_GOOGLE_VERIFICATION_CODE',
+  },
+  alternates: {
+    canonical: 'https://www.getvion.com',
+    languages: {
+      'en': 'https://www.getvion.com',
+      'tr': 'https://www.getvion.com',
+      'x-default': 'https://www.getvion.com',
+    },
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
@@ -36,23 +56,24 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
+    alternateLocale: ['tr_TR'],
     url: 'https://www.getvion.com',
-    title: 'Vion AI | AI-Powered Business Assistant',
-    description: 'Transform your business with Vion AI. Automate sales, support, and booking with our intelligent, multi-lingual AI assistant.',
+    title: 'Vion AI | AI-Powered Sales & Support Chatbot',
+    description: 'Convert website visitors into customers with Vion AI. Intelligent chatbot for sales, support, and booking in 50+ languages.',
     siteName: 'Vion AI',
     images: [
       {
-        url: '/vion-logo-full-dark.png', // Using existing asset
+        url: '/vion-logo-full-dark.png',
         width: 1200,
         height: 630,
-        alt: 'Vion AI',
+        alt: 'Vion AI - AI-Powered Business Assistant',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Vion AI | AI-Powered Business Assistant',
-    description: 'Transform your business with Vion AI. Automate sales, support, and booking with our intelligent, multi-lingual AI assistant.',
+    title: 'Vion AI | AI-Powered Sales & Support Chatbot',
+    description: 'Convert website visitors into customers. Intelligent AI chatbot for sales, support, and booking in 50+ languages.',
     images: ['/vion-logo-full-dark.png'],
   },
 };

@@ -1,16 +1,18 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Vion AI | Ziyaretçiyi Müşteriye Dönüştüren Yapay Zeka",
-  description: "Vion AI, web sitenize gelen ziyaretçileri karşılar, sorularını yanıtlar ve onları müşteriye dönüştürür. 7/24 çalışan AI satış asistanı ile dönüşüm oranlarınızı artırın.",
-  keywords: ["AI chatbot", "yapay zeka asistan", "satış otomasyonu", "müşteri dönüşümü", "chatbot", "web sitesi chatbot", "AI sales assistant"],
+  title: "AI-Powered Sales Chatbot That Converts Visitors to Customers",
+  description: "Vion AI welcomes your website visitors, answers their questions, and converts them into paying customers. No coding required. Works in 50+ languages. Start your 14-day free trial.",
+  keywords: ["AI sales chatbot", "visitor conversion", "website chatbot", "lead generation", "yapay zeka satış asistanı", "ziyaretçi dönüşümü"],
   alternates: {
     canonical: "https://www.getvion.com",
   },
   openGraph: {
-    title: "Vion AI | Ziyaretçiyi Müşteriye Dönüştüren Yapay Zeka",
-    description: "Web sitenize gelen ziyaretçileri karşılayan, sorularını yanıtlayan ve onları müşteriye dönüştüren AI asistan.",
+    title: "Vion AI | The AI That Converts Visitors to Customers",
+    description: "Welcome visitors, answer questions, and convert them into customers. No coding required.",
     url: "https://www.getvion.com",
+    locale: "en_US",
+    alternateLocale: ["tr_TR"],
   },
 };
 

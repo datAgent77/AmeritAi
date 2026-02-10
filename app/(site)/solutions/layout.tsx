@@ -1,14 +1,15 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Çözümler | Vion AI — İşletmenize Özel AI Çözümleri",
-  description: "Vion AI ile işletmenize özel yapay zeka çözümleri. Satış otomasyonu, müşteri desteği, randevu yönetimi ve daha fazlası için AI destekli çözümler.",
+  title: "Solutions — Custom AI Solutions for Your Business",
+  description: "Tailored AI solutions for sales automation, customer support, appointment management, and more. See how Vion AI solves real business problems.",
+  keywords: ["AI solutions", "business AI", "sales automation solution", "AI çözümleri", "işletme yapay zeka"],
   alternates: {
     canonical: "https://www.getvion.com/solutions",
   },
   openGraph: {
-    title: "Çözümler | Vion AI",
-    description: "İşletmenize özel AI çözümleri: satış otomasyonu, müşteri desteği ve randevu yönetimi.",
+    title: "Solutions | Vion AI",
+    description: "Custom AI solutions for sales, support, and appointment management.",
     url: "https://www.getvion.com/solutions",
   },
 };
