@@ -69,7 +69,7 @@
 
   // Engagement Controller Class
   class EngagementController {
-    constructor(settings, baseUrl, chatbotId) {
+    constructor(settings, baseUrl, chatbotId, language) {
       if (!settings || !settings.enabled) {
         return;
       }
@@ -77,6 +77,7 @@
       this.settings = settings;
       this.baseUrl = baseUrl;
       this.chatbotId = chatbotId;
+      this.language = language || 'tr';
       this.bubble = null;
       this.hasShown = false;
       this.timers = [];
@@ -378,7 +379,7 @@
             pageContext,
             tone: this.settings.tone || 'friendly',
             messageLength: this.settings.messageLength || 'medium',
-            language: 'tr',
+            language: this.language || 'tr',
             sectorHint: this.settings.sectorHint || '',
             actionMode: this.settings.actionMode || 'aiDecides'
           })
@@ -1410,59 +1411,7 @@
     const launcher = document.createElement('div');
     launcher.id = 'userex-chatbot-launcher';
 
-    // Voice Launcher Logic
-    if (settings.enableVoiceAssistant) {
-      const voiceLauncher = document.createElement('div');
-      voiceLauncher.id = 'userex-voice-launcher';
-      const vlHeight = 50;
-      const vlWidth = 50;
-
-      Object.assign(voiceLauncher.style, {
-        position: 'fixed',
-        width: `${vlWidth}px`,
-        height: `${vlHeight}px`,
-        borderRadius: '50%',
-        backgroundColor: settings.launcherBackgroundColor || settings.primaryColor || '#000000',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        cursor: 'pointer',
-        zIndex: '9998',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-        ...horizontalStyle,
-        // Adjust vertical position to be above the main launcher
-        bottom: isBottom ? `${verticalSpacing + settings.launcherHeight + 16}px` : 'auto',
-        top: isTop ? `${verticalSpacing + settings.launcherHeight + 16}px` : 'auto',
-      });
-
-      // Adjust if centered or middle (simplified for now: stacks vertically)
-      if (isMiddle) {
-        voiceLauncher.style.transform = `translateY(calc(-50% - ${settings.launcherHeight / 2 + 10}px))`;
-      }
-
-      voiceLauncher.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${settings.launcherIconColor || '#FFFFFF'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" x2="12" y1="19" y2="22"/>
-            </svg>
-        `;
-
-      // Add subtle pulse animation
-      voiceLauncher.classList.add('userex-anim-pulse');
-
-      voiceLauncher.onclick = (e) => {
-        e.stopPropagation();
-        toggleVoiceInterface();
-      };
-
-      // Hover effect
-      voiceLauncher.onmouseenter = () => { voiceLauncher.style.transform = (voiceLauncher.style.transform || '') + ' scale(1.1)'; };
-      voiceLauncher.onmouseleave = () => { voiceLauncher.style.transform = (voiceLauncher.style.transform || '').replace(' scale(1.1)', ''); };
-
-      document.body.appendChild(voiceLauncher);
-    }
+    // Voice is only available inside the chatbot (via ChatInput mic button)
 
     // Main Launcher Styles
     const isTextMode = settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text';
@@ -1917,6 +1866,7 @@
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
+    iframe.allow = 'microphone; camera; autoplay';
 
     iframeContainer.appendChild(iframe);
 
@@ -2042,8 +1992,18 @@
 
     // Initialize Engagement Controller if enabled
     if (settings.engagement && settings.engagement.enabled) {
-      console.log('Initializing Engagement Controller with settings:', settings.engagement);
-      engagementController = new EngagementController(settings.engagement, baseUrl, chatbotId);
+      // Resolve language: if 'auto' or not set, detect from browser
+      let resolvedLanguage = settings.initialLanguage;
+      if (!resolvedLanguage || resolvedLanguage === 'auto') {
+        const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+        if (browserLang.startsWith('tr')) resolvedLanguage = 'tr';
+        else if (browserLang.startsWith('es')) resolvedLanguage = 'es';
+        else if (browserLang.startsWith('de')) resolvedLanguage = 'de';
+        else if (browserLang.startsWith('fr')) resolvedLanguage = 'fr';
+        else resolvedLanguage = 'en';
+      }
+      console.log('Initializing Engagement Controller with language:', resolvedLanguage);
+      engagementController = new EngagementController(settings.engagement, baseUrl, chatbotId, resolvedLanguage);
     }
     
     // Initialize No-Code Dynamic Context
@@ -2327,96 +2287,7 @@
     }
   }
 
-  // VOICE INTERFACE LOGIC
-  function toggleVoiceInterface() {
-    let overlay = document.getElementById('userex-voice-overlay');
-
-    if (overlay) {
-      // Toggle visibility
-      if (overlay.style.display === 'none') {
-        overlay.style.display = 'flex';
-        startVoiceSession();
-      } else {
-        overlay.style.display = 'none';
-        stopVoiceSession();
-      }
-    } else {
-      createVoiceOverlay();
-    }
-  }
-
-  function createVoiceOverlay() {
-    const overlay = document.createElement('div');
-    overlay.id = 'userex-voice-overlay';
-    Object.assign(overlay.style, {
-      position: 'fixed',
-      top: '0',
-      left: '0',
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      backdropFilter: 'blur(10px)',
-      zIndex: '9999',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'white',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-      opacity: '0',
-      transition: 'opacity 0.3s ease'
-    });
-
-    overlay.innerHTML = `
-        <div style="position: absolute; top: 20px; right: 20px; cursor: pointer;" id="userex-voice-close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </div>
-        <div style="text-align: center; max-width: 90%;"> // <--- Fixed: added closing quote
-            <div id="userex-voice-status" style="font-size: 24px; font-weight: 500; margin-bottom: 20px;">Listening...</div>
-            <div id="userex-voice-visualizer" style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                <div class="bar" style="width: 4px; height: 10px; background: white; border-radius: 2px;"></div>
-                <div class="bar" style="width: 4px; height: 20px; background: white; border-radius: 2px;"></div>
-                <div class="bar" style="width: 4px; height: 15px; background: white; border-radius: 2px;"></div>
-                <div class="bar" style="width: 4px; height: 25px; background: white; border-radius: 2px;"></div>
-                <div class="bar" style="width: 4px; height: 15px; background: white; border-radius: 2px;"></div>
-            </div>
-        </div>
-        <div id="userex-voice-controls" style="margin-top: 40px;">
-            <button id="userex-voice-mic-toggle" style="background: #ef4444; border: none; padding: 16px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-            </button>
-        </div>
-      `;
-
-    document.body.appendChild(overlay);
-
-    // Force reflow
-    overlay.offsetHeight;
-    overlay.style.opacity = '1';
-
-    document.getElementById('userex-voice-close').onclick = () => toggleVoiceInterface();
-
-    // Simple visualizer animation
-    const bars = overlay.querySelectorAll('.bar');
-    setInterval(() => {
-      bars.forEach(bar => {
-        bar.style.height = Math.random() * 40 + 10 + 'px';
-      });
-    }, 100);
-
-    startVoiceSession();
-  }
-
-  function startVoiceSession() {
-    // Placeholder for ElevenLabs/WebSpeech API logic
-    const statusEl = document.getElementById('userex-voice-status');
-    if (statusEl) statusEl.innerText = "Listening...";
-    console.log('Voice Session Started');
-  }
-
-  function stopVoiceSession() {
-    console.log('Voice Session Stopped');
-  }
+  // Voice interface is handled inside the chatbot iframe (ChatInput mic button + VoiceOverlay component)
 
   // Helper: Fetch Settings
   async function fetchSettings() {

@@ -41,7 +41,7 @@ async function getSystemConfig(adminDb: any) {
         console.error("Failed to fetch AI config", e);
     }
     // Default
-    return { provider: "openai", model: "gpt-3.5-turbo" };
+    return { provider: "openai", model: "gpt-4o-mini" };
 }
 
 function normalizeIndustry(input: string | undefined): keyof typeof INDUSTRY_CONFIG {
@@ -186,13 +186,13 @@ export async function generateAIResponse(
         if (tenantAiConfig && tenantAiConfig.useGlobalDefaults === false) {
             // Use tenant-specific configuration
             provider = tenantAiConfig.provider || globalAiConfig.provider || "openai";
-            model = tenantAiConfig.model || globalAiConfig.model || "gpt-3.5-turbo";
+            model = tenantAiConfig.model || globalAiConfig.model || "gpt-4o-mini";
             apiKey = tenantAiConfig.apiKey || globalAiConfig.apiKey;
             console.log(`AI Service: Using TENANT config for ${chatbotId}: ${provider}/${model}`);
         } else {
             // Use global configuration
             provider = globalAiConfig.provider || "openai";
-            model = globalAiConfig.model || "gpt-3.5-turbo";
+            model = globalAiConfig.model || "gpt-4o-mini";
             apiKey = globalAiConfig.apiKey;
             console.log(`AI Service: Using GLOBAL config: ${provider}/${model}`);
         }
@@ -228,7 +228,7 @@ export async function generateAIResponse(
             const embedding = embeddingResponse.data[0].embedding;
             const queryResponse = await index.query({
                 vector: embedding,
-                topK: 20,
+                topK: 8, // Reduced from 20 to save tokens
                 includeMetadata: true,
                 filter: { chatbotId: chatbotId }
             });
@@ -256,7 +256,6 @@ You are an advanced AI Assistant for ${chatbotId}.
 Your goal is to provide accurate, helpful, and professional support.
 ${industryConfig.systemPrompt}
 
-# KNOWLEDGE BASE CONTEXT
 # KNOWLEDGE BASE CONTEXT
 ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the context above says "visit our website for details" or "contact us for more info", YOU MUST IGNORE THAT INSTRUCTION. Instead, extract and summarize the actual information (features, specs, policies) from the context. If the specific detail is missing, say "I don't have that specific detail."` : "No specific context available."}
 
@@ -417,6 +416,10 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                 let instruction = mod.aiSystemInstruction[langKey] || mod.aiSystemInstruction['en'];
 
                 // For voice/appointment module, inject actual availability settings
+                // ... (abbreviated for brevity in replacement tool, but I should probably include the whole block to be safe)
+                // Actually I must include the whole logic.
+
+                // For voice/appointment module, inject actual availability settings
                 if (mod.id === 'voiceAssistant') {
                     try {
                         const settingsSnap = await adminDb.collection("appointments_settings").doc(chatbotId).get();
@@ -504,7 +507,8 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                                 `1. Explain coffee beans, brewing methods, and pastries.\n` +
                                 `2. Help guests choose their items.\n` +
                                 `3. When they want to order: Say "Please place your order at the counter."\n` +
-                                `4. NEVER say "we will bring it to your table".\n`;
+                                `4. NEVER say "we will bring it to your table.\n`
+                                // corrected quote 
                         }
 
                         // GLOBAL SMART RULES (Direct Answer + Clarification)
@@ -585,7 +589,6 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                     }
                 }
 
-
                 // Dynamic Context Module
                 if (mod.id === 'dynamicContext') {
                     // This module relies on data passed from the client, not Firestore settings
@@ -614,12 +617,21 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         if (activeModuleInstructions.length > 0) {
             systemPrompt += `\n\n# ACTIVE MODULE CAPABILITIES\n${activeModuleInstructions.join('\n')}`;
             console.log("AI Service: Active module instructions count:", activeModuleInstructions.length);
-        }
+        } 
 
         // 4. Generate Response based on Provider
+        
+        // Context Window Protection: Keep only last 12 messages
+        const MAX_HISTORY_LENGTH = 12;
+        const recentMessages = messages.length > MAX_HISTORY_LENGTH 
+            ? messages.slice(-MAX_HISTORY_LENGTH) 
+            : messages;
+
+        console.log(`AI Service: Using ${recentMessages.length} messages (truncated from ${messages.length}) to save tokens.`);
+
         const fullMessages = [
             { role: "system", content: systemPrompt },
-            ...messages.map((m) => ({ role: m.role, content: m.content })),
+            ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
         ];
 
         let resultStream;
@@ -703,7 +715,7 @@ export async function analyzeSentiment(text: string): Promise<"Positive" | "Neut
         // Always use OpenAI for lightweight utility tasks for consistency/speed/cost-predictability
         // Or could use the global provider too, but simpler to keep this fixed for now.
         const response = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: "Classify: Positive, Neutral, Negative." },
                 { role: "user", content: text }

@@ -22,7 +22,8 @@ export async function POST(req: Request) {
         const userId = decodedToken.uid
 
         // Get request body
-        const { tone, topics } = await req.json()
+        const { tone, topics, language = 'tr' } = await req.json()
+        const isTurkish = language === 'tr'
 
         // Fetch knowledge base data
         const chatbotDoc = await adminDb.collection("chatbots").doc(userId).get()
@@ -33,30 +34,30 @@ export async function POST(req: Request) {
 
         // 1. Company info
         if (chatbotData.companyName) {
-            knowledgeContext += `Şirket: ${chatbotData.companyName}\n`
+            knowledgeContext += `${isTurkish ? 'Şirket' : 'Company'}: ${chatbotData.companyName}\n`
         }
         if (chatbotData.industry) {
-            knowledgeContext += `Sektör: ${chatbotData.industry}\n`
+            knowledgeContext += `${isTurkish ? 'Sektör' : 'Sector'}: ${chatbotData.industry}\n`
         }
 
         // 2. FAQ items
         const faqSnapshot = await adminDb.collection("chatbots").doc(userId).collection("faq").limit(10).get()
         if (!faqSnapshot.empty) {
-            knowledgeContext += "\nSSS:\n"
+            knowledgeContext += `\n${isTurkish ? 'SSS' : 'FAQ'}:\n`
             faqSnapshot.docs.forEach(doc => {
                 const faq = doc.data()
-                knowledgeContext += `- Soru: ${faq.question}\n  Cevap: ${faq.answer?.substring(0, 100)}...\n`
+                knowledgeContext += `- ${isTurkish ? 'Soru' : 'Q'}: ${faq.question}\n  ${isTurkish ? 'Cevap' : 'A'}: ${faq.answer?.substring(0, 100)}...\n`
             })
         }
 
         // 3. Text knowledge
         const textSnapshot = await adminDb.collection("chatbots").doc(userId).collection("knowledge_text").limit(5).get()
         if (!textSnapshot.empty) {
-            knowledgeContext += "\nBilgi Metinleri:\n"
+            knowledgeContext += `\n${isTurkish ? 'Bilgi Metinleri' : 'Knowledge Base'}:\n`
             textSnapshot.docs.forEach(doc => {
                 const text = doc.data()
                 if (text.content) {
-                    knowledgeContext += `- ${text.title || 'Metin'}: ${text.content.substring(0, 150)}...\n`
+                    knowledgeContext += `- ${text.title || (isTurkish ? 'Metin' : 'Text')}: ${text.content.substring(0, 150)}...\n`
                 }
             })
         }
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         if (chatbotData.enablePersonalShopper) {
             const productsSnapshot = await adminDb.collection("chatbots").doc(userId).collection("products").limit(5).get()
             if (!productsSnapshot.empty) {
-                knowledgeContext += "\nÖne Çıkan Ürünler:\n"
+                knowledgeContext += `\n${isTurkish ? 'Öne Çıkan Ürünler' : 'Featured Products'}:\n`
                 productsSnapshot.docs.forEach(doc => {
                     const product = doc.data()
                     knowledgeContext += `- ${product.name}: ${product.price || ''} ${product.description?.substring(0, 50) || ''}\n`
@@ -75,29 +76,37 @@ export async function POST(req: Request) {
 
         if (!knowledgeContext.trim()) {
             return NextResponse.json({
-                bubbles: [
-                    "Merhaba! Size nasıl yardımcı olabilirim?",
-                    "Sorularınızı yanıtlamak için buradayım."
-                ]
+                bubbles: isTurkish
+                    ? ["Merhaba! Size nasıl yardımcı olabilirim?", "Sorularınızı yanıtlamak için buradayım."]
+                    : ["How can I help you today?", "I'm here to answer your questions."]
             })
         }
 
-        // Map tone to Turkish prompt instruction
-        const toneMap: Record<string, string> = {
-            friendly: "Samimi, sıcak ve arkadaşça bir ton kullan. Emoji kullanabilirsin.",
-            professional: "Profesyonel ve resmi bir ton kullan. Emoji kullanma.",
-            playful: "Eğlenceli, enerjik ve oyuncu bir ton kullan. Emoji kullan!"
+        // Map tone to prompt instruction (bilingual)
+        const toneMap: Record<string, Record<string, string>> = {
+            tr: {
+                friendly: "Samimi, sıcak ve arkadaşça bir ton kullan. Emoji kullanabilirsin.",
+                professional: "Profesyonel ve resmi bir ton kullan. Emoji kullanma.",
+                playful: "Eğlenceli, enerjik ve oyuncu bir ton kullan. Emoji kullan!"
+            },
+            en: {
+                friendly: "Use a friendly, warm and approachable tone. You may use emoji.",
+                professional: "Use a professional and formal tone. Do not use emoji.",
+                playful: "Use a fun, energetic and playful tone. Use emoji!"
+            }
         }
 
-        const toneInstruction = toneMap[tone] || toneMap.friendly
+        const langKey = isTurkish ? 'tr' : 'en'
+        const toneInstruction = toneMap[langKey]?.[tone] || toneMap[langKey]?.friendly || ''
 
         // Map topics to focus areas
         const topicFocus = topics?.length > 0
-            ? `Özellikle şu konulara odaklan: ${topics.join(", ")}`
+            ? (isTurkish ? `Özellikle şu konulara odaklan: ${topics.join(", ")}` : `Focus especially on these topics: ${topics.join(", ")}`)
             : ""
 
-        // Build prompt
-        const prompt = `Sen bir web sitesi ziyaretçi etkileşim asistanısın. Aşağıdaki bilgilere dayanarak, ziyaretçilerin dikkatini çekecek KISA balon mesajları oluştur.
+        // Build prompt (bilingual)
+        const prompt = isTurkish
+            ? `Sen bir web sitesi ziyaretçi etkileşim asistanısın. Aşağıdaki bilgilere dayanarak, ziyaretçilerin dikkatini çekecek KISA balon mesajları oluştur.
 
 Bu mesajlar chatbot açılmadan önce, launcher butonunun üzerinde küçük baloncuklar olarak görünecek. Amaç ziyaretçiyi chatbot'a yönlendirmek.
 
@@ -121,16 +130,38 @@ Kurallar:
 [Sorularınız için buradayım 👋]
 
 Şimdi 3 mesaj üret:`
+            : `You are a website visitor engagement assistant. Based on the information below, generate SHORT bubble messages that catch visitors' attention.
+
+These messages will appear as small bubbles above the launcher button before the chatbot opens. The goal is to guide visitors to the chatbot.
+
+${toneInstruction}
+
+${topicFocus}
+
+Knowledge Base:
+${knowledgeContext}
+
+Rules:
+1. Each message must be at most 50 characters
+2. Generate 3 different messages
+3. Each message should be in [] brackets
+4. Messages MUST be in English
+5. Write curiosity-inducing messages that don't annoy visitors
+
+Example format:
+[Need help finding what you're looking for?]
+[I can answer your questions!]
+[Got a question? I'm here to help 👋]
+
+Now generate 3 messages:`
 
         // Check for GEMINI_API_KEY
         if (!process.env.GEMINI_API_KEY) {
             console.log("GEMINI_API_KEY not set, returning default bubbles")
             return NextResponse.json({
-                bubbles: [
-                    "Merhaba! Size nasıl yardımcı olabilirim?",
-                    "Sorularınızı yanıtlamak için buradayım.",
-                    "İhtiyacınız olan bilgiye ulaşmanıza yardımcı olabilirim."
-                ]
+                bubbles: isTurkish
+                    ? ["Merhaba! Size nasıl yardımcı olabilirim?", "Sorularınızı yanıtlamak için buradayım.", "İhtiyacınız olan bilgiye ulaşmanıza yardımcı olabilirim."]
+                    : ["How can I help you today?", "I'm here to answer your questions.", "I can help you find the information you need."]
             })
         }
 
@@ -150,10 +181,9 @@ Kurallar:
         if (bubbles.length === 0) {
             // Fallback
             return NextResponse.json({
-                bubbles: [
-                    "Merhaba! Size yardımcı olabilir miyim?",
-                    "Sorularınız için buradayım."
-                ]
+                bubbles: isTurkish
+                    ? ["Merhaba! Size yardımcı olabilir miyim?", "Sorularınız için buradayım."]
+                    : ["Can I help you with something?", "I'm here for your questions."]
             })
         }
 
@@ -164,8 +194,8 @@ Kurallar:
         // Return fallback bubbles instead of error
         return NextResponse.json({
             bubbles: [
-                "Merhaba! Size nasıl yardımcı olabilirim?",
-                "Sorularınızı yanıtlamak için buradayım."
+                "How can I help you?",
+                "I'm here to answer your questions."
             ]
         })
     }

@@ -130,11 +130,13 @@ export default function ChatbotContainer() {
     // 6. Voice Hook (Uses proxySendMessage)
     const {
         handleVoiceInput,
+        cancelVoiceMode,
         speakText,
-        handleSpeak, // Not used in UI yet? Or can be passed down
+        handleSpeak,
         isListening,
         isSpeaking,
         isVoiceMode,
+        voiceStatus,
         setIsVoiceMode
     } = useVoiceInput(chatbotId, language, settings, setLocalInput, proxySendMessage)
 
@@ -330,8 +332,8 @@ export default function ChatbotContainer() {
              <ChatHeader 
                 settings={settings}
                 isExpanded={isExpanded}
-                isVoiceMode={isVoiceMode}
-                setIsVoiceMode={setIsVoiceMode}
+                handleVoiceInput={handleVoiceInput}
+                isListening={isListening}
                 handleToggleSize={handleToggleSize}
                 handleCloseWidget={handleCloseWidget}
                 handleClearChat={handleClearChat}
@@ -395,11 +397,9 @@ export default function ChatbotContainer() {
 
              <VoiceOverlay 
                 isVoiceMode={isVoiceMode}
-                isListening={isListening}
-                isSpeaking={isSpeaking}
+                voiceStatus={voiceStatus}
                 localInput={localInput}
-                handleVoiceInput={handleVoiceInput}
-                exitVoiceMode={() => setIsVoiceMode(false)}
+                cancelVoiceMode={cancelVoiceMode}
                 t={t}
              />
         </div>

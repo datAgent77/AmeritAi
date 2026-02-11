@@ -6,14 +6,14 @@ import {
     Headset, Mic, Video, Phone, User, Users, UserCheck, 
     HelpCircle, Info, AlertCircle, Star, Heart, ThumbsUp, Smile, 
     Send, Share2, Paperclip, Command, Terminal, Code, Box, 
-    Ghost, Gamepad2, Rocket, Minimize2, Maximize2, RefreshCw, X, Headphones
+    Ghost, Gamepad2, Rocket, Minimize2, Maximize2, RefreshCw, X
 } from "lucide-react"
 
 interface ChatHeaderProps {
     settings: ChatbotSettings
     isExpanded: boolean
-    isVoiceMode: boolean
-    setIsVoiceMode: (val: boolean) => void
+    handleVoiceInput: () => void
+    isListening: boolean
     handleToggleSize: () => void
     handleCloseWidget: () => void
     handleClearChat: () => void
@@ -23,8 +23,8 @@ interface ChatHeaderProps {
 export function ChatHeader({
     settings,
     isExpanded,
-    isVoiceMode,
-    setIsVoiceMode,
+    handleVoiceInput,
+    isListening,
     handleToggleSize,
     handleCloseWidget,
     handleClearChat,
@@ -93,11 +93,13 @@ export function ChatHeader({
                 </div>
                 {settings.enableVoiceAssistant && (
                     <button
-                        onClick={() => setIsVoiceMode(!isVoiceMode)}
-                        className={`p-2 rounded-full transition-colors ${isVoiceMode ? 'bg-white/20 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'}`}
-                        title={isVoiceMode ? "Text Mode" : "Voice Mode"}
+                        onClick={handleVoiceInput}
+                        className={`p-2 rounded-full transition-all ${isListening 
+                            ? 'text-white bg-red-500/80 animate-pulse shadow-lg shadow-red-500/30' 
+                            : 'text-white/80 hover:text-white hover:bg-white/20'}`}
+                        title={t('voiceReady')}
                     >
-                        {isVoiceMode ? <MessageSquare className="w-4 h-4" /> : <Headphones className="w-4 h-4" />}
+                        <Mic className="w-4 h-4" />
                     </button>
                 )}
                 <button

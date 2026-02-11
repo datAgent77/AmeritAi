@@ -47,7 +47,7 @@ export default function AISettingsPage() {
                 if (res.ok) {
                     const data = await res.json()
                     setProvider(data.provider || "openai")
-                    setModel(data.model || "gpt-3.5-turbo")
+                    setModel(data.model || "gpt-4o-mini")
                     setApiKey(data.apiKey || "")
                 }
             } catch (error) {
@@ -95,8 +95,9 @@ export default function AISettingsPage() {
         if (p === 'openai') {
             return [
                 { id: 'gpt-4o', name: 'GPT-4o (Most Capable)' },
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Best Value)' },
                 { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-                { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Fastest)' }
+                { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo (Legacy)' }
             ]
         }
         if (p === 'google') {
