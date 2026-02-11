@@ -132,8 +132,9 @@ export async function GET(req: Request) {
                     engagement: mergedData.engagement || (mergedData.enableProactiveMessaging ? { enabled: true } : null),
                     // Digital Waiter (Restaurant)
                     digitalWaiter: mergedData.digitalWaiter || null,
-                    // Voice Assistant - only enable if module is available AND user has it enabled
-                    enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
+                    // Voice Assistant - TEMPORARILY DISABLED
+                    enableVoiceAssistant: false, // TODO: Re-enable when voice assistant is production-ready
+                    // enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
                     voiceProvider: mergedData.voiceProvider || "klassifier",
                     elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
                     enablePersonalShopper: mergedData.enablePersonalShopper || false,

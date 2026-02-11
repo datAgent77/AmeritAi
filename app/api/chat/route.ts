@@ -301,7 +301,7 @@ export async function POST(req: Request) {
                         // Track Usage (Async, Fire-and-forget)
                         const estimatedOutputTokens = Math.ceil(fullContent.length / 4);
                         // TODO: Pass actual model used from result.modelUsed
-                        const modelUsed = (result as any).modelUsed || "gpt-3.5-turbo";
+                        const modelUsed = (result as any).modelUsed || "gpt-4o-mini";
                         trackAiUsage(chatbotId, estimatedInputTokens, estimatedOutputTokens, modelUsed);
 
 

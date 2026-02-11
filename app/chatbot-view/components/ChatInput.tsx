@@ -183,6 +183,20 @@ export function ChatInput({
                         </div>
                     )}
 
+                    {/* Voice Input Button (Left side) */}
+                    {settings.enableVoiceAssistant && (
+                        <button
+                            type="button"
+                            onClick={handleVoiceInput}
+                            className={`p-3 rounded-full transition-all shadow-sm border ${isListening 
+                                ? 'text-white bg-red-500 border-red-400 animate-pulse shadow-md shadow-red-200' 
+                                : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border-gray-200'}`}
+                            title={t('voiceReady')}
+                        >
+                            <Mic className="w-4 h-4" />
+                        </button>
+                    )}
+
                     {/* Image Upload Button */}
                     {settings.enableVisualDiagnosis && (
                         <>
@@ -220,17 +234,7 @@ export function ChatInput({
                             style={{ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any}
                         />
 
-                        {/* Voice Input Button */}
-                        {settings.enableVoiceAssistant && (
-                            <button
-                                type="button"
-                                onClick={handleVoiceInput}
-                                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'text-red-500 bg-red-50 animate-pulse shadow-sm' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                                title="Voice Input"
-                            >
-                                <Mic className="w-4 h-4" />
-                            </button>
-                        )}
+                        {/* Voice Input inline button removed - prominent mic button is on the left side */}
                     </div>
 
                     <button

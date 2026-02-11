@@ -182,6 +182,17 @@ export const translations = {
         clearChat: "Clear Chat",
         aiOnline: "AI Online",
         aiDisclaimer: "AI can make mistakes. Verify important info.",
+
+        // Voice Overlay
+        voiceReady: "Voice Assistant Ready",
+        clickToSpeak: "Click the button to speak.",
+        returnToText: "Return to Text Chat",
+        listening: "Listening...",
+        tapToStopListening: "Speak your question, then tap the stop button.",
+        answering: "Vion is Responding...",
+        askQuestion: "Please ask your question.",
+        speakingAnswer: "Playing response.",
+        processingDesc: "Your voice is being transcribed...",
         offline: "Offline",
         outsideBusinessHours: "We're Outside Business Hours",
 
@@ -635,6 +646,26 @@ export const translations = {
         settingsSavedDesc: "Your settings have been successfully updated.",
         skillUnderDevelopment: "This skill's settings page is currently under development.",
         voiceAssistantSettingsDesc: "Configure your ElevenLabs API key and Voice ID.",
+
+        // Voice Settings Page
+        voiceSettingsTitle: "Voice Assistant Settings",
+        voiceSettingsDesc: "Manage and configure AI voice engines.",
+        klassifierTitle: "Klassifier",
+        klassifierDesc: "Our low-latency, high-performance local voice service.",
+        elevenLabsTitle: "ElevenLabs",
+        elevenLabsDesc: "The world's most advanced AI voice technology.",
+        defaultVoice: "Default Voice",
+        voiceId: "Voice ID",
+        saveSuccess: "Settings Saved Successfully",
+        saveSuccessDesc: "Your voice assistant preferences have been updated.",
+        saveFailedDesc: "Settings could not be saved.",
+        configSummary: "Configuration Summary",
+        configBothEngines: "Both voice engines are enabled. The system will use the most suitable engine based on the situation (ElevenLabs priority).",
+        configKlassifierOnly: "Only Klassifier (Local) engine is active. It will be used for fast and economical responses.",
+        configElevenLabsOnly: "Only ElevenLabs engine is active. It will be used for high-quality voice responses.",
+        configNoEngine: "Both voice engines are disabled. Voice assistant feature will not be used.",
+        freeLabel: "Free",
+        unlimitedUsage: "Unlimited usage",
 
         save: "Save",
         saved: "Saved",
@@ -1663,6 +1694,17 @@ export const translations = {
         clearChat: "Temizle",
         aiOnline: "AI Çevrimiçi",
         aiDisclaimer: "AI hata yapabilir. Önemli bilgileri kontrol edin.",
+
+        // Voice Overlay
+        voiceReady: "Sesli Asistan Hazır",
+        clickToSpeak: "Konuşmak için butona tıklayın.",
+        returnToText: "Yazılı Sohbete Dön",
+        listening: "Sizi Dinliyorum...",
+        tapToStopListening: "Sorunuzu sorun, bitince durdur butonuna basın.",
+        answering: "Vion Cevap Veriyor...",
+        askQuestion: "Lütfen sorunuzu sorun.",
+        speakingAnswer: "Yanıt seslendiriliyor.",
+        processingDesc: "Sesiniz yazıya dönüştürülüyor...",
         offline: "Çevrimdışı",
         outsideBusinessHours: "Mesai Saatleri Dışındayız",
 
@@ -2297,6 +2339,25 @@ export const translations = {
         chatbotSkillDisabledDesc: "AI Chatbot devre dışı bırakıldı.",
         voiceSkillEnabledDesc: "Sesli Asistan artık etkin.",
         voiceSkillDisabledDesc: "Sesli Asistan devre dışı bırakıldı.",
+
+        // Voice Settings Page
+        voiceSettingsTitle: "Sesli Asistan Ayarları",
+        voiceSettingsDesc: "Yapay zeka ses motorlarını yönetin ve yapılandırın.",
+        klassifierTitle: "Klassifier",
+        klassifierDesc: "Düşük gecikmeli ve yüksek performanslı yerel ses servisimiz.",
+        elevenLabsTitle: "ElevenLabs",
+        elevenLabsDesc: "Dünyanın en gelişmiş yapay zeka ses teknolojisi.",
+        voiceId: "Voice ID",
+        saveSuccess: "Ayarlar Başarıyla Kaydedildi",
+        saveSuccessDesc: "Sesli asistan tercihleriniz güncellendi.",
+        saveFailedDesc: "Ayarlar kaydedilemedi.",
+        configSummary: "Yapılandırma Özeti",
+        configBothEngines: "Her iki ses motoru da etkinleştirildi. Sistem, duruma göre en uygun motoru kullanacaktır (ElevenLabs öncelikli).",
+        configKlassifierOnly: "Sadece Klassifier (Yerel) motoru aktif. Hızlı ve ekonomik yanıtlar için kullanılacak.",
+        configElevenLabsOnly: "Sadece ElevenLabs motoru aktif. Yüksek kaliteli ses yanıtları için kullanılacak.",
+        configNoEngine: "Her iki ses motoru da devre dışı. Sesli asistan özelliği kullanılmayacak.",
+        freeLabel: "Ücretsiz",
+        unlimitedUsage: "Sınırsız kullanım",
 
         // Gamification
         wheelOfFortune: "Çarkıfelek",

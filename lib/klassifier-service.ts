@@ -9,10 +9,18 @@ export class KlassifierService {
      * @param audioFile The audio blob/file to transcribe
      * @returns The transcribed text
      */
-    static async transcribeAudio(audioFile: Blob): Promise<string> {
+    static async transcribeAudio(audioFile: Blob, language: string = 'tr'): Promise<string> {
+        // Determine correct file extension from blob type
+        const mimeType = audioFile.type || 'audio/webm';
+        let extension = 'webm';
+        if (mimeType.includes('wav')) extension = 'wav';
+        else if (mimeType.includes('mp4') || mimeType.includes('mp4a')) extension = 'mp4';
+        else if (mimeType.includes('ogg')) extension = 'ogg';
+        else if (mimeType.includes('webm')) extension = 'webm';
+
         const formData = new FormData();
-        formData.append('audio_file', audioFile, 'recording.wav');
-        formData.append('language', 'tr');
+        formData.append('audio_file', audioFile, `recording.${extension}`);
+        formData.append('language', language);
         formData.append('model_name', 'large-v2');
 
         try {

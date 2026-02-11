@@ -47,8 +47,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 })
     }
 
+    let requestLanguage = 'tr'
     try {
         const body: GenerateRequest = await req.json()
+        requestLanguage = body.language || 'tr'
         const { chatbotId, pageContext, tone = 'friendly', messageLength = 'medium', language = 'tr', sectorHint, actionMode = 'aiDecides' } = body
 
         if (!chatbotId || !pageContext) {
@@ -59,12 +61,23 @@ export async function POST(req: Request) {
         const chatbotDoc = await adminDb.collection("chatbots").doc(chatbotId).get()
         const chatbotData = chatbotDoc.data() || {}
 
+        // Language label mapping
+        const langLabels: Record<string, { sector: string, company: string, langName: string, fallback: string }> = {
+            tr: { sector: 'Sektör', company: 'Şirket', langName: 'Türkçe', fallback: 'Size nasıl yardımcı olabilirim?' },
+            en: { sector: 'Sector', company: 'Company', langName: 'English', fallback: 'How can I help you?' },
+            es: { sector: 'Sector', company: 'Empresa', langName: 'Español', fallback: '¿Cómo puedo ayudarte?' },
+            de: { sector: 'Branche', company: 'Unternehmen', langName: 'Deutsch', fallback: 'Wie kann ich Ihnen helfen?' },
+            fr: { sector: 'Secteur', company: 'Entreprise', langName: 'Français', fallback: 'Comment puis-je vous aider ?' }
+        }
+        const labels = langLabels[language] || langLabels['en']
+        const isTurkish = language === 'tr'
+
         // Build sector context
         let sectorContext = ""
         if (sectorHint) {
             sectorContext = sectorHint
         } else if (chatbotData.industry || chatbotData.sectorId) {
-            sectorContext = `Sektör: ${chatbotData.industry || chatbotData.sectorId}`
+            sectorContext = `${labels.sector}: ${chatbotData.industry || chatbotData.sectorId}`
         }
 
         // 2. Detect Intent from behavior
@@ -90,26 +103,26 @@ export async function POST(req: Request) {
             console.log("GEMINI_API_KEY not set, returning fallback")
             return NextResponse.json({
                 action: recommendedAction,
-                message: "Size nasıl yardımcı olabilirim?",
+                message: labels.fallback,
                 intent: detectedIntent,
                 confidence: 0.5
             } as GenerateResponse)
         }
 
-        // 5. Construct AI Prompt
+        // 5. Construct AI Prompt (multi-language)
         const toneDescriptions: Record<string, string> = {
-            friendly: "Samimi, sıcak ve yardımsever",
-            professional: "Profesyonel, resmi ve kurumsal",
-            playful: "Eğlenceli, esprili ve enerjik",
-            urgent: "Acil, dikkat çekici, satış odaklı"
+            friendly: "Friendly, warm and helpful",
+            professional: "Professional, formal and corporate",
+            playful: "Fun, witty and energetic",
+            urgent: "Urgent, attention-grabbing, sales-focused"
         }
 
         const intentDescriptions: Record<string, string> = {
-            browsing: "Geziyor, bilgi topluyor",
-            high_interest: "Yüksek ilgi gösteriyor (uzun süre kaldı, scroll yaptı)",
-            comparison: "Karşılaştırma yapıyor",
-            support_needed: "Destek/yardım arıyor",
-            exit_intent: "Sayfadan ayrılmak üzere"
+            browsing: "Browsing, collecting information",
+            high_interest: "Showing high interest (stayed long, scrolled deep)",
+            comparison: "Comparing options",
+            support_needed: "Looking for support/help",
+            exit_intent: "About to leave the page"
         }
 
         const lengthLimits = {
@@ -119,45 +132,45 @@ export async function POST(req: Request) {
         }
         const maxChars = lengthLimits[messageLength] || 100
 
-        const prompt = `Sen bir web sitesi ziyaretçi asistanısın. Ziyaretçinin bulunduğu sayfaya ve davranışına göre ONUN DİKKATİNİ ÇEKECEK akıllı bir mesaj üret.
+        const toneDesc = toneDescriptions[tone] || toneDescriptions.friendly
+        const intentDesc = intentDescriptions[detectedIntent] || detectedIntent
 
-BAĞLAM:
-${chatbotData.companyName ? `Şirket: ${chatbotData.companyName}` : ''}
+        // Language instruction for the AI
+        const languageInstruction = `CRITICAL: The message MUST be written in ${labels.langName}. Do NOT use any other language.`
+
+        const prompt = `You are a website visitor engagement assistant. Generate a smart, attention-grabbing message based on the visitor's current page and behavior.
+
+CONTEXT:
+${chatbotData.companyName ? `${labels.company}: ${chatbotData.companyName}` : ''}
 ${sectorContext}
 
-SAYFA BİLGİSİ:
+PAGE INFO:
 - URL: ${pageContext.url}
-- Başlık: ${pageContext.title}
-- Ana Başlıklar: ${pageContext.headings.join(', ') || 'Bulunamadı'}
-${pageContext.metaDescription ? `- Açıklama: ${pageContext.metaDescription}` : ''}
+- Title: ${pageContext.title}
+- Main Headings: ${pageContext.headings.join(', ') || 'Not found'}
+${pageContext.metaDescription ? `- Description: ${pageContext.metaDescription}` : ''}
 
-ZİYARETÇİ DAVRANIŞI:
-- Sayfada Geçen Süre: ${pageContext.behavior.timeOnPage} saniye
-- Scroll Derinliği: %${pageContext.behavior.scrollDepth}
-- Tıklama Sayısı: ${pageContext.behavior.clickCount}
-- Algılanan Niyet: ${intentDescriptions[detectedIntent] || detectedIntent}
+VISITOR BEHAVIOR:
+- Time on Page: ${pageContext.behavior.timeOnPage} seconds
+- Scroll Depth: ${pageContext.behavior.scrollDepth}%
+- Click Count: ${pageContext.behavior.clickCount}
+- Detected Intent: ${intentDesc}
 
-GÖREV:
-1. Sayfa içeriğini ve ziyaretçi davranışını analiz et
-2. ${recommendedAction === 'openWidget' ? 'Widget açılacak, ilk sohbet mesajı üret' : 'Dikkat çekici bir balon mesajı üret'}
+TASK:
+1. Analyze the page content and visitor behavior
+2. ${recommendedAction === 'openWidget' ? 'The widget will open, generate an initial chat message' : 'Generate an attention-grabbing bubble message'}
 
-KURALLAR:
-1. Mesaj EN FAZLA ${maxChars} karakter olmalı
-2. Ton: ${toneDescriptions[tone]}
-3. Asla "Merhaba" veya "Hoşgeldiniz" ile başlama
-4. Sayfa içeriğiyle DOĞRUDAN ilgili ol
-5. Kişiselleştirilmiş ve bağlama uygun ol
-6. Emoji kullanabilirsin ama abartma (max 1)
-7. Sadece mesaj metnini döndür
+RULES:
+1. Message must be at most ${maxChars} characters
+2. Tone: ${toneDesc}
+3. Never start with a generic greeting like "Hello" or "Welcome"
+4. Be DIRECTLY relevant to the page content
+5. Be personalized and context-aware
+6. You may use emoji but don't overdo it (max 1)
+7. ${languageInstruction}
+8. Return ONLY the message text, nothing else
 
-${recommendedAction === 'openWidget' ? 'Bu mesaj widget içinde ilk mesaj olarak görünecek, sohbet başlatıcı olsun.' : 'Bu mesaj küçük bir baloncukta görünecek, dikkat çekici olsun.'}
-
-SEKTÖREL ÖRNEKLER:
-- Sağlık (Doktor sayfası): "Bu doktordan randevu almak ister misiniz? 📅"
-- E-ticaret (Ürün sayfası): "Bu ürün hakkında sorularınızı yanıtlayabilirim!"
-- Eğitim (Bölüm sayfası): "Kabul koşulları hakkında bilgi verebilirim 🎓"
-- SaaS (Fiyat sayfası): "Hangi plan ihtiyaçlarınıza uygun, birlikte bakalım mı?"
-- Emlak (İlan sayfası): "Bu mülkü görmek için randevu oluşturabilir miyim?"
+${recommendedAction === 'openWidget' ? 'This message will appear as the first message inside the widget, make it a conversation starter.' : 'This message will appear in a small bubble, make it eye-catching.'}
 `
 
         // 6. Call AI
@@ -185,9 +198,16 @@ SEKTÖREL ÖRNEKLER:
 
     } catch (error) {
         console.error("Error in AI engagement generate:", error)
+        const fallbackMessages: Record<string, string> = {
+            tr: "Size nasıl yardımcı olabilirim?",
+            en: "How can I help you?",
+            es: "¿Cómo puedo ayudarte?",
+            de: "Wie kann ich Ihnen helfen?",
+            fr: "Comment puis-je vous aider ?"
+        }
         return NextResponse.json({
             action: 'showBubble',
-            message: "Size nasıl yardımcı olabilirim?",
+            message: fallbackMessages[requestLanguage] || fallbackMessages['en'],
             intent: 'unknown',
             confidence: 0.3
         } as GenerateResponse)

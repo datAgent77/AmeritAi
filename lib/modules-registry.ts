@@ -373,10 +373,10 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'ready',
+        status: 'coming_soon', // TEMPORARILY DISABLED - re-enable when production-ready
         supportedSectors: [],
-        defaultEnabledBySector: ['booking', 'healthcare', 'service', 'real_estate', 'maritime'],
-        showOnLandingPage: true,
+        defaultEnabledBySector: [], // Cleared - no sector gets this by default
+        showOnLandingPage: false, // Hidden from landing page
         legacyFirestoreField: 'enableVoiceAssistant',
         aiSystemInstruction: {
             en: `APPOINTMENT BOOKING MODULE ACTIVE. You are a helpful assistant. Your goal is to collect the necessary information to book an appointment kindly and naturally.
@@ -932,9 +932,9 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.proactiveMessaging, // Proactive Engagement (Ready)
     MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
     MODULES_REGISTRY.dynamicContext,    // Dynamic Data Context (Ready)
-    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Ready)
 
     // --- 2. COMING SOON MODULES ---
+    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Coming Soon - temporarily disabled)
     MODULES_REGISTRY.appointments,      // Coming Soon
     // MODULES_REGISTRY.emailMarketing,    // Coming Soon - Not yet implemented
     // MODULES_REGISTRY.reviewManagement,  // Coming Soon - Removed
