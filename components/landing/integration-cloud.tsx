@@ -1,14 +1,30 @@
 "use client"
 
 import { useLanguage } from "@/context/LanguageContext"
-import { Code2, Link2, MessageSquare } from "lucide-react"
+import { Code2, Link2, MessageSquare, type LucideIcon } from "lucide-react"
 import Image from "next/image"
+
+type LogoIntegration = {
+    name: string
+    logo: string
+    bgColor: string
+    isSvg: true
+}
+
+type IconIntegration = {
+    name: string
+    icon: LucideIcon
+    bgColor: string
+    isSvg: false
+}
+
+type IntegrationItem = LogoIntegration | IconIntegration
 
 export function IntegrationCloud() {
     const { language } = useLanguage()
 
     // Landing section mirrors currently active integrations in console.
-    const integrations = [
+    const integrations: IntegrationItem[] = [
         {
             name: "WhatsApp Business",
             logo: "/integrations/whatsapp.svg",
@@ -81,7 +97,6 @@ export function IntegrationCloud() {
 
                 <div className="flex flex-wrap justify-center gap-6 md:gap-12">
                     {integrations.map((item, i) => {
-                        const IconComponent = item.icon
                         return (
                             <div key={i} className="flex flex-col items-center gap-3 hover:scale-110 transition-all cursor-default group">
                                 <div className={`w-20 h-20 rounded-2xl ${item.bgColor} flex items-center justify-center hover:shadow-2xl transition-all border border-white/10 group-hover:border-white/20`}>
@@ -95,7 +110,7 @@ export function IntegrationCloud() {
                                             style={{ filter: "brightness(0) invert(1)" }}
                                         />
                                     ) : (
-                                        IconComponent && <IconComponent className="w-10 h-10 text-white" />
+                                        <item.icon className="w-10 h-10 text-white" />
                                     )}
                                 </div>
                                 <span className="text-muted-foreground text-sm font-medium group-hover:text-foreground transition-colors">{item.name}</span>
