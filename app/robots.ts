@@ -7,6 +7,7 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/console/', '/api/'],
         },
+        host: 'https://www.getvion.com',
         sitemap: 'https://www.getvion.com/sitemap.xml',
     }
 }

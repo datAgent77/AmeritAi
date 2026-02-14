@@ -7,6 +7,7 @@ import { PlanConfig, formatPlanPrice } from '@/lib/pricing-config';
 import { Check, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/LanguageContext';
+import { trackCtaClick, trackMarketingEvent, trackPricingPlanSelect } from '@/lib/marketing-tracking';
 
 interface PricingCardProps {
     plan: PlanConfig;
@@ -20,6 +21,9 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
     const isPopular = isRecommended || plan.copy.badge === 'recommended' || plan.copy.badge === 'Önerilen' || plan.copy.badge === 'Recommended';
     const priceDisplay = formatPlanPrice(plan.planId, billingCycle, language as 'en' | 'tr');
     const isContact = plan.billing.contact;
+    const selectedBilling = billingCycle === 'annual'
+        ? plan.billing.annual ?? plan.billing.monthly
+        : plan.billing.monthly;
 
     // Helper to get translated plan name
     const getPlanName = (id: string) => {
@@ -28,6 +32,42 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
     };
 
     const planName = getPlanName(plan.planId);
+
+    const handlePlanClick = () => {
+        if (isContact) {
+            trackCtaClick({
+                location: 'pricing_page',
+                ctaLabel: 'contact_sales',
+                destination: '/contact',
+                language
+            });
+            return;
+        }
+
+        trackPricingPlanSelect({
+            planId: plan.planId,
+            billingCycle,
+            price: selectedBilling?.amount ?? 0,
+            currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD'),
+            location: 'pricing_page',
+            language
+        });
+        trackMarketingEvent('begin_checkout', {
+            plan_id: plan.planId,
+            billing_cycle: billingCycle,
+            price: selectedBilling?.amount ?? 0,
+            currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD'),
+            language,
+            value: selectedBilling?.amount ?? 0
+        });
+
+        trackCtaClick({
+            location: 'pricing_page',
+            ctaLabel: 'plan_selected',
+            destination: `/signup?plan=${plan.planId}&cycle=${billingCycle}`,
+            language
+        });
+    };
     
     return (
         <motion.div
@@ -78,7 +118,7 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
 
             {/* CTA Button */}
             {isContact ? (
-                <Link href="/contact" className="w-full mb-4 block">
+                <Link href="/contact" className="w-full mb-4 block" onClick={handlePlanClick}>
                     <Button 
                         variant={isPopular ? "default" : "outline"}
                         className={cn("w-full", isPopular && "bg-primary hover:bg-primary/90")}
@@ -90,25 +130,7 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
                 <Link 
                     href={`/signup?plan=${plan.planId}&cycle=${billingCycle}`} 
                     className="w-full mb-4 block"
-                    onClick={() => {
-                        if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                            const price = billingCycle === 'annual' 
-                                ? plan.billing.annual?.amount 
-                                : plan.billing.monthly?.amount;
-                                
-                            (window as any).dataLayer.push({
-                                event: 'select_item',
-                                ecommerce: {
-                                    items: [{
-                                        item_name: plan.planId,
-                                        item_category: 'subscription',
-                                        price: price || 0,
-                                        quantity: 1
-                                    }]
-                                }
-                            })
-                        }
-                    }}
+                    onClick={handlePlanClick}
                 >
                     <Button 
                         variant={isPopular ? "default" : "outline"}

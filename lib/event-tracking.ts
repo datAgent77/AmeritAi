@@ -123,10 +123,25 @@ export function trackEvent(
             );
         }
 
-        // TODO: Production - send to PostHog/Segment/Firestore
-        // if (process.env.NODE_ENV === 'production') {
-        //     posthog.capture(eventName, event.payload);
-        // }
+        // Push to GTM/GA4 when available so pricing/upgrade actions are measurable.
+        if (typeof window !== 'undefined') {
+            const w = window as typeof window & {
+                dataLayer?: Array<Record<string, unknown>>;
+                gtag?: (...args: unknown[]) => void;
+            };
+
+            if (typeof w.gtag === 'function') {
+                w.gtag('event', eventName, event.payload);
+            } else if (Array.isArray(w.dataLayer)) {
+                w.dataLayer.push({
+                    event: eventName,
+                    ...event.payload
+                });
+            }
+        }
+
+        // TODO: Optionally forward to PostHog/Segment/Firestore
+        // posthog.capture(eventName, event.payload);
 
     } catch (error) {
         // Fail silently

@@ -6,6 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.getvion.com'),
+  applicationName: "Vion AI",
   title: {
     default: "Vion AI | AI-Powered Sales & Support Chatbot for Businesses",
     template: "%s | Vion AI"
@@ -23,6 +24,13 @@ export const metadata: Metadata = {
   authors: [{ name: "Vion AI Team" }],
   creator: "Vion AI",
   publisher: "Vion AI",
+  category: "business software",
+  manifest: "/manifest.webmanifest",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   robots: {
     index: true,
     follow: true,
@@ -48,10 +56,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
       { url: '/favicon.png', type: 'image/png' },
     ],
-    apple: '/favicon.png',
+    apple: [
+      { url: '/favicon.png', type: 'image/png' },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Vion AI",
+    statusBarStyle: "default",
   },
   openGraph: {
     type: 'website',
@@ -83,6 +97,7 @@ import { LanguageProvider } from "@/context/LanguageContext";
 import { CookieConsentProvider } from "@/context/CookieConsentContext";
 import { CookieConsent } from "@/components/cookie-consent";
 import { GoogleTagManager } from "@/components/google-tag-manager";
+import { RouteAnalyticsTracker } from "@/components/route-analytics-tracker";
 import { Toaster } from "@/components/ui/toaster"
 import { PublicChatbot } from "@/components/public-chatbot"
 
@@ -91,9 +106,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
+  const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
+    '@id': 'https://www.getvion.com/#organization',
     name: 'Vion AI',
     url: 'https://www.getvion.com',
     logo: 'https://www.getvion.com/vion-logo-icon-dark.png',
@@ -107,6 +123,37 @@ export default function RootLayout({
       'https://twitter.com/vion_ai'
     ]
   }
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': 'https://www.getvion.com/#website',
+    name: 'Vion AI',
+    url: 'https://www.getvion.com',
+    inLanguage: ['en', 'tr'],
+    publisher: {
+      '@id': 'https://www.getvion.com/#organization'
+    }
+  }
+
+  const softwareApplicationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Vion AI',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      description: '14-day free trial'
+    },
+    brand: {
+      '@id': 'https://www.getvion.com/#organization'
+    },
+    url: 'https://www.getvion.com'
+  }
+
+  const jsonLd = [organizationJsonLd, websiteJsonLd, softwareApplicationJsonLd]
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -128,6 +175,7 @@ export default function RootLayout({
               <CookieConsentProvider>
                 <CookieConsent />
                 <GoogleTagManager />
+                <RouteAnalyticsTracker />
                 {children}
                 <PublicChatbot />
                 <Toaster />

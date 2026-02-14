@@ -11,6 +11,7 @@ import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { PublicBreadcrumb } from "@/components/public-breadcrumb"
+import { trackLeadGenerated } from "@/lib/marketing-tracking"
 
 
 export default function ContactPage() {
@@ -39,14 +40,11 @@ export default function ContactPage() {
 
             if (response.ok) {
                 setIsSubmitted(true)
-                // GTM Conversion Event
-                if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                    (window as any).dataLayer.push({
-                        event: 'generate_lead',
-                        form_name: 'contact_form',
-                        subject: formData.subject
-                    })
-                }
+                trackLeadGenerated('contact_form', {
+                    form_name: 'contact_form',
+                    subject: formData.subject,
+                    language
+                })
                 toast({
                     title: language === 'tr' ? 'Mesaj Gönderildi' : 'Message Sent',
                     description: language === 'tr' ? 'En kısa sürede size dönüş yapacağız.' : 'We will get back to you soon.'

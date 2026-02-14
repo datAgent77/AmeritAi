@@ -9,7 +9,7 @@ import { Calendar, Clock, ArrowLeft, User, Share2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { notFound } from "next/navigation"
+import { SEED_BLOG_POSTS } from "@/lib/seed-cms-data"
 
 // Type definition (same as list page)
 interface BlogPost {
@@ -27,8 +27,9 @@ interface BlogPost {
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
     const { t, language } = useLanguage()
-    const [post, setPost] = useState<BlogPost | null>(null)
-    const [loading, setLoading] = useState(true)
+    const initialPost = (SEED_BLOG_POSTS as BlogPost[]).find((item) => item.slug === params.slug) || null
+    const [post, setPost] = useState<BlogPost | null>(initialPost)
+    const [loading, setLoading] = useState(!initialPost)
     const [error, setError] = useState(false)
 
     useEffect(() => {
@@ -159,14 +160,15 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                         "@context": "https://schema.org",
                         "@type": "BlogPosting",
                         "headline": post.title[language as 'en' | 'tr'],
-                        "image": [post.image],
+                        "image": [`https://www.getvion.com${post.image}`],
                         "datePublished": post.date,
                         "dateModified": post.date,
                         "author": [{
                             "@type": "Person",
                             "name": post.author.name,
-                            "url": "https://userex-ai.com"
+                            "url": "https://www.getvion.com"
                         }],
+                        "mainEntityOfPage": `https://www.getvion.com/blog/${post.slug}`,
                         "description": post.excerpt[language as 'en' | 'tr']
                     })
                 }}

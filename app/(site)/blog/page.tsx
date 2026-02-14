@@ -9,6 +9,7 @@ import { ArrowRight, Calendar, Clock } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { PublicBreadcrumb } from "@/components/public-breadcrumb"
+import { SEED_BLOG_POSTS } from "@/lib/seed-cms-data"
 
 // Type definition (should be shared)
 interface BlogPost {
@@ -26,7 +27,7 @@ interface BlogPost {
 
 export default function BlogPage() {
     const { t, language } = useLanguage()
-    const [posts, setPosts] = useState<BlogPost[]>([])
+    const [posts, setPosts] = useState<BlogPost[]>(SEED_BLOG_POSTS as BlogPost[])
 
     useEffect(() => {
         fetch('/api/cms/blog')
@@ -71,7 +72,7 @@ export default function BlogPage() {
                 <div className="container mx-auto px-4">
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {posts.map((post) => (
-                            <Link key={post.id} href={`/blog/${post.slug}`} className="group">
+                            <Link key={post.id || post.slug} href={`/blog/${post.slug}`} className="group">
                                 <article className="bg-card border border-border rounded-2xl overflow-hidden hover:border-foreground/20 transition-all hover:translate-y-[-4px] shadow-sm">
                                     <div className="aspect-video relative overflow-hidden">
                                         <Image

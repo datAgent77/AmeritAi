@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createUserWithEmailAndPassword, sendEmailVerification, User } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, setDoc, getDoc } from "firebase/firestore"
@@ -19,6 +19,7 @@ import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { PasswordStrength, isPasswordStrong } from "@/components/auth/password-strength"
 import { PhoneInput } from "@/components/auth/phone-input"
 import { event as trackEvent } from "@/lib/gtag"
+import { trackMarketingEvent, trackSignUp } from "@/lib/marketing-tracking"
 
 type SignupStep = 'initial' | 'form' | 'success'
 
@@ -49,12 +50,28 @@ export default function SignUpForm() {
 
     const { toast } = useToast()
     const { t, language } = useLanguage()
+    const signupEntryTrackedRef = useRef(false)
+
+    useEffect(() => {
+        if (signupEntryTrackedRef.current) return
+        signupEntryTrackedRef.current = true
+
+        trackMarketingEvent('signup_page_view', {
+            plan_id: plan || 'trial',
+            billing_cycle: cycle || 'monthly',
+            language
+        })
+    }, [plan, cycle, language])
 
     // Handle email submit to go to form step
     const handleEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (email) {
             setStep('form')
+            trackMarketingEvent('sign_up_start', {
+                method: 'email',
+                language
+            })
         }
     }
 
@@ -64,6 +81,10 @@ export default function SignUpForm() {
         setAuthProvider(providerId)
         setEmail(user.email || '')
         setFullName(user.displayName || '')
+        trackMarketingEvent('sign_up_start', {
+            method: providerId,
+            language
+        })
 
         try {
             // Check if user exists
@@ -177,14 +198,19 @@ export default function SignUpForm() {
                 category: 'Auth',
                 label: authProvider || 'email'
             })
-
-            // GTM Signup Conversion Event
-            if (typeof window !== 'undefined' && (window as any).dataLayer) {
-                (window as any).dataLayer.push({
-                    event: 'sign_up',
-                    method: authProvider || 'email'
-                })
-            }
+            trackSignUp(authProvider || 'email', language)
+            trackMarketingEvent('signup_completed', {
+                method: authProvider || 'email',
+                plan_id: plan || 'trial',
+                billing_cycle: cycle || 'monthly',
+                language
+            })
+            trackMarketingEvent('start_trial', {
+                plan_id: plan || 'trial',
+                billing_cycle: cycle || 'monthly',
+                method: authProvider || 'email',
+                language
+            })
 
             if (requiresEmailVerification) {
                 router.push("/login?verifyEmail=1")

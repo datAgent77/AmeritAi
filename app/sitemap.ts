@@ -5,7 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = 'https://www.getvion.com'
 
     // Core pages — highest priority
-    const coreRoutes = ['', '/pricing', '/products', '/solutions', '/industries', '/contact'].map((route) => ({
+    const coreRoutes = ['', '/pricing', '/products', '/solutions', '/industries', '/contact', '/why'].map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date(),
         changeFrequency: 'weekly' as const,

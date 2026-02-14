@@ -22,6 +22,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { cn } from "@/lib/utils"
 import { getAllModules } from "@/lib/modules-registry"
+import { trackCtaClick } from "@/lib/marketing-tracking"
 
 import {
     ShoppingBag, Plane, Home, Code2, Briefcase, HeartPulse, GraduationCap, School, Banknote, ChefHat, Sprout,
@@ -272,19 +273,49 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     {/* Auth Buttons */}
                     <div className="hidden md:flex items-center gap-3">
                         {user ? (
-                            <Link href="/platform">
+                            <Link
+                                href="/platform"
+                                onClick={() =>
+                                    trackCtaClick({
+                                        location: "header_desktop",
+                                        ctaLabel: "go_to_console",
+                                        destination: "/platform",
+                                        language
+                                    })
+                                }
+                            >
                                 <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-lg h-9 rounded-full px-6">
                                     {language === 'tr' ? 'Panele Git' : 'Go to Console'}
                                 </Button>
                             </Link>
                         ) : (
                             <>
-                                <Link href="/login">
+                                <Link
+                                    href="/login"
+                                    onClick={() =>
+                                        trackCtaClick({
+                                            location: "header_desktop",
+                                            ctaLabel: "login",
+                                            destination: "/login",
+                                            language
+                                        })
+                                    }
+                                >
                                     <Button variant="ghost" className="text-sm font-medium text-foreground hover:text-foreground hover:bg-muted h-9 rounded-full px-4">
                                         {t('login')}
                                     </Button>
                                 </Link>
-                                <Link href="/signup">
+                                <Link
+                                    href="/signup"
+                                    onClick={() =>
+                                        trackCtaClick({
+                                            location: "header_desktop",
+                                            ctaLabel: "get_started",
+                                            destination: "/signup",
+                                            language
+                                        })
+                                    }
+                                >
                                     <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-lg h-9 rounded-full px-5 text-sm">
                                         {t('landingGetStarted')}
                                     </Button>
@@ -321,19 +352,54 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                 <div className="p-4 bg-muted/50 border-b border-border">
                                     {!user ? (
                                         <div className="flex gap-2">
-                                            <Link href="/login" onClick={() => setIsOpen(false)} className="flex-1">
+                                            <Link
+                                                href="/login"
+                                                onClick={() => {
+                                                    trackCtaClick({
+                                                        location: "header_mobile",
+                                                        ctaLabel: "login",
+                                                        destination: "/login",
+                                                        language
+                                                    })
+                                                    setIsOpen(false)
+                                                }}
+                                                className="flex-1"
+                                            >
                                                 <Button variant="outline" className="w-full border-border text-foreground bg-transparent hover:bg-muted h-9">
                                                     {t('login')}
                                                 </Button>
                                             </Link>
-                                            <Link href="/signup" onClick={() => setIsOpen(false)} className="flex-1">
+                                            <Link
+                                                href="/signup"
+                                                onClick={() => {
+                                                    trackCtaClick({
+                                                        location: "header_mobile",
+                                                        ctaLabel: "get_started",
+                                                        destination: "/signup",
+                                                        language
+                                                    })
+                                                    setIsOpen(false)
+                                                }}
+                                                className="flex-1"
+                                            >
                                                 <Button className="w-full bg-foreground text-background hover:bg-muted-foreground/20 h-9">
                                                     {t('landingGetStarted')}
                                                 </Button>
                                             </Link>
                                         </div>
                                     ) : (
-                                        <Link href="/platform" onClick={() => setIsOpen(false)}>
+                                        <Link
+                                            href="/platform"
+                                            onClick={() => {
+                                                trackCtaClick({
+                                                    location: "header_mobile",
+                                                    ctaLabel: "go_to_console",
+                                                    destination: "/platform",
+                                                    language
+                                                })
+                                                setIsOpen(false)
+                                            }}
+                                        >
                                             <Button className="w-full bg-foreground text-background hover:bg-muted-foreground/20">
                                                 {language === 'tr' ? 'Panele Git' : 'Go to Console'}
                                             </Button>

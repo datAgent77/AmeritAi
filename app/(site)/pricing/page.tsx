@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from 'react';
-import { HeroBackgroundModern } from '@/components/landing/hero-background-modern';
+import { useEffect, useRef, useState } from 'react';
 import { PublicFooter } from '@/components/public-footer';
-import { getPublicPlansSorted, PRICING_SETTINGS } from '@/lib/pricing-config';
+import { getPublicPlansSorted } from '@/lib/pricing-config';
 import { BillingToggle } from '@/components/pricing/billing-toggle';
 import { PricingCard } from '@/components/pricing/pricing-card';
-import { Check, ShieldCheck, Zap, Headphones } from 'lucide-react';
+import { ShieldCheck, Zap, Headphones } from 'lucide-react';
+import { trackMarketingEvent, trackPricingView } from '@/lib/marketing-tracking';
 
 import { PublicHeader } from '@/components/public-header';
 
@@ -14,9 +14,95 @@ import { useLanguage } from '@/context/LanguageContext';
 import { PublicBreadcrumb } from '@/components/public-breadcrumb';
 
 export default function PricingPage() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
     const plans = getPublicPlansSorted();
+    const lastPricingViewSignatureRef = useRef<string>("");
+    const baseUrl = "https://www.getvion.com";
+
+    useEffect(() => {
+        const signature = `${billingCycle}-${language}-${plans.length}`;
+        if (lastPricingViewSignatureRef.current === signature) return;
+
+        const items = plans
+            .filter((plan) => !plan.billing.contact)
+            .map((plan) => {
+                const selectedBilling = billingCycle === 'annual'
+                    ? plan.billing.annual ?? plan.billing.monthly
+                    : plan.billing.monthly;
+
+                return {
+                    planId: plan.planId,
+                    price: selectedBilling?.amount ?? 0,
+                    currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD')
+                };
+            });
+
+        trackPricingView({
+            billingCycle,
+            language,
+            items
+        });
+
+        lastPricingViewSignatureRef.current = signature;
+    }, [billingCycle, language, plans]);
+
+    const handleBillingCycleChange = (nextCycle: 'monthly' | 'annual') => {
+        if (nextCycle === billingCycle) return;
+
+        trackMarketingEvent('pricing_billing_cycle_changed', {
+            from_billing_cycle: billingCycle,
+            to_billing_cycle: nextCycle,
+            language
+        });
+
+        setBillingCycle(nextCycle);
+    };
+
+    const offerCatalogJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "OfferCatalog",
+        "name": language === "tr" ? "Vion AI Fiyatlandırma Planları" : "Vion AI Pricing Plans",
+        "url": `${baseUrl}/pricing`,
+        "itemListElement": plans
+            .filter((plan) => !plan.billing.contact)
+            .map((plan) => {
+                const selectedBilling = billingCycle === "annual"
+                    ? plan.billing.annual ?? plan.billing.monthly
+                    : plan.billing.monthly;
+                const planNameKey = `plan${plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)}`;
+                const localizedPlanName = t(planNameKey);
+                const planName = localizedPlanName === planNameKey ? plan.displayName : localizedPlanName;
+
+                return {
+                    "@type": "Offer",
+                    "name": planName,
+                    "price": selectedBilling?.amount ?? 0,
+                    "priceCurrency": selectedBilling?.currency ?? (language === "tr" ? "TRY" : "USD"),
+                    "url": `${baseUrl}/signup?plan=${plan.planId}&cycle=${billingCycle}`,
+                    "category": "SaaS Subscription"
+                };
+            })
+    };
+
+    const breadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": baseUrl
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": language === "tr" ? "Fiyatlandırma" : "Pricing",
+                "item": `${baseUrl}/pricing`
+            }
+        ]
+    };
 
     return (
         <div className="min-h-screen bg-slate-50/50 dark:bg-background relative selection:bg-primary/20 flex flex-col font-sans text-foreground">
@@ -43,7 +129,7 @@ export default function PricingPage() {
                     {/* Billing Toggle */}
                     <BillingToggle 
                         billingCycle={billingCycle} 
-                        onChange={setBillingCycle} 
+                        onChange={handleBillingCycleChange} 
                     />
 
                     {/* Pricing Grid */}
@@ -98,6 +184,14 @@ export default function PricingPage() {
             </main>
 
             <div className="relative z-10">
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(offerCatalogJsonLd) }}
+                />
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+                />
                 <PublicFooter />
             </div>
         </div>

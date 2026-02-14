@@ -7,6 +7,7 @@ import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
+import { trackCtaClick } from "@/lib/marketing-tracking"
 
 import { HeroVisual } from "@/components/landing/hero-visual"
 import { SkillsTicker } from "@/components/landing/skills-ticker"
@@ -74,7 +75,18 @@ export default function LandingPage() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                                <Link href="/signup" className="w-full sm:w-auto">
+                                <Link
+                                    href="/signup"
+                                    className="w-full sm:w-auto"
+                                    onClick={() =>
+                                        trackCtaClick({
+                                            location: "home_hero",
+                                            ctaLabel: "start_for_free",
+                                            destination: "/signup",
+                                            language
+                                        })
+                                    }
+                                >
                                     <Button size="lg" className="w-full h-14 px-8 text-lg rounded-full font-medium shadow-lg shadow-cyan-500/20 hover:scale-105 transition-transform bg-foreground text-background hover:bg-foreground/90">
                                         {language === 'tr' ? 'Ücretsiz Başlayın' : 'Start for Free'}
                                         <ArrowRight className="ml-2 w-5 h-5" />
@@ -85,6 +97,12 @@ export default function LandingPage() {
                                     size="lg"
                                     className="w-full sm:w-auto h-14 px-8 text-lg rounded-full border-muted-foreground/20 hover:bg-secondary/50 backdrop-blur-sm"
                                     onClick={() => {
+                                        trackCtaClick({
+                                            location: "home_hero",
+                                            ctaLabel: "live_demo",
+                                            destination: "widget_open",
+                                            language
+                                        })
                                         // Widget lazy loads on interaction, then opens
                                         const w = window as any
                                         if (w.UserexWidget?.open) {

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/context/LanguageContext"
+import { trackCtaClick } from "@/lib/marketing-tracking"
 
 export function CTASection() {
     const { t, language } = useLanguage()
@@ -18,7 +19,17 @@ export function CTASection() {
                         ? 'Vion ile 5 dakika içinde kendi yapay zeka asistanınızı oluşturun. Kredi kartı gerekmez.'
                         : 'Create your AI assistant in 5 minutes with Vion. No credit card required.'}
                 </p>
-                <Link href="/signup">
+                <Link
+                    href="/signup"
+                    onClick={() =>
+                        trackCtaClick({
+                            location: "cta_section",
+                            ctaLabel: "create_account",
+                            destination: "/signup",
+                            language
+                        })
+                    }
+                >
                     <Button className="h-14 px-12 text-lg bg-foreground text-background hover:bg-foreground/90 rounded-full transition-all hover:scale-105 shadow-xl">
                         {t('landingCreateAccount')}
                     </Button>
