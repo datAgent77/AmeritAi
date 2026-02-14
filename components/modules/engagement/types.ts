@@ -7,8 +7,11 @@ export interface BubbleMessage {
     isActive?: boolean
 }
 
+export type EngagementLanguage = 'auto' | 'tr' | 'en' | 'es' | 'de' | 'fr'
+
 export interface EngagementSettings {
     enabled: boolean
+    language: EngagementLanguage
     bubble: {
         messages: BubbleMessage[]
         position: 'top' | 'left' | 'right' | 'bottom-left' | 'bottom-right'
@@ -91,6 +94,7 @@ export interface EngagementSettings {
 
 export const defaultSettings: EngagementSettings = {
     enabled: false,
+    language: 'auto',
     bubble: {
         messages: [{ id: '1', text: 'Merhaba! Size nasıl yardımcı olabilirim?', delay: 5, isActive: true }],
         position: 'top',

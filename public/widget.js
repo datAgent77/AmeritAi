@@ -2069,8 +2069,11 @@
 
     // Initialize Engagement Controller if enabled
     if (settings.engagement && settings.engagement.enabled) {
-      // Resolve language: if 'auto' or not set, detect from browser
-      let resolvedLanguage = settings.initialLanguage;
+      // Resolve language precedence for proactive bubbles:
+      // 1) engagement.language (Proactive module setting)
+      // 2) initialLanguage (widget global setting)
+      // 3) browser language (auto fallback)
+      let resolvedLanguage = settings.engagement.language || settings.initialLanguage;
       if (!resolvedLanguage || resolvedLanguage === 'auto') {
         const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
         if (browserLang.startsWith('tr')) resolvedLanguage = 'tr';

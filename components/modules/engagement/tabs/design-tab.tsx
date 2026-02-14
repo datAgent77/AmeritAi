@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { EngagementSettings } from "../types"
+import { EngagementLanguage, EngagementSettings } from "../types"
 
 interface EngagementDesignTabProps {
     settings: EngagementSettings
@@ -88,6 +88,26 @@ export function EngagementDesignTab({ settings, setSettings }: EngagementDesignT
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs font-medium text-muted-foreground">Balon Dili</Label>
+                        <Select
+                            value={settings.language}
+                            onValueChange={(val: EngagementLanguage) => setSettings(p => ({ ...p, language: val }))}
+                        >
+                            <SelectTrigger className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="auto">Otomatik Algıla (Tarayıcı Dili)</SelectItem>
+                                <SelectItem value="tr">Türkçe</SelectItem>
+                                <SelectItem value="en">English</SelectItem>
+                                <SelectItem value="es">Español</SelectItem>
+                                <SelectItem value="de">Deutsch</SelectItem>
+                                <SelectItem value="fr">Français</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-6 pt-2">
