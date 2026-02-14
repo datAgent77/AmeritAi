@@ -2,6 +2,8 @@ import { OpenAI } from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { isSafeUrl } from "@/lib/security";
 import * as cheerio from 'cheerio';
 import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
@@ -31,6 +33,11 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
         }
 
         let query = adminDb.collection("knowledge_docs").where("chatbotId", "==", chatbotId);
@@ -85,8 +92,42 @@ export async function POST(req: Request) {
         console.log("API: Received knowledge request");
         const body = await req.json();
 
+        let targetChatbotId: string | null = null;
+        if (body.action === 'bulk_import' && Array.isArray(body.items)) {
+            const itemChatbotIds: string[] = body.items
+                .map((item: any) => item?.chatbotId)
+                .filter((id: unknown): id is string => typeof id === "string" && id.length > 0);
+            const chatbotIds = new Set(itemChatbotIds);
+
+            if (chatbotIds.size !== 1) {
+                return NextResponse.json({
+                    error: "Bulk import must target exactly one chatbotId"
+                }, { status: 400 });
+            }
+
+            targetChatbotId = itemChatbotIds[0];
+        } else if (typeof body.chatbotId === "string" && body.chatbotId.length > 0) {
+            targetChatbotId = body.chatbotId;
+        }
+
+        if (!targetChatbotId) {
+            return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, targetChatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+
         // Handle Bulk Import
         if (body.action === 'bulk_import' && Array.isArray(body.items)) {
+            const hasMixedChatbotIds = body.items.some((item: any) => item?.chatbotId !== targetChatbotId);
+            if (hasMixedChatbotIds) {
+                return NextResponse.json({
+                    error: "All bulk import items must match the authorized chatbotId"
+                }, { status: 400 });
+            }
+
             console.log(`API: Processing bulk import of ${body.items.length} items`);
             const results = [];
             const index = pinecone.index("chatbot-knowledge");
@@ -139,12 +180,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, results });
         }
 
-        const { text, chatbotId, docId, type, url, fileBase64, fileName, title: providedTitle } = body;
+        const { text, docId, type, url, fileBase64, fileName, title: providedTitle } = body;
+        const chatbotId = targetChatbotId;
         console.log("API: Parsed body", { chatbotId, docId, type, fileName, providedTitle, hasFile: !!fileBase64 });
-
-        if (!chatbotId) {
-            return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
-        }
 
         // Enforce docId for consistency
         if (!docId) {
@@ -159,6 +197,9 @@ export async function POST(req: Request) {
         // Handle URL Type
         if (type === 'url') {
             if (!url) return NextResponse.json({ error: "Missing URL" }, { status: 400 });
+            if (!isSafeUrl(url)) {
+                return NextResponse.json({ error: "Invalid or restricted URL" }, { status: 400 });
+            }
 
             try {
                 // If text is already provided (from preview), use it. Otherwise scrape.
@@ -393,6 +434,20 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "Missing docId or chatbotId" }, { status: 400 });
         }
 
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+
+        const docSnap = await adminDb.collection("knowledge_docs").doc(docId).get();
+        if (!docSnap.exists) {
+            return NextResponse.json({ error: "Document not found" }, { status: 404 });
+        }
+
+        if (docSnap.data()?.chatbotId !== chatbotId) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         console.log(`API: Deleting doc ${docId} for chatbot ${chatbotId}`);
 
         const index = pinecone.index("chatbot-knowledge");
@@ -433,6 +488,11 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: "Missing docId or chatbotId" }, { status: 400 });
         }
 
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+
         console.log(`API: Editing doc ${docId} for chatbot ${chatbotId}`);
 
         // Get existing document to check type
@@ -442,6 +502,10 @@ export async function PUT(req: Request) {
         }
 
         const existingData = existingDoc.data();
+        if (existingData?.chatbotId !== chatbotId) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const docType = existingData?.type || 'text';
 
         // For text/manual types, we can update content and re-embed
@@ -498,4 +562,3 @@ export async function PUT(req: Request) {
         return NextResponse.json({ error: "Edit failed" }, { status: 500 });
     }
 }
-

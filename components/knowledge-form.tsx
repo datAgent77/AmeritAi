@@ -73,6 +73,11 @@ export function KnowledgeForm({ targetUserId, onSuccess, defaultTab = "text", hi
 
         setIsAdding(true)
         try {
+            if (!user) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+            const token = await user.getIdToken()
+
             const docRef = doc(collection(db, "knowledge_docs"));
             const docId = docRef.id;
             let payload: any = {}
@@ -148,7 +153,10 @@ export function KnowledgeForm({ targetUserId, onSuccess, defaultTab = "text", hi
             // 2. Send to API (Pinecone)
             const res = await fetch("/api/knowledge", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             })
 

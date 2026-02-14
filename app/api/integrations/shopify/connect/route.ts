@@ -1,4 +1,5 @@
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -12,6 +13,9 @@ export async function POST(req: Request) {
         if (!userId || !shopDomain || !apiKey || !apiSecret) {
             return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
         }
+
+        const access = await authorizeTargetAccess(req, userId);
+        if (!access.ok) return access.response;
 
         // Shopify OAuth flow
         // For custom apps, we can use Admin API with API key/secret

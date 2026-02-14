@@ -27,7 +27,7 @@ export default function TenantAccountSettingsPage() {
 
     useEffect(() => {
         const fetchUserData = async () => {
-            if (!tenantUserId) return
+            if (!tenantUserId || !user) return
             setIsLoading(true)
             try {
                 // We use the settings API to get current data, including email if returned
@@ -38,7 +38,12 @@ export default function TenantAccountSettingsPage() {
                 // Let's check if it returns 'email'. If not, we might need another way or just let it be blank.
                 // Usually `api/console/settings` returns the user doc content, which includes email.
 
-                const response = await fetch(`/api/console/settings?chatbotId=${tenantUserId}`)
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${tenantUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
                 if (!response.ok) throw new Error("Failed to fetch user data")
                 const data = await response.json()
                 if (data.email) {
@@ -51,7 +56,7 @@ export default function TenantAccountSettingsPage() {
             }
         }
         fetchUserData()
-    }, [tenantUserId])
+    }, [tenantUserId, user])
 
     const handleSave = async () => {
         if (!user) return

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, User } from "firebase/auth"
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, User, sendEmailVerification } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
@@ -62,12 +62,36 @@ export default function LoginForm() {
       // Ensure persistence is set before signing in
       await setPersistence(auth, browserLocalPersistence)
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      await userCredential.user.reload()
+
+      if (!userCredential.user.emailVerified) {
+        try {
+          await sendEmailVerification(userCredential.user)
+        } catch (verificationError) {
+          console.warn("Could not re-send verification email:", verificationError)
+        }
+        await auth.signOut()
+
+        const verifyMsg = language === 'tr'
+          ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
+          : "You must verify your email before logging in. We've sent a new verification link."
+        setError(verifyMsg)
+        toast({
+          title: language === 'tr' ? "E-posta doğrulaması gerekli" : "Email verification required",
+          description: verifyMsg,
+          variant: "destructive",
+        })
+        return
+      }
 
       // Check if user is active in Firestore (wrapped in try-catch for permission errors)
       try {
         const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
         if (userDoc.exists()) {
           const userData = userDoc.data()
+          if (userData?.emailVerified !== true) {
+            await setDoc(doc(db, "users", userCredential.user.uid), { emailVerified: true }, { merge: true })
+          }
           if (userData.isActive === false) {
             await auth.signOut()
             const msg = t('accountPendingApproval')

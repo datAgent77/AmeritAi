@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Plus, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { KnowledgeList } from "@/components/knowledge/knowledge-list"
+import { useAuth } from "@/context/AuthContext"
 
 interface KnowledgeFileContentProps {
     userId: string
@@ -17,6 +18,7 @@ interface KnowledgeFileContentProps {
 export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
     const { t } = useLanguage()
     const { toast } = useToast()
+    const { user } = useAuth()
 
     const [file, setFile] = useState<File | null>(null)
     const [isAdding, setIsAdding] = useState(false)
@@ -36,6 +38,11 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
 
         setIsAdding(true)
         try {
+            if (!user) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+            const token = await user.getIdToken()
+
             const docId = crypto.randomUUID();
 
             const reader = new FileReader();
@@ -59,7 +66,10 @@ export function KnowledgeFileContent({ userId }: KnowledgeFileContentProps) {
 
             const response = await fetch("/api/knowledge", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             })
 

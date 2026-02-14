@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { KnowledgeList } from "@/components/knowledge/knowledge-list"
+import { useAuth } from "@/context/AuthContext"
 
 interface KnowledgeTextContentProps {
     userId: string
@@ -18,6 +19,7 @@ interface KnowledgeTextContentProps {
 export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
     const { t } = useLanguage()
     const { toast } = useToast()
+    const { user } = useAuth()
 
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
@@ -30,6 +32,11 @@ export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
 
         setIsAdding(true)
         try {
+            if (!user) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+            const token = await user.getIdToken()
+
             // Generate a random ID client-side (or let server do it, but we need it for API payload structure)
             const docId = crypto.randomUUID();
 
@@ -37,7 +44,10 @@ export function KnowledgeTextContent({ userId }: KnowledgeTextContentProps) {
 
             const response = await fetch("/api/knowledge", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             })
 

@@ -27,6 +27,9 @@ export interface AnalyticsSummary {
     totalConversations: number;
     totalMessages: number;
     averageMessagesPerConversation: number;
+    leadsCount: number;
+    appointmentsCount: number;
+    conversionRate: number;
     sentiment: SentimentStats;
     dailyStats: DailyStat[];
     automationRate: { automated: number; handoff: number };
@@ -49,6 +52,34 @@ const STOP_WORDS = new Set([
 const POSITIVE_WORDS = new Set(['teşekkür', 'harika', 'süper', 'muhteşem', 'iyi', 'güzel', 'thanks', 'great', 'good', 'amazing', 'perfect', 'love']);
 const NEGATIVE_WORDS = new Set(['kötü', 'berbat', 'iğrenç', 'rezalet', 'sorun', 'hata', 'bad', 'terrible', 'awful', 'hate', 'error', 'bug', 'fail']);
 
+function normalizeToDate(value: any): Date | null {
+    if (!value) return null;
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    if (typeof value?.toDate === 'function') {
+        const parsed = value.toDate();
+        if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) {
+            return parsed;
+        }
+    }
+
+    return null;
+}
+
+function isWithinRange(value: any, startDate: Date, endDate: Date): boolean {
+    const date = normalizeToDate(value);
+    if (!date) return false;
+    return date >= startDate && date <= endDate;
+}
+
 export async function getAnalyticsData(
     chatbotId: string,
     startDate: Date,
@@ -67,6 +98,14 @@ export async function getAnalyticsData(
             .where("createdAt", "<=", endDate.toISOString())
             .orderBy("createdAt", "asc")
             .get();
+        const [leadsSnapshot, appointmentsSnapshot] = await Promise.all([
+            adminDb.collection("leads")
+                .where("chatbotId", "==", chatbotId)
+                .get(),
+            adminDb.collection("appointments")
+                .where("chatbotId", "==", chatbotId)
+                .get()
+        ]);
 
         let totalConversations = 0;
         let totalMessages = 0;
@@ -169,11 +208,28 @@ export async function getAnalyticsData(
         // Assume half of total messages are bot responses.
         const botMessages = Math.floor(totalMessages / 2);
         const savedTimeHours = Math.round(botMessages * (2 / 60));
+        const leadsCount = leadsSnapshot.docs.filter((doc) => {
+            const data = doc.data();
+            return isWithinRange(data.createdAt, startDate, endDate);
+        }).length;
+        const appointmentsCount = appointmentsSnapshot.docs.filter((doc) => {
+            const data = doc.data();
+            if (String(data.status || "").toLowerCase() === "cancelled") {
+                return false;
+            }
+            return isWithinRange(data.createdAt, startDate, endDate);
+        }).length;
+        const conversionRate = totalConversations > 0
+            ? Math.round((leadsCount / totalConversations) * 1000) / 10
+            : 0;
 
         return {
             totalConversations,
             totalMessages,
             averageMessagesPerConversation: totalConversations > 0 ? Math.round(totalMessages / totalConversations) : 0,
+            leadsCount,
+            appointmentsCount,
+            conversionRate,
             sentiment,
             dailyStats: stats,
             automationRate: { automated: automatedCount, handoff: handoffCount },

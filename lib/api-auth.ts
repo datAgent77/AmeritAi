@@ -1,0 +1,78 @@
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+
+type AccessAllowed = {
+    ok: true;
+    callerUid: string;
+    isSuperAdmin: boolean;
+};
+
+type AccessDenied = {
+    ok: false;
+    response: Response;
+};
+
+type AccessResult = AccessAllowed | AccessDenied;
+
+function getBearerToken(req: Request): string | null {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+        return null;
+    }
+    return authHeader.split("Bearer ")[1];
+}
+
+/**
+ * Allows access when caller owns target resource or has SUPER_ADMIN privileges.
+ */
+export async function authorizeTargetAccess(req: Request, targetUserId: string): Promise<AccessResult> {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+
+    if (!adminAuth || !adminDb) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 })
+        };
+    }
+
+    const token = getBearerToken(req);
+    if (!token) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifyIdToken(token);
+    } catch {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+
+    const callerUid = decodedToken.uid;
+    if (callerUid === targetUserId) {
+        return { ok: true, callerUid, isSuperAdmin: false };
+    }
+
+    const callerDoc = await adminDb.collection("users").doc(callerUid).get();
+    const callerRole = callerDoc.data()?.role;
+    const decodedRole = (decodedToken as any).role;
+
+    const isSuperAdmin =
+        callerRole === "SUPER_ADMIN" ||
+        decodedRole === "SUPER_ADMIN" ||
+        decodedRole === "super_admin";
+
+    if (!isSuperAdmin) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
+        };
+    }
+
+    return { ok: true, callerUid, isSuperAdmin: true };
+}

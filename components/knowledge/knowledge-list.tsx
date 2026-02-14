@@ -11,6 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/context/AuthContext"
 import {
     Table,
     TableBody,
@@ -79,6 +80,7 @@ const getTypeLabel = (type: string | undefined) => {
 export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeListProps) {
     const { t } = useLanguage()
     const { toast } = useToast()
+    const { user } = useAuth()
     const [docs, setDocs] = useState<KnowledgeDoc[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [previewDoc, setPreviewDoc] = useState<KnowledgeDoc | null>(null)
@@ -91,10 +93,15 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
     const [isDeleting, setIsDeleting] = useState(false)
 
     const fetchDocs = useCallback(async () => {
-        if (!userId) return
+        if (!userId || !user) return
         setIsLoading(true)
         try {
-            const response = await fetch(`/api/knowledge?chatbotId=${userId}`)
+            const token = await user.getIdToken()
+            const response = await fetch(`/api/knowledge?chatbotId=${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
             if (!response.ok) {
                 throw new Error("Failed to fetch docs")
             }
@@ -105,7 +112,7 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
         } finally {
             setIsLoading(false)
         }
-    }, [userId])
+    }, [userId, user])
 
     useEffect(() => {
         fetchDocs()
@@ -132,9 +139,14 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
     }, [docs, filterType, searchQuery])
 
     const handleDelete = async (docId: string) => {
+        if (!user) return
         try {
+            const token = await user.getIdToken()
             await fetch(`/api/knowledge?docId=${docId}&chatbotId=${userId}`, {
-                method: "DELETE"
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             })
             toast({
                 title: t('deleted'),
@@ -152,12 +164,16 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
     }
 
     const handleBatchDelete = async () => {
-        if (selectedIds.length === 0) return
+        if (selectedIds.length === 0 || !user) return
         setIsDeleting(true)
         try {
+            const token = await user.getIdToken()
             for (const docId of selectedIds) {
                 await fetch(`/api/knowledge?docId=${docId}&chatbotId=${userId}`, {
-                    method: "DELETE"
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 })
             }
             toast({
@@ -185,12 +201,16 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
     }
 
     const handleSaveEdit = async () => {
-        if (!editDoc) return
+        if (!editDoc || !user) return
         setIsSaving(true)
         try {
+            const token = await user.getIdToken()
             const response = await fetch('/api/knowledge', {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     docId: editDoc.id,
                     chatbotId: userId,
@@ -461,4 +481,3 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
         </div>
     )
 }
-

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { KnowledgeList } from "@/components/knowledge/knowledge-list"
+import { useAuth } from "@/context/AuthContext"
 
 interface KnowledgeQaContentProps {
     userId: string
@@ -18,6 +19,7 @@ interface KnowledgeQaContentProps {
 export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
     const { t } = useLanguage()
     const { toast } = useToast()
+    const { user } = useAuth()
 
     const [question, setQuestion] = useState("")
     const [answer, setAnswer] = useState("")
@@ -29,6 +31,11 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
 
         setIsAdding(true)
         try {
+            if (!user) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+            const token = await user.getIdToken()
+
             const docId = crypto.randomUUID();
 
             const qaContent = `Q: ${question}\nA: ${answer}`;
@@ -38,7 +45,10 @@ export function KnowledgeQaContent({ userId }: KnowledgeQaContentProps) {
 
             const response = await fetch("/api/knowledge", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             })
 

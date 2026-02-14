@@ -179,11 +179,16 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
     useEffect(() => {
         const loadModuleStates = async () => {
-            if (!effectiveUserId) return
+            if (!effectiveUserId || !user) return
             setIsPageLoading(true)
             try {
                 // Fetch from API to avoid client-side permission issues
-                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`)
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
 
                 if (response.ok) {
                     const data = await response.json()
@@ -238,7 +243,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             }
         }
         loadModuleStates()
-    }, [effectiveUserId])
+    }, [effectiveUserId, user])
 
     const handleToggle = async (moduleId: ModuleId, checked: boolean) => {
         if (!effectiveUserId) return
@@ -968,4 +973,3 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         </div>
     )
 }
-

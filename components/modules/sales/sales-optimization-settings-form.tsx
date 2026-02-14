@@ -91,9 +91,14 @@ export function SalesOptimizationSettingsForm({ targetUserId, isSuperAdmin = fal
 
     useEffect(() => {
         const loadConfig = async () => {
-            if (!effectiveUserId) return
+            if (!effectiveUserId || !user) return
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`);
+                const token = await user.getIdToken();
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -107,7 +112,7 @@ export function SalesOptimizationSettingsForm({ targetUserId, isSuperAdmin = fal
             }
         }
         loadConfig()
-    }, [effectiveUserId])
+    }, [effectiveUserId, user])
 
     // Check localStorage for "shown" tags - Realtime (Only relevant for User View/Testing)
     useEffect(() => {

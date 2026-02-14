@@ -1,4 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -13,6 +15,9 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "Missing userId or botToken" }), { status: 400 });
         }
 
+        const access = await authorizeTargetAccess(req, userId);
+        if (!access.ok) return access.response;
+
         // 1. Verify Token and Get Bot Info from Telegram
         const telegramResponse = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
         const telegramData = await telegramResponse.json();
@@ -22,12 +27,20 @@ export async function POST(req: Request) {
         }
 
         const botName = telegramData.result.username;
+        const webhookSecret = crypto.randomBytes(32).toString("hex");
 
         // 2. Set Webhook
         const origin = new URL(req.url).origin;
         const webhookUrl = `${origin}/api/integrations/telegram/webhook?chatbotId=${userId}`;
 
-        const setWebhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook?url=${webhookUrl}`);
+        const setWebhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                url: webhookUrl,
+                secret_token: webhookSecret
+            })
+        });
         const setWebhookData = await setWebhookResponse.json();
 
         if (!setWebhookData.ok) {
@@ -44,6 +57,7 @@ export async function POST(req: Request) {
                 botToken: botToken,
                 botName: botName,
                 botId: telegramData.result.id,
+                webhookSecret,
                 connectedAt: new Date().toISOString()
             }
         }).catch(async (err) => {
@@ -56,6 +70,7 @@ export async function POST(req: Request) {
                             botToken: botToken,
                             botName: botName,
                             botId: telegramData.result.id,
+                            webhookSecret,
                             connectedAt: new Date().toISOString()
                         }
                     }

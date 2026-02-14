@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { motion, AnimatePresence } from "framer-motion"
 import { useCookieConsent, CookieConsent as ConsentType } from "@/context/CookieConsentContext"
-import { Shield, BarChart3, Megaphone, Settings2, Check, X, ChevronRight } from "lucide-react"
+import { Shield, BarChart3, Megaphone, Settings2, X } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function CookieConsent() {
+    const { language } = useLanguage()
     const { consent, acceptAll, declineAll, saveConsent } = useCookieConsent()
     const [isVisible, setIsVisible] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
@@ -41,6 +43,31 @@ export function CookieConsent() {
         setPreferences(prev => ({ ...prev, [key]: !prev[key] }))
     }
 
+    const isTr = language === "tr"
+    const ui = {
+        bannerTitle: isTr ? "Çerez Tercihleri" : "Cookie Preferences",
+        bannerLine1: isTr ? "Deneyiminizi iyileştirmek için çerezleri kullanıyoruz." : "We use cookies to improve your experience.",
+        bannerLine2: isTr ? "Kendi tercihlerinize göre özelleştirebilirsiniz." : "You can customize them based on your preferences.",
+        reject: isTr ? "Reddet" : "Reject",
+        acceptAll: isTr ? "Tümünü Kabul Et" : "Accept All",
+        settingsTitle: isTr ? "Çerez Ayarları" : "Cookie Settings",
+        settingsSubtitle: isTr ? "Hangi çerezlere izin vereceğinizi seçin." : "Choose which cookies you allow.",
+        necessaryTitle: isTr ? "Zorunlu Çerezler" : "Necessary Cookies",
+        necessaryDesc: isTr
+            ? "Sitenin çalışması için gereklidir (Güvenlik, dil ayarları vb.). Kapatılamaz."
+            : "Required for the site to function (security, language settings, etc.). Cannot be disabled.",
+        analyticsTitle: isTr ? "Analitik" : "Analytics",
+        analyticsDesc: isTr
+            ? "Sitemizi nasıl kullandığınızı analiz etmemize yardımcı olur (Google Analytics, Hotjar)."
+            : "Helps us understand how you use our site (Google Analytics, Hotjar).",
+        marketingTitle: isTr ? "Pazarlama" : "Marketing",
+        marketingDesc: isTr
+            ? "Size özel kampanyalar sunmamızı ve reklamları yönetmemizi sağlar."
+            : "Allows us to show personalized campaigns and manage advertising.",
+        rejectAll: isTr ? "Tümünü Reddet" : "Reject All",
+        save: isTr ? "Seçimleri Kaydet" : "Save Choices",
+    }
+
     return (
         <AnimatePresence>
             {/* 1. Main Banner */}
@@ -56,12 +83,12 @@ export function CookieConsent() {
                         <div className="text-sm text-gray-300 leading-relaxed">
                             <h3 className="text-white font-medium mb-1 flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-white" />
-                                Çerez Tercihleri
+                                {ui.bannerTitle}
                             </h3>
                             <p>
-                                Deneyiminizi iyileştirmek için çerezleri kullanıyoruz. 
+                                {ui.bannerLine1}
                                 <br />
-                                Kendi tercihlerinize göre özelleştirebilirsiniz.
+                                {ui.bannerLine2}
                             </p>
                         </div>
                         <div className="flex items-center justify-between pt-2">
@@ -70,10 +97,10 @@ export function CookieConsent() {
                             </Button>
                             <div className="flex gap-2">
                                 <Button variant="ghost" onClick={declineAll} className="bg-white/5 hover:bg-white/10 text-white border border-white/5 h-10 px-4 rounded-xl transition-all text-xs">
-                                    Reddet
+                                    {ui.reject}
                                 </Button>
                                 <Button onClick={acceptAll} className="bg-white hover:bg-gray-200 text-black font-bold h-10 px-6 rounded-xl shadow-[0_0_15px_rgba(255,255,255,0.1)] transition-all text-xs">
-                                    Tümünü Kabul Et
+                                    {ui.acceptAll}
                                 </Button>
                             </div>
                         </div>
@@ -100,8 +127,8 @@ export function CookieConsent() {
                         {/* Header */}
                         <div className="p-6 border-b border-white/5 flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl font-semibold text-white">Çerez Ayarları</h2>
-                                <p className="text-sm text-gray-400 mt-1">Hangi çerezlere izin vereceğinizi seçin.</p>
+                                <h2 className="text-xl font-semibold text-white">{ui.settingsTitle}</h2>
+                                <p className="text-sm text-gray-400 mt-1">{ui.settingsSubtitle}</p>
                             </div>
                             <Button variant="ghost" size="icon" onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white rounded-full">
                                 <X className="w-5 h-5" />
@@ -118,9 +145,9 @@ export function CookieConsent() {
                                         <Shield className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-medium">Zorunlu Çerezler</h4>
+                                        <h4 className="text-white font-medium">{ui.necessaryTitle}</h4>
                                         <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                                            Sitenin çalışması için gereklidir (Güvenlik, dil ayarları vb.). Kapatılamaz.
+                                            {ui.necessaryDesc}
                                         </p>
                                     </div>
                                 </div>
@@ -134,9 +161,9 @@ export function CookieConsent() {
                                         <BarChart3 className="w-5 h-5 text-gray-300" />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-medium">Analitik</h4>
+                                        <h4 className="text-white font-medium">{ui.analyticsTitle}</h4>
                                         <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                                            Sitemizi nasıl kullandığınızı analiz etmemize yardımcı olur (Google Analytics, Hotjar).
+                                            {ui.analyticsDesc}
                                         </p>
                                     </div>
                                 </div>
@@ -154,9 +181,9 @@ export function CookieConsent() {
                                         <Megaphone className="w-5 h-5 text-gray-300" />
                                     </div>
                                     <div>
-                                        <h4 className="text-white font-medium">Pazarlama</h4>
+                                        <h4 className="text-white font-medium">{ui.marketingTitle}</h4>
                                         <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                                            Size özel kampanyalar sunmamızı ve reklamları yönetmemizi sağlar.
+                                            {ui.marketingDesc}
                                         </p>
                                     </div>
                                 </div>
@@ -171,10 +198,10 @@ export function CookieConsent() {
                         {/* Footer */}
                         <div className="p-6 border-t border-white/5 bg-white/5 flex justify-end gap-3">
                             <Button variant="ghost" onClick={declineAll} className="text-white hover:bg-white/10">
-                                Tümünü Reddet
+                                {ui.rejectAll}
                             </Button>
                             <Button onClick={handleSavePreferences} className="bg-white hover:bg-gray-200 text-black font-bold px-8">
-                                Seçimleri Kaydet
+                                {ui.save}
                             </Button>
                         </div>
                     </motion.div>

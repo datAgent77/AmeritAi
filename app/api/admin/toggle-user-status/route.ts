@@ -23,7 +23,11 @@ export async function POST(req: Request) {
         // Check Super Admin
         const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
         const userData = userDoc.data();
-        const isSuperAdmin = (userData?.role === 'SUPER_ADMIN' || decodedToken.email === 'yasincelenkk@gmail.com');
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin =
+            userData?.role === 'SUPER_ADMIN' ||
+            tokenRole === 'SUPER_ADMIN' ||
+            tokenRole === 'super_admin';
 
         if (!isSuperAdmin) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });

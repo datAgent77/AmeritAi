@@ -213,7 +213,22 @@ export function useChatCore({
             })
 
             clearTimeout(timeoutId)
-            if (!response.ok) throw new Error('Chat API error')
+            if (!response.ok) {
+                let serverMessage = `Chat API error (${response.status})`
+                try {
+                    const payload = await response.json()
+                    if (typeof payload?.message === 'string' && payload.message.trim()) {
+                        serverMessage = payload.message
+                    } else if (typeof payload?.details === 'string' && payload.details.trim()) {
+                        serverMessage = payload.details
+                    } else if (typeof payload?.error === 'string' && payload.error.trim()) {
+                        serverMessage = payload.error
+                    }
+                } catch {
+                    // Keep generic message when body isn't JSON
+                }
+                throw new Error(serverMessage)
+            }
 
             setChatStatus('streaming')
             const reader = response.body?.getReader()
@@ -280,10 +295,20 @@ export function useChatCore({
                 }
                 
                 // Add System Error Message
+                const runtimeError = typeof error?.message === 'string' ? error.message.trim() : ''
+                const isTurkishUi = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('tr')
+                const defaultFallbackMessage = isTurkishUi
+                    ? "⚠️ Bir bağlantı hatası oluştu. Lütfen tekrar deneyin."
+                    : "⚠️ A connection error occurred. Please try again."
+                const fallbackMessage = settings.errorMessage || defaultFallbackMessage
+                const safeErrorMessage = runtimeError && !runtimeError.toLowerCase().includes("chat api error")
+                    ? runtimeError
+                    : fallbackMessage
+
                 const errorMsg = {
                     id: 'system-error-' + Date.now(),
                     role: 'assistant', // Use assistant role so it shows up in bubble
-                    content: settings.errorMessage || "⚠️ Bir bağlantı hatası oluştu. Lütfen tekrar deneyin.", // Fallback if setting missing
+                    content: safeErrorMessage,
                     createdAt: new Date(),
                     isError: true // We can use this for styling if needed
                 }

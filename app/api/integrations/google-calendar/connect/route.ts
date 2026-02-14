@@ -1,4 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { createOAuthState } from "@/lib/oauth-state";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -13,6 +15,9 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "Missing userId" }), { status: 400 });
         }
 
+        const access = await authorizeTargetAccess(req, userId);
+        if (!access.ok) return access.response;
+
         // Google OAuth2 configuration
         const clientId = process.env.GOOGLE_CLIENT_ID;
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -25,8 +30,11 @@ export async function POST(req: Request) {
             }), { status: 500 });
         }
 
-        // Generate state token for security
-        const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+        // Use one-time state token stored server-side to prevent tampering/replay.
+        const state = await createOAuthState({
+            provider: "integration-google-calendar",
+            userId
+        });
 
         // Build OAuth URL
         const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { createUserWithEmailAndPassword, User } from "firebase/auth"
+import { createUserWithEmailAndPassword, sendEmailVerification, User } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -109,7 +109,10 @@ export default function SignUpForm() {
         // Send admin notification
         fetch('/api/admin/notify-signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 email: user.email,
                 name: fullName || user.displayName,
@@ -126,6 +129,7 @@ export default function SignUpForm() {
 
         try {
             let user = socialUser;
+            let requiresEmailVerification = false;
 
             if (user) {
                 // Social auth user - Register on server
@@ -141,14 +145,27 @@ export default function SignUpForm() {
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password)
                 user = userCredential.user;
+                await sendEmailVerification(user, {
+                    url: `${window.location.origin}/login`
+                });
+                requiresEmailVerification = true;
                 await registerUserOnServer(user, { authProvider: 'email' });
                 await auth.signOut()
             }
 
-            toast({
-                title: t('success'),
-                description: t('accountCreatedRedirecting') || "Hesabınız oluşturuldu, yönlendiriliyorsunuz...",
-            })
+            if (requiresEmailVerification) {
+                toast({
+                    title: language === 'tr' ? "Doğrulama e-postası gönderildi" : "Verification email sent",
+                    description: language === 'tr'
+                        ? "Giriş yapmadan önce e-posta adresinizi doğrulayın."
+                        : "Please verify your email address before logging in.",
+                })
+            } else {
+                toast({
+                    title: t('success'),
+                    description: t('accountCreatedRedirecting') || "Hesabınız oluşturuldu, yönlendiriliyorsunuz...",
+                })
+            }
 
             // Track Signup Event
             trackEvent({
@@ -165,8 +182,12 @@ export default function SignUpForm() {
                 })
             }
 
-            // Redirect to Onboarding
-            router.push("/onboarding")
+            if (requiresEmailVerification) {
+                router.push("/login?verifyEmail=1")
+            } else {
+                // Redirect to Onboarding
+                router.push("/onboarding")
+            }
 
         } catch (error: any) {
             console.error("Sign up error:", error)
@@ -304,7 +325,7 @@ export default function SignUpForm() {
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="ornek@email.com"
+                                        placeholder={language === 'tr' ? 'ornek@email.com' : 'john@example.com'}
                                         required
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}

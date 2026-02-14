@@ -1,57 +1,68 @@
 "use client"
 
 import { useLanguage } from "@/context/LanguageContext"
+import { Code2, Link2, MessageSquare } from "lucide-react"
 import Image from "next/image"
-import { Code2, Link2 } from "lucide-react"
 
 export function IntegrationCloud() {
     const { language } = useLanguage()
 
-    // Real brand integrations with official logos
+    // Landing section mirrors currently active integrations in console.
     const integrations = [
-        { 
-            name: 'WhatsApp Business', 
-            logo: '/integrations/whatsapp.svg',
-            bgColor: 'bg-[#25D366]',
-            isSvg: true
-        },
-        { 
-            name: 'Telegram', 
-            logo: '/integrations/telegram.svg',
-            bgColor: 'bg-[#0088cc]',
-            isSvg: true
-        },
-        { 
-            name: 'Slack', 
-            logo: '/integrations/slack.svg',
-            bgColor: 'bg-[#4A154B]',
-            isSvg: true
-        },
-        { 
-            name: 'Google Calendar', 
-            logo: '/integrations/google-calendar.svg',
-            bgColor: 'bg-[#4285F4]',
-            isSvg: true
-        },
-        { 
-            name: 'WordPress', 
-            logo: '/integrations/wordpress.svg',
-            bgColor: 'bg-[#21759B]',
+        {
+            name: "WhatsApp Business",
+            logo: "/integrations/whatsapp.svg",
+            bgColor: "bg-[#25D366]",
             isSvg: true,
-            noInvert: true
         },
-        { 
-            name: 'Web Widget', 
+        {
+            name: "Telegram",
+            logo: "/integrations/telegram.svg",
+            bgColor: "bg-[#0088cc]",
+            isSvg: true,
+        },
+        {
+            name: "Google Calendar",
+            logo: "/integrations/google-calendar.svg",
+            bgColor: "bg-[#4285F4]",
+            isSvg: true,
+        },
+        {
+            name: language === "tr" ? "Outlook Takvim" : "Outlook Calendar",
+            logo: "/integrations/outlook.svg",
+            bgColor: "bg-[#0072C6]",
+            isSvg: true,
+        },
+        {
+            name: "Shopify",
+            logo: "/integrations/shopify.svg",
+            bgColor: "bg-[#7AB55C]",
+            isSvg: true,
+        },
+        {
+            name: "WordPress",
+            logo: "/integrations/wordpress.svg",
+            bgColor: "bg-[#21759B]",
+            isSvg: true,
+        },
+        {
+            name: language === "tr" ? "Web Sitesi" : "Web Widget",
+            icon: MessageSquare,
+            bgColor: "bg-indigo-600",
+            isSvg: false,
+        },
+        {
+            name: language === "tr" ? "Iframe Gömme" : "Iframe Embed",
             icon: Code2,
-            bgColor: 'bg-indigo-600',
-            isSvg: false
+            bgColor: "bg-violet-600",
+            isSvg: false,
         },
-        { 
-            name: 'Direct Link', 
+        {
+            name: language === "tr" ? "Doğrudan Bağlantı" : "Direct Link",
             icon: Link2,
-            bgColor: 'bg-emerald-600',
-            isSvg: false
-        }
+            bgColor: "bg-emerald-600",
+            isSvg: false,
+        },
     ]
 
     return (
@@ -75,11 +86,13 @@ export function IntegrationCloud() {
                             <div key={i} className="flex flex-col items-center gap-3 hover:scale-110 transition-all cursor-default group">
                                 <div className={`w-20 h-20 rounded-2xl ${item.bgColor} flex items-center justify-center hover:shadow-2xl transition-all border border-white/10 group-hover:border-white/20`}>
                                     {item.isSvg ? (
-                                        <img 
-                                            src={item.logo} 
+                                        <Image
+                                            src={item.logo}
                                             alt={item.name}
+                                            width={48}
+                                            height={48}
                                             className="w-12 h-12 object-contain"
-                                            style={item.noInvert ? {} : { filter: 'brightness(0) invert(1)' }}
+                                            style={{ filter: "brightness(0) invert(1)" }}
                                         />
                                     ) : (
                                         IconComponent && <IconComponent className="w-10 h-10 text-white" />

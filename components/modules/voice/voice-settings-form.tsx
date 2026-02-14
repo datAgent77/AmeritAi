@@ -31,10 +31,15 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
 
     useEffect(() => {
         const fetchSettings = async () => {
-            if (!targetUserId) return
+            if (!targetUserId || !user) return
             setIsLoading(true)
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${targetUserId}`);
+                const token = await user.getIdToken();
+                const response = await fetch(`/api/console/settings?chatbotId=${targetUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 

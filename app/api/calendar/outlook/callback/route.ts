@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { consumeOAuthState } from "@/lib/oauth-state";
 
 export const runtime = 'nodejs'
 
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url)
         const code = searchParams.get('code')
-        const state = searchParams.get('state') // chatbotId
+        const state = searchParams.get('state')
         const error = searchParams.get('error')
 
         if (error) {
@@ -23,6 +24,12 @@ export async function GET(req: Request) {
 
         if (!code || !state) {
             return NextResponse.redirect(new URL('/console/chatbot/appointments?error=missing_params', req.url))
+        }
+
+        const stateData = await consumeOAuthState(state, 'calendar-outlook');
+        const chatbotId = stateData?.userId;
+        if (!chatbotId) {
+            return NextResponse.redirect(new URL('/console/chatbot/appointments?error=invalid_state', req.url))
         }
 
         if (!OUTLOOK_CLIENT_ID || !OUTLOOK_CLIENT_SECRET) {
@@ -55,7 +62,7 @@ export async function GET(req: Request) {
             return NextResponse.redirect(new URL('/console/chatbot/appointments?error=db_error', req.url))
         }
 
-        await adminDb.collection('calendar_tokens').doc(state).set({
+        await adminDb.collection('calendar_tokens').doc(chatbotId).set({
             outlook: {
                 accessToken: tokens.access_token,
                 refreshToken: tokens.refresh_token,
@@ -65,11 +72,11 @@ export async function GET(req: Request) {
         }, { merge: true })
 
         // Update appointments_settings to mark as connected
-        await adminDb.collection('appointments_settings').doc(state).set({
+        await adminDb.collection('appointments_settings').doc(chatbotId).set({
             outlookCalendarConnected: true
         }, { merge: true })
 
-        console.log('Outlook Calendar connected for chatbot:', state)
+        console.log('Outlook Calendar connected for chatbot:', chatbotId)
 
         // Redirect back to appointments page with success
         return NextResponse.redirect(new URL('/console/chatbot/appointments?tab=integrations&success=outlook', req.url))

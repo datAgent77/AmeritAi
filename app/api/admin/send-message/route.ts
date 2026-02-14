@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 export async function POST(req: Request) {
     try {
@@ -12,6 +13,11 @@ export async function POST(req: Request) {
 
         if (!sessionId || !chatbotId || !content) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
         }
 
         console.log(`Admin Message: Sending to ${sessionId} for bot ${chatbotId}`);
@@ -28,18 +34,17 @@ export async function POST(req: Request) {
             isHuman: true
         };
 
-        if (sessionSnap.exists) {
-            const currentMessages = sessionSnap.data()?.messages || [];
-            currentMessages.push(newMessage);
-            await sessionRef.update({ messages: currentMessages });
-        } else {
-            console.warn("Admin Message: Session not found, creating new one (rare case)");
-            await sessionRef.set({
-                chatbotId,
-                createdAt: new Date().toISOString(),
-                messages: [newMessage]
-            });
+        if (!sessionSnap.exists) {
+            return NextResponse.json({ error: "Session not found" }, { status: 404 });
         }
+
+        if (sessionSnap.data()?.chatbotId !== chatbotId) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const currentMessages = sessionSnap.data()?.messages || [];
+        currentMessages.push(newMessage);
+        await sessionRef.update({ messages: currentMessages });
 
         // 2. Check if Telegram and Dispatch
         if (sessionId.startsWith("telegram-")) {

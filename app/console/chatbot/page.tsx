@@ -29,7 +29,10 @@ export default function ChatbotConsolePage() {
 
         const fetchData = async () => {
             try {
-                const userDoc = await getDoc(doc(db, "users", user.uid))
+                const [userDoc, idToken] = await Promise.all([
+                    getDoc(doc(db, "users", user.uid)),
+                    user.getIdToken()
+                ])
                 const data = userDoc.data()
 
                 if (!data) {
@@ -54,10 +57,27 @@ export default function ChatbotConsolePage() {
 
                 setUserContext(context)
 
-                // Check if dashboard has conversations/data
-                // TODO: Implement actual data check (e.g., query conversations collection)
-                // For now, assume has data
-                setHasData(true)
+                // Check if dashboard has conversation data
+                try {
+                    const response = await fetch(`/api/chat-sessions?chatbotId=${encodeURIComponent(user.uid)}&limit=1`, {
+                        headers: {
+                            Authorization: `Bearer ${idToken}`
+                        }
+                    })
+
+                    if (response.ok) {
+                        const payload = await response.json()
+                        const sessions = Array.isArray(payload?.sessions) ? payload.sessions : []
+                        setHasData(sessions.length > 0)
+                    } else {
+                        // Avoid false empty-state when API is temporarily unavailable
+                        setHasData(true)
+                    }
+                } catch (error) {
+                    console.error("Error checking dashboard conversation data:", error)
+                    setHasData(true)
+                }
+
                 setIsLoading(false)
             } catch (error) {
                 console.error("Error fetching dashboard data:", error)

@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server"
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { createOAuthState } from "@/lib/oauth-state";
 
 export const runtime = 'nodejs'
 
@@ -25,6 +27,15 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'chatbotId is required' }, { status: 400 })
         }
 
+        const access = await authorizeTargetAccess(req, chatbotId);
+        if (!access.ok) {
+            const status = access.response.status;
+            return NextResponse.json(
+                { error: status === 403 ? 'Forbidden' : 'Unauthorized' },
+                { status }
+            );
+        }
+
         if (!OUTLOOK_CLIENT_ID) {
             return NextResponse.json({
                 error: 'Outlook Calendar integration is not configured. Please add OUTLOOK_CLIENT_ID to environment variables.'
@@ -38,7 +49,11 @@ export async function GET(req: Request) {
         authUrl.searchParams.set('response_type', 'code')
         authUrl.searchParams.set('scope', SCOPES)
         authUrl.searchParams.set('response_mode', 'query')
-        authUrl.searchParams.set('state', chatbotId) // Pass chatbotId to callback
+        const state = await createOAuthState({
+            provider: 'calendar-outlook',
+            userId: chatbotId
+        });
+        authUrl.searchParams.set('state', state)
 
         return NextResponse.json({ authUrl: authUrl.toString() })
     } catch (error: any) {

@@ -1,5 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { redirect } from "next/navigation";
+import { consumeOAuthState } from "@/lib/oauth-state";
 
 export const dynamic = 'force-dynamic';
 
@@ -23,9 +24,8 @@ export async function GET(req: Request) {
             return new Response("Missing code or state", { status: 400 });
         }
 
-        // Decode state to get userId
-        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
-        const userId = stateData.userId;
+        const stateData = await consumeOAuthState(state, "integration-outlook-calendar");
+        const userId = stateData?.userId;
 
         if (!userId) {
             return new Response("Invalid state", { status: 400 });

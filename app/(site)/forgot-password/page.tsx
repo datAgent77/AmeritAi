@@ -130,7 +130,7 @@ export default function ForgotPasswordPage() {
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="ornek@email.com"
+                                placeholder={language === 'tr' ? 'ornek@email.com' : 'john@example.com'}
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}

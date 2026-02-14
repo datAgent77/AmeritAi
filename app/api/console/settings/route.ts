@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 export async function POST(req: Request) {
     try {
@@ -21,36 +22,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
         }
 
-        // --- SECURITY CHECK ---
-        const authHeader = req.headers.get("Authorization");
-        console.log("[Settings API] Auth Header present:", !!authHeader)
-
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized: Missing token" }, { status: 401 });
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
         }
-
-        const idToken = authHeader.split("Bearer ")[1];
-        let decodedToken;
-
-        try {
-            decodedToken = await adminAuth.verifyIdToken(idToken);
-            console.log("[Settings API] Token verified for:", decodedToken.email)
-        } catch (authError) {
-            console.error("[Settings API] Token verification failed:", authError);
-            return NextResponse.json({ error: "Unauthorized: Invalid token" }, { status: 401 });
-        }
-
-        // Check permissions:
-        // Allow if user is modifying their OWN data
-        const isOwner = decodedToken.uid === chatbotId;
-
-        // Allow if user is Super Admin (check by email for now, or custom claim if set)
-        const isSuperAdmin = decodedToken.email === 'yasincelenkk@gmail.com' || decodedToken.role === 'super_admin';
-
-        if (!isOwner && !isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden: You can only modify your own settings" }, { status: 403 });
-        }
-        // ----------------------
 
         const updates = [];
 
@@ -88,6 +63,11 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
         }
 
         const chatbotDocPromise = adminDb.collection("chatbots").doc(chatbotId).get();

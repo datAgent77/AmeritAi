@@ -36,10 +36,15 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
 
     useEffect(() => {
         const fetchSettings = async () => {
-            if (!effectiveUserId) return
+            if (!effectiveUserId || !user) return
             setIsLoading(true)
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`);
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -57,15 +62,19 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
             }
         }
         fetchSettings()
-    }, [effectiveUserId])
+    }, [effectiveUserId, user])
 
     const handleSave = async () => {
-        if (!effectiveUserId) return
+        if (!effectiveUserId || !user) return
         setIsSaving(true)
         try {
+            const token = await user.getIdToken()
             const response = await fetch("/api/console/settings", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     chatbotId: effectiveUserId,
                     chatbotSettings: {

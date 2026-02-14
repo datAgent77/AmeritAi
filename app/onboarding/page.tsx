@@ -301,9 +301,13 @@ export default function OnboardingPage() {
         if (fullCrawl && discoveredUrls.length === 0) {
             setIsScanning(true)
             try {
+                const token = await getToken()
                 const response = await fetch("/api/admin/sitemap", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({ url: formattedUrl })
                 })
                 if (!response.ok) {
@@ -360,7 +364,10 @@ export default function OnboardingPage() {
                         const docId = crypto.randomUUID()
                         const response = await fetch("/api/knowledge", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`
+                            },
                             body: JSON.stringify({
                                 chatbotId: user?.uid,
                                 docId,
@@ -397,7 +404,10 @@ export default function OnboardingPage() {
                     const docId = crypto.randomUUID()
                     await fetch("/api/knowledge", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`
+                        },
                         body: JSON.stringify({
                             chatbotId: user?.uid,
                             docId,

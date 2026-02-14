@@ -39,9 +39,12 @@ export async function GET(request: Request) {
         }
         const userData = userDoc.data();
 
-        // Hardcoded override for the primary admin as a safety measure
         const requesterEmail = decodedToken.email;
-        const isSuperAdmin = (userData?.role === 'SUPER_ADMIN' || requesterEmail === 'yasincelenkk@gmail.com');
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin =
+            userData?.role === 'SUPER_ADMIN' ||
+            tokenRole === 'SUPER_ADMIN' ||
+            tokenRole === 'super_admin';
 
         console.log(`[Stats API] Requester: ${requesterEmail}, Role: ${userData?.role}, isSuperAdmin: ${isSuperAdmin}`);
 

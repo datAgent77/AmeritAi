@@ -24,7 +24,12 @@ export default function AnalyticsPage() {
         const fetchAnalytics = async () => {
             if (!user) return
             try {
-                const res = await fetch(`/api/analytics?chatbotId=${user.uid}`)
+                const idToken = await user.getIdToken()
+                const res = await fetch(`/api/analytics?chatbotId=${user.uid}`, {
+                    headers: {
+                        Authorization: `Bearer ${idToken}`
+                    }
+                })
                 if (res.ok) {
                     const jsonData = await res.json()
                     setData(jsonData)

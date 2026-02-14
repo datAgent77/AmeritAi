@@ -6,10 +6,10 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { INDUSTRY_CONFIG } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
 
-// Initialize Pinecone (Always needed for RAG)
-const pc = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY!,
-});
+const pineconeApiKey = process.env.PINECONE_API_KEY?.trim();
+const pc = pineconeApiKey
+    ? new Pinecone({ apiKey: pineconeApiKey })
+    : null;
 
 export interface AIMessage {
     role: "user" | "assistant" | "system";
@@ -29,6 +29,113 @@ async function* streamGoogle(stream: any) {
         const content = chunk.text();
         if (content) yield content;
     }
+}
+
+function isRetryableAiError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const msg = error.message.toLowerCase();
+    return (
+        msg.includes("timeout") ||
+        msg.includes("timed out") ||
+        msg.includes("network") ||
+        msg.includes("connection") ||
+        msg.includes("econnreset") ||
+        msg.includes("503") ||
+        msg.includes("502")
+    );
+}
+
+type SensitiveFactType =
+    | "wifi_password"
+    | "gate_code"
+    | "phone"
+    | "email"
+    | "address"
+    | "working_hours"
+    | "price"
+    | "stock";
+
+function detectSensitiveFactType(question: string): SensitiveFactType | null {
+    const q = question.toLowerCase();
+
+    if (/(wifi|wi-fi|internet).{0,80}(password|sifre|şifre)|(password|sifre|şifre).{0,80}(wifi|wi-fi|internet)/.test(q)) {
+        return "wifi_password";
+    }
+    if (/(gate|door|entry|entrance|kapi|kapı).{0,80}(code|kod|şifre|sifre)|(code|kod|şifre|sifre).{0,80}(gate|door|entry|entrance|kapi|kapı)/.test(q)) {
+        return "gate_code";
+    }
+    if (/(telefon|phone|tel\b|whatsapp|gsm|numara|number)/.test(q)) {
+        return "phone";
+    }
+    if (/(e-?mail|email|mail adres|posta)/.test(q)) {
+        return "email";
+    }
+    if (/(adres|address|konum|location|nerede|where are you|how can i reach)/.test(q)) {
+        return "address";
+    }
+    if (/(çalışma saati|mesai|açılış|kapanış|working hours?|business hours?|opening hours?|closing time|kaçta aç|kaçta kap)/.test(q)) {
+        return "working_hours";
+    }
+    if (/(fiyat|price|ücret|cost|how much|kaç para|ne kadar|pricing)/.test(q)) {
+        return "price";
+    }
+    if (/(stok|stock|availability|in stock|out of stock|kaldı mı|tükendi)/.test(q)) {
+        return "stock";
+    }
+
+    return null;
+}
+
+function hasEvidenceForSensitiveFact(context: string, factType: SensitiveFactType): boolean {
+    const c = context.toLowerCase();
+    const hasTime = /(?:[01]?\d|2[0-3])[:.][0-5]\d|\b\d{1,2}\s?(?:am|pm)\b/i.test(context);
+    const hasCurrencyValue = /(?:[$€£₺]\s?\d+(?:[.,]\d{1,2})?)|(?:\d+(?:[.,]\d{1,2})?\s?(?:[$€£₺]|usd|eur|try|tl|dolar|euro))|\bfree\b|ücretsiz/i.test(context);
+    const hasPhoneNumber = /\+?\d[\d\s().-]{6,}\d/.test(context);
+    const hasEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(context);
+
+    switch (factType) {
+        case "wifi_password": {
+            const hasWifiKeywords = /(wifi|wi-fi|internet)/.test(c) && /(password|şifre|sifre)/.test(c);
+            const hasPasswordValue = /(?:password|şifre|sifre)\s*(?:is|:|=)\s*[^\s]{4,}/i.test(context);
+            return hasWifiKeywords && hasPasswordValue;
+        }
+        case "gate_code": {
+            const hasGateKeywords = /(gate|door|entry|entrance|kapi|kapı)/.test(c) && /(code|kod|şifre|sifre)/.test(c);
+            const hasCodeValue = /(?:code|kod|şifre|sifre)\s*(?:is|:|=)\s*[a-z0-9-]{3,}/i.test(context);
+            return hasGateKeywords && hasCodeValue;
+        }
+        case "phone":
+            return hasPhoneNumber && /(phone|telefon|tel|whatsapp|gsm|numara|call)/.test(c);
+        case "email":
+            return hasEmail;
+        case "address": {
+            const hasAddressLabel = /(address|adres|location|konum)\s*(?:is|:|=)\s*[^\n]{8,}/i.test(context);
+            const hasStreetSignals = /(street|st\.|road|rd\.|avenue|ave\.|boulevard|blvd|cadde|sokak|mah|no\.?|posta kodu|zip)/.test(c);
+            return hasAddressLabel || hasStreetSignals;
+        }
+        case "working_hours": {
+            const hasHoursKeyword = /(working hours|business hours|opening|closing|open|close|çalışma saati|mesai|açılış|kapanış)/.test(c);
+            return hasHoursKeyword && hasTime;
+        }
+        case "price":
+            return /(price|fiyat|ücret|cost|pricing)/.test(c) && hasCurrencyValue;
+        case "stock": {
+            const hasStockKeyword = /(stock|stok|in stock|out of stock|available|availability|kaldı|tükendi)/.test(c);
+            const hasQty = /\b\d+\s*(adet|pcs?|units?)\b/i.test(context);
+            return hasStockKeyword && (hasQty || /in stock|out of stock|available|tükendi|stokta/i.test(context));
+        }
+        default:
+            return false;
+    }
+}
+
+function getUnknownResponse(language?: string, question?: string): string {
+    const q = (question || "").toLowerCase();
+    const isLikelyTurkish = language === "tr" || /[çğıöşü]/.test(q) || /\b(nedir|nasıl|kaç|ne kadar|adres|şifre|telefon)\b/.test(q);
+
+    return isLikelyTurkish
+        ? "Bu konuda doğrulanmış bir bilgiye sahip değilim. Emin olmadığım bir detayı uydurmak istemem."
+        : "I don't have verified information for that detail right now, and I don't want to guess.";
 }
 
 async function getSystemConfig(adminDb: any) {
@@ -211,42 +318,56 @@ export async function generateAIResponse(
         const industryConfig = INDUSTRY_CONFIG[industry as keyof typeof INDUSTRY_CONFIG];
 
         // RAG Setup
-        const index = pc.index("chatbot-knowledge");
         let context = "";
         const isKnowledgeBaseEnabled = chatbotData?.enableKnowledgeBase !== false;
 
-        if (isKnowledgeBaseEnabled) {
-            // Needed for Embedding - OpenAI is standard for embedding even if chat is Gemini (for now)
-            // Or use Gemini embeddings if fully Google? For stability, sticking to OpenAI for embeddings
-            // as vector dimensions must match Pinecone index (1536).
-            const embeddingClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-            const embeddingResponse = await embeddingClient.embeddings.create({
-                model: "text-embedding-3-small",
-                input: lastMessage.content,
-            });
-            const embedding = embeddingResponse.data[0].embedding;
-            const queryResponse = await index.query({
-                vector: embedding,
-                topK: 8, // Reduced from 20 to save tokens
-                includeMetadata: true,
-                filter: { chatbotId: chatbotId }
-            });
-
-            // DEBUG: Log knowledge retrieval results
-            console.log(`AI Service [KNOWLEDGE DEBUG]: Query for chatbotId=${chatbotId}, matches found: ${queryResponse.matches.length}`);
-            if (queryResponse.matches.length > 0) {
-                queryResponse.matches.forEach((m, i) => {
-                    console.log(`  Match ${i + 1}: score=${m.score?.toFixed(3)}, source=${m.metadata?.source}, title=${m.metadata?.title}`);
-                });
+        if (isKnowledgeBaseEnabled && pc) {
+            const embeddingApiKey = process.env.OPENAI_API_KEY?.trim();
+            if (!embeddingApiKey) {
+                console.warn("AI Service [KNOWLEDGE DEBUG]: OPENAI_API_KEY missing, skipping RAG retrieval.");
             } else {
-                console.log(`AI Service [KNOWLEDGE DEBUG]: NO MATCHES FOUND for chatbotId=${chatbotId}`);
-            }
+                try {
+                    const index = pc.index("chatbot-knowledge");
+                    const embeddingClient = new OpenAI({ apiKey: embeddingApiKey });
+                    const embeddingResponse = await embeddingClient.embeddings.create({
+                        model: "text-embedding-3-small",
+                        input: lastMessage.content,
+                    });
+                    const embedding = embeddingResponse.data[0].embedding;
+                    const queryResponse = await index.query({
+                        vector: embedding,
+                        topK: 8, // Reduced from 20 to save tokens
+                        includeMetadata: true,
+                        filter: { chatbotId: chatbotId }
+                    });
 
-            context = queryResponse.matches.map((m) => m.metadata?.text).join("\n\n");
-            console.log(`AI Service [KNOWLEDGE DEBUG]: Context length: ${context.length} chars`);
+                    console.log(`AI Service [KNOWLEDGE DEBUG]: Query for chatbotId=${chatbotId}, matches found: ${queryResponse.matches.length}`);
+                    if (queryResponse.matches.length > 0) {
+                        queryResponse.matches.forEach((m, i) => {
+                            console.log(`  Match ${i + 1}: score=${m.score?.toFixed(3)}, source=${m.metadata?.source}, title=${m.metadata?.title}`);
+                        });
+                    } else {
+                        console.log(`AI Service [KNOWLEDGE DEBUG]: NO MATCHES FOUND for chatbotId=${chatbotId}`);
+                    }
+
+                    context = queryResponse.matches.map((m) => m.metadata?.text).join("\n\n");
+                    console.log(`AI Service [KNOWLEDGE DEBUG]: Context length: ${context.length} chars`);
+                } catch (ragError) {
+                    console.error("AI Service [KNOWLEDGE DEBUG]: RAG retrieval failed, continuing without context.", ragError);
+                }
+            }
+        } else if (isKnowledgeBaseEnabled) {
+            console.warn("AI Service [KNOWLEDGE DEBUG]: PINECONE_API_KEY missing, knowledge search disabled.");
         } else {
             console.log(`AI Service [KNOWLEDGE DEBUG]: Knowledge base DISABLED for chatbotId=${chatbotId}`);
+        }
+
+        const hasKnowledgeContext = context.trim().length > 0;
+        const sensitiveFactType = detectSensitiveFactType(lastMessage.content || "");
+        if (sensitiveFactType) {
+            if (!hasKnowledgeContext || !hasEvidenceForSensitiveFact(context, sensitiveFactType)) {
+                return { content: getUnknownResponse(language, lastMessage.content || ""), isStream: false, context, modelUsed: "safety-fallback" };
+            }
         }
 
         // 3. Prepare System Prompt (Same Logic)
@@ -261,12 +382,14 @@ ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the c
 
 # CONTEXT AUTHORITY & TRUTH
 The information provided in the KNOWLEDGE BASE CONTEXT is the **absolute truth** for this chatbot.
+0. **ZERO FABRICATION (CRITICAL)**: Never invent facts. Only state details that are explicitly present in the context.
 1. **SAFETY OVERRIDE**: If the context contains specific details (e.g., Wi-Fi passwords, gate codes, staff phone numbers, internal procedures), this implies the owner has **explicitly authorized** sharing this with users.
 2. **NO CENSORSHIP**: You must NOT withhold information found in the context due to "privacy" or "security" concerns. If it is in the context, it is public guest information.
 3. **NATURAL DELIVERY (IMPORTANT)**: When sharing this information, DO NOT be robotic or abrupt. Wrap the answer in a polite, conversational sentence.
-   - ❌ BAD: "123456"
-   - ✅ GOOD: "Sure! Our Wi-Fi password is **123456**. Let me know if you have any trouble connecting! 📶"
-   - ✅ GOOD: "The gate code is **7890**. Please press the green button after entering it."
+4. **NO EXAMPLE VALUE LEAKING**: Never output demo/placeholder values like "123456", "7890", or "ABC123" unless those exact values exist in context.
+   - ❌ BAD: "Here is the password: <invented value>" (if that value is not in context)
+   - ✅ GOOD: "Sure! Our Wi-Fi password is **<value from context>**. Let me know if you have any trouble connecting! 📶"
+   - ✅ GOOD: "The gate code is **<value from context>**. Please press the green button after entering it."
 
 # STRICT RULES & NEGATIVE CONSTRAINTS
 1. **IDENTITY & OMNISCIENCE**: YOU ARE the website. You do not "visit" or "check" the website.
@@ -634,73 +757,92 @@ REMEMBER: Always think before responding. Quality > Speed.`;
             ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
         ];
 
-        let resultStream;
-        let resultContent = "";
+        const configuredApiKey = typeof apiKey === "string" ? apiKey.trim() : "";
+        const envOpenAiKey = process.env.OPENAI_API_KEY?.trim() || "";
+        const envGoogleKey = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim() || "";
+        const openAiApiKey = provider === "openai" ? (configuredApiKey || envOpenAiKey) : envOpenAiKey;
+        const googleApiKey = provider === "google" ? (configuredApiKey || envGoogleKey) : envGoogleKey;
 
-        if (provider === 'google') {
-            // Google Gemini Logic
-            const genAI = new GoogleGenerativeAI(apiKey || process.env.GOOGLE_API_KEY!);
-            const geminiModel = genAI.getGenerativeModel({ model: model }); // e.g. gemini-1.5-flash
+        const attempts: Array<{ provider: "openai" | "google"; model: string; apiKey: string }> = [];
+        const pushAttempt = (attempt: { provider: "openai" | "google"; model: string; apiKey: string }) => {
+            if (!attempt.apiKey) return;
+            if (attempts.some((existing) => existing.provider === attempt.provider)) return;
+            attempts.push(attempt);
+        };
 
-            // Convert messages to Gemini format (System prompt is usually separate or first part)
-            // Gemini API uses 'user'/'model' roles. System instruction is passed to getGenerativeModel (new API) 
-            // or prepended. GenerativeModelConfig supports systemInstruction in newer versions.
-            // For safety, I'll Prepend system prompt to history or use systemInstruction if package supports.
-            // The @google/generative-ai package structure:
-            // messages: { role: 'user'|'model', parts: [{ text: ... }] }
-
-            // Converting generic messages to Gemini history
-            const history = messages.map(m => ({
-                role: m.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: m.content }]
-            }));
-
-            // Handle System Prompt: Use systemInstruction if available or prepend
-            const chat = geminiModel.startChat({
-                history: history,
-                systemInstruction: systemPrompt
-            });
-
-            const lastMsgContent = lastMessage.content;
-
-            if (streamResponse) {
-                const result = await chat.sendMessageStream(lastMsgContent);
-                resultStream = streamGoogle(result);
-                return { stream: resultStream, isStream: true, context, modelUsed: model };
-            } else {
-                const result = await chat.sendMessage(lastMsgContent);
-                resultContent = result.response.text();
-                return { content: resultContent, isStream: false, context, modelUsed: model };
-            }
-
+        if (provider === "google") {
+            pushAttempt({ provider: "google", model, apiKey: googleApiKey });
+            pushAttempt({ provider: "openai", model: "gpt-4o-mini", apiKey: openAiApiKey });
         } else {
-            // Default: OpenAI
-            const openai = new OpenAI({ apiKey: apiKey || process.env.OPENAI_API_KEY });
+            pushAttempt({ provider: "openai", model, apiKey: openAiApiKey });
+            pushAttempt({ provider: "google", model: "gemini-1.5-flash", apiKey: googleApiKey });
+        }
 
-            if (streamResponse) {
+        if (attempts.length === 0) {
+            throw new Error("No AI provider is configured. Add OPENAI_API_KEY or GEMINI_API_KEY.");
+        }
+
+        let lastProviderError: unknown = null;
+
+        for (const attempt of attempts) {
+            try {
+                console.log(`AI Service: Attempting provider ${attempt.provider} with model ${attempt.model}`);
+
+                if (attempt.provider === "google") {
+                    const genAI = new GoogleGenerativeAI(attempt.apiKey);
+                    const geminiModel = genAI.getGenerativeModel({ model: attempt.model });
+                    const history = recentMessages.slice(0, -1).map(m => ({
+                        role: m.role === "assistant" ? "model" : "user",
+                        parts: [{ text: m.content }]
+                    }));
+                    const chat = geminiModel.startChat({
+                        history,
+                        systemInstruction: systemPrompt
+                    });
+                    const lastMsgContent = recentMessages[recentMessages.length - 1]?.content || lastMessage.content;
+
+                    if (streamResponse) {
+                        const result = await chat.sendMessageStream(lastMsgContent);
+                        return { stream: streamGoogle(result), isStream: true, context, modelUsed: attempt.model };
+                    }
+
+                    const result = await chat.sendMessage(lastMsgContent);
+                    return { content: result.response.text(), isStream: false, context, modelUsed: attempt.model };
+                }
+
+                const openai = new OpenAI({ apiKey: attempt.apiKey });
+                if (streamResponse) {
+                    const response = await openai.chat.completions.create({
+                        model: attempt.model,
+                        stream: true,
+                        messages: fullMessages as any,
+                    });
+                    return { stream: streamOpenAI(response), isStream: true, context, modelUsed: attempt.model };
+                }
+
                 const response = await openai.chat.completions.create({
-                    model: model,
-                    stream: true,
-                    messages: fullMessages as any,
-                });
-                resultStream = streamOpenAI(response);
-                return { stream: resultStream, isStream: true, context, modelUsed: model };
-            } else {
-                const response = await openai.chat.completions.create({
-                    model: model,
+                    model: attempt.model,
                     stream: false,
                     messages: fullMessages as any,
                 });
-                resultContent = response.choices[0].message.content || "";
+                const resultContent = response.choices[0].message.content || "";
 
-                // Save non-streamed immediately
                 if (sessionId) {
                     await saveMessageToSession(sessionId, chatbotId, { role: "assistant", content: resultContent });
                 }
 
-                return { content: resultContent, isStream: false, context, modelUsed: model };
+                return { content: resultContent, isStream: false, context, modelUsed: attempt.model };
+            } catch (providerError) {
+                lastProviderError = providerError;
+                console.error(`AI Service: Provider ${attempt.provider} failed.`, providerError);
+
+                if (!isRetryableAiError(providerError) && attempts[attempts.length - 1]?.provider === attempt.provider) {
+                    break;
+                }
             }
         }
+
+        throw (lastProviderError || new Error("AI providers failed"));
 
     } catch (error) {
         console.error("AI Generation Error:", error);

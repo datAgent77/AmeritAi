@@ -1,4 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -13,7 +15,12 @@ export async function POST(req: Request) {
             return new Response("Missing required fields", { status: 400 });
         }
 
+        const access = await authorizeTargetAccess(req, chatbotId);
+        if (!access.ok) return access.response;
+
         const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
+        const webhookSecret = crypto.randomBytes(32).toString("hex");
+        const webhookUrl = `${new URL(req.url).origin}/api/integrations/whatsapp/webhook?chatbotId=${chatbotId}&secret=${webhookSecret}`;
 
         // Verify chatbot exists
         const chatbotSnap = await chatbotRef.get();
@@ -29,12 +36,13 @@ export async function POST(req: Request) {
                     phoneNumberId,
                     accessToken,
                     verifyToken,
+                    webhookSecret,
                     connectedAt: new Date().toISOString()
                 }
             }
         }, { merge: true });
 
-        return new Response(JSON.stringify({ success: true }), { status: 200 });
+        return new Response(JSON.stringify({ success: true, webhookUrl }), { status: 200 });
 
     } catch (error) {
         console.error("WhatsApp Connect Error:", error);

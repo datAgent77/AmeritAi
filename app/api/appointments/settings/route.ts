@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { authorizeTargetAccess } from "@/lib/api-auth"
 
 export const runtime = 'nodejs'
 
@@ -16,6 +17,11 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "chatbotId is required" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
         }
 
         const docRef = adminDb.collection("appointments_settings").doc(chatbotId)
@@ -55,6 +61,11 @@ export async function POST(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "chatbotId is required" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
         }
 
         const docRef = adminDb.collection("appointments_settings").doc(chatbotId)

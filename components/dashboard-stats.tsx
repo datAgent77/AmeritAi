@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/context/AuthContext"
-import { Loader2, MessageSquare, Activity, Clock, Zap } from "lucide-react"
+import { Loader2, MessageSquare, Activity, Clock, Zap, UserPlus, CalendarCheck2, Target } from "lucide-react"
 import { format, subDays, eachDayOfInterval } from "date-fns"
 import { useLanguage } from "@/context/LanguageContext"
 import { AnalyticsSummary } from "@/lib/analytics"
@@ -53,7 +53,12 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
                     endDate: new Date().toISOString()
                 })
 
-                const res = await fetch(`/api/analytics?${queryParams}`)
+                const idToken = await user?.getIdToken()
+                const res = await fetch(`/api/analytics?${queryParams}`, {
+                    headers: idToken
+                        ? { Authorization: `Bearer ${idToken}` }
+                        : undefined
+                })
                 if (!res.ok) throw new Error("Failed to fetch analytics")
 
                 const data: AnalyticsSummary = await res.json()
@@ -98,7 +103,7 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
         }
 
         fetchStats()
-    }, [effectiveUserId, locale])
+    }, [effectiveUserId, locale, user])
 
     if (isLoading) {
         return (
@@ -170,6 +175,34 @@ export function DashboardStats({ targetUserId }: DashboardStatsProps) {
                     icon={Zap}
                     colorClass="bg-amber-500 text-amber-600"
                     subtitle={t('dailyAverage')}
+                />
+            </div>
+
+            {/* Outcome Cards */}
+            <div className="grid gap-4 md:grid-cols-3">
+                <StatCard
+                    title={language === 'tr' ? 'Toplanan Lead' : 'Leads Captured'}
+                    value={apiData?.leadsCount || 0}
+                    change={0}
+                    icon={UserPlus}
+                    colorClass="bg-cyan-500 text-cyan-600"
+                    subtitle={language === 'tr' ? 'Bu periyot' : 'This period'}
+                />
+                <StatCard
+                    title={language === 'tr' ? 'Oluşan Randevu' : 'Appointments Created'}
+                    value={apiData?.appointmentsCount || 0}
+                    change={0}
+                    icon={CalendarCheck2}
+                    colorClass="bg-indigo-500 text-indigo-600"
+                    subtitle={language === 'tr' ? 'Bu periyot' : 'This period'}
+                />
+                <StatCard
+                    title={language === 'tr' ? 'Dönüşüm Oranı' : 'Conversion Rate'}
+                    value={`${apiData?.conversionRate || 0}%`}
+                    change={0}
+                    icon={Target}
+                    colorClass="bg-rose-500 text-rose-600"
+                    subtitle={language === 'tr' ? 'Sohbet -> Lead' : 'Conversation -> Lead'}
                 />
             </div>
 

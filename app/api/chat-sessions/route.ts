@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,11 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
         }
 
         const querySnapshot = await adminDb.collection("chat_sessions")

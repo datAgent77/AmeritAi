@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { KnowledgeList } from "@/components/knowledge/knowledge-list"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/context/AuthContext"
 
 interface KnowledgeUrlContentProps {
     userId: string
@@ -19,6 +20,7 @@ interface KnowledgeUrlContentProps {
 export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
     const { t } = useLanguage()
     const { toast } = useToast()
+    const { user } = useAuth()
 
     const [url, setUrl] = useState("")
     const [isAdding, setIsAdding] = useState(false)
@@ -41,11 +43,28 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
     // Refresh trigger for list
     const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+    const getAuthHeaders = async (withContentType: boolean = false): Promise<Record<string, string>> => {
+        if (!user) {
+            throw new Error(t('unauthorized') || "Unauthorized")
+        }
+
+        const token = await user.getIdToken()
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${token}`
+        }
+        if (withContentType) {
+            headers["Content-Type"] = "application/json"
+        }
+        return headers
+    }
+
     // Check for duplicate URL
     const checkDuplicate = async (checkUrl: string) => {
         if (!checkUrl) return
         try {
-            const res = await fetch(`/api/knowledge?chatbotId=${userId}&source=${encodeURIComponent(checkUrl)}`)
+            const res = await fetch(`/api/knowledge?chatbotId=${userId}&source=${encodeURIComponent(checkUrl)}`, {
+                headers: await getAuthHeaders()
+            })
             const data = await res.json()
             if (data.docs && data.docs.length > 0) {
                 setIsDuplicate(true)
@@ -100,9 +119,16 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
         setPreviewContent("") // Clear single preview
 
         try {
+            if (!user) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+            const token = await user.getIdToken()
             const response = await fetch("/api/admin/sitemap", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify({ url: url })
             })
 
@@ -156,7 +182,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
 
             const response = await fetch("/api/knowledge", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(true),
                 body: JSON.stringify(payload)
             })
 
@@ -192,7 +218,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
 
                     const response = await fetch("/api/knowledge", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: await getAuthHeaders(true),
                         body: JSON.stringify({ chatbotId: userId, docId, type: "url", url: urlToImport })
                     })
 

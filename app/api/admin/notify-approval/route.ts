@@ -1,9 +1,50 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
     try {
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader?.startsWith("Bearer ")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const adminAuth = getAdminAuth();
+        const adminDb = getAdminDb();
+        if (!adminAuth || !adminDb) {
+            return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        }
+
+        const token = authHeader.split("Bearer ")[1];
+        let decodedToken;
+        try {
+            decodedToken = await adminAuth.verifyIdToken(token);
+        } catch {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const callerDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+        const callerRole = callerDoc.data()?.role;
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin =
+            callerRole === "SUPER_ADMIN" ||
+            tokenRole === "SUPER_ADMIN" ||
+            tokenRole === "super_admin";
+
+        if (!isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const { email, name } = await req.json();
+        const normalizedEmail = String(email || "").trim().toLowerCase();
+        const normalizedName = String(name || "").trim().slice(0, 120);
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+        }
+        if (!normalizedName) {
+            return NextResponse.json({ error: "Name is required" }, { status: 400 });
+        }
 
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
@@ -16,10 +57,10 @@ export async function POST(req: Request) {
 
         const mailOptions = {
             from: process.env.SMTP_USER,
-            to: email,
+            to: normalizedEmail,
             subject: 'Your Vion Account has been Approved!',
             text: `
-                Hello ${name},
+                Hello ${normalizedName},
                 
                 Your account for Vion has been approved!
                 
@@ -30,7 +71,7 @@ export async function POST(req: Request) {
             `,
             html: `
                 <h3>Welcome to Vion!</h3>
-                <p>Hello ${name},</p>
+                <p>Hello ${normalizedName},</p>
                 <p>Your account has been approved!</p>
                 <p>You can now log in to the platform at: <a href="https://app.userex.com.tr/login">https://app.userex.com.tr/login</a></p>
                 <br/>

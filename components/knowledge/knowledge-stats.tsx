@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Type, Globe, FileText, MessageSquare, Database, Loader2 } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
+import { useAuth } from "@/context/AuthContext"
 
 interface KnowledgeStatsProps {
     userId: string
@@ -20,14 +21,20 @@ interface Stats {
 
 export function KnowledgeStats({ userId, refreshTrigger }: KnowledgeStatsProps) {
     const { t } = useLanguage()
+    const { user } = useAuth()
     const [stats, setStats] = useState<Stats>({ total: 0, text: 0, url: 0, file: 0, qa: 0 })
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const fetchStats = async () => {
-            if (!userId) return
+            if (!userId || !user) return
             try {
-                const response = await fetch(`/api/knowledge?chatbotId=${userId}&stats=true`)
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/knowledge?chatbotId=${userId}&stats=true`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
                 if (!response.ok) throw new Error("Failed to fetch stats")
                 const data = await response.json()
                 setStats(data.stats || { total: 0, text: 0, url: 0, file: 0, qa: 0 })
@@ -38,7 +45,7 @@ export function KnowledgeStats({ userId, refreshTrigger }: KnowledgeStatsProps) 
             }
         }
         fetchStats()
-    }, [userId, refreshTrigger])
+    }, [userId, user, refreshTrigger])
 
     if (isLoading) {
         return (

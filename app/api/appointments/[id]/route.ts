@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { authorizeTargetAccess } from "@/lib/api-auth"
 
 export const runtime = 'nodejs'
 
@@ -22,7 +23,32 @@ export async function PATCH(
         }
 
         const docRef = adminDb.collection("appointments").doc(id)
-        await docRef.update(body)
+        const appointmentSnap = await docRef.get()
+        if (!appointmentSnap.exists) {
+            return NextResponse.json({ error: "Appointment not found" }, { status: 404 })
+        }
+
+        const chatbotId = appointmentSnap.data()?.chatbotId
+        if (!chatbotId) {
+            return NextResponse.json({ error: "Appointment chatbotId is missing" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
+        }
+
+        const allowedStatuses = new Set(["pending", "confirmed", "cancelled", "completed"])
+        const nextStatus = body?.status
+
+        if (typeof nextStatus !== "string" || !allowedStatuses.has(nextStatus)) {
+            return NextResponse.json({ error: "Invalid status" }, { status: 400 })
+        }
+
+        await docRef.update({
+            status: nextStatus,
+            updatedAt: new Date().toISOString()
+        })
 
         return NextResponse.json({ success: true })
     } catch (error) {
@@ -49,6 +75,21 @@ export async function DELETE(
         }
 
         const docRef = adminDb.collection("appointments").doc(id)
+        const appointmentSnap = await docRef.get()
+        if (!appointmentSnap.exists) {
+            return NextResponse.json({ error: "Appointment not found" }, { status: 404 })
+        }
+
+        const chatbotId = appointmentSnap.data()?.chatbotId
+        if (!chatbotId) {
+            return NextResponse.json({ error: "Appointment chatbotId is missing" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
+        }
+
         await docRef.delete()
 
         return NextResponse.json({ success: true })

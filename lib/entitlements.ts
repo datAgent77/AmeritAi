@@ -112,7 +112,7 @@ export const TRIAL_CONFIG = {
      * Decision A: During trial, premium add-ons are LOCKED.
      * Set to true to allow premium modules during trial (Decision B).
      */
-    allowPremiumDuringTrial: true
+    allowPremiumDuringTrial: false
 };
 
 // =============================================================================

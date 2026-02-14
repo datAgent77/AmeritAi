@@ -144,6 +144,10 @@ export async function GET(req: Request) {
                     customPrompts: mergedData.customPrompts || "",
                     salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
                     enableDynamicContext: mergedData.enableDynamicContext || false,
+                    dynamicContextMode: mergedData.dynamicContextMode || "nocode",
+                    dynamicContextSelectors: Array.isArray(mergedData.dynamicContextSelectors)
+                        ? mergedData.dynamicContextSelectors
+                        : [],
                     theme: mergedData.theme || "classic",
                     }, {
                         headers: {
@@ -197,6 +201,9 @@ export async function GET(req: Request) {
                 enableIndustryGreeting: false,
                 industry: "technology",
                 customPrompts: "",
+                enableDynamicContext: false,
+                dynamicContextMode: "nocode",
+                dynamicContextSelectors: [],
                 theme: "classic",
             };
 
@@ -221,6 +228,9 @@ export async function GET(req: Request) {
                 position: "bottom-right",
                 viewMode: "classic",
                 initialLanguage: "tr",
+                enableDynamicContext: false,
+                dynamicContextMode: "nocode",
+                dynamicContextSelectors: [],
                 theme: "classic"
             }, {
                 headers: {
@@ -243,6 +253,9 @@ export async function GET(req: Request) {
             position: "bottom-right",
             viewMode: "classic",
             initialLanguage: "tr",
+            enableDynamicContext: false,
+            dynamicContextMode: "nocode",
+            dynamicContextSelectors: [],
             theme: "classic"
         }, {
             headers: {

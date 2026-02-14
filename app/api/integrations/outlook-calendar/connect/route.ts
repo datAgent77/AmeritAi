@@ -1,4 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { createOAuthState } from "@/lib/oauth-state";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -13,6 +15,9 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: "Missing userId" }), { status: 400 });
         }
 
+        const access = await authorizeTargetAccess(req, userId);
+        if (!access.ok) return access.response;
+
         // Microsoft OAuth2 configuration
         const clientId = process.env.MICROSOFT_CLIENT_ID;
         const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
@@ -25,8 +30,11 @@ export async function POST(req: Request) {
             }), { status: 500 });
         }
 
-        // Generate state token for security
-        const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+        // Use one-time state token stored server-side to prevent tampering/replay.
+        const state = await createOAuthState({
+            provider: "integration-outlook-calendar",
+            userId
+        });
 
         // Build OAuth URL for Microsoft Graph API
         const authUrl = new URL("https://login.microsoftonline.com/common/oauth2/v2.0/authorize");

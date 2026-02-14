@@ -13,7 +13,12 @@ export function useKnowledgeImportExport() {
     const handleExport = async () => {
         if (!user?.uid) return
         try {
-            const response = await fetch(`/api/knowledge?chatbotId=${user.uid}`)
+            const token = await user.getIdToken()
+            const response = await fetch(`/api/knowledge?chatbotId=${user.uid}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
             const data = await response.json()
             const blob = new Blob([JSON.stringify(data.docs || [], null, 2)], { type: 'application/json' })
             const url = URL.createObjectURL(blob)
@@ -53,9 +58,13 @@ export function useKnowledgeImportExport() {
                     chatbotId: user.uid
                 }))
 
+                const token = await user.getIdToken()
                 const response = await fetch('/api/knowledge', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
                     body: JSON.stringify({
                         action: 'bulk_import',
                         items: importItems

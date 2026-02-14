@@ -63,10 +63,15 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
 
     useEffect(() => {
         const fetchSettings = async () => {
-            if (!targetUserId) return
+            if (!targetUserId || !user) return
             setIsLoading(true)
             try {
-                const response = await fetch(`/api/console/settings?chatbotId=${targetUserId}`);
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${targetUserId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
                 if (!response.ok) throw new Error("Failed to fetch settings");
                 const data = await response.json();
 
@@ -112,7 +117,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
             }
         }
         fetchSettings()
-    }, [targetUserId])
+    }, [targetUserId, user])
 
     const handleSave = async () => {
         if (!user || !targetUserId) return

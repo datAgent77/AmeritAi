@@ -32,10 +32,18 @@ interface Integration {
     connectedInfo?: string
 }
 
+const HIDDEN_INTEGRATION_IDS = new Set([
+    "slack",
+    "salesforce",
+    "mailchimp",
+    "sendgrid",
+    "constant-contact",
+])
+
 export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const { toast } = useToast()
     const { t, language } = useLanguage()
-    const { planId, role } = useAuth()
+    const { user, planId, role } = useAuth()
     const [origin, setOrigin] = useState("")
     const [brandColor, setBrandColor] = useState("#000000")
     const [copied, setCopied] = useState<string | null>(null)
@@ -117,6 +125,19 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [constantContactConnected, setConstantContactConnected] = useState(false)
 
     const whatsAppConnected = settings?.integrations?.whatsapp?.connected
+    const waWebhookSecret = settings?.integrations?.whatsapp?.webhookSecret
+
+    const getAuthHeaders = async () => {
+        if (!user) {
+            throw new Error(t('unauthorized') || "Unauthorized")
+        }
+
+        const token = await user.getIdToken()
+        return {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
+    }
 
 
     // Only our actual integrations
@@ -265,13 +286,14 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/whatsapp/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ chatbotId: userId, phoneNumberId: waPhoneNumberId, accessToken: waAccessToken, verifyToken: waVerifyToken })
             })
-            if (!response.ok) throw new Error(t('failedToConnect') || "Failed to connect")
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
             toast({ title: t('success'), description: t('whatsappConnected') })
             setIsWhatsAppOpen(false)
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const data = await res.json()
                 setSettings(data)
@@ -292,7 +314,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/slack/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ userId, botToken: slackBotToken, signingSecret: slackSigningSecret })
             })
             const data = await response.json()
@@ -303,7 +325,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             setIsSlackOpen(false)
             setSlackBotToken("")
             setSlackSigningSecret("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const data = await res.json()
                 setSettings(data)
@@ -321,7 +343,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/telegram/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ userId, botToken: telegramToken })
             })
             const data = await response.json()
@@ -347,7 +369,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/salesforce/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({
                     userId,
                     clientId: salesforceClientId,
@@ -366,7 +388,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             setSalesforceUsername("")
             setSalesforcePassword("")
             setSalesforceSecurityToken("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -383,7 +405,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/google-calendar/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ userId })
             })
             const data = await response.json()
@@ -397,7 +419,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             }
             setGoogleCalendarConnected(true)
             toast({ title: t('success'), description: t('googleCalendarConnected') })
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -419,7 +441,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/outlook-calendar/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({ userId })
             })
             const data = await response.json()
@@ -433,7 +455,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             }
             setOutlookCalendarConnected(true)
             toast({ title: t('success'), description: t('outlookCalendarConnected') })
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -459,7 +481,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/shopify/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({
                     userId,
                     shopDomain: shopifyShopDomain,
@@ -478,7 +500,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             setShopifyShopDomain("")
             setShopifyApiKey("")
             setShopifyApiSecret("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -499,7 +521,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/mailchimp/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({
                     userId,
                     apiKey: mailchimpApiKey,
@@ -514,7 +536,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             setMailchimpApiKey("")
             setMailchimpServerPrefix("")
             setMailchimpListId("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -535,7 +557,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/sendgrid/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({
                     userId,
                     apiKey: sendgridApiKey,
@@ -548,7 +570,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             toast({ title: t('success'), description: t('sendgridConnected') })
             setSendgridApiKey("")
             setSendgridFromEmail("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -569,7 +591,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         try {
             const response = await fetch("/api/integrations/constant-contact/connect", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(),
                 body: JSON.stringify({
                     userId,
                     apiKey: constantContactApiKey,
@@ -586,7 +608,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             toast({ title: t('success'), description: t('constantContactConnected') })
             setConstantContactApiKey("")
             setConstantContactApiSecret("")
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
             if (res.ok) {
                 const settingsData = await res.json()
                 setSettings(settingsData)
@@ -601,8 +623,14 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     useEffect(() => {
         setOrigin(window.location.origin)
         const fetchSettings = async () => {
+            if (!user) return
             try {
-                const res = await fetch(`/api/console/settings?chatbotId=${userId}`)
+                const token = await user.getIdToken()
+                const res = await fetch(`/api/console/settings?chatbotId=${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
                 if (res.ok) {
                     const data = await res.json()
                     setSettings(data)
@@ -642,7 +670,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             }
         }
         fetchSettings()
-    }, [userId])
+    }, [userId, user])
 
     const copyToClipboard = (text: string, key: string) => {
         navigator.clipboard.writeText(text)
@@ -654,15 +682,29 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const scriptCode = `<script src="${origin}/widget.js?v=2.0" data-chatbot-id="${userId}" data-color="${brandColor}"></script>`
     const iframeCode = `<iframe src="${origin}/chatbot-view?id=${userId}" width="100%" height="600" frameborder="0"></iframe>`
     const directLink = `${origin}/chatbot-view?id=${userId}`
+    const whatsappWebhookUrl = waWebhookSecret
+        ? `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}&secret=${encodeURIComponent(waWebhookSecret)}`
+        : `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}`
 
-    // Filter integrations
-    const filteredIntegrations = integrations.filter(integration => {
+    // Hide deprecated integrations and apply search filter
+    const visibleIntegrations = integrations.filter(
+        (integration) => !HIDDEN_INTEGRATION_IDS.has(integration.id)
+    )
+    const filteredIntegrations = visibleIntegrations.filter(integration => {
         const matchesSearch = integration.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             integration.description.toLowerCase().includes(searchQuery.toLowerCase())
         return matchesSearch
     })
 
-    const currentIntegration = selectedIntegration ? integrations.find(i => i.id === selectedIntegration) : null
+    const currentIntegration = selectedIntegration
+        ? visibleIntegrations.find(i => i.id === selectedIntegration)
+        : null
+
+    useEffect(() => {
+        if (selectedIntegration && !currentIntegration) {
+            setSelectedIntegration(null)
+        }
+    }, [selectedIntegration, currentIntegration])
 
     // Render Detail View
     const renderDetailView = () => {
@@ -691,7 +733,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                             src={currentIntegration.logo} 
                                             alt={currentIntegration.name}
                                             className="w-6 h-6 object-contain"
-                                            style={{ filter: 'brightness(0)' }}
                                         />
                                     ) : currentIntegration.icon ? (
                                         currentIntegration.icon
@@ -896,12 +937,12 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 />
                                                 <p className="text-xs text-muted-foreground">{t('verifyTokenHelp')}</p>
                                             </div>
-                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
-                                                <p className="font-medium mb-1">{t('webhookUrl') || 'Webhook URL'}:</p>
-                                                <code className="break-all">{origin}/api/integrations/whatsapp/webhook?chatbotId={userId}</code>
-                                            </div>
                                         </>
                                     )}
+                                    <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                        <p className="font-medium mb-1">{t('webhookUrl') || 'Webhook URL'}:</p>
+                                        <code className="break-all">{whatsappWebhookUrl}</code>
+                                    </div>
                                 </CardContent>
                                 <CardFooter>
                                     <Button
@@ -1413,7 +1454,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                             src={integration.logo} 
                                             alt={integration.name}
                                             className="w-6 h-6 object-contain"
-                                            style={{ filter: !hasAccess ? 'grayscale(1) brightness(0.5)' : 'brightness(0)' }}
+                                            style={{ filter: !hasAccess ? 'grayscale(1) opacity(0.55)' : 'none' }}
                                         />
                                     ) : integration.icon ? (
                                         integration.icon

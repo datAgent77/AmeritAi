@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { useAuth } from "@/context/AuthContext"
 
 interface ChatSession {
     id: string
@@ -27,6 +28,7 @@ interface UnifiedInboxProps {
 
 export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const { t } = useLanguage()
+    const { user } = useAuth()
     const [sessions, setSessions] = useState<ChatSession[]>([])
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -36,6 +38,21 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const [isTogglingPause, setIsTogglingPause] = useState(false)
 
     const scrollRef = useRef<HTMLDivElement>(null)
+
+    const getAuthHeaders = async (withContentType: boolean = false): Promise<Record<string, string>> => {
+        if (!user) {
+            throw new Error("Unauthorized")
+        }
+
+        const token = await user.getIdToken()
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${token}`
+        }
+        if (withContentType) {
+            headers["Content-Type"] = "application/json"
+        }
+        return headers
+    }
 
     // Helper to format date safely
     const formatDateSafe = (dateVal: any, formatStr: string) => {
@@ -51,11 +68,16 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
 
     // 1. Fetch Sessions via API (to avoid Firestore permission issues)
     useEffect(() => {
-        if (!userId) return
+        if (!userId || !user) return
 
         const fetchSessions = async () => {
             try {
-                const response = await fetch(`/api/chat-sessions?chatbotId=${userId}&limit=50`)
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/chat-sessions?chatbotId=${userId}&limit=50`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
                 if (!response.ok) {
                     throw new Error("Failed to fetch sessions")
                 }
@@ -72,7 +94,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
         const interval = setInterval(fetchSessions, 15000) // 15 seconds polling
 
         return () => clearInterval(interval)
-    }, [userId])
+    }, [userId, user])
 
     // 2. Auto-scroll to bottom of chat
     useEffect(() => {
@@ -83,13 +105,13 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!replyText.trim() || !selectedSessionId) return
+        if (!replyText.trim() || !selectedSessionId || !user) return
 
         setIsSending(true)
         try {
             const response = await fetch("/api/admin/send-message", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(true),
                 body: JSON.stringify({
                     sessionId: selectedSessionId,
                     chatbotId: userId,
@@ -111,7 +133,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     }
 
     const handleTogglePause = async () => {
-        if (!selectedSessionId || !selectedSession) return
+        if (!selectedSessionId || !selectedSession || !user) return
 
         setIsTogglingPause(true)
         const newStatus = !selectedSession.isPaused
@@ -119,9 +141,10 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
         try {
             const response = await fetch("/api/admin/toggle-pause", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: await getAuthHeaders(true),
                 body: JSON.stringify({
                     sessionId: selectedSessionId,
+                    chatbotId: userId,
                     isPaused: newStatus
                 })
             })

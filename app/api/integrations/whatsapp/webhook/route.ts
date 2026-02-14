@@ -1,5 +1,22 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
+import crypto from "crypto";
+
+function isTimingSafeEqual(value: string, expected: string): boolean {
+    const valueBuf = Buffer.from(value);
+    const expectedBuf = Buffer.from(expected);
+    if (valueBuf.length !== expectedBuf.length) return false;
+    return crypto.timingSafeEqual(valueBuf, expectedBuf);
+}
+
+function verifyWhatsAppSignature(rawBody: string, signatureHeader: string | null, appSecret: string): boolean {
+    if (!signatureHeader?.startsWith("sha256=")) {
+        return false;
+    }
+    const providedSignature = signatureHeader.slice("sha256=".length);
+    const expectedSignature = crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex");
+    return isTimingSafeEqual(providedSignature, expectedSignature);
+}
 
 // GET: Webhook Verification
 export async function GET(req: Request) {
@@ -9,6 +26,7 @@ export async function GET(req: Request) {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
     const chatbotId = url.searchParams.get("chatbotId");
+    const webhookSecretParam = url.searchParams.get("secret") || "";
 
     if (!chatbotId) {
         return new Response("Missing chatbotId", { status: 400 });
@@ -32,6 +50,11 @@ export async function GET(req: Request) {
         return new Response("Forbidden", { status: 403 });
     }
 
+    const expectedWebhookSecret = waConfig.webhookSecret || "";
+    if (expectedWebhookSecret && !isTimingSafeEqual(webhookSecretParam, expectedWebhookSecret)) {
+        return new Response("Forbidden", { status: 403 });
+    }
+
     if (mode === "subscribe" && challenge) {
         return new Response(challenge, { status: 200 });
     }
@@ -45,7 +68,7 @@ export async function POST(req: Request) {
     try {
         const url = new URL(req.url);
         const chatbotId = url.searchParams.get("chatbotId");
-        const body = await req.json();
+        const webhookSecretParam = url.searchParams.get("secret") || "";
 
         if (!chatbotId) {
             return new Response("Missing chatbotId", { status: 400 });
@@ -54,23 +77,6 @@ export async function POST(req: Request) {
         if (!adminDb) {
             return new Response("Internal Server Error", { status: 500 });
         }
-
-        // Check if it's a WhatsApp status update (ignore for now)
-        if (body.entry?.[0]?.changes?.[0]?.value?.statuses) {
-            return new Response("OK", { status: 200 });
-        }
-
-        const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-
-        if (!message || message.type !== "text") {
-            return new Response("OK", { status: 200 }); // Ignore non-text
-        }
-
-        const from = message.from; // User's phone number
-        const text = message.text.body;
-        const waBusinessId = body.entry?.[0]?.id; // Business Account ID
-
-        console.log(`WhatsApp Webhook: Message from ${from} for chatbot ${chatbotId}: ${text}`);
 
         // 1. Get Chatbot Settings
         const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
@@ -85,6 +91,46 @@ export async function POST(req: Request) {
         if (!waConfig || !waConfig.connected) {
             return new Response("WhatsApp not connected", { status: 400 });
         }
+
+        const expectedWebhookSecret = waConfig.webhookSecret || "";
+        const hasWebhookSecret = !!expectedWebhookSecret;
+        if (hasWebhookSecret && !isTimingSafeEqual(webhookSecretParam, expectedWebhookSecret)) {
+            return new Response("Forbidden", { status: 403 });
+        }
+
+        const rawBody = await req.text();
+        const appSecret = waConfig.appSecret || process.env.WHATSAPP_APP_SECRET || process.env.META_APP_SECRET || "";
+        if (!hasWebhookSecret && !appSecret) {
+            return new Response("Webhook security not configured", { status: 401 });
+        }
+
+        if (appSecret) {
+            const signatureHeader = req.headers.get("x-hub-signature-256");
+            if (!verifyWhatsAppSignature(rawBody, signatureHeader, appSecret)) {
+                return new Response("Forbidden", { status: 403 });
+            }
+        }
+
+        let body: any;
+        try {
+            body = JSON.parse(rawBody);
+        } catch {
+            return new Response("Invalid payload", { status: 400 });
+        }
+
+        // Check if it's a WhatsApp status update (ignore for now)
+        if (body.entry?.[0]?.changes?.[0]?.value?.statuses) {
+            return new Response("OK", { status: 200 });
+        }
+
+        const message = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+        if (!message || message.type !== "text") {
+            return new Response("OK", { status: 200 }); // Ignore non-text
+        }
+
+        const from = message.from; // User's phone number
+        const text = message.text.body;
+        console.log(`WhatsApp Webhook: Message from ${from} for chatbot ${chatbotId}: ${text}`);
 
         const phoneNumberId = waConfig.phoneNumberId;
         const accessToken = waConfig.accessToken;

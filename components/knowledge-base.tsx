@@ -73,13 +73,18 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
     }, [userId, fetchDocs])
 
     const handleDelete = async (docId: string) => {
+        if (!user) return
         try {
             // 1. Delete from Firestore
             await deleteDoc(doc(db, "knowledge_docs", docId))
 
             // 2. Call API to delete from Pinecone (Best effort)
+            const token = await user.getIdToken()
             await fetch(`/api/knowledge?docId=${docId}&chatbotId=${userId}`, {
-                method: "DELETE"
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             })
 
             toast({ title: t('deleted'), description: t('knowledgeDeleted') })

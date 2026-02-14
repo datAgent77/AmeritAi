@@ -69,20 +69,39 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
 
     const effectiveUserId = targetUserId || user?.uid
 
+    const getAuthHeaders = useCallback(async (withContentType: boolean = false): Promise<Record<string, string>> => {
+        if (!user) {
+            throw new Error(t('unauthorized') || "Unauthorized")
+        }
+
+        const token = await user.getIdToken()
+        const headers: Record<string, string> = {
+            Authorization: `Bearer ${token}`
+        }
+        if (withContentType) {
+            headers["Content-Type"] = "application/json"
+        }
+        return headers
+    }, [user, t])
+
     const fetchData = useCallback(async () => {
-        if (!effectiveUserId) return
+        if (!effectiveUserId || !user) return
         setIsLoading(true)
 
         try {
             // Fetch appointments via API
-            const apptRes = await fetch(`/api/appointments?chatbotId=${effectiveUserId}`)
+            const apptRes = await fetch(`/api/appointments?chatbotId=${effectiveUserId}`, {
+                headers: await getAuthHeaders()
+            })
             if (apptRes.ok) {
                 const apptData = await apptRes.json()
                 setAppointments(apptData.appointments || [])
             }
 
             // Fetch settings via API
-            const settingsRes = await fetch(`/api/appointments/settings?chatbotId=${effectiveUserId}`)
+            const settingsRes = await fetch(`/api/appointments/settings?chatbotId=${effectiveUserId}`, {
+                headers: await getAuthHeaders()
+            })
             if (settingsRes.ok) {
                 const settingsData = await settingsRes.json()
                 if (settingsData.settings) {
@@ -99,13 +118,14 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
         } finally {
             setIsLoading(false)
         }
-    }, [effectiveUserId, t, toast])
+    }, [effectiveUserId, user, t, toast, getAuthHeaders])
 
     useEffect(() => {
         fetchData()
     }, [fetchData])
 
     const updateStatus = async (id: string, newStatus: Appointment['status']) => {
+        if (!user) return
         try {
             let res;
 
@@ -113,13 +133,13 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
             if (newStatus === 'confirmed') {
                 res = await fetch(`/api/appointments/${id}/approve`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: await getAuthHeaders(true)
                 });
             } else {
                 // Use standard update for other statuses
                 res = await fetch(`/api/appointments/${id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await getAuthHeaders(true),
                     body: JSON.stringify({ status: newStatus })
                 });
             }
@@ -157,11 +177,11 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
     }
 
     const handleSaveSettings = async () => {
-        if (!effectiveUserId) return
+        if (!effectiveUserId || !user) return
         try {
             const res = await fetch('/api/appointments/settings', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: await getAuthHeaders(true),
                 body: JSON.stringify({ chatbotId: effectiveUserId, ...settings })
             })
 
@@ -184,7 +204,7 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
     }
 
     const handleIntegrationConnect = async (provider: 'google' | 'outlook') => {
-        if (!effectiveUserId) return
+        if (!effectiveUserId || !user) return
 
         try {
             // If already connected, disconnect
@@ -193,7 +213,7 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                 // Disconnect logic
                 const res = await fetch('/api/appointments/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await getAuthHeaders(true),
                     body: JSON.stringify({
                         chatbotId: effectiveUserId,
                         [provider === 'google' ? 'googleCalendarConnected' : 'outlookCalendarConnected']: false
@@ -213,7 +233,12 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
             }
 
             // Get OAuth URL and redirect
-            const authRes = await fetch(`/api/calendar/${provider}/auth?chatbotId=${effectiveUserId}`)
+            const token = await user.getIdToken()
+            const authRes = await fetch(`/api/calendar/${provider}/auth?chatbotId=${effectiveUserId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
             const authData = await authRes.json()
 
             if (authData.error) {

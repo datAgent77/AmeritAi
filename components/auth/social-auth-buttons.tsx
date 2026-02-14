@@ -46,6 +46,10 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
                 errorMessage = language === 'tr'
                     ? "Bu giriş yöntemi şu anda devre dışı."
                     : "This sign-in method is currently disabled."
+            } else if (error.code === 'auth/unauthorized-domain') {
+                errorMessage = language === 'tr'
+                    ? "Bu alan adı Firebase yetkili alan adları listesinde değil. Firebase Console > Authentication > Settings > Authorized domains bölümüne bu domaini ekleyin."
+                    : "This domain is not in Firebase authorized domains. Add it in Firebase Console > Authentication > Settings > Authorized domains."
             }
 
             toast({

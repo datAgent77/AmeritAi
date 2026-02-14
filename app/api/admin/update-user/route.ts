@@ -23,11 +23,15 @@ export async function POST(req: NextRequest) {
 
         // Verify Requester is Super Admin
         const requesterDoc = await adminDb.collection('users').doc(requesterUid).get();
-        if (!requesterDoc.exists || requesterDoc.data()?.role !== 'SUPER_ADMIN') {
-            // Fallback: Check by email if role is missing (legacy)
-            if (decodedToken.email !== 'yasincelenkk@gmail.com') { // Hardcoded super admin fallback
-                return NextResponse.json({ error: 'Forbidden: Super Admin access required' }, { status: 403 });
-            }
+        const requesterRole = requesterDoc.data()?.role;
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin =
+            requesterRole === 'SUPER_ADMIN' ||
+            tokenRole === 'SUPER_ADMIN' ||
+            tokenRole === 'super_admin';
+
+        if (!isSuperAdmin) {
+            return NextResponse.json({ error: 'Forbidden: Super Admin access required' }, { status: 403 });
         }
 
         const body = await req.json();

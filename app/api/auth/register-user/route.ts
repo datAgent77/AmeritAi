@@ -55,6 +55,7 @@ export async function POST(req: Request) {
             lastName,
             fullName,
             email: email || body.email,
+            emailVerified: decodedToken.email_verified === true,
             phoneNumber: phoneNumber || "",
             authProvider: authProvider || "email",
             role: "TENANT_ADMIN",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { sendAppointmentConfirmationEmail } from "@/lib/email-service";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 export async function POST(
     req: Request,
@@ -36,6 +37,18 @@ export async function POST(
         }
 
         const appointment = appointmentSnap.data();
+        const chatbotId = appointment?.chatbotId;
+        if (!chatbotId) {
+            return NextResponse.json(
+                { error: "Appointment chatbotId is missing" },
+                { status: 400 }
+            );
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
 
         // Update status to confirmed
         await appointmentRef.update({

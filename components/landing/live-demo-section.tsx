@@ -7,12 +7,82 @@ import { Loader2, CheckCircle, ArrowRight, Zap, TrendingUp, AlertCircle, Search,
 import { useLanguage } from "@/context/LanguageContext"
 import Link from "next/link"
 
+type RoiSimulationResult = {
+    missedLeadsPerDay: number
+    projectedRevenuePerMonth: number
+    projectedRevenueLow: number
+    projectedRevenueHigh: number
+}
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+function normalizeUrlForSimulation(rawUrl: string): string {
+    const trimmed = rawUrl.trim().toLowerCase()
+    const withProtocol = /^https?:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`
+
+    try {
+        const parsed = new URL(withProtocol)
+        return `${parsed.hostname}${parsed.pathname}`.replace(/\/+$/, "")
+    } catch {
+        return trimmed
+    }
+}
+
+function hashString(input: string): number {
+    let hash = 0
+    for (let i = 0; i < input.length; i += 1) {
+        hash = (hash * 31 + input.charCodeAt(i)) >>> 0
+    }
+    return hash
+}
+
+function simulateRoiFromUrl(rawUrl: string): RoiSimulationResult {
+    const normalized = normalizeUrlForSimulation(rawUrl)
+    const hash = hashString(normalized)
+
+    const isEcommerce = /(shop|store|product|cart|market)/.test(normalized)
+    const isSaas = /(saas|software|app|platform|cloud)/.test(normalized)
+    const isHospitality = /(hotel|restaurant|cafe|clinic|dental|spa)/.test(normalized)
+
+    const avgDealValue = isHospitality ? 45 : isSaas ? 220 : isEcommerce ? 95 : 130
+    const closeRate = isHospitality ? 0.24 : isSaas ? 0.09 : isEcommerce ? 0.15 : 0.12
+    const captureRate = isHospitality ? 0.2 : 0.17
+
+    const depthFactor = normalized.split("/").filter(Boolean).length
+    const lengthFactor = clamp(Math.floor(normalized.length / 8), 0, 8)
+    const randomFactor = 8 + (hash % 24)
+
+    const missedLeadsPerDay = clamp(randomFactor + depthFactor + lengthFactor, 8, 64)
+    const projectedRevenueRaw = missedLeadsPerDay * 30 * captureRate * closeRate * avgDealValue
+    const volatility = 0.88 + ((hash % 37) / 100) // 0.88 - 1.24
+    const projectedRevenuePerMonth = Math.round((projectedRevenueRaw * volatility) / 50) * 50
+
+    const projectedRevenueLow = Math.round(projectedRevenuePerMonth * 0.82)
+    const projectedRevenueHigh = Math.round(projectedRevenuePerMonth * 1.18)
+
+    return {
+        missedLeadsPerDay,
+        projectedRevenuePerMonth: clamp(projectedRevenuePerMonth, 450, 25000),
+        projectedRevenueLow: clamp(projectedRevenueLow, 350, 22000),
+        projectedRevenueHigh: clamp(projectedRevenueHigh, 550, 30000),
+    }
+}
+
+function formatUsd(value: number): string {
+    return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+    }).format(value)
+}
+
 export function LiveDemoSection() {
     const { t } = useLanguage()
     const [url, setUrl] = useState("")
     const [status, setStatus] = useState<'idle' | 'analyzing' | 'complete'>('idle')
     const [progress, setProgress] = useState(0)
     const [scanStep, setScanStep] = useState(0)
+    const [roiResult, setRoiResult] = useState<RoiSimulationResult | null>(null)
 
     const scanSteps = [
         t('connecting') || "Connecting to site...",
@@ -25,7 +95,8 @@ export function LiveDemoSection() {
     const handleAnalyze = (e: React.FormEvent) => {
         e.preventDefault()
         if (!url) return
-        
+
+        setRoiResult(simulateRoiFromUrl(url))
         setStatus('analyzing')
         setProgress(0)
         setScanStep(0)
@@ -49,7 +120,7 @@ export function LiveDemoSection() {
             }, 50)
             return () => clearInterval(interval)
         }
-    }, [status])
+    }, [status, scanSteps.length])
 
     return (
         <section className="py-32 relative overflow-hidden bg-gradient-to-b from-background via-muted/30 to-background border-t border-border/40">
@@ -146,7 +217,10 @@ export function LiveDemoSection() {
                                             <AlertCircle className="w-24 h-24" />
                                         </div>
                                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t('missedOpportunities') || "Missed Opportunities"}</h3>
-                                        <div className="text-4xl font-bold text-foreground mb-1">12<span className="text-xl text-muted-foreground font-normal">+</span></div>
+                                        <div className="text-4xl font-bold text-foreground mb-1">
+                                            {roiResult?.missedLeadsPerDay ?? 12}
+                                            <span className="text-xl text-muted-foreground font-normal">+</span>
+                                        </div>
                                         <p className="text-sm text-muted-foreground leading-relaxed">
                                             {t('potentialLeadsLost') || "Potential leads leaving your site daily without engagement."}
                                         </p>
@@ -157,9 +231,14 @@ export function LiveDemoSection() {
                                             <TrendingUp className="w-24 h-24 text-green-500" />
                                         </div>
                                         <h3 className="text-sm font-semibold text-green-600 uppercase tracking-wider mb-2">{t('projectedGrowth') || "Projected Growth"}</h3>
-                                        <div className="text-4xl font-bold text-green-700 mb-1">$2,450<span className="text-xl font-normal text-green-600/80">/mo</span></div>
+                                        <div className="text-4xl font-bold text-green-700 mb-1">
+                                            {formatUsd(roiResult?.projectedRevenuePerMonth ?? 2450)}
+                                            <span className="text-xl font-normal text-green-600/80">/mo</span>
+                                        </div>
                                         <p className="text-sm text-green-700/80 leading-relaxed">
-                                            {t('estimatedRevenue') || "Estimated revenue increase with active AI engagement."}
+                                            {roiResult
+                                                ? `${formatUsd(roiResult.projectedRevenueLow)} - ${formatUsd(roiResult.projectedRevenueHigh)} • ${t('estimatedRevenue') || "Estimated revenue increase with active AI engagement."}`
+                                                : (t('estimatedRevenue') || "Estimated revenue increase with active AI engagement.")}
                                         </p>
                                     </Card>
 

@@ -1,12 +1,19 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
+import crypto from "crypto";
+
+function isTimingSafeEqual(value: string, expected: string): boolean {
+    const valueBuf = Buffer.from(value);
+    const expectedBuf = Buffer.from(expected);
+    if (valueBuf.length !== expectedBuf.length) return false;
+    return crypto.timingSafeEqual(valueBuf, expectedBuf);
+}
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
     try {
         const url = new URL(req.url);
         const chatbotId = url.searchParams.get("chatbotId");
-        const update = await req.json();
 
         if (!chatbotId) {
             console.error("Telegram Webhook: Missing chatbotId");
@@ -17,17 +24,6 @@ export async function POST(req: Request) {
             console.error("Telegram Webhook: Firebase Admin not initialized");
             return new Response("Internal Server Error", { status: 500 });
         }
-
-        // Check if it's a message
-        if (!update.message || !update.message.text) {
-            return new Response("OK", { status: 200 }); // Ignore non-text messages
-        }
-
-        const chatId = update.message.chat.id;
-        const text = update.message.text;
-        const userId = update.message.from.id; // Telegram User ID
-
-        console.log(`Telegram Webhook: Received message from ${userId} for chatbot ${chatbotId}: ${text}`);
 
         // 1. Get Chatbot Settings (to get the Token)
         const chatbotRef = adminDb.collection("chatbots").doc(chatbotId);
@@ -45,6 +41,30 @@ export async function POST(req: Request) {
             console.error("Telegram Webhook: Telegram not connected for this chatbot");
             return new Response("Telegram not connected", { status: 400 });
         }
+
+        const expectedWebhookSecret = telegramConfig.webhookSecret || "";
+        if (!expectedWebhookSecret) {
+            console.error("Telegram Webhook: Missing webhook secret configuration");
+            return new Response("Webhook secret not configured", { status: 401 });
+        }
+
+        const providedWebhookSecret = req.headers.get("x-telegram-bot-api-secret-token") || "";
+        if (!isTimingSafeEqual(providedWebhookSecret, expectedWebhookSecret)) {
+            console.error("Telegram Webhook: Invalid webhook secret");
+            return new Response("Forbidden", { status: 403 });
+        }
+
+        const update = await req.json();
+        // Check if it's a message
+        if (!update.message || !update.message.text) {
+            return new Response("OK", { status: 200 }); // Ignore non-text messages
+        }
+
+        const chatId = update.message.chat.id;
+        const text = update.message.text;
+        const userId = update.message.from.id; // Telegram User ID
+
+        console.log(`Telegram Webhook: Received message from ${userId} for chatbot ${chatbotId}: ${text}`);
 
         const botToken = telegramConfig.botToken;
 

@@ -1,11 +1,12 @@
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Eye, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { TestRun } from "@/lib/services/test-run-service";
+import { useAuth } from "@/context/AuthContext";
 
 interface RunHistoryTableProps {
     onViewDetail: (run: TestRun) => void;
@@ -14,25 +15,40 @@ interface RunHistoryTableProps {
 export function RunHistoryTable({ onViewDetail }: RunHistoryTableProps) {
     const [runs, setRuns] = useState<TestRun[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { user } = useAuth();
 
-    const fetchRuns = async () => {
+    const fetchRuns = useCallback(async () => {
+        if (!user) {
+            setRuns([]);
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const res = await fetch('/api/autopilot/runs');
+            const token = await user.getIdToken();
+            const res = await fetch('/api/autopilot/runs', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             const data = await res.json();
             if (data.success) {
                 setRuns(data.runs);
+            } else {
+                setRuns([]);
             }
         } catch (error) {
             console.error("Failed to fetch history:", error);
+            setRuns([]);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         fetchRuns();
-    }, []);
+    }, [fetchRuns]);
 
     if (isLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-muted-foreground" /></div>;

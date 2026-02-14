@@ -239,55 +239,8 @@ export async function POST(req: Request) {
 
                                             await adminDb.collection("leads").add(leadDoc);
 
-                                            // Sync to connected integrations
-                                            try {
-                                                const chatbotDoc = await adminDb.collection("chatbots").doc(chatbotId).get();
-                                                const integrations = chatbotDoc.data()?.integrations || {};
-
-                                                // Sync to Salesforce
-                                                if (integrations.salesforce?.connected && leadData.email) {
-                                                    try {
-                                                        await fetch(`${new URL(req.url).origin}/api/integrations/salesforce/sync`, {
-                                                            method: "POST",
-                                                            headers: { "Content-Type": "application/json" },
-                                                            body: JSON.stringify({ userId: chatbotId, leadData })
-                                                        });
-
-                                                    } catch (err) {
-                                                        console.error("Chat API: ❌ Salesforce sync failed:", err);
-                                                    }
-                                                }
-
-                                                // Sync to Mailchimp
-                                                if (integrations.mailchimp?.connected && leadData.email) {
-                                                    try {
-                                                        await fetch(`${new URL(req.url).origin}/api/integrations/mailchimp/subscribe`, {
-                                                            method: "POST",
-                                                            headers: { "Content-Type": "application/json" },
-                                                            body: JSON.stringify({ userId: chatbotId, leadData })
-                                                        });
-
-                                                    } catch (err) {
-                                                        console.error("Chat API: ❌ Mailchimp sync failed:", err);
-                                                    }
-                                                }
-
-                                                // Sync to Constant Contact
-                                                if (integrations.constantContact?.connected && leadData.email) {
-                                                    try {
-                                                        await fetch(`${new URL(req.url).origin}/api/integrations/constant-contact/contacts`, {
-                                                            method: "POST",
-                                                            headers: { "Content-Type": "application/json" },
-                                                            body: JSON.stringify({ userId: chatbotId, leadData })
-                                                        });
-
-                                                    } catch (err) {
-                                                        console.error("Chat API: ❌ Constant Contact sync failed:", err);
-                                                    }
-                                                }
-                                            } catch (syncError) {
-                                                console.error("Chat API: ❌ Integration sync error:", syncError);
-                                            }
+                                            // External lead sync integrations (Salesforce/Mailchimp/Constant Contact)
+                                            // are intentionally disabled.
                                         }
                                     } else {
 
@@ -324,6 +277,16 @@ export async function POST(req: Request) {
 
     } catch (error) {
         console.error("Chat API Error:", error);
-        return new Response(JSON.stringify({ error: "Internal Server Error", details: error instanceof Error ? error.message : String(error) }), { status: 500 });
+        const rawMessage = error instanceof Error ? error.message : String(error);
+        const lowered = rawMessage.toLowerCase();
+        const isConfigError = lowered.includes("no ai provider is configured") || lowered.includes("api key");
+        const message = isConfigError
+            ? "AI service configuration is incomplete. Please contact support."
+            : "AI service is temporarily unavailable. Please try again.";
+
+        return new Response(
+            JSON.stringify({ error: "ai_unavailable", message }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } }
+        );
     }
 }

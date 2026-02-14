@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, MessageSquare, Activity, Users, Download, UserX, Clock } from "lucide-react"
+import { Loader2, MessageSquare, Activity, Users, Download, UserX, Clock, UserPlus, CalendarCheck2, Target } from "lucide-react"
 import { AnalyticsSummary } from "@/lib/analytics"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
@@ -58,7 +58,12 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                 endDate: endDate.toISOString()
             })
 
-            const res = await fetch(`/api/analytics?${queryParams}`)
+            const idToken = await user?.getIdToken()
+            const res = await fetch(`/api/analytics?${queryParams}`, {
+                headers: idToken
+                    ? { Authorization: `Bearer ${idToken}` }
+                    : undefined
+            })
             if (!res.ok) throw new Error("Failed to fetch analytics")
 
             const jsonData = await res.json()
@@ -73,7 +78,7 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
         } finally {
             setIsLoading(false)
         }
-    }, [startDate, endDate, effectiveUserId, t, toast])
+    }, [startDate, endDate, effectiveUserId, t, toast, user])
 
     useEffect(() => {
         if (effectiveUserId && startDate && endDate) {
@@ -166,6 +171,40 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{data?.averageMessagesPerConversation || 0}</div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Outcome Metrics */}
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{language === "tr" ? "Toplanan Lead" : "Leads Captured"}</CardTitle>
+                        <UserPlus className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{data?.leadsCount || 0}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{language === "tr" ? "Oluşan Randevu" : "Appointments Created"}</CardTitle>
+                        <CalendarCheck2 className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{data?.appointmentsCount || 0}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">{language === "tr" ? "Dönüşüm Oranı" : "Conversion Rate"}</CardTitle>
+                        <Target className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">%{data?.conversionRate || 0}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {language === "tr" ? "Sohbetten lead'e dönüşüm" : "Conversation to lead conversion"}
+                        </p>
                     </CardContent>
                 </Card>
             </div>

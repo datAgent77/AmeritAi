@@ -3,6 +3,7 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { STEP_INDEX } from "@/lib/onboarding-config";
 import { planExists, getAllPlans } from "@/lib/pricing-config";
 import { FieldValue } from "firebase-admin/firestore";
+import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,13 @@ export async function POST(req: Request) {
         // Verify token
         const authHeader = req.headers.get("Authorization");
         if (!authHeader?.startsWith("Bearer ")) {
+            await logPlatformEvent({
+                event_type: "onboarding_plan_select",
+                actor: buildActorFromRequest(req),
+                source_module: "onboarding_plan_api",
+                result: "denied",
+                metadata: { reason: "missing_bearer" }
+            });
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -26,6 +34,12 @@ export async function POST(req: Request) {
         try {
             decoded = await adminAuth.verifyIdToken(token);
         } catch {
+            await logPlatformEvent({
+                event_type: "onboarding_plan_select",
+                actor: buildActorFromRequest(req),
+                source_module: "onboarding_plan_api",
+                result: "denied"
+            });
             return NextResponse.json({ error: "Invalid token" }, { status: 401 });
         }
 
@@ -35,6 +49,13 @@ export async function POST(req: Request) {
 
         // Check if planId is valid
         if (!planId || !planExists(planId)) {
+            await logPlatformEvent({
+                event_type: "onboarding_plan_select",
+                actor: buildActorFromRequest(req, { uid: decoded.uid }),
+                source_module: "onboarding_plan_api",
+                result: "error",
+                metadata: { reason: "invalid_plan", requested_plan_id: planId || null }
+            });
             return NextResponse.json({ 
                 error: "Invalid plan ID",
                 validPlans: getAllPlans().map(p => p.planId)
@@ -43,16 +64,31 @@ export async function POST(req: Request) {
 
         // Get user document
         const userRef = adminDb.collection("users").doc(decoded.uid);
-        
+        const userSnap = await userRef.get();
+
+        if (!userSnap.exists) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        const userData = userSnap.data() || {};
+
         // Get selected plan details
         const selectedPlan = getAllPlans().find(p => p.planId === planId);
-        const defaultModules = selectedPlan?.modules.defaultEnabled || [];
+        const defaultModules = (selectedPlan?.modules.defaultEnabled || []).filter(
+            (moduleId): moduleId is string => typeof moduleId === "string"
+        );
+        const existingAddOns = Array.isArray(userData?.entitlements?.modules?.addOns)
+            ? userData.entitlements.modules.addOns.filter((moduleId: unknown): moduleId is string => typeof moduleId === "string")
+            : [];
 
         // Update user document
         await userRef.update({
             // Update entitlements (source of truth)
             "entitlements.planId": planId,
-            "entitlements.modules": defaultModules, // Auto-enable default modules
+            "entitlements.modules": {
+                enabled: defaultModules, // Auto-enable default modules
+                addOns: existingAddOns
+            },
             "entitlements.updatedAt": new Date().toISOString(),
 
             // Update legacy/root fields if necessary (some apps use root planId)
@@ -77,6 +113,14 @@ export async function POST(req: Request) {
             console.warn("Chatbot doc update failed (might not exist yet):", error);
         }
 
+        await logPlatformEvent({
+            event_type: "onboarding_plan_select",
+            actor: buildActorFromRequest(req, { uid: decoded.uid }),
+            source_module: "onboarding_plan_api",
+            result: "success",
+            target: { plan_id: planId }
+        });
+
         return NextResponse.json({
             success: true,
             planId,
@@ -85,6 +129,13 @@ export async function POST(req: Request) {
 
     } catch (error: any) {
         console.error("[Onboarding Plan] Error:", error);
+        await logPlatformEvent({
+            event_type: "onboarding_plan_select",
+            actor: buildActorFromRequest(req),
+            source_module: "onboarding_plan_api",
+            result: "error",
+            metadata: { error_message: error.message || "Internal error" }
+        });
         return NextResponse.json({ error: error.message || "Internal error" }, { status: 500 });
     }
 }

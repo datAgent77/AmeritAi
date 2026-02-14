@@ -1166,9 +1166,26 @@
     constructor(selectors) {
       this.selectors = selectors || [];
       this.observers = new Map(); // Map<Selector, MutationObserver>
+      this.inputListeners = new Map(); // Map<Selector, { el, handler }>
       this.elements = new Map(); // Map<Selector, Element>
       this.data = {};
       this.debounceTimer = null;
+    }
+
+    readElementValue(el) {
+      const tag = (el.tagName || '').toLowerCase();
+
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+        const inputType = (el.type || '').toLowerCase();
+
+        if (inputType === 'checkbox' || inputType === 'radio') {
+          return String(!!el.checked);
+        }
+
+        return String(el.value || '').trim();
+      }
+
+      return String(el.innerText || el.textContent || '').trim();
     }
 
     init() {
@@ -1207,7 +1224,7 @@
                 this.observeElement(el, key, selector);
                 
                 // Extract initial value
-                const val = el.innerText.trim();
+                const val = this.readElementValue(el);
                 // console.log(`DynamicContext: Initial value for "${key}" -> "${val}"`);
                 if (this.data[key] !== val) {
                     this.data[key] = val;
@@ -1220,6 +1237,12 @@
                  if (obs) {
                      obs.disconnect();
                      this.observers.delete(selector);
+                 }
+                 const listener = this.inputListeners.get(selector);
+                 if (listener) {
+                     listener.el.removeEventListener('input', listener.handler);
+                     listener.el.removeEventListener('change', listener.handler);
+                     this.inputListeners.delete(selector);
                  }
             }
         } catch (e) {
@@ -1237,26 +1260,40 @@
         if (this.observers.has(selector)) {
             this.observers.get(selector).disconnect();
         }
+        if (this.inputListeners.has(selector)) {
+            const oldListener = this.inputListeners.get(selector);
+            oldListener.el.removeEventListener('input', oldListener.handler);
+            oldListener.el.removeEventListener('change', oldListener.handler);
+            this.inputListeners.delete(selector);
+        }
 
-        const observer = new MutationObserver(() => {
-            const newVal = el.innerText.trim();
+        const updateValue = () => {
+            const newVal = this.readElementValue(el);
             if (this.data[key] !== newVal) {
                 // console.log(`DynamicContext: Value changed for "${key}" -> "${newVal}"`);
                 this.data[key] = newVal;
                 this.triggerUpdate();
             }
-        });
+        };
+
+        const observer = new MutationObserver(updateValue);
 
         observer.observe(el, { characterData: true, subtree: true, childList: true });
         this.observers.set(selector, observer);
+
+        const tag = (el.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+            el.addEventListener('input', updateValue);
+            el.addEventListener('change', updateValue);
+            this.inputListeners.set(selector, { el, handler: updateValue });
+        }
     }
 
     triggerUpdate() {
         if (this.debounceTimer) clearTimeout(this.debounceTimer);
         this.debounceTimer = setTimeout(() => {
-            if (window.UserexWidget && window.UserexWidget.setContext) {
-                window.UserexWidget.setContext(this.data);
-            }
+            dynamicContextData = { ...dynamicContextData, ...this.data };
+            sendContextUpdate();
         }, 500);
     }
   }
@@ -2007,7 +2044,7 @@
     }
     
     // Initialize No-Code Dynamic Context
-    if (settings.enableDynamicContext && settings.dynamicContextMode === 'nocode' && settings.dynamicContextSelectors) {
+    if (settings.enableDynamicContext && settings.dynamicContextSelectors) {
          try {
              // Ensure it's an array
              const validSelectors = Array.isArray(settings.dynamicContextSelectors) ? settings.dynamicContextSelectors : [];
@@ -2215,15 +2252,9 @@
     sendContextUpdate(); // Immediately notify chatbot of user change
   };
 
-  // NEW: setContext API
-  window.UserexWidget.setContext = function (data) {
-    if (typeof data !== 'object') {
-        console.warn('UserexWidget.setContext: data must be an object');
-        return;
-    }
-    dynamicContextData = { ...dynamicContextData, ...data };
-    console.log('UserexWidget: Context updated', dynamicContextData);
-    sendContextUpdate();
+  // setContext code integration is intentionally disabled.
+  window.UserexWidget.setContext = function () {
+    console.warn('UserexWidget.setContext is disabled. Use Dynamic Context Selector Mode from dashboard.');
   };
 
   // Send context update to iframe

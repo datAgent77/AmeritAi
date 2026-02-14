@@ -1,5 +1,182 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { authorizeTargetAccess } from "@/lib/api-auth"
+
+interface RateLimitEntry {
+    count: number
+    resetAt: number
+}
+
+const appointmentIpRateLimits = new Map<string, RateLimitEntry>()
+const appointmentIdentityRateLimits = new Map<string, RateLimitEntry>()
+
+const APPOINTMENT_IP_LIMIT = 10
+const APPOINTMENT_IP_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
+const APPOINTMENT_IDENTITY_LIMIT = 4
+const APPOINTMENT_IDENTITY_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+const APPOINTMENT_MAX_DAYS_AHEAD = 365
+const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL?.trim()
+const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+const REDIS_RATE_LIMIT_ENABLED = Boolean(UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN)
+
+interface ConsumeRateLimitResult {
+    allowed: boolean
+    remaining: number
+    resetInMs: number
+}
+
+function getRequesterIp(req: Request): string {
+    return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        || req.headers.get("x-real-ip")
+        || "unknown"
+}
+
+function parseNumericResult(value: unknown): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return value
+    }
+
+    if (typeof value === "string" && value.trim().length > 0) {
+        const parsed = Number(value)
+        if (Number.isFinite(parsed)) {
+            return parsed
+        }
+    }
+
+    return null
+}
+
+async function runRedisCommand(args: Array<string | number>): Promise<unknown | null> {
+    if (!REDIS_RATE_LIMIT_ENABLED || !UPSTASH_REDIS_REST_URL || !UPSTASH_REDIS_REST_TOKEN) {
+        return null
+    }
+
+    try {
+        const response = await fetch(UPSTASH_REDIS_REST_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${UPSTASH_REDIS_REST_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(args),
+            cache: "no-store"
+        })
+
+        if (!response.ok) {
+            return null
+        }
+
+        const payload = await response.json() as { result?: unknown; error?: string }
+        if (payload?.error) {
+            return null
+        }
+
+        return payload?.result ?? null
+    } catch (error) {
+        console.error("Appointments Redis rate limit command failed:", error)
+        return null
+    }
+}
+
+async function consumeRedisRateLimit(
+    key: string,
+    limit: number,
+    windowMs: number
+): Promise<ConsumeRateLimitResult | null> {
+    const incrementResult = await runRedisCommand(["INCR", key])
+    const count = parseNumericResult(incrementResult)
+    if (count === null) {
+        return null
+    }
+
+    const ttlResult = await runRedisCommand(["PTTL", key])
+    let resetInMs = parseNumericResult(ttlResult)
+    if (resetInMs === null) {
+        return null
+    }
+
+    if (resetInMs < 0) {
+        await runRedisCommand(["PEXPIRE", key, windowMs])
+        resetInMs = windowMs
+    }
+
+    return {
+        allowed: count <= limit,
+        remaining: Math.max(0, limit - count),
+        resetInMs: Math.max(0, resetInMs)
+    }
+}
+
+async function consumeRateLimit(
+    map: Map<string, RateLimitEntry>,
+    key: string,
+    limit: number,
+    windowMs: number,
+    bucket: "ip" | "identity"
+): Promise<ConsumeRateLimitResult> {
+    const redisResult = await consumeRedisRateLimit(
+        `ratelimit:appointments:${bucket}:${key}`,
+        limit,
+        windowMs
+    )
+    if (redisResult) {
+        return redisResult
+    }
+
+    const now = Date.now()
+    const current = map.get(key)
+
+    if (!current || now > current.resetAt) {
+        const next = {
+            count: 1,
+            resetAt: now + windowMs
+        }
+        map.set(key, next)
+        return {
+            allowed: true,
+            remaining: limit - 1,
+            resetInMs: windowMs
+        }
+    }
+
+    current.count += 1
+    map.set(key, current)
+
+    const remaining = Math.max(0, limit - current.count)
+    return {
+        allowed: current.count <= limit,
+        remaining,
+        resetInMs: Math.max(0, current.resetAt - now)
+    }
+}
+
+function getRateLimitHeaders(result: { remaining: number; resetInMs: number }) {
+    return {
+        "X-RateLimit-Remaining": result.remaining.toString(),
+        "X-RateLimit-Reset": Math.ceil(result.resetInMs / 1000).toString()
+    }
+}
+
+function parseTimeToMinutes(value: string): number | null {
+    if (!/^\d{2}:\d{2}$/.test(value)) {
+        return null
+    }
+
+    const [hourStr, minuteStr] = value.split(":")
+    const hour = Number(hourStr)
+    const minute = Number(minuteStr)
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        return null
+    }
+
+    return hour * 60 + minute
+}
+
+function getDayCode(date: Date): string {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    return days[date.getDay()]
+}
 
 // POST: Create a new appointment
 export async function POST(req: Request) {
@@ -26,16 +203,153 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
         }
 
+        const normalizedEmail = String(customerEmail).trim().toLowerCase()
+        const normalizedPhone = String(customerPhone || "").trim()
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+        }
+
+        if (normalizedPhone && !/^[0-9+\-() ]{6,20}$/.test(normalizedPhone)) {
+            return NextResponse.json({ error: "Invalid phone number" }, { status: 400 })
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !/^\d{2}:\d{2}$/.test(String(time))) {
+            return NextResponse.json({ error: "Invalid date or time format" }, { status: 400 })
+        }
+
+        const appointmentDateTime = new Date(`${date}T${time}:00`)
+        if (Number.isNaN(appointmentDateTime.getTime())) {
+            return NextResponse.json({ error: "Invalid appointment date or time" }, { status: 400 })
+        }
+
+        const now = Date.now()
+        if (appointmentDateTime.getTime() < now - 5 * 60 * 1000) {
+            return NextResponse.json({ error: "Appointment must be in the future" }, { status: 400 })
+        }
+
+        if (appointmentDateTime.getTime() > now + APPOINTMENT_MAX_DAYS_AHEAD * 24 * 60 * 60 * 1000) {
+            return NextResponse.json({ error: "Appointment date is too far in the future" }, { status: 400 })
+        }
+
+        const ip = getRequesterIp(req)
+        const ipRate = await consumeRateLimit(
+            appointmentIpRateLimits,
+            `${chatbotId}:${ip}`,
+            APPOINTMENT_IP_LIMIT,
+            APPOINTMENT_IP_WINDOW_MS,
+            "ip"
+        )
+        if (!ipRate.allowed) {
+            return NextResponse.json(
+                { error: "Too many appointment requests. Please try again later." },
+                { status: 429, headers: getRateLimitHeaders(ipRate) }
+            )
+        }
+
+        const identityKey = `${chatbotId}:${normalizedEmail || normalizedPhone || "unknown"}`
+        const identityRate = await consumeRateLimit(
+            appointmentIdentityRateLimits,
+            identityKey,
+            APPOINTMENT_IDENTITY_LIMIT,
+            APPOINTMENT_IDENTITY_WINDOW_MS,
+            "identity"
+        )
+        if (!identityRate.allowed) {
+            return NextResponse.json(
+                { error: "Too many booking attempts for this contact. Please try again later." },
+                { status: 429, headers: getRateLimitHeaders(identityRate) }
+            )
+        }
+
+        const chatbotRef = adminDb.collection("chatbots").doc(chatbotId)
+        const userRef = adminDb.collection("users").doc(chatbotId)
+        const settingsRef = adminDb.collection("appointments_settings").doc(chatbotId)
+
+        const [chatbotSnap, userSnap, settingsSnap] = await Promise.all([
+            chatbotRef.get(),
+            userRef.get(),
+            settingsRef.get()
+        ])
+
+        if (!chatbotSnap.exists) {
+            return NextResponse.json({ error: "Chatbot not found" }, { status: 404 })
+        }
+
+        const userData = userSnap.data()
+        if (userData?.isActive === false) {
+            return NextResponse.json({ error: "Account is inactive" }, { status: 403 })
+        }
+
+        const chatbotData = chatbotSnap.data()
+        const isAppointmentsEnabled =
+            chatbotData?.enableAppointments === true ||
+            userData?.enableAppointments === true
+
+        if (!isAppointmentsEnabled) {
+            return NextResponse.json({ error: "Appointments are disabled for this chatbot" }, { status: 403 })
+        }
+
+        const settings = settingsSnap.exists ? settingsSnap.data() : null
+        const workingDays = Array.isArray(settings?.workingDays) && settings?.workingDays.length > 0
+            ? settings.workingDays
+            : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+        const workingHoursStart = typeof settings?.workingHoursStart === "string" ? settings.workingHoursStart : "09:00"
+        const workingHoursEnd = typeof settings?.workingHoursEnd === "string" ? settings.workingHoursEnd : "18:00"
+
+        if (!workingDays.includes(getDayCode(appointmentDateTime))) {
+            return NextResponse.json({ error: "Selected day is outside working days" }, { status: 400 })
+        }
+
+        const appointmentMinutes = parseTimeToMinutes(String(time))
+        const startMinutes = parseTimeToMinutes(workingHoursStart)
+        const endMinutes = parseTimeToMinutes(workingHoursEnd)
+        if (
+            appointmentMinutes === null ||
+            startMinutes === null ||
+            endMinutes === null ||
+            appointmentMinutes < startMinutes ||
+            appointmentMinutes > endMinutes
+        ) {
+            return NextResponse.json({ error: "Selected time is outside working hours" }, { status: 400 })
+        }
+
+        if (sessionId) {
+            const sessionSnap = await adminDb.collection("chat_sessions").doc(String(sessionId)).get()
+            if (!sessionSnap.exists || sessionSnap.data()?.chatbotId !== chatbotId) {
+                return NextResponse.json({ error: "Invalid session for chatbot" }, { status: 403 })
+            }
+        }
+
+        const existingSameDay = await adminDb.collection("appointments")
+            .where("chatbotId", "==", chatbotId)
+            .where("date", "==", String(date))
+            .limit(200)
+            .get()
+
+        const hasDuplicate = existingSameDay.docs.some((doc) => {
+            const data = doc.data()
+            return (
+                String(data.time || "") === String(time) &&
+                String(data.customerEmail || "").toLowerCase() === normalizedEmail &&
+                data.status !== "cancelled"
+            )
+        })
+
+        if (hasDuplicate) {
+            return NextResponse.json({ error: "An appointment already exists for this date and time" }, { status: 409 })
+        }
+
         const appointmentData = {
             chatbotId,
-            customerName,
-            customerEmail,
-            customerPhone: customerPhone || "",
+            customerName: String(customerName || "").trim().slice(0, 120) || "Guest",
+            customerEmail: normalizedEmail,
+            customerPhone: normalizedPhone,
             date,
             time,
-            type: type || "Consultation",
-            notes: notes || "",
-            sessionId: sessionId || "",
+            type: String(type || "Consultation").trim().slice(0, 120),
+            notes: String(notes || "").trim().slice(0, 1000),
+            sessionId: String(sessionId || ""),
             status: "pending",
             source: "chatbot",
             createdAt: new Date().toISOString()
@@ -46,7 +360,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             appointmentId: docRef.id
-        }, { status: 201 })
+        }, { status: 201, headers: getRateLimitHeaders(identityRate) })
 
     } catch (error: any) {
         console.error("Error creating appointment:", error)
@@ -68,6 +382,11 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "chatbotId is required" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
         }
 
         const snapshot = await adminDb.collection("appointments")
