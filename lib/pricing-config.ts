@@ -27,6 +27,25 @@ export type BillingCycle = 'monthly' | 'annual';
 export type PlanAvailability = 'public' | 'hidden' | 'legacy';
 export type LimitValue = number | 'unlimited';
 
+/**
+ * Single-point currency display rules.
+ * - Turkish UI -> TRY
+ * - English UI -> USD
+ * Prices are converted with fixed FX rates and rounded to whole numbers.
+ */
+export const PRICING_CURRENCY_DISPLAY = {
+    targetByLang: {
+        tr: 'TRY',
+        en: 'USD'
+    } as const,
+    // "1 USD = 40 TRY" fixed rate (can be updated from one place).
+    perUsd: {
+        USD: 1,
+        TRY: 40,
+        EUR: 0.92
+    } as const
+};
+
 export interface BillingOption {
     amount: number;
     currency: Currency;
@@ -578,15 +597,24 @@ export function formatPlanPrice(
         return lang === 'tr' ? 'Özel Teklif' : 'Custom Quote';
     }
 
-    const billing = billingCycle === 'annual' ? plan.billing.annual : plan.billing.monthly;
+    let effectiveCycle: BillingCycle = billingCycle;
+    let billing = billingCycle === 'annual' ? plan.billing.annual : plan.billing.monthly;
     if (!billing) {
         // Fallback to monthly if annual not available
         const fallback = plan.billing.monthly;
         if (!fallback) return lang === 'tr' ? 'Fiyat yok' : 'No price';
-        return formatAmount(fallback.amount, fallback.currency, billingCycle, lang);
+        billing = fallback;
+        effectiveCycle = 'monthly';
     }
 
-    return formatAmount(billing.amount, billing.currency, billingCycle, lang);
+    const targetCurrency = PRICING_CURRENCY_DISPLAY.targetByLang[lang] || 'USD';
+    const convertedAmount = convertAndRoundAmount(
+        billing.amount,
+        billing.currency,
+        targetCurrency
+    );
+
+    return formatAmount(convertedAmount, targetCurrency, effectiveCycle, lang);
 }
 
 /**
@@ -613,7 +641,24 @@ function formatAmount(
         annual: { en: '/yr', tr: '/yıl' }
     };
 
-    return `${symbols[currency]}${amount.toLocaleString()}${intervals[cycle][lang]}`;
+    const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
+    return `${symbols[currency]}${amount.toLocaleString(locale, { maximumFractionDigits: 0 })}${intervals[cycle][lang]}`;
+}
+
+function convertAndRoundAmount(amount: number, from: Currency, to: Currency): number {
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    if (from === to) return Math.round(amount);
+
+    const perUsd = PRICING_CURRENCY_DISPLAY.perUsd;
+    const fromPerUsd = perUsd[from];
+    const toPerUsd = perUsd[to];
+
+    // Convert via USD base: amount(from) -> USD -> target.
+    const amountInUsd = amount / fromPerUsd;
+    const converted = amountInUsd * toPerUsd;
+
+    // User requested rounded values.
+    return Math.round(converted);
 }
 
 /**

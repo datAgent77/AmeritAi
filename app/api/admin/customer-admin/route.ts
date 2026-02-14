@@ -4,14 +4,17 @@ import { getAdminDb } from "@/lib/firebase-admin";
 
 // Default subscription values for new/existing users without subscription data
 const DEFAULT_SUBSCRIPTION = {
-    planId: 'trial',
+    planId: 'starter',
+    status: 'trial',
     billingStatus: 'free',
     trialDays: 14,
     trialEndsAt: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
     paidSince: null,
     messageLimitOverride: null,
     moduleOverrides: null,
-    isPriority: false,
+    prioritySupport: false,
     isFrozen: false,
     adminNotes: '',
     // Billing fields
@@ -26,6 +29,50 @@ const DEFAULT_SUBSCRIPTION = {
     invoiceReminderSent: false,         // Has invoice reminder been sent?
     paymentReminderSent: false          // Has payment reminder been sent?
 };
+
+function normalizePlanIdFromUser(targetUserData: Record<string, any>, subscription: Record<string, any>) {
+    const candidates = [
+        subscription?.planId,
+        targetUserData?.planId,
+        targetUserData?.plan,
+        targetUserData?.entitlements?.planId
+    ].filter((value) => typeof value === "string" && value.trim().length > 0) as string[];
+
+    const resolved = candidates[0] || DEFAULT_SUBSCRIPTION.planId;
+    // "trial" is a status, not a billable plan card; show underlying plan as Starter if no concrete plan was selected.
+    return resolved === "trial" ? "starter" : resolved;
+}
+
+function normalizeSubscriptionStatus(targetUserData: Record<string, any>, subscription: Record<string, any>) {
+    const validStatuses = new Set(['active', 'trial', 'past_due', 'canceled', 'unpaid']);
+    const rawStatus = subscription?.status || targetUserData?.subscriptionStatus;
+
+    if (typeof rawStatus === "string" && validStatuses.has(rawStatus)) {
+        return rawStatus;
+    }
+
+    const trialFlag = targetUserData?.entitlements?.trial?.isActive;
+    if (trialFlag === true) return 'trial';
+    if (trialFlag === false) return 'active';
+
+    return DEFAULT_SUBSCRIPTION.status;
+}
+
+function normalizeBillingStatus(status: string, targetUserData: Record<string, any>, subscription: Record<string, any>) {
+    const validBillingStatuses = new Set(['free', 'paid', 'pending', 'cancelled']);
+    const rawBillingStatus = subscription?.billingStatus || targetUserData?.billingStatus;
+
+    if (typeof rawBillingStatus === "string" && validBillingStatuses.has(rawBillingStatus)) {
+        return rawBillingStatus;
+    }
+
+    return status === 'active' ? 'paid' : 'free';
+}
+
+function normalizeBillingPeriod(targetUserData: Record<string, any>, subscription: Record<string, any>) {
+    const raw = subscription?.billingPeriod || targetUserData?.billingCycle || DEFAULT_SUBSCRIPTION.billingPeriod;
+    return raw === 'yearly' ? 'yearly' : 'monthly';
+}
 
 // GET: Fetch customer subscription data
 export async function GET(request: Request) {
@@ -67,8 +114,34 @@ export async function GET(request: Request) {
 
         const targetUserData = targetUserDoc.data();
 
-        // Return user info with subscription (use defaults if not set)
-        const subscription = targetUserData?.subscription || DEFAULT_SUBSCRIPTION;
+        // Return user info with subscription (normalized from all known legacy + new fields)
+        const rawSubscription = (targetUserData?.subscription && typeof targetUserData.subscription === "object")
+            ? targetUserData.subscription
+            : {};
+        const normalizedStatus = normalizeSubscriptionStatus(targetUserData || {}, rawSubscription);
+        const normalizedPlanId = normalizePlanIdFromUser(targetUserData || {}, rawSubscription);
+        const normalizedBillingStatus = normalizeBillingStatus(normalizedStatus, targetUserData || {}, rawSubscription);
+        const normalizedBillingPeriod = normalizeBillingPeriod(targetUserData || {}, rawSubscription);
+        const normalizedTrialEndsAt =
+            rawSubscription?.trialEndsAt ||
+            targetUserData?.trialEndsAt ||
+            targetUserData?.entitlements?.trial?.endAt ||
+            null;
+        const normalizedCurrentPeriodEnd =
+            rawSubscription?.currentPeriodEnd ||
+            targetUserData?.currentPeriodEnd ||
+            null;
+
+        const subscription = {
+            ...DEFAULT_SUBSCRIPTION,
+            ...rawSubscription,
+            planId: normalizedPlanId,
+            status: normalizedStatus,
+            billingStatus: normalizedBillingStatus,
+            billingPeriod: normalizedBillingPeriod,
+            trialEndsAt: normalizedTrialEndsAt,
+            currentPeriodEnd: normalizedCurrentPeriodEnd,
+        };
 
         // Fetch detailed usage stats (parallel)
         const [knowledgeDocs, sessions, leads, appointments] = await Promise.all([
@@ -109,10 +182,7 @@ export async function GET(request: Request) {
                 isActive: targetUserData?.isActive,
                 isArchived: targetUserData?.isArchived
             },
-            subscription: {
-                ...DEFAULT_SUBSCRIPTION,
-                ...subscription
-            },
+            subscription,
             resourceUsage: usageData
         });
 

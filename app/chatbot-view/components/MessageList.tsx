@@ -17,7 +17,7 @@ interface MessageListProps {
     messagesContainerRef: RefObject<HTMLDivElement | null>
     messagesEndRef: RefObject<HTMLDivElement | null>
     t: (key: string) => string
-    onLeadSubmit: (data: any) => Promise<void>
+    onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
 }
 import { InlineLeadForm } from "./InlineLeadForm"
 
@@ -161,7 +161,7 @@ export function MessageList({
                                         {/* Inline Lead Form */}
                                         {m.content.includes('[SHOW_LEAD_FORM]') && (
                                             <InlineLeadForm 
-                                                onSubmit={onLeadSubmit}
+                                                onSubmit={(data) => onLeadSubmit(data, { source: "inline" })}
                                                 settings={settings}
                                                 t={t}
                                             />

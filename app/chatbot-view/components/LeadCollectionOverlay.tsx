@@ -4,7 +4,7 @@ import { useState } from "react"
 
 interface LeadCollectionOverlayProps {
     show: boolean
-    onSubmit: (data: any) => Promise<void>
+    onSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
     isSubmitting: boolean
     settings: ChatbotSettings
     t: (key: string) => string
@@ -118,7 +118,7 @@ export function LeadCollectionOverlay({
                         <UserPlus className="w-8 h-8" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800">{settings.leadFormConfig?.title || t('getStarted')}</h2>
-                    <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || t('leadFormSubtitle') || "Lütfen bilgilerinizi girerek sohbete başlayın."}</p>
+                    <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || t('leadFormSubtitle') || "Please fill in your details to start chatting."}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -129,7 +129,7 @@ export function LeadCollectionOverlay({
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder={formConfig.namePlaceholder || t('fullName') || "Ad Soyad"}
+                                    placeholder={formConfig.namePlaceholder || t('fullName') || "Full Name"}
                                     required={nameRequired}
                                     value={formData.name}
                                     onChange={(e) => {
@@ -153,7 +153,7 @@ export function LeadCollectionOverlay({
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     type="email"
-                                    placeholder={formConfig.emailPlaceholder || t('email') || "E-posta"}
+                                    placeholder={formConfig.emailPlaceholder || t('email') || "Email"}
                                     required={emailRequired}
                                     value={formData.email}
                                     onChange={(e) => {
@@ -177,7 +177,7 @@ export function LeadCollectionOverlay({
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     type="tel"
-                                    placeholder={formConfig.phonePlaceholder || t('phone') || "Telefon"}
+                                    placeholder={formConfig.phonePlaceholder || t('phone') || "Phone"}
                                     required={phoneRequired}
                                     value={formData.phone}
                                     onChange={(e) => {
@@ -257,7 +257,7 @@ export function LeadCollectionOverlay({
                                                     }`}
                                                     style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
                                                 >
-                                                    <option value="">{field.placeholder || field.label || (t('select') || 'Seçiniz...')}</option>
+                                                    <option value="">{field.placeholder || field.label || (t('select') || 'Select...')}</option>
                                                     {(field.options || []).map((opt: string, i: number) => (
                                                         <option key={i} value={opt}>{opt}</option>
                                                     ))}

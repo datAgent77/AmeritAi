@@ -4,7 +4,7 @@ import { useState } from "react"
 import React from 'react';
 
 interface InlineLeadFormProps {
-    onSubmit: (data: any) => Promise<void>
+    onSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
     settings: ChatbotSettings
     t: (key: string) => string
 }
@@ -58,7 +58,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
         try {
             await onSubmit(formData)
             setStatus('success')
-        } catch (error) {
+        } catch (_error) {
             setStatus('idle')
         }
     }
@@ -70,7 +70,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                     <Send className="w-4 h-4 text-green-600" />
                 </div>
                 <p className="text-sm font-medium text-green-700">
-                    {t('infoReceived') === 'infoReceived' ? "Bilgileriniz alındı, teşekkürler!" : t('infoReceived')}
+                    {t('infoReceived') === 'infoReceived' ? "Your information has been received. Thank you!" : t('infoReceived')}
                 </p>
             </div>
         )
@@ -84,7 +84,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                     <User className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder={config.namePlaceholder || (t('fullName') || "Ad Soyad")}
+                        placeholder={config.namePlaceholder || (t('fullName') || "Full Name")}
                         required={config.nameRequired !== false}
                         value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -98,7 +98,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                     <Phone className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                     <input
                         type="tel"
-                        placeholder={config.phonePlaceholder || (t('phone') || "Telefon")}
+                        placeholder={config.phonePlaceholder || (t('phone') || "Phone")}
                         required={config.phoneRequired === true}
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -112,7 +112,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                     <Mail className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                     <input
                         type="email"
-                        placeholder={config.emailPlaceholder || (t('email') || "E-posta")}
+                        placeholder={config.emailPlaceholder || (t('email') || "Email")}
                         required={config.emailRequired !== false}
                         value={formData.email || ''}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -168,8 +168,8 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                 style={{ backgroundColor: settings.brandColor }}
             >
                 {status === 'submitting' 
-                    ? (t('sending') === 'sending' ? "Gönderiliyor..." : t('sending')) 
-                    : (t('sendInfo') === 'sendInfo' ? "Bilgileri Gönder" : t('sendInfo'))
+                    ? (t('sending') === 'sending' ? "Sending..." : t('sending')) 
+                    : (t('sendInfo') === 'sendInfo' ? "Send Info" : t('sendInfo'))
                 }
             </button>
         </form>

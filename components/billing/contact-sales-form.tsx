@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
@@ -49,6 +49,16 @@ export function ContactSalesForm({ planId, onBack, onSuccess }: ContactSalesForm
                     email: user.email
                 }
             });
+
+            // Keep latest request summary on user document for UI visibility
+            await setDoc(doc(db, "users", user.uid), {
+                lastUpgradeRequest: {
+                    targetPlan: planId,
+                    status: 'pending',
+                    source: 'contact_sales_form',
+                    requestedAt: serverTimestamp()
+                }
+            }, { merge: true });
 
             setIsSuccess(true);
 

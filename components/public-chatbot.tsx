@@ -10,6 +10,7 @@ export function PublicChatbot() {
     if (pathname?.startsWith("/admin") ||
         pathname?.startsWith("/console") ||
         pathname?.startsWith("/menu") ||
+        pathname?.startsWith("/onboarding") ||
         pathname?.startsWith("/chatbot-view") ||
         pathname?.startsWith("/widget-test")) {
         return null

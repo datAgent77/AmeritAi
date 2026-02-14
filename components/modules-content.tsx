@@ -6,13 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
     ShoppingBag,
     ArrowRight,
     Mic,
@@ -34,7 +27,6 @@ import {
     LayoutGrid,
     List,
     Search,
-    Filter,
     Settings2,
     UserPlus,
     Star,
@@ -162,9 +154,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
     const [upgradeTargetModuleId, setUpgradeTargetModuleId] = useState<ModuleId | null>(null)
 
-    // Search and Filter States
+    // Search state
     const [searchQuery, setSearchQuery] = useState("")
-    const [industryFilter, setIndustryFilter] = useState("all")
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
@@ -312,9 +303,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             if (checked && targetModule && !targetModule.isCore && targetModule.status !== 'coming_soon') {
                 toast({
                     title: t('moduleEnabled') || "Module Enabled",
-                    description: language === 'tr' 
-                        ? "Ayarları yapılandırmak için yönlendiriliyorsunuz..." 
-                        : "Redirecting to configure settings..."
+                    description: t('redirectingToConfigure')
                 })
                 // Small delay so user sees the toast before redirect
                 setTimeout(() => handleManage(moduleId), 800)
@@ -476,19 +465,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             // Search Match
             const matchesSearch = name.toLowerCase().includes(query) || description.toLowerCase().includes(query)
 
-            // Industry Match
-            let matchesIndustry = true
-            if (industryFilter !== 'all') {
-                const supported = module.supportedSectors || []
-                // If module has no recommendations, strictly speaking it might be for all?
-                // In registry '[]' means all sectors. In module-config it might be consistent.
-                // If recommended list is empty, it usually means Core/General.
-                if (supported.length > 0) {
-                    matchesIndustry = supported.includes(industryFilter as any)
-                }
-            }
-
-            return matchesSearch && matchesIndustry
+            return matchesSearch
         }).sort((a, b) => {
             // 1. Coming soon modules always at the end
             if (a.status === 'coming_soon' && b.status !== 'coming_soon') return 1
@@ -505,7 +482,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, industryFilter, language, checkModuleIncluded])
+    }, [searchQuery, language, checkModuleIncluded])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
@@ -555,7 +532,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 )}
             </div>
 
-            {/* Toolbar: Search, Filter, View Toggle */}
+            {/* Toolbar: Search, View Toggle */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-zinc-950 p-1 rounded-xl">
                 <div className="flex flex-1 w-full md:w-auto items-center gap-3">
                     <div className="relative flex-1 md:max-w-xs">
@@ -567,21 +544,6 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-
-                    <Select value={industryFilter} onValueChange={setIndustryFilter}>
-                        <SelectTrigger className="w-full md:w-[180px] h-10">
-                            <Filter className="w-4 h-4 mr-2" />
-                            <SelectValue placeholder={t('filterByIndustry') || "Filter by Industry"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">{t('allIndustries') || "All Industries"}</SelectItem>
-                            {Object.entries(INDUSTRY_CONFIG).map(([key, config]) => (
-                                <SelectItem key={key} value={key}>
-                                    {(config as any).names?.[language] || config.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
                 </div>
 
                 <div className="flex items-center space-x-1 bg-secondary/30 p-1 rounded-lg border">
@@ -613,8 +575,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         <Search className="w-12 h-12 opacity-20" />
                     </div>
                     <p>{t('noModulesFound') || "No modules found"}</p>
-                    <Button variant="link" onClick={() => { setSearchQuery(""); setIndustryFilter("all") }}>
-                        {t('clearFilters') || "Clear Filters"}
+                    <Button variant="link" onClick={() => setSearchQuery("")}>
+                        {t('clearSearch') || "Clear Search"}
                     </Button>
                 </div>
             ) : viewMode === 'grid' ? (

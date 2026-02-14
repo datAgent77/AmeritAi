@@ -6,17 +6,25 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { getPublicPlansSorted, formatPlanPrice, PlanConfig } from '@/lib/pricing-config'
 import { BillingToggle } from '@/components/pricing/billing-toggle'
-import { Check, Zap } from 'lucide-react'
+import { Check, Loader2, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
 export default function SubscriptionPage() {
     const { t, language } = useLanguage()
-    const { planId: authPlanId } = useAuth()
+    const { planId: authPlanId, user } = useAuth()
+    const { toast } = useToast()
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+    const [submittingPlanId, setSubmittingPlanId] = useState<string | null>(null)
+    const [requestedPlanId, setRequestedPlanId] = useState<string | null>(null)
 
     const allPlans = getPublicPlansSorted()
     const currentPlanId = authPlanId || 'starter'
     const currentPlanConfig = allPlans.find(p => p.planId === currentPlanId)
+    const profileRequestedPlanId = ((user as any)?.lastUpgradeRequest?.status === 'pending'
+        ? (user as any)?.lastUpgradeRequest?.targetPlan
+        : null) as string | null
+    const effectiveRequestedPlanId = requestedPlanId || profileRequestedPlanId
 
     // Get plan display name
     const getPlanDisplayName = (plan: PlanConfig) => {
@@ -25,9 +33,57 @@ export default function SubscriptionPage() {
         return translated !== key ? translated : plan.displayName
     }
 
-    const handleUpgrade = (planId: string) => {
-        // TODO: Implement upgrade flow
-        console.log('Upgrade to:', planId)
+    const getPlanNameById = (planId: string) => {
+        const plan = allPlans.find((p) => p.planId === planId)
+        if (!plan) return planId.toUpperCase()
+        return getPlanDisplayName(plan)
+    }
+
+    const handleUpgrade = async (planId: string) => {
+        if (!user) {
+            toast({
+                variant: "destructive",
+                title: language === 'tr' ? 'Hata' : 'Error',
+                description: language === 'tr' ? 'Lütfen önce giriş yapın.' : 'Please log in first.'
+            })
+            return
+        }
+
+        if (submittingPlanId) return
+
+        setSubmittingPlanId(planId)
+        try {
+            const token = await user.getIdToken()
+            const response = await fetch('/api/upgrade-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ targetPlan: planId })
+            })
+
+            const payload = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                throw new Error(payload?.error || 'Request failed')
+            }
+
+            setRequestedPlanId(planId)
+            toast({
+                title: language === 'tr' ? 'Talebiniz Alındı' : 'Request Received',
+                description: language === 'tr'
+                    ? `${getPlanNameById(planId)} paketi için yükseltme talebiniz alındı.`
+                    : `Your upgrade request for ${getPlanNameById(planId)} has been received.`
+            })
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: language === 'tr' ? 'Hata' : 'Error',
+                description: error?.message || (language === 'tr' ? 'Talep gönderilemedi.' : 'Failed to send request.')
+            })
+        } finally {
+            setSubmittingPlanId(null)
+        }
     }
 
     const handleContact = () => {
@@ -47,6 +103,19 @@ export default function SubscriptionPage() {
                         : 'View or upgrade your current plan.'}
                 </p>
             </div>
+
+            {effectiveRequestedPlanId && (
+                <div className="mx-auto max-w-xl rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
+                    <div className="font-medium">
+                        {language === 'tr' ? 'Yükseltme talebi gönderildi.' : 'Upgrade request submitted.'}
+                    </div>
+                    <div className="text-sm mt-1">
+                        {language === 'tr'
+                            ? `Talep edilen paket: ${getPlanNameById(effectiveRequestedPlanId)}`
+                            : `Requested plan: ${getPlanNameById(effectiveRequestedPlanId)}`}
+                    </div>
+                </div>
+            )}
 
             {/* Billing Toggle */}
             <div className="flex justify-center">
@@ -125,9 +194,16 @@ export default function SubscriptionPage() {
                                     "w-full mb-4",
                                     isPopular && !isCurrentPlan && "bg-primary hover:bg-primary/90"
                                 )}
-                                disabled={isCurrentPlan || (!!currentPlanConfig && plan.sortOrder < currentPlanConfig.sortOrder)}
+                                disabled={
+                                    isCurrentPlan ||
+                                    (!!currentPlanConfig && plan.sortOrder < currentPlanConfig.sortOrder) ||
+                                    !!submittingPlanId
+                                }
                                 onClick={() => isContact ? handleContact() : handleUpgrade(plan.planId)}
                             >
+                                {submittingPlanId === plan.planId && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
                                 {isCurrentPlan 
                                     ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
                                     : isContact

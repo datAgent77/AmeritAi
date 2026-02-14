@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { translations, Language } from '@/lib/translations';
 
 type LanguageContextType = {
@@ -10,16 +10,26 @@ type LanguageContextType = {
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const missingTranslationKeys = new Set<string>();
+
+function humanizeTranslationKey(key: string): string {
+    const readable = key
+        .replace(/[_-]+/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .trim();
+
+    if (!readable) return key;
+    return readable.charAt(0).toUpperCase() + readable.slice(1);
+}
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguage] = useState<Language>('en');
 
     useEffect(() => {
-        const storedLang = localStorage.getItem('language') as Language;
-        if (storedLang && ['en', 'tr'].includes(storedLang)) {
-            setLanguage(storedLang);
+        const savedLanguage = localStorage.getItem('language');
+        if (savedLanguage && savedLanguage in translations) {
+            setLanguage(savedLanguage as Language);
         }
-        // Default is 'en' (set in useState), so no browser detection needed.
     }, []);
 
     const handleSetLanguage = (lang: Language) => {
@@ -30,7 +40,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const t = (key: string): string => {
         const trans = translations[language] as Record<string, string>;
         const enTrans = translations['en'] as Record<string, string>;
-        return trans[key] || enTrans[key] || key;
+        const translated = trans[key] || enTrans[key];
+
+        if (translated) return translated;
+
+        if (process.env.NODE_ENV !== 'production' && !missingTranslationKeys.has(key)) {
+            missingTranslationKeys.add(key);
+            console.warn(`[i18n] Missing translation key: "${key}" (lang=${language})`);
+        }
+
+        // Never show raw keys like "moduleEnabled" directly to users.
+        return humanizeTranslationKey(key);
     };
 
     return (

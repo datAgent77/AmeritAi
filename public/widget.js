@@ -1597,6 +1597,65 @@
       </svg>
     `;
 
+    const isAutoCollapseEnabled = settings.launcherStyle === 'icon_text' && settings.launcherCollapse;
+    let collapseTimer = null;
+    let isLauncherCollapsed = false;
+
+    const clearCollapseTimer = () => {
+      if (collapseTimer) {
+        clearTimeout(collapseTimer);
+        collapseTimer = null;
+      }
+    };
+
+    const collapseLauncher = (force = false) => {
+      if (!isAutoCollapseEnabled) return;
+      if (isLauncherCollapsed && !force) return;
+      isLauncherCollapsed = true;
+
+      launcher.style.width = `${settings.launcherHeight}px`;
+      launcher.style.padding = '0';
+      launcher.style.minWidth = `${settings.launcherHeight}px`;
+      launcher.style.gap = '0';
+
+      const span = launcher.querySelector('.userex-launcher-text');
+      if (span) {
+        span.style.opacity = '0';
+        span.style.maxWidth = '0';
+        span.style.margin = '0';
+        span.style.whiteSpace = 'nowrap';
+        span.style.overflow = 'hidden';
+        span.style.display = 'none';
+        span.style.pointerEvents = 'none';
+      }
+    };
+
+    const expandLauncher = (force = false) => {
+      if (!isAutoCollapseEnabled) return;
+      if (!isLauncherCollapsed && !force) return;
+      isLauncherCollapsed = false;
+
+      launcher.style.width = 'auto';
+      launcher.style.padding = '0 16px';
+      launcher.style.minWidth = `${settings.launcherWidth || 100}px`;
+      launcher.style.gap = '8px';
+
+      const span = launcher.querySelector('.userex-launcher-text');
+      if (span) {
+        span.style.display = 'inline-block';
+        span.style.opacity = '1';
+        span.style.maxWidth = '300px';
+        span.style.margin = '';
+        span.style.pointerEvents = 'auto';
+      }
+    };
+
+    const scheduleCollapse = (delayMs = 3000) => {
+      if (!isAutoCollapseEnabled) return;
+      clearCollapseTimer();
+      collapseTimer = setTimeout(() => collapseLauncher(), delayMs);
+    };
+
     const renderLauncherContent = (isOpen) => {
       if (isOpen) {
         launcher.innerHTML = closeSvg;
@@ -1701,6 +1760,15 @@
       if (window.lucide) {
         window.lucide.createIcons();
       }
+
+      // Re-apply visual collapse/expand state after any re-render.
+      if (isAutoCollapseEnabled) {
+        if (isLauncherCollapsed) {
+          collapseLauncher(true);
+        } else {
+          expandLauncher(true);
+        }
+      }
     };
 
     // Store dynamic context data - MOVED TO GLOBAL SCOPE
@@ -1729,63 +1797,23 @@
     };
 
     // Auto Collapse Logic for Icon + Text
-    if (settings.launcherStyle === 'icon_text' && settings.launcherCollapse) {
-      let collapseTimer;
-      let isCollapsed = false;
+    if (isAutoCollapseEnabled) {
+      // Initial collapse after a short idle window.
+      scheduleCollapse(5000);
 
-      const collapseLauncher = () => {
-        if (isCollapsed) return;
-        isCollapsed = true;
-
-        // Shrink width to height (make it circle/square)
-        launcher.style.width = `${settings.launcherHeight}px`;
-        launcher.style.padding = '0';
-        launcher.style.minWidth = `${settings.launcherHeight}px`; // Override minWidth
-        launcher.style.gap = '0';
-
-        // Hide text span
-        const span = launcher.querySelector('.userex-launcher-text');
-        if (span) {
-          span.style.transition = 'all 0.3s ease';
-          span.style.opacity = '0';
-          span.style.maxWidth = '0';
-          span.style.whiteSpace = 'nowrap';
-          span.style.overflow = 'hidden';
-        }
-      };
-
-      const expandLauncher = () => {
-        if (!isCollapsed) return;
-        isCollapsed = false;
-
-        launcher.style.width = 'auto';
-        launcher.style.padding = '0 16px';
-        launcher.style.minWidth = '100px'; // Restore original minWidth for text mode
-        launcher.style.gap = '8px';
-
-        const span = launcher.querySelector('.userex-launcher-text');
-        if (span) {
-          span.style.opacity = '1';
-          span.style.maxWidth = '300px';
-        }
-      };
-
-      // Start initial timer
-      collapseTimer = setTimeout(collapseLauncher, 5000);
-
-      // Enhance existing hover handlers
       const originalEnter = launcher.onmouseenter;
       launcher.onmouseenter = (e) => {
         if (originalEnter) originalEnter(e);
-        clearTimeout(collapseTimer);
+        clearCollapseTimer();
         expandLauncher();
       };
 
       const originalLeave = launcher.onmouseleave;
       launcher.onmouseleave = (e) => {
         if (originalLeave) originalLeave(e);
-        // Restart collapse timer
-        collapseTimer = setTimeout(collapseLauncher, 3000);
+        if (!isOpen) {
+          scheduleCollapse(3000);
+        }
       };
     }
 
@@ -1929,6 +1957,18 @@
 
       // Update icon based on state
       renderLauncherContent(isOpen);
+
+      // Keep collapse state consistent across open/close re-renders.
+      if (isAutoCollapseEnabled) {
+        if (isOpen) {
+          clearCollapseTimer();
+        } else if (isLauncherCollapsed) {
+          collapseLauncher(true);
+        } else {
+          expandLauncher(true);
+          scheduleCollapse(3000);
+        }
+      }
     };
 
     launcher.onclick = () => toggleWidget();

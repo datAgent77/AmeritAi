@@ -21,6 +21,10 @@ import { ConfirmationModal } from "./components/ConfirmationModal"
 import { VoiceOverlay } from "./components/VoiceOverlay"
 import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 
+type LeadSubmitOptions = {
+    source?: "inline" | "overlay"
+}
+
 export default function ChatbotContainer() {
     // 1. Contexts & Params
     const searchParams = useSearchParams()
@@ -168,6 +172,7 @@ export default function ChatbotContainer() {
     // 8. Scrolling Logic
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const messagesContainerRef = useRef<HTMLDivElement>(null)
+    const isFirstScrollRef = useRef(true)
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
         if (messagesContainerRef.current) {
@@ -175,19 +180,45 @@ export default function ChatbotContainer() {
             if (behavior === "auto") {
                 container.scrollTop = container.scrollHeight
             } else {
-                container.scrollTo({ top: container.scrollHeight, behavior: "smooth" })
+                container.scrollTo({ top: container.scrollHeight, behavior })
             }
         } else if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior })
         }
     }
 
-    // Effect to scroll on new messages
+    // Keep the latest message visible, including token-by-token streaming updates.
     useEffect(() => {
-        if (messages.length > 0) {
-           setTimeout(() => scrollToBottom("smooth"), 100)
+        if (messages.length === 0) {
+            isFirstScrollRef.current = true
+            return
         }
-    }, [messages.length, isTyping])
+
+        if (isFirstScrollRef.current) {
+            scrollToBottom("auto")
+            const frameId = requestAnimationFrame(() => scrollToBottom("auto"))
+            const timeout100 = setTimeout(() => scrollToBottom("auto"), 100)
+            const timeout500 = setTimeout(() => scrollToBottom("auto"), 500)
+            isFirstScrollRef.current = false
+
+            return () => {
+                cancelAnimationFrame(frameId)
+                clearTimeout(timeout100)
+                clearTimeout(timeout500)
+            }
+        }
+
+        const behavior: ScrollBehavior = chatStatus === "streaming" || isTyping ? "auto" : "smooth"
+        const frameId = requestAnimationFrame(() => scrollToBottom(behavior))
+        return () => cancelAnimationFrame(frameId)
+    }, [messages, isTyping, chatStatus])
+
+    // Mobile keyboard / visual viewport changes can shift the layout, so pin to bottom again.
+    useEffect(() => {
+        if (messages.length === 0) return
+        const frameId = requestAnimationFrame(() => scrollToBottom("auto"))
+        return () => cancelAnimationFrame(frameId)
+    }, [messages.length, viewportStyle.height, viewportStyle.top])
 
     // 9. Handlers
     const handleToggleSize = () => {
@@ -208,16 +239,17 @@ export default function ChatbotContainer() {
     }
 
     // LEAD SUBMIT HANDLER
-    const handleLeadSubmit = async (formData: any) => {
+    const handleLeadSubmit = async (formData: any, options?: LeadSubmitOptions) => {
         setIsSubmittingLead(true)
         try {
+            const submitSource = options?.source === "inline" ? "inline" : "overlay"
             const response = await fetch('/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chatbotId,
                     ...formData,
-                    source: 'Initial Lead Form'
+                    source: submitSource === "inline" ? 'In-Chat Lead Form' : 'Initial Lead Form'
                 })
             })
 
@@ -234,17 +266,31 @@ export default function ChatbotContainer() {
                 // Save legacy format for compatibility with Booking Overlay
                 localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
                 setShowLeadCollection(false)
-                
-                // Add Thank You message from Assistant
-                const thankYouMsg = {
-                    id: Date.now().toString(),
-                    role: 'assistant',
-                    content: t('leadThankYou') === 'leadThankYou' 
-                        ? `Teşekkürler ${formData.name || ''}, bilgilerinizi aldım. Ekibimiz sizinle en kısa sürede iletişime geçecektir.` 
-                        : t('leadThankYou').replace('{name}', formData.name || ''),
-                    createdAt: new Date()
+
+                // Inline lead form already renders an in-bubble success state.
+                // Avoid appending an extra assistant message to prevent duplicate acknowledgements.
+                if (submitSource !== "inline") {
+                    const leadName = String(formData?.name || "").trim()
+                    const translatedTemplate = t('leadThankYou')
+                    const fallbackText = leadName
+                        ? `Thank you ${leadName}, we received your information. Our team will contact you shortly.`
+                        : "Thank you, we received your information. Our team will contact you shortly."
+                    const thankYouText = translatedTemplate === 'leadThankYou'
+                        ? fallbackText
+                        : translatedTemplate
+                            .replace('{name}', leadName)
+                            .replace(/\s+,/g, ',')
+                            .replace(/\s{2,}/g, ' ')
+                            .trim()
+
+                    const thankYouMsg = {
+                        id: Date.now().toString(),
+                        role: 'assistant',
+                        content: thankYouText,
+                        createdAt: new Date()
+                    }
+                    setMessages((prev: any) => [...prev, thankYouMsg])
                 }
-                setMessages((prev: any) => [...prev, thankYouMsg])
             } else {
                 alert(t('errorOccurred') || "An error occurred. Please try again.")
             }

@@ -35,7 +35,7 @@ import {
     AlertCircle,
     Check
 } from "lucide-react"
-import { getPlanConfig } from "@/lib/pricing-config"
+import { getPlanConfig, formatPlanPrice } from "@/lib/pricing-config"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
@@ -190,7 +190,7 @@ export default function CustomerAdminPage() {
         }
 
         fetchData()
-    }, [userId, t, toast])
+    }, [userId, t, toast, currentUser])
 
     const handleSave = async () => {
         setIsSaving(true)
@@ -239,6 +239,14 @@ export default function CustomerAdminPage() {
     }
 
     const planConfig = getPlanConfig(subscription.planId)
+    const pricingLang = language === 'tr' ? 'tr' : 'en'
+    const monthlyPriceDisplay = formatPlanPrice(subscription.planId, 'monthly', pricingLang)
+    const annualPriceDisplay = formatPlanPrice(subscription.planId, 'annual', pricingLang)
+    const currentPlanLabel = (() => {
+        const key = `plan${subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1)}`
+        const translated = t(key)
+        return translated !== key ? translated : (planConfig?.displayName || subscription.planId)
+    })()
 
     if (isLoading) {
         return <div className="p-8 text-center">Loading...</div>
@@ -320,7 +328,7 @@ export default function CustomerAdminPage() {
                                     Aktif Paket
                                 </CardTitle>
                                 <div className="flex items-end gap-3">
-                                    <h2 className="text-4xl font-bold text-white capitalize">{subscription.planId} Plan</h2>
+                                    <h2 className="text-4xl font-bold text-white capitalize">{currentPlanLabel}</h2>
                                     {subscription.status === 'trial' && (
                                         <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 mb-1.5 hover:bg-blue-500/30">Deneme Sürümü</Badge>
                                     )}
@@ -330,16 +338,13 @@ export default function CustomerAdminPage() {
                                 </div>
                              </div>
                              <div className="text-right">
-                                    <div className="text-sm text-zinc-400">Aylık Tutar</div>
+                                    <div className="text-sm text-zinc-400">{language === 'tr' ? 'Aylık Tutar' : 'Monthly Price'}</div>
                                     <div className="text-2xl font-bold">
-                                        {planConfig?.billing?.contact 
-                                            ? 'Özel Teklif' 
-                                            : `$${planConfig?.billing?.monthly?.amount || 0}`
-                                        }
+                                        {monthlyPriceDisplay}
                                     </div>
                                     {planConfig?.billing?.annual && !planConfig?.billing?.contact && (
                                         <div className="text-xs text-zinc-400 mt-1">
-                                            Yıllık: ${planConfig.billing.annual.amount}
+                                            {language === 'tr' ? 'Yıllık' : 'Annual'}: {annualPriceDisplay}
                                         </div>
                                     )}
                              </div>

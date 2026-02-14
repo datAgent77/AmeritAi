@@ -58,7 +58,7 @@ export function GoogleTagManager() {
     return (
         <>
             {/* Initialize DataLayer & Consent Defaults */}
-            <Script id="gtm-consent-mode" strategy="beforeInteractive">
+            <Script id="gtm-consent-mode" strategy="afterInteractive">
                 {initialConsentScript}
             </Script>
 

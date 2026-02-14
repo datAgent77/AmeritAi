@@ -531,9 +531,16 @@ export default function AdminPage() {
                                         <TableCell>
                                             <div className="flex flex-col gap-1">
                                                 <span className="font-medium text-sm">
-                                                    {(user as any).subscription?.planId ? (
-                                                        (user as any).subscription.planId.charAt(0).toUpperCase() + (user as any).subscription.planId.slice(1)
-                                                    ) : '-'}
+                                                    {(() => {
+                                                        const rawPlanId =
+                                                            (user as any).subscription?.planId ||
+                                                            (user as any).planId ||
+                                                            (user as any).plan ||
+                                                            (user as any).entitlements?.planId;
+                                                        if (!rawPlanId || typeof rawPlanId !== 'string') return '-';
+                                                        const normalizedPlan = rawPlanId === 'trial' ? 'starter' : rawPlanId;
+                                                        return normalizedPlan.charAt(0).toUpperCase() + normalizedPlan.slice(1);
+                                                    })()}
                                                 </span>
                                                 <span className="textxs text-muted-foreground">
                                                     {(user as any).subscription?.billingPeriod === 'monthly' ? (t('monthly') || 'Aylık') : (user as any).subscription?.billingPeriod === 'yearly' ? (t('yearly') || 'Yıllık') : ''}

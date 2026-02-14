@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Keep dev and production build artifacts isolated to avoid chunk corruption
+    // when `next dev` and `next build` run in the same workspace.
+    distDir: process.env.NEXT_DIST_DIR || ".next",
     // Exclude chrome-extension from Next.js build
     webpack: (config, { isServer }) => {
         config.watchOptions = {

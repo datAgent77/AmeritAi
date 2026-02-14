@@ -48,6 +48,17 @@ export function NotificationBell() {
 
     const isSuperAdmin = role === 'SUPER_ADMIN'
 
+    const parseNotificationTimestamp = (rawValue: any): Date => {
+        if (!rawValue) return new Date()
+        if (rawValue instanceof Date) return rawValue
+        if (typeof rawValue?.toDate === 'function') {
+            return rawValue.toDate()
+        }
+
+        const parsed = new Date(rawValue)
+        return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+    }
+
     // Initialize audio
     useEffect(() => {
         audioRef.current = new Audio('/sound/notification.mp3')
@@ -196,7 +207,46 @@ export function NotificationBell() {
             // Silently ignore lead notification errors
         }
 
-        // 4. SYSTEM (Super Admin) - wrapped in try-catch
+        // 4. STORED SYSTEM NOTIFICATIONS (for all users) - wrapped in try-catch
+        try {
+            const notificationsRef = collection(db, "notifications")
+            const notificationsQ = query(
+                notificationsRef,
+                where("userId", "==", user.uid)
+            )
+            const notificationsSnap = await getDocs(notificationsQ)
+
+            notificationsSnap.docs.forEach(docSnap => {
+                const data = docSnap.data() as any
+                const timestamp = parseNotificationTimestamp(data.createdAt)
+                const notifId = `system_notification_${docSnap.id}`
+                const isUnread = data.isRead !== true
+                const isFresh = !previousIdsRef.current.has(notifId)
+
+                results.push({
+                    id: notifId,
+                    type: 'system',
+                    title: data.title || 'Sistem Bildirimi',
+                    message: data.message || '',
+                    timestamp,
+                    isNew: isUnread,
+                    data: {
+                        ...(data.metadata || {}),
+                        notificationDocId: docSnap.id,
+                        notificationType: data.type || 'general'
+                    }
+                })
+
+                if (isFresh && isUnread && previousIdsRef.current.size > 0) {
+                    hasNewTotal = true
+                }
+                previousIdsRef.current.add(notifId)
+            })
+        } catch (storedNotificationError) {
+            // Silently ignore system notification errors
+        }
+
+        // 5. SYSTEM (Super Admin fallback: pending tenant approvals) - wrapped in try-catch
         if (isSuperAdmin) {
             try {
                 const usersRef = collection(db, "users")
@@ -276,7 +326,32 @@ export function NotificationBell() {
                 router.push('/console/chatbot/leads')
                 break
             case 'system':
-                router.push('/admin')
+                if (notification.data?.notificationDocId) {
+                    try {
+                        await updateDoc(doc(db, "notifications", notification.data.notificationDocId), {
+                            isRead: true
+                        })
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+
+                if (isSuperAdmin) {
+                    router.push('/admin')
+                } else {
+                    const notificationType = notification.data?.notificationType as string | undefined
+                    if (
+                        notificationType === 'payment_due' ||
+                        notificationType === 'payment_overdue' ||
+                        notificationType === 'invoice_reminder' ||
+                        notificationType === 'trial_expired' ||
+                        notificationType === 'upgrade_request'
+                    ) {
+                        router.push('/console/settings/subscription')
+                    } else {
+                        router.push('/console/chatbot')
+                    }
+                }
                 break
         }
     }

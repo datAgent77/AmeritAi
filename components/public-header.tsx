@@ -56,7 +56,7 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ transparent = false }: PublicHeaderProps) {
     const { t, language, setLanguage } = useLanguage()
-    const { theme, resolvedTheme, setTheme } = useTheme()
+    const { resolvedTheme, setTheme } = useTheme()
     const { user } = useAuth()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
@@ -130,11 +130,12 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                 {/* Logo */}
                 <div className="flex items-center gap-2 mr-12">
                     <Link href="/" onClick={() => setIsOpen(false)}>
-                        {mounted ? (
-                            <VionLogo variant={resolvedTheme === 'dark' ? 'white' : 'black'} />
-                        ) : (
-                             <div className="h-7 w-24" />
-                        )}
+                        <div className="dark:hidden">
+                            <VionLogo variant="black" />
+                        </div>
+                        <div className="hidden dark:block">
+                            <VionLogo variant="white" />
+                        </div>
                     </Link>
                 </div>
 
@@ -304,7 +305,12 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                             <SheetContent side="right" className="bg-background border-l border-border text-foreground w-[300px] p-0 flex flex-col overflow-y-auto">
                                 <SheetHeader className="p-6 border-b border-border">
                                     <SheetTitle className="text-left text-foreground flex items-center justify-between">
-                                        <VionLogo variant={resolvedTheme === 'dark' ? 'white' : 'black'} />
+                                        <div className="dark:hidden">
+                                            <VionLogo variant="black" />
+                                        </div>
+                                        <div className="hidden dark:block">
+                                            <VionLogo variant="white" />
+                                        </div>
                                         <button onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')} className="text-xs border border-border rounded px-2 py-1 uppercase hover:bg-muted mr-8">
                                             {language}
                                         </button>

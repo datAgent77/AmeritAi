@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
-import { translations } from "@/lib/translations"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +38,7 @@ import {
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
 import { getPublicPlansSorted, formatPlanPrice, getPlanBadge, PlanConfig } from "@/lib/pricing-config"
 import { PricingModal } from "@/components/pricing-modal"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 // Industry icons
 const INDUSTRY_ICONS: Record<string, any> = {
@@ -542,7 +542,7 @@ export default function OnboardingPage() {
     }
 
     const copyEmbedCode = () => {
-        const code = `<script src="${window.location.origin}/widget.js?v=2.0" data-chatbot-id="${user?.uid}"></script>`
+        const code = `<script src="${window.location.origin}/widget.js?v=2.0" data-chatbot-id="${user?.uid || ""}"></script>`
         navigator.clipboard.writeText(code)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
@@ -558,56 +558,77 @@ export default function OnboardingPage() {
     }
 
     const stepConfig = STEP_CONFIG[currentStep]
+    const getPlanDisplayName = (planId: string, fallback: string) => {
+        const key = `plan${planId.charAt(0).toUpperCase() + planId.slice(1)}`
+        const translated = t(key)
+        return translated !== key ? translated : fallback
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-zinc-950">
             {/* Header */}
             <header className="border-b bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <VionLogo variant="black" className="text-xl dark:hidden" />
-                    <VionLogo variant="white" className="text-xl hidden dark:block" />
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
+                    <div className="shrink-0">
+                        <VionLogo variant="black" className="text-xl dark:hidden" />
+                        <VionLogo variant="white" className="text-xl hidden dark:block" />
+                    </div>
 
                     {/* Step Indicator with Progress */}
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            {ONBOARDING_STEPS.map((step, i) => {
-                                const isCompleted = completedSteps.includes(step)
-                                const isCurrent = step === currentStep
+                    <div className="flex-1 min-w-0 flex justify-center">
+                        <div className="flex items-center gap-4 overflow-x-auto pb-1">
+                            <div className="flex items-center gap-2">
+                                {ONBOARDING_STEPS.map((step, i) => {
+                                    const isCompleted = completedSteps.includes(step)
+                                    const isCurrent = step === currentStep
 
-                                return (
-                                    <div key={step} className="flex items-center">
-                                        <button
-                                            onClick={() => goToStep(step)}
-                                            disabled={!canAccessStep(step, completedSteps) && !isCompleted}
-                                            className={cn(
-                                                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                                                isCompleted && "bg-green-500 text-white",
-                                                isCurrent && !isCompleted && "bg-primary text-white dark:text-black ring-4 ring-primary/20",
-                                                !isCurrent && !isCompleted && "bg-gray-200 text-gray-500 dark:bg-zinc-700"
+                                    return (
+                                        <div key={step} className="flex items-center">
+                                            <button
+                                                onClick={() => goToStep(step)}
+                                                disabled={!canAccessStep(step, completedSteps) && !isCompleted}
+                                                className={cn(
+                                                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                                                    isCompleted && "bg-green-500 text-white",
+                                                    isCurrent && !isCompleted && "bg-primary text-white dark:text-black ring-4 ring-primary/20",
+                                                    !isCurrent && !isCompleted && "bg-gray-200 text-gray-500 dark:bg-zinc-700"
+                                                )}
+                                            >
+                                                {isCompleted ? <Check className="w-4 h-4" /> : i + 1}
+                                            </button>
+                                            {i < ONBOARDING_STEPS.length - 1 && (
+                                                <div className={cn(
+                                                    "w-8 h-0.5 mx-1",
+                                                    completedSteps.includes(step) ? "bg-green-500" : "bg-gray-200 dark:bg-zinc-700"
+                                                )} />
                                             )}
-                                        >
-                                            {isCompleted ? <Check className="w-4 h-4" /> : i + 1}
-                                        </button>
-                                        {i < ONBOARDING_STEPS.length - 1 && (
-                                            <div className={cn(
-                                                "w-8 h-0.5 mx-1",
-                                                completedSteps.includes(step) ? "bg-green-500" : "bg-gray-200 dark:bg-zinc-700"
-                                            )} />
-                                        )}
-                                    </div>
-                                )
-                            })}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            {/* Progress Percentage */}
+                            <div className="text-sm text-muted-foreground font-medium whitespace-nowrap">
+                                {getCompletionPercentage(completedSteps)}%
+                            </div>
                         </div>
-                        {/* Progress Percentage */}
-                        <div className="text-sm text-muted-foreground font-medium">
-                            {getCompletionPercentage(completedSteps)}%
-                        </div>
+                    </div>
+
+                    <div className="ml-auto shrink-0 flex items-center gap-2">
+                        {user?.email && (
+                            <div
+                                title={user.email}
+                                className="hidden md:flex h-10 max-w-[280px] items-center rounded-full border border-zinc-200 dark:border-zinc-700 bg-white/70 dark:bg-zinc-900/70 px-3 text-sm text-muted-foreground truncate"
+                            >
+                                {user.email}
+                            </div>
+                        )}
+                        <LanguageSwitcher />
                     </div>
                 </div>
             </header>
 
             {/* Content */}
-            <main className="max-w-7xl mx-auto px-6 py-12 transition-all duration-300 ease-in-out">
+            <main className="max-w-7xl mx-auto px-4 md:px-6 py-12 transition-all duration-300 ease-in-out">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold tracking-tight">
                         {stepConfig.title[language === 'tr' ? 'tr' : 'en']}
@@ -637,13 +658,20 @@ export default function OnboardingPage() {
                                         whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
                                         whileTap={{ scale: 0.95 }}
                                         onClick={() => setSelectedSector(key as IndustryType)}
+                                        aria-pressed={isSelected}
                                         className={cn(
-                                            "p-4 rounded-xl border-2 text-left transition-colors shadow-sm hover:shadow-md bg-white dark:bg-zinc-900",
+                                            "relative p-4 rounded-xl border-2 text-left transition-all duration-200 shadow-sm hover:shadow-md bg-white dark:bg-zinc-900",
                                             isSelected
-                                                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                                ? "border-white bg-primary/15 dark:bg-primary/20 ring-2 ring-white/25 shadow-lg"
                                                 : "border-gray-200 dark:border-zinc-800 hover:border-primary/50"
                                         )}
                                     >
+                                        {isSelected && (
+                                            <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                                                <Check className="w-3 h-3" />
+                                                {language === 'tr' ? 'Seçildi' : 'Selected'}
+                                            </span>
+                                        )}
                                         <Icon className={cn(
                                             "w-6 h-6 mb-2",
                                             isSelected ? "text-primary" : "text-muted-foreground"
@@ -687,10 +715,14 @@ export default function OnboardingPage() {
                         animate="visible"
                         className="space-y-6"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                             {getPublicPlansSorted().map((plan) => {
                                 const badge = getPlanBadge(plan.planId)
                                 const isPopular = badge === 'recommended' || badge === 'Önerilen'
+                                const isContact = plan.billing.contact
+                                const price = formatPlanPrice(plan.planId, 'monthly', language === 'tr' ? 'tr' : 'en')
+                                const subtitle = t(plan.copy.subtitle || '')
+                                const translatedSubtitle = subtitle !== (plan.copy.subtitle || '') ? subtitle : (plan.copy.subtitle || '')
 
                                 return (
                                     <motion.div
@@ -706,51 +738,42 @@ export default function OnboardingPage() {
                                     >
                                         {isPopular && (
                                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold shadow-md">
-                                                {language === 'tr' ? 'Önerilen' : 'Recommended'}
+                                                {t('recommended')}
                                             </div>
                                         )}
 
                                         <div className="mb-6 space-y-1 text-center">
-                                            <h3 className="text-xl font-bold">{plan.displayName}</h3>
-                                            <p className="text-sm text-muted-foreground">
-                                                {(() => {
-                                                    const lang = language === 'tr' ? 'tr' : 'en'
-                                                    const subtitleKey = plan.copy.subtitle || ''
-                                                    // @ts-ignore
-                                                    return translations[lang]?.[subtitleKey] || subtitleKey
-                                                })()}
-                                            </p>
+                                            <h3 className="text-xl font-bold">{getPlanDisplayName(plan.planId, plan.displayName)}</h3>
+                                            <p className="text-sm text-muted-foreground">{translatedSubtitle}</p>
                                         </div>
 
                                         <div className="mb-6 text-center">
                                             <div className="flex items-baseline justify-center gap-1">
                                                 <span className="text-4xl font-bold tracking-tight">
-                                                    {plan.billing.contact 
-                                                        ? (language === 'tr' ? 'Özel' : 'Custom')
-                                                        : formatPlanPrice(plan.planId, 'monthly', language === 'tr' ? 'tr' : 'en')}
+                                                    {isContact ? (language === 'tr' ? 'Özel Teklif' : 'Custom Quote') : price}
                                                 </span>
                                             </div>
                                         </div>
 
                                         <ul className="space-y-3 mb-8 flex-1">
-                                            <li className="flex items-start gap-3 text-sm">
-                                                <Check className="w-5 h-5 text-green-500 shrink-0" />
-                                                <span>
-                                                    {plan.limits.messageLimit === 'unlimited' 
-                                                        ? (language === 'tr' ? 'Sınırsız Mesaj' : 'Unlimited Messages')
-                                                        : (language === 'tr' ? `${plan.limits.messageLimit} Mesaj/ay` : `${plan.limits.messageLimit} Messages/mo`)}
-                                                </span>
-                                            </li>
-                                            {plan.highlights
-                                                ?.filter(h => h !== 'featureUnlimitedMessages')
-                                                .slice(0, 3)
-                                                .map((highlight, idx) => {
-                                                const lang = language === 'tr' ? 'tr' : 'en'
-                                                const translatedText = (translations as Record<string, Record<string, string>>)[lang]?.[highlight] || highlight
+                                            {plan.highlights?.map((highlight, idx) => {
+                                                const isComingSoon = plan.highlights_meta?.coming_soon?.includes(highlight)
+                                                const translatedText = t(highlight) !== highlight ? t(highlight) : highlight
                                                 return (
                                                     <li key={idx} className="flex items-start gap-3 text-sm">
-                                                        <Check className="w-5 h-5 text-green-500 shrink-0" />
-                                                        <span>{translatedText}</span>
+                                                        {isComingSoon ? (
+                                                            <Info className="w-5 h-5 text-amber-500 shrink-0" />
+                                                        ) : (
+                                                            <Check className="w-5 h-5 text-green-500 shrink-0" />
+                                                        )}
+                                                        <span className={cn(isComingSoon && "text-muted-foreground")}>
+                                                            {translatedText}
+                                                            {isComingSoon && (
+                                                                <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                                    {language === 'tr' ? 'Yakında' : 'Soon'}
+                                                                </span>
+                                                            )}
+                                                        </span>
                                                     </li>
                                                 )
                                             })}
@@ -792,7 +815,7 @@ export default function OnboardingPage() {
 
                 {/* STEP 3: KNOWLEDGE BASE */}
                 {currentStep === 'knowledge' && (
-                    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <Card className="border-none shadow-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm ring-1 ring-border/50">
                             <CardContent className="p-8 space-y-8">
                                 {/* Input Area: Only show if not scanning and no results yet */}
@@ -994,7 +1017,7 @@ export default function OnboardingPage() {
                 {/* STEP 4: WIDGET */}
                 {
                     currentStep === 'widget' && (
-                        <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                             <Card className="border-none shadow-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm ring-1 ring-border/50">
                                 <CardContent className="p-8 space-y-8">
                                         <div className="grid gap-6">
@@ -1118,7 +1141,7 @@ export default function OnboardingPage() {
                                 <CardContent>
                                     <div className="relative">
                                         <pre className="p-4 rounded-lg bg-zinc-900 text-green-400 text-sm overflow-x-auto">
-                                            {`<script src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget.js" data-chatbot-id="${user?.uid}"></script>`}
+                                            {`<script src="${typeof window !== 'undefined' ? window.location.origin : ''}/widget.js?v=2.0" data-chatbot-id="${user?.uid || ""}"></script>`}
                                         </pre>
                                         <Button
                                             size="sm"
@@ -1172,7 +1195,11 @@ export default function OnboardingPage() {
                             <div className="flex justify-center -mt-2 mb-4">
                                 <Button
                                     variant="outline"
-                                    onClick={() => window.open('/chatbot-view', '_blank')}
+                                    onClick={() => {
+                                        if (!user?.uid) return
+                                        window.open(`/chatbot-view?id=${encodeURIComponent(user.uid)}`, '_blank', 'noopener,noreferrer')
+                                    }}
+                                    disabled={!user?.uid}
                                     className="gap-2 w-full sm:w-auto border-dashed border-2"
                                 >
                                     <MessageSquare className="w-4 h-4 text-primary" />

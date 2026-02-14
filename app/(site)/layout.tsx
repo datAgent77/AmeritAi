@@ -9,7 +9,8 @@ export default function SiteLayout({
     <ThemeProvider
         attribute="class"
         defaultTheme="dark"
-        enableSystem
+        storageKey="site-theme"
+        enableSystem={false}
         disableTransitionOnChange
     >
       {children}

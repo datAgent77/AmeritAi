@@ -38,6 +38,7 @@ export function PricingModal({
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
     const [isLoading, setIsLoading] = useState(false)
     const [showSuccess, setShowSuccess] = useState(false)
+    const [requestedPlanId, setRequestedPlanId] = useState<string | null>(null)
     const { user } = useAuth()
     const { toast } = useToast()
 
@@ -56,6 +57,7 @@ export function PricingModal({
         }
 
         setIsLoading(true)
+        setRequestedPlanId(planId)
         try {
             const token = await user.getIdToken()
             const response = await fetch('/api/upgrade-request', {
@@ -120,6 +122,19 @@ export function PricingModal({
                                 ? 'Plan yükseltme talebiniz başarıyla bize ulaştı. Müşteri temsilcilerimiz en kısa sürede sizinle iletişime geçerek süreci tamamlayacaktır.' 
                                 : 'Your upgrade request has been received successfully. Our customer representatives will contact you shortly to complete the process.'}
                         </p>
+                        {requestedPlanId && (
+                            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-sm text-green-800">
+                                <span className="font-medium">
+                                    {language === 'tr' ? 'Talep Edilen Paket:' : 'Requested Plan:'}
+                                </span>
+                                <span className="uppercase font-semibold">
+                                    {(() => {
+                                        const planConfig = getPlan(requestedPlanId)
+                                        return planConfig ? getPlanDisplayName(planConfig) : requestedPlanId
+                                    })()}
+                                </span>
+                            </div>
+                        )}
                         <Button onClick={onClose} size="lg" className="min-w-[150px]">
                             {language === 'tr' ? 'Tamam, Anlaşıldı' : 'Got it'}
                         </Button>

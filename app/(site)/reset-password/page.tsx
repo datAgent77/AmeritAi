@@ -66,7 +66,11 @@ function ResetPasswordContent() {
         }
 
         if (!isPasswordStrong(password)) {
-            setError(language === 'tr' ? 'Şifre gereksinimleri karşılanmıyor.' : 'Password does not meet requirements.')
+            setError(
+                language === 'tr'
+                    ? 'Şifre en az 8 karakter olmalı ve harf, sayı, sembolden en az ikisini içermelidir.'
+                    : 'Password must be at least 8 characters and include at least 2 of: letters, numbers, symbols.'
+            )
             return
         }
 
@@ -236,7 +240,7 @@ function ResetPasswordContent() {
                                     )}
                                 </Button>
                             </div>
-                            <PasswordStrength password={password} className="mt-2" />
+                            <PasswordStrength password={password} language={language} className="mt-2" />
                         </div>
 
                         <div className="space-y-2">

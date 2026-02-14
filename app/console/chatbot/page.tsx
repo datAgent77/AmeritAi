@@ -8,7 +8,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { getExperienceState, UserContext, OnboardingStatus } from "@/lib/experience-orchestrator"
-import { getUIExperienceAction, isEmptyStateAction, isModalAction } from "@/lib/experience-ui-adapter"
+import { getUIExperienceAction, isModalAction } from "@/lib/experience-ui-adapter"
 import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization"
 import { getTrialDaysRemaining } from "@/lib/entitlements"
 import { PricingModal } from "@/components/pricing-modal"
@@ -121,32 +121,8 @@ export default function ChatbotConsolePage() {
         )
     }
 
-    // Render empty state if action is show-empty-state
-    const shouldShowEmptyState = uiAction && isEmptyStateAction(uiAction)
-
-    if (shouldShowEmptyState) {
-        return (
-            <div className="p-8">
-                <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-                    <div className="max-w-md space-y-4">
-                        <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                            {uiAction.config.title}
-                        </h2>
-                        <p className="text-muted-foreground">
-                            {uiAction.config.description}
-                        </p>
-                        {uiAction.config.helperText && (
-                            <p className="text-sm text-muted-foreground">
-                                {uiAction.config.helperText}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    // Default: render dashboard normally (action type: 'none')
+    // Always render dashboard widgets, even when there is no conversation data.
+    // Widgets already handle empty/zero states internally.
     return (
         <>
             <div className="p-8">

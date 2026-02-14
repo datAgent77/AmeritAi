@@ -4,23 +4,14 @@ import Link from "next/link"
 import NextImage from "next/image"
 import { VionLogo } from "@/components/vion-logo"
 import { useLanguage } from "@/context/LanguageContext"
-import { Twitter, Linkedin, Github, Instagram, Sun, Moon } from "lucide-react"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { Twitter, Linkedin, Github, Instagram } from "lucide-react"
 
 export function PublicFooter() {
     const { t } = useLanguage()
-    const { theme, setTheme, resolvedTheme } = useTheme()
-    const [mounted, setMounted] = useState(false)
-
-    useEffect(() => {
-        setMounted(true)
-    }, [])
 
     const footerLinks = {
         product: [
-            { label: t('allModules') || (mounted && (resolvedTheme === 'dark' ? 'Modules' : 'Modules')), href: "/products" },
+            { label: t('allModules') || "Modules", href: "/products" },
             { label: t('landingPersonalShopper'), href: "/products/personal-shopper" },
             { label: t('modules.visualDiagnosis'), href: "/products/visual-diagnosis" },
             { label: t('modules.restaurantMenu') || "Smart Menu", href: "/products/restaurant-menu" },
@@ -60,11 +51,12 @@ export function PublicFooter() {
                     {/* Brand Column */}
                     <div className="col-span-2 lg:col-span-2 flex flex-col gap-4">
                         <Link href="/" className="flex items-center gap-2">
-                            {mounted ? (
-                                <VionLogo variant={resolvedTheme === 'dark' ? 'white' : 'black'} />
-                            ) : (
-                                <div className="h-7 w-24 bg-muted/20 animate-pulse rounded" />
-                            )}
+                            <div className="dark:hidden">
+                                <VionLogo variant="black" />
+                            </div>
+                            <div className="hidden dark:block">
+                                <VionLogo variant="white" />
+                            </div>
                         </Link>
                         <p className="text-sm text-muted-foreground max-w-sm mt-2 leading-relaxed">
                             {t('footerDesc')}
