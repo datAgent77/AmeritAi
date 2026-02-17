@@ -32,6 +32,8 @@ export function useChatCore({
     const [isTyping, setIsTyping] = useState(false)
     const [hasProactiveTriggered, setHasProactiveTriggered] = useState(false)
     const [listenerTrigger, setListenerTrigger] = useState(0)
+    const messagesRef = useRef<any[]>([])
+    const sendQueueRef = useRef<Promise<string>>(Promise.resolve(""))
     
     // Lead capture states
     const [hasRequestedContactInfo, setHasRequestedContactInfo] = useState(false)
@@ -50,6 +52,10 @@ export function useChatCore({
     })
 
     const isChatLoading = chatStatus === 'streaming' || chatStatus === 'submitted'
+
+    useEffect(() => {
+        messagesRef.current = messages
+    }, [messages])
 
     // 1. Session Initialization
     useEffect(() => {
@@ -176,13 +182,20 @@ export function useChatCore({
     const sendMessage = async (content: string, shouldSpeakResponse: boolean = false, visualAnalysisContext?: string): Promise<string> => {
         if (!content.trim()) return ""
 
+        const run = async (): Promise<string> => {
+
         const userMessage = {
             id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
             role: 'user',
             content: content,
             createdAt: new Date()
         }
-        setMessages((prev: any) => [...prev, userMessage])
+        const outboundMessages = [...messagesRef.current, userMessage]
+        setMessages((prev: any) => {
+            const next = [...prev, userMessage]
+            messagesRef.current = next
+            return next
+        })
         setChatStatus('submitted')
         setIsTyping(true)
 
@@ -197,7 +210,7 @@ export function useChatCore({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: [...messages, userMessage],
+                    messages: outboundMessages,
                     chatbotId,
                     sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
                     context: pageContext,
@@ -316,6 +329,11 @@ export function useChatCore({
             })
             return ""
         }
+        }
+
+        const queued = sendQueueRef.current.then(run, run)
+        sendQueueRef.current = queued.then(() => "", () => "")
+        return queued
     }
 
     // 5. Proactive Engagement

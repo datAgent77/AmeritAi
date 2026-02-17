@@ -116,32 +116,37 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
         )
     }
 
+    const campaignCardClass = (enabled: boolean) =>
+        `border transition-all ${enabled ? "border-zinc-900 bg-zinc-50" : "border-zinc-200 bg-white"}`
+
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+        <div className="flex-1 space-y-6 animate-in fade-in duration-500">
+            <section className="rounded-2xl border border-zinc-900 bg-black p-6 text-white">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                        <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Campaign Manager</p>
+                        <h2 className="text-2xl font-semibold tracking-tight">
                             {t('modules.campaignManager') || "Campaign Wizard"}
                         </h2>
-                        <p className="text-muted-foreground">
+                        <p className="text-sm text-zinc-300">
                             {t('modules.campaignManagerDesc') || "Create instant deals and happy hours driven by AI"}
                         </p>
+                        {isSuperAdmin && (
+                            <p className="text-xs text-zinc-400">Tenant scope: {targetUserId}</p>
+                        )}
                     </div>
+                    <Button onClick={saveConfig} disabled={isSaving} className="bg-white text-black hover:bg-zinc-200">
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t('save') || "Kaydet"}
+                    </Button>
                 </div>
-                <Button onClick={saveConfig} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t('save') || "Kaydet"}
-                </Button>
-            </div>
+            </section>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {/* Rainy Day Special */}
-                <Card className={`border-2 transition-all ${config.rainyDay.enabled ? 'border-blue-500 bg-blue-50/50' : 'hover:border-blue-200'}`}>
+                <Card className={campaignCardClass(config.rainyDay.enabled)}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <CloudLightning className="h-5 w-5 text-blue-500" />
+                            <CloudLightning className="h-5 w-5 text-zinc-800" />
                             Rainy Day Special
                         </CardTitle>
                         <CardDescription>
@@ -150,7 +155,7 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
                                 <Label>Enable</Label>
                                 <Switch
                                     checked={config.rainyDay.enabled}
@@ -160,12 +165,12 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                                     }))}
                                 />
                             </div>
-                            <div className="flex justify-between items-center bg-background p-3 rounded-lg border">
+                            <div className="flex justify-between items-center rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                                 <span className="font-medium text-sm">Discount</span>
                                 <div className="flex items-center gap-2">
                                     <Input
                                         type="number"
-                                        className="w-16"
+                                        className="w-20"
                                         value={config.rainyDay.discount}
                                         onChange={(e) => setConfig(prev => ({
                                             ...prev,
@@ -179,11 +184,10 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </CardContent>
                 </Card>
 
-                {/* Happy Hour */}
-                <Card className={`border-2 transition-all ${config.happyHour.enabled ? 'border-purple-500 bg-purple-50/50' : 'hover:border-purple-200'}`}>
+                <Card className={campaignCardClass(config.happyHour.enabled)}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-purple-500" />
+                            <Clock className="h-5 w-5 text-zinc-800" />
                             Happy Hour
                         </CardTitle>
                         <CardDescription>
@@ -192,7 +196,7 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
                                 <Label>Enable</Label>
                                 <Switch
                                     checked={config.happyHour.enabled}
@@ -230,11 +234,10 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </CardContent>
                 </Card>
 
-                {/* Flash Sale */}
-                <Card>
+                <Card className={campaignCardClass(config.flashSale.enabled)}>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Zap className="h-5 w-5 text-orange-500" />
+                            <Zap className="h-5 w-5 text-zinc-800" />
                             Custom Flash Sale
                         </CardTitle>
                         <CardDescription>
@@ -243,7 +246,7 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
                                 <Label>Enable</Label>
                                 <Switch
                                     checked={config.flashSale.enabled}
@@ -269,13 +272,13 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                 </Card>
             </div>
 
-            <Card>
+            <Card className="border-zinc-200 bg-white shadow-sm">
                 <CardHeader>
                     <CardTitle>AI Injection Preview</CardTitle>
                     <CardDescription>How the AI sees active campaigns</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="bg-slate-950 text-slate-50 p-4 rounded-lg font-mono text-sm max-w-2xl">
+                    <div className="rounded-lg bg-black p-4 font-mono text-sm text-zinc-100">
                         {`{
   "activeCampaigns": [
     ${config.rainyDay.enabled ? '"Rainy Day",' : ''}
@@ -294,6 +297,13 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                     </div>
                 </CardContent>
             </Card>
+
+            <div className="flex justify-end">
+                <Button onClick={saveConfig} disabled={isSaving} className="bg-black text-white hover:bg-zinc-800">
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {t('save') || "Kaydet"}
+                </Button>
+            </div>
         </div>
     )
 }

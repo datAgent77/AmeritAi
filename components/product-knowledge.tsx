@@ -1,91 +1,84 @@
-import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
-import { useAuth } from "@/context/AuthContext"
-import { db } from "@/lib/firebase"
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2, Plus, Search, Trash2, Upload, Globe, DollarSign, Package, AlertCircle } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { db } from "@/lib/firebase";
+import { collection, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Plus, Trash2, DollarSign, Package, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
-    id: string
-    name: string
-    price: number
-    currency: string
-    description: string
-    inStock: boolean
-    stockQuantity?: number | null  // NEW: Actual stock count from feed
-    imageUrl?: string
-    createdAt: any
-    tenantId?: string
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    description: string;
+    inStock: boolean;
+    imageUrl?: string;
 }
 
 interface ProductKnowledgeProps {
-    targetUserId?: string
+    targetUserId?: string;
 }
 
 export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
-    const { user } = useAuth()
-    const { toast } = useToast()
-    const [products, setProducts] = useState<Product[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [isAdding, setIsAdding] = useState(false)
-    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false) // Renamed for clarity, was isOpen
-    const [fetchError, setFetchError] = useState<string | null>(null)
+    const { user } = useAuth();
+    const { language } = useLanguage();
+    const { toast } = useToast();
+    const isTr = language === "tr";
 
-    const effectiveUserId = targetUserId || user?.uid
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
-    // Form State
+    const effectiveUserId = targetUserId || user?.uid;
+
     const [newProduct, setNewProduct] = useState({
         name: "",
         price: "",
         currency: "USD",
         description: "",
         imageUrl: ""
-    })
+    });
 
     const fetchProducts = useCallback(async () => {
-        if (!effectiveUserId) return
-        setIsLoading(true)
-        setFetchError(null)
+        if (!effectiveUserId) return;
+        setIsLoading(true);
+        setFetchError(null);
         try {
-            // Use API to bypass Firestore SDK issues
-            const response = await fetch(`/api/shopper/products?chatbotId=${effectiveUserId}`)
-            if (!response.ok) {
-                throw new Error("Failed to fetch products")
-            }
-            const data = await response.json()
-            setProducts(data.products || [])
-        } catch (error: any) {
-            console.error("Error fetching products:", error)
-            setFetchError("Ürünler yüklenirken bir hata oluştu.")
+            const response = await fetch(`/api/shopper/products?chatbotId=${effectiveUserId}`);
+            if (!response.ok) throw new Error("Failed to fetch products");
+            const data = await response.json();
+            setProducts(data.products || []);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+            setFetchError(isTr ? "Ürünler yüklenirken bir hata oluştu." : "An error occurred while loading products.");
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }, [effectiveUserId])
+    }, [effectiveUserId, isTr]);
 
     useEffect(() => {
-        // Delay fetch slightly to avoid SDK race conditions
         const timer = setTimeout(() => {
             if (effectiveUserId) {
-                fetchProducts()
+                void fetchProducts();
             }
-        }, 100)
-        return () => clearTimeout(timer)
-    }, [effectiveUserId, fetchProducts])
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [effectiveUserId, fetchProducts]);
 
     const handleAddProduct = async () => {
-        if (!effectiveUserId || !newProduct.name || !newProduct.price) return
-        setIsAdding(true)
+        if (!effectiveUserId || !newProduct.name || !newProduct.price) return;
+        setIsAdding(true);
         try {
             await addDoc(collection(db, "products"), {
                 chatbotId: effectiveUserId,
@@ -96,139 +89,136 @@ export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
                 imageUrl: newProduct.imageUrl,
                 inStock: true,
                 createdAt: serverTimestamp()
-            })
+            });
 
             toast({
-                title: "Success",
-                description: "Product added to catalog."
-            })
-            setIsAddDialogOpen(false)
-            setNewProduct({ name: "", price: "", currency: "USD", description: "", imageUrl: "" })
-            fetchProducts()
+                title: isTr ? "Başarılı" : "Success",
+                description: isTr ? "Ürün kataloğa eklendi." : "Product added to catalog."
+            });
+            setIsAddDialogOpen(false);
+            setNewProduct({ name: "", price: "", currency: "USD", description: "", imageUrl: "" });
+            await fetchProducts();
         } catch (error) {
-            console.error("Error adding product:", error)
+            console.error("Error adding product:", error);
             toast({
-                title: "Error",
-                description: "Failed to add product.",
+                title: isTr ? "Hata" : "Error",
+                description: isTr ? "Ürün eklenemedi." : "Failed to add product.",
                 variant: "destructive"
-            })
+            });
         } finally {
-            setIsAdding(false)
+            setIsAdding(false);
         }
-    }
+    };
 
     const handleDeleteProduct = async (productId: string) => {
-        // Automatically approved as per user request
-        // if (!confirm("Are you sure you want to delete this product?")) return
         try {
-            await deleteDoc(doc(db, "products", productId))
+            await deleteDoc(doc(db, "products", productId));
             toast({
-                title: "Deleted",
-                description: "Product removed from catalog."
-            })
-            fetchProducts()
+                title: isTr ? "Silindi" : "Deleted",
+                description: isTr ? "Ürün katalogdan kaldırıldı." : "Product removed from catalog."
+            });
+            await fetchProducts();
         } catch (error) {
-            console.error("Error deleting product:", error)
+            console.error("Error deleting product:", error);
             toast({
-                title: "Error",
-                description: "Failed to delete product.",
+                title: isTr ? "Hata" : "Error",
+                description: isTr ? "Ürün silinemedi." : "Failed to delete product.",
                 variant: "destructive"
-            })
+            });
         }
-    }
+    };
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-lg font-medium">Product Catalog</h2>
+                    <h2 className="text-lg font-medium">{isTr ? "Ürün Kataloğu" : "Product Catalog"}</h2>
                     <p className="text-sm text-gray-500">
-                        Manage your products for AI recommendations.
+                        {isTr ? "AI önerileri için ürünlerinizi yönetin." : "Manage your products for AI recommendations."}
                     </p>
                 </div>
-                <div className="flex gap-2">
-
-                    <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Product
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Product</DialogTitle>
-                                <DialogDescription>
-                                    Add a product to your catalog. The AI will use this information to make recommendations.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="bg-black text-white hover:bg-zinc-800">
+                            <Plus className="mr-2 h-4 w-4" />
+                            {isTr ? "Ürün Ekle" : "Add Product"}
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>{isTr ? "Yeni Ürün Ekle" : "Add New Product"}</DialogTitle>
+                            <DialogDescription>
+                                {isTr
+                                    ? "AI önerilerinde kullanılmak üzere kataloğunuza ürün ekleyin."
+                                    : "Add a product to your catalog for AI recommendations."}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label>{isTr ? "Ürün Adı" : "Product Name"}</Label>
+                                <Input
+                                    value={newProduct.name}
+                                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                    placeholder={isTr ? "Örn: Premium Kablosuz Kulaklık" : "e.g. Premium Wireless Headphones"}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Product Name</Label>
-                                    <Input
-                                        value={newProduct.name}
-                                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                                        placeholder="e.g. Premium Wireless Headphones"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <Label>Price</Label>
-                                        <div className="relative">
-                                            <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                className="pl-8"
-                                                type="number"
-                                                value={newProduct.price}
-                                                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                                                placeholder="99.99"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label>Currency</Label>
+                                    <Label>{isTr ? "Fiyat" : "Price"}</Label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            value={newProduct.currency}
-                                            onChange={(e) => setNewProduct({ ...newProduct, currency: e.target.value })}
-                                            placeholder="USD"
+                                            className="pl-8"
+                                            type="number"
+                                            value={newProduct.price}
+                                            onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                                            placeholder="99.99"
                                         />
                                     </div>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Description</Label>
-                                    <Textarea
-                                        value={newProduct.description}
-                                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                                        placeholder="Detailed product description..."
-                                        rows={3}
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label>Image URL (Optional)</Label>
+                                    <Label>{isTr ? "Para Birimi" : "Currency"}</Label>
                                     <Input
-                                        value={newProduct.imageUrl}
-                                        onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
-                                        placeholder="https://example.com/image.jpg"
+                                        value={newProduct.currency}
+                                        onChange={(e) => setNewProduct({ ...newProduct, currency: e.target.value })}
+                                        placeholder="USD"
                                     />
                                 </div>
                             </div>
-                            <Button onClick={handleAddProduct} disabled={isAdding} className="w-full">
-                                {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Add Product
-                            </Button>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                            <div className="grid gap-2">
+                                <Label>{isTr ? "Açıklama" : "Description"}</Label>
+                                <Textarea
+                                    value={newProduct.description}
+                                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                    placeholder={isTr ? "Detaylı ürün açıklaması..." : "Detailed product description..."}
+                                    rows={3}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{isTr ? "Görsel URL (Opsiyonel)" : "Image URL (Optional)"}</Label>
+                                <Input
+                                    value={newProduct.imageUrl}
+                                    onChange={(e) => setNewProduct({ ...newProduct, imageUrl: e.target.value })}
+                                    placeholder="https://example.com/image.jpg"
+                                />
+                            </div>
+                        </div>
+                        <Button onClick={handleAddProduct} disabled={isAdding} className="w-full bg-black text-white hover:bg-zinc-800">
+                            {isAdding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {isTr ? "Ürün Ekle" : "Add Product"}
+                        </Button>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Price</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>{isTr ? "Ad" : "Name"}</TableHead>
+                            <TableHead>{isTr ? "Fiyat" : "Price"}</TableHead>
+                            <TableHead>{isTr ? "Durum" : "Status"}</TableHead>
+                            <TableHead className="text-right">{isTr ? "İşlemler" : "Actions"}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -244,8 +234,8 @@ export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
                                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                                         <AlertCircle className="h-6 w-6 text-red-500" />
                                         <p>{fetchError}</p>
-                                        <Button variant="outline" size="sm" onClick={fetchProducts}>
-                                            Tekrar Dene
+                                        <Button variant="outline" size="sm" onClick={() => void fetchProducts()}>
+                                            {isTr ? "Tekrar Dene" : "Retry"}
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -253,7 +243,7 @@ export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
                         ) : products.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                    No products found. Add your first product to get started.
+                                    {isTr ? "Ürün bulunamadı. İlk ürününüzü ekleyin." : "No products found. Add your first product."}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -273,15 +263,15 @@ export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
                                     </TableCell>
                                     <TableCell>{product.price} {product.currency}</TableCell>
                                     <TableCell>
-                                        <Badge variant={product.inStock ? "outline" : "destructive"} className={product.inStock ? "bg-green-50 text-green-700 border-green-200" : ""}>
-                                            {product.inStock ? "In Stock" : "Out of Stock"}
+                                        <Badge variant="outline" className={product.inStock ? "border-zinc-300 bg-zinc-100 text-zinc-800" : "border-zinc-400 bg-zinc-200 text-zinc-800"}>
+                                            {product.inStock ? (isTr ? "Stokta" : "In Stock") : (isTr ? "Stok Dışı" : "Out of Stock")}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => handleDeleteProduct(product.id)}
+                                            onClick={() => void handleDeleteProduct(product.id)}
                                         >
                                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                                         </Button>
@@ -293,5 +283,5 @@ export function ProductKnowledge({ targetUserId }: ProductKnowledgeProps) {
                 </Table>
             </div>
         </div>
-    )
+    );
 }

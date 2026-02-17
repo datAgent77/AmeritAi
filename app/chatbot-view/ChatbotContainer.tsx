@@ -151,6 +151,7 @@ export default function ChatbotContainer() {
         sendMessage, // The REAL function
         chatStatus,
         isTyping,
+        isChatLoading,
         sessionId,
         resetSession
     } = useChatCore({
@@ -405,6 +406,7 @@ export default function ChatbotContainer() {
                 localInput={localInput}
                 setLocalInput={setLocalInput}
                 sendMessage={sendMessage}
+                isChatLoading={isChatLoading}
                 handleVoiceInput={handleVoiceInput}
                 isListening={isListening}
                 visualContext={visualContext}

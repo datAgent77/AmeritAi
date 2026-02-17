@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev",
+    "check:env:build": "node scripts/check-build-env.js",
+    "prebuild": "npm run check:env:build",
     "build": "NEXT_DIST_DIR=.next-build next build",
     "start": "NEXT_DIST_DIR=.next-build next start",
     "lint": "eslint",

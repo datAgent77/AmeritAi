@@ -1,4 +1,3 @@
-import { OpenAI } from 'openai';
 import { getAdminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 import { generateAIResponse, saveMessageToSession, analyzeSentiment } from "@/lib/ai-service";
@@ -9,11 +8,228 @@ import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
 
 export const runtime = 'nodejs';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+type ChatMessage = {
+    role?: string;
+    content?: string;
+    id?: string;
+};
+
+type ChatRequestBody = {
+    messages?: ChatMessage[];
+    chatbotId?: string;
+    sessionId?: string;
+    context?: unknown;
+    language?: string;
+    isVoice?: boolean;
+    shouldStream?: boolean;
+    userId?: string;
+    visualAnalysisContext?: string;
+    assistantMessageId?: string;
+    industry?: string;
+};
+
+type ShopperProduct = {
+    id: string;
+    name?: string;
+    description?: string;
+    price?: number | string;
+    currency?: string;
+    imageUrl?: string;
+    url?: string;
+    category?: string;
+    inStock?: boolean;
+};
+
+const TR_STOPWORDS = new Set([
+    "ve", "ile", "bir", "bu", "için", "ama", "gibi", "olan", "olanlar", "bana", "şu", "de", "da", "mı", "mi", "mu", "mü", "ne", "hangi", "yap", "yapar", "lütfen"
+]);
+
+const EN_STOPWORDS = new Set([
+    "the", "and", "for", "with", "this", "that", "from", "have", "your", "please", "can", "could", "would", "make", "give", "about"
+]);
+
+function normalizeText(input: string): string {
+    return input
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+type UILang = "tr" | "en" | "de" | "fr" | "es";
+
+const FALLBACK_COPY: Record<UILang, { intro: string; closing: string; noPrice: string; noCatalog: string }> = {
+    tr: {
+        intro: "AI anahtarı yerelde eksik olduğu için katalogdan hızlı öneri hazırladım:",
+        closing: "İstersen bütçe, kişi (kadın/erkek/çocuk) ve kategori yaz; daha nokta atışı öneri yapayım.",
+        noPrice: "Fiyat bilgisi yok",
+        noCatalog: "Shopper modülü aktif görünüyor ama katalogda henüz ürün yok. Konsoldan ürün ekledikten sonra tekrar deneyin."
+    },
+    en: {
+        intro: "AI key is missing locally, so I prepared quick recommendations from your catalog:",
+        closing: "Share budget, recipient (woman/man/kid), and category, and I will refine the suggestions.",
+        noPrice: "Price unavailable",
+        noCatalog: "Shopper is enabled, but there are no products in the catalog yet. Add products from console and try again."
+    },
+    de: {
+        intro: "Da der AI-Schlüssel lokal fehlt, habe ich schnelle Empfehlungen aus deinem Katalog vorbereitet:",
+        closing: "Nenne Budget, Empfänger (Frau/Mann/Kind) und Kategorie, dann verfeinere ich die Vorschläge.",
+        noPrice: "Preis nicht verfügbar",
+        noCatalog: "Shopper ist aktiv, aber im Katalog sind noch keine Produkte vorhanden."
+    },
+    fr: {
+        intro: "La clé AI n'étant pas disponible en local, j'ai préparé des recommandations rapides depuis votre catalogue :",
+        closing: "Indiquez le budget, le destinataire (femme/homme/enfant) et la catégorie pour des recommandations plus précises.",
+        noPrice: "Prix indisponible",
+        noCatalog: "Le module Shopper est actif, mais aucun produit n'est encore présent dans le catalogue."
+    },
+    es: {
+        intro: "Como falta la clave de AI en local, preparé recomendaciones rápidas desde tu catálogo:",
+        closing: "Comparte presupuesto, destinatario (mujer/hombre/niño) y categoría para afinar las recomendaciones.",
+        noPrice: "Precio no disponible",
+        noCatalog: "Shopper está activo, pero aún no hay productos en el catálogo."
+    }
+};
+
+function resolveUiLanguage(language: string | undefined, userText: string): UILang {
+    const lang = (language || "").toLowerCase();
+    if (lang === "tr" || lang.startsWith("tr-")) return "tr";
+    if (lang === "de" || lang.startsWith("de-")) return "de";
+    if (lang === "fr" || lang.startsWith("fr-")) return "fr";
+    if (lang === "es" || lang.startsWith("es-")) return "es";
+    if (lang === "en" || lang.startsWith("en-")) return "en";
+
+    if (/[çğıöşü]/i.test(userText) || /\b(hediye|ürün|öner|fiyat|alacağım|bana)\b/i.test(userText)) {
+        return "tr";
+    }
+    return "en";
+}
+
+function extractKeywords(query: string): string[] {
+    const normalized = normalizeText(query);
+    if (!normalized) return [];
+
+    const tokens = normalized.split(" ");
+    return tokens.filter((token) => {
+        if (token.length < 3) return false;
+        return !TR_STOPWORDS.has(token) && !EN_STOPWORDS.has(token);
+    });
+}
+
+function rankProducts(products: ShopperProduct[], userQuery: string): ShopperProduct[] {
+    const normalizedQuery = normalizeText(userQuery);
+    const keywords = extractKeywords(normalizedQuery);
+
+    if (!keywords.length) return products;
+
+    const scored = products.map((product, index) => {
+        const haystack = normalizeText(
+            `${product.name || ""} ${product.description || ""} ${product.category || ""}`
+        );
+
+        let score = 0;
+        for (const keyword of keywords) {
+            if (haystack.includes(keyword)) {
+                const inTitle = normalizeText(product.name || "").includes(keyword);
+                score += inTitle ? 3 : 1;
+            }
+        }
+
+        if (normalizedQuery.includes("hediye") && /hediye|gift/.test(haystack)) {
+            score += 2;
+        }
+
+        return { product, score, index };
+    });
+
+    scored.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.index - b.index;
+    });
+
+    return scored.map((entry) => entry.product);
+}
+
+function toCardPayload(product: ShopperProduct): Record<string, string | number> {
+    const description = typeof product.description === "string"
+        ? product.description.trim().slice(0, 180)
+        : "";
+
+    const payload: Record<string, string | number> = {
+        name: product.name || "Product",
+        price: typeof product.price === "number"
+            ? product.price
+            : (product.price ? String(product.price) : "N/A"),
+        currency: product.currency || "₺",
+    };
+
+    if (description) payload.description = description;
+    if (product.imageUrl) payload.imageUrl = product.imageUrl;
+    if (product.url) payload.url = product.url;
+
+    return payload;
+}
+
+function buildShopperFallbackMessage(products: ShopperProduct[], uiLang: UILang): string {
+    const intro = FALLBACK_COPY[uiLang].intro;
+    const closing = FALLBACK_COPY[uiLang].closing;
+
+    const lines: string[] = [intro, ""];
+    const carouselPayload = {
+        type: "product-carousel",
+        items: products.map((product) => toCardPayload(product))
+    };
+
+    lines.push("```json");
+    lines.push(JSON.stringify(carouselPayload, null, 2));
+    lines.push("```");
+    lines.push("");
+
+    lines.push(closing);
+    return lines.join("\n").trim();
+}
+
+async function tryShopperFallback(body: ChatRequestBody | null | undefined): Promise<string | null> {
+    if (!body?.chatbotId) return null;
+
+    const adminDb = getAdminDb();
+    if (!adminDb) return null;
+
+    const chatbotSnap = await adminDb.collection("chatbots").doc(body.chatbotId).get();
+    if (!chatbotSnap.exists) return null;
+
+    const chatbotData = chatbotSnap.data() || {};
+    if (chatbotData.enablePersonalShopper !== true) return null;
+
+    const productSnap = await adminDb
+        .collection("products")
+        .where("chatbotId", "==", body.chatbotId)
+        .limit(200)
+        .get();
+
+    const products = productSnap.docs
+        .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<ShopperProduct, "id">) }))
+        .filter((product) => typeof product.name === "string" && product.name.trim().length > 0)
+        .filter((product) => product.inStock !== false);
+
+    const userMessage = [...(body.messages || [])]
+        .reverse()
+        .find((message) => message?.role === "user" && typeof message.content === "string");
+    const userText = userMessage?.content || "";
+    const uiLang = resolveUiLanguage(body.language, userText);
+
+    if (!products.length) {
+        return FALLBACK_COPY[uiLang].noCatalog;
+    }
+
+    const ranked = rankProducts(products, userText);
+    const picks = ranked.slice(0, 3);
+    return buildShopperFallbackMessage(picks, uiLang);
+}
 
 export async function POST(req: Request) {
+    let body: ChatRequestBody | null = null;
+
     try {
         const adminDb = getAdminDb();
         if (!adminDb) {
@@ -25,7 +241,7 @@ export async function POST(req: Request) {
             || req.headers.get("x-real-ip")
             || "unknown";
 
-        const body = await req.json();
+        body = await req.json();
         const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext, assistantMessageId } = body;
 
         // Rate limiting check
@@ -280,6 +496,38 @@ export async function POST(req: Request) {
         const rawMessage = error instanceof Error ? error.message : String(error);
         const lowered = rawMessage.toLowerCase();
         const isConfigError = lowered.includes("no ai provider is configured") || lowered.includes("api key");
+
+        if (isConfigError) {
+            try {
+                const fallbackResponse = await tryShopperFallback(body);
+                if (fallbackResponse) {
+                    if (body?.sessionId && body?.chatbotId) {
+                        try {
+                            await saveMessageToSession(
+                                body.sessionId,
+                                body.chatbotId,
+                                {
+                                    role: "assistant",
+                                    content: fallbackResponse,
+                                    id: body.assistantMessageId || `assistant-fallback-${Date.now()}`
+                                },
+                                body.userId
+                            );
+                        } catch (saveFallbackError) {
+                            console.error("Chat API: Failed to persist fallback response:", saveFallbackError);
+                        }
+                    }
+
+                    return new Response(fallbackResponse, {
+                        status: 200,
+                        headers: { "Content-Type": "text/plain; charset=utf-8" }
+                    });
+                }
+            } catch (fallbackError) {
+                console.error("Chat API: Shopper fallback failed:", fallbackError);
+            }
+        }
+
         const message = isConfigError
             ? "AI service configuration is incomplete. Please contact support."
             : "AI service is temporarily unavailable. Please try again.";

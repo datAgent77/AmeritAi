@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { signInWithPopup } from "firebase/auth"
-import { auth, googleProvider, microsoftProvider, appleProvider } from "@/lib/firebase"
+import { auth, googleProvider } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
 

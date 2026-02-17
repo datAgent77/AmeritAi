@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
+import { ProductCarousel } from "@/components/chatbot/product-carousel"
 import Image from "next/image"
 import { RefObject } from "react"
 
@@ -35,7 +36,7 @@ export function MessageList({
     onLeadSubmit
 }: MessageListProps) {
     return (
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6 scroll-smooth bg-gray-50">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 scroll-smooth bg-gray-50">
             {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
                     <div
@@ -72,6 +73,7 @@ export function MessageList({
                         const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
                         const displayImage = m.image || cached?.image
                         const displayMime = m.imageMimeType || cached?.mimeType
+                        const hasProductCarousel = typeof m.content === 'string' && m.content.includes('"product-carousel"')
 
                         // Hide empty messages (prevent empty bubble while loading or if failed)
                         if (!m.content?.trim() && !displayImage) return null;
@@ -81,7 +83,7 @@ export function MessageList({
                         const animationClasses = isAssistant ? '' : 'animate-in fade-in slide-in-from-bottom-2 duration-300';
                         
                         return (
-                            <div key={m.id} className={`flex gap-3 max-w-3xl mx-auto ${m.role === 'user' ? 'flex-row-reverse' : ''} ${animationClasses} group/msg`}>
+                            <div key={m.id} className={`flex w-full gap-3 max-w-3xl mx-auto overflow-x-hidden ${m.role === 'user' ? 'flex-row-reverse' : ''} ${animationClasses} group/msg`}>
                                 {m.role !== 'user' && (
                                     <div
                                         className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-auto mb-1 shadow-sm overflow-hidden text-white"
@@ -90,14 +92,14 @@ export function MessageList({
                                         <Sparkles className="w-4 h-4" />
                                     </div>
                                 )}
-                                <div className={`space-y-1 max-w-[85%] ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                <div className={`space-y-1 ${hasProductCarousel && m.role !== 'user' ? 'w-[calc(100%-2.75rem)] max-w-[calc(100%-2.75rem)]' : 'max-w-[85%]'} ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
                                     <div className="flex items-center gap-2 justify-between px-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-300">
                                         {m.role === 'assistant' && (
                                             <span className="text-[10px] font-medium text-gray-400">{settings.companyName}</span>
                                         )}
                                     </div>
                                     <div
-                                        className={`text-sm leading-relaxed px-4 py-3 rounded-2xl shadow-sm inline-block text-left relative transition-all hover:shadow-md ${m.role === 'user'
+                                        className={`text-sm leading-relaxed px-4 py-3 rounded-2xl shadow-sm text-left relative transition-all hover:shadow-md ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${m.role === 'user'
                                             ? 'bg-blue-600 text-white rounded-tr-sm'
                                             : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm'
                                             }`}
@@ -124,11 +126,37 @@ export function MessageList({
                                                     const match = /language-(\w+)/.exec(className || '')
                                                     const content = String(children).replace(/\n$/, '')
 
+                                                    if (content.trim().startsWith('[') && content.includes('"price"')) {
+                                                        try {
+                                                            const products = JSON.parse(content)
+                                                            if (Array.isArray(products) && products.length > 0) {
+                                                                const validProducts = products.filter((p: any) => p?.name && (p?.price !== undefined && p?.price !== null))
+                                                                if (validProducts.length > 0) {
+                                                                    return <ProductCarousel products={validProducts} brandColor={settings.brandColor} language={language} />
+                                                                }
+                                                            }
+                                                        } catch (e) {
+                                                        }
+                                                    }
+
+                                                    if (content.trim().startsWith('{') && content.includes('"product-carousel"')) {
+                                                        try {
+                                                            const payload = JSON.parse(content)
+                                                            if (payload?.type === 'product-carousel' && Array.isArray(payload?.items)) {
+                                                                const validProducts = payload.items.filter((p: any) => p?.name && (p?.price !== undefined && p?.price !== null))
+                                                                if (validProducts.length > 0) {
+                                                                    return <ProductCarousel products={validProducts} brandColor={settings.brandColor} language={language} />
+                                                                }
+                                                            }
+                                                        } catch (e) {
+                                                        }
+                                                    }
+
                                                     if (content.trim().startsWith('{') && content.includes('"price"')) {
                                                         try {
                                                             const product = JSON.parse(content)
-                                                            if (product.name && product.price) {
-                                                                return <ProductCard product={product} brandColor={settings.brandColor} />
+                                                            if (product.name && (product.price !== undefined && product.price !== null)) {
+                                                                return <ProductCard product={product} brandColor={settings.brandColor} language={language} />
                                                             }
                                                         } catch (e) {
                                                         }
@@ -147,6 +175,11 @@ export function MessageList({
                                                     )
                                                 },
                                                 a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={`underline font-medium ${m.role === 'user' ? 'text-white' : 'text-blue-600 hover:text-blue-800'}`} />,
+                                                pre: ({ node, ...props }) => (
+                                                    <div className="max-w-full overflow-hidden my-0">
+                                                        {props.children}
+                                                    </div>
+                                                ),
                                                 table: ({ node, ...props }) => <table className="border-collapse table-auto w-full text-xs my-2 bg-white/5 rounded overflow-hidden" {...props} />,
                                                 th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${m.role === 'user' ? 'border-white/20' : 'border-gray-200 bg-gray-50'}`} {...props} />,
                                                 td: ({ node, ...props }) => <td className={`border px-2 py-1 ${m.role === 'user' ? 'border-white/20' : 'border-gray-200'}`} {...props} />,

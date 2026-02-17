@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, ExternalLink } from 'lucide-react';
+import { ExternalLink, Package } from 'lucide-react';
 import Image from "next/image";
 
 interface Product {
@@ -13,11 +13,62 @@ interface Product {
 
 interface ProductCardProps {
     product: Product;
-    onAddToCart?: (product: Product) => void;
     brandColor?: string;
+    language?: string;
 }
 
-export function ProductCard({ product, onAddToCart, brandColor = '#000000' }: ProductCardProps) {
+type SupportedLang = 'tr' | 'en' | 'de' | 'fr' | 'es';
+
+const LABELS: Record<SupportedLang, { viewDetails: string; detailsUnavailable: string; viewProductTitle: string }> = {
+    tr: {
+        viewDetails: "Ürün Detayı",
+        detailsUnavailable: "Detay Bulunamadı",
+        viewProductTitle: "Ürünü Gör"
+    },
+    en: {
+        viewDetails: "View Details",
+        detailsUnavailable: "Details Unavailable",
+        viewProductTitle: "View Product"
+    },
+    de: {
+        viewDetails: "Details ansehen",
+        detailsUnavailable: "Keine Details",
+        viewProductTitle: "Produkt ansehen"
+    },
+    fr: {
+        viewDetails: "Voir le détail",
+        detailsUnavailable: "Détails indisponibles",
+        viewProductTitle: "Voir le produit"
+    },
+    es: {
+        viewDetails: "Ver detalle",
+        detailsUnavailable: "Detalle no disponible",
+        viewProductTitle: "Ver producto"
+    }
+};
+
+function resolveLanguage(language?: string): SupportedLang {
+    const normalized = (language || "").toLowerCase();
+    if (normalized.startsWith("tr")) return "tr";
+    if (normalized.startsWith("de")) return "de";
+    if (normalized.startsWith("fr")) return "fr";
+    if (normalized.startsWith("es")) return "es";
+    return "en";
+}
+
+function formatPrice(price: string | number | undefined, currency?: string): string {
+    if (price === undefined || price === null || price === "") return "";
+    const value = String(price);
+    const curr = (currency || "TRY").trim();
+    const symbolLike = ["₺", "$", "€", "£"].includes(curr);
+    return symbolLike ? `${curr}${value}` : `${value} ${curr}`;
+}
+
+export function ProductCard({ product, brandColor = '#000000', language }: ProductCardProps) {
+    const lang = resolveLanguage(language);
+    const copy = LABELS[lang];
+    const hasProductUrl = typeof product.url === "string" && product.url.trim().length > 0;
+
     return (
         <div className="flex flex-col w-full max-w-[240px] bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300 my-2">
             <div className="relative h-32 w-full bg-gray-100 overflow-hidden group">
@@ -34,12 +85,12 @@ export function ProductCard({ product, onAddToCart, brandColor = '#000000' }: Pr
                     </div>
                 ) : (
                     <div className="flex items-center justify-center w-full h-full text-gray-400">
-                        <ShoppingCart className="w-8 h-8 opacity-20" />
+                        <Package className="w-8 h-8 opacity-20" />
                     </div>
                 )}
                 {product.price && (
                     <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md">
-                        {product.currency || '$'}{product.price}
+                        {formatPrice(product.price, product.currency)}
                     </div>
                 )}
             </div>
@@ -55,26 +106,28 @@ export function ProductCard({ product, onAddToCart, brandColor = '#000000' }: Pr
                     </p>
                 )}
 
-                <div className="mt-auto flex gap-2">
-                    {product.url && (
+                <div className="mt-auto">
+                    {hasProductUrl ? (
                         <a
                             href={product.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-center p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex-1"
-                            title="View Product"
+                            className="flex items-center justify-center gap-1 w-full py-2 px-3 rounded-lg text-white text-xs font-medium transition-opacity hover:opacity-90 active:scale-95"
+                            style={{ backgroundColor: brandColor }}
+                            title={copy.viewProductTitle}
                         >
-                            <ExternalLink className="w-4 h-4" />
+                            <ExternalLink className="w-3 h-3" />
+                            {copy.viewDetails}
                         </a>
+                    ) : (
+                        <button
+                            type="button"
+                            disabled
+                            className="flex items-center justify-center gap-1 w-full py-2 px-3 rounded-lg text-xs font-medium bg-gray-200 text-gray-500 cursor-not-allowed"
+                        >
+                            {copy.detailsUnavailable}
+                        </button>
                     )}
-                    <button
-                        onClick={() => onAddToCart && onAddToCart(product)}
-                        className="flex items-center justify-center gap-1 flex-[3] py-2 px-3 rounded-lg text-white text-xs font-medium transition-opacity hover:opacity-90 active:scale-95"
-                        style={{ backgroundColor: brandColor }}
-                    >
-                        <ShoppingCart className="w-3 h-3" />
-                        Add to Cart
-                    </button>
                 </div>
             </div>
         </div>

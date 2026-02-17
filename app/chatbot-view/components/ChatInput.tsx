@@ -10,6 +10,7 @@ interface ChatInputProps {
     localInput: string
     setLocalInput: (val: string) => void
     sendMessage: (text: string, speakResponse?: boolean, visualContext?: string) => Promise<string>
+    isChatLoading: boolean
     handleVoiceInput: () => void
     isListening: boolean
     visualContext: ReturnType<typeof useVisualContext>
@@ -23,6 +24,7 @@ export function ChatInput({
     localInput,
     setLocalInput,
     sendMessage,
+    isChatLoading,
     handleVoiceInput,
     isListening,
     visualContext,
@@ -48,7 +50,7 @@ export function ChatInput({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if ((!localInput.trim() && !selectedImage) || isAnalyzingImage) return
+        if ((!localInput.trim() && !selectedImage) || isAnalyzingImage || isChatLoading) return
 
         const currentInput = localInput
         const currentImage = selectedImage
@@ -227,6 +229,7 @@ export function ChatInput({
                             onChange={(e) => setLocalInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             type="text"
+                            disabled={isChatLoading}
                             placeholder={selectedImage
                                 ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
                                 : t('messagePlaceholder')}
@@ -239,7 +242,7 @@ export function ChatInput({
 
                     <button
                         type="submit"
-                        disabled={!localInput.trim() && !selectedImage}
+                        disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
                         className={`p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
                         style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                     >

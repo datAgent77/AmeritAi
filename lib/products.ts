@@ -46,18 +46,55 @@ export async function getProduct(productId: string): Promise<Product | null> {
 import { OpenAI } from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient: OpenAI | null | undefined;
+let pineconeClient: Pinecone | null | undefined;
+let hasWarnedMissingOpenAIKey = false;
+let hasWarnedMissingPineconeKey = false;
 
-const pc = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY!,
-});
+function getOpenAIClient(): OpenAI | null {
+    if (openaiClient !== undefined) return openaiClient;
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+        if (!hasWarnedMissingOpenAIKey) {
+            console.warn("[Products] OPENAI_API_KEY missing. Embedding sync is disabled.");
+            hasWarnedMissingOpenAIKey = true;
+        }
+        openaiClient = null;
+        return openaiClient;
+    }
+
+    openaiClient = new OpenAI({ apiKey });
+    return openaiClient;
+}
+
+function getPineconeClient(): Pinecone | null {
+    if (pineconeClient !== undefined) return pineconeClient;
+
+    const apiKey = process.env.PINECONE_API_KEY;
+    if (!apiKey) {
+        if (!hasWarnedMissingPineconeKey) {
+            console.warn("[Products] PINECONE_API_KEY missing. Embedding sync is disabled.");
+            hasWarnedMissingPineconeKey = true;
+        }
+        pineconeClient = null;
+        return pineconeClient;
+    }
+
+    pineconeClient = new Pinecone({ apiKey });
+    return pineconeClient;
+}
 
 const INDEX_NAME = "chatbot-knowledge";
 
 export async function indexProduct(product: Product) {
     try {
+        const openai = getOpenAIClient();
+        const pc = getPineconeClient();
+        if (!openai || !pc) {
+            return;
+        }
+
         const textToEmbed = `Product Name: ${product.name}\nDescription: ${product.description}\nPrice: ${product.price} ${product.currency}\nCategory: ${product.category || 'Uncategorized'}`;
 
         const embeddingResponse = await openai.embeddings.create({
@@ -136,6 +173,8 @@ export async function deleteProduct(productId: string): Promise<void> {
 
         // Remove from Pinecone
         try {
+            const pc = getPineconeClient();
+            if (!pc) return;
             const index = pc.index(INDEX_NAME);
             await index.deleteOne(`product-${productId}`);
         } catch (pcError) {
