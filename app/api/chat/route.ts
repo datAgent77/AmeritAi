@@ -32,6 +32,21 @@ type NormalizedChatMessage = AIMessage & {
     id?: string;
 };
 
+type UserContextPayload = {
+    url: string;
+    title: string;
+    desc: string;
+    dynamicData?: Record<string, any>;
+};
+
+function isUserContextPayload(value: unknown): value is UserContextPayload {
+    if (!value || typeof value !== "object") return false;
+    const candidate = value as Record<string, unknown>;
+    return typeof candidate.url === "string"
+        && typeof candidate.title === "string"
+        && typeof candidate.desc === "string";
+}
+
 type ShopperProduct = {
     id: string;
     name?: string;
@@ -285,6 +300,7 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+        const safeContext = isUserContextPayload(context) ? context : undefined;
 
         // Rate limiting check
         const rateLimitResult = checkRateLimit(ip, sessionId);
@@ -358,7 +374,7 @@ export async function POST(req: Request) {
                     userId
                 )
                 : Promise.resolve(),
-            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext, body.industry)
+            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, safeContext, isVoice, language, visualAnalysisContext, body.industry)
         ]);
         
         // ... sentiment code ...
