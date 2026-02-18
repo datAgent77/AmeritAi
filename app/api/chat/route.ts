@@ -228,7 +228,7 @@ async function tryShopperFallback(body: ChatRequestBody | null | undefined): Pro
 }
 
 export async function POST(req: Request) {
-    let body: ChatRequestBody | null = null;
+    let body: ChatRequestBody = {};
 
     try {
         const adminDb = getAdminDb();
@@ -241,7 +241,8 @@ export async function POST(req: Request) {
             || req.headers.get("x-real-ip")
             || "unknown";
 
-        body = await req.json();
+        const parsedBody = await req.json();
+        body = (parsedBody && typeof parsedBody === "object" ? parsedBody : {}) as ChatRequestBody;
         const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext, assistantMessageId } = body;
 
         // Rate limiting check
