@@ -243,7 +243,25 @@ export async function POST(req: Request) {
 
         const parsedBody = await req.json();
         body = (parsedBody && typeof parsedBody === "object" ? parsedBody : {}) as ChatRequestBody;
-        const { messages, chatbotId, sessionId, context, language, isVoice, shouldStream = true, userId, visualAnalysisContext, assistantMessageId } = body;
+        const {
+            messages = [],
+            chatbotId,
+            sessionId,
+            context,
+            language,
+            isVoice,
+            shouldStream = true,
+            userId,
+            visualAnalysisContext,
+            assistantMessageId
+        } = body;
+
+        if (!chatbotId || messages.length === 0) {
+            return NextResponse.json(
+                { error: "Invalid request body: chatbotId and messages are required." },
+                { status: 400 }
+            );
+        }
 
         // Rate limiting check
         const rateLimitResult = checkRateLimit(ip, sessionId);
@@ -304,7 +322,7 @@ export async function POST(req: Request) {
         // ... existing pause check codes ...
 
         // Parallelize: Save user message and start generating AI response
-        const lastMessage = messages[messages.length - 1];
+        const lastMessage = messages[messages.length - 1]!;
         const messageId = lastMessage.id || Date.now().toString();
 
         const [saveResult, result] = await Promise.all([
