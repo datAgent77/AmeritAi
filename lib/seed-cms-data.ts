@@ -1,8 +1,412 @@
 
 // -- UNIQUE SEED DATA FOR VION AI --
-// 20 Real Blog Posts + 30 Unique FAQs
+// 30 Real Blog Posts + 30 Unique FAQs
+
+const NEW_SEO_BLOG_POSTS = [
+    {
+        slug: "ai-calisani-vs-chatbot-2026",
+        title: {
+            en: "AI Employee vs Chatbot: What Actually Changes in 2026?",
+            tr: "AI Çalışanı vs Chatbot: 2026'da Gerçekte Ne Değişiyor?"
+        },
+        excerpt: {
+            en: "Learn the operational difference between a classic chatbot and an AI employee model that drives sales, support, and workflow outcomes.",
+            tr: "Klasik chatbot ile satış, destek ve operasyon çıktısı üreten AI çalışanı modeli arasındaki gerçek farkı öğrenin."
+        },
+        content: {
+            en: `Most businesses still evaluate conversational AI as a chat widget. That view is too narrow for 2026. A classic chatbot answers questions. An AI employee model completes business tasks end-to-end.
+
+The practical difference is outcome ownership. A chatbot may answer "Do you have this in stock?" and stop. An AI employee continues with recommendation, objection handling, and next-best action.
+
+In Vion AI projects, teams get better results when they map flows by business goal, not by page. For example, a lead flow is designed around "qualified meeting booked", not "message replied". This single change improves quality of pipeline and team focus.
+
+A second difference is context depth. AI employee architectures combine knowledge base, user context, and intent tracking. This allows answers like "your order is in transit" instead of generic FAQ responses.
+
+Implementation should start with one measurable process: support deflection, lead qualification, or cart recovery. Measure baseline metrics, run one focused workflow, and expand after measurable gains.
+
+If your current chatbot is active but not improving revenue or support velocity, the issue is likely not model quality. It is operating model design.`,
+            tr: `Birçok işletme konuşma tabanlı yapay zekayı hâlâ sadece bir sohbet balonu olarak görüyor. 2026 için bu bakış artık dar kalıyor. Klasik chatbot soruya cevap verir. AI çalışanı modeli ise süreci iş çıktısına kadar taşır.
+
+Temel fark sonuç sahipliğidir. Chatbot "stok var mı?" sorusunu yanıtlayıp durabilir. AI çalışanı ise doğru ürünü önerir, itirazı yönetir ve bir sonraki aksiyonu oluşturur.
+
+Vion AI projelerinde ekipler, sayfa odaklı değil hedef odaklı akış tasarladığında daha iyi sonuç alır. Örneğin lead akışı "mesaj yanıtlandı" değil, "nitelikli görüşme planlandı" hedefiyle kurulur. Bu yaklaşım hem satış kalitesini hem ekip odağını artırır.
+
+İkinci fark bağlam derinliğidir. AI çalışanı mimarisi bilgi tabanı, kullanıcı bağlamı ve niyet takibini birlikte kullanır. Böylece genel SSS yanıtı yerine "siparişin dağıtıma çıktı" gibi kişisel ve doğru cevap üretebilir.
+
+Uygulama tarafında tek bir ölçülebilir süreçle başlamak gerekir: destek yükü azaltma, lead kalitesi veya sepet kurtarma. Önce mevcut metriği ölçün, sonra tek bir akışta optimize edin, ardından ölçekleyin.
+
+Chatbotunuz çalışıyor ama gelir ya da operasyon hızına etkisi düşükse sorun çoğu zaman modelde değil, işletim tasarımındadır.`
+        },
+        category: "AI Strateji",
+        date: "2026-02-18",
+        readTime: "8 dk",
+        image: "/blog/ai-employee-vs-chatbot.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "ecommerce-ai-personal-shopper-donusum-rehberi",
+        title: {
+            en: "E-commerce AI Personal Shopper Playbook: Increase Conversion and AOV",
+            tr: "E-Ticaret AI Personal Shopper Rehberi: Dönüşüm ve Sepet Tutarı Artışı"
+        },
+        excerpt: {
+            en: "A practical framework to build an AI shopping assistant that shortens decision time and increases average order value.",
+            tr: "Karar süresini kısaltan ve ortalama sepet tutarını artıran AI alışveriş asistanını adım adım kurma çerçevesi."
+        },
+        content: {
+            en: `Shoppers rarely fail because your catalog is small. They fail because choice is overwhelming. An AI personal shopper reduces decision fatigue by narrowing options based on intent.
+
+The most effective flow starts with three short qualifiers: budget range, use case, and recipient profile. This keeps the conversation fast while producing enough context for useful recommendations.
+
+Then move from "top sellers" to "fit-based shortlist". Show two or three strong options with clear tradeoffs. Conversion improves when users compare fewer, better-matched alternatives.
+
+The second lift comes from contextual bundles. Instead of random upsells, suggest complementary items tied to user goal. This is where AOV growth usually appears.
+
+Operationally, keep product data clean: titles, specs, stock, and price formatting. AI cannot recommend what your catalog cannot describe clearly.
+
+Teams using Vion AI Product Catalog with guided shopper prompts usually see improvements in add-to-cart quality before they see traffic growth. Better intent matching creates better revenue per session.`,
+            tr: `E-ticarette sorun çoğu zaman ürün azlığı değil, seçenek fazlalığıdır. AI personal shopper, kullanıcı niyetine göre seçenekleri daraltarak karar yorgunluğunu azaltır.
+
+En etkili akış üç kısa soruyla başlar: bütçe aralığı, kullanım amacı ve alıcı profili. Bu yapı konuşmayı yavaşlatmadan doğru öneri için yeterli bağlam üretir.
+
+Ardından "en çok satanlar" yerine "ihtiyaca uygun kısa liste" modeline geçin. İki veya üç güçlü alternatif ve net farklar sunun. Kullanıcı daha az ama daha doğru seçenekle daha hızlı karar verir.
+
+İkinci katkı bağlamsal paket önerilerinden gelir. Rastgele upsell yerine kullanıcı hedefiyle ilgili tamamlayıcı ürünler önerin. Sepet ortalamasındaki artış genelde burada ortaya çıkar.
+
+Operasyon tarafında ürün verisini temiz tutmak kritik: başlık, teknik özellik, stok ve fiyat alanları tutarlı olmalı. Katalog net değilse AI öneri kalitesi de düşer.
+
+Vion AI Product Catalog ve yönlendirilmiş shopper akışı kullanan ekipler çoğu zaman trafik artmadan önce oturum başına gelirde iyileşme görür.`
+        },
+        category: "E-Ticaret",
+        date: "2026-02-17",
+        readTime: "7 dk",
+        image: "/blog/ecommerce-personal-shopper.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "lead-collection-proactive-messaging-7-akis",
+        title: {
+            en: "Lead Collection + Proactive Messaging: 7 High-Intent Flows",
+            tr: "Lead Collection + Proactive Messaging: 7 Yüksek Niyetli Akış"
+        },
+        excerpt: {
+            en: "Capture more qualified leads by triggering forms after intent signals, not before trust is built.",
+            tr: "Formu erken açmak yerine niyet sinyalinden sonra tetikleyerek daha nitelikli lead toplayın."
+        },
+        content: {
+            en: `Most lead forms underperform because timing is wrong. Asking for contact details before delivering value breaks momentum.
+
+Proactive messaging solves this when paired with intent triggers. Good triggers include pricing questions, demo requests, integration questions, and repeated feature comparisons.
+
+A high-performing sequence is simple: helpful prompt, short guidance, then form invitation. The visitor should understand why sharing contact information benefits them now.
+
+Keep the first form small. Name plus one contact field is often enough at first touch. Over-collecting data drops completion rate.
+
+Sales teams should define MQL criteria with marketing before launch. Without a shared definition, chatbot lead volume increases but pipeline quality does not.
+
+In Vion AI implementations, combining lead module with proactive messaging usually improves first-response speed and increases booked follow-up opportunities.`,
+            tr: `Birçok lead formunun düşük performans vermesinin ana nedeni zamanlama hatasıdır. Değer sunmadan iletişim bilgisi istemek, sohbet akışını erken kırar.
+
+Proactive messaging, niyet sinyalleriyle birlikte kullanıldığında bu sorunu çözer. Fiyat soruları, demo isteği, entegrasyon sorusu ve tekrar eden özellik karşılaştırmaları güçlü sinyallerdir.
+
+Yüksek performanslı akış basittir: yardımcı mesaj, kısa yönlendirme, sonra form daveti. Kullanıcı, bilgisini neden şimdi paylaşması gerektiğini net görmelidir.
+
+İlk formu küçük tutun. İlk temas için ad + tek iletişim alanı genellikle yeterlidir. Fazla alan dönüşümü düşürür.
+
+Yayına çıkmadan önce pazarlama ve satış ekipleri MQL tanımını ortaklaştırmalıdır. Ortak tanım yoksa lead sayısı artar ama fırsat kalitesi artmaz.
+
+Vion AI'de lead modülü ile proaktif mesajların birlikte kullanımı, hem ilk yanıt hızını hem takip görüşmesi sayısını artırır.`
+        },
+        category: "Pazarlama",
+        date: "2026-02-16",
+        readTime: "6 dk",
+        image: "/blog/lead-proactive-flows.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "restoranlar-icin-dijital-garson-qr-menu-ai",
+        title: {
+            en: "Digital Waiter for Restaurants: From QR Menu to Smart Ordering",
+            tr: "Restoranlar İçin Dijital Garson: QR Menüden Akıllı Siparişe"
+        },
+        excerpt: {
+            en: "Turn static QR menus into conversational ordering assistants that improve speed, upsell quality, and guest satisfaction.",
+            tr: "Statik QR menüyü konuşma tabanlı sipariş asistanına dönüştürerek hız, upsell ve misafir memnuniyetini artırın."
+        },
+        content: {
+            en: `QR menus solved printing costs but did not solve decision friction. Guests still spend too long choosing and ask repeated questions.
+
+A digital waiter reduces this friction by answering dietary, ingredient, and pairing questions instantly. The guest experience becomes guided, not passive.
+
+The key is menu intelligence. Each item should include clear tags like spicy level, allergen info, prep time, and recommended pairings. Better structure creates better AI responses.
+
+For revenue, focus on context-aware add-ons. Suggesting drink and side options linked to selected dish performs better than generic upsell prompts.
+
+For operations, define handoff rules. If a guest asks policy-sensitive or complex service questions, the flow should escalate to staff seamlessly.
+
+Restaurants using Vion AI Digital Waiter typically gain faster table decisions and fewer repetitive staff interruptions during peak hours.`,
+            tr: `QR menü baskı maliyetini çözdü ama karar sürecindeki sürtünmeyi çözmedi. Misafir hâlâ uzun süre menüde kalıyor ve aynı soruları tekrar soruyor.
+
+Dijital garson bu sürtünmeyi azaltır. İçerik, alerjen, acılık seviyesi ve eşleşme önerilerini anında yanıtlayarak deneyimi pasif görüntüleme yerine yönlendirilmiş sohbete çevirir.
+
+Başarı için menü verisinin zengin olması gerekir. Her ürün için acılık, alerjen, hazırlık süresi ve önerilen eşleşmeler net tanımlanmalıdır. Yapı ne kadar iyi olursa AI yanıtı da o kadar iyi olur.
+
+Gelir tarafında bağlamsal ek satış önemlidir. Seçilen yemeğe uygun içecek ve yan ürün önerileri, genel upsell mesajlarından daha yüksek performans verir.
+
+Operasyon tarafında aktarım kurallarını netleştirin. Politika veya özel servis sorularında akışın personele sorunsuz devredilmesi gerekir.
+
+Vion AI Digital Waiter kullanan restoranlar yoğun saatlerde daha hızlı karar ve daha az tekrar eden personel kesintisi elde eder.`
+        },
+        category: "Restoran",
+        date: "2026-02-15",
+        readTime: "6 dk",
+        image: "/blog/digital-waiter-qr-menu.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "rag-dynamic-context-visual-analysis-ai-mimarisi",
+        title: {
+            en: "RAG + Dynamic Context + Visual Analysis: A Reliable AI Stack",
+            tr: "RAG + Dynamic Context + Görsel Analiz: Güvenilir AI Mimarisi"
+        },
+        excerpt: {
+            en: "Design a practical architecture that reduces hallucinations by combining retrieval, user context, and image understanding.",
+            tr: "Retrieval, kullanıcı bağlamı ve görsel analiz birleşimiyle halüsinasyonu azaltan pratik AI mimarisini kurun."
+        },
+        content: {
+            en: `Reliable AI systems are built as stacks, not prompts. A single model call cannot cover document retrieval, user-specific context, and image reasoning with consistent accuracy.
+
+RAG handles factual grounding from docs and site content. Dynamic Context brings per-user data like order state or account limits. Visual analysis extends the same experience to uploaded images.
+
+These layers should have explicit boundaries. RAG answers "what is true in knowledge base". Dynamic Context answers "what is true for this user". Visual analysis answers "what is visible in this image".
+
+When teams blur these boundaries, response quality drops and debugging becomes hard. Clear ownership by layer keeps output explainable.
+
+From a product view, this architecture increases trust because users receive precise and contextual responses instead of broad generic text.
+
+Vion AI module system is designed around this layered approach so teams can enable capabilities progressively without rebuilding the whole assistant.`,
+            tr: `Güvenilir AI sistemleri tek promptla değil, katmanlı mimariyle kurulur. Tek model çağrısı; doküman doğruluğu, kullanıcıya özel veri ve görsel yorumlama ihtiyaçlarını aynı kalitede taşıyamaz.
+
+RAG katmanı doküman ve site bilgisini doğru şekilde getirir. Dynamic Context, sipariş durumu veya hesap limiti gibi kullanıcıya özel veriyi taşır. Görsel analiz ise yüklenen görseller üzerinden ön değerlendirme sağlar.
+
+Bu katmanların görev sınırları net olmalıdır. RAG "bilgi tabanında ne doğru?" sorusunu yanıtlar. Dynamic Context "bu kullanıcı için ne doğru?" sorusunu yanıtlar. Görsel analiz "görselde ne var?" sorusunu yanıtlar.
+
+Sınırlar karıştığında cevap kalitesi düşer, hata ayıklama zorlaşır. Katman bazlı sahiplik modeli, çıktının açıklanabilirliğini artırır.
+
+Ürün tarafında bu mimari güven üretir çünkü kullanıcı genel metin değil, bağlama uygun net yanıt alır.
+
+Vion AI modül yapısı bu katmanlı yaklaşımı desteklediği için ekipler tüm sistemi baştan kurmadan yetenekleri adım adım açabilir.`
+        },
+        category: "Teknik Mimari",
+        date: "2026-02-14",
+        readTime: "8 dk",
+        image: "/blog/rag-dynamic-context.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "ai-ile-seo-odakli-blog-icerik-uretimi",
+        title: {
+            en: "AI-Powered SEO Content: How to Publish Useful Blog Posts at Scale",
+            tr: "AI ile SEO Odaklı İçerik: Ölçekli ve Faydalı Blog Yayınlama"
+        },
+        excerpt: {
+            en: "Build a content workflow that uses AI for speed but preserves expert value and search quality standards.",
+            tr: "AI ile üretim hızını artırırken uzmanlık değerini ve arama kalite standartlarını koruyan içerik workflow'u kurun."
+        },
+        content: {
+            en: `AI can accelerate content production, but speed without quality creates indexing without rankings. Search performance still depends on usefulness and originality.
+
+The right workflow is hybrid. Use AI for draft structure, keyword mapping, and outline alternatives. Use domain experts for examples, claims, and final narrative.
+
+For each post, define one primary query, two supporting intents, and one conversion action. This keeps the page focused and measurable.
+
+Avoid generic statements that could belong to any brand. Add product-specific use cases, operational lessons, and implementation constraints from your own experience.
+
+Technical SEO still matters: clean titles, accurate publish dates, internal links, and structured data. AI does not replace these fundamentals.
+
+Teams using Vion AI content workflows usually improve publishing consistency first, then organic traffic quality as expertise depth accumulates across topics.`,
+            tr: `AI içerik üretim hızını artırır, ancak hız tek başına sıralama getirmez. Arama performansı hâlâ fayda, özgünlük ve uzmanlık derinliğine bağlıdır.
+
+Doğru model hibrittir. AI taslak yapı, anahtar kelime eşlemesi ve alternatif başlıklar üretir. Uzman ekip örnekleri, iddiaları ve nihai anlatıyı doğrular.
+
+Her yazı için bir ana sorgu, iki destek niyeti ve bir dönüşüm aksiyonu tanımlayın. Bu yaklaşım sayfayı odaklı ve ölçülebilir tutar.
+
+Her markaya uyabilecek genel cümlelerden kaçının. Kendi ürününüzden kullanım senaryosu, operasyon dersi ve uygulama kısıtı ekleyin.
+
+Teknik SEO temelleri değişmez: temiz başlıklar, doğru yayın tarihi, iç link yapısı ve structured data.
+
+Vion AI ile içerik akışı kuran ekipler önce yayın tutarlılığını, sonra da organik trafik kalitesini artırır.`
+        },
+        category: "SEO",
+        date: "2026-02-13",
+        readTime: "7 dk",
+        image: "/blog/ai-seo-content.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "cok-dilli-ai-destekte-kaliteyi-korumak",
+        title: {
+            en: "Multilingual AI Support: Keep Quality Consistent Across Languages",
+            tr: "Çok Dilli AI Destek: Diller Arasında Kaliteyi Koruma"
+        },
+        excerpt: {
+            en: "A practical quality model for Turkish-English support flows with consistent brand tone and policy accuracy.",
+            tr: "Türkçe-İngilizce destek akışlarında marka tonu ve politika doğruluğunu korumak için pratik kalite modeli."
+        },
+        content: {
+            en: `Multilingual support is not a translation project. It is a quality-control project across tone, policy accuracy, and resolution speed.
+
+The first principle is single source of truth. If language versions use different source docs, contradiction is inevitable.
+
+The second principle is style governance. Define how formal the assistant should be, how short answers should stay, and which terms should never be translated.
+
+Language switching must be natural. If a user starts in English and moves to Turkish, the assistant should adapt without losing conversation memory.
+
+Measure quality per language, not global average only. A strong EN score can hide weak TR performance and vice versa.
+
+Vion AI language-aware flows help teams standardize support quality while preserving local communication nuances.`,
+            tr: `Çok dilli destek bir çeviri projesi değil, kalite yönetimi projesidir. Ton, politika doğruluğu ve çözüm hızı her dilde korunmalıdır.
+
+İlk ilke tek doğruluk kaynağıdır. Diller farklı kaynaklardan beslenirse çelişki kaçınılmaz olur.
+
+İkinci ilke üslup yönetimidir. Asistanın ne kadar resmi konuşacağı, cevapların ne kadar kısa olacağı ve hangi terimlerin çevrilmeyeceği yazılı olmalıdır.
+
+Dil geçişi doğal olmalıdır. Kullanıcı İngilizce başlayıp Türkçeye döndüğünde asistan bağlamı kaybetmeden uyum sağlamalıdır.
+
+Kaliteyi dil bazında ölçün. Sadece genel ortalama metrik, bir dildeki zayıflığı gizleyebilir.
+
+Vion AI dil duyarlı akışları, ekiplerin yerel iletişim nüansını koruyarak standart destek kalitesi sağlamasına yardımcı olur.`
+        },
+        category: "Global",
+        date: "2026-02-12",
+        readTime: "6 dk",
+        image: "/blog/multilingual-ai-support.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "kobi-icin-30-gunde-ai-calisani-kurulum-plani",
+        title: {
+            en: "30-Day AI Employee Plan for SMBs: Launch, Measure, Improve",
+            tr: "KOBİ'ler İçin 30 Günde AI Çalışanı Planı: Kur, Ölç, İyileştir"
+        },
+        excerpt: {
+            en: "A realistic month-long rollout plan for SMB teams that need fast wins without enterprise-level complexity.",
+            tr: "Kurumsal karmaşıklığa girmeden hızlı sonuç almak isteyen KOBİ ekipleri için gerçekçi 30 günlük kurulum planı."
+        },
+        content: {
+            en: `SMBs often delay AI adoption because they expect a large transformation project. In reality, a focused 30-day rollout can produce measurable gains.
+
+Week 1 should define baseline metrics and top repetitive questions. Without baseline, improvement claims are guesswork.
+
+Week 2 should activate core flows: FAQ resolution, lead capture, and one conversion path aligned with your revenue model.
+
+Week 3 should add optimization: proactive prompts, better routing, and response quality review from real conversation logs.
+
+Week 4 should finalize operational rhythm: weekly review, ownership matrix, and a backlog of unanswered intents.
+
+Vion AI modular setup fits this model well because teams can start with essentials and expand after each measured iteration.`,
+            tr: `KOBİ'ler AI dönüşümünü çoğu zaman büyük ve uzun bir proje gibi gördüğü için erteler. Oysa odaklı bir 30 günlük plan, ölçülebilir sonuç üretir.
+
+1. hafta mevcut metrikleri ve en çok tekrar eden soruları netleştirmekle başlamalıdır. Başlangıç metriği yoksa iyileşme iddiası ölçülemez.
+
+2. hafta temel akışlar devreye alınır: SSS çözümü, lead toplama ve gelir modeline bağlı tek bir dönüşüm yolu.
+
+3. hafta optimizasyon haftasıdır: proaktif mesajlar, daha iyi yönlendirme ve gerçek konuşma logları üzerinden kalite iyileştirme.
+
+4. hafta operasyon ritmi kurulur: haftalık değerlendirme, sorumluluk matrisi ve yanıtsız niyetlerin backlog'u.
+
+Vion AI modüler yapısı bu yaklaşım için uygundur; ekipler çekirdek yetenekle başlayıp her ölçüm döngüsünde kapsamı büyütebilir.`
+        },
+        category: "KOBİ",
+        date: "2026-02-11",
+        readTime: "7 dk",
+        image: "/blog/kobi-30-day-ai-plan.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "yapay-zeka-ile-satis-optimizasyonu-ve-cart-recovery",
+        title: {
+            en: "AI Sales Optimization: Cart Recovery and Objection Handling",
+            tr: "AI ile Satış Optimizasyonu: Cart Recovery ve İtiraz Yönetimi"
+        },
+        excerpt: {
+            en: "Recover lost revenue by detecting hesitation signals and responding with timely, relevant interventions.",
+            tr: "Kararsızlık sinyallerini tespit edip doğru anda müdahale ederek kayıp geliri geri kazanın."
+        },
+        content: {
+            en: `Most abandoned carts are not hard no decisions. They are unresolved questions: shipping uncertainty, product fit concerns, or price hesitation.
+
+AI sales optimization focuses on these moments. The assistant identifies hesitation language and responds with the right proof or next action.
+
+Good recovery flows are specific. Generic discounts train users to wait for promotions. Contextual interventions perform better: fit clarification, delivery timeline, or risk-reduction policies.
+
+Objection handling should be structured by type: price, trust, urgency, and complexity. Each type needs a different response strategy.
+
+Track outcomes by reason code. Knowing why users recovered is as important as total recovery count.
+
+With Vion AI Sales Optimization, teams can move from reactive discounting to systematic conversion support.`,
+            tr: `Terk edilen sepetlerin çoğu kesin ret değildir. Çoğu, çözülmemiş sorudur: kargo belirsizliği, ürün uyumu veya fiyat kararsızlığı.
+
+AI satış optimizasyonu bu anlara odaklanır. Asistan kararsızlık dilini algılar ve doğru kanıtı veya aksiyonu sunar.
+
+Etkili recovery akışları spesifik olur. Genel indirimler kullanıcıyı kampanya beklemeye alıştırır. Bağlamsal müdahaleler daha iyi performans verir: ürün uyumu netleştirme, teslimat takvimi, risk azaltan politika bilgisi.
+
+İtiraz yönetimini tür bazında kurgulamak gerekir: fiyat, güven, aciliyet, karmaşıklık. Her tür için farklı cevap stratejisi gerekir.
+
+Sonuçları neden koduyla ölçün. Kaç sepet kurtarıldığı kadar, neden kurtarıldığı da önemlidir.
+
+Vion AI Sales Optimization modülü ile ekipler reaktif indirim yaklaşımından sistematik dönüşüm desteğine geçebilir.`
+        },
+        category: "Satış",
+        date: "2026-02-10",
+        readTime: "6 dk",
+        image: "/blog/sales-optimization-ai.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    },
+    {
+        slug: "ai-uygulamalarinda-kvkk-gdpr-guvenlik-rehberi-2026",
+        title: {
+            en: "AI Security and Compliance in 2026: KVKK + GDPR Practical Guide",
+            tr: "AI Güvenliği ve Uyum 2026: KVKK + GDPR Pratik Rehberi"
+        },
+        excerpt: {
+            en: "A practical checklist for secure AI operations across data minimization, access control, retention, and audit readiness.",
+            tr: "Veri minimizasyonu, erişim kontrolü, saklama politikası ve denetim hazırlığı için pratik AI güvenlik kontrol listesi."
+        },
+        content: {
+            en: `AI adoption without governance creates silent risk. Compliance is not a legal footer; it is an operating discipline.
+
+Start with data minimization. Collect only fields required for a defined purpose. Reduce free-text capture where sensitive data may appear unnecessarily.
+
+Then enforce access boundaries. Separate admin, analyst, and operator permissions. Every role should access only what it needs.
+
+Retention policy must be explicit. Define how long conversation logs and uploaded documents are stored, and how deletion requests are processed.
+
+Audit readiness requires traceability. Keep event logs for configuration changes, export actions, and sensitive workflow triggers.
+
+Vion AI deployments can be structured around these controls to align everyday operations with KVKK and GDPR expectations.`,
+            tr: `Yönetim modeli olmadan AI kullanımı görünmeyen risk üretir. Uyum, sayfanın altındaki bir metin değil; günlük operasyon disiplinidir.
+
+İlk adım veri minimizasyonudur. Sadece tanımlı amaca gerekli alanları toplayın. Gereksiz hassas verinin serbest metinle sisteme girmesini azaltın.
+
+İkinci adım erişim sınırlarıdır. Admin, analist ve operatör rollerini ayırın. Her rol yalnızca ihtiyacı kadar veriye erişmelidir.
+
+Saklama politikası açık olmalıdır. Sohbet logları ve yüklenen dokümanların ne kadar süre tutulacağı, silme taleplerinin nasıl işleneceği net tanımlanmalıdır.
+
+Denetime hazırlık için izlenebilirlik gerekir. Konfigürasyon değişikliği, dışa aktarım ve hassas akış tetiklerinde olay kaydı tutun.
+
+Vion AI kurulumları bu kontroller etrafında yapılandırıldığında, KVKK ve GDPR beklentileriyle günlük işleyiş arasında güçlü bir uyum sağlanır.`
+        },
+        category: "Güvenlik",
+        date: "2026-02-09",
+        readTime: "7 dk",
+        image: "/blog/ai-security-kvkk-gdpr.svg",
+        author: { name: "Vion AI Team", avatar: "VA" }
+    }
+];
 
 export const SEED_BLOG_POSTS = [
+    ...NEW_SEO_BLOG_POSTS,
     {
         slug: "ai-chatbot-musteri-hizmetleri-donusumu",
         title: {
@@ -1231,4 +1635,3 @@ export const SEED_FAQS = [
         category: "security"
     }
 ];
-

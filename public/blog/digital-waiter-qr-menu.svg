@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Digital Waiter QR Menu">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#451a03"/>
+      <stop offset="100%" stop-color="#c2410c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="860" y="120" width="190" height="310" rx="20" fill="#ffedd5" opacity="0.22"/>
+  <text x="80" y="180" fill="#fed7aa" font-size="34" font-family="Arial, sans-serif" font-weight="700">VION AI BLOG</text>
+  <text x="80" y="290" fill="#ffffff" font-size="62" font-family="Arial, sans-serif" font-weight="700">Digital Waiter</text>
+  <text x="80" y="365" fill="#ffffff" font-size="62" font-family="Arial, sans-serif" font-weight="700">QR Menu AI</text>
+  <text x="80" y="445" fill="#ffedd5" font-size="32" font-family="Arial, sans-serif">Restaurant conversion flow</text>
+</svg>

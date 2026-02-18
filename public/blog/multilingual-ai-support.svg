@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Multilingual AI Support">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#4338ca"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="980" cy="150" r="165" fill="#c7d2fe" opacity="0.2"/>
+  <text x="80" y="180" fill="#c7d2fe" font-size="34" font-family="Arial, sans-serif" font-weight="700">VION AI BLOG</text>
+  <text x="80" y="290" fill="#ffffff" font-size="62" font-family="Arial, sans-serif" font-weight="700">Multilingual</text>
+  <text x="80" y="365" fill="#ffffff" font-size="62" font-family="Arial, sans-serif" font-weight="700">AI Support</text>
+  <text x="80" y="445" fill="#e0e7ff" font-size="32" font-family="Arial, sans-serif">Consistency across languages</text>
+</svg>

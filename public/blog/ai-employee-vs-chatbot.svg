@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="AI Employee vs Chatbot">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="980" cy="120" r="180" fill="#93c5fd" opacity="0.2"/>
+  <text x="80" y="180" fill="#93c5fd" font-size="34" font-family="Arial, sans-serif" font-weight="700">VION AI BLOG</text>
+  <text x="80" y="290" fill="#ffffff" font-size="68" font-family="Arial, sans-serif" font-weight="700">AI Employee</text>
+  <text x="80" y="370" fill="#ffffff" font-size="68" font-family="Arial, sans-serif" font-weight="700">vs Chatbot</text>
+  <text x="80" y="450" fill="#cbd5e1" font-size="32" font-family="Arial, sans-serif">Operational impact in 2026</text>
+</svg>
