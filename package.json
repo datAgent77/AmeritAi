@@ -12,7 +12,10 @@
     "build": "NEXT_DIST_DIR=.next-build next build",
     "start": "NEXT_DIST_DIR=.next-build next start",
     "lint": "eslint",
-    "validate-modules": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/validate-modules.ts"
+    "validate-modules": "npx ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/validate-modules.ts",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "security:scan": "./.githooks/pre-commit",
+    "security:scan:repo": "gitleaks git --redact --config .gitleaks.toml --verbose"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.80",

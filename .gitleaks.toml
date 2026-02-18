@@ -1,0 +1,35 @@
+title = "Vion AI Gitleaks Config"
+
+[extend]
+useDefault = true
+
+# Firebase Web API key is public by design (client-side identifier),
+# but we scope this allowlist tightly to avoid broad false negatives.
+[[allowlists]]
+description = "Allow known Firebase browser key in checked files"
+paths = [
+  '''lib/firebase.ts''',
+  '''lib/firebase-guest.ts'''
+]
+regexes = [
+  '''AIzaSyCUwSlqGfisUtejDfF8Snv-EzI374vcuus'''
+]
+
+# Historical false-positives: static PEM marker strings used in key-formatting code.
+# Scope exclusion to specific historical commits so new leaks are still caught.
+[[allowlists]]
+description = "Ignore historical private-key marker false-positives"
+commits = [
+  '''984c52afbfc348e8c95954b1f040730a96d7b5f7''',
+  '''860ed7daa0a606dd77b17d6e416312166e3bcc2e'''
+]
+
+[[allowlists]]
+description = "Allow static PEM marker strings in backup utility code"
+paths = [
+  '''scripts/firestore-backup.js'''
+]
+regexes = [
+  '''-----BEGIN PRIVATE KEY-----''',
+  '''-----END PRIVATE KEY-----'''
+]

@@ -1,0 +1,8 @@
+# Global default owner
+* @yasincelenk
+
+# Security-critical areas (explicit for visibility)
+/.github/ @yasincelenk
+/lib/ @yasincelenk
+/app/api/ @yasincelenk
+/scripts/ @yasincelenk
