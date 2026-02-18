@@ -11,6 +11,29 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 const missingTranslationKeys = new Set<string>();
+const LANGUAGE_COOKIE_NAME = 'language';
+const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+
+function isSupportedLanguage(value: string | null | undefined): value is Language {
+    return value === 'en' || value === 'tr';
+}
+
+function getCookieLanguage(): Language | null {
+    if (typeof document === 'undefined') return null;
+
+    const cookieValue = document.cookie
+        .split('; ')
+        .find((cookie) => cookie.startsWith(`${LANGUAGE_COOKIE_NAME}=`))
+        ?.split('=')[1];
+
+    if (!cookieValue) return null;
+    return isSupportedLanguage(cookieValue) ? cookieValue : null;
+}
+
+function setLanguageCookie(language: Language) {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${LANGUAGE_COOKIE_NAME}=${language}; path=/; max-age=${LANGUAGE_COOKIE_MAX_AGE}; samesite=lax`;
+}
 
 function humanizeTranslationKey(key: string): string {
     const readable = key
@@ -22,19 +45,38 @@ function humanizeTranslationKey(key: string): string {
     return readable.charAt(0).toUpperCase() + readable.slice(1);
 }
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-    const [language, setLanguage] = useState<Language>('en');
+export function LanguageProvider({
+    children,
+    initialLanguage = 'en'
+}: {
+    children: React.ReactNode;
+    initialLanguage?: Language;
+}) {
+    const [language, setLanguage] = useState<Language>(initialLanguage);
 
     useEffect(() => {
         const savedLanguage = localStorage.getItem('language');
-        if (savedLanguage && savedLanguage in translations) {
-            setLanguage(savedLanguage as Language);
+        if (isSupportedLanguage(savedLanguage)) {
+            setLanguage(savedLanguage);
+            setLanguageCookie(savedLanguage);
+            return;
         }
-    }, []);
+
+        const cookieLanguage = getCookieLanguage();
+        if (cookieLanguage) {
+            setLanguage(cookieLanguage);
+            localStorage.setItem('language', cookieLanguage);
+            return;
+        }
+
+        localStorage.setItem('language', initialLanguage);
+        setLanguageCookie(initialLanguage);
+    }, [initialLanguage]);
 
     const handleSetLanguage = (lang: Language) => {
         setLanguage(lang);
         localStorage.setItem('language', lang);
+        setLanguageCookie(lang);
     };
 
     const t = (key: string): string => {

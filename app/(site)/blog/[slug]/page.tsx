@@ -25,6 +25,13 @@ interface BlogPost {
     author: { name: string; avatar: string };
 }
 
+const BLOG_IMAGE_FALLBACK = "/blog/customer-service-ai.jpg";
+
+function resolveBlogImage(image: string | undefined) {
+    if (!image || !image.trim()) return BLOG_IMAGE_FALLBACK;
+    return image;
+}
+
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
     const { t, language } = useLanguage()
     const initialPost = (SEED_BLOG_POSTS as BlogPost[]).find((item) => item.slug === params.slug) || null
@@ -134,10 +141,11 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
             <article className="container mx-auto px-4 max-w-4xl pb-24">
                 <div className="rounded-2xl overflow-hidden mb-12 border border-border bg-card/50 relative h-auto">
                     <Image
-                        src={post.image}
+                        src={resolveBlogImage(post.image)}
                         alt={post.title[language as 'en' | 'tr']}
                         width={800}
                         height={500}
+                        sizes="(max-width: 1024px) 100vw, 800px"
                         className="w-full h-auto max-h-[500px] object-cover"
                         unoptimized
                     />

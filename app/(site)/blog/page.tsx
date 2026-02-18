@@ -25,6 +25,13 @@ interface BlogPost {
     author: { name: string; avatar: string };
 }
 
+const BLOG_IMAGE_FALLBACK = "/blog/customer-service-ai.jpg";
+
+function resolveBlogImage(image: string | undefined) {
+    if (!image || !image.trim()) return BLOG_IMAGE_FALLBACK;
+    return image;
+}
+
 export default function BlogPage() {
     const { t, language } = useLanguage()
     const [posts, setPosts] = useState<BlogPost[]>(SEED_BLOG_POSTS as BlogPost[])
@@ -76,9 +83,10 @@ export default function BlogPage() {
                                 <article className="bg-card border border-border rounded-2xl overflow-hidden hover:border-foreground/20 transition-all hover:translate-y-[-4px] shadow-sm">
                                     <div className="aspect-video relative overflow-hidden">
                                         <Image
-                                            src={post.image}
+                                            src={resolveBlogImage(post.image)}
                                             alt={post.title[language as 'en' | 'tr']}
                                             fill
+                                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                             className="object-cover group-hover:scale-105 transition-transform duration-500"
                                             unoptimized
                                         />

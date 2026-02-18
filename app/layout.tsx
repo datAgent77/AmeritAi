@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -100,12 +101,17 @@ import { GoogleTagManager } from "@/components/google-tag-manager";
 import { RouteAnalyticsTracker } from "@/components/route-analytics-tracker";
 import { Toaster } from "@/components/ui/toaster"
 import { PublicChatbot } from "@/components/public-chatbot"
+import type { Language } from "@/lib/translations";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const languageCookie = cookieStore.get("language")?.value;
+  const initialLanguage: Language = languageCookie === "tr" ? "tr" : "en";
+
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
@@ -156,7 +162,7 @@ export default function RootLayout({
   const jsonLd = [organizationJsonLd, websiteJsonLd, softwareApplicationJsonLd]
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={initialLanguage} suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <noscript>
           <iframe 
@@ -170,7 +176,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-          <LanguageProvider>
+          <LanguageProvider initialLanguage={initialLanguage}>
             <ConditionalAuthProvider>
               <CookieConsentProvider>
                 <CookieConsent />

@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { SEED_BLOG_POSTS } from "@/lib/seed-cms-data";
 
 const baseUrl = "https://www.getvion.com";
+const BLOG_IMAGE_FALLBACK = "/blog/customer-service-ai.jpg";
+
+function resolveBlogImage(image: string | undefined) {
+    if (!image || !image.trim()) return BLOG_IMAGE_FALLBACK;
+    return image;
+}
 
 export async function generateMetadata(
     { params }: { params: { slug: string } }
@@ -32,7 +38,7 @@ export async function generateMetadata(
             siteName: "Vion AI",
             images: [
                 {
-                    url: `${baseUrl}${post.image}`,
+                    url: `${baseUrl}${resolveBlogImage(post.image)}`,
                     alt: post.title.en
                 }
             ],
@@ -42,7 +48,7 @@ export async function generateMetadata(
             card: "summary_large_image",
             title: post.title.en,
             description: post.excerpt.en,
-            images: [`${baseUrl}${post.image}`]
+            images: [`${baseUrl}${resolveBlogImage(post.image)}`]
         }
     };
 }
