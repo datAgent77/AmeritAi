@@ -324,10 +324,16 @@ export async function POST(req: Request) {
         // Parallelize: Save user message and start generating AI response
         const lastMessage = messages[messages.length - 1]!;
         const messageId = lastMessage.id || Date.now().toString();
+        const userContent = typeof lastMessage.content === "string" ? lastMessage.content : "";
 
         const [saveResult, result] = await Promise.all([
-            sessionId && lastMessage.role === "user"
-                ? saveMessageToSession(sessionId, chatbotId, { ...lastMessage, id: messageId, role: "user", sentiment: "Neutral" }, userId)
+            sessionId && lastMessage.role === "user" && userContent
+                ? saveMessageToSession(
+                    sessionId,
+                    chatbotId,
+                    { id: messageId, role: "user", content: userContent, sentiment: "Neutral" },
+                    userId
+                )
                 : Promise.resolve(),
             generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext, body.industry)
         ]);
