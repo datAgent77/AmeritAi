@@ -1,6 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
-import { generateAIResponse, saveMessageToSession, analyzeSentiment } from "@/lib/ai-service";
+import { generateAIResponse, saveMessageToSession, analyzeSentiment, type AIMessage } from "@/lib/ai-service";
 import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
@@ -26,6 +26,10 @@ type ChatRequestBody = {
     visualAnalysisContext?: string;
     assistantMessageId?: string;
     industry?: string;
+};
+
+type NormalizedChatMessage = AIMessage & {
+    id?: string;
 };
 
 type ShopperProduct = {
@@ -263,6 +267,25 @@ export async function POST(req: Request) {
             );
         }
 
+        const normalizedMessages: NormalizedChatMessage[] = messages
+            .filter((message): message is NormalizedChatMessage => {
+                const validRole = message?.role === "user" || message?.role === "assistant" || message?.role === "system";
+                const validContent = typeof message?.content === "string";
+                return validRole && validContent;
+            })
+            .map((message) => ({
+                id: message.id,
+                role: message.role as AIMessage["role"],
+                content: message.content as string
+            }));
+
+        if (normalizedMessages.length === 0) {
+            return NextResponse.json(
+                { error: "Invalid request body: at least one valid message is required." },
+                { status: 400 }
+            );
+        }
+
         // Rate limiting check
         const rateLimitResult = checkRateLimit(ip, sessionId);
         if (!rateLimitResult.allowed) {
@@ -322,7 +345,7 @@ export async function POST(req: Request) {
         // ... existing pause check codes ...
 
         // Parallelize: Save user message and start generating AI response
-        const lastMessage = messages[messages.length - 1]!;
+        const lastMessage = normalizedMessages[normalizedMessages.length - 1]!;
         const messageId = lastMessage.id || Date.now().toString();
         const userContent = typeof lastMessage.content === "string" ? lastMessage.content : "";
 
@@ -335,13 +358,13 @@ export async function POST(req: Request) {
                     userId
                 )
                 : Promise.resolve(),
-            generateAIResponse(chatbotId, messages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext, body.industry)
+            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, context, isVoice, language, visualAnalysisContext, body.industry)
         ]);
         
         // ... sentiment code ...
 
         // Estimate Input Tokens
-        const inputContent = messages.map((m: any) => m.content).join(" ");
+        const inputContent = normalizedMessages.map((m) => m.content).join(" ");
         const estimatedInputTokens = Math.ceil(inputContent.length / 4);
 
         if (result.isStream) {
@@ -372,7 +395,7 @@ export async function POST(req: Request) {
 
                                 try {
                                     // Extract appointment data using the clean extractor
-                                    const extractedData = extractAppointmentData(messages, fullContent);
+                                    const extractedData = extractAppointmentData(normalizedMessages, fullContent);
 
                                     // Validate we have minimum required data
                                     if (!extractedData.customerEmail && !extractedData.customerPhone) {
@@ -452,7 +475,7 @@ export async function POST(req: Request) {
                             // Check if this is a lead confirmation and save it
                             if (isLeadConfirmation(fullContent)) {
                                 try {
-                                    const leadData = extractLeadData(messages);
+                                    const leadData = extractLeadData(normalizedMessages);
 
                                     // IMPORTANT: Only save if we have REAL contact info (email or phone)
                                     // Don't save if only name exists, as it might be incorrectly extracted from chat messages
