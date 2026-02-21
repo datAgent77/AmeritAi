@@ -67,6 +67,11 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ambient Chatbot Widget Transparent Overrides */
+  .ambient-transparent-bg {
+    @apply bg-transparent !important;
+  }
 }
 
 /* Animations */

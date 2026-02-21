@@ -90,18 +90,23 @@ export default function ChatbotContainer() {
     useEffect(() => {
         if (!isClient) return
 
-        const prevHtmlBg = document.documentElement.style.backgroundColor
-        const prevBodyBg = document.body.style.backgroundColor
-
         const isAmbient = settings.chatDisplayMode === "ambient"
         if (isAmbient) {
+            // Apply via both JS and a dedicated strict style tag injected later
             document.documentElement.style.setProperty("background-color", "transparent", "important")
             document.body.style.setProperty("background-color", "transparent", "important")
+            document.documentElement.classList.add('ambient-transparent-bg')
+            document.body.classList.add('ambient-transparent-bg')
+
+            const nextRoot = document.getElementById('__next')
+            if (nextRoot) nextRoot.style.setProperty("background-color", "transparent", "important")
         }
 
         return () => {
-            document.documentElement.style.backgroundColor = prevHtmlBg
-            document.body.style.backgroundColor = prevBodyBg
+            document.documentElement.classList.remove('ambient-transparent-bg')
+            document.body.classList.remove('ambient-transparent-bg')
+            document.documentElement.style.backgroundColor = ''
+            document.body.style.backgroundColor = ''
         }
     }, [settings.chatDisplayMode, isClient])
 
