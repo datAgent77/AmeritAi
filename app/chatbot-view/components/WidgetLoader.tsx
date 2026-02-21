@@ -10,11 +10,12 @@ interface WidgetLoaderProps {
 
 export function WidgetLoader({ loaderStyle = 'skeleton', ambientBottomMargin = 0, showAmbientIcon = true }: WidgetLoaderProps) {
     const bottomPadding = `calc(0.75rem + ${ambientBottomMargin}px + env(safe-area-inset-bottom))`;
+    const transparentRootStyle = `html, body, #__next, #root { background: transparent !important; background-color: transparent !important; }`
 
     if (loaderStyle === 'spinner') {
         return (
             <div className="fixed inset-0 w-full overflow-hidden font-sans flex items-center justify-center z-50 pointer-events-none">
-                <style>{`body { background-color: transparent !important; }`}</style>
+                <style>{transparentRootStyle}</style>
                 <div className="w-10 h-10 border-4 border-gray-200/50 dark:border-gray-700/50 border-t-primary rounded-full animate-spin"></div>
             </div>
         );
@@ -23,7 +24,7 @@ export function WidgetLoader({ loaderStyle = 'skeleton', ambientBottomMargin = 0
     if (loaderStyle === 'pulsing-icon') {
         return (
             <div className="fixed inset-0 w-full overflow-hidden font-sans flex flex-col justify-end px-4 sm:px-6 z-50 pointer-events-none" style={{ paddingBottom: bottomPadding }}>
-                <style>{`body { background-color: transparent !important; }`}</style>
+                <style>{transparentRootStyle}</style>
                 <div className="relative z-20 w-full mx-auto flex items-center justify-center mb-6" style={{ maxWidth: '1080px' }}>
                     <div className="bg-white/80 dark:bg-black/50 backdrop-blur-md p-4 rounded-full shadow-lg flex gap-1.5 opacity-90">
                         <div className="w-2.5 h-2.5 rounded-full bg-primary animate-[bounce_1.4s_infinite_ease-in-out]"></div>
@@ -38,7 +39,7 @@ export function WidgetLoader({ loaderStyle = 'skeleton', ambientBottomMargin = 0
     // Default: Skeleton (Input Shape)
     return (
         <div className="fixed inset-0 w-full overflow-hidden font-sans flex flex-col justify-end px-4 sm:px-6 z-50 pointer-events-none">
-            <style>{`body { background-color: transparent !important; }`}</style>
+            <style>{transparentRootStyle}</style>
             <div className="relative z-20 w-full mx-auto" style={{ maxWidth: '1080px' }}>
                 <div className="px-4 pt-0" style={{ paddingBottom: bottomPadding }}>
                     <div className="relative mx-auto w-full animate-pulse">

@@ -372,7 +372,6 @@ export default function ChatbotContainer() {
         }
     }, [isExpanded, showAmbientFeed])
     const ambientOverlayHeight = Math.max(300, Math.min(820, ambientRailHeight + 280))
-    const ambientOverlayWidth = "min(1080px, 100%)"
     // Keep internal gradient alpha values constant! 
     // The parent div handles hiding via `opacity-0 transition-opacity` smoothly.
     // Dynamically dropping this to 0 causes CSS interpolation artifacts (striped lines) during close.
@@ -461,10 +460,19 @@ export default function ChatbotContainer() {
             style={{
                 height: viewportStyle.height,
                 top: viewportStyle.top,
-                position: 'fixed'
+                position: 'fixed',
+                backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}
             className={`fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
         >
+            {isAmbientMode && (
+                <style>{`
+                    html, body, #__next, #root {
+                        background: transparent !important;
+                        background-color: transparent !important;
+                    }
+                `}</style>
+            )}
             {isAmbientMode ? (
                 <div className="relative flex h-full w-full flex-col justify-end px-4 sm:px-6 overflow-visible">
                     <div
