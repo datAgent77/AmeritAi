@@ -476,6 +476,9 @@ export default function ChatbotContainer() {
                         background: transparent !important;
                         background-color: transparent !important;
                     }
+                    :root {
+                        color-scheme: light dark normal !important;
+                    }
                 `}</style>
             )}
             {isAmbientMode ? (
