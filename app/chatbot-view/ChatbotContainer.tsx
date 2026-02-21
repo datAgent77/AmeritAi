@@ -475,31 +475,31 @@ export default function ChatbotContainer() {
             )}
             {isAmbientMode ? (
                 <div className="relative flex h-full w-full flex-col justify-end px-4 sm:px-6 overflow-visible">
-                    <div
-                        className={`pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out ${showAmbientFeed ? 'opacity-100' : 'opacity-0'}`}
-                    >
-                        {/* Radial glow — fades to transparent on top, left, right */}
-                        <div
-                            style={{
-                                width: '140vw',
-                                marginLeft: '-20vw',
-                                height: `${ambientOverlayHeight + 220}px`,
-                                background: `radial-gradient(ellipse 70% 85% at 50% 100%, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${Math.max(0.2, visibleOverlayOpacity * 0.7)}) 25%, rgba(0,0,0,${Math.max(0.08, visibleOverlayOpacity * 0.35)}) 50%, rgba(0,0,0,0) 75%)`,
-                                transition: 'height 0.4s ease-out, opacity 0.5s ease-out',
-                            }}
-                        />
-                        {/* Solid base — covers the very bottom edge below input bar */}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                height: '80px',
-                                background: `linear-gradient(to top, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${visibleOverlayOpacity * 0.5}) 60%, transparent 100%)`,
-                            }}
-                        />
-                    </div>
+                    {showAmbientFeed && (
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out opacity-100">
+                            {/* Radial glow — fades to transparent on top, left, right */}
+                            <div
+                                style={{
+                                    width: '140vw',
+                                    marginLeft: '-20vw',
+                                    height: `${ambientOverlayHeight + 220}px`,
+                                    background: `radial-gradient(ellipse 70% 85% at 50% 100%, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${Math.max(0.2, visibleOverlayOpacity * 0.7)}) 25%, rgba(0,0,0,${Math.max(0.08, visibleOverlayOpacity * 0.35)}) 50%, rgba(0,0,0,0) 75%)`,
+                                    transition: 'height 0.4s ease-out, opacity 0.5s ease-out',
+                                }}
+                            />
+                            {/* Solid base — covers the very bottom edge below input bar */}
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: '80px',
+                                    background: `linear-gradient(to top, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${visibleOverlayOpacity * 0.5}) 60%, transparent 100%)`,
+                                }}
+                            />
+                        </div>
+                    )}
 
                     <div
                         className="relative z-10 flex h-full flex-col justify-end w-full"
@@ -509,8 +509,8 @@ export default function ChatbotContainer() {
                         }}
                     >
                         <div
-                            className={`mb-1 w-full overflow-y-auto overflow-x-clip pt-2 pb-1 transition-opacity duration-200 ease-in-out ${showAmbientFeed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                            style={{ height: `${ambientRailHeight}px` }}
+                            className={`w-full overflow-y-auto overflow-x-clip transition-[height,opacity,margin,padding] duration-200 ease-in-out ${showAmbientFeed ? 'mb-1 pt-2 pb-1 opacity-100' : 'mb-0 pt-0 pb-0 opacity-0 pointer-events-none overflow-hidden'}`}
+                            style={{ height: showAmbientFeed ? `${ambientRailHeight}px` : '0px' }}
                         >
                             <MessageList
                                 mode="ambient"
