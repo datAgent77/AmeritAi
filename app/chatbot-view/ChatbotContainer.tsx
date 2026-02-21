@@ -12,10 +12,10 @@ import { useVisualContext } from "./hooks/useVisualContext"
 import { useVoiceInput } from "./hooks/useVoiceInput"
 import { useChatCore } from "./hooks/useChatCore"
 
-// Components
 import { ChatHeader } from "./components/ChatHeader"
 import { MessageList } from "./components/MessageList"
 import { ChatInput } from "./components/ChatInput"
+import { WidgetLoader } from './components/WidgetLoader';
 import { BookingOverlay } from "./components/BookingOverlay"
 import { ConfirmationModal } from "./components/ConfirmationModal"
 import { VoiceOverlay } from "./components/VoiceOverlay"
@@ -36,7 +36,7 @@ export default function ChatbotContainer() {
     const visualContext = useVisualContext(chatbotId, language)
 
     // 3. Local State (Top Level)
-    const [pageContext, setPageContext] = useState<{ url: string, title: string, desc: string } | null>(null)
+    const [pageContext, setPageContext] = useState<{ url: string, title: string, desc: string, pageText?: string } | null>(null)
     const [isGuestReady, setIsGuestReady] = useState(false)
     const [isClient, setIsClient] = useState(false)
     const [localInput, setLocalInput] = useState("")
@@ -45,7 +45,10 @@ export default function ChatbotContainer() {
     const [showBooking, setShowBooking] = useState(false)
     const [bookingData, setBookingData] = useState({ type: "", date: "", time: "", notes: "" })
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
-    
+
+    // Ambient mode: manual override to collapse feed
+    const [ambientFeedManuallyClosed, setAmbientFeedManuallyClosed] = useState(true)
+
     // Lead Collection State
     const [showLeadCollection, setShowLeadCollection] = useState(false)
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
@@ -73,7 +76,7 @@ export default function ChatbotContainer() {
 
             window.visualViewport.addEventListener('resize', handleResize)
             window.visualViewport.addEventListener('scroll', handleResize)
-            
+
             // Initial check
             handleResize()
 
@@ -83,6 +86,24 @@ export default function ChatbotContainer() {
             }
         }
     }, [])
+
+    useEffect(() => {
+        if (!isClient) return
+
+        const prevHtmlBg = document.documentElement.style.backgroundColor
+        const prevBodyBg = document.body.style.backgroundColor
+
+        const isAmbient = settings.chatDisplayMode === "ambient"
+        if (isAmbient) {
+            document.documentElement.style.setProperty("background-color", "transparent", "important")
+            document.body.style.setProperty("background-color", "transparent", "important")
+        }
+
+        return () => {
+            document.documentElement.style.backgroundColor = prevHtmlBg
+            document.body.style.backgroundColor = prevBodyBg
+        }
+    }, [settings.chatDisplayMode, isClient])
 
     // 4. Initialization Effects
     useEffect(() => {
@@ -188,6 +209,19 @@ export default function ChatbotContainer() {
         }
     }
 
+    // Instantly teleport to bottom when the widget transitions from hidden to visible
+    useEffect(() => {
+        const handleVisibilityToggle = (event: MessageEvent) => {
+            if (event.data.type === 'USEREX_WIDGET_TOGGLED' && event.data.isOpen) {
+                scrollToBottom("auto")
+                // Fallback attempt in case layout takes a moment
+                setTimeout(() => scrollToBottom("auto"), 50)
+            }
+        }
+        window.addEventListener('message', handleVisibilityToggle)
+        return () => window.removeEventListener('message', handleVisibilityToggle)
+    }, [])
+
     // Keep the latest message visible, including token-by-token streaming updates.
     useEffect(() => {
         if (messages.length === 0) {
@@ -233,7 +267,7 @@ export default function ChatbotContainer() {
     }
 
     const handleClearChat = () => setIsConfirmingClear(true)
-    
+
     const confirmClear = () => {
         resetSession()
         setIsConfirmingClear(false)
@@ -314,8 +348,64 @@ export default function ChatbotContainer() {
         }, 1000)
     }
 
+    const isAmbientMode = settings.chatDisplayMode === "ambient"
+
+    // Open ambient feed automatically when there's an active interaction (typing)
+    useEffect(() => {
+        if (isAmbientMode && isTyping) {
+            setAmbientFeedManuallyClosed(false)
+        }
+    }, [isTyping, isAmbientMode])
+    const ambientOverlayOpacity = Math.max(0.2, Math.min(0.9, settings.ambientOverlayOpacity || 0.55))
+    const ambientRailHeight = Math.max(220, Math.min(460, settings.ambientMaxHeight || 300))
+    // Read bottom margin: prefer settings value, fallback to URL param (passed by widget.js)
+    const ambientBottomMarginFromUrl = settings.ambientBottomMargin || Number(searchParams?.get('ambientBottomMargin') || 0)
+    const hasUserMessage = messages.some((m: any) => m.role === "user")
+    const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping)
+
+    // Scroll to bottom when the widget expands or ambient feed manually opens
+    useEffect(() => {
+        if (isExpanded || showAmbientFeed) {
+            scrollToBottom("auto")
+            const timeoutId = setTimeout(() => scrollToBottom("auto"), 300)
+            return () => clearTimeout(timeoutId)
+        }
+    }, [isExpanded, showAmbientFeed])
+    const ambientOverlayHeight = Math.max(300, Math.min(820, ambientRailHeight + 280))
+    const ambientOverlayWidth = "min(1080px, 100%)"
+    // Keep internal gradient alpha values constant! 
+    // The parent div handles hiding via `opacity-0 transition-opacity` smoothly.
+    // Dynamically dropping this to 0 causes CSS interpolation artifacts (striped lines) during close.
+    const visibleOverlayOpacity = ambientOverlayOpacity
+
+    const handleToggleAmbientFeed = () => {
+        setAmbientFeedManuallyClosed(prev => !prev)
+    }
+
+    const ambientAlignmentStyle = {
+        maxWidth: settings.ambientWidth ? `${settings.ambientWidth}px` : '1080px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        paddingLeft: `${settings.ambientSideMargin || 0}px`,
+        paddingRight: `${settings.ambientSideMargin || 0}px`,
+    }
+
+    useEffect(() => {
+        if (!isAmbientMode) return
+        window.parent.postMessage({
+            type: 'USEREX_AMBIENT_FEED_VISIBILITY',
+            hasFeed: showAmbientFeed
+        }, '*')
+    }, [isAmbientMode, showAmbientFeed])
+
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen bg-white">Loading...</div>
+        return (
+            <WidgetLoader
+                loaderStyle={(searchParams?.get("loaderStyle") as any) || "skeleton"}
+                ambientBottomMargin={Number(searchParams?.get("ambientBottomMargin") || 0)}
+                showAmbientIcon={false} // ChatInput checks its own settings, but loader can be simple
+            />
+        )
     }
 
     // Show offline message when outside business hours
@@ -323,14 +413,14 @@ export default function ChatbotContainer() {
         return (
             <div className={`flex flex-col h-screen overflow-hidden font-sans text-gray-800 ${settings.theme === 'dark' ? 'dark bg-gray-900' : 'bg-white'}`}>
                 {/* Header */}
-                <div 
+                <div
                     className="p-4 flex items-center gap-3"
                     style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                 >
                     {settings.headerLogo && (
-                        <img 
-                            src={settings.headerLogo} 
-                            alt={settings.companyName} 
+                        <img
+                            src={settings.headerLogo}
+                            alt={settings.companyName}
                             className="h-8 w-auto object-contain"
                         />
                     )}
@@ -339,18 +429,18 @@ export default function ChatbotContainer() {
                         <p className="text-xs opacity-80">{t('offline') || 'Çevrimdışı'}</p>
                     </div>
                 </div>
-                
+
                 {/* Offline Content */}
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                    <div 
+                    <div
                         className="w-16 h-16 rounded-full flex items-center justify-center mb-6"
                         style={{ backgroundColor: `${settings.brandColor}20` }}
                     >
-                        <svg 
-                            className="w-8 h-8" 
+                        <svg
+                            className="w-8 h-8"
                             style={{ color: settings.brandColor }}
-                            fill="none" 
-                            stroke="currentColor" 
+                            fill="none"
+                            stroke="currentColor"
                             viewBox="0 0 24 24"
                         >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -367,65 +457,149 @@ export default function ChatbotContainer() {
     if (!isClient || !settings) return null
 
     return (
-        <div 
-            style={{ 
+        <div
+            style={{
                 height: viewportStyle.height,
                 top: viewportStyle.top,
-                position: viewportStyle.top > 0 ? 'fixed' : 'fixed' // Ensure fixed
+                position: 'fixed'
             }}
-            className={`flex flex-col fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
+            className={`fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
         >
-             
-             <ChatHeader 
-                settings={settings}
-                isExpanded={isExpanded}
-                handleVoiceInput={handleVoiceInput}
-                isListening={isListening}
-                handleToggleSize={handleToggleSize}
-                handleCloseWidget={handleCloseWidget}
-                handleClearChat={handleClearChat}
-                t={t}
-             />
+            {isAmbientMode ? (
+                <div className="relative flex h-full w-full flex-col justify-end px-4 sm:px-6 overflow-visible">
+                    <div
+                        className={`pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out ${showAmbientFeed ? 'opacity-100' : 'opacity-0'}`}
+                    >
+                        {/* Radial glow — fades to transparent on top, left, right */}
+                        <div
+                            style={{
+                                width: '140vw',
+                                marginLeft: '-20vw',
+                                height: `${ambientOverlayHeight + 220}px`,
+                                background: `radial-gradient(ellipse 70% 85% at 50% 100%, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${Math.max(0.2, visibleOverlayOpacity * 0.7)}) 25%, rgba(0,0,0,${Math.max(0.08, visibleOverlayOpacity * 0.35)}) 50%, rgba(0,0,0,0) 75%)`,
+                                transition: 'height 0.4s ease-out, opacity 0.5s ease-out',
+                            }}
+                        />
+                        {/* Solid base — covers the very bottom edge below input bar */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: '80px',
+                                background: `linear-gradient(to top, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${visibleOverlayOpacity * 0.5}) 60%, transparent 100%)`,
+                            }}
+                        />
+                    </div>
 
-             <MessageList 
-                messages={messages}
-                settings={settings}
-                isTyping={isTyping}
-                language={language}
-                imageMap={visualContext.imageMap}
-                scrollToBottom={scrollToBottom}
-                sendMessage={(text) => sendMessage(text)}
-                messagesContainerRef={messagesContainerRef}
-                messagesEndRef={messagesEndRef}
-                t={t}
-                onLeadSubmit={handleLeadSubmit}
-             />
+                    <div
+                        className="relative z-10 flex h-full flex-col justify-end w-full"
+                        style={{
+                            ...ambientAlignmentStyle,
+                            paddingBottom: `${ambientBottomMarginFromUrl || 4}px`
+                        }}
+                    >
+                        <div
+                            className={`mb-1 w-full overflow-y-auto overflow-x-clip pt-2 pb-1 transition-opacity duration-200 ease-in-out ${showAmbientFeed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                            style={{ height: `${ambientRailHeight}px` }}
+                        >
+                            <MessageList
+                                mode="ambient"
+                                messages={messages}
+                                settings={settings}
+                                isTyping={isTyping}
+                                language={language}
+                                imageMap={visualContext.imageMap}
+                                scrollToBottom={scrollToBottom}
+                                sendMessage={(text) => sendMessage(text)}
+                                messagesContainerRef={messagesContainerRef}
+                                messagesEndRef={messagesEndRef}
+                                t={t}
+                                onLeadSubmit={handleLeadSubmit}
+                            />
+                        </div>
 
-             <ChatInput 
-                settings={settings}
-                localInput={localInput}
-                setLocalInput={setLocalInput}
-                sendMessage={sendMessage}
-                isChatLoading={isChatLoading}
-                handleVoiceInput={handleVoiceInput}
-                isListening={isListening}
-                visualContext={visualContext}
-                language={language}
-                t={t}
-                setMessages={setMessages}
-             />
+                        <ChatInput
+                            mode="ambient"
+                            settings={settings}
+                            localInput={localInput}
+                            setLocalInput={setLocalInput}
+                            sendMessage={(text: string, speakResponse?: boolean, visualCtx?: string) => {
+                                setAmbientFeedManuallyClosed(false)
+                                return sendMessage(text, speakResponse, visualCtx)
+                            }}
+                            isChatLoading={isChatLoading}
+                            handleVoiceInput={handleVoiceInput}
+                            isListening={isListening}
+                            visualContext={visualContext}
+                            language={language}
+                            t={t}
+                            setMessages={setMessages}
+                            ambientInputOnly={!showAmbientFeed}
+                            onClearChat={handleClearChat}
+                            onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                            onToggleAmbientFeed={handleToggleAmbientFeed}
+                            showUtilityActions
+                        />
+                    </div>
+                </div>
+            ) : (
+                <div className="flex h-full flex-col">
+                    <ChatHeader
+                        settings={settings}
+                        isExpanded={isExpanded}
+                        handleVoiceInput={handleVoiceInput}
+                        isListening={isListening}
+                        handleToggleSize={handleToggleSize}
+                        handleCloseWidget={handleCloseWidget}
+                        handleClearChat={handleClearChat}
+                        t={t}
+                    />
 
-             {/* Overlays */}
-             <LeadCollectionOverlay 
+                    <MessageList
+                        mode="classic"
+                        messages={messages}
+                        settings={settings}
+                        isTyping={isTyping}
+                        language={language}
+                        imageMap={visualContext.imageMap}
+                        scrollToBottom={scrollToBottom}
+                        sendMessage={(text) => sendMessage(text)}
+                        messagesContainerRef={messagesContainerRef}
+                        messagesEndRef={messagesEndRef}
+                        t={t}
+                        onLeadSubmit={handleLeadSubmit}
+                    />
+
+                    <ChatInput
+                        mode="classic"
+                        settings={settings}
+                        localInput={localInput}
+                        setLocalInput={setLocalInput}
+                        sendMessage={sendMessage}
+                        isChatLoading={isChatLoading}
+                        handleVoiceInput={handleVoiceInput}
+                        isListening={isListening}
+                        visualContext={visualContext}
+                        language={language}
+                        t={t}
+                        setMessages={setMessages}
+                    />
+                </div>
+            )}
+
+            {/* Overlays */}
+            <LeadCollectionOverlay
                 show={showLeadCollection}
                 onSubmit={handleLeadSubmit}
                 isSubmitting={isSubmittingLead}
                 settings={settings}
                 t={t}
-                description={settings.leadFormConfig?.title} 
-             />
+                description={settings.leadFormConfig?.title}
+            />
 
-             <BookingOverlay 
+            <BookingOverlay
                 showBooking={showBooking}
                 setShowBooking={setShowBooking}
                 bookingData={bookingData}
@@ -434,22 +608,22 @@ export default function ChatbotContainer() {
                 isSubmittingBooking={isSubmittingBooking}
                 settings={settings}
                 t={t}
-             />
+            />
 
-             <ConfirmationModal 
-                 isOpen={isConfirmingClear}
-                 onConfirm={confirmClear}
-                 onCancel={() => setIsConfirmingClear(false)}
-                 t={t}
-             />
+            <ConfirmationModal
+                isOpen={isConfirmingClear}
+                onConfirm={confirmClear}
+                onCancel={() => setIsConfirmingClear(false)}
+                t={t}
+            />
 
-             <VoiceOverlay 
+            <VoiceOverlay
                 isVoiceMode={isVoiceMode}
                 voiceStatus={voiceStatus}
                 localInput={localInput}
                 cancelVoiceMode={cancelVoiceMode}
                 t={t}
-             />
+            />
         </div>
     )
 }

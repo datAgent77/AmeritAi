@@ -29,10 +29,10 @@ export async function GET(req: Request) {
                 // === STRICT ACTIVE CHECK ===
                 // If the user account is explicitly deactivated, force disable the widget immediately.
                 if (userData?.isActive === false) {
-                     return NextResponse.json({
+                    return NextResponse.json({
                         isEnabled: false,
                         companyName: userData?.companyName || "Vion AI",
-                        theme: "classic" 
+                        theme: "classic"
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
@@ -51,104 +51,128 @@ export async function GET(req: Request) {
                 const docSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
 
                 if (docSnap.exists) {
-                const data = docSnap.data() || {};
-                
-                // Merge data: Chatbot settings should take precedence for widget configuration
-                // User settings provide account status and global overrides
-                const mergedData = {
-                    ...userData, // Base: User account data
-                    ...data,     // Override: Chatbot specific settings (including leadCustomFields)
-                    // Keep isActive and enableChatbot from userData if critical
-                    isActive: userData?.isActive,
-                    enableChatbot: userData?.enableChatbot
-                } as any;
+                    const data = docSnap.data() || {};
 
-                const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
-                const isAccountActive = mergedData.isActive !== false;
-                
-                // Only enable modules that are 'ready' in the registry
-                const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
+                    // Merge data: Chatbot settings should take precedence for widget configuration
+                    // User settings provide account status and global overrides
+                    const mergedData = {
+                        ...userData, // Base: User account data
+                        ...data,     // Override: Chatbot specific settings (including leadCustomFields)
+                        // Keep isActive and enableChatbot from userData if critical
+                        isActive: userData?.isActive,
+                        enableChatbot: userData?.enableChatbot
+                    } as any;
 
-                // Return only public settings
-                return NextResponse.json({
-                    isEnabled: isChatbotEnabled && isAccountActive,
-                    companyName: mergedData.companyName || "Acme Corp",
-                    welcomeTitle: mergedData.welcomeTitle || "",
-                    welcomeMessage: mergedData.welcomeMessage || "Hello! How can I help you today?",
-                    brandColor: mergedData.brandColor || "#000000",
-                    brandLogo: mergedData.brandLogo || "",
-                    headerLogo: mergedData.headerLogo || "",
-                    headerLogoWidth: mergedData.headerLogoWidth || 32,
-                    headerLogoHeight: mergedData.headerLogoHeight || 32,
-                    headerBackgroundColor: mergedData.headerBackgroundColor || "",
-                    headerTextColor: mergedData.headerTextColor || "#FFFFFF",
-                    suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
-                    enableLeadCollection: mergedData.enableLeadCollection || false,
-                    enableInitialLeadCollection: mergedData.enableInitialLeadCollection ?? mergedData.enableLeadCollection ?? false,
-                    enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
-                    leadFormConfig: mergedData.leadFormConfig || null,
-                    leadCustomFields: mergedData.leadCustomFields || [],
-                    position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
-                    viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
-                    modalSize: mergedData.modalSize || "half", // 'half' | 'full'
-                    launcherStyle: mergedData.launcherStyle || "circle",
-                    launcherCollapse: mergedData.launcherCollapse || false,
-                    launcherText: mergedData.launcherText || "Chat",
-                    launcherRadius: mergedData.launcherRadius !== undefined ? mergedData.launcherRadius : 50,
-                    launcherHeight: mergedData.launcherHeight || 60,
-                    launcherWidth: mergedData.launcherWidth || 60,
-                    fullImageLauncherWidth: mergedData.fullImageLauncherWidth || 60,
-                    fullImageLauncherHeight: mergedData.fullImageLauncherHeight || 60,
-                    launcherIcon: mergedData.launcherIcon || "message",
-                    launcherIconUrl: mergedData.launcherIconUrl || "",
-                    launcherLibraryIcon: mergedData.launcherLibraryIcon || "MessageSquare",
-                    launcherIconColor: mergedData.launcherIconColor || "#FFFFFF",
-                    launcherBackgroundColor: mergedData.launcherBackgroundColor || "",
-                    bottomSpacing: mergedData.bottomSpacing !== undefined ? mergedData.bottomSpacing : 20,
-                    sideSpacing: mergedData.sideSpacing !== undefined ? mergedData.sideSpacing : 20,
-                    launcherShadow: mergedData.launcherShadow || "medium",
-                    launcherAnimation: mergedData.launcherAnimation || "none",
-                    mobileBottomSpacing: mergedData.mobileBottomSpacing !== undefined ? mergedData.mobileBottomSpacing : 20,
-                    mobileSideSpacing: mergedData.mobileSideSpacing !== undefined ? mergedData.mobileSideSpacing : 20,
-                    mobileLauncherAnimation: mergedData.mobileLauncherAnimation || "none",
-                    // Full Image / Lottie Mode
-                    launcherType: mergedData.launcherType || "standard",
-                    launcherImageMode: mergedData.launcherImageMode || "image",
-                    launcherFullImageUrl: mergedData.launcherFullImageUrl || "",
-                    launcherLottieUrl: mergedData.launcherLottieUrl || "",
-                    launcherHoverEffect: mergedData.launcherHoverEffect || "scale",
-                    initialLanguage: mergedData.initialLanguage || "auto",
-                    // Triggers
-                    autoOpenDelay: mergedData.autoOpenDelay || 0,
-                    openOnExitIntent: mergedData.openOnExitIntent || false,
-                    openOnScroll: mergedData.openOnScroll || 0,
-                    // Availability
-                    enableBusinessHours: mergedData.enableBusinessHours || false,
-                    timezone: mergedData.timezone || "UTC",
-                    businessHoursStart: mergedData.businessHoursStart || "09:00",
-                    businessHoursEnd: mergedData.businessHoursEnd || "17:00",
-                    offlineMessage: mergedData.offlineMessage || "We are currently offline.",
-                    // Engagement
-                    engagement: mergedData.engagement || (mergedData.enableProactiveMessaging ? { enabled: true } : null),
-                    // Digital Waiter (Restaurant)
-                    digitalWaiter: mergedData.digitalWaiter || null,
-                    // Voice Assistant - TEMPORARILY DISABLED
-                    enableVoiceAssistant: false, // TODO: Re-enable when voice assistant is production-ready
-                    // enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
-                    voiceProvider: mergedData.voiceProvider || "klassifier",
-                    elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
-                    enablePersonalShopper: mergedData.enablePersonalShopper || false,
-                    enableVisualDiagnosis: mergedData.enableVisualDiagnosis || false,
-                    enableIndustryGreeting: mergedData.enableIndustryGreeting || false,
-                    industry: data.industry || mergedData.industry || "ecommerce",
-                    customPrompts: mergedData.customPrompts || "",
-                    salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
-                    enableDynamicContext: mergedData.enableDynamicContext || false,
-                    dynamicContextMode: mergedData.dynamicContextMode || "nocode",
-                    dynamicContextSelectors: Array.isArray(mergedData.dynamicContextSelectors)
-                        ? mergedData.dynamicContextSelectors
-                        : [],
-                    theme: mergedData.theme || "classic",
+                    const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
+                    const isAccountActive = mergedData.isActive !== false;
+
+                    // Only enable modules that are 'ready' in the registry
+                    const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
+
+                    // Return only public settings
+                    return NextResponse.json({
+                        isEnabled: isChatbotEnabled && isAccountActive,
+                        companyName: mergedData.companyName || "Acme Corp",
+                        welcomeTitle: mergedData.welcomeTitle || "",
+                        welcomeMessage: mergedData.welcomeMessage || "Hello! How can I help you today?",
+                        brandColor: mergedData.brandColor || "#000000",
+                        brandLogo: mergedData.brandLogo || "",
+                        headerLogo: mergedData.headerLogo || "",
+                        headerLogoWidth: mergedData.headerLogoWidth || 32,
+                        headerLogoHeight: mergedData.headerLogoHeight || 32,
+                        headerBackgroundColor: mergedData.headerBackgroundColor || "",
+                        headerTextColor: mergedData.headerTextColor || "#FFFFFF",
+                        suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
+                        enableLeadCollection: mergedData.enableLeadCollection || false,
+                        enableInitialLeadCollection: mergedData.enableInitialLeadCollection ?? mergedData.enableLeadCollection ?? false,
+                        enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
+                        leadFormConfig: mergedData.leadFormConfig || null,
+                        leadCustomFields: mergedData.leadCustomFields || [],
+                        position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
+                        viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
+                        modalSize: mergedData.modalSize || "half", // 'half' | 'full'
+                        launcherStyle: mergedData.launcherStyle || "circle",
+                        launcherCollapse: mergedData.launcherCollapse || false,
+                        launcherText: mergedData.launcherText || "Chat",
+                        launcherRadius: mergedData.launcherRadius !== undefined ? mergedData.launcherRadius : 50,
+                        launcherHeight: mergedData.launcherHeight || 60,
+                        launcherWidth: mergedData.launcherWidth || 60,
+                        fullImageLauncherWidth: mergedData.fullImageLauncherWidth || 60,
+                        fullImageLauncherHeight: mergedData.fullImageLauncherHeight || 60,
+                        launcherIcon: mergedData.launcherIcon || "message",
+                        launcherIconUrl: mergedData.launcherIconUrl || "",
+                        launcherLibraryIcon: mergedData.launcherLibraryIcon || "MessageSquare",
+                        launcherIconColor: mergedData.launcherIconColor || "#FFFFFF",
+                        launcherBackgroundColor: mergedData.launcherBackgroundColor || "",
+                        bottomSpacing: mergedData.bottomSpacing !== undefined ? mergedData.bottomSpacing : 20,
+                        sideSpacing: mergedData.sideSpacing !== undefined ? mergedData.sideSpacing : 20,
+                        launcherShadow: mergedData.launcherShadow || "medium",
+                        launcherAnimation: mergedData.launcherAnimation || "none",
+                        mobileBottomSpacing: mergedData.mobileBottomSpacing !== undefined ? mergedData.mobileBottomSpacing : 20,
+                        mobileSideSpacing: mergedData.mobileSideSpacing !== undefined ? mergedData.mobileSideSpacing : 20,
+                        mobileLauncherAnimation: mergedData.mobileLauncherAnimation || "none",
+                        interactionMode:
+                            mergedData.chatDisplayMode === "ambient"
+                                ? "always_open"
+                                : (mergedData.interactionMode === "always_open" ? "always_open" : "launcher"),
+                        chatDisplayMode: mergedData.chatDisplayMode === "ambient" ? "ambient" : "classic",
+                        ambientMaxHeight: mergedData.ambientMaxHeight !== undefined ? mergedData.ambientMaxHeight : 260,
+                        ambientOverlayOpacity: mergedData.ambientOverlayOpacity !== undefined ? mergedData.ambientOverlayOpacity : 0.55,
+                        ambientWidth: mergedData.ambientWidth !== undefined ? mergedData.ambientWidth : 800,
+                        ambientSideMargin: mergedData.ambientSideMargin !== undefined ? mergedData.ambientSideMargin : 0,
+                        ambientBottomMargin: mergedData.ambientBottomMargin !== undefined ? mergedData.ambientBottomMargin : 20,
+                        ambientInputSize: mergedData.ambientInputSize || "lg",
+                        showAmbientIcon: mergedData.showAmbientIcon !== undefined ? mergedData.showAmbientIcon : true,
+                        ambientIconUrl: mergedData.ambientIconUrl || "",
+                        ambientIconType: mergedData.ambientIconType || "library",
+                        ambientLibraryIcon: mergedData.ambientLibraryIcon || "MessageCircle",
+                        ambientIconColor: mergedData.ambientIconColor || "",
+                        ambientBorderColorIdle: mergedData.ambientBorderColorIdle || "",
+                        ambientBorderColorFocused: mergedData.ambientBorderColorFocused || "",
+                        ambientClosedBgColor: mergedData.ambientClosedBgColor || "",
+                        ambientClosedBorderColorIdle: mergedData.ambientClosedBorderColorIdle || "",
+                        ambientClosedBorderColorFocused: mergedData.ambientClosedBorderColorFocused || "",
+                        ambientAiBubbleColor: mergedData.ambientAiBubbleColor || "",
+                        widgetLoaderStyle: mergedData.widgetLoaderStyle || "skeleton",
+                        enableContextAwareness: mergedData.enableContextAwareness || false,
+                        // Full Image / Lottie Mode
+                        launcherType: mergedData.launcherType || "standard",
+                        launcherImageMode: mergedData.launcherImageMode || "image",
+                        launcherFullImageUrl: mergedData.launcherFullImageUrl || "",
+                        launcherLottieUrl: mergedData.launcherLottieUrl || "",
+                        launcherHoverEffect: mergedData.launcherHoverEffect || "scale",
+                        initialLanguage: mergedData.initialLanguage || "auto",
+                        // Triggers
+                        autoOpenDelay: mergedData.autoOpenDelay || 0,
+                        openOnExitIntent: mergedData.openOnExitIntent || false,
+                        openOnScroll: mergedData.openOnScroll || 0,
+                        // Availability
+                        enableBusinessHours: mergedData.enableBusinessHours || false,
+                        timezone: mergedData.timezone || "UTC",
+                        businessHoursStart: mergedData.businessHoursStart || "09:00",
+                        businessHoursEnd: mergedData.businessHoursEnd || "17:00",
+                        offlineMessage: mergedData.offlineMessage || "We are currently offline.",
+                        // Engagement
+                        engagement: mergedData.engagement || (mergedData.enableProactiveMessaging ? { enabled: true } : null),
+                        // Digital Waiter (Restaurant)
+                        digitalWaiter: mergedData.digitalWaiter || null,
+                        // Voice Assistant - TEMPORARILY DISABLED
+                        enableVoiceAssistant: false, // TODO: Re-enable when voice assistant is production-ready
+                        // enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
+                        voiceProvider: mergedData.voiceProvider || "klassifier",
+                        elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
+                        enablePersonalShopper: mergedData.enablePersonalShopper || false,
+                        enableVisualDiagnosis: mergedData.enableVisualDiagnosis || false,
+                        enableIndustryGreeting: mergedData.enableIndustryGreeting || false,
+                        industry: data.industry || mergedData.industry || "ecommerce",
+                        customPrompts: mergedData.customPrompts || "",
+                        salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
+                        enableDynamicContext: mergedData.enableDynamicContext || false,
+                        dynamicContextMode: mergedData.dynamicContextMode || "nocode",
+                        dynamicContextSelectors: Array.isArray(mergedData.dynamicContextSelectors)
+                            ? mergedData.dynamicContextSelectors
+                            : [],
+                        theme: mergedData.theme || "classic",
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
@@ -191,6 +215,27 @@ export async function GET(req: Request) {
                 sideSpacing: 20,
                 launcherShadow: "medium",
                 launcherAnimation: "none",
+                interactionMode: "launcher",
+                chatDisplayMode: "classic",
+                ambientMaxHeight: 260,
+                ambientOverlayOpacity: 0.55,
+                ambientWidth: 800,
+                ambientSideMargin: 0,
+                ambientBottomMargin: 20,
+                ambientInputSize: "lg",
+                showAmbientIcon: true,
+                ambientIconUrl: "",
+                ambientIconType: "library",
+                ambientLibraryIcon: "MessageCircle",
+                ambientIconColor: "",
+                ambientBorderColorIdle: "",
+                ambientBorderColorFocused: "",
+                ambientClosedBgColor: "",
+                ambientClosedBorderColorIdle: "",
+                ambientClosedBorderColorFocused: "",
+                ambientAiBubbleColor: "",
+                widgetLoaderStyle: "skeleton",
+                enableContextAwareness: false,
                 initialLanguage: "tr",
                 engagement: null,
                 digitalWaiter: null,
@@ -228,7 +273,29 @@ export async function GET(req: Request) {
                 position: "bottom-right",
                 viewMode: "classic",
                 initialLanguage: "tr",
+                interactionMode: "launcher",
+                chatDisplayMode: "classic",
+                ambientMaxHeight: 260,
+                ambientOverlayOpacity: 0.55,
+                ambientWidth: 800,
+                ambientSideMargin: 0,
+                ambientBottomMargin: 20,
+                ambientInputSize: "lg",
+                showAmbientIcon: true,
+                ambientIconUrl: "",
+                ambientIconType: "library",
+                ambientLibraryIcon: "MessageCircle",
+                ambientIconColor: "",
+                ambientBorderColorIdle: "",
+                ambientBorderColorFocused: "",
+                ambientClosedBgColor: "",
+                ambientClosedBorderColorIdle: "",
+                ambientClosedBorderColorFocused: "",
+                ambientAiBubbleColor: "",
+                widgetLoaderStyle: "skeleton",
+                enableContextAwareness: false,
                 enableDynamicContext: false,
+
                 dynamicContextMode: "nocode",
                 dynamicContextSelectors: [],
                 theme: "classic"
@@ -253,6 +320,10 @@ export async function GET(req: Request) {
             position: "bottom-right",
             viewMode: "classic",
             initialLanguage: "tr",
+            interactionMode: "launcher",
+            chatDisplayMode: "classic",
+            ambientMaxHeight: 260,
+            ambientOverlayOpacity: 0.55,
             enableDynamicContext: false,
             dynamicContextMode: "nocode",
             dynamicContextSelectors: [],

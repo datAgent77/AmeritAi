@@ -18,6 +18,7 @@ interface ChatHeaderProps {
     handleCloseWidget: () => void
     handleClearChat: () => void
     t: (key: string) => string
+    showCloseButton?: boolean
 }
 
 export function ChatHeader({
@@ -28,7 +29,8 @@ export function ChatHeader({
     handleToggleSize,
     handleCloseWidget,
     handleClearChat,
-    t
+    t,
+    showCloseButton = true
 }: ChatHeaderProps) {
     return (
         <div
@@ -116,13 +118,15 @@ export function ChatHeader({
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
-                <button
-                    onClick={handleCloseWidget}
-                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                    title="Close Widget"
-                >
-                    <X className="w-4 h-4" />
-                </button>
+                {showCloseButton && (
+                    <button
+                        onClick={handleCloseWidget}
+                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                        title="Close Widget"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                )}
             </div>
         </div>
     )

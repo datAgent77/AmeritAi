@@ -56,7 +56,7 @@ export async function uploadLogo(
 ): Promise<string | null> {
     const timestamp = Date.now()
     const path = `users/${userId}/logos/${timestamp}-${file.name}`
-    
+
     return uploadImage({
         file,
         userId,
@@ -76,7 +76,7 @@ export async function uploadHeaderLogo(
 ): Promise<string | null> {
     const timestamp = Date.now()
     const path = `users/${userId}/header_logos/${timestamp}-${file.name}`
-    
+
     return uploadImage({
         file,
         userId,
@@ -96,7 +96,7 @@ export async function uploadLauncherIcon(
 ): Promise<string | null> {
     const timestamp = Date.now()
     const path = `users/${userId}/launcher_icons/${timestamp}-${file.name}`
-    
+
     return uploadImage({
         file,
         userId,
@@ -116,7 +116,27 @@ export async function uploadLauncherFullImage(
 ): Promise<string | null> {
     const timestamp = Date.now()
     const path = `users/${userId}/launcher_full/${timestamp}-${file.name}`
-    
+
+    return uploadImage({
+        file,
+        userId,
+        path,
+        token,
+        onSuccess,
+        onError,
+    })
+}
+
+export async function uploadAmbientIcon(
+    file: File,
+    userId: string,
+    token: string,
+    onSuccess: (url: string) => void,
+    onError?: (error: Error) => void
+): Promise<string | null> {
+    const timestamp = Date.now()
+    const path = `users/${userId}/ambient_icons/${timestamp}-${file.name}`
+
     return uploadImage({
         file,
         userId,

@@ -92,4 +92,26 @@ export interface ChatbotSettings {
     mobileBottomSpacing: number;
     mobileSideSpacing: number;
     mobileLauncherAnimation: string;
+    interactionMode?: "launcher" | "always_open";
+    chatDisplayMode?: "classic" | "ambient";
+    position?: "bottom-right" | "bottom-left" | "bottom-center";
+    ambientMaxHeight?: number;
+    ambientOverlayOpacity?: number;
+    ambientWidth?: number;
+    ambientSideMargin?: number;
+    ambientBottomMargin?: number;
+    ambientInputSize?: "sm" | "md" | "lg" | "xl";
+    showAmbientIcon?: boolean;
+    ambientIconUrl?: string;
+    ambientIconType?: "library" | "custom";
+    ambientLibraryIcon?: string;
+    ambientIconColor?: string;
+    ambientBorderColorIdle?: string;
+    ambientBorderColorFocused?: string;
+    ambientClosedBgColor?: string;
+    ambientClosedBorderColorIdle?: string;
+    ambientClosedBorderColorFocused?: string;
+    ambientAiBubbleColor?: string;
+    widgetLoaderStyle?: 'skeleton' | 'spinner' | 'pulsing-icon';
+    enableContextAwareness?: boolean;
 }

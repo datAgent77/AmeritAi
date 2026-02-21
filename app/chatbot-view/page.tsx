@@ -2,10 +2,11 @@
 
 import { Suspense } from "react"
 import ChatbotContainer from "./ChatbotContainer"
+import { WidgetLoader } from "./components/WidgetLoader"
 
 export default function ChatbotView() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen bg-white">Loading...</div>}>
+        <Suspense fallback={<WidgetLoader loaderStyle="skeleton" ambientBottomMargin={0} showAmbientIcon={false} />}>
             <ChatbotContainer />
         </Suspense>
     )

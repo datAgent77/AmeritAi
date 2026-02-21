@@ -23,6 +23,10 @@ function WidgetTestPageContent() {
         if (existingLauncher) {
             existingLauncher.remove()
         }
+        const existingLauncherWrapper = document.getElementById('userex-launcher-wrapper')
+        if (existingLauncherWrapper) {
+            existingLauncherWrapper.remove()
+        }
         const existingContainer = document.getElementById('userex-chatbot-container')
         if (existingContainer) {
             existingContainer.remove()
@@ -30,7 +34,7 @@ function WidgetTestPageContent() {
 
         // Add new script
         const script = document.createElement("script")
-        script.src = "/widget.js"
+        script.src = `/widget.js?t=${Date.now()}`
         script.setAttribute("data-chatbot-id", id)
         // We can optionally fetch the brand color here if we want to be precise, 
         // but the widget.js fetches settings from API anyway. 
@@ -47,6 +51,8 @@ function WidgetTestPageContent() {
             }
             const launcher = document.getElementById('userex-chatbot-launcher')
             if (launcher) launcher.remove()
+            const launcherWrapper = document.getElementById('userex-launcher-wrapper')
+            if (launcherWrapper) launcherWrapper.remove()
             const container = document.getElementById('userex-chatbot-container')
             if (container) container.remove()
         }

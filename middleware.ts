@@ -36,6 +36,7 @@ function isPublicSitePage(pathname: string): boolean {
  */
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const isEmbeddableWidgetPath = pathname.startsWith('/chatbot-view');
 
     // === BLOCK DEBUG/TEST ROUTES ===
     if (blockedPaths.some(p => pathname.startsWith(p))) {
@@ -45,7 +46,9 @@ export function middleware(request: NextRequest) {
     const response = NextResponse.next();
 
     // === SECURITY HEADERS ===
-    response.headers.set('X-Frame-Options', 'DENY');
+    if (!isEmbeddableWidgetPath) {
+        response.headers.set('X-Frame-Options', 'DENY');
+    }
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.headers.set('X-XSS-Protection', '1; mode=block');

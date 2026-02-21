@@ -51,6 +51,30 @@ export interface WidgetSettings {
     mobileBottomSpacing: number
     mobileSideSpacing: number
     mobileLauncherAnimation: string
+    interactionMode: "launcher" | "always_open"
+    chatDisplayMode: "classic" | "ambient"
+    ambientMaxHeight: number
+    ambientOverlayOpacity: number
+    ambientWidth: number
+    ambientSideMargin: number
+    ambientBottomMargin: number
+    ambientInputSize: "sm" | "md" | "lg" | "xl"
+    showAmbientIcon: boolean
+    ambientIconUrl: string
+    ambientIconType: "library" | "custom"
+    ambientLibraryIcon: string
+    ambientIconColor: string
+    ambientBorderColorIdle: string
+    ambientBorderColorFocused: string
+    ambientClosedBgColor: string
+    ambientClosedBorderColorIdle: string
+    ambientClosedBorderColorFocused: string
+    ambientAiBubbleColor: string
+    ambientInputBgColorIdle: string
+    ambientInputBgColorFocused: string
+    widgetLoaderStyle: "skeleton" | "spinner"
+    userGreetingCount: number
+    userInactionDelay: number
     // Full Image / Lottie Mode
     launcherType: "standard" | "fullImage"
     launcherImageMode: "image" | "lottie"
@@ -67,6 +91,7 @@ export interface WidgetSettings {
     businessHoursStart: string
     businessHoursEnd: string
     offlineMessage: string
+    enableContextAwareness: boolean
 }
 
 const defaultSettings: WidgetSettings = {
@@ -112,6 +137,31 @@ const defaultSettings: WidgetSettings = {
     mobileBottomSpacing: 20,
     mobileSideSpacing: 20,
     mobileLauncherAnimation: "none",
+    interactionMode: "launcher",
+    chatDisplayMode: "classic",
+    ambientMaxHeight: 260,
+    ambientOverlayOpacity: 0.55,
+    ambientWidth: 800,
+    ambientSideMargin: 0,
+    ambientBottomMargin: 20,
+    ambientInputSize: "lg",
+    showAmbientIcon: true,
+    ambientIconUrl: "",
+    ambientIconType: "library",
+    ambientLibraryIcon: "MessageCircle",
+    ambientIconColor: "",
+    ambientBorderColorIdle: "",
+    ambientBorderColorFocused: "",
+    ambientClosedBgColor: "",
+    ambientClosedBorderColorIdle: "",
+    ambientClosedBorderColorFocused: "",
+    ambientAiBubbleColor: "",
+    ambientInputBgColorIdle: "",
+    ambientInputBgColorFocused: "",
+    widgetLoaderStyle: "skeleton",
+    enableContextAwareness: false,
+    userGreetingCount: 0,
+    userInactionDelay: 5000,
     launcherType: "standard",
     launcherImageMode: "image",
     launcherFullImageUrl: "",
@@ -188,6 +238,33 @@ export function useWidgetSettings(userId?: string) {
                     mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : prev.mobileBottomSpacing,
                     mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : prev.mobileSideSpacing,
                     mobileLauncherAnimation: data.mobileLauncherAnimation || prev.mobileLauncherAnimation,
+                    interactionMode:
+                        data.chatDisplayMode === "ambient"
+                            ? "always_open"
+                            : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
+                    chatDisplayMode: data.chatDisplayMode === "ambient" ? "ambient" : "classic",
+                    ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : prev.ambientMaxHeight,
+                    ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : prev.ambientOverlayOpacity,
+                    ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth,
+                    ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : prev.ambientSideMargin,
+                    ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : prev.ambientBottomMargin,
+                    ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : prev.ambientInputSize) as "sm" | "md" | "lg" | "xl",
+                    showAmbientIcon: typeof data.showAmbientIcon === "boolean" ? data.showAmbientIcon : prev.showAmbientIcon,
+                    ambientIconUrl: data.ambientIconUrl !== undefined ? data.ambientIconUrl : prev.ambientIconUrl,
+                    ambientIconType: data.ambientIconType || prev.ambientIconType,
+                    ambientLibraryIcon: data.ambientLibraryIcon || prev.ambientLibraryIcon,
+                    ambientIconColor: data.ambientIconColor !== undefined ? data.ambientIconColor : prev.ambientIconColor,
+                    ambientBorderColorIdle: data.ambientBorderColorIdle !== undefined ? data.ambientBorderColorIdle : prev.ambientBorderColorIdle,
+                    ambientBorderColorFocused: data.ambientBorderColorFocused !== undefined ? data.ambientBorderColorFocused : prev.ambientBorderColorFocused,
+                    ambientClosedBgColor: data.ambientClosedBgColor !== undefined ? data.ambientClosedBgColor : prev.ambientClosedBgColor,
+                    ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle !== undefined ? data.ambientClosedBorderColorIdle : prev.ambientClosedBorderColorIdle,
+                    ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused !== undefined ? data.ambientClosedBorderColorFocused : prev.ambientClosedBorderColorFocused,
+                    ambientAiBubbleColor: data.ambientAiBubbleColor !== undefined ? data.ambientAiBubbleColor : prev.ambientAiBubbleColor,
+                    widgetLoaderStyle: data.widgetLoaderStyle || "skeleton",
+                    userGreetingCount: typeof data.userGreetingCount === 'number' ? data.userGreetingCount : prev.userGreetingCount,
+                    userInactionDelay: typeof data.userInactionDelay === 'number' ? data.userInactionDelay : prev.userInactionDelay,
+                    ambientInputBgColorIdle: data.ambientInputBgColorIdle !== undefined ? data.ambientInputBgColorIdle : prev.ambientInputBgColorIdle,
+                    ambientInputBgColorFocused: data.ambientInputBgColorFocused !== undefined ? data.ambientInputBgColorFocused : prev.ambientInputBgColorFocused,
                     launcherType: data.launcherType || prev.launcherType,
                     launcherImageMode: data.launcherImageMode || prev.launcherImageMode,
                     launcherFullImageUrl: data.launcherFullImageUrl || prev.launcherFullImageUrl,

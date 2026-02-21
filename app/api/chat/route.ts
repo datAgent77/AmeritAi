@@ -36,6 +36,7 @@ type UserContextPayload = {
     url: string;
     title: string;
     desc: string;
+    pageText?: string;
     dynamicData?: Record<string, any>;
 };
 
@@ -318,7 +319,7 @@ export async function POST(req: Request) {
                 const userDoc = await adminDb.collection('users').doc(userId).get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    
+
                     // === ACCOUNT STATUS CHECK ===
                     // Explicitly check for false, default to true if undefined to be safe
                     if (userData?.isActive === false) {
@@ -332,13 +333,13 @@ export async function POST(req: Request) {
 
                     const subscriptionStatus = userData?.subscriptionStatus;
                     const trialEndsAt = userData?.trialEndsAt;
-                    
+
                     // If subscription is 'trial' and trial has expired, block the request
                     if (subscriptionStatus === 'trial' && trialEndsAt) {
                         const now = new Date();
                         const endDate = new Date(trialEndsAt);
                         const isExpired = endDate.getTime() < now.getTime();
-                        
+
                         if (isExpired) {
                             console.log(`[CHAT API] Trial expired for user ${userId}, blocking widget`);
                             return NextResponse.json({
@@ -376,7 +377,7 @@ export async function POST(req: Request) {
                 : Promise.resolve(),
             generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, safeContext, isVoice, language, visualAnalysisContext, body.industry)
         ]);
-        
+
         // ... sentiment code ...
 
         // Estimate Input Tokens
@@ -445,11 +446,11 @@ export async function POST(req: Request) {
                                                     // Parse date and time
                                                     const dateStr = extractedData.date;
                                                     const timeStr = extractedData.time;
-                                                    
+
                                                     // Combine date and time into ISO format
                                                     let startDateTime: string;
                                                     let endDateTime: string;
-                                                    
+
                                                     try {
                                                         const date = new Date(`${dateStr}T${timeStr}`);
                                                         startDateTime = date.toISOString();
@@ -496,16 +497,16 @@ export async function POST(req: Request) {
                                     // IMPORTANT: Only save if we have REAL contact info (email or phone)
                                     // Don't save if only name exists, as it might be incorrectly extracted from chat messages
                                     const hasRealContactInfo = leadData.email || leadData.phone;
-                                    
+
                                     if (hasRealContactInfo) {
                                         if (!adminDb) {
                                             console.error("Chat API: ❌ adminDb is null for lead save!");
                                         } else {
                                             // Get translation for source based on language
-                                            const sourceText = language === 'tr' 
-                                                ? "Sohbet İçi Konuşma" 
+                                            const sourceText = language === 'tr'
+                                                ? "Sohbet İçi Konuşma"
                                                 : "In-Chat Conversation";
-                                            
+
                                             const leadDoc = {
                                                 chatbotId,
                                                 name: leadData.name || (language === 'tr' ? "Anonim" : "Anonymous"),

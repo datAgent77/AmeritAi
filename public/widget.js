@@ -22,6 +22,10 @@
     primaryColor: attrColor || '#000000',
     position: 'bottom-right',
     viewMode: 'classic',
+    interactionMode: 'launcher',
+    chatDisplayMode: 'classic',
+    ambientMaxHeight: 260,
+    ambientOverlayOpacity: 0.55,
     launcherStyle: 'circle',
     launcherWidth: 60,
     launcherHeight: 60,
@@ -37,7 +41,8 @@
     launcherImageMode: 'image',
     launcherFullImageUrl: '',
     launcherLottieUrl: '',
-    launcherHoverEffect: 'scale'
+    launcherHoverEffect: 'scale',
+    enableContextAwareness: false
   };
 
   // Global Context Data
@@ -151,7 +156,7 @@
 
       // Initialize behavior tracking for AI
       this.initBehaviorTracking();
-      
+
       // Custom logic starts here
 
       // Pre-select message to determine delay if needed
@@ -515,12 +520,12 @@
     openWidget() {
       const launcher = document.getElementById('userex-chatbot-launcher');
       const container = document.getElementById('userex-chatbot-container');
-      
+
       if (launcher) {
         // Check if already open to prevent toggle (closing)
         if (container && container.style.display !== 'none') {
-             console.log('Engagement: Widget already open, skipping open action');
-             return;
+          console.log('Engagement: Widget already open, skipping open action');
+          return;
         }
 
         console.log('Engagement: Opening widget via trigger action');
@@ -1170,6 +1175,7 @@
       this.elements = new Map(); // Map<Selector, Element>
       this.data = {};
       this.debounceTimer = null;
+      this.pollingTimer = null;
     }
 
     readElementValue(el) {
@@ -1197,15 +1203,20 @@
         // Just scan again if nodes are added/removed
         let shouldScan = false;
         for (const mut of mutations) {
-            if (mut.type === 'childList' && (mut.addedNodes.length > 0 || mut.removedNodes.length > 0)) {
-                shouldScan = true;
-                break;
-            }
+          if (mut.type === 'childList' && (mut.addedNodes.length > 0 || mut.removedNodes.length > 0)) {
+            shouldScan = true;
+            break;
+          }
         }
         if (shouldScan) this.scan();
       });
 
       this.globalObserver.observe(document.body, { childList: true, subtree: true });
+
+      // Fallback polling for localStorage, cookies or missed DOM changes
+      this.pollingTimer = setInterval(() => {
+        this.scan();
+      }, 2000);
     }
 
     scan() {
@@ -1213,88 +1224,116 @@
 
       this.selectors.forEach(({ key, selector }) => {
         if (!key || !selector) return;
-        
+
         try {
+          if (selector.startsWith('localStorage:')) {
+            // LocalStorage Scraper
+            const lsKey = selector.replace('localStorage:', '').trim();
+            const val = window.localStorage.getItem(lsKey) || '';
+            if (this.data[key] !== val) {
+              this.data[key] = val;
+              changed = true;
+            }
+          } else if (selector.startsWith('cookie:')) {
+            // Cookie Scraper
+            const cookieKey = selector.replace('cookie:', '').trim();
+            const match = document.cookie.match(new RegExp('(^| )' + cookieKey + '=([^;]+)'));
+            const val = match ? decodeURIComponent(match[2]) : '';
+            if (this.data[key] !== val) {
+              this.data[key] = val;
+              changed = true;
+            }
+          } else {
+            // DOM Scraper
             const el = document.querySelector(selector);
-            
+
             // Element found for the first time or changed reference
             if (el && el !== this.elements.get(selector)) {
-                // console.log(`DynamicContext: Found element for "${key}"`, el);
-                this.elements.set(selector, el);
-                this.observeElement(el, key, selector);
-                
-                // Extract initial value
-                const val = this.readElementValue(el);
-                // console.log(`DynamicContext: Initial value for "${key}" -> "${val}"`);
-                if (this.data[key] !== val) {
-                    this.data[key] = val;
-                    changed = true;
-                }
+              this.elements.set(selector, el);
+              this.observeElement(el, key, selector);
+
+              // Extract initial value
+              const val = this.readElementValue(el);
+              if (this.data[key] !== val) {
+                this.data[key] = val;
+                changed = true;
+              }
             } else if (!el && this.elements.has(selector)) {
-                 // Element lost
-                 this.elements.delete(selector);
-                 const obs = this.observers.get(selector);
-                 if (obs) {
-                     obs.disconnect();
-                     this.observers.delete(selector);
-                 }
-                 const listener = this.inputListeners.get(selector);
-                 if (listener) {
-                     listener.el.removeEventListener('input', listener.handler);
-                     listener.el.removeEventListener('change', listener.handler);
-                     this.inputListeners.delete(selector);
-                 }
+              // Element lost
+              this.elements.delete(selector);
+              const obs = this.observers.get(selector);
+              if (obs) {
+                obs.disconnect();
+                this.observers.delete(selector);
+              }
+              const listener = this.inputListeners.get(selector);
+              if (listener) {
+                listener.el.removeEventListener('input', listener.handler);
+                listener.el.removeEventListener('change', listener.handler);
+                this.inputListeners.delete(selector);
+              }
+              if (this.data[key] !== '') {
+                this.data[key] = ''; // Clear lost element data
+                changed = true;
+              }
+            } else if (el) {
+              // Element exists, double check value in polling
+              const val = this.readElementValue(el);
+              if (this.data[key] !== val) {
+                this.data[key] = val;
+                changed = true;
+              }
             }
+          }
         } catch (e) {
-            console.warn(`DynamicContext: Invalid selector "${selector}"`, e);
+          console.warn(`DynamicContext: Invalid selector or error "${selector}"`, e);
         }
       });
 
       if (changed) {
-          this.triggerUpdate();
+        this.triggerUpdate();
       }
     }
 
     observeElement(el, key, selector) {
-        // Disconnect old observer if any
-        if (this.observers.has(selector)) {
-            this.observers.get(selector).disconnect();
+      // Disconnect old observer if any
+      if (this.observers.has(selector)) {
+        this.observers.get(selector).disconnect();
+      }
+      if (this.inputListeners.has(selector)) {
+        const oldListener = this.inputListeners.get(selector);
+        oldListener.el.removeEventListener('input', oldListener.handler);
+        oldListener.el.removeEventListener('change', oldListener.handler);
+        this.inputListeners.delete(selector);
+      }
+
+      const updateValue = () => {
+        const newVal = this.readElementValue(el);
+        if (this.data[key] !== newVal) {
+          this.data[key] = newVal;
+          this.triggerUpdate();
         }
-        if (this.inputListeners.has(selector)) {
-            const oldListener = this.inputListeners.get(selector);
-            oldListener.el.removeEventListener('input', oldListener.handler);
-            oldListener.el.removeEventListener('change', oldListener.handler);
-            this.inputListeners.delete(selector);
-        }
+      };
 
-        const updateValue = () => {
-            const newVal = this.readElementValue(el);
-            if (this.data[key] !== newVal) {
-                // console.log(`DynamicContext: Value changed for "${key}" -> "${newVal}"`);
-                this.data[key] = newVal;
-                this.triggerUpdate();
-            }
-        };
+      const observer = new MutationObserver(updateValue);
 
-        const observer = new MutationObserver(updateValue);
+      observer.observe(el, { characterData: true, subtree: true, childList: true });
+      this.observers.set(selector, observer);
 
-        observer.observe(el, { characterData: true, subtree: true, childList: true });
-        this.observers.set(selector, observer);
-
-        const tag = (el.tagName || '').toLowerCase();
-        if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-            el.addEventListener('input', updateValue);
-            el.addEventListener('change', updateValue);
-            this.inputListeners.set(selector, { el, handler: updateValue });
-        }
+      const tag = (el.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') {
+        el.addEventListener('input', updateValue);
+        el.addEventListener('change', updateValue);
+        this.inputListeners.set(selector, { el, handler: updateValue });
+      }
     }
 
     triggerUpdate() {
-        if (this.debounceTimer) clearTimeout(this.debounceTimer);
-        this.debounceTimer = setTimeout(() => {
-            dynamicContextData = { ...dynamicContextData, ...this.data };
-            sendContextUpdate();
-        }, 500);
+      if (this.debounceTimer) clearTimeout(this.debounceTimer);
+      this.debounceTimer = setTimeout(() => {
+        dynamicContextData = { ...dynamicContextData, ...this.data };
+        sendContextUpdate();
+      }, 500);
     }
   }
 
@@ -1304,7 +1343,7 @@
   // Function to initialize widget
   function initWidget() {
     // Check if widget already exists
-    if (document.getElementById('userex-chatbot-launcher')) {
+    if (document.getElementById('userex-chatbot-launcher') || document.getElementById('userex-chatbot-container')) {
       return;
     }
 
@@ -1319,7 +1358,10 @@
 
     // Adjust spacing for mobile
     const isMobile = window.innerWidth < 768;
-    
+    const isAmbientWidgetMode = settings.chatDisplayMode === 'ambient';
+    const isAlwaysOpenMode = settings.interactionMode === 'always_open' || isAmbientWidgetMode;
+    const usesLauncher = !isAlwaysOpenMode;
+
     let verticalSpacing = settings.bottomSpacing !== undefined ? settings.bottomSpacing : 20;
     let sideSpacing = settings.sideSpacing !== undefined ? settings.sideSpacing : 20;
 
@@ -1334,7 +1376,25 @@
       if (document.getElementById('userex-mobile-styles')) return;
       const style = document.createElement('style');
       style.id = 'userex-mobile-styles';
-      style.innerHTML = `
+      const alwaysOpenWidth = isAmbientWidgetMode ? '100vw' : 'calc(100vw - 20px)';
+      const alwaysOpenInset = isAmbientWidgetMode ? '0px' : '10px';
+      const alwaysOpenRadius = isAmbientWidgetMode ? '0' : '18px';
+      style.innerHTML = isAlwaysOpenMode
+        ? `
+        @media (max-width: 768px) {
+          #userex-chatbot-container {
+            width: ${alwaysOpenWidth} !important;
+            max-width: ${alwaysOpenWidth} !important;
+            left: ${alwaysOpenInset} !important;
+            right: ${alwaysOpenInset} !important;
+            border-radius: ${alwaysOpenRadius} !important;
+          }
+          #userex-chatbot-launcher {
+             max-width: calc(100vw - 40px) !important;
+          }
+        }
+      `
+        : `
         @media (max-width: 768px) {
           #userex-chatbot-container {
             width: 100% !important;
@@ -1440,7 +1500,7 @@
       document.head.appendChild(style);
     };
 
-    if (settings.launcherAnimation !== 'none' || (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none')) {
+    if (usesLauncher && (settings.launcherAnimation !== 'none' || (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none'))) {
       addAnimationStyles();
     }
 
@@ -1774,47 +1834,48 @@
     // Store dynamic context data - MOVED TO GLOBAL SCOPE
     // let dynamicContextData = {};
 
-    renderLauncherContent(false);
+    if (usesLauncher) {
+      renderLauncherContent(false);
 
-    // Hover effect
-    launcher.onmouseenter = () => {
-      // Handle hover effect based on launcherHoverEffect setting
-      if (settings.launcherHoverEffect === 'none') return;
+      // Hover effect
+      launcher.onmouseenter = () => {
+        // Handle hover effect based on launcherHoverEffect setting
+        if (settings.launcherHoverEffect === 'none') return;
 
-      if (settings.launcherHoverEffect === 'opacity') {
-        launcher.style.opacity = '0.8';
-        return;
-      }
-
-      // Default: scale effect
-      // Default: scale effect
-      // Simplified: Container handles position, so just scale relative
-      launcher.style.transform = 'scale(1.05)';
-    };
-    launcher.onmouseleave = () => {
-      launcher.style.opacity = '1';
-      launcher.style.transform = 'scale(1)';
-    };
-
-    // Auto Collapse Logic for Icon + Text
-    if (isAutoCollapseEnabled) {
-      // Initial collapse after a short idle window.
-      scheduleCollapse(5000);
-
-      const originalEnter = launcher.onmouseenter;
-      launcher.onmouseenter = (e) => {
-        if (originalEnter) originalEnter(e);
-        clearCollapseTimer();
-        expandLauncher();
-      };
-
-      const originalLeave = launcher.onmouseleave;
-      launcher.onmouseleave = (e) => {
-        if (originalLeave) originalLeave(e);
-        if (!isOpen) {
-          scheduleCollapse(3000);
+        if (settings.launcherHoverEffect === 'opacity') {
+          launcher.style.opacity = '0.8';
+          return;
         }
+
+        // Default: scale effect
+        // Simplified: Container handles position, so just scale relative
+        launcher.style.transform = 'scale(1.05)';
       };
+      launcher.onmouseleave = () => {
+        launcher.style.opacity = '1';
+        launcher.style.transform = 'scale(1)';
+      };
+
+      // Auto Collapse Logic for Icon + Text
+      if (isAutoCollapseEnabled) {
+        // Initial collapse after a short idle window.
+        scheduleCollapse(5000);
+
+        const originalEnter = launcher.onmouseenter;
+        launcher.onmouseenter = (e) => {
+          if (originalEnter) originalEnter(e);
+          clearCollapseTimer();
+          expandLauncher();
+        };
+
+        const originalLeave = launcher.onmouseleave;
+        launcher.onmouseleave = (e) => {
+          if (originalLeave) originalLeave(e);
+          if (!isOpen) {
+            scheduleCollapse(3000);
+          }
+        };
+      }
     }
 
     // Create Iframe Container
@@ -1828,13 +1889,65 @@
       borderRadius: '24px',
       overflow: 'hidden',
       zIndex: '9999',
-      display: 'none',
+      display: usesLauncher ? 'none' : 'block',
       backgroundColor: '#fff',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
+    let applyAmbientContainerSize = null;
 
     // Apply View Mode Styles
-    if (settings.viewMode === 'wide') {
+    const isAmbientMode = isAmbientWidgetMode;
+
+    if (isAmbientMode) {
+      const ambientRailHeight = Math.max(220, Math.min(460, Number(settings.ambientMaxHeight || 260)));
+      const ambientExpandedHeight = Math.max(360, Math.min(760, ambientRailHeight + 220));
+      const ambientInputOnlyHeight = 130;
+
+      const bottomMargin = settings.ambientBottomMargin || 0;
+
+      // Bottom margin applied INSIDE the iframe as padding, not as container position
+      // This ensures the overlay can cover the full bottom edge
+      const ambientPositionStyle = isTop
+        ? { top: '0px', bottom: 'auto' }
+        : { bottom: '0px', top: 'auto' };
+
+      const ambientHorizontalStyle = { left: '0', right: '0', transform: 'none' };
+
+
+      let ambientShrinkTimeout = null;
+
+      applyAmbientContainerSize = (hasFeed) => {
+        if (ambientShrinkTimeout) clearTimeout(ambientShrinkTimeout);
+
+        const applySizes = (isExpanding) => {
+          const nextHeight = isExpanding ? (ambientExpandedHeight + bottomMargin) : (ambientInputOnlyHeight + bottomMargin);
+          const nextMaxHeight = isExpanding ? '86vh' : '160px';
+
+          Object.assign(iframeContainer.style, {
+            width: '100vw',
+            maxWidth: '100vw',
+            height: `${nextHeight}px`,
+            maxHeight: nextMaxHeight,
+            borderRadius: '0',
+            overflow: 'hidden',
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+            transition: isExpanding ? 'height 0.28s cubic-bezier(0.22, 1, 0.36, 1), left 0.28s, right 0.28s' : 'none',
+            ...ambientHorizontalStyle,
+            ...ambientPositionStyle
+          });
+        };
+
+        if (hasFeed) {
+          applySizes(true);
+        } else {
+          // Wait 300ms for React elements to gracefully fade out before snapping the iframe shut
+          ambientShrinkTimeout = setTimeout(() => applySizes(false), 300);
+        }
+      };
+
+      applyAmbientContainerSize(false);
+    } else if (settings.viewMode === 'wide') {
       if (settings.modalSize === 'full') {
         // Full Screen Modal Styles
         Object.assign(iframeContainer.style, {
@@ -1867,30 +1980,27 @@
       let classicVerticalStyle = {};
 
       // Calculate effective height for positioning
-      // If fullImage, the "closed" launcher is large, but when open it becomes a 60px close button.
-      // So the widget should be positioned relative to that 60px button to avoid a huge gap.
-      const effectiveHeight = settings.launcherType === 'fullImage' ? 60 : settings.launcherHeight;
+      const effectiveHeight = usesLauncher
+        ? (settings.launcherType === 'fullImage' ? 60 : settings.launcherHeight)
+        : 0;
+      const launcherOffset = usesLauncher ? (effectiveHeight + 24) : 0;
 
       if (isTop) {
-        classicVerticalStyle = { top: `${verticalSpacing + effectiveHeight + 24}px`, bottom: 'auto' };
+        classicVerticalStyle = { top: `${verticalSpacing + launcherOffset}px`, bottom: 'auto' };
       } else if (isBottom) {
-        classicVerticalStyle = { bottom: `${verticalSpacing + effectiveHeight + 24}px`, top: 'auto' };
+        classicVerticalStyle = { bottom: `${verticalSpacing + launcherOffset}px`, top: 'auto' };
       } else if (isMiddle) {
         // For middle, we place it next to the launcher
         classicVerticalStyle = { top: '50%', transform: 'translateY(-50%)' };
         // Adjust horizontal to be next to launcher
         if (isLeft) {
-          Object.assign(horizontalStyle, { left: `${sideSpacing + settings.launcherWidth + 10}px`, right: 'auto' });
+          Object.assign(horizontalStyle, { left: `${sideSpacing + (usesLauncher ? settings.launcherWidth + 10 : 0)}px`, right: 'auto' });
         } else if (isRight) {
-          Object.assign(horizontalStyle, { right: `${sideSpacing + settings.launcherWidth + 10}px`, left: 'auto' });
+          Object.assign(horizontalStyle, { right: `${sideSpacing + (usesLauncher ? settings.launcherWidth + 10 : 0)}px`, left: 'auto' });
         } else if (isCenter) {
-          // Middle Center - place it below (or above if not enough space, but let's default to below for now)
-          classicVerticalStyle = { top: '50%', transform: 'translate(-50%, -50%)' }; // Centered on screen
-          // Actually for classic view in middle center, maybe just center it?
-          // Let's offset it slightly so it doesn't cover the launcher if possible, or just center it over.
-          // Let's center it completely.
+          // Middle Center
+          classicVerticalStyle = { top: '50%', transform: 'translate(-50%, -50%)', bottom: 'auto' };
           horizontalStyle = { left: '50%', transform: 'translate(-50%, -50%)', right: 'auto' };
-          classicVerticalStyle = { top: '50%', bottom: 'auto' };
         }
       }
 
@@ -1927,28 +2037,52 @@
     if (!isAvailable && settings.offlineMessage) {
       iframeSrc += `&offlineMessage=${encodeURIComponent(settings.offlineMessage)}`;
     }
+    // Add loader style
+    if (settings.widgetLoaderStyle) {
+      iframeSrc += `&loaderStyle=${encodeURIComponent(settings.widgetLoaderStyle)}`;
+    }
+
+    // Pass ambientBottomMargin to iframe content for internal padding
+    if (isAmbientMode && settings.ambientBottomMargin > 0) {
+      iframeSrc += `&ambientBottomMargin=${settings.ambientBottomMargin}`;
+    }
+
     iframe.src = iframeSrc;
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
+    iframe.style.background = 'transparent';
+    iframe.setAttribute('allowTransparency', 'true');
     iframe.allow = 'microphone; camera; autoplay';
 
     iframeContainer.appendChild(iframe);
 
     // Toggle Logic
-    let isOpen = false;
+    let isOpen = !usesLauncher;
     const toggleWidget = (forceState) => {
+      if (!usesLauncher) {
+        const nextState = forceState !== undefined ? forceState : true;
+        isOpen = !!nextState;
+        iframeContainer.style.display = isOpen ? 'block' : 'none';
+        return;
+      }
+
       isOpen = forceState !== undefined ? forceState : !isOpen;
 
       // GA Tracking
       if (isOpen && typeof window.gtag === 'function') {
         window.gtag('event', 'chat_widget_open', {
-             'event_category': 'Chatbot',
-             'event_label': chatbotId
+          'event_category': 'Chatbot',
+          'event_label': chatbotId
         });
       }
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
+
+      // Notify React app that visibility changed so it can instantly scroll to bottom
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'USEREX_WIDGET_TOGGLED', isOpen }, '*');
+      }
 
       // If opening, hide any engagement bubble
       if (isOpen && engagementController) {
@@ -1971,12 +2105,31 @@
       }
     };
 
-    launcher.onclick = () => toggleWidget();
+    if (usesLauncher) {
+      launcher.onclick = () => toggleWidget();
+    }
+
+    // Sorun 2: Ambient modda X butonuna basınca widget tamamen kapanıyor ve geri açılamıyordu.
+    // Çözüm: Ambient modda "kapat" yerine sadece feed'i gizle ve input-only moduna al.
+    // Kullanıcı tekrar yazınca feed yeniden açılıyor — launcher olmadığından tam kapama yok.
+    const hideAmbientFeed = () => {
+      if (applyAmbientContainerSize) {
+        applyAmbientContainerSize(false); // Sadece boyutu küçült, container'ı gizleme
+      }
+    };
 
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
       if (event.data.type === 'USEREX_CLOSE_WIDGET') {
-        toggleWidget(false);
+        if (isAmbientWidgetMode) {
+          // Ambient modda: tam kapatma yok, sadece feed'i gizle (input kalır)
+          hideAmbientFeed();
+        } else {
+          toggleWidget(false);
+        }
+      }
+      if (event.data.type === 'USEREX_AMBIENT_FEED_VISIBILITY' && applyAmbientContainerSize) {
+        applyAmbientContainerSize(!!event.data.hasFeed);
       }
       if (event.data.type === 'USEREX_TOGGLE_SIZE') {
         if (settings.viewMode === 'wide') {
@@ -2011,64 +2164,72 @@
     });
 
     // Append to body (Container wraps launcher)
-    // Add Launcher to DOM
-    document.body.appendChild(launcherContainer);
-    launcherContainer.appendChild(launcher);
+    if (usesLauncher) {
+      document.body.appendChild(launcherContainer);
+      launcherContainer.appendChild(launcher);
+    }
     document.body.appendChild(iframeContainer);
 
     // Expose public API for programmatic control
     window.UserexWidget = window.UserexWidget || {};
-    window.UserexWidget.open = function() { toggleWidget(true); };
-    window.UserexWidget.close = function() { toggleWidget(false); };
-    window.UserexWidget.toggle = function() { toggleWidget(); };
+    window.UserexWidget.open = function () { toggleWidget(true); };
+    window.UserexWidget.close = function () {
+      if (usesLauncher) toggleWidget(false);
+    };
+    window.UserexWidget.toggle = function () {
+      if (usesLauncher) toggleWidget();
+      else toggleWidget(true);
+    };
 
     // Initial Trigger Check
     setTimeout(() => {
-        if (engagementController) {
-            engagementController.init();
-        }
+      if (engagementController) {
+        engagementController.init();
+      }
     }, 1000);
 
     // Dynamic Resize Handler
     window.addEventListener('resize', () => {
-        const isNowMobile = window.innerWidth < 768;
-        
-        // 1. Update Spacing
-        const newBottom = isNowMobile ? (settings.mobileBottomSpacing ?? 20) : (settings.bottomSpacing ?? 20);
-        const newSide = isNowMobile ? (settings.mobileSideSpacing ?? 20) : (settings.sideSpacing ?? 20);
-        
-        let newVertStyle = {};
-        if (isTop) {
-            newVertStyle = { top: `${newBottom}px`, bottom: 'auto' };
-        } else if (isBottom) {
-            newVertStyle = { bottom: `${newBottom}px`, top: 'auto' };
-        } else if (isMiddle) {
-             newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${settings.launcherHeight / 2}px))`, bottom: 'auto' }; // Approximate re-calc
-        }
+      const isNowMobile = window.innerWidth < 768;
 
-        let newHorizStyle = {};
-        if (isLeft) {
-            newHorizStyle = { left: `${newSide}px`, right: 'auto' };
-        } else if (isRight) {
-            newHorizStyle = { right: `${newSide}px`, left: 'auto' };
-        } else if (isCenter) {
-             newHorizStyle = { left: '50%', transform: 'translateX(-50%)', right: 'auto' };
-        }
+      // 1. Update Spacing
+      const newBottom = isNowMobile ? (settings.mobileBottomSpacing ?? 20) : (settings.bottomSpacing ?? 20);
+      const newSide = isNowMobile ? (settings.mobileSideSpacing ?? 20) : (settings.sideSpacing ?? 20);
 
+      let newVertStyle = {};
+      if (isTop) {
+        newVertStyle = { top: `${newBottom}px`, bottom: 'auto' };
+      } else if (isBottom) {
+        newVertStyle = { bottom: `${newBottom}px`, top: 'auto' };
+      } else if (isMiddle) {
+        newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${settings.launcherHeight / 2}px))`, bottom: 'auto' }; // Approximate re-calc
+      }
+
+      let newHorizStyle = {};
+      if (isLeft) {
+        newHorizStyle = { left: `${newSide}px`, right: 'auto' };
+      } else if (isRight) {
+        newHorizStyle = { right: `${newSide}px`, left: 'auto' };
+      } else if (isCenter) {
+        newHorizStyle = { left: '50%', transform: 'translateX(-50%)', right: 'auto' };
+      }
+
+      if (usesLauncher) {
         // Apply new positioning
         Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
-        
+
         // 2. Update Animation
         const newAnim = isNowMobile ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none');
         launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin');
-        
+
         if (newAnim !== 'none') {
-            launcher.classList.add(`userex-anim-${newAnim}`);
+          launcher.classList.add(`userex-anim-${newAnim}`);
         }
+      }
     });
 
     // Initialize Engagement Controller if enabled
-    if (settings.engagement && settings.engagement.enabled) {
+    if (settings.engagement && settings.engagement.enabled && usesLauncher) {
       // Resolve language precedence for proactive bubbles:
       // 1) engagement.language (Proactive module setting)
       // 2) initialLanguage (widget global setting)
@@ -2085,19 +2246,19 @@
       console.log('Initializing Engagement Controller with language:', resolvedLanguage);
       engagementController = new EngagementController(settings.engagement, baseUrl, chatbotId, resolvedLanguage);
     }
-    
+
     // Initialize No-Code Dynamic Context
     if (settings.enableDynamicContext && settings.dynamicContextSelectors) {
-         try {
-             // Ensure it's an array
-             const validSelectors = Array.isArray(settings.dynamicContextSelectors) ? settings.dynamicContextSelectors : [];
-             if (validSelectors.length > 0) {
-                 const contextObserver = new DynamicContextObserver(validSelectors);
-                 contextObserver.init();
-             }
-         } catch (e) {
-             console.error('Userex: Failed to init Dynamic Context Observer', e);
-         }
+      try {
+        // Ensure it's an array
+        const validSelectors = Array.isArray(settings.dynamicContextSelectors) ? settings.dynamicContextSelectors : [];
+        if (validSelectors.length > 0) {
+          const contextObserver = new DynamicContextObserver(validSelectors);
+          contextObserver.init();
+        }
+      } catch (e) {
+        console.error('Userex: Failed to init Dynamic Context Observer', e);
+      }
     }
 
     // AI Smart Bubbles Logic - DISABLED (Replaced by AI Engagement PRO in EngagementController.fetchAIBubble)
@@ -2162,7 +2323,7 @@
     */
 
     // --- Triggers ---
-    if (isAvailable) {
+    if (isAvailable && usesLauncher) {
       // Auto Open
       if (settings.autoOpenDelay > 0) {
         setTimeout(() => {
@@ -2272,6 +2433,20 @@
 
   // Helper to scrape metadata
   function getPageContext() {
+    let pageText = '';
+    // Optional: Only scrape heavy text if context awareness is enabled AND Dynamic Module is active
+    if (settings && settings.enableDynamicContext && settings.enableContextAwareness) {
+      try {
+        const mainElement = document.querySelector('main') || document.body;
+        if (mainElement) {
+          // Clean up newlines, scripts, and extra spaces. Grab first 1000 chars.
+          pageText = mainElement.innerText.replace(/\s+/g, ' ').trim().substring(0, 1000);
+        }
+      } catch (err) {
+        console.warn('Userex Context Scraper Error:', err);
+      }
+    }
+
     return {
       url: window.location.href,
       title: document.title,
@@ -2279,6 +2454,7 @@
       productName: document.querySelector('meta[property="og:title"]')?.content || document.title,
       productImage: document.querySelector('meta[property="og:image"]')?.content || '',
       productPrice: document.querySelector('meta[property="product:price:amount"]')?.content || '',
+      pageText: pageText,
       // NEW: Page type detection
       pageType: detectPageType(),
       // NEW: User login status
@@ -2378,19 +2554,19 @@
   // Bootstrap Function
   async function bootstrap() {
     const fetchedSettings = await fetchSettings();
-    
+
     // STRICT CHECK: If disabled, abort
     if (fetchedSettings.isEnabled === false) {
       console.warn('Userex Widget is disabled for this account.');
-      return; 
+      return;
     }
-    
+
     // Merge fetched settings into global settings object
     settings = {
       ...settings,
       ...fetchedSettings
     };
-    
+
     console.log('Userex Widget: Configuration loaded');
     initWidget();
   }
@@ -2401,5 +2577,84 @@
   } else {
     document.addEventListener('DOMContentLoaded', bootstrap);
   }
+
+  // ============================================
+  // Auto-Discovery Agent (Triggers when vion_scan=1 is in URL)
+  // ============================================
+  function runAutoDiscovery() {
+    if (window.location.search.includes('vion_scan=1') || window.location.hash.includes('vion_scan')) {
+      console.log('Vion AI: Auto-Discovery Scan Started...');
+      setTimeout(() => {
+        const discovered = [];
+
+        // 1. Scan LocalStorage
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            const lower = key.toLowerCase();
+            if (lower.includes('user') || lower.includes('token') || lower.includes('cart') || lower.includes('auth') || lower.includes('basket') || lower.includes('order') || lower.includes('session') || lower.includes('price')) {
+              discovered.push({ key: key.replace(/[^a-zA-Z0-9]/g, '_'), selector: `localStorage:${key}` });
+            }
+          }
+        } catch (e) { }
+
+        // 2. Scan Cookies
+        try {
+          const cookies = document.cookie.split(';');
+          cookies.forEach(c => {
+            const key = c.split('=')[0].trim();
+            if (!key) return;
+            const lower = key.toLowerCase();
+            if (lower.includes('user') || lower.includes('token') || lower.includes('session') || lower.includes('auth')) {
+              discovered.push({ key: key.replace(/[^a-zA-Z0-9]/g, '_'), selector: `cookie:${key}` });
+            }
+          });
+        } catch (e) { }
+
+        // 3. Scan DOM Elements
+        try {
+          const elements = document.querySelectorAll('[id*="user"], [id*="cart"], [id*="balance"], [id*="price"], [class*="user"], [class*="cart"], [class*="balance"], [class*="price"]');
+          elements.forEach(el => {
+            if (el.id) {
+              const lowerId = el.id.toLowerCase();
+              if (lowerId.includes('user') || lowerId.includes('cart') || lowerId.includes('balance') || lowerId.includes('price')) {
+                discovered.push({ key: el.id.replace(/[^a-zA-Z0-9]/g, '_'), selector: `#${el.id}` });
+              }
+            } else if (el.className && typeof el.className === 'string') {
+              const classes = el.className.split(' ').filter(c => {
+                const lc = c.toLowerCase();
+                return lc.includes('user') || lc.includes('cart') || lc.includes('balance') || lc.includes('price');
+              });
+              if (classes.length > 0) {
+                discovered.push({ key: classes[0].replace(/[^a-zA-Z0-9]/g, '_'), selector: `.${classes[0]}` });
+              }
+            }
+          });
+        } catch (e) { }
+
+        // Deduplicate using a Map
+        const uniqueMap = new Map();
+        discovered.forEach(item => {
+          if (!uniqueMap.has(item.selector) && uniqueMap.size < 30) {
+            uniqueMap.set(item.selector, item);
+          }
+        });
+        const finalResults = Array.from(uniqueMap.values());
+
+        // Send results back to window opener
+        if (window.opener) {
+          window.opener.postMessage({ type: 'USEREX_DISCOVERY_RESULTS', payload: finalResults }, '*');
+          // Try to close the scanning popup automatically if permitted
+          window.close();
+        } else {
+          console.log('Vion AI Discovered Data:', finalResults);
+        }
+      }, 2500); // 2.5 seconds wait for fully loaded page & hydrated SPA
+    }
+  }
+
+  // Execute scan check
+  runAutoDiscovery();
 
 })();

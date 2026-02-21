@@ -45,6 +45,7 @@ export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
         const cleanup = () => {
             const elementsToRemove = [
                 'userex-chatbot-launcher',
+                'userex-launcher-wrapper',
                 'userex-chatbot-container',
                 'userex-engagement-bubble',
                 'userex-mobile-styles',

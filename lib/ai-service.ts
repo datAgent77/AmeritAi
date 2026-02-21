@@ -262,7 +262,7 @@ export async function generateAIResponse(
     messages: AIMessage[],
     sessionId?: string,
     streamResponse: boolean = true,
-    userContext?: { url: string, title: string, desc: string, dynamicData?: Record<string, any> },
+    userContext?: { url: string, title: string, desc: string, pageText?: string, dynamicData?: Record<string, any> },
     isVoice?: boolean,
     language?: string,
     visualAnalysisContext?: string,
@@ -423,7 +423,13 @@ The information provided in the KNOWLEDGE BASE CONTEXT is the **absolute truth**
 `;
 
         if (isShopperEnabled && shopperConfig) {
-            systemPrompt += `\n# PERSONAL SHOPPER\nTone: ${shopperConfig.salesTone || "friendly"}. Recommend products.`;
+            systemPrompt += `\n# PERSONAL SHOPPER MODULE (ACTIVE)
+Tone: ${shopperConfig.salesTone || "friendly"}.
+IMPORTANT RULES:
+- ONLY recommend products when the user is asking about products, shopping, prices, recommendations, or expressing a need/want that can be fulfilled by a product.
+- If the user is asking a general question (greetings, working hours, contact info, etc.), answer normally WITHOUT recommending any products.
+- Do NOT force product recommendations into every response. Be natural and contextual.
+- When the user IS interested in products, be proactive and helpful with recommendations.`;
         }
 
         // Language Mirroring: AI responds in whatever language the user writes
@@ -492,6 +498,9 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         // Add User Context
         if (userContext) {
             systemPrompt += `\n# USER CONTEXT\nURL: ${userContext.url}\nTitle: ${userContext.title}`;
+            if (userContext.pageText) {
+                systemPrompt += `\n\n# PAGE CONTENT (Context Awareness)\nThe user is currently viewing the following page content. You can use this to provide highly accurate and contextual answers:\n${userContext.pageText}\n`;
+            }
         }
 
         // Voice Mode
@@ -519,7 +528,7 @@ REMEMBER: Always think before responding. Quality > Speed.`;
             if (mod.status !== 'ready') {
                 continue; // Skip coming_soon and beta modules
             }
-            
+
             let isEnabled = mod.isCore || (mod.legacyFirestoreField && chatbotData?.[mod.legacyFirestoreField] === true);
 
             // Special case for appointments/voice - check multiple field names
@@ -631,21 +640,21 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                                 `2. Help guests choose their items.\n` +
                                 `3. When they want to order: Say "Please place your order at the counter."\n` +
                                 `4. NEVER say "we will bring it to your table.\n`
-                                // corrected quote 
+                            // corrected quote 
                         }
 
                         // GLOBAL SMART RULES (Direct Answer + Clarification)
                         waiterPrompt += isTR
                             ? `\n\n🧠 AKILLI CEVAP KURALLARI (ÇOK ÖNEMLİ):\n` +
-                              `1. Menü veya ürünler hakkında soru gelirse (ör: "Hangi kahveler var?", "İçinde ne var?"), link vermek yerine DOĞRUDAN BİLDİĞİN CEVABI YAZ.\n` +
-                              `2. Linki SADECE kullanıcı açıkça "link gönder", "menüyü göreyim" derse paylaş.\n` +
-                              `3. Asla "detaylar için linke bakın" deme; detayları sen anlatmak zorundasın.\n` +
-                              `4. Eşleşme veya öneri sorularında (ör: "Kahvemin yanına ne gider?") eğer kullanıcı ürünü belirtmediyse TAHMİN ETME. "Hangi kahveyi içiyorsunuz?" veya "Hangi ürünümüz için soruyorsunuz?" diye sorarak netleştir.\n`
+                            `1. Menü veya ürünler hakkında soru gelirse (ör: "Hangi kahveler var?", "İçinde ne var?"), link vermek yerine DOĞRUDAN BİLDİĞİN CEVABI YAZ.\n` +
+                            `2. Linki SADECE kullanıcı açıkça "link gönder", "menüyü göreyim" derse paylaş.\n` +
+                            `3. Asla "detaylar için linke bakın" deme; detayları sen anlatmak zorundasın.\n` +
+                            `4. Eşleşme veya öneri sorularında (ör: "Kahvemin yanına ne gider?") eğer kullanıcı ürünü belirtmediyse TAHMİN ETME. "Hangi kahveyi içiyorsunuz?" veya "Hangi ürünümüz için soruyorsunuz?" diye sorarak netleştir.\n`
                             : `\n\n🧠 SMART ANSWER RULES (VERY IMPORTANT):\n` +
-                              `1. If asked about menu/items (e.g., "What coffees do you have?", "Ingredients?"), ANSWER DIRECTLY using your knowledge/context instead of sending a link.\n` +
-                              `2. Only share the link if user explicitly asks "send link" or "show menu".\n` +
-                              `3. Never say "check link for details"; YOU must explain the details.\n` +
-                              `4. For pairing/recommendation questions (e.g., "What goes with my coffee?"), if the product isn't specified, DO NOT GUESS. Ask "Which coffee are you drinking?" or "For which item?" to clarify.\n`;
+                            `1. If asked about menu/items (e.g., "What coffees do you have?", "Ingredients?"), ANSWER DIRECTLY using your knowledge/context instead of sending a link.\n` +
+                            `2. Only share the link if user explicitly asks "send link" or "show menu".\n` +
+                            `3. Never say "check link for details"; YOU must explain the details.\n` +
+                            `4. For pairing/recommendation questions (e.g., "What goes with my coffee?"), if the product isn't specified, DO NOT GUESS. Ask "Which coffee are you drinking?" or "For which item?" to clarify.\n`;
 
                         // Shared Menu Info
                         if (waiterConfig.menuUrl) {
@@ -740,14 +749,14 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         if (activeModuleInstructions.length > 0) {
             systemPrompt += `\n\n# ACTIVE MODULE CAPABILITIES\n${activeModuleInstructions.join('\n')}`;
             console.log("AI Service: Active module instructions count:", activeModuleInstructions.length);
-        } 
+        }
 
         // 4. Generate Response based on Provider
-        
+
         // Context Window Protection: Keep only last 12 messages
         const MAX_HISTORY_LENGTH = 12;
-        const recentMessages = messages.length > MAX_HISTORY_LENGTH 
-            ? messages.slice(-MAX_HISTORY_LENGTH) 
+        const recentMessages = messages.length > MAX_HISTORY_LENGTH
+            ? messages.slice(-MAX_HISTORY_LENGTH)
             : messages;
 
         console.log(`AI Service: Using ${recentMessages.length} messages (truncated from ${messages.length}) to save tokens.`);

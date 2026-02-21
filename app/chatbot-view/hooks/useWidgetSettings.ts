@@ -56,7 +56,13 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         launcherLibraryIcon: "",
         mobileBottomSpacing: 20,
         mobileSideSpacing: 20,
-        mobileLauncherAnimation: "none"
+        mobileLauncherAnimation: "none",
+        interactionMode: "launcher",
+        ambientIconType: "library",
+        ambientLibraryIcon: "MessageCircle",
+        chatDisplayMode: "classic",
+        ambientMaxHeight: 260,
+        ambientOverlayOpacity: 0.55
     })
 
     useEffect(() => {
@@ -105,6 +111,29 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : 20,
                         mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : 20,
                         mobileLauncherAnimation: data.mobileLauncherAnimation || "none",
+                        interactionMode:
+                            data.chatDisplayMode === "ambient"
+                                ? "always_open"
+                                : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
+                        chatDisplayMode: data.chatDisplayMode === "ambient" ? "ambient" : "classic",
+                        ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : 260,
+                        ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : 0.55,
+                        ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : 800,
+                        ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : 0,
+                        ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : 20,
+                        ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : "lg") as "sm" | "md" | "lg" | "xl",
+                        showAmbientIcon: typeof data.showAmbientIcon === "boolean" ? data.showAmbientIcon : true,
+                        ambientIconUrl: data.ambientIconUrl || "",
+                        ambientIconType: data.ambientIconType || "library",
+                        ambientLibraryIcon: data.ambientLibraryIcon || "MessageCircle",
+                        ambientIconColor: data.ambientIconColor || "",
+                        ambientBorderColorIdle: data.ambientBorderColorIdle || "",
+                        ambientBorderColorFocused: data.ambientBorderColorFocused || "",
+                        ambientClosedBgColor: data.ambientClosedBgColor || "",
+                        ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle || "",
+                        ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused || "",
+                        ambientAiBubbleColor: data.ambientAiBubbleColor || "",
+                        position: data.position || "bottom-right",
                     })
                 }
             } catch (error) {

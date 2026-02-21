@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { doc, getDoc, setDoc } from "firebase/firestore"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Search, Wand2, Loader2 } from "lucide-react"
 
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
@@ -35,7 +35,13 @@ export default function DynamicContextSettings() {
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
     const [isEnabled, setIsEnabled] = useState(false)
+    const [isContextAwarenessEnabled, setIsContextAwarenessEnabled] = useState(false)
     const [selectors, setSelectors] = useState<DynamicSelector[]>(DEFAULT_SELECTORS)
+
+    // Auto-Discovery State
+    const [domain, setDomain] = useState<string>("")
+    const [isDiscovering, setIsDiscovering] = useState(false)
+    const [discoveredSelectors, setDiscoveredSelectors] = useState<DynamicSelector[]>([])
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -48,6 +54,8 @@ export default function DynamicContextSettings() {
                 if (docSnap.exists()) {
                     const data = docSnap.data()
                     setIsEnabled(Boolean(data.enableDynamicContext))
+                    setIsContextAwarenessEnabled(Boolean(data.enableContextAwareness))
+                    setDomain(data.domain || data.website || "")
 
                     if (Array.isArray(data.dynamicContextSelectors) && data.dynamicContextSelectors.length > 0) {
                         setSelectors(data.dynamicContextSelectors)
@@ -72,6 +80,7 @@ export default function DynamicContextSettings() {
                 doc(db, "chatbots", targetUserId),
                 {
                     enableDynamicContext: isEnabled,
+                    enableContextAwareness: isContextAwarenessEnabled,
                     dynamicContextSelectors: selectors,
                     dynamicContextMode: "nocode",
                 },
@@ -106,6 +115,46 @@ export default function DynamicContextSettings() {
         setSelectors((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)))
     }
 
+    const startAutoDiscovery = () => {
+        let savedDomain = domain;
+        if (!savedDomain || !savedDomain.startsWith('http')) {
+            savedDomain = prompt(language === "tr" ? "Lütfen widget'ınızın kurulu olduğu sitenin URL'sini girin (Örn: https://site.com)" : "Please enter the URL where your widget is installed (e.g., https://site.com)") || "";
+        }
+
+        if (!savedDomain) return;
+        if (!savedDomain.startsWith('http')) savedDomain = 'https://' + savedDomain;
+
+        try {
+            const url = new URL(savedDomain);
+            url.searchParams.set('vion_scan', '1');
+            window.open(url.toString(), 'VionScanner', 'width=800,height=600');
+            setIsDiscovering(true);
+            setDiscoveredSelectors([]);
+            toast({
+                title: language === "tr" ? "Tarama Başlatıldı" : "Scan Started",
+                description: language === "tr" ? "Açılan pencerede siteniz taranırken lütfen bekleyin... (Pencereyi kapatabilirsiniz)" : "Scanning your site in the new window, please wait... (You can close the window)",
+            });
+        } catch (e) {
+            toast({ title: "Hata", description: "Geçersiz URL", variant: "destructive" });
+        }
+    }
+
+    useEffect(() => {
+        const handleMessage = (e: MessageEvent) => {
+            if (e.data && e.data.type === 'USEREX_DISCOVERY_RESULTS') {
+                setIsDiscovering(false);
+                const payload = e.data.payload || [];
+                setDiscoveredSelectors(payload.map((p: any, i: number) => ({ id: `discovered_${i}`, key: p.key, selector: p.selector })));
+                toast({
+                    title: language === "tr" ? "Tarama Tamamlandı" : "Scan Completed",
+                    description: language === "tr" ? `${payload.length} adet veri noktası bulundu.` : `Found ${payload.length} data points.`,
+                });
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [language, toast]);
+
     if (isLoading) {
         return <div className="p-8 text-center">Loading settings...</div>
     }
@@ -129,8 +178,8 @@ export default function DynamicContextSettings() {
                                 ? "Modül Aktif"
                                 : "Module Active"
                             : language === "tr"
-                              ? "Modül Pasif"
-                              : "Module Inactive"}
+                                ? "Modül Pasif"
+                                : "Module Inactive"}
                     </span>
                     <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
                 </div>
@@ -156,14 +205,80 @@ export default function DynamicContextSettings() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{language === "tr" ? "CSS Seçiciler" : "CSS Selectors"}</CardTitle>
-                    <CardDescription>
-                        {language === "tr"
-                            ? "Metin alanları ve form input değişimleri canlı izlenir."
-                            : "Text content and input value changes are tracked in real time."}
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle>{language === "tr" ? "Sayfa İçeriği Okuma" : "Page Content Reading"}</CardTitle>
+                            <CardDescription className="max-w-2xl">
+                                {language === "tr"
+                                    ? "Sadece seçili alanları değil, ziyaretçinin gezdiği tüm sayfanın metinlerini (body) okuyarak bağlama ekler."
+                                    : "Adds context by reading all the text on the page the visitor is browsing, not just selected areas."}
+                            </CardDescription>
+                        </div>
+                        <Switch checked={isContextAwarenessEnabled} onCheckedChange={setIsContextAwarenessEnabled} />
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle>{language === "tr" ? "CSS Seçiciler" : "CSS Selectors"}</CardTitle>
+                            <CardDescription>
+                                {language === "tr"
+                                    ? "Metin alanları ve form input değişimleri canlı izlenir. Manuel ekleyebilir veya sitenizi tarayabilirsiniz."
+                                    : "Text content and input value changes are tracked in real time. Add manually or scan your site."}
+                            </CardDescription>
+                        </div>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={startAutoDiscovery}
+                            disabled={isDiscovering}
+                            className="shrink-0 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                        >
+                            {isDiscovering ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <Wand2 className="w-4 h-4 mr-2" />
+                            )}
+                            {language === "tr" ? "Sitemi Otomatik Tara" : "Auto-Scan Website"}
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {discoveredSelectors.length > 0 && (
+                        <div className="bg-muted/50 rounded-lg p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Search className="w-4 h-4 text-indigo-500" />
+                                <h4 className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                                    {language === "tr" ? "Bulunan Potansiyel Veriler" : "Discovered Potential Data"}
+                                </h4>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {discoveredSelectors.map((item) => {
+                                    const isAdded = selectors.some((s) => s.selector === item.selector);
+                                    return (
+                                        <div key={item.id} className="flex items-center bg-white dark:bg-zinc-950 border rounded-full px-3 py-1 text-xs gap-2 shadow-sm">
+                                            <span className="font-mono text-muted-foreground">{item.selector}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className={`h-5 px-2 text-[10px] rounded-full uppercase font-bold ${isAdded ? 'text-green-600 hover:text-green-700 bg-green-50 dark:bg-green-900/20' : 'text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40'}`}
+                                                disabled={isAdded}
+                                                onClick={() => {
+                                                    setSelectors(prev => [...prev, { id: Date.now().toString() + item.id, key: item.key, selector: item.selector }]);
+                                                }}
+                                            >
+                                                {isAdded ? (language === "tr" ? "Eklendi" : "Added") : (language === "tr" ? "Ekle" : "Add")}
+                                            </Button>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
