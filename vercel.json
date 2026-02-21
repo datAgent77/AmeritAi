@@ -1,9 +1,4 @@
 {
-    "build": {
-        "env": {
-            "NODE_VERSION": "20"
-        }
-    },
     "crons": [
         {
             "path": "/api/admin/shopper-site-crawl-cron",

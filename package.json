@@ -8,7 +8,6 @@
   "scripts": {
     "dev": "next dev",
     "check:env:build": "node scripts/check-build-env.js",
-    "prebuild": "npm run check:env:build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
