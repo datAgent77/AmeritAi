@@ -1890,7 +1890,7 @@
       overflow: 'hidden',
       zIndex: '9999',
       display: usesLauncher ? 'none' : 'block',
-      backgroundColor: '#fff',
+      backgroundColor: 'transparent',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
     let applyAmbientContainerSize = null;

@@ -472,9 +472,10 @@ export default function ChatbotContainer() {
         >
             {isAmbientMode && (
                 <style>{`
-                    html, body, #__next, #root {
+                    html, body, #__next, #root, body.bg-background, div.bg-background {
                         background: transparent !important;
                         background-color: transparent !important;
+                        box-shadow: none !important;
                     }
                     :root {
                         color-scheme: light dark normal !important;

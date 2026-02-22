@@ -197,11 +197,15 @@ export function ChatInput({
         <div
             className={isAmbientMode
                 ? (isAmbientInputOnly
-                    ? "px-4 pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
-                    : "px-4 pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))]")
+                    ? "px-4 pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
+                    : "px-4 pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"}
+            style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
-            <div className={`relative mx-auto ${isAmbientMode ? "w-full" : "max-w-3xl"}`}>
+            <div
+                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : "max-w-3xl"}`}
+                style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
+            >
                 {isAmbientMode && (
                     <style>{`
                         @keyframes ambient-border-rotate {
