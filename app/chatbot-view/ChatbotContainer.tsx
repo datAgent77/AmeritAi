@@ -482,6 +482,9 @@ export default function ChatbotContainer() {
                         background-color: transparent !important;
                         box-shadow: none !important;
                     }
+                    :root {
+                        color-scheme: light dark !important;
+                    }
                 `}</style>
             )}
             {isAmbientMode ? (
