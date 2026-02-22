@@ -1901,7 +1901,7 @@
     if (isAmbientMode) {
       const ambientRailHeight = Math.max(220, Math.min(460, Number(settings.ambientMaxHeight || 260)));
       const ambientExpandedHeight = Math.max(360, Math.min(760, ambientRailHeight + 220));
-      const ambientInputOnlyHeight = 130;
+      const ambientInputOnlyHeight = 190;
 
       const bottomMargin = settings.ambientBottomMargin || 0;
 
