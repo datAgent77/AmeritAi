@@ -44,7 +44,7 @@ export function MessageList({
         <div
             ref={messagesContainerRef}
             className={isAmbientMode
-                ? "h-full overflow-y-auto overflow-x-hidden px-1 py-1 space-y-3 sm:px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                ? "flex flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-1 sm:px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"}
             style={isAmbientMode
                 ? {
@@ -56,7 +56,7 @@ export function MessageList({
         >
             {messages.length === 0 ? (
                 isAmbientMode ? (
-                    <div className="h-full" />
+                    <div className="flex-1 min-h-0" />
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
                         <div
@@ -88,7 +88,7 @@ export function MessageList({
                     </div>
                 )
             ) : (
-                <>
+                <div className={isAmbientMode ? "mt-auto flex flex-col space-y-3 w-full" : "w-full space-y-6"}>
                     {messages.map((m: any) => {
                         // Render-time image recovery
                         const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
@@ -270,7 +270,7 @@ export function MessageList({
                         </div>
                     )}
                     <div ref={messagesEndRef} />
-                </>
+                </div>
             )}
         </div>
     )

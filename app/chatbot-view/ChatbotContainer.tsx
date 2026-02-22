@@ -97,9 +97,14 @@ export default function ChatbotContainer() {
             document.body.style.setProperty("background-color", "transparent", "important")
             document.documentElement.classList.add('ambient-transparent-bg')
             document.body.classList.add('ambient-transparent-bg')
+            document.documentElement.classList.remove('bg-background')
+            document.body.classList.remove('bg-background')
 
             const nextRoot = document.getElementById('__next')
-            if (nextRoot) nextRoot.style.setProperty("background-color", "transparent", "important")
+            if (nextRoot) {
+                nextRoot.style.setProperty("background-color", "transparent", "important")
+                nextRoot.classList.remove('bg-background')
+            }
         }
 
         return () => {
