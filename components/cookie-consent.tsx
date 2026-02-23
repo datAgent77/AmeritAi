@@ -77,9 +77,9 @@ export function CookieConsent() {
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 100, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="fixed bottom-0 sm:bottom-4 left-0 right-0 sm:left-4 sm:right-auto z-[99999] p-4 sm:max-w-md w-full"
+                    className="fixed bottom-0 sm:bottom-4 left-0 right-0 sm:left-4 sm:right-auto z-[99999] px-3 pt-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:p-4 sm:max-w-md w-full"
                 >
-                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
                         <div className="text-sm text-gray-300 leading-relaxed">
                             <h3 className="text-white font-medium mb-1 flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-white" />
@@ -91,7 +91,7 @@ export function CookieConsent() {
                                 {ui.bannerLine2}
                             </p>
                         </div>
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center justify-between pt-1 sm:pt-2">
                             <Button variant="ghost" onClick={() => setShowSettings(true)} className="text-gray-400 hover:text-white text-xs h-10 px-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all">
                                 <Settings2 className="w-4 h-4" />
                             </Button>
@@ -110,7 +110,7 @@ export function CookieConsent() {
 
             {/* 2. Settings Modal */}
             {showSettings && (
-                 <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                 <div className="fixed inset-0 z-[99999] flex items-center justify-center px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-4">
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -196,7 +196,7 @@ export function CookieConsent() {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-6 border-t border-white/5 bg-white/5 flex justify-end gap-3">
+                        <div className="p-4 sm:p-6 border-t border-white/5 bg-white/5 flex justify-end gap-3">
                             <Button variant="ghost" onClick={declineAll} className="text-white hover:bg-white/10">
                                 {ui.rejectAll}
                             </Button>

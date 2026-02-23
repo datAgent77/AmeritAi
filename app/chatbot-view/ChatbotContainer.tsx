@@ -431,11 +431,15 @@ export default function ChatbotContainer() {
 
     if (!isClient || !settings) return null
 
+    const runtimeViewportStyle = isAmbientMode
+        ? { height: '100%', top: 0 }
+        : viewportStyle
+
     return (
         <div
             style={{
-                height: viewportStyle.height,
-                top: viewportStyle.top,
+                height: runtimeViewportStyle.height,
+                top: runtimeViewportStyle.top,
                 position: 'fixed',
                 backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}

@@ -88,7 +88,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                         required={config.nameRequired !== false}
                         value={formData.name || ''}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                        className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                     />
                 </div>
             )}
@@ -102,7 +102,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                         required={config.phoneRequired === true}
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                        className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                     />
                 </div>
             )}
@@ -116,7 +116,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                         required={config.emailRequired !== false}
                         value={formData.email || ''}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                        className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                     />
                 </div>
             )}
@@ -132,7 +132,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                                 required={field.required}
                                 value={formData[field.id] || ''}
                                 onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
-                                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white appearance-none"
+                                className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white appearance-none"
                             >
                                 <option value="">{field.placeholder || field.label}</option>
                                 {field.options?.map((opt, i) => (
@@ -145,7 +145,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                                 required={field.required}
                                 value={formData[field.id] || ''}
                                 onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
-                                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white min-h-[60px]"
+                                className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white min-h-[60px]"
                             />
                         ) : (
                             <input
@@ -154,7 +154,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                                 required={field.required}
                                 value={formData[field.id] || ''}
                                 onChange={(e) => setFormData({ ...formData, [field.id]: e.target.value })}
-                                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                className="w-full pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                             />
                         )}
                     </div>

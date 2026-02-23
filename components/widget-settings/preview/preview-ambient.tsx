@@ -58,6 +58,8 @@ export function PreviewAmbient({
                     ? { ...dockStyles.gradientCssVars }
                     : undefined
     const ambientPlaceholder = settings.initialLanguage === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
+    const resolvedAmbientMaxWidth = settings.ambientWidth ? `${settings.ambientWidth}px` : (isDesktop ? '100%' : '100%')
+    const resolvedAmbientSideMargin = `${settings.ambientSideMargin || 0}px`
 
     return (
         <div className="absolute inset-0 flex flex-col justify-end pointer-events-none overflow-hidden z-50">
@@ -80,10 +82,10 @@ export function PreviewAmbient({
             <div
                 className={`pointer-events-auto bg-transparent w-full flex flex-col relative z-10 mx-auto`}
                 style={{
-                    maxWidth: isDesktop && settings.ambientWidth ? `${settings.ambientWidth}px` : '100%',
+                    maxWidth: resolvedAmbientMaxWidth,
                     paddingBottom: `${settings.ambientBottomMargin || 20}px`,
-                    paddingLeft: isDesktop ? `${settings.ambientSideMargin || 0}px` : '0px',
-                    paddingRight: isDesktop ? `${settings.ambientSideMargin || 0}px` : '0px'
+                    paddingLeft: resolvedAmbientSideMargin,
+                    paddingRight: resolvedAmbientSideMargin
                 }}
             >
                 {isChatActive ? (
@@ -124,7 +126,7 @@ export function PreviewAmbient({
                 {/* Always-on Input Bar */}
                 <div
                     className="p-4 mx-auto w-full transition-all duration-300"
-                    style={{ maxWidth: isDesktop ? (settings.ambientWidth ? `${settings.ambientWidth}px` : '500px') : '90%' }}
+                    style={{ maxWidth: settings.ambientWidth ? `${settings.ambientWidth}px` : (isDesktop ? '500px' : '100%') }}
                 >
                     <div
                         onClick={() => {

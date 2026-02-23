@@ -2651,10 +2651,13 @@
 
   // Voice interface is handled inside the chatbot iframe (ChatInput mic button + VoiceOverlay component)
 
+  let settingsFetchPromise = null;
+  let bootstrapStarted = false;
+
   // Helper: Fetch Settings
   async function fetchSettings() {
     try {
-      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`);
+      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`);
       if (!response.ok) throw new Error('Failed to fetch settings');
       return await response.json();
     } catch (error) {
@@ -2665,7 +2668,10 @@
 
   // Bootstrap Function
   async function bootstrap() {
-    const fetchedSettings = await fetchSettings();
+    if (bootstrapStarted) return;
+    bootstrapStarted = true;
+
+    const fetchedSettings = await (settingsFetchPromise || fetchSettings());
 
     // STRICT CHECK: If disabled, abort
     if (fetchedSettings.isEnabled === false) {
@@ -2684,11 +2690,14 @@
     initWidget();
   }
 
+  // Start fetching settings immediately so network overlaps with page render.
+  settingsFetchPromise = fetchSettings();
+
   // Start Initialization
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     bootstrap();
   } else {
-    document.addEventListener('DOMContentLoaded', bootstrap);
+    document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
   }
 
   // ============================================
