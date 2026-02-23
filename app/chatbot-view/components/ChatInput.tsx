@@ -257,9 +257,9 @@ export function ChatInput({
                     <form
                         onSubmit={handleSubmit}
                         className={isAmbientMode
-                            ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 ${!isAmbientInputOnly ? 'border border-gray-200/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
+                            ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
                             : "relative flex items-center gap-2"}
-                        style={isAmbientMode ? (isAmbientInputOnly ? { backgroundColor: settings.ambientClosedBgColor || '#f3f4f6' } : { backgroundColor: '#f3f4f6' }) : undefined}
+                        style={isAmbientMode ? { backgroundColor: settings.ambientClosedBgColor || '#f3f4f6' } : undefined}
                     >
                         {/* Image Preview */}
                         {selectedImage && (
@@ -365,9 +365,9 @@ export function ChatInput({
                                     ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
                                     : (isAmbientMode ? ambientPlaceholder : t('messagePlaceholder'))}
                                 className={isAmbientMode
-                                    ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none text-gray-600 placeholder:text-gray-400`
+                                    ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400`
                                     : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"}
-                                style={isAmbientMode ? undefined : ({ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any)}
+                                style={isAmbientMode ? { color: settings.ambientInputTextColor || '#4b5563' } : ({ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any)}
                                 onFocus={() => isAmbientMode && setIsInputFocused(true)}
                                 onBlur={() => isAmbientMode && setIsInputFocused(false)}
                             />

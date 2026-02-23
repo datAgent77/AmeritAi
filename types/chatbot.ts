@@ -106,6 +106,7 @@ export interface ChatbotSettings {
     ambientIconType?: "library" | "custom";
     ambientLibraryIcon?: string;
     ambientIconColor?: string;
+    ambientInputTextColor?: string;
     ambientBorderColorIdle?: string;
     ambientBorderColorFocused?: string;
     ambientClosedBgColor?: string;

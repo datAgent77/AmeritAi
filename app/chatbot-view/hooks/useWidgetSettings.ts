@@ -130,6 +130,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         ambientBorderColorIdle: data.ambientBorderColorIdle || "",
                         ambientBorderColorFocused: data.ambientBorderColorFocused || "",
                         ambientClosedBgColor: data.ambientClosedBgColor || "",
+                        ambientInputTextColor: data.ambientInputTextColor || "",
                         ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle || "",
                         ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused || "",
                         ambientAiBubbleColor: data.ambientAiBubbleColor || "",

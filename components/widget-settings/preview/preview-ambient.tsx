@@ -74,12 +74,16 @@ export function PreviewAmbient({ settings, previewMode, isPreviewOpen, setIsPrev
                 >
                     <div
                         onClick={() => setIsPreviewOpen(true)}
-                        className="bg-white/90 dark:bg-black/80 backdrop-blur-xl border border-white/40 dark:border-white/20 rounded-full p-2 flex items-center shadow-lg transition-all cursor-pointer hover:shadow-xl"
+                        className="backdrop-blur-xl border border-white/40 dark:border-white/20 rounded-full p-2 flex items-center shadow-lg transition-all cursor-pointer hover:shadow-xl"
+                        style={{ backgroundColor: settings.ambientClosedBgColor || 'rgba(255, 255, 255, 0.9)' }}
                     >
                         <div className="bg-black/5 dark:bg-white/10 p-2 rounded-full mr-2">
                             <ListFilter className="w-4 h-4" />
                         </div>
-                        <span className="flex-1 text-sm text-gray-500 bg-transparent border-0">
+                        <span
+                            className="flex-1 text-sm bg-transparent border-0"
+                            style={{ color: settings.ambientInputTextColor || '#6b7280' }}
+                        >
                             Ask me anything...
                         </span>
                         <div className="p-2 rounded-full bg-black text-white ml-2">

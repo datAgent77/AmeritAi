@@ -811,6 +811,27 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                                     </div>
 
                                                                     <div className="grid gap-2 mt-2">
+                                                                        <Label className="text-xs">{t('closedFormTextColor') || 'Form Yazı Rengi (Boşsa Koyu Gri)'}</Label>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div
+                                                                                className="h-8 w-8 rounded-full border shadow-sm"
+                                                                                style={{ backgroundColor: settings.ambientInputTextColor || '#374151' }}
+                                                                            />
+                                                                            <Input
+                                                                                type="color"
+                                                                                value={settings.ambientInputTextColor || '#374151'}
+                                                                                onChange={(e) => setSettings(prev => ({ ...prev, ambientInputTextColor: e.target.value }))}
+                                                                                className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
+                                                                            />
+                                                                            {settings.ambientInputTextColor && (
+                                                                                <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientInputTextColor: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Yazı Rengine Dön' : 'Reset to Default Text Color'}>
+                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="grid gap-2 mt-2">
                                                                         <Label className="text-xs">{t('closedFormBorderIdleColor') || 'Şifreli Çerçeve Rengi - Normal (Boşsa Zemin Gri)'}</Label>
                                                                         <div className="flex items-center gap-2">
                                                                             <div

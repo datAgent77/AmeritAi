@@ -64,6 +64,7 @@ export interface WidgetSettings {
     ambientIconType: "library" | "custom"
     ambientLibraryIcon: string
     ambientIconColor: string
+    ambientInputTextColor: string
     ambientBorderColorIdle: string
     ambientBorderColorFocused: string
     ambientClosedBgColor: string
@@ -150,6 +151,7 @@ const defaultSettings: WidgetSettings = {
     ambientIconType: "library",
     ambientLibraryIcon: "MessageCircle",
     ambientIconColor: "",
+    ambientInputTextColor: "",
     ambientBorderColorIdle: "",
     ambientBorderColorFocused: "",
     ambientClosedBgColor: "",
@@ -254,6 +256,7 @@ export function useWidgetSettings(userId?: string) {
                     ambientIconType: data.ambientIconType || prev.ambientIconType,
                     ambientLibraryIcon: data.ambientLibraryIcon || prev.ambientLibraryIcon,
                     ambientIconColor: data.ambientIconColor !== undefined ? data.ambientIconColor : prev.ambientIconColor,
+                    ambientInputTextColor: data.ambientInputTextColor !== undefined ? data.ambientInputTextColor : prev.ambientInputTextColor,
                     ambientBorderColorIdle: data.ambientBorderColorIdle !== undefined ? data.ambientBorderColorIdle : prev.ambientBorderColorIdle,
                     ambientBorderColorFocused: data.ambientBorderColorFocused !== undefined ? data.ambientBorderColorFocused : prev.ambientBorderColorFocused,
                     ambientClosedBgColor: data.ambientClosedBgColor !== undefined ? data.ambientClosedBgColor : prev.ambientClosedBgColor,
