@@ -363,7 +363,7 @@ export function ChatInput({
                                 disabled={isChatLoading}
                                 placeholder={selectedImage
                                     ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
-                                    : (isAmbientMode ? ambientPlaceholder : t('messagePlaceholder'))}
+                                    : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
                                 className={isAmbientMode
                                     ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400`
                                     : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"}

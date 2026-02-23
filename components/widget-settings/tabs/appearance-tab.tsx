@@ -848,6 +848,16 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                                         </div>
                                                                     </div>
 
+                                                                    <div className="grid gap-2 mt-3 mb-1">
+                                                                        <Label className="text-xs">{t('closedFormPlaceholder') || 'Girdi Metni (Placeholder)'}</Label>
+                                                                        <Input
+                                                                            value={settings.ambientPlaceholderText || ""}
+                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientPlaceholderText: e.target.value }))}
+                                                                            className="h-9 text-sm"
+                                                                            placeholder={language === 'tr' ? 'Aklınızdan geçenleri sorun...' : 'Ask what\'s on your mind...'}
+                                                                        />
+                                                                    </div>
+
                                                                     <div className="grid gap-2 mt-2">
                                                                         <Label className="text-xs">{t('closedFormBorderIdleColor') || 'Şifreli Çerçeve Rengi - Normal (Boşsa Zemin Gri)'}</Label>
                                                                         <div className="flex items-center gap-2">

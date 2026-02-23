@@ -84,7 +84,7 @@ export function PreviewAmbient({ settings, previewMode, isPreviewOpen, setIsPrev
                             className="flex-1 text-sm bg-transparent border-0"
                             style={{ color: settings.ambientInputTextColor || '#6b7280' }}
                         >
-                            Ask me anything...
+                            {settings.ambientPlaceholderText || 'Ask me anything...'}
                         </span>
                         <div className="p-2 rounded-full bg-black text-white ml-2">
                             <Send className="w-4 h-4" />
