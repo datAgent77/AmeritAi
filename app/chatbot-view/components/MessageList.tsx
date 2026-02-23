@@ -134,7 +134,9 @@ export function MessageList({
                                         style={
                                             isAmbientMode
                                                 ? (m.role === 'user'
-                                                    ? undefined
+                                                    ? (settings.ambientUserBubbleColor
+                                                        ? { backgroundColor: settings.ambientUserBubbleColor }
+                                                        : undefined)
                                                     : { backgroundColor: settings.ambientAiBubbleColor || settings.brandColor || '#3b82f6' })
                                                 : (m.role === 'user'
                                                     ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor }

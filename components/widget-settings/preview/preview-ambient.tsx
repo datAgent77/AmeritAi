@@ -1,21 +1,63 @@
 "use client"
 
 import { Send, ListFilter } from "lucide-react"
+import { getAmbientDockStateKey, resolveAmbientDockStyle, type AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 
 interface PreviewAmbientProps {
     settings: any
     previewMode: 'mobile' | 'desktop'
     isPreviewOpen: boolean
     setIsPreviewOpen: (open: boolean) => void
+    previewAmbientDockState?: AmbientDockPreviewState
+    previewAmbientThinking?: boolean
 }
 
-export function PreviewAmbient({ settings, previewMode, isPreviewOpen, setIsPreviewOpen }: PreviewAmbientProps) {
+export function PreviewAmbient({
+    settings,
+    previewMode,
+    isPreviewOpen,
+    setIsPreviewOpen,
+    previewAmbientDockState = "auto",
+    previewAmbientThinking = false,
+}: PreviewAmbientProps) {
     const isDesktop = previewMode === 'desktop'
-    const railHeight = isDesktop ? (settings.ambientMaxHeight || 260) : 130
+    const railHeight = Math.max(220, Math.min(460, settings.ambientMaxHeight || 260))
     const overlayOpacity = settings.ambientOverlayOpacity || 0.55
 
     // Ambient modda pencere açık kapalı yok, "Sohbet Yüksekte mi Alçakta mı" mantığı var. (Preview'da örnek gösterim)
-    const isChatActive = isPreviewOpen
+    const forcedPreviewDockState = previewAmbientDockState === "auto"
+        ? null
+        : previewAmbientDockState
+    const isChatActive = forcedPreviewDockState
+        ? forcedPreviewDockState.startsWith("open")
+        : (isPreviewOpen || previewAmbientThinking)
+    const visualDockState = forcedPreviewDockState || getAmbientDockStateKey({
+        isCollapsed: !isChatActive,
+        isFocused: false,
+    })
+    const dockStyles = resolveAmbientDockStyle({
+        settings,
+        state: visualDockState,
+        isChatLoading: previewAmbientThinking,
+    })
+    const dockOuterClass = `rounded-full p-[2px] transition-all duration-500 ${dockStyles.isCollapsed
+        ? (dockStyles.borderMode === 'animated' ? 'ambient-border-animated shadow-md hover:shadow-lg' : 'shadow-md hover:shadow-lg')
+        : dockStyles.borderMode === 'animated'
+            ? 'ambient-border-animated shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+            : 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+        }`
+    const dockOuterStyle =
+        dockStyles.borderMode === "solid" && dockStyles.outerBorderColor
+            ? { backgroundColor: dockStyles.outerBorderColor }
+            : (dockStyles.borderMode === "gradient")
+                ? {
+                    ...dockStyles.gradientCssVars,
+                    background: `linear-gradient(90deg, ${dockStyles.gradientColors[0]} 0%, ${dockStyles.gradientColors[1]} 33%, ${dockStyles.gradientColors[2]} 66%, ${dockStyles.gradientColors[3]} 100%)`,
+                }
+                : dockStyles.borderMode === "animated"
+                    ? { ...dockStyles.gradientCssVars }
+                    : undefined
+    const ambientPlaceholder = settings.initialLanguage === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
 
     return (
         <div className="absolute inset-0 flex flex-col justify-end pointer-events-none overflow-hidden z-50">
@@ -58,6 +100,18 @@ export function PreviewAmbient({ settings, previewMode, isPreviewOpen, setIsPrev
                             </button>
                         </div>
                         <div className="flex flex-col gap-3 px-2">
+                            <div
+                                className="text-sm text-white px-4 py-3 rounded-2xl shadow-sm w-fit max-w-[85%]"
+                                style={{ backgroundColor: settings.ambientAiBubbleColor || settings.brandColor || "#3b82f6" }}
+                            >
+                                Merhaba! Nasıl yardımcı olabilirim?
+                            </div>
+                            <div
+                                className="text-sm text-gray-800 px-4 py-3 rounded-2xl rounded-br-md shadow-sm w-fit max-w-[75%] ml-auto bg-white/80 border border-white/70"
+                                style={settings.ambientUserBubbleColor ? { backgroundColor: settings.ambientUserBubbleColor } : undefined}
+                            >
+                                Demo kullanıcı mesajı
+                            </div>
                             {settings.suggestedQuestions?.slice(0, 2).map((q: string, i: number) => (
                                 <div key={i} className="text-sm bg-black/5 dark:bg-white/5 py-2 px-4 rounded-xl text-left border border-black/5">
                                     {q}
@@ -73,21 +127,32 @@ export function PreviewAmbient({ settings, previewMode, isPreviewOpen, setIsPrev
                     style={{ maxWidth: isDesktop ? (settings.ambientWidth ? `${settings.ambientWidth}px` : '500px') : '90%' }}
                 >
                     <div
-                        onClick={() => setIsPreviewOpen(true)}
-                        className="backdrop-blur-xl border border-white/40 dark:border-white/20 rounded-full p-2 flex items-center shadow-lg transition-all cursor-pointer hover:shadow-xl"
-                        style={{ backgroundColor: settings.ambientClosedBgColor || 'rgba(255, 255, 255, 0.9)' }}
+                        onClick={() => {
+                            if (forcedPreviewDockState) return
+                            setIsPreviewOpen(true)
+                        }}
+                        className={dockOuterClass}
+                        style={dockOuterStyle}
                     >
-                        <div className="bg-black/5 dark:bg-white/10 p-2 rounded-full mr-2">
-                            <ListFilter className="w-4 h-4" />
-                        </div>
-                        <span
-                            className="flex-1 text-sm bg-transparent border-0"
-                            style={{ color: settings.ambientInputTextColor || '#6b7280' }}
+                        <div
+                            className="backdrop-blur-xl border border-white/40 dark:border-white/20 rounded-full p-2 flex items-center shadow-lg transition-all cursor-pointer hover:shadow-xl"
+                            style={{ backgroundColor: dockStyles.formBackgroundColor || 'rgba(255, 255, 255, 0.9)' }}
                         >
-                            {settings.ambientPlaceholderText || 'Ask me anything...'}
-                        </span>
-                        <div className="p-2 rounded-full bg-black text-white ml-2">
-                            <Send className="w-4 h-4" />
+                            <div className="bg-black/5 dark:bg-white/10 p-2 rounded-full mr-2">
+                                <ListFilter className="w-4 h-4" />
+                            </div>
+                            <span
+                                className="flex-1 text-sm bg-transparent border-0"
+                                style={{ color: settings.ambientInputTextColor || '#6b7280' }}
+                            >
+                                {settings.ambientPlaceholderText || ambientPlaceholder}
+                            </span>
+                            <div
+                                className="p-2 rounded-full text-white ml-2"
+                                style={{ backgroundColor: settings.ambientIconColor || settings.brandColor || "#1f2937" }}
+                            >
+                                <Send className="w-4 h-4" />
+                            </div>
                         </div>
                     </div>
                 </div>

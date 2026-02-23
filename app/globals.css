@@ -115,6 +115,7 @@
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
@@ -126,6 +127,7 @@
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
+
   to {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.95);
@@ -140,4 +142,41 @@
 [data-slot="dialog-content"][data-state="closed"] {
   animation: dialog-zoom-out 100ms ease-in forwards !important;
   pointer-events: none;
+}
+
+/* Rainbow Border Animation for Ambient Mode */
+@property --ambient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ambient-border-rotate {
+  0% {
+    --ambient-angle: 0deg;
+  }
+
+  100% {
+    --ambient-angle: 360deg;
+  }
+}
+
+.ambient-border-animated {
+  background: conic-gradient(
+    from var(--ambient-angle, 0deg),
+    var(--ambient-g1, #17b5e8),
+    var(--ambient-g2, #3f6eea),
+    var(--ambient-g3, #7c3aed),
+    var(--ambient-g4, #f59e0b),
+    var(--ambient-g1, #17b5e8)
+  ) !important;
+  animation: ambient-border-rotate 4s linear infinite !important;
+}
+
+@media (max-width: 768px) {
+  .vion-widget-runtime-root input,
+  .vion-widget-runtime-root textarea,
+  .vion-widget-runtime-root select {
+    font-size: 16px !important;
+  }
 }

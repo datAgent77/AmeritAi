@@ -24,6 +24,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
+import { getAmbientDeviceSettingsKeys, resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
+import { getClassicDeviceSettingsKeys, resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 
 interface AppearanceTabProps {
     settings: WidgetSettings
@@ -31,16 +34,169 @@ interface AppearanceTabProps {
     userId: string
     isUploading: boolean
     setIsUploading: React.Dispatch<React.SetStateAction<boolean>>
+    ambientPreviewDockState: AmbientDockPreviewState
+    setAmbientPreviewDockState: React.Dispatch<React.SetStateAction<AmbientDockPreviewState>>
+    ambientPreviewThinking: boolean
+    setAmbientPreviewThinking: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export function AppearanceTab({ settings, setSettings, userId, isUploading, setIsUploading }: AppearanceTabProps) {
+export function AppearanceTab({
+    settings: rootSettings,
+    setSettings: setRootSettings,
+    userId,
+    isUploading,
+    setIsUploading,
+    ambientPreviewDockState,
+    setAmbientPreviewDockState,
+    ambientPreviewThinking,
+    setAmbientPreviewThinking,
+}: AppearanceTabProps) {
     const { t, language } = useLanguage()
     const { user } = useAuth()
     const { toast } = useToast()
     const [searchTerm, setSearchTerm] = useState("")
     const [activeDevice, setActiveDevice] = useState<'desktop' | 'mobile'>('desktop')
-    const isAmbientMode = settings.chatDisplayMode === "ambient"
-    const isAlwaysOpenMode = settings.interactionMode === "always_open" || isAmbientMode
+    const [ambientEditorDevice, setAmbientEditorDevice] = useState<'desktop' | 'mobile'>('desktop')
+
+    const isAmbientMode = rootSettings.chatDisplayMode === "ambient"
+    const editorDevice = isAmbientMode ? ambientEditorDevice : activeDevice
+    const ambientDeviceModeEnabled = rootSettings.ambientPerDeviceSettingsEnabled === true
+    const classicDeviceModeEnabled = rootSettings.classicPerDeviceSettingsEnabled === true
+    const deviceModeEnabled = isAmbientMode ? ambientDeviceModeEnabled : classicDeviceModeEnabled
+    const isAlwaysOpenMode = rootSettings.interactionMode === "always_open" || isAmbientMode
+
+    const ambientDeviceKeys = new Set(getAmbientDeviceSettingsKeys())
+    const classicDeviceKeys = new Set(getClassicDeviceSettingsKeys())
+    const deviceScopedKeys = isAmbientMode ? ambientDeviceKeys : classicDeviceKeys
+    const effectiveDeviceOverrides = isAmbientMode
+        ? resolveAmbientDeviceSettings(rootSettings, editorDevice)
+        : resolveClassicDeviceSettings(rootSettings, editorDevice)
+    const settings = (deviceModeEnabled
+        ? { ...rootSettings, ...effectiveDeviceOverrides }
+        : rootSettings) as WidgetSettings
+
+    const setSettings: React.Dispatch<React.SetStateAction<WidgetSettings>> = (updater) => {
+        if (!deviceModeEnabled) {
+            setRootSettings(updater)
+            return
+        }
+
+        setRootSettings((prevRoot) => {
+            const prevModeEnabled = isAmbientMode
+                ? prevRoot.ambientPerDeviceSettingsEnabled === true
+                : prevRoot.classicPerDeviceSettingsEnabled === true
+
+            if (!prevModeEnabled) {
+                return typeof updater === "function" ? updater(prevRoot) : updater
+            }
+
+            const prevEffective = (isAmbientMode
+                ? { ...prevRoot, ...resolveAmbientDeviceSettings(prevRoot, editorDevice) }
+                : { ...prevRoot, ...resolveClassicDeviceSettings(prevRoot, editorDevice) }) as WidgetSettings
+            const nextEffective = (typeof updater === "function" ? updater(prevEffective) : updater) as WidgetSettings
+            const nextRoot = { ...prevRoot } as WidgetSettings
+
+            const bucketKey = isAmbientMode
+                ? (editorDevice === "mobile" ? "ambientMobileSettings" : "ambientDesktopSettings")
+                : (editorDevice === "mobile" ? "classicMobileSettings" : "classicDesktopSettings")
+
+            const prevBucket = ((nextRoot as any)[bucketKey] && typeof (nextRoot as any)[bucketKey] === "object")
+                ? (nextRoot as any)[bucketKey]
+                : {}
+            let nextBucket = { ...prevBucket }
+            let bucketChanged = false
+
+            const keysToCheck = new Set([...Object.keys(prevEffective), ...Object.keys(nextEffective)])
+            keysToCheck.forEach((key) => {
+                const prevVal = (prevEffective as any)[key]
+                const nextVal = (nextEffective as any)[key]
+                if (Object.is(prevVal, nextVal)) return
+
+                if (deviceScopedKeys.has(key as any)) {
+                    nextBucket[key] = nextVal
+                    bucketChanged = true
+                    return
+                }
+
+                ; (nextRoot as any)[key] = nextVal
+            })
+
+            if (bucketChanged) {
+                ; (nextRoot as any)[bucketKey] = nextBucket
+            }
+
+            return nextRoot
+        })
+    }
+    const ambientPreviewStatus = ambientPreviewDockState === "auto"
+        ? "auto"
+        : (ambientPreviewDockState.startsWith("collapsed") ? "collapsed" : "open")
+    const ambientPreviewFocus = ambientPreviewDockState.endsWith("focused") ? "focused" : "idle"
+
+    const setAmbientPreviewStatus = (next: "auto" | "collapsed" | "open") => {
+        if (next === "auto") {
+            setAmbientPreviewDockState("auto")
+            return
+        }
+        setAmbientPreviewDockState(`${next}-${ambientPreviewFocus}` as AmbientDockPreviewState)
+    }
+
+    const setAmbientPreviewFocusState = (next: "idle" | "focused") => {
+        const status = ambientPreviewStatus === "auto" ? "collapsed" : ambientPreviewStatus
+        setAmbientPreviewDockState(`${status}-${next}` as AmbientDockPreviewState)
+    }
+
+    const toggleAmbientPerDeviceSettings = (checked: boolean) => {
+        setRootSettings((prev) => {
+            if (!checked) {
+                return { ...prev, ambientPerDeviceSettingsEnabled: false }
+            }
+
+            const desktopSeed = {
+                ...resolveAmbientDeviceSettings(prev, "desktop"),
+            }
+            const mobileSeed = {
+                ...resolveAmbientDeviceSettings(prev, "mobile"),
+            }
+
+            return {
+                ...prev,
+                ambientPerDeviceSettingsEnabled: true,
+                ambientDesktopSettings: prev.ambientDesktopSettings && typeof prev.ambientDesktopSettings === "object"
+                    ? prev.ambientDesktopSettings
+                    : desktopSeed,
+                ambientMobileSettings: prev.ambientMobileSettings && typeof prev.ambientMobileSettings === "object"
+                    ? prev.ambientMobileSettings
+                    : mobileSeed,
+            }
+        })
+    }
+
+    const toggleClassicPerDeviceSettings = (checked: boolean) => {
+        setRootSettings((prev) => {
+            if (!checked) {
+                return { ...prev, classicPerDeviceSettingsEnabled: false }
+            }
+
+            const desktopSeed = {
+                ...resolveClassicDeviceSettings(prev, "desktop"),
+            }
+            const mobileSeed = {
+                ...resolveClassicDeviceSettings(prev, "mobile"),
+            }
+
+            return {
+                ...prev,
+                classicPerDeviceSettingsEnabled: true,
+                classicDesktopSettings: prev.classicDesktopSettings && typeof prev.classicDesktopSettings === "object"
+                    ? prev.classicDesktopSettings
+                    : desktopSeed,
+                classicMobileSettings: prev.classicMobileSettings && typeof prev.classicMobileSettings === "object"
+                    ? prev.classicMobileSettings
+                    : mobileSeed,
+            }
+        })
+    }
 
     const applyDisplayPreset = (preset: "classic_launcher" | "classic_always_open" | "ambient_always_open") => {
         if (preset === "classic_launcher") {
@@ -351,80 +507,6 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                             </div>
                         </AccordionContent>
                     </AccordionItem>
-                    <AccordionItem value="business-hours" className="border rounded-lg px-4">
-                        <AccordionTrigger className="hover:no-underline">
-                            <div className="flex items-center justify-between w-full pr-4">
-                                <span className="text-sm font-medium">{t('availability') || 'Çalışma Saatleri'}</span>
-                                <Switch
-                                    checked={settings.enableBusinessHours}
-                                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableBusinessHours: checked }))}
-                                    onClick={(e) => e.stopPropagation()}
-                                />
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-4 pb-6">
-                            <div className="space-y-6">
-                                <div className="text-sm text-muted-foreground">
-                                    {t('enableBusinessHoursDesc')}
-                                </div>
-
-                                {settings.enableBusinessHours && (
-                                    <div className="grid gap-4">
-                                        <div className="grid gap-2">
-                                            <Label>{t('timezone')}</Label>
-                                            <Select
-                                                value={settings.timezone}
-                                                onValueChange={(value) => setSettings(prev => ({ ...prev, timezone: value }))}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t('selectTimezone')} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="UTC">UTC</SelectItem>
-                                                    <SelectItem value="America/New_York">New York (EST)</SelectItem>
-                                                    <SelectItem value="Europe/London">London (GMT)</SelectItem>
-                                                    <SelectItem value="Europe/Istanbul">Istanbul (TRT)</SelectItem>
-                                                    <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="grid gap-2">
-                                                <Label>{t('startTime')}</Label>
-                                                <Input
-                                                    type="time"
-                                                    value={settings.businessHoursStart}
-                                                    onChange={(e) => setSettings(prev => ({ ...prev, businessHoursStart: e.target.value }))}
-                                                />
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <Label>{t('endTime')}</Label>
-                                                <Input
-                                                    type="time"
-                                                    value={settings.businessHoursEnd}
-                                                    onChange={(e) => setSettings(prev => ({ ...prev, businessHoursEnd: e.target.value }))}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid gap-2">
-                                            <Label>{t('offlineMessage')}</Label>
-                                            <Textarea
-                                                placeholder={t('offlineMessagePlaceholder')}
-                                                value={settings.offlineMessage}
-                                                onChange={(e) => setSettings(prev => ({ ...prev, offlineMessage: e.target.value }))}
-                                            />
-                                            <p className="text-xs text-muted-foreground">
-                                                {t('offlineMessageDesc')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-
 
                 </Accordion>
             </div>
@@ -436,7 +518,43 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                 </h3>
 
                 {isAmbientMode ? (
-                    <Accordion type="single" collapsible defaultValue="ambient-position" className="w-full space-y-2">
+                    <div className="space-y-2">
+                        <div className="border rounded-lg p-4 bg-card">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">{language === 'tr' ? 'Ambient: Cihaza Göre Ayrı Ayarlar' : 'Ambient: Per-Device Settings'}</Label>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {language === 'tr'
+                                            ? 'Kapalıysa tek ayar (shared), açıksa Desktop ve Mobile için ayrı görünüm düzenlersiniz.'
+                                            : 'Disabled = shared settings. Enabled = edit separate Desktop and Mobile appearance.'}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={ambientDeviceModeEnabled}
+                                    onCheckedChange={toggleAmbientPerDeviceSettings}
+                                />
+                            </div>
+                            {ambientDeviceModeEnabled && (
+                                <div className="mt-3 flex p-1 bg-muted rounded-lg w-full max-w-xs">
+                                    <button
+                                        type="button"
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${ambientEditorDevice === 'desktop' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => setAmbientEditorDevice('desktop')}
+                                    >
+                                        {t('desktop') || 'Desktop'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${ambientEditorDevice === 'mobile' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => setAmbientEditorDevice('mobile')}
+                                    >
+                                        {t('mobile') || 'Mobile'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <Accordion type="single" collapsible defaultValue="ambient-position" className="w-full space-y-2">
                         <AccordionItem value="ambient-position" className="border rounded-lg px-4 bg-card">
                             <AccordionTrigger className="hover:no-underline">
                                 <span className="text-sm font-medium">{t('positionLayout') || 'Pozisyon & Efektler'}</span>
@@ -527,8 +645,17 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                             />
                                         </div>
                                     </div>
-                                    {/* Input Size Selector */}
-                                    <div className="border-t pt-4">
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <AccordionItem value="ambient-icon" className="border rounded-lg px-4 bg-card">
+                            <AccordionTrigger className="hover:no-underline">
+                                <span className="text-sm font-medium">{language === 'tr' ? 'Tema, Boyut & İkonlar' : 'Theme, Size & Icons'}</span>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4 pb-6">
+                                <div className="grid gap-6">
+                                    <div>
                                         <Label className="text-xs mb-3 block">{language === 'tr' ? 'Input Boyutu' : 'Input Size'}</Label>
                                         <div className="grid grid-cols-4 gap-2">
                                             {([
@@ -540,7 +667,7 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                 <button
                                                     key={value}
                                                     type="button"
-                                                    onClick={() => setSettings(prev => ({ ...prev, ambientInputSize: value as "sm" | "md" | "lg" | "xl" }))}
+                                                    onClick={() => setSettings(prev => ({ ...prev, ambientInputSize: value as any }))}
                                                     className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${(settings.ambientInputSize || 'lg') === value
                                                         ? 'border-black bg-black text-white shadow-sm'
                                                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
@@ -552,7 +679,6 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Loader Style Selector */}
                                     <div className="border-t pt-4 mt-4">
                                         <Label className="text-xs mb-3 block">{language === 'tr' ? 'Yüklenme Animasyonu' : 'Loader Style'}</Label>
                                         <div className="grid grid-cols-3 gap-2">
@@ -575,7 +701,6 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                             ))}
                                         </div>
                                     </div>
-                                    {/* Ambient Icon Toggle */}
                                     <div className="border-t pt-4">
                                         <div className="flex items-center justify-between mb-4">
                                             <div>
@@ -592,327 +717,385 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                         {settings.showAmbientIcon && (
                                             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant={settings.ambientIconType === "library" ? "secondary" : "outline"}
-                                                        onClick={() => setSettings(prev => ({ ...prev, ambientIconType: "library" }))}
-                                                    >
-                                                        {t('library') || 'Library'}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant={settings.ambientIconType === "custom" ? "secondary" : "outline"}
-                                                        onClick={() => setSettings(prev => ({ ...prev, ambientIconType: "custom" }))}
-                                                    >
-                                                        {t('custom') || 'Custom URL'}
-                                                    </Button>
+                                                    <Button size="sm" variant={settings.ambientIconType === "library" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, ambientIconType: "library" }))}>Library</Button>
+                                                    <Button size="sm" variant={settings.ambientIconType === "custom" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, ambientIconType: "custom" }))}>Custom</Button>
                                                 </div>
-
                                                 {settings.ambientIconType === "library" ? (
                                                     <div className="space-y-2">
-                                                        <Input
-                                                            placeholder={t('searchIcons') || 'Search icons...'}
-                                                            className="h-8 text-xs bg-muted/20"
-                                                            value={searchTerm}
-                                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                                        />
+                                                        <Input placeholder="Search icons..." className="h-8 text-xs bg-muted/20" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                                         <div className="border rounded-md p-2 h-32 overflow-y-auto grid grid-cols-6 gap-2 bg-muted/10">
-                                                            {(searchTerm ? Object.keys(icons) : [
-                                                                "MessageSquare", "MessageCircle", "MessageSquareText", "MessagesSquare",
-                                                                "Bot", "Sparkles", "Brain", "BrainCircuit", "Cpu", "Zap", "Activity",
-                                                                "Headset", "Mic", "Video", "Phone",
-                                                                "User", "Users", "UserCheck",
-                                                                "HelpCircle", "Info", "AlertCircle",
-                                                                "Star", "Heart", "ThumbsUp", "Smile",
-                                                                "Send", "Share2", "Paperclip",
-                                                                "Command", "Terminal", "Code", "Box",
-                                                                "Ghost", "Gamepad2", "Rocket"
-                                                            ])
-                                                                .filter(key => {
-                                                                    if (searchTerm && !key.toLowerCase().includes(searchTerm.toLowerCase())) return false
-                                                                    return (icons as any)[key] !== undefined
-                                                                })
-                                                                .slice(0, 100)
-                                                                .map((iconName) => {
-                                                                    const Icon = (icons as any)[iconName]
-                                                                    if (typeof Icon !== 'function' && typeof Icon !== 'object') return null
-                                                                    return (
-                                                                        <button
-                                                                            key={iconName}
-                                                                            onClick={() => setSettings(prev => ({ ...prev, ambientIconType: "library", ambientLibraryIcon: iconName }))}
-                                                                            className={`p-2 rounded hover:bg-muted/50 flex items-center justify-center transition-colors ${settings.ambientLibraryIcon === iconName ? 'bg-primary/10 text-primary shadow-sm' : 'text-foreground/70'}`}
-                                                                            title={iconName}
-                                                                        >
-                                                                            <Icon className="w-5 h-5" />
-                                                                        </button>
-                                                                    )
-                                                                })}
+                                                            {(searchTerm ? Object.keys(icons) : ["MessageSquare", "Bot", "Sparkles", "Brain", "Zap", "Activity"]).slice(0, 50).map((iconName) => {
+                                                                const Icon = (icons as any)[iconName]
+                                                                if (!Icon) return null
+                                                                return (
+                                                                    <button key={iconName} onClick={() => setSettings(prev => ({ ...prev, ambientLibraryIcon: iconName }))} className={`p-2 rounded hover:bg-muted/50 flex items-center justify-center ${settings.ambientLibraryIcon === iconName ? 'bg-primary/10 text-primary' : 'text-foreground/70'}`}>
+                                                                        <Icon className="w-5 h-5" />
+                                                                    </button>
+                                                                )
+                                                            })}
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="space-y-4">
-                                                        <Label className="text-xs">{language === 'tr' ? 'Özel İkon Görseli Yükle veya Link Gir' : 'Upload Custom Icon or Enter Link'}</Label>
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="relative w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden group">
-                                                                {isUploading ? (
-                                                                    <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
-                                                                ) : settings.ambientIconUrl ? (
-                                                                    <div className="relative w-10 h-10">
-                                                                        {/* We use generic img tag because it could be an external URL or Firebase storage URL without domain configured in next config */}
-                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                        <img src={settings.ambientIconUrl} alt="Custom Icon" className="w-full h-full object-contain" />
-                                                                    </div>
-                                                                ) : (
-                                                                    <ImageIcon className="w-6 h-6 text-muted-foreground/50" />
-                                                                )}
-                                                                <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                                    <Label htmlFor="ambient-icon-upload" className="cursor-pointer text-xs font-medium text-foreground hover:text-primary">
-                                                                        {language === 'tr' ? 'Seç' : 'Select'}
-                                                                    </Label>
-                                                                    <Input
-                                                                        id="ambient-icon-upload"
-                                                                        type="file"
-                                                                        accept="image/*"
-                                                                        className="hidden"
-                                                                        onChange={handleAmbientIconUpload}
-                                                                        disabled={isUploading}
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex-1 space-y-1">
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {language === 'tr'
-                                                                        ? 'Tavsiye edilen boyut: 64x64px (PNG, SVG, JPG). Maks 2MB.'
-                                                                        : 'Recommended size: 64x64px (PNG, SVG, JPG). Max 2MB.'}
-                                                                </p>
-                                                            </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30 overflow-hidden group">
+                                                            {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : settings.ambientIconUrl ? <img src={settings.ambientIconUrl} alt="Icon" className="w-10 h-10 object-contain" /> : <ImageIcon className="w-6 h-6" />}
+                                                            <Input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleAmbientIconUpload} disabled={isUploading} />
                                                         </div>
+                                                        <p className="text-xs text-muted-foreground">Recommended: 64x64px PNG/SVG</p>
                                                     </div>
                                                 )}
-
-                                                {/* Detaylı Renk Ayarları Akordiyonu */}
-                                                <div className="mt-4 border-t pt-4">
-                                                    <Accordion type="single" collapsible className="w-full">
-                                                        <AccordionItem value="color-settings" className="border rounded-lg px-4 shadow-sm bg-white/50">
-                                                            <AccordionTrigger className="hover:no-underline py-3">
-                                                                <span className="text-sm font-medium text-gray-700">{t('detailedColorSettings') || 'Detaylı Renk Ayarları'}</span>
-                                                            </AccordionTrigger>
-                                                            <AccordionContent className="pt-2 pb-4 space-y-4">
-                                                                <div className="grid gap-2 border-t pt-2 mt-2">
-                                                                    <Label className="text-xs">{t('iconColor') || 'İkon Rengi (Boşsa Marka Rengi)'}</Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div
-                                                                            className="h-8 w-8 rounded-full border shadow-sm"
-                                                                            style={{ backgroundColor: settings.ambientIconColor || settings.brandColor }}
-                                                                        />
-                                                                        <Input
-                                                                            type="color"
-                                                                            value={settings.ambientIconColor || settings.brandColor}
-                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientIconColor: e.target.value }))}
-                                                                            className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                        />
-                                                                        {settings.ambientIconColor && (
-                                                                            <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientIconColor: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Rengi Sıfırla' : 'Reset Color'}>
-                                                                                <Trash2 className="w-4 h-4" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid gap-2 border-t pt-2 mt-2">
-                                                                    <Label className="text-xs">{t('borderIdleColor') || 'Kapalı Çerçeve Rengi (Boşsa Rainbow)'}</Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        {settings.ambientBorderColorIdle ? (
-                                                                            <div
-                                                                                className="h-8 w-8 rounded-full border shadow-sm"
-                                                                                style={{ backgroundColor: settings.ambientBorderColorIdle }}
-                                                                            />
-                                                                        ) : (
-                                                                            <div className="h-8 w-8 rounded-full border shadow-sm bg-[linear-gradient(90deg,#17b5e8_0%,#3f6eea_30%,#7c3aed_48%,#f59e0b_76%,#84cc16_100%)]" />
-                                                                        )}
-                                                                        <Input
-                                                                            type="color"
-                                                                            value={settings.ambientBorderColorIdle || "#17b5e8"}
-                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderColorIdle: e.target.value }))}
-                                                                            className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                        />
-                                                                        {settings.ambientBorderColorIdle && (
-                                                                            <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientBorderColorIdle: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Rainbow Efektine Dön' : 'Reset to Rainbow'}>
-                                                                                <Trash2 className="w-4 h-4" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid gap-2 border-t pt-2 mt-2">
-                                                                    <Label className="text-xs">{t('borderFocusedColor') || 'Açık Çerçeve Rengi (Boşsa Marka Rengi)'}</Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div
-                                                                            className="h-8 w-8 rounded-full border shadow-sm"
-                                                                            style={{ backgroundColor: settings.ambientBorderColorFocused || settings.brandColor }}
-                                                                        />
-                                                                        <Input
-                                                                            type="color"
-                                                                            value={settings.ambientBorderColorFocused || settings.brandColor}
-                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderColorFocused: e.target.value }))}
-                                                                            className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                        />
-                                                                        {settings.ambientBorderColorFocused && (
-                                                                            <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientBorderColorFocused: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Marka Rengine Dön' : 'Reset to Brand Color'}>
-                                                                                <Trash2 className="w-4 h-4" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid gap-2 border-t pt-2 mt-2">
-                                                                    <Label className="text-xs">{t('aiBubbleBgColor') || 'Yapay Zeka Balon Rengi (Boşsa Marka Rengi)'}</Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div
-                                                                            className="h-8 w-8 rounded-full border shadow-sm"
-                                                                            style={{ backgroundColor: settings.ambientAiBubbleColor || settings.brandColor }}
-                                                                        />
-                                                                        <Input
-                                                                            type="color"
-                                                                            value={settings.ambientAiBubbleColor || settings.brandColor}
-                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientAiBubbleColor: e.target.value }))}
-                                                                            className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                        />
-                                                                        {settings.ambientAiBubbleColor && (
-                                                                            <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientAiBubbleColor: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Marka Rengine Dön' : 'Reset to Brand Color'}>
-                                                                                <Trash2 className="w-4 h-4" />
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="grid gap-2 border-t pt-2 mt-4">
-                                                                    <Label className="text-xs font-semibold text-gray-500">{t('ambientTheme') || 'Tema'}</Label>
-                                                                    <Select value={settings.ambientTheme || "light"} onValueChange={(v: "light" | "dark" | "auto") => setSettings(prev => ({ ...prev, ambientTheme: v }))}>
-                                                                        <SelectTrigger className="w-full">
-                                                                            <SelectValue placeholder={t('ambientThemePlaceholder') || 'Tema Seçin'} />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="light">{t('ambientThemeLight') || 'Aydınlık (Light)'}</SelectItem>
-                                                                            <SelectItem value="dark">{t('ambientThemeDark') || 'Karanlık (Dark)'}</SelectItem>
-                                                                            <SelectItem value="auto">{t('ambientThemeAuto') || 'Sistem Teması (Auto)'}</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <p className="text-[11px] text-gray-400 mt-1">
-                                                                        {t('ambientThemeDescription') || 'Widget gövdesi için tema. (Form ayarlarından bağımsız olarak sohbet penceresi renklerini etkiler.)'}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="grid gap-2 border-t pt-2 mt-4">
-                                                                    <Label className="text-xs font-semibold text-gray-500">{t('closedFormColors') || 'Sohbet Kapalıyken (Kapalı Form) Renkleri'}</Label>
-
-                                                                    <div className="grid gap-2 mt-2">
-                                                                        <Label className="text-xs">{t('closedFormBgColor') || 'Zemin Rengi (Boşsa İlk Gri)'}</Label>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div
-                                                                                className="h-8 w-8 rounded-full border shadow-sm"
-                                                                                style={{ backgroundColor: settings.ambientClosedBgColor || '#f3f4f6' }}
-                                                                            />
-                                                                            <Input
-                                                                                type="color"
-                                                                                value={settings.ambientClosedBgColor || '#f3f4f6'}
-                                                                                onChange={(e) => setSettings(prev => ({ ...prev, ambientClosedBgColor: e.target.value }))}
-                                                                                className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                            />
-                                                                            {settings.ambientClosedBgColor && (
-                                                                                <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientClosedBgColor: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Zemin Rengine Dön' : 'Reset to Default Background'}>
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="grid gap-2 mt-2">
-                                                                        <Label className="text-xs">{t('closedFormTextColor') || 'Form Yazı Rengi (Boşsa Koyu Gri)'}</Label>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div
-                                                                                className="h-8 w-8 rounded-full border shadow-sm"
-                                                                                style={{ backgroundColor: settings.ambientInputTextColor || '#374151' }}
-                                                                            />
-                                                                            <Input
-                                                                                type="color"
-                                                                                value={settings.ambientInputTextColor || '#374151'}
-                                                                                onChange={(e) => setSettings(prev => ({ ...prev, ambientInputTextColor: e.target.value }))}
-                                                                                className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                            />
-                                                                            {settings.ambientInputTextColor && (
-                                                                                <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientInputTextColor: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Yazı Rengine Dön' : 'Reset to Default Text Color'}>
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="grid gap-2 mt-3 mb-1">
-                                                                        <Label className="text-xs">{t('closedFormPlaceholder') || 'Girdi Metni (Placeholder)'}</Label>
-                                                                        <Input
-                                                                            value={settings.ambientPlaceholderText || ""}
-                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientPlaceholderText: e.target.value }))}
-                                                                            className="h-9 text-sm"
-                                                                            placeholder={language === 'tr' ? 'Aklınızdan geçenleri sorun...' : 'Ask what\'s on your mind...'}
-                                                                        />
-                                                                    </div>
-
-                                                                    <div className="grid gap-2 mt-2">
-                                                                        <Label className="text-xs">{t('closedFormBorderIdleColor') || 'Şifreli Çerçeve Rengi - Normal (Boşsa Zemin Gri)'}</Label>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div
-                                                                                className="h-8 w-8 rounded-full border shadow-sm"
-                                                                                style={{ backgroundColor: settings.ambientClosedBorderColorIdle || '#f3f4f6' }}
-                                                                            />
-                                                                            <Input
-                                                                                type="color"
-                                                                                value={settings.ambientClosedBorderColorIdle || '#f3f4f6'}
-                                                                                onChange={(e) => setSettings(prev => ({ ...prev, ambientClosedBorderColorIdle: e.target.value }))}
-                                                                                className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                            />
-                                                                            {settings.ambientClosedBorderColorIdle && (
-                                                                                <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientClosedBorderColorIdle: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Normal Çerçeveye Dön' : 'Reset to Default Idle Border'}>
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="grid gap-2 mt-2">
-                                                                        <Label className="text-xs">{t('closedFormBorderFocusedColor') || 'Sınırlı Çerçeve Rengi - Aktif (Boşsa Koyu Gri)'}</Label>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div
-                                                                                className="h-8 w-8 rounded-full border shadow-sm"
-                                                                                style={{ backgroundColor: settings.ambientClosedBorderColorFocused || '#d1d5db' }}
-                                                                            />
-                                                                            <Input
-                                                                                type="color"
-                                                                                value={settings.ambientClosedBorderColorFocused || '#d1d5db'}
-                                                                                onChange={(e) => setSettings(prev => ({ ...prev, ambientClosedBorderColorFocused: e.target.value }))}
-                                                                                className="h-8 w-16 p-0.5 cursor-pointer border-0 rounded"
-                                                                            />
-                                                                            {settings.ambientClosedBorderColorFocused && (
-                                                                                <Button variant="ghost" size="icon" onClick={() => setSettings(prev => ({ ...prev, ambientClosedBorderColorFocused: "" }))} className="h-8 w-8 hover:bg-red-50 hover:text-red-500 transition-colors" title={language === 'tr' ? 'Varsayılan Aktif Çerçeveye Dön' : 'Reset to Default Focused Border'}>
-                                                                                    <Trash2 className="w-4 h-4" />
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </AccordionContent>
-                                                        </AccordionItem>
-                                                    </Accordion>
-                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
+
+                        <AccordionItem value="ambient-colors" className="border rounded-lg px-4 bg-card">
+                            <AccordionTrigger className="hover:no-underline">
+                                <span className="text-sm font-medium">{language === 'tr' ? 'Renkler & Çerçeve Efektleri' : 'Colors & Border Effects'}</span>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4 pb-6">
+                                <div className="grid gap-6">
+                                    <div className="rounded-lg border bg-muted/20 p-3">
+                                        <Label className="text-xs font-semibold">
+                                            {language === 'tr' ? 'Durum Bazlı Görünüm' : 'State-Based Styling'}
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {language === 'tr'
+                                                ? 'Kapalı = feed kapalı, Açık = mesaj paneli görünür, Odaklı = input focus.'
+                                                : 'Collapsed = feed hidden, Open = message panel visible, Focused = input focus.'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {language === 'tr'
+                                                ? 'Form çerçevesi (Pasif/Odaklı) kapalı ve açık durumda ortak kullanılır.'
+                                                : 'Form border (Idle/Focused) is shared across collapsed and open states.'}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {language === 'tr'
+                                                ? 'Not: Gökkuşağı çerçeve animasyonu açıkken bazı açık durum çerçeve renkleri görsel olarak override edilir.'
+                                                : 'Note: Rainbow border animation can visually override some open-state border colors.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="rounded-lg border p-3 grid gap-3">
+                                        <Label className="text-xs font-semibold">
+                                            {language === 'tr' ? 'Preview State Simulator (Kaydedilmez)' : 'Preview State Simulator (Local Only)'}
+                                        </Label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div className="grid gap-1">
+                                                <Label className="text-[10px]">{language === 'tr' ? 'Durum' : 'State'}</Label>
+                                                <Select value={ambientPreviewStatus} onValueChange={(v) => setAmbientPreviewStatus(v as "auto" | "collapsed" | "open")}>
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="auto">{language === 'tr' ? 'Otomatik (Preview tıklaması)' : 'Auto (click preview)'}</SelectItem>
+                                                        <SelectItem value="collapsed">{language === 'tr' ? 'Kapalı (Collapsed)' : 'Collapsed'}</SelectItem>
+                                                        <SelectItem value="open">{language === 'tr' ? 'Açık (Expanded)' : 'Expanded'}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid gap-1">
+                                                <Label className="text-[10px]">{language === 'tr' ? 'Odak' : 'Focus'}</Label>
+                                                <Select
+                                                    value={ambientPreviewFocus}
+                                                    disabled={ambientPreviewStatus === "auto"}
+                                                    onValueChange={(v) => setAmbientPreviewFocusState(v as "idle" | "focused")}
+                                                >
+                                                    <SelectTrigger className="h-8 text-xs">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="idle">{language === 'tr' ? 'Pasif' : 'Idle'}</SelectItem>
+                                                        <SelectItem value="focused">{language === 'tr' ? 'Odaklı' : 'Focused'}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid gap-1">
+                                                <Label className="text-[10px]">{language === 'tr' ? 'Thinking' : 'Thinking'}</Label>
+                                                <div className="h-8 rounded-md border px-2 flex items-center justify-between">
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        {ambientPreviewThinking
+                                                            ? (language === 'tr' ? 'Açık' : 'On')
+                                                            : (language === 'tr' ? 'Kapalı' : 'Off')}
+                                                    </span>
+                                                    <Switch
+                                                        checked={ambientPreviewThinking}
+                                                        onCheckedChange={setAmbientPreviewThinking}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-4">
+                                        <div className="rounded-lg border p-4 grid gap-3">
+                                            <Label className="text-xs font-semibold">
+                                                {language === 'tr' ? 'Genel' : 'General'}
+                                            </Label>
+                                            <div className="grid gap-2">
+                                                <Label className="text-xs">{language === 'tr' ? 'İkon Rengi' : 'Icon Color'}</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-8 w-8 rounded-full border" style={{ backgroundColor: settings.ambientIconColor || settings.brandColor }} />
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientIconColor || settings.brandColor}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientIconColor: e.target.value }))}
+                                                        className="h-8 w-16 p-0.5 cursor-pointer"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label className="text-xs font-semibold">{language === 'tr' ? 'Tema' : 'Theme'}</Label>
+                                                <Select value={settings.ambientTheme || "light"} onValueChange={(v: any) => setSettings(prev => ({ ...prev, ambientTheme: v }))}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="light">{language === 'tr' ? 'Aydınlık' : 'Light'}</SelectItem>
+                                                        <SelectItem value="dark">{language === 'tr' ? 'Karanlık' : 'Dark'}</SelectItem>
+                                                        <SelectItem value="auto">{language === 'tr' ? 'Sistem' : 'System'}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-lg border p-4 grid gap-3">
+                                            <Label className="text-xs font-semibold">
+                                                {language === 'tr' ? 'Form Çerçevesi (Ortak)' : 'Form Border (Shared)'}
+                                            </Label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Çerçeve (Pasif)' : 'Border (Idle)'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientBorderColorIdle || settings.ambientClosedBorderColorIdle || "#17b5e8"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderColorIdle: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Çerçeve (Odaklı)' : 'Border (Focused)'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientBorderColorFocused || settings.ambientClosedBorderColorFocused || settings.brandColor || "#3b82f6"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderColorFocused: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                {language === 'tr'
+                                                    ? 'Bu çerçeve renkleri kapalı ve açık widget durumunda ortak kullanılır.'
+                                                    : 'These border colors are shared across collapsed and open widget states.'}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-lg border p-4 grid gap-3">
+                                            <Label className="text-xs font-semibold">
+                                                {language === 'tr' ? 'Kapalı Durum (Collapsed)' : 'Collapsed State'}
+                                            </Label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Arka Plan' : 'Background'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientClosedBgColor || "#f3f4f6"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientClosedBgColor: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Metin Rengi (Ortak)' : 'Text Color (Shared)'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientInputTextColor || "#374151"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientInputTextColor: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Placeholder (Ortak)' : 'Placeholder (Shared)'}</Label>
+                                                    <Input
+                                                        value={settings.ambientPlaceholderText || ""}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientPlaceholderText: e.target.value }))}
+                                                        placeholder={language === 'tr' ? "Soru sorun..." : "Ask something..."}
+                                                        className="h-8 text-xs"
+                                                    />
+                                                </div>
+                                                <div className="hidden sm:block" />
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground">
+                                                {language === 'tr'
+                                                    ? 'v1: Metin rengi ve placeholder kapalı/açık durumda ortak kullanılır.'
+                                                    : 'v1: Text color and placeholder are shared between collapsed and open states.'}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-lg border p-4 grid gap-3">
+                                            <Label className="text-xs font-semibold">
+                                                {language === 'tr' ? 'Açık Durum (Expanded)' : 'Open State'}
+                                            </Label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Arka Plan (Pasif)' : 'Background (Idle)'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientInputBgColorIdle || settings.ambientClosedBgColor || "#f3f4f6"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientInputBgColorIdle: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'AI Mesaj Balonu' : 'AI Message Bubble'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientAiBubbleColor || settings.brandColor || "#3b82f6"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientAiBubbleColor: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                                <div className="grid gap-1">
+                                                    <Label className="text-[10px]">{language === 'tr' ? 'Kullanıcı Mesaj Balonu' : 'User Message Bubble'}</Label>
+                                                    <Input
+                                                        type="color"
+                                                        value={settings.ambientUserBubbleColor || "#ffffff"}
+                                                        onChange={(e) => setSettings(prev => ({ ...prev, ambientUserBubbleColor: e.target.value }))}
+                                                        className="h-8 p-0.5"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Accordion type="single" collapsible className="w-full">
+                                            <AccordionItem value="ambient-advanced-state" className="border rounded-lg px-4">
+                                                <AccordionTrigger className="hover:no-underline py-3">
+                                                    <span className="text-xs font-semibold">{language === 'tr' ? 'Gelişmiş' : 'Advanced'}</span>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="pb-4">
+                                                    <div className="grid gap-4">
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div className="grid gap-1">
+                                                                <Label className="text-[10px]">{language === 'tr' ? 'Açık > Arka Plan (Odaklı)' : 'Open > Background (Focused)'}</Label>
+                                                                <Input
+                                                                    type="color"
+                                                                    value={settings.ambientInputBgColorFocused || settings.ambientInputBgColorIdle || settings.ambientClosedBgColor || "#f3f4f6"}
+                                                                    onChange={(e) => setSettings(prev => ({ ...prev, ambientInputBgColorFocused: e.target.value }))}
+                                                                    className="h-8 p-0.5"
+                                                                />
+                                                            </div>
+                                                            <div className="grid gap-1">
+                                                                <Label className="text-[10px]">{language === 'tr' ? 'Gradient Görünürlük' : 'Gradient Visibility'}</Label>
+                                                                <div className="rounded-md border bg-muted/20 px-2 py-1.5 flex flex-wrap items-center gap-3 text-[10px]">
+                                                                    <label className="inline-flex items-center gap-1.5">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={settings.ambientBorderGradientShowWhenCollapsed ?? false}
+                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderGradientShowWhenCollapsed: e.target.checked }))}
+                                                                        />
+                                                                        <span>{language === 'tr' ? 'Kapalı' : 'Collapsed'}</span>
+                                                                    </label>
+                                                                    <label className="inline-flex items-center gap-1.5">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={settings.ambientBorderGradientShowWhenOpen ?? true}
+                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderGradientShowWhenOpen: e.target.checked }))}
+                                                                        />
+                                                                        <span>{language === 'tr' ? 'Açık' : 'Open'}</span>
+                                                                    </label>
+                                                                    <label className="inline-flex items-center gap-1.5">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={settings.ambientBorderGradientShowWhenThinking ?? true}
+                                                                            onChange={(e) => setSettings(prev => ({ ...prev, ambientBorderGradientShowWhenThinking: e.target.checked }))}
+                                                                        />
+                                                                        <span>{language === 'tr' ? 'Thinking' : 'Thinking'}</span>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                            {[1, 2, 3, 4].map((idx) => {
+                                                                const key = `ambientBorderGradientColor${idx}` as const
+                                                                const fallback = ["#17b5e8", "#3f6eea", "#7c3aed", "#f59e0b"][idx - 1]
+                                                                return (
+                                                                    <div key={key} className="grid gap-1">
+                                                                        <Label className="text-[10px]">{language === 'tr' ? `Gradient Renk ${idx}` : `Gradient Color ${idx}`}</Label>
+                                                                        <Input
+                                                                            type="color"
+                                                                            value={(settings as any)[key] || fallback}
+                                                                            onChange={(e) => setSettings(prev => ({ ...prev, [key]: e.target.value } as any))}
+                                                                            className="h-8 p-0.5"
+                                                                        />
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+
+                                                        <div className="grid gap-2 pt-2 border-t">
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <div>
+                                                                    <Label className="text-sm font-medium">{language === 'tr' ? 'Gökkuşağı Çerçeve Animasyonu' : 'Rainbow Border Animation'}</Label>
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        {language === 'tr'
+                                                                            ? 'Açık durumda/yanıt sırasında bazı çerçeve renklerini görsel olarak override edebilir.'
+                                                                            : 'May visually override some open-state border colors while active/loading.'}
+                                                                    </p>
+                                                                </div>
+                                                                <Switch
+                                                                    checked={settings.enableAmbientRainbowBorder}
+                                                                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableAmbientRainbowBorder: checked }))}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
                     </Accordion>
+                    </div>
                 ) : (
-                    <Accordion type="single" collapsible defaultValue="widget-position" className="w-full space-y-2">
+                    <div className="space-y-2">
+                        <div className="border rounded-lg p-4 bg-card">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <Label className="text-sm font-medium">{language === 'tr' ? 'Classic: Cihaza Göre Ayrı Ayarlar' : 'Classic: Per-Device Settings'}</Label>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {language === 'tr'
+                                            ? 'Kapalıysa mevcut shared classic ayarlar kullanılır. Açıkken Desktop/Mobile için ayrı launcher görünümü düzenlenir.'
+                                            : 'Disabled = shared classic settings. Enabled = separate Desktop/Mobile launcher appearance.'}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={classicDeviceModeEnabled}
+                                    onCheckedChange={toggleClassicPerDeviceSettings}
+                                />
+                            </div>
+                            {classicDeviceModeEnabled && (
+                                <div className="mt-3 flex p-1 bg-muted rounded-lg w-full max-w-xs">
+                                    <button
+                                        type="button"
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'desktop' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => setActiveDevice('desktop')}
+                                    >
+                                        {t('desktop') || 'Desktop'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'mobile' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                        onClick={() => setActiveDevice('mobile')}
+                                    >
+                                        {t('mobile') || 'Mobile'}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <Accordion type="single" collapsible defaultValue="widget-position" className="w-full space-y-2">
                         <AccordionItem value="widget-position" className="border rounded-lg px-4">
                             <AccordionTrigger className="hover:no-underline">
                                 <span className="text-sm font-medium">{t('positionLayout') || 'Widget Pozisyonu'}</span>
@@ -1379,10 +1562,12 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                         type="range"
                                                         min="0"
                                                         max="100"
-                                                        value={activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20)}
+                                                        value={classicDeviceModeEnabled
+                                                            ? (settings.bottomSpacing ?? 20)
+                                                            : (activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20))}
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value);
-                                                            if (activeDevice === 'desktop') {
+                                                            if (classicDeviceModeEnabled || activeDevice === 'desktop') {
                                                                 setSettings(prev => ({ ...prev, bottomSpacing: val }))
                                                             } else {
                                                                 setSettings(prev => ({ ...prev, mobileBottomSpacing: val }))
@@ -1391,7 +1576,9 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                         className="flex-1"
                                                     />
                                                     <span className="text-xs w-8 text-right">
-                                                        {activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20)}
+                                                        {classicDeviceModeEnabled
+                                                            ? (settings.bottomSpacing ?? 20)
+                                                            : (activeDevice === 'desktop' ? settings.bottomSpacing : (settings.mobileBottomSpacing ?? 20))}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1402,10 +1589,12 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                         type="range"
                                                         min="0"
                                                         max="100"
-                                                        value={activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20)}
+                                                        value={classicDeviceModeEnabled
+                                                            ? (settings.sideSpacing ?? 20)
+                                                            : (activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20))}
                                                         onChange={(e) => {
                                                             const val = parseInt(e.target.value);
-                                                            if (activeDevice === 'desktop') {
+                                                            if (classicDeviceModeEnabled || activeDevice === 'desktop') {
                                                                 setSettings(prev => ({ ...prev, sideSpacing: val }))
                                                             } else {
                                                                 setSettings(prev => ({ ...prev, mobileSideSpacing: val }))
@@ -1414,7 +1603,9 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                         className="flex-1"
                                                     />
                                                     <span className="text-xs w-8 text-right">
-                                                        {activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20)}
+                                                        {classicDeviceModeEnabled
+                                                            ? (settings.sideSpacing ?? 20)
+                                                            : (activeDevice === 'desktop' ? settings.sideSpacing : (settings.mobileSideSpacing ?? 20))}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1430,12 +1621,14 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                             ) : (
                                                 <div className="grid grid-cols-3 gap-2">
                                                     {['none', 'pulse', 'bounce', 'wiggle', 'float', 'spin'].map((anim) => {
-                                                        const currentAnim = activeDevice === 'desktop' ? settings.launcherAnimation : (settings.mobileLauncherAnimation ?? 'none');
+                                                        const currentAnim = classicDeviceModeEnabled
+                                                            ? (settings.launcherAnimation ?? 'none')
+                                                            : (activeDevice === 'desktop' ? settings.launcherAnimation : (settings.mobileLauncherAnimation ?? 'none'));
                                                         return (
                                                             <button
                                                                 key={anim}
                                                                 onClick={() => {
-                                                                    if (activeDevice === 'desktop') {
+                                                                    if (classicDeviceModeEnabled || activeDevice === 'desktop') {
                                                                         setSettings(prev => ({ ...prev, launcherAnimation: anim }))
                                                                     } else {
                                                                         setSettings(prev => ({ ...prev, mobileLauncherAnimation: anim }))
@@ -1455,9 +1648,9 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
+                    </div>
                 )}
             </div>
-        </div >
+        </div>
     )
 }
-

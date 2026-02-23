@@ -84,25 +84,26 @@ function WidgetTestPageContent() {
     }
 
     return (
-        <div className={`min-h-screen p-8 font-sans transition-colors ${isDark ? "bg-zinc-950 text-zinc-100" : "bg-gray-100 text-gray-900"}`}>
-            <div className={`max-w-3xl mx-auto rounded-xl shadow-sm border p-12 transition-colors ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-gray-100"}`}>
-                <div className="flex items-start justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                        <MessageSquare className="h-6 w-6" />
+        <div className={`min-h-screen px-3 py-4 sm:p-8 font-sans transition-colors ${isDark ? "bg-zinc-950 text-zinc-100" : "bg-gray-100 text-gray-900"}`}>
+            <div className={`w-full max-w-3xl mx-auto rounded-xl shadow-sm border p-4 sm:p-8 lg:p-12 transition-colors ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-gray-100"}`}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                        <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl font-bold">Widget Integration Test</h1>
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold leading-tight">Widget Integration Test</h1>
                             <p className={isDark ? "text-zinc-400" : "text-muted-foreground"}>
-                                Testing environment for chatbot ID: <code className={`px-2 py-1 rounded text-sm ${isDark ? "bg-zinc-800 text-zinc-200" : "bg-gray-100 text-gray-800"}`}>{id}</code>
+                                Testing environment for chatbot ID:
+                                <code className={`mt-1 sm:mt-0 sm:ml-1 inline-block align-middle px-2 py-1 rounded text-xs sm:text-sm break-all ${isDark ? "bg-zinc-800 text-zinc-200" : "bg-gray-100 text-gray-800"}`}>{id}</code>
                             </p>
                         </div>
                     </div>
-                    <div className={`inline-flex items-center rounded-full p-1 border ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-gray-100 border-gray-200"}`}>
+                    <div className={`inline-flex items-center rounded-full p-1 border self-start sm:self-auto ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-gray-100 border-gray-200"}`}>
                         <button
                             type="button"
                             onClick={() => handleThemeChange("light")}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${!isDark ? "bg-white text-gray-900 shadow-sm" : "text-zinc-300 hover:text-zinc-100"}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm transition-colors ${!isDark ? "bg-white text-gray-900 shadow-sm" : "text-zinc-300 hover:text-zinc-100"}`}
                             aria-pressed={!isDark}
                         >
                             <Sun className="h-4 w-4" />
@@ -111,7 +112,7 @@ function WidgetTestPageContent() {
                         <button
                             type="button"
                             onClick={() => handleThemeChange("dark")}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${isDark ? "bg-zinc-700 text-zinc-100 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm transition-colors ${isDark ? "bg-zinc-700 text-zinc-100 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
                             aria-pressed={isDark}
                         >
                             <Moon className="h-4 w-4" />
@@ -120,7 +121,7 @@ function WidgetTestPageContent() {
                     </div>
                 </div>
 
-                <div className={`space-y-4 ${isDark ? "text-zinc-300" : "text-gray-600"}`}>
+                <div className={`space-y-4 text-sm sm:text-base ${isDark ? "text-zinc-300" : "text-gray-600"}`}>
                     <p>
                         This page simulates a client website where the chatbot widget is installed.
                     </p>
@@ -133,7 +134,7 @@ function WidgetTestPageContent() {
                         )}
                     </div>
 
-                    <h3 className={`font-semibold mt-8 ${isDark ? "text-zinc-100" : "text-gray-900"}`}>Test Checklist:</h3>
+                    <h3 className={`font-semibold mt-6 sm:mt-8 ${isDark ? "text-zinc-100" : "text-gray-900"}`}>Test Checklist:</h3>
                     <ul className="list-disc list-inside space-y-2 ml-2">
                         <li>Verify the launcher icon appears.</li>
                         <li>Click the launcher to open the chat modal.</li>

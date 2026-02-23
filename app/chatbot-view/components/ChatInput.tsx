@@ -4,6 +4,7 @@ import { Send, ImageIcon, Mic, X, ChevronDown, ChevronUp, RefreshCw, MessageCirc
 import { useVisualContext } from "../hooks/useVisualContext"
 import Image from "next/image"
 import { event as trackEvent } from "@/lib/gtag"
+import { getAmbientDockStateKey, resolveAmbientDockStyle } from "@/lib/ambient-dock-style"
 
 interface ChatInputProps {
     settings: ChatbotSettings
@@ -72,21 +73,43 @@ export function ChatInput({
         xl: { height: 'h-[68px]', btnSize: 'h-11 w-11', iconSize: 'w-5 h-5', textSize: 'text-xl', inputPy: 'py-3.5', inputPl: 'pl-6', inputPr: 'pr-2', gap: 'gap-2.5' },
     }[inputSize]
 
-    const ambientActionButtonClass = `${sizeConfig.btnSize} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700`
+    const ambientActionButtonClass = `${sizeConfig.btnSize} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700 dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70 dark:hover:bg-zinc-700/95 dark:hover:text-zinc-100 dark:hover:border-zinc-600`
     const ambientSendButtonClass = `${sizeConfig.btnSize} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
 
     const [isInputFocused, setIsInputFocused] = React.useState(false)
+    const [isMobileViewport, setIsMobileViewport] = React.useState(false)
     const inputRef = React.useRef<HTMLInputElement>(null)
+    const ambientDockStyles = isAmbientMode
+        ? resolveAmbientDockStyle({
+            settings,
+            state: getAmbientDockStateKey({
+                isCollapsed: isAmbientInputOnly,
+                isFocused: isInputFocused,
+            }),
+            isChatLoading,
+        })
+        : null
+
+    React.useEffect(() => {
+        const updateViewportFlags = () => {
+            if (typeof window === "undefined") return
+            setIsMobileViewport(window.innerWidth < 768)
+        }
+
+        updateViewportFlags()
+        window.addEventListener("resize", updateViewportFlags)
+        return () => window.removeEventListener("resize", updateViewportFlags)
+    }, [])
 
     React.useEffect(() => {
         // Automatically focus the input when AI finishes answering
-        if (!isChatLoading && inputRef.current && !ambientInputOnly) {
+        if (!isChatLoading && inputRef.current && !ambientInputOnly && !isMobileViewport) {
             // setTimeout to ensure it runs after any pending renders
             setTimeout(() => {
                 inputRef.current?.focus()
             }, 10)
         }
-    }, [isChatLoading, ambientInputOnly])
+    }, [isChatLoading, ambientInputOnly, isMobileViewport])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -193,6 +216,31 @@ export function ChatInput({
         }
     }
 
+    const ambientDockWrapperClassName = isAmbientMode
+        ? `rounded-[999px] p-[2px] transition-all duration-500 ${isAmbientInputOnly
+            ? (ambientDockStyles?.borderMode === 'animated'
+                ? 'ambient-border-animated shadow-md hover:shadow-lg'
+                : 'shadow-md hover:shadow-lg')
+            : ambientDockStyles?.borderMode === 'animated'
+                ? 'ambient-border-animated shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+                : ambientDockStyles?.borderMode === 'gradient'
+                    ? 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+                    : 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+        }`
+        : ""
+    const ambientDockWrapperStyle = isAmbientMode
+        ? ({
+            ...(ambientDockStyles?.gradientCssVars || {}),
+            ...(ambientDockStyles?.borderMode === 'solid' && ambientDockStyles.outerBorderColor
+                ? { backgroundColor: ambientDockStyles.outerBorderColor }
+                : (ambientDockStyles && ambientDockStyles.borderMode === 'gradient')
+                    ? {
+                        background: `linear-gradient(90deg, ${ambientDockStyles.gradientColors[0]} 0%, ${ambientDockStyles.gradientColors[1]} 33%, ${ambientDockStyles.gradientColors[2]} 66%, ${ambientDockStyles.gradientColors[3]} 100%)`
+                    }
+                    : {}),
+        } as React.CSSProperties)
+        : undefined
+
     return (
         <div
             className={isAmbientMode
@@ -206,60 +254,17 @@ export function ChatInput({
                 className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : "max-w-3xl"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
-                {isAmbientMode && (
-                    <style>{`
-                        @keyframes ambient-border-rotate {
-                            0% { --ambient-angle: 0deg; }
-                            100% { --ambient-angle: 360deg; }
-                        }
-                        .ambient-border-animated {
-                            background: conic-gradient(from var(--ambient-angle, 0deg), #17b5e8, #3f6eea, #7c3aed, #f59e0b, #84cc16, #17b5e8);
-                            animation: ambient-border-rotate 4s linear infinite;
-                        }
-                        @property --ambient-angle {
-                            syntax: '<angle>';
-                            initial-value: 0deg;
-                            inherits: false;
-                        }
-                    `}</style>
-                )}
+                {/* Rainbow Border Style is now in globals.css */}
                 <div
-                    className={isAmbientMode
-                        ? `rounded-[999px] p-[2px] transition-all duration-500 ${isAmbientInputOnly
-                            ? 'shadow-md hover:shadow-lg'
-                            : (isChatLoading
-                                ? 'ambient-border-animated shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
-                                : (isInputFocused
-                                    ? 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
-                                    : (settings.ambientBorderColorIdle
-                                        ? 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
-                                        : 'bg-[linear-gradient(90deg,#17b5e8_0%,#3f6eea_30%,#7c3aed_48%,#f59e0b_76%,#84cc16_100%)] shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
-                                    )
-                                )
-                            )
-                        }`
-                        : ""}
-                    style={isAmbientMode
-                        ? (isAmbientInputOnly
-                            ? (isInputFocused
-                                ? { backgroundColor: settings.ambientClosedBorderColorFocused || '#d1d5db' } // Default gray-300 if empty
-                                : { backgroundColor: settings.ambientClosedBorderColorIdle || '#f3f4f6' }     // Default gray-100 if empty
-                            )
-                            : (!isChatLoading
-                                ? (isInputFocused
-                                    ? { backgroundColor: settings.ambientBorderColorFocused || settings.brandColor || '#3b82f6' }
-                                    : (settings.ambientBorderColorIdle ? { backgroundColor: settings.ambientBorderColorIdle } : undefined)
-                                )
-                                : undefined)
-                        )
-                        : undefined}
+                    className={ambientDockWrapperClassName}
+                    style={ambientDockWrapperStyle}
                 >
                     <form
                         onSubmit={handleSubmit}
                         className={isAmbientMode
                             ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
                             : "relative flex items-center gap-2"}
-                        style={isAmbientMode ? { backgroundColor: settings.ambientClosedBgColor || '#f3f4f6' } : undefined}
+                        style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || '#f3f4f6' } : undefined}
                     >
                         {/* Image Preview */}
                         {selectedImage && (
@@ -359,15 +364,29 @@ export function ChatInput({
                                 onChange={(e) => setLocalInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 type="text"
-                                autoFocus={isAmbientMode}
+                                autoFocus={isAmbientMode && !isMobileViewport}
                                 disabled={isChatLoading}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck={false}
+                                enterKeyHint="send"
+                                name="vion-chat-input"
                                 placeholder={selectedImage
                                     ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
                                     : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
                                 className={isAmbientMode
                                     ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400`
                                     : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"}
-                                style={isAmbientMode ? { color: settings.ambientInputTextColor || '#4b5563' } : ({ '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor } as any)}
+                                style={isAmbientMode
+                                    ? {
+                                        color: settings.ambientInputTextColor || '#4b5563',
+                                        fontSize: isMobileViewport ? '16px' : undefined,
+                                    }
+                                    : ({
+                                        '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor,
+                                        fontSize: isMobileViewport ? '16px' : undefined,
+                                    } as any)}
                                 onFocus={() => isAmbientMode && setIsInputFocused(true)}
                                 onBlur={() => isAmbientMode && setIsInputFocused(false)}
                             />
@@ -412,7 +431,7 @@ export function ChatInput({
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
-                                className={`${ambientActionButtonClass} ${selectedImage ? '!bg-emerald-50 !text-emerald-700 !border-emerald-200' : ''} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`${ambientActionButtonClass} ${selectedImage ? '!bg-emerald-50 !text-emerald-700 !border-emerald-200 dark:!bg-emerald-950/60 dark:!text-emerald-300 dark:!border-emerald-800/70' : ''} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                             >
                                 <ImageIcon className={sizeConfig.iconSize} />
@@ -423,7 +442,7 @@ export function ChatInput({
                             <button
                                 type="button"
                                 onClick={handleVoiceInput}
-                                className={`${ambientActionButtonClass} ${isListening ? '!bg-red-50 !text-red-600 !border-red-200 animate-pulse' : ''}`}
+                                className={`${ambientActionButtonClass} ${isListening ? '!bg-red-50 !text-red-600 !border-red-200 dark:!bg-red-950/60 dark:!text-red-300 dark:!border-red-800/70 animate-pulse' : ''}`}
                                 title={t('voiceReady')}
                             >
                                 <Mic className={sizeConfig.iconSize} />

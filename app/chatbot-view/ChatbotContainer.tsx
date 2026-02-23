@@ -20,6 +20,8 @@ import { BookingOverlay } from "./components/BookingOverlay"
 import { ConfirmationModal } from "./components/ConfirmationModal"
 import { VoiceOverlay } from "./components/VoiceOverlay"
 import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
+import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
+import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 
 type LeadSubmitOptions = {
     source?: "inline" | "overlay"
@@ -53,9 +55,7 @@ export default function ChatbotContainer() {
     const [showLeadCollection, setShowLeadCollection] = useState(false)
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
 
-    // Offline mode - when business hours are not active
-    const offlineMessage = searchParams?.get("offlineMessage") || null
-    const isOffline = !!offlineMessage
+
 
     // Mobile Keyboard Fix: Visual Viewport
     const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0 });
@@ -65,9 +65,11 @@ export default function ChatbotContainer() {
             const handleResize = () => {
                 // Only apply on mobile where keyboard creates visual viewport shift
                 if (window.innerWidth < 768) {
+                    const vvHeight = window.visualViewport?.height ?? window.innerHeight
+                    const keyboardDelta = window.innerHeight - vvHeight
                     setViewportStyle({
-                        height: `${window.visualViewport?.height}px`,
-                        top: window.visualViewport?.offsetTop || 0
+                        height: keyboardDelta > 80 ? `${vvHeight}px` : '100%',
+                        top: 0
                     })
                 } else {
                     setViewportStyle({ height: '100%', top: 0 })
@@ -75,14 +77,12 @@ export default function ChatbotContainer() {
             }
 
             window.visualViewport.addEventListener('resize', handleResize)
-            window.visualViewport.addEventListener('scroll', handleResize)
 
             // Initial check
             handleResize()
 
             return () => {
                 window.visualViewport?.removeEventListener('resize', handleResize)
-                window.visualViewport?.removeEventListener('scroll', handleResize)
             }
         }
     }, [])
@@ -359,6 +359,16 @@ export default function ChatbotContainer() {
     }
 
     const isAmbientMode = settings.chatDisplayMode === "ambient"
+    const runtimeDevice = (isClient && typeof window !== "undefined" && window.innerWidth < 768) ? "mobile" : "desktop"
+    const effectiveAmbientSettings = {
+        ...settings,
+        ...resolveAmbientDeviceSettings(settings, runtimeDevice),
+    }
+    const effectiveClassicSettings = {
+        ...settings,
+        ...resolveClassicDeviceSettings(settings, runtimeDevice),
+    }
+    const effectiveSettings = isAmbientMode ? effectiveAmbientSettings : effectiveClassicSettings
 
     // Open ambient feed automatically when there's an active interaction (typing)
     useEffect(() => {
@@ -366,10 +376,10 @@ export default function ChatbotContainer() {
             setAmbientFeedManuallyClosed(false)
         }
     }, [isTyping, isAmbientMode])
-    const ambientOverlayOpacity = Math.max(0.2, Math.min(0.9, settings.ambientOverlayOpacity || 0.55))
-    const ambientRailHeight = Math.max(220, Math.min(460, settings.ambientMaxHeight || 300))
+    const ambientOverlayOpacity = Math.max(0.2, Math.min(0.9, effectiveSettings.ambientOverlayOpacity || 0.55))
+    const ambientRailHeight = Math.max(220, Math.min(460, effectiveSettings.ambientMaxHeight || 300))
     // Read bottom margin: prefer settings value, fallback to URL param (passed by widget.js)
-    const ambientBottomMarginFromUrl = settings.ambientBottomMargin || Number(searchParams?.get('ambientBottomMargin') || 0)
+    const ambientBottomMarginFromUrl = effectiveSettings.ambientBottomMargin || Number(searchParams?.get('ambientBottomMargin') || 0)
     const hasUserMessage = messages.some((m: any) => m.role === "user")
     const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping)
 
@@ -392,11 +402,11 @@ export default function ChatbotContainer() {
     }
 
     const ambientAlignmentStyle = {
-        maxWidth: settings.ambientWidth ? `${settings.ambientWidth}px` : '1080px',
+        maxWidth: effectiveSettings.ambientWidth ? `${effectiveSettings.ambientWidth}px` : '1080px',
         marginLeft: 'auto',
         marginRight: 'auto',
-        paddingLeft: `${settings.ambientSideMargin || 0}px`,
-        paddingRight: `${settings.ambientSideMargin || 0}px`,
+        paddingLeft: `${effectiveSettings.ambientSideMargin || 0}px`,
+        paddingRight: `${effectiveSettings.ambientSideMargin || 0}px`,
     }
 
     useEffect(() => {
@@ -417,51 +427,7 @@ export default function ChatbotContainer() {
         )
     }
 
-    // Show offline message when outside business hours
-    if (isOffline) {
-        return (
-            <div className={`flex flex-col h-screen overflow-hidden font-sans text-gray-800 ${settings.theme === 'dark' ? 'dark bg-gray-900' : 'bg-white'}`}>
-                {/* Header */}
-                <div
-                    className="p-4 flex items-center gap-3"
-                    style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
-                >
-                    {settings.headerLogo && (
-                        <img
-                            src={settings.headerLogo}
-                            alt={settings.companyName}
-                            className="h-8 w-auto object-contain"
-                        />
-                    )}
-                    <div className="text-white">
-                        <h1 className="font-semibold text-sm">{settings.companyName}</h1>
-                        <p className="text-xs opacity-80">{t('offline') || 'Çevrimdışı'}</p>
-                    </div>
-                </div>
 
-                {/* Offline Content */}
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                    <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center mb-6"
-                        style={{ backgroundColor: `${settings.brandColor}20` }}
-                    >
-                        <svg
-                            className="w-8 h-8"
-                            style={{ color: settings.brandColor }}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <p className="text-gray-600 max-w-sm text-lg font-medium">
-                        {decodeURIComponent(settings?.offlineMessage || "We are currently offline.")}
-                    </p>
-                </div>
-            </div>
-        )
-    }
 
     if (!isClient || !settings) return null
 
@@ -473,7 +439,7 @@ export default function ChatbotContainer() {
                 position: 'fixed',
                 backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}
-            className={`fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${isAmbientMode ? (settings.ambientTheme === 'dark' || (settings.ambientTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : '') : (settings.theme === 'dark' ? 'dark' : '')}`}
+            className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${isAmbientMode ? (effectiveSettings.ambientTheme === 'dark' || (effectiveSettings.ambientTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : '') : (effectiveSettings.theme === 'dark' ? 'dark' : '')}`}
         >
             {isAmbientMode && (
                 <style>{`
@@ -529,7 +495,7 @@ export default function ChatbotContainer() {
                             <MessageList
                                 mode="ambient"
                                 messages={messages}
-                                settings={settings}
+                                settings={effectiveSettings}
                                 isTyping={isTyping}
                                 language={language}
                                 imageMap={visualContext.imageMap}
@@ -544,7 +510,7 @@ export default function ChatbotContainer() {
 
                         <ChatInput
                             mode="ambient"
-                            settings={settings}
+                            settings={effectiveSettings}
                             localInput={localInput}
                             setLocalInput={setLocalInput}
                             sendMessage={(text: string, speakResponse?: boolean, visualCtx?: string) => {
@@ -569,7 +535,7 @@ export default function ChatbotContainer() {
             ) : (
                 <div className="flex h-full flex-col">
                     <ChatHeader
-                        settings={settings}
+                        settings={effectiveSettings}
                         isExpanded={isExpanded}
                         handleVoiceInput={handleVoiceInput}
                         isListening={isListening}
@@ -582,7 +548,7 @@ export default function ChatbotContainer() {
                     <MessageList
                         mode="classic"
                         messages={messages}
-                        settings={settings}
+                        settings={effectiveSettings}
                         isTyping={isTyping}
                         language={language}
                         imageMap={visualContext.imageMap}
@@ -596,7 +562,7 @@ export default function ChatbotContainer() {
 
                     <ChatInput
                         mode="classic"
-                        settings={settings}
+                        settings={effectiveSettings}
                         localInput={localInput}
                         setLocalInput={setLocalInput}
                         sendMessage={sendMessage}

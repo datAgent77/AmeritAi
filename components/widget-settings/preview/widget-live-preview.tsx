@@ -5,23 +5,37 @@ import { Button } from "@/components/ui/button"
 import { WidgetSettings } from "@/hooks/use-widget-settings"
 import { PreviewClassic } from "./preview-classic"
 import { PreviewAmbient } from "./preview-ambient"
+import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
+import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
+import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 
 interface WidgetLivePreviewProps {
     settings: WidgetSettings
     t: (key: string) => string
+    ambientPreviewDockState?: AmbientDockPreviewState
+    ambientPreviewThinking?: boolean
 }
 
-export function WidgetLivePreview({ settings, t }: WidgetLivePreviewProps) {
+export function WidgetLivePreview({
+    settings,
+    t,
+    ambientPreviewDockState = "auto",
+    ambientPreviewThinking = false,
+}: WidgetLivePreviewProps) {
     const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [lottieData, setLottieData] = useState<any>(null)
 
     const isAmbientMode = settings.chatDisplayMode === "ambient"
+    const previewDevice = previewMode === "mobile" ? "mobile" : "desktop"
+    const effectivePreviewSettings = isAmbientMode
+        ? { ...settings, ...resolveAmbientDeviceSettings(settings, previewDevice) }
+        : { ...settings, ...resolveClassicDeviceSettings(settings, previewDevice) }
 
     // Fetch Lottie animation data for preview
     useEffect(() => {
-        if (settings.launcherLottieUrl && settings.launcherLottieUrl.trim()) {
-            fetch(settings.launcherLottieUrl)
+        if (effectivePreviewSettings.launcherLottieUrl && effectivePreviewSettings.launcherLottieUrl.trim()) {
+            fetch(effectivePreviewSettings.launcherLottieUrl)
                 .then(res => res.json())
                 .then(data => setLottieData(data))
                 .catch(err => {
@@ -31,7 +45,7 @@ export function WidgetLivePreview({ settings, t }: WidgetLivePreviewProps) {
         } else {
             setLottieData(null)
         }
-    }, [settings.launcherLottieUrl])
+    }, [effectivePreviewSettings.launcherLottieUrl])
 
     return (
         <div className="flex-1 flex flex-col items-center bg-muted/30 rounded-xl border border-dashed border-border/50 p-6 min-h-[600px] h-full overflow-y-auto">
@@ -65,14 +79,16 @@ export function WidgetLivePreview({ settings, t }: WidgetLivePreviewProps) {
                         <div className="rounded-[2rem] overflow-hidden w-full h-full bg-white dark:bg-gray-950 flex flex-col relative">
                             {isAmbientMode ? (
                                 <PreviewAmbient
-                                    settings={settings}
+                                    settings={effectivePreviewSettings}
                                     previewMode={previewMode}
                                     isPreviewOpen={isPreviewOpen}
                                     setIsPreviewOpen={setIsPreviewOpen}
+                                    previewAmbientDockState={ambientPreviewDockState}
+                                    previewAmbientThinking={ambientPreviewThinking}
                                 />
                             ) : (
                                 <PreviewClassic
-                                    settings={settings}
+                                    settings={effectivePreviewSettings}
                                     previewMode={previewMode}
                                     isPreviewOpen={isPreviewOpen}
                                     setIsPreviewOpen={setIsPreviewOpen}
@@ -112,14 +128,16 @@ export function WidgetLivePreview({ settings, t }: WidgetLivePreviewProps) {
                             {/* Inner Preview Content */}
                             {isAmbientMode ? (
                                 <PreviewAmbient
-                                    settings={settings}
+                                    settings={effectivePreviewSettings}
                                     previewMode={previewMode}
                                     isPreviewOpen={isPreviewOpen}
                                     setIsPreviewOpen={setIsPreviewOpen}
+                                    previewAmbientDockState={ambientPreviewDockState}
+                                    previewAmbientThinking={ambientPreviewThinking}
                                 />
                             ) : (
                                 <PreviewClassic
-                                    settings={settings}
+                                    settings={effectivePreviewSettings}
                                     previewMode={previewMode}
                                     isPreviewOpen={isPreviewOpen}
                                     setIsPreviewOpen={setIsPreviewOpen}

@@ -44,6 +44,7 @@
     launcherHoverEffect: 'scale',
     enableContextAwareness: false
   };
+  let baseDeviceAwareSettings = null;
 
   // Global Context Data
   let dynamicContextData = {};
@@ -70,6 +71,116 @@
   // Helper: Check if mobile device
   function isMobileDevice() {
     return window.innerWidth < 768;
+  }
+
+  function mergeDefined(target, source) {
+    const out = { ...target };
+    if (!source || typeof source !== 'object') return out;
+    Object.keys(source).forEach((key) => {
+      if (source[key] !== undefined) out[key] = source[key];
+    });
+    return out;
+  }
+
+  function resolveAmbientDeviceSettingsForWidget(source, device) {
+    const shared = {};
+    [
+      'ambientMaxHeight',
+      'ambientOverlayOpacity',
+      'ambientWidth',
+      'ambientSideMargin',
+      'ambientBottomMargin',
+      'ambientInputSize',
+      'showAmbientIcon',
+      'ambientIconUrl',
+      'ambientIconType',
+      'ambientLibraryIcon',
+      'ambientIconColor',
+      'ambientInputTextColor',
+      'ambientPlaceholderText',
+      'ambientTheme',
+      'enableAmbientRainbowBorder',
+      'ambientBorderColorIdle',
+      'ambientBorderColorFocused',
+      'ambientClosedBgColor',
+      'ambientInputBgColorIdle',
+      'ambientInputBgColorFocused',
+      'ambientClosedBorderColorIdle',
+      'ambientClosedBorderColorFocused',
+      'ambientAiBubbleColor',
+      'ambientUserBubbleColor',
+      'ambientBorderGradientColor1',
+      'ambientBorderGradientColor2',
+      'ambientBorderGradientColor3',
+      'ambientBorderGradientColor4',
+      'ambientBorderGradientShowWhenCollapsed',
+      'ambientBorderGradientShowWhenOpen',
+      'ambientBorderGradientShowWhenThinking'
+    ].forEach((key) => {
+      if (source[key] !== undefined) shared[key] = source[key];
+    });
+
+    if (source.ambientPerDeviceSettingsEnabled !== true) return shared;
+    const deviceObj = device === 'mobile' ? source.ambientMobileSettings : source.ambientDesktopSettings;
+    return mergeDefined(shared, deviceObj);
+  }
+
+  function resolveClassicDeviceSettingsForWidget(source, device) {
+    const shared = {};
+    [
+      'bottomSpacing',
+      'sideSpacing',
+      'launcherAnimation',
+      'launcherStyle',
+      'launcherCollapse',
+      'launcherText',
+      'launcherRadius',
+      'launcherHeight',
+      'launcherWidth',
+      'fullImageLauncherWidth',
+      'fullImageLauncherHeight',
+      'launcherIcon',
+      'launcherIconUrl',
+      'launcherLibraryIcon',
+      'launcherIconColor',
+      'launcherBackgroundColor',
+      'launcherShadow',
+      'launcherType',
+      'launcherImageMode',
+      'launcherFullImageUrl',
+      'launcherLottieUrl',
+      'launcherHoverEffect',
+      'viewMode',
+      'modalSize'
+    ].forEach((key) => {
+      if (source[key] !== undefined) shared[key] = source[key];
+    });
+
+    const deviceObj = source.classicPerDeviceSettingsEnabled === true
+      ? (device === 'mobile' ? source.classicMobileSettings : source.classicDesktopSettings)
+      : null;
+
+    const merged = mergeDefined(shared, deviceObj);
+
+    if (device === 'mobile') {
+      const hasDeviceBottom = !!deviceObj && Object.prototype.hasOwnProperty.call(deviceObj, 'bottomSpacing');
+      const hasDeviceSide = !!deviceObj && Object.prototype.hasOwnProperty.call(deviceObj, 'sideSpacing');
+      const hasDeviceAnim = !!deviceObj && Object.prototype.hasOwnProperty.call(deviceObj, 'launcherAnimation');
+      if (!hasDeviceBottom && source.mobileBottomSpacing !== undefined) merged.bottomSpacing = source.mobileBottomSpacing;
+      if (!hasDeviceSide && source.mobileSideSpacing !== undefined) merged.sideSpacing = source.mobileSideSpacing;
+      if (!hasDeviceAnim && source.mobileLauncherAnimation !== undefined) merged.launcherAnimation = source.mobileLauncherAnimation;
+    }
+
+    return merged;
+  }
+
+  function applyDeviceResolvedWidgetSettings(source, device) {
+    if (!source || typeof source !== 'object') return source;
+    const out = { ...source };
+    if (source.chatDisplayMode === 'ambient') {
+      return mergeDefined(out, resolveAmbientDeviceSettingsForWidget(source, device));
+    }
+    return mergeDefined(out, resolveClassicDeviceSettingsForWidget(source, device));
   }
 
   // Engagement Controller Class
@@ -2193,8 +2304,9 @@
       const isNowMobile = window.innerWidth < 768;
 
       // 1. Update Spacing
-      const newBottom = isNowMobile ? (settings.mobileBottomSpacing ?? 20) : (settings.bottomSpacing ?? 20);
-      const newSide = isNowMobile ? (settings.mobileSideSpacing ?? 20) : (settings.sideSpacing ?? 20);
+      const resizeSettings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings || settings, isNowMobile ? 'mobile' : 'desktop');
+      const newBottom = resizeSettings.bottomSpacing ?? 20;
+      const newSide = resizeSettings.sideSpacing ?? 20;
 
       let newVertStyle = {};
       if (isTop) {
@@ -2202,7 +2314,7 @@
       } else if (isBottom) {
         newVertStyle = { bottom: `${newBottom}px`, top: 'auto' };
       } else if (isMiddle) {
-        newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${settings.launcherHeight / 2}px))`, bottom: 'auto' }; // Approximate re-calc
+        newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${(resizeSettings.launcherHeight || settings.launcherHeight) / 2}px))`, bottom: 'auto' }; // Approximate re-calc
       }
 
       let newHorizStyle = {};
@@ -2219,7 +2331,7 @@
         Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
 
         // 2. Update Animation
-        const newAnim = isNowMobile ? (settings.mobileLauncherAnimation || 'none') : (settings.launcherAnimation || 'none');
+        const newAnim = resizeSettings.launcherAnimation || 'none';
         launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin');
 
         if (newAnim !== 'none') {
@@ -2562,10 +2674,11 @@
     }
 
     // Merge fetched settings into global settings object
-    settings = {
+    baseDeviceAwareSettings = {
       ...settings,
       ...fetchedSettings
     };
+    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
 
     console.log('Userex Widget: Configuration loaded');
     initWidget();

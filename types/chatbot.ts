@@ -1,3 +1,64 @@
+export interface AmbientDeviceAppearanceSettings {
+    ambientMaxHeight?: number;
+    ambientOverlayOpacity?: number;
+    ambientWidth?: number;
+    ambientSideMargin?: number;
+    ambientBottomMargin?: number;
+    ambientInputSize?: "sm" | "md" | "lg" | "xl";
+    showAmbientIcon?: boolean;
+    ambientIconUrl?: string;
+    ambientIconType?: "library" | "custom";
+    ambientLibraryIcon?: string;
+    ambientIconColor?: string;
+    ambientInputTextColor?: string;
+    ambientPlaceholderText?: string;
+    ambientTheme?: "light" | "dark" | "auto";
+    enableAmbientRainbowBorder?: boolean;
+    ambientBorderColorIdle?: string;
+    ambientBorderColorFocused?: string;
+    ambientClosedBgColor?: string;
+    ambientInputBgColorIdle?: string;
+    ambientInputBgColorFocused?: string;
+    ambientClosedBorderColorIdle?: string;
+    ambientClosedBorderColorFocused?: string;
+    ambientAiBubbleColor?: string;
+    ambientUserBubbleColor?: string;
+    ambientBorderGradientColor1?: string;
+    ambientBorderGradientColor2?: string;
+    ambientBorderGradientColor3?: string;
+    ambientBorderGradientColor4?: string;
+    ambientBorderGradientShowWhenCollapsed?: boolean;
+    ambientBorderGradientShowWhenOpen?: boolean;
+    ambientBorderGradientShowWhenThinking?: boolean;
+}
+
+export interface ClassicDeviceAppearanceSettings {
+    bottomSpacing?: number;
+    sideSpacing?: number;
+    launcherAnimation?: string;
+    launcherStyle?: string;
+    launcherCollapse?: boolean;
+    launcherText?: string;
+    launcherRadius?: number;
+    launcherHeight?: number;
+    launcherWidth?: number;
+    fullImageLauncherWidth?: number;
+    fullImageLauncherHeight?: number;
+    launcherIcon?: "message" | "library" | "custom";
+    launcherIconUrl?: string;
+    launcherLibraryIcon?: string;
+    launcherIconColor?: string;
+    launcherBackgroundColor?: string;
+    launcherShadow?: string;
+    launcherType?: "standard" | "fullImage";
+    launcherImageMode?: "image" | "lottie";
+    launcherFullImageUrl?: string;
+    launcherLottieUrl?: string;
+    launcherHoverEffect?: "scale" | "opacity" | "none";
+    viewMode?: string;
+    modalSize?: string;
+}
+
 export interface ChatbotSettings {
     companyName: string;
     welcomeTitle: string;
@@ -109,12 +170,29 @@ export interface ChatbotSettings {
     ambientInputTextColor?: string;
     ambientPlaceholderText?: string;
     ambientTheme?: 'light' | 'dark' | 'auto';
+    enableAmbientRainbowBorder?: boolean;
     ambientBorderColorIdle?: string;
     ambientBorderColorFocused?: string;
     ambientClosedBgColor?: string;
+    ambientInputBgColorIdle?: string;
+    ambientInputBgColorFocused?: string;
     ambientClosedBorderColorIdle?: string;
     ambientClosedBorderColorFocused?: string;
     ambientAiBubbleColor?: string;
+    ambientUserBubbleColor?: string;
+    ambientBorderGradientColor1?: string;
+    ambientBorderGradientColor2?: string;
+    ambientBorderGradientColor3?: string;
+    ambientBorderGradientColor4?: string;
+    ambientBorderGradientShowWhenCollapsed?: boolean;
+    ambientBorderGradientShowWhenOpen?: boolean;
+    ambientBorderGradientShowWhenThinking?: boolean;
+    ambientPerDeviceSettingsEnabled?: boolean;
+    ambientDesktopSettings?: AmbientDeviceAppearanceSettings;
+    ambientMobileSettings?: AmbientDeviceAppearanceSettings;
+    classicPerDeviceSettingsEnabled?: boolean;
+    classicDesktopSettings?: ClassicDeviceAppearanceSettings;
+    classicMobileSettings?: ClassicDeviceAppearanceSettings;
     widgetLoaderStyle?: 'skeleton' | 'spinner' | 'pulsing-icon';
     enableContextAwareness?: boolean;
 }

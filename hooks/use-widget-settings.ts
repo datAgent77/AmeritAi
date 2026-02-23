@@ -3,6 +3,7 @@ import { doc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
+import type { AmbientDeviceAppearanceSettings, ClassicDeviceAppearanceSettings } from "@/types/chatbot"
 
 export interface WidgetSettings {
     // Branding settings
@@ -67,12 +68,27 @@ export interface WidgetSettings {
     ambientInputTextColor: string
     ambientPlaceholderText: string
     ambientTheme: 'light' | 'dark' | 'auto'
+    enableAmbientRainbowBorder: boolean
     ambientBorderColorIdle: string
     ambientBorderColorFocused: string
     ambientClosedBgColor: string
     ambientClosedBorderColorIdle: string
     ambientClosedBorderColorFocused: string
     ambientAiBubbleColor: string
+    ambientUserBubbleColor: string
+    ambientBorderGradientColor1: string
+    ambientBorderGradientColor2: string
+    ambientBorderGradientColor3: string
+    ambientBorderGradientColor4: string
+    ambientBorderGradientShowWhenCollapsed: boolean
+    ambientBorderGradientShowWhenOpen: boolean
+    ambientBorderGradientShowWhenThinking: boolean
+    ambientPerDeviceSettingsEnabled: boolean
+    ambientDesktopSettings?: AmbientDeviceAppearanceSettings
+    ambientMobileSettings?: AmbientDeviceAppearanceSettings
+    classicPerDeviceSettingsEnabled: boolean
+    classicDesktopSettings?: ClassicDeviceAppearanceSettings
+    classicMobileSettings?: ClassicDeviceAppearanceSettings
     ambientInputBgColorIdle: string
     ambientInputBgColorFocused: string
     widgetLoaderStyle: "skeleton" | "spinner"
@@ -88,12 +104,6 @@ export interface WidgetSettings {
     autoOpenDelay: number
     openOnExitIntent: boolean
     openOnScroll: number
-    // Availability
-    enableBusinessHours: boolean
-    timezone: string
-    businessHoursStart: string
-    businessHoursEnd: string
-    offlineMessage: string
     enableContextAwareness: boolean
 }
 
@@ -156,12 +166,27 @@ const defaultSettings: WidgetSettings = {
     ambientInputTextColor: "",
     ambientPlaceholderText: "",
     ambientTheme: "light",
+    enableAmbientRainbowBorder: false,
     ambientBorderColorIdle: "",
     ambientBorderColorFocused: "",
     ambientClosedBgColor: "",
     ambientClosedBorderColorIdle: "",
     ambientClosedBorderColorFocused: "",
     ambientAiBubbleColor: "",
+    ambientUserBubbleColor: "",
+    ambientBorderGradientColor1: "",
+    ambientBorderGradientColor2: "",
+    ambientBorderGradientColor3: "",
+    ambientBorderGradientColor4: "",
+    ambientBorderGradientShowWhenCollapsed: false,
+    ambientBorderGradientShowWhenOpen: true,
+    ambientBorderGradientShowWhenThinking: true,
+    ambientPerDeviceSettingsEnabled: false,
+    ambientDesktopSettings: undefined,
+    ambientMobileSettings: undefined,
+    classicPerDeviceSettingsEnabled: false,
+    classicDesktopSettings: undefined,
+    classicMobileSettings: undefined,
     ambientInputBgColorIdle: "",
     ambientInputBgColorFocused: "",
     widgetLoaderStyle: "skeleton",
@@ -176,11 +201,6 @@ const defaultSettings: WidgetSettings = {
     autoOpenDelay: 0,
     openOnExitIntent: false,
     openOnScroll: 0,
-    enableBusinessHours: false,
-    timezone: "UTC",
-    businessHoursStart: "09:00",
-    businessHoursEnd: "17:00",
-    offlineMessage: "Şu anda çevrimdışıyız.",
 }
 
 export function useWidgetSettings(userId?: string) {
@@ -263,12 +283,50 @@ export function useWidgetSettings(userId?: string) {
                     ambientInputTextColor: data.ambientInputTextColor !== undefined ? data.ambientInputTextColor : prev.ambientInputTextColor,
                     ambientPlaceholderText: data.ambientPlaceholderText !== undefined ? data.ambientPlaceholderText : prev.ambientPlaceholderText,
                     ambientTheme: data.ambientTheme || prev.ambientTheme,
+                    enableAmbientRainbowBorder: data.enableAmbientRainbowBorder !== undefined ? data.enableAmbientRainbowBorder : prev.enableAmbientRainbowBorder,
                     ambientBorderColorIdle: data.ambientBorderColorIdle !== undefined ? data.ambientBorderColorIdle : prev.ambientBorderColorIdle,
                     ambientBorderColorFocused: data.ambientBorderColorFocused !== undefined ? data.ambientBorderColorFocused : prev.ambientBorderColorFocused,
                     ambientClosedBgColor: data.ambientClosedBgColor !== undefined ? data.ambientClosedBgColor : prev.ambientClosedBgColor,
                     ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle !== undefined ? data.ambientClosedBorderColorIdle : prev.ambientClosedBorderColorIdle,
                     ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused !== undefined ? data.ambientClosedBorderColorFocused : prev.ambientClosedBorderColorFocused,
                     ambientAiBubbleColor: data.ambientAiBubbleColor !== undefined ? data.ambientAiBubbleColor : prev.ambientAiBubbleColor,
+                    ambientUserBubbleColor: data.ambientUserBubbleColor !== undefined ? data.ambientUserBubbleColor : prev.ambientUserBubbleColor,
+                    ambientBorderGradientColor1: data.ambientBorderGradientColor1 !== undefined ? data.ambientBorderGradientColor1 : prev.ambientBorderGradientColor1,
+                    ambientBorderGradientColor2: data.ambientBorderGradientColor2 !== undefined ? data.ambientBorderGradientColor2 : prev.ambientBorderGradientColor2,
+                    ambientBorderGradientColor3: data.ambientBorderGradientColor3 !== undefined ? data.ambientBorderGradientColor3 : prev.ambientBorderGradientColor3,
+                    ambientBorderGradientColor4: data.ambientBorderGradientColor4 !== undefined ? data.ambientBorderGradientColor4 : prev.ambientBorderGradientColor4,
+                    ambientBorderGradientShowWhenCollapsed:
+                        typeof data.ambientBorderGradientShowWhenCollapsed === "boolean"
+                            ? data.ambientBorderGradientShowWhenCollapsed
+                            : prev.ambientBorderGradientShowWhenCollapsed,
+                    ambientBorderGradientShowWhenOpen:
+                        typeof data.ambientBorderGradientShowWhenOpen === "boolean"
+                            ? data.ambientBorderGradientShowWhenOpen
+                            : prev.ambientBorderGradientShowWhenOpen,
+                    ambientBorderGradientShowWhenThinking:
+                        typeof data.ambientBorderGradientShowWhenThinking === "boolean"
+                            ? data.ambientBorderGradientShowWhenThinking
+                            : prev.ambientBorderGradientShowWhenThinking,
+                    ambientPerDeviceSettingsEnabled:
+                        typeof data.ambientPerDeviceSettingsEnabled === "boolean"
+                            ? data.ambientPerDeviceSettingsEnabled
+                            : prev.ambientPerDeviceSettingsEnabled,
+                    ambientDesktopSettings: typeof data.ambientDesktopSettings === "object" && data.ambientDesktopSettings
+                        ? data.ambientDesktopSettings
+                        : prev.ambientDesktopSettings,
+                    ambientMobileSettings: typeof data.ambientMobileSettings === "object" && data.ambientMobileSettings
+                        ? data.ambientMobileSettings
+                        : prev.ambientMobileSettings,
+                    classicPerDeviceSettingsEnabled:
+                        typeof data.classicPerDeviceSettingsEnabled === "boolean"
+                            ? data.classicPerDeviceSettingsEnabled
+                            : prev.classicPerDeviceSettingsEnabled,
+                    classicDesktopSettings: typeof data.classicDesktopSettings === "object" && data.classicDesktopSettings
+                        ? data.classicDesktopSettings
+                        : prev.classicDesktopSettings,
+                    classicMobileSettings: typeof data.classicMobileSettings === "object" && data.classicMobileSettings
+                        ? data.classicMobileSettings
+                        : prev.classicMobileSettings,
                     widgetLoaderStyle: data.widgetLoaderStyle || "skeleton",
                     userGreetingCount: typeof data.userGreetingCount === 'number' ? data.userGreetingCount : prev.userGreetingCount,
                     userInactionDelay: typeof data.userInactionDelay === 'number' ? data.userInactionDelay : prev.userInactionDelay,
@@ -282,11 +340,6 @@ export function useWidgetSettings(userId?: string) {
                     autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
                     openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
                     openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
-                    enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
-                    timezone: data.timezone || prev.timezone,
-                    businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
-                    businessHoursEnd: data.businessHoursEnd || prev.businessHoursEnd,
-                    offlineMessage: data.offlineMessage || prev.offlineMessage,
                 }))
             } else {
                 console.log("No chatbot settings found, using defaults")

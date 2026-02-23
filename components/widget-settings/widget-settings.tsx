@@ -13,6 +13,7 @@ import { useWidgetSettings } from "@/hooks/use-widget-settings"
 import { uploadLogo } from "@/lib/widget-settings-utils"
 import { AppearanceTab } from "./tabs/appearance-tab"
 import { WidgetLivePreview } from "./preview/widget-live-preview"
+import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 
 interface WidgetSettingsProps {
     userId?: string
@@ -26,6 +27,8 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
 
     const { settings, setSettings, isLoading, isSaving, saveSettings } = useWidgetSettings(userId)
     const [isUploading, setIsUploading] = useState(false)
+    const [ambientPreviewDockState, setAmbientPreviewDockState] = useState<AmbientDockPreviewState>("auto")
+    const [ambientPreviewThinking, setAmbientPreviewThinking] = useState(false)
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -119,6 +122,10 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                         userId={userId || ''}
                         isUploading={isUploading}
                         setIsUploading={setIsUploading}
+                        ambientPreviewDockState={ambientPreviewDockState}
+                        setAmbientPreviewDockState={setAmbientPreviewDockState}
+                        ambientPreviewThinking={ambientPreviewThinking}
+                        setAmbientPreviewThinking={setAmbientPreviewThinking}
                     />
 
                     <div className="flex items-center gap-3 pt-4">
@@ -134,7 +141,12 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
                 </div>
 
                 {/* Right Panel: Live Preview */}
-                <WidgetLivePreview settings={settings} t={t} />
+                <WidgetLivePreview
+                    settings={settings}
+                    t={t}
+                    ambientPreviewDockState={ambientPreviewDockState}
+                    ambientPreviewThinking={ambientPreviewThinking}
+                />
             </div>
         </div>
     )

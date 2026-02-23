@@ -62,7 +62,19 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         ambientLibraryIcon: "MessageCircle",
         chatDisplayMode: "classic",
         ambientMaxHeight: 260,
-        ambientOverlayOpacity: 0.55
+        ambientOverlayOpacity: 0.55,
+        ambientInputBgColorIdle: "",
+        ambientInputBgColorFocused: "",
+        ambientUserBubbleColor: "",
+        ambientBorderGradientColor1: "",
+        ambientBorderGradientColor2: "",
+        ambientBorderGradientColor3: "",
+        ambientBorderGradientColor4: "",
+        ambientBorderGradientShowWhenCollapsed: false,
+        ambientBorderGradientShowWhenOpen: true,
+        ambientBorderGradientShowWhenThinking: true,
+        ambientPerDeviceSettingsEnabled: false,
+        classicPerDeviceSettingsEnabled: false,
     })
 
     useEffect(() => {
@@ -130,12 +142,38 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         ambientBorderColorIdle: data.ambientBorderColorIdle || "",
                         ambientBorderColorFocused: data.ambientBorderColorFocused || "",
                         ambientTheme: data.ambientTheme || "light",
+                        enableAmbientRainbowBorder: data.enableAmbientRainbowBorder || false,
                         ambientClosedBgColor: data.ambientClosedBgColor || "",
+                        ambientInputBgColorIdle: data.ambientInputBgColorIdle || "",
+                        ambientInputBgColorFocused: data.ambientInputBgColorFocused || "",
                         ambientInputTextColor: data.ambientInputTextColor || "",
                         ambientPlaceholderText: data.ambientPlaceholderText || "",
                         ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle || "",
                         ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused || "",
                         ambientAiBubbleColor: data.ambientAiBubbleColor || "",
+                        ambientUserBubbleColor: data.ambientUserBubbleColor || "",
+                        ambientBorderGradientColor1: data.ambientBorderGradientColor1 || "",
+                        ambientBorderGradientColor2: data.ambientBorderGradientColor2 || "",
+                        ambientBorderGradientColor3: data.ambientBorderGradientColor3 || "",
+                        ambientBorderGradientColor4: data.ambientBorderGradientColor4 || "",
+                        ambientBorderGradientShowWhenCollapsed:
+                            typeof data.ambientBorderGradientShowWhenCollapsed === "boolean"
+                                ? data.ambientBorderGradientShowWhenCollapsed
+                                : false,
+                        ambientBorderGradientShowWhenOpen:
+                            typeof data.ambientBorderGradientShowWhenOpen === "boolean"
+                                ? data.ambientBorderGradientShowWhenOpen
+                                : true,
+                        ambientBorderGradientShowWhenThinking:
+                            typeof data.ambientBorderGradientShowWhenThinking === "boolean"
+                                ? data.ambientBorderGradientShowWhenThinking
+                                : true,
+                        ambientPerDeviceSettingsEnabled: data.ambientPerDeviceSettingsEnabled === true,
+                        ambientDesktopSettings: typeof data.ambientDesktopSettings === "object" && data.ambientDesktopSettings ? data.ambientDesktopSettings : undefined,
+                        ambientMobileSettings: typeof data.ambientMobileSettings === "object" && data.ambientMobileSettings ? data.ambientMobileSettings : undefined,
+                        classicPerDeviceSettingsEnabled: data.classicPerDeviceSettingsEnabled === true,
+                        classicDesktopSettings: typeof data.classicDesktopSettings === "object" && data.classicDesktopSettings ? data.classicDesktopSettings : undefined,
+                        classicMobileSettings: typeof data.classicMobileSettings === "object" && data.classicMobileSettings ? data.classicMobileSettings : undefined,
                         position: data.position || "bottom-right",
                     })
                 }

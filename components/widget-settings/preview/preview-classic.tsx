@@ -118,10 +118,10 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                     <div
                         className="absolute pointer-events-auto"
                         style={{
-                            ...(settings.position.includes('bottom') ? { bottom: `${previewMode === 'mobile' ? (settings.mobileBottomSpacing ?? 20) : settings.bottomSpacing}px` } : {}),
-                            ...(settings.position.includes('top') ? { top: `${previewMode === 'mobile' ? (settings.mobileBottomSpacing ?? 20) : settings.bottomSpacing}px` } : {}),
-                            ...(settings.position.includes('right') ? { right: `${previewMode === 'mobile' ? (settings.mobileSideSpacing ?? 20) : settings.sideSpacing}px` } : {}),
-                            ...(settings.position.includes('left') ? { left: `${previewMode === 'mobile' ? (settings.mobileSideSpacing ?? 20) : settings.sideSpacing}px` } : {}),
+                            ...(settings.position.includes('bottom') ? { bottom: `${settings.bottomSpacing ?? 20}px` } : {}),
+                            ...(settings.position.includes('top') ? { top: `${settings.bottomSpacing ?? 20}px` } : {}),
+                            ...(settings.position.includes('right') ? { right: `${settings.sideSpacing ?? 20}px` } : {}),
+                            ...(settings.position.includes('left') ? { left: `${settings.sideSpacing ?? 20}px` } : {}),
                             ...(settings.position.includes('center') ? { left: '50%', transform: 'translateX(-50%)' } : {}),
                         }}
                     >
