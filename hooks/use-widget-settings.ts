@@ -19,6 +19,11 @@ export interface WidgetSettings {
     headerTextColor: string
     suggestedQuestions: string[]
     enableLeadCollection: boolean
+    enableBusinessHours: boolean
+    timezone: string
+    businessHoursStart: string
+    businessHoursEnd: string
+    offlineMessage: string
     enableVoiceAssistant: boolean
     enablePersonalShopper: boolean
     initialLanguage: string
@@ -120,6 +125,11 @@ const defaultSettings: WidgetSettings = {
     headerTextColor: "#FFFFFF",
     suggestedQuestions: ["Fiyatlandırma planlarınız neler?", "Nasıl başlayabilirim?", "Destek ile iletişime geç"],
     enableLeadCollection: false,
+    enableBusinessHours: false,
+    timezone: "UTC",
+    businessHoursStart: "09:00",
+    businessHoursEnd: "17:00",
+    offlineMessage: "",
     enableVoiceAssistant: false,
     enablePersonalShopper: false,
     initialLanguage: "auto",
@@ -234,6 +244,11 @@ export function useWidgetSettings(userId?: string) {
                     headerTextColor: data.headerTextColor || prev.headerTextColor,
                     suggestedQuestions: data.suggestedQuestions || prev.suggestedQuestions,
                     enableLeadCollection: data.enableLeadCollection !== undefined ? data.enableLeadCollection : prev.enableLeadCollection,
+                    enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
+                    timezone: data.timezone || prev.timezone,
+                    businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
+                    businessHoursEnd: data.businessHoursEnd || prev.businessHoursEnd,
+                    offlineMessage: data.offlineMessage !== undefined ? data.offlineMessage : prev.offlineMessage,
                     enableVoiceAssistant: data.enableVoiceAssistant !== undefined ? data.enableVoiceAssistant : prev.enableVoiceAssistant,
                     enablePersonalShopper: data.enablePersonalShopper !== undefined ? data.enablePersonalShopper : prev.enablePersonalShopper,
                     initialLanguage: data.initialLanguage || prev.initialLanguage,

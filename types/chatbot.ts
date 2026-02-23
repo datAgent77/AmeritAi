@@ -93,6 +93,10 @@ export interface ChatbotSettings {
     } | null;
     industry: string;
     enableVoiceAssistant: boolean;
+    enableBusinessHours?: boolean;
+    timezone?: string;
+    businessHoursStart?: string;
+    businessHoursEnd?: string;
     voiceProvider: string;
     elevenLabsVoiceId: string;
     theme: string;
