@@ -30,7 +30,9 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                         <div className="p-5 flex items-center justify-between z-20 relative border-b bg-white/50 backdrop-blur-sm">
                             <div className="flex items-center gap-2">
                                 {settings.headerLogo || settings.brandLogo ? (
-                                    <Image src={settings.headerLogo || settings.brandLogo} alt="Logo" fill className="object-cover rounded-full" unoptimized />
+                                    <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
+                                        <Image src={settings.headerLogo || settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
+                                    </div>
                                 ) : (
                                     <Sparkles className="w-5 h-5 text-blue-500 fill-blue-500" />
                                 )}
@@ -140,7 +142,7 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                                 ),
                                 padding: (settings.launcherStyle === 'text' || settings.launcherStyle === 'icon_text') ? '0 12px' : 0,
                                 overflow: 'hidden',
-                                color: settings.launcherIconColor,
+                                color: settings.launcherIconColor || "#ffffff",
                             }}
                             className={`flex items-center justify-center gap-2 font-medium transition-transform hover:scale-105 ${settings.launcherAnimation === 'pulse' ? 'animate-pulse' :
                                 settings.launcherAnimation === 'bounce' ? 'animate-bounce' : ''

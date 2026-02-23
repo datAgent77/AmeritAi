@@ -31,6 +31,9 @@ export function WidgetLivePreview({
     const effectivePreviewSettings = isAmbientMode
         ? { ...settings, ...resolveAmbientDeviceSettings(settings, previewDevice) }
         : { ...settings, ...resolveClassicDeviceSettings(settings, previewDevice) }
+    const previewThemeClass = isAmbientMode && effectivePreviewSettings.ambientTheme === "dark"
+        ? "dark"
+        : ""
 
     // Fetch Lottie animation data for preview
     useEffect(() => {
@@ -66,17 +69,17 @@ export function WidgetLivePreview({
                 </Button>
             </div>
 
-            <div className="sticky top-8 w-full max-w-[600px] flex justify-center">
+            <div className="sticky top-8 w-full max-w-[700px] flex justify-center">
                 {previewMode === 'mobile' ? (
                     // MOBILE FRAME
-                    <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[600px] w-[300px] shadow-xl shrink-0">
-                        <div className="w-[148px] h-[18px] bg-gray-800 top-0 rounded-b-[1rem] left-1/2 -translate-x-1/2 absolute z-50"></div>
-                        <div className="h-[32px] w-[3px] bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
-                        <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
-                        <div className="h-[46px] w-[3px] bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
-                        <div className="h-[64px] w-[3px] bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
+                    <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.8rem] h-[740px] w-[360px] shadow-xl shrink-0">
+                        <div className="w-[178px] h-[22px] bg-gray-800 top-0 rounded-b-[1.1rem] left-1/2 -translate-x-1/2 absolute z-50"></div>
+                        <div className="h-[36px] w-[3px] bg-gray-800 absolute -start-[17px] top-[88px] rounded-s-lg"></div>
+                        <div className="h-[52px] w-[3px] bg-gray-800 absolute -start-[17px] top-[146px] rounded-s-lg"></div>
+                        <div className="h-[52px] w-[3px] bg-gray-800 absolute -start-[17px] top-[206px] rounded-s-lg"></div>
+                        <div className="h-[72px] w-[3px] bg-gray-800 absolute -end-[17px] top-[164px] rounded-e-lg"></div>
 
-                        <div className="rounded-[2rem] overflow-hidden w-full h-full bg-white dark:bg-gray-950 flex flex-col relative">
+                        <div className={`rounded-[2rem] overflow-hidden w-full h-full bg-white dark:bg-gray-950 flex flex-col relative ${previewThemeClass}`}>
                             {isAmbientMode ? (
                                 <PreviewAmbient
                                     settings={effectivePreviewSettings}
@@ -99,7 +102,7 @@ export function WidgetLivePreview({
                     </div>
                 ) : (
                     // DESKTOP FRAME
-                    <div className="w-full max-w-[600px] bg-white dark:bg-gray-950 rounded-lg shadow-2xl border overflow-hidden shrink-0">
+                    <div className={`w-full max-w-[600px] bg-white dark:bg-gray-950 rounded-lg shadow-2xl border overflow-hidden shrink-0 ${previewThemeClass}`}>
                         <div className="bg-gray-100 dark:bg-gray-800 p-3 flex items-center gap-2 border-b">
                             <div className="flex gap-1.5">
                                 <div className="w-3 h-3 rounded-full bg-red-500"></div>

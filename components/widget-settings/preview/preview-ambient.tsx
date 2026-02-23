@@ -1,6 +1,8 @@
 "use client"
 
-import { Send, ListFilter } from "lucide-react"
+import Image from "next/image"
+import * as LucideIcons from "lucide-react"
+import { Send, RefreshCw, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
 import { getAmbientDockStateKey, resolveAmbientDockStyle, type AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 
 interface PreviewAmbientProps {
@@ -20,6 +22,48 @@ export function PreviewAmbient({
     previewAmbientDockState = "auto",
     previewAmbientThinking = false,
 }: PreviewAmbientProps) {
+    const inputSize = (settings.ambientInputSize || "lg") as "sm" | "md" | "lg" | "xl"
+    const sizeConfigMap = {
+        sm: { btnSize: 'h-8 w-8', iconSize: 'w-4 h-4', textSize: 'text-sm', dockPadding: 'p-2', leadingSize: 'w-7 h-7' },
+        md: { btnSize: 'h-9 w-9', iconSize: 'w-[18px] h-[18px]', textSize: 'text-base', dockPadding: 'p-2', leadingSize: 'w-8 h-8' },
+        lg: { btnSize: 'h-10 w-10', iconSize: 'w-5 h-5', textSize: 'text-lg', dockPadding: 'p-2', leadingSize: 'w-9 h-9' },
+        xl: { btnSize: 'h-11 w-11', iconSize: 'w-5 h-5', textSize: 'text-xl', dockPadding: 'p-2.5', leadingSize: 'w-10 h-10' },
+    } as const
+    const sizeConfig = sizeConfigMap[inputSize] || sizeConfigMap.lg
+
+    const renderAmbientLeadingIcon = () => {
+        if (settings.showAmbientIcon === false) return null
+
+        const ambientIconColor = settings.ambientIconColor || settings.brandColor || "#3b82f6"
+        const customIconUrl = settings.ambientIconUrl || settings.launcherIconUrl
+        const iconType = settings.ambientIconType
+
+        if (iconType === "custom" && customIconUrl) {
+            return (
+                <div className={`ml-2 mr-1 flex-shrink-0 flex items-center justify-center rounded-full overflow-hidden ${sizeConfig.leadingSize} bg-transparent`}>
+                    <Image
+                        src={customIconUrl}
+                        alt="Widget Icon"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-contain p-[2px]"
+                        unoptimized
+                    />
+                </div>
+            )
+        }
+
+        const IconComponent = iconType === "library" && settings.ambientLibraryIcon
+            ? ((LucideIcons as any)[settings.ambientLibraryIcon] || MessageCircle)
+            : MessageCircle
+
+        return (
+            <div className={`ml-2 mr-1 flex-shrink-0 flex items-center justify-center rounded-full overflow-hidden ${sizeConfig.leadingSize} bg-transparent`}>
+                <IconComponent className={sizeConfig.iconSize} color={ambientIconColor} />
+            </div>
+        )
+    }
+
     const isDesktop = previewMode === 'desktop'
     const railHeight = Math.max(220, Math.min(460, settings.ambientMaxHeight || 260))
     const overlayOpacity = settings.ambientOverlayOpacity || 0.55
@@ -65,6 +109,7 @@ export function PreviewAmbient({
         ? (parsedAmbientWidth > 0 ? `${parsedAmbientWidth}px` : '100%')
         : '100%'
     const resolvedAmbientSideMargin = `${settings.ambientSideMargin || 0}px`
+    const ambientActionButtonClass = `${sizeConfig.btnSize} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70`
 
     return (
         <div className="absolute inset-0 flex flex-col justify-end pointer-events-none overflow-hidden z-50">
@@ -99,10 +144,10 @@ export function PreviewAmbient({
                         style={{ height: `${railHeight}px` }}
                     >
                         <div className="flex justify-between items-center mb-4 px-2">
-                            <div className="text-sm font-medium opacity-70">
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-200 opacity-90">
                                 {settings.companyName || "AI Assistant"}
                             </div>
-                            <button onClick={() => setIsPreviewOpen(false)} className="text-xs px-3 py-1 bg-black/5 dark:bg-white/10 rounded-full hover:bg-black/10 transition-colors">
+                            <button onClick={() => setIsPreviewOpen(false)} className="text-xs px-3 py-1 bg-black/5 dark:bg-white/10 text-gray-700 dark:text-gray-200 rounded-full hover:bg-black/10 dark:hover:bg-white/15 transition-colors">
                                 Kapat
                             </button>
                         </div>
@@ -120,7 +165,7 @@ export function PreviewAmbient({
                                 Demo kullanıcı mesajı
                             </div>
                             {settings.suggestedQuestions?.slice(0, 2).map((q: string, i: number) => (
-                                <div key={i} className="text-sm bg-black/5 dark:bg-white/5 py-2 px-4 rounded-xl text-left border border-black/5">
+                                <div key={i} className="text-sm text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 py-2 px-4 rounded-xl text-left border border-black/5 dark:border-white/10">
                                     {q}
                                 </div>
                             ))}
@@ -145,20 +190,55 @@ export function PreviewAmbient({
                             className="backdrop-blur-xl border border-white/40 dark:border-white/20 rounded-full p-2 flex items-center shadow-lg transition-all cursor-pointer hover:shadow-xl"
                             style={{ backgroundColor: dockStyles.formBackgroundColor || 'rgba(255, 255, 255, 0.9)' }}
                         >
-                            <div className="bg-black/5 dark:bg-white/10 p-2 rounded-full mr-2">
-                                <ListFilter className="w-4 h-4" />
-                            </div>
+                            {renderAmbientLeadingIcon()}
                             <span
-                                className="flex-1 text-sm bg-transparent border-0"
+                                className={`flex-1 ${sizeConfig.textSize} leading-tight bg-transparent border-0`}
                                 style={{ color: settings.ambientInputTextColor || '#6b7280' }}
                             >
                                 {settings.ambientPlaceholderText || ambientPlaceholder}
                             </span>
+                            {isChatActive ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                        }}
+                                        className={ambientActionButtonClass}
+                                        aria-label="Refresh preview"
+                                    >
+                                        <RefreshCw className={sizeConfig.iconSize} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (!forcedPreviewDockState) setIsPreviewOpen(false)
+                                        }}
+                                        className={ambientActionButtonClass}
+                                        aria-label="Collapse preview"
+                                    >
+                                        <ChevronDown className={sizeConfig.iconSize} />
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (!forcedPreviewDockState) setIsPreviewOpen(true)
+                                    }}
+                                    className={ambientActionButtonClass}
+                                    aria-label="Expand preview"
+                                >
+                                    <ChevronUp className={sizeConfig.iconSize} />
+                                </button>
+                            )}
                             <div
                                 className="p-2 rounded-full text-white ml-2"
                                 style={{ backgroundColor: settings.ambientIconColor || settings.brandColor || "#1f2937" }}
                             >
-                                <Send className="w-4 h-4" />
+                                <Send className={sizeConfig.iconSize} />
                             </div>
                         </div>
                     </div>
