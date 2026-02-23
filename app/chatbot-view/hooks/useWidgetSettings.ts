@@ -129,6 +129,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         ambientIconColor: data.ambientIconColor || "",
                         ambientBorderColorIdle: data.ambientBorderColorIdle || "",
                         ambientBorderColorFocused: data.ambientBorderColorFocused || "",
+                        ambientTheme: data.ambientTheme || "light",
                         ambientClosedBgColor: data.ambientClosedBgColor || "",
                         ambientInputTextColor: data.ambientInputTextColor || "",
                         ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle || "",

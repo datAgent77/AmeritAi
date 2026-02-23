@@ -473,7 +473,7 @@ export default function ChatbotContainer() {
                 position: 'fixed',
                 backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}
-            className={`fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${settings.theme === 'dark' ? 'dark' : ''}`}
+            className={`fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${isAmbientMode ? (settings.ambientTheme === 'dark' || (settings.ambientTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : '') : (settings.theme === 'dark' ? 'dark' : '')}`}
         >
             {isAmbientMode && (
                 <style>{`

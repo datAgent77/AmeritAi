@@ -787,6 +787,23 @@ export function AppearanceTab({ settings, setSettings, userId, isUploading, setI
                                                                 </div>
 
                                                                 <div className="grid gap-2 border-t pt-2 mt-4">
+                                                                    <Label className="text-xs font-semibold text-gray-500">{t('ambientTheme') || 'Tema'}</Label>
+                                                                    <Select value={settings.ambientTheme || "light"} onValueChange={(v: "light" | "dark" | "auto") => setSettings(prev => ({ ...prev, ambientTheme: v }))}>
+                                                                        <SelectTrigger className="w-full">
+                                                                            <SelectValue placeholder={t('ambientThemePlaceholder') || 'Tema Seçin'} />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="light">{t('ambientThemeLight') || 'Aydınlık (Light)'}</SelectItem>
+                                                                            <SelectItem value="dark">{t('ambientThemeDark') || 'Karanlık (Dark)'}</SelectItem>
+                                                                            <SelectItem value="auto">{t('ambientThemeAuto') || 'Sistem Teması (Auto)'}</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <p className="text-[11px] text-gray-400 mt-1">
+                                                                        {t('ambientThemeDescription') || 'Widget gövdesi için tema. (Form ayarlarından bağımsız olarak sohbet penceresi renklerini etkiler.)'}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="grid gap-2 border-t pt-2 mt-4">
                                                                     <Label className="text-xs font-semibold text-gray-500">{t('closedFormColors') || 'Sohbet Kapalıyken (Kapalı Form) Renkleri'}</Label>
 
                                                                     <div className="grid gap-2 mt-2">
