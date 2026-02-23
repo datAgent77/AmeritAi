@@ -401,12 +401,20 @@ export default function ChatbotContainer() {
         setAmbientFeedManuallyClosed(prev => !prev)
     }
 
+    const ambientWidthValue = typeof effectiveSettings.ambientWidth === "number"
+        ? effectiveSettings.ambientWidth
+        : Number(effectiveSettings.ambientWidth)
+    const ambientMaxWidthStyle = Number.isFinite(ambientWidthValue)
+        ? (ambientWidthValue > 0 ? `${ambientWidthValue}px` : '100%')
+        : '1080px'
+
     const ambientAlignmentStyle = {
-        maxWidth: effectiveSettings.ambientWidth ? `${effectiveSettings.ambientWidth}px` : '1080px',
+        maxWidth: ambientMaxWidthStyle,
         marginLeft: 'auto',
         marginRight: 'auto',
         paddingLeft: `${effectiveSettings.ambientSideMargin || 0}px`,
         paddingRight: `${effectiveSettings.ambientSideMargin || 0}px`,
+        boxSizing: 'border-box' as const,
     }
 
     useEffect(() => {
@@ -458,7 +466,7 @@ export default function ChatbotContainer() {
                 `}</style>
             )}
             {isAmbientMode ? (
-                <div className="relative flex h-full w-full flex-col justify-end px-4 sm:px-6 overflow-visible">
+                <div className="relative flex h-full w-full flex-col justify-end overflow-visible">
                     {showAmbientFeed && (
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out opacity-100">
                             {/* Radial glow — fades to transparent on top, left, right */}

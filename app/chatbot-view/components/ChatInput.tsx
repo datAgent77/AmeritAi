@@ -245,8 +245,8 @@ export function ChatInput({
         <div
             className={isAmbientMode
                 ? (isAmbientInputOnly
-                    ? "px-4 pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
-                    : "px-4 pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
+                    ? "pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
+                    : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >

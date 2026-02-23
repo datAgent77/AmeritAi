@@ -58,7 +58,12 @@ export function PreviewAmbient({
                     ? { ...dockStyles.gradientCssVars }
                     : undefined
     const ambientPlaceholder = settings.initialLanguage === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
-    const resolvedAmbientMaxWidth = settings.ambientWidth ? `${settings.ambientWidth}px` : (isDesktop ? '100%' : '100%')
+    const parsedAmbientWidth = typeof settings.ambientWidth === "number"
+        ? settings.ambientWidth
+        : Number(settings.ambientWidth)
+    const resolvedAmbientMaxWidth = Number.isFinite(parsedAmbientWidth)
+        ? (parsedAmbientWidth > 0 ? `${parsedAmbientWidth}px` : '100%')
+        : '100%'
     const resolvedAmbientSideMargin = `${settings.ambientSideMargin || 0}px`
 
     return (
@@ -125,8 +130,8 @@ export function PreviewAmbient({
 
                 {/* Always-on Input Bar */}
                 <div
-                    className="p-4 mx-auto w-full transition-all duration-300"
-                    style={{ maxWidth: settings.ambientWidth ? `${settings.ambientWidth}px` : (isDesktop ? '500px' : '100%') }}
+                    className="py-4 mx-auto w-full transition-all duration-300"
+                    style={{ maxWidth: resolvedAmbientMaxWidth }}
                 >
                     <div
                         onClick={() => {

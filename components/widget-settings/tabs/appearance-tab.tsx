@@ -600,7 +600,7 @@ export function AppearanceTab({
                                             <Label className="text-xs">{language === 'tr' ? 'Maksimum Genişlik (px)' : 'Max Width (px)'}</Label>
                                             <Input
                                                 type="number"
-                                                min={300}
+                                                min={0}
                                                 max={1200}
                                                 value={settings.ambientWidth}
                                                 onChange={(e) => {
@@ -608,9 +608,16 @@ export function AppearanceTab({
                                                     setSettings(prev => ({ ...prev, ambientWidth: raw }))
                                                 }}
                                                 onBlur={() => {
-                                                    setSettings(prev => ({ ...prev, ambientWidth: Math.max(300, Math.min(1200, prev.ambientWidth || 800)) }))
+                                                    setSettings(prev => {
+                                                        const raw = typeof prev.ambientWidth === "number" ? prev.ambientWidth : Number(prev.ambientWidth)
+                                                        const next = Number.isFinite(raw) ? raw : 0
+                                                        return { ...prev, ambientWidth: Math.max(0, Math.min(1200, next)) }
+                                                    })
                                                 }}
                                             />
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {language === 'tr' ? '0 = tam genişlik (full width)' : '0 = full width'}
+                                            </p>
                                         </div>
                                         <div className="grid gap-2">
                                             <Label className="text-xs">{language === 'tr' ? 'Yan Boşluk (px)' : 'Side Margin (px)'}</Label>
