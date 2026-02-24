@@ -111,6 +111,33 @@ export function ChatInput({
         }
     }, [isChatLoading, ambientInputOnly, isMobileViewport])
 
+    React.useEffect(() => {
+        const handleActivateInput = (event: MessageEvent) => {
+            if (event.data?.type !== 'USEREX_ACTIVATE_INPUT') return
+
+            // In ambient mode, open the feed first if it's currently collapsed (input-only).
+            if (isAmbientMode && ambientInputOnly && onToggleAmbientFeed) {
+                onToggleAmbientFeed()
+            }
+
+            const focusInput = () => {
+                if (!inputRef.current) return
+                inputRef.current.focus()
+                // Put cursor at the end for existing text
+                const val = inputRef.current.value
+                inputRef.current.setSelectionRange(val.length, val.length)
+            }
+
+            // Retry a few times to cover iframe mount/layout transitions after open.
+            focusInput()
+            setTimeout(focusInput, 50)
+            setTimeout(focusInput, 180)
+        }
+
+        window.addEventListener('message', handleActivateInput)
+        return () => window.removeEventListener('message', handleActivateInput)
+    }, [ambientInputOnly, isAmbientMode, onToggleAmbientFeed])
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if ((!localInput.trim() && !selectedImage) || isAnalyzingImage || isChatLoading) return

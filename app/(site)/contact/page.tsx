@@ -51,12 +51,19 @@ export default function ContactPage() {
                 })
             } else {
                 const data = await response.json()
-                throw new Error(data.details || data.error || 'Failed to send')
+                throw new Error(data.error || 'Failed to send')
             }
         } catch (error: any) {
+            const isAuthIssue = String(error?.message || '').toLowerCase().includes('authentication')
             toast({
                 title: language === 'tr' ? 'Hata' : 'Error',
-                description: error.message || (language === 'tr' ? 'Mesaj gönderilemedi. Lütfen tekrar deneyin.' : 'Failed to send message. Please try again.'),
+                description: isAuthIssue
+                    ? (language === 'tr'
+                        ? 'E-posta servisi geçici olarak yapılandırılamadı. Lütfen daha sonra tekrar deneyin.'
+                        : 'Email service is temporarily unavailable. Please try again later.')
+                    : (language === 'tr'
+                        ? 'Mesaj gönderilemedi. Lütfen tekrar deneyin.'
+                        : 'Failed to send message. Please try again.'),
                 variant: 'destructive'
             })
         } finally {

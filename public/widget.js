@@ -2282,6 +2282,12 @@
     document.body.appendChild(iframeContainer);
 
     // Expose public API for programmatic control
+    const postActivateInput = () => {
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'USEREX_ACTIVATE_INPUT' }, '*');
+      }
+    };
+
     window.UserexWidget = window.UserexWidget || {};
     window.UserexWidget.open = function () { toggleWidget(true); };
     window.UserexWidget.close = function () {
@@ -2290,6 +2296,15 @@
     window.UserexWidget.toggle = function () {
       if (usesLauncher) toggleWidget();
       else toggleWidget(true);
+    };
+    window.UserexWidget.focusInput = function () {
+      postActivateInput();
+    };
+    window.UserexWidget.openAndFocus = function () {
+      toggleWidget(true);
+      postActivateInput();
+      setTimeout(postActivateInput, 80);
+      setTimeout(postActivateInput, 220);
     };
 
     // Initial Trigger Check

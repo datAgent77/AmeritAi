@@ -103,17 +103,28 @@ export default function LandingPage() {
                                             destination: "widget_open",
                                             language
                                         })
-                                        // Widget lazy loads on interaction, then opens
+                                        // Widget lazy-loads on interaction, so retry for a short window.
                                         const w = window as any
-                                        if (w.UserexWidget?.open) {
-                                            w.UserexWidget.open()
-                                        } else {
-                                            // Fallback if user clicks before 4s timeout or quick interaction
-                                            // The click itself triggers lazy load in ChatbotLoader
-                                            setTimeout(() => {
-                                                 if (w.UserexWidget?.open) w.UserexWidget.open()
-                                            }, 1000)
+                                        const startedAt = Date.now()
+
+                                        const openAndActivate = () => {
+                                            const api = w.UserexWidget
+                                            if (api?.openAndFocus) {
+                                                api.openAndFocus()
+                                                return
+                                            }
+                                            if (api?.open) {
+                                                api.open()
+                                                api.focusInput?.()
+                                                setTimeout(() => api.focusInput?.(), 120)
+                                                return
+                                            }
+                                            if (Date.now() - startedAt < 5000) {
+                                                setTimeout(openAndActivate, 150)
+                                            }
                                         }
+
+                                        openAndActivate()
                                     }}
                                 >
                                     {language === 'tr' ? 'Canlı Demo' : 'Live Demo'}
