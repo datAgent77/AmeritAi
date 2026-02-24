@@ -1,4 +1,5 @@
 type MarketingPayload = Record<string, unknown>;
+const GOOGLE_ADS_SIGNUP_CONVERSION_EVENT = "conversion_event_signup_1";
 
 function toCleanPayload(payload: MarketingPayload): MarketingPayload {
     return Object.fromEntries(
@@ -28,6 +29,63 @@ export function trackMarketingEvent(eventName: string, payload: MarketingPayload
     }
 }
 
+function trackGoogleAdsEvent(eventName: string, payload: MarketingPayload = {}) {
+    if (typeof window === "undefined") return;
+
+    const windowRef = window as typeof window & {
+        gtag?: (...args: unknown[]) => void;
+        dataLayer?: Array<Record<string, unknown>>;
+    };
+
+    if (typeof windowRef.gtag === "function") {
+        windowRef.gtag("event", eventName, toCleanPayload(payload));
+        return;
+    }
+
+    if (Array.isArray(windowRef.dataLayer)) {
+        windowRef.dataLayer.push({
+            event: eventName,
+            ...toCleanPayload(payload),
+        });
+    }
+}
+
+export function trackAdsSignupConversion(payload: MarketingPayload = {}) {
+    trackGoogleAdsEvent(GOOGLE_ADS_SIGNUP_CONVERSION_EVENT, {
+        event_timeout: 2000,
+        ...payload,
+    });
+}
+
+// React/Next version of the Google Ads "delayed navigation helper" snippet.
+// Use this when you need to guarantee event send before navigating away.
+export function trackAdsSignupConversionAndNavigate(url?: string) {
+    if (typeof window === "undefined") return false;
+
+    const callback = () => {
+        if (typeof url === "string") {
+            window.location.href = url;
+        }
+    };
+
+    const windowRef = window as typeof window & { gtag?: (...args: unknown[]) => void };
+    if (typeof windowRef.gtag === "function") {
+        windowRef.gtag("event", GOOGLE_ADS_SIGNUP_CONVERSION_EVENT, {
+            event_callback: callback,
+            event_timeout: 2000,
+        });
+
+        if (typeof url === "string") {
+            window.setTimeout(callback, 2100);
+        }
+
+        return false;
+    }
+
+    callback();
+    return false;
+}
+
 export function trackCtaClick(params: {
     location: string;
     ctaLabel: string;
@@ -40,6 +98,17 @@ export function trackCtaClick(params: {
         destination: params.destination,
         language: params.language
     });
+
+    // Optional Google Ads web conversion (signup CTA click)
+    const destination = String(params.destination || "");
+    if (destination.startsWith("/signup")) {
+        trackAdsSignupConversion({
+            cta_location: params.location,
+            cta_label: params.ctaLabel,
+            destination,
+            language: params.language,
+        });
+    }
 }
 
 export function trackPricingView(params: {

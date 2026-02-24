@@ -22,6 +22,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
+  const [showResendVerificationButton, setShowResendVerificationButton] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
   const { toast } = useToast()
@@ -57,6 +59,7 @@ export default function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+    setShowResendVerificationButton(false)
 
     try {
       // Ensure persistence is set before signing in
@@ -76,6 +79,7 @@ export default function LoginForm() {
           ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
           : "You must verify your email before logging in. We've sent a new verification link."
         setError(verifyMsg)
+        setShowResendVerificationButton(true)
         toast({
           title: language === 'tr' ? "E-posta doğrulaması gerekli" : "Email verification required",
           description: verifyMsg,
@@ -112,6 +116,7 @@ export default function LoginForm() {
       router.push("/console/chatbot")
     } catch (error: any) {
       console.error("Login error:", error)
+      setShowResendVerificationButton(false)
 
       // Show more specific error messages
       let errorMessage = t('invalidEmailPassword')
@@ -146,6 +151,88 @@ export default function LoginForm() {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    if (!email || !password) {
+      const msg = language === 'tr'
+        ? 'Lütfen e-posta ve şifre alanlarını doldurun.'
+        : 'Please enter your email and password.'
+      setError(msg)
+      toast({
+        title: language === 'tr' ? 'Eksik bilgi' : 'Missing information',
+        description: msg,
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsResendingVerification(true)
+    setError("")
+
+    try {
+      await setPersistence(auth, browserLocalPersistence)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      await userCredential.user.reload()
+
+      if (userCredential.user.emailVerified) {
+        await auth.signOut()
+        setShowResendVerificationButton(false)
+        const msg = language === 'tr'
+          ? 'Bu hesap zaten doğrulanmış görünüyor. Giriş yapmayı tekrar deneyin.'
+          : 'This account is already verified. Please try logging in again.'
+        toast({
+          title: language === 'tr' ? 'Hesap doğrulanmış' : 'Account verified',
+          description: msg,
+        })
+        return
+      }
+
+      await sendEmailVerification(userCredential.user, {
+        url: `${window.location.origin}/login`
+      })
+      await auth.signOut()
+
+      const msg = language === 'tr'
+        ? 'Doğrulama e-postası tekrar gönderildi. Spam klasörünü de kontrol edin.'
+        : 'Verification email re-sent. Please also check your spam folder.'
+
+      setError(msg)
+      setShowResendVerificationButton(true)
+      toast({
+        title: language === 'tr' ? 'Doğrulama e-postası gönderildi' : 'Verification email sent',
+        description: msg,
+      })
+    } catch (error: any) {
+      console.error("Resend verification error:", error)
+
+      let errorMessage = language === 'tr'
+        ? 'Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin.'
+        : 'Could not send verification email. Please try again.'
+
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        errorMessage = language === 'tr'
+          ? 'Şifre hatalı olduğu için doğrulama e-postası gönderilemedi.'
+          : 'Verification email could not be sent because the password is incorrect.'
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = language === 'tr'
+          ? 'Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.'
+          : 'Too many attempts. Please try again in a few minutes.'
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = language === 'tr'
+          ? 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.'
+          : 'No user found with this email address.'
+      }
+
+      setError(errorMessage)
+      toast({
+        title: language === 'tr' ? 'Hata' : 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsResendingVerification(false)
     }
   }
 
@@ -186,8 +273,28 @@ export default function LoginForm() {
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-600 dark:text-red-400">
-              {error}
+            <div className="space-y-3">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-600 dark:text-red-400">
+                {error}
+              </div>
+              {showResendVerificationButton && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10 border-zinc-700/60 dark:border-zinc-700 hover:bg-zinc-900/40"
+                  onClick={handleResendVerification}
+                  disabled={isLoading || isResendingVerification}
+                >
+                  {isResendingVerification ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {language === 'tr' ? 'Gönderiliyor...' : 'Sending...'}
+                    </>
+                  ) : (
+                    language === 'tr' ? 'Doğrulama E-postasını Tekrar Gönder' : 'Resend Verification Email'
+                  )}
+                </Button>
+              )}
             </div>
           )}
 
