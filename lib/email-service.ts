@@ -12,6 +12,11 @@
 
 import nodemailer from 'nodemailer';
 
+const parseBooleanEnv = (value?: string | null): boolean => {
+    if (!value) return false;
+    return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+};
+
 // Create reusable transporter
 const createTransporter = () => {
     // Check for credentials (support both naming conventions)
@@ -22,6 +27,27 @@ const createTransporter = () => {
     if (!emailUser || !emailPass) {
         console.warn('Email Service: SMTP_USER/EMAIL_USER or SMTP_PASS/EMAIL_PASSWORD not set. Running in MOCK mode.');
         return null;
+    }
+
+    const smtpHost = process.env.SMTP_HOST;
+    const parsedPort = Number.parseInt(process.env.SMTP_PORT || "", 10);
+    const smtpPort = Number.isFinite(parsedPort)
+        ? parsedPort
+        : (parseBooleanEnv(process.env.SMTP_SECURE) ? 465 : 587);
+    const smtpSecure = process.env.SMTP_SECURE
+        ? parseBooleanEnv(process.env.SMTP_SECURE)
+        : smtpPort === 465;
+
+    if (smtpHost) {
+        return nodemailer.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: smtpSecure,
+            auth: {
+                user: emailUser,
+                pass: emailPass,
+            },
+        });
     }
 
     return nodemailer.createTransport({
@@ -56,6 +82,111 @@ const sendEmailOrMock = async (transporter: nodemailer.Transporter | null, mailO
         return false;
     }
 };
+
+export interface VerificationEmailData {
+    recipientEmail: string;
+    recipientName?: string;
+    verificationLink: string;
+    language?: string;
+    companyName?: string;
+}
+
+export async function sendVerificationEmail(data: VerificationEmailData): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const {
+        recipientEmail,
+        recipientName,
+        verificationLink,
+        language = "en",
+        companyName = "Vion AI"
+    } = data;
+
+    const isTurkish = String(language).toLowerCase().startsWith("tr");
+    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER || "no-reply@vion.ai";
+    const fromName = process.env.SMTP_FROM_NAME || companyName;
+    const subject = isTurkish
+        ? `${companyName} e-posta doğrulama bağlantınız`
+        : `${companyName} email verification link`;
+    const ctaText = isTurkish ? "E-postamı Doğrula" : "Verify My Email";
+    const fallbackLine = isTurkish
+        ? "Buton çalışmazsa aşağıdaki bağlantıyı tarayıcınıza yapıştırın:"
+        : "If the button does not work, paste this link into your browser:";
+    const intro = isTurkish
+        ? `Hesabınızı aktifleştirmek için e-posta adresinizi doğrulayın.`
+        : `Verify your email address to activate your account.`;
+    const expiryNote = isTurkish
+        ? "Bu bağlantı güvenlik nedeniyle bir süre sonra geçersiz olabilir."
+        : "This link may expire after some time for security reasons.";
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fb;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="padding:28px 28px 20px;background:#0f172a;color:#ffffff;">
+              <h1 style="margin:0;font-size:20px;font-weight:700;">${companyName}</h1>
+              <p style="margin:8px 0 0;font-size:14px;opacity:0.92;">${isTurkish ? "E-posta doğrulama" : "Email verification"}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+                ${isTurkish ? "Merhaba" : "Hello"}${recipientName ? ` <strong>${recipientName}</strong>` : ""},
+              </p>
+              <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#374151;">
+                ${intro}
+              </p>
+              <p style="margin:0 0 22px;text-align:center;">
+                <a href="${verificationLink}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;font-size:14px;">
+                  ${ctaText}
+                </a>
+              </p>
+              <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#4b5563;">
+                ${fallbackLine}
+              </p>
+              <p style="margin:0 0 16px;font-size:12px;line-height:1.6;word-break:break-all;color:#2563eb;">
+                ${verificationLink}
+              </p>
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;">
+                ${expiryNote}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    const textContent = isTurkish
+        ? `Merhaba ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}`.trim()
+        : `Hello ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}`.trim();
+
+    return sendEmailOrMock(transporter, {
+        from: `"${fromName}" <${fromEmail}>`,
+        to: recipientEmail,
+        subject,
+        text: textContent,
+        html: htmlContent,
+    });
+}
 
 export interface AppointmentEmailData {
     customerEmail: string;
@@ -874,4 +1005,3 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
         html: htmlContent,
     });
 }
-

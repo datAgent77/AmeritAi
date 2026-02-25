@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
+import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
@@ -68,6 +69,16 @@ export async function GET(req: Request) {
 
                     // Only enable modules that are 'ready' in the registry
                     const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
+                    const dynamicContextPresetSelection = resolveDynamicContextPresetSelection({
+                        sectorId: mergedData?.sector || mergedData?.sectorId || mergedData?.industry,
+                        presetMode: mergedData?.dynamicSiteContextPresetMode,
+                        presetId: mergedData?.dynamicSiteContextPresetId,
+                        presetOverrides: (mergedData?.dynamicSiteContextPresetOverrides && typeof mergedData.dynamicSiteContextPresetOverrides === "object")
+                            ? mergedData.dynamicSiteContextPresetOverrides
+                            : null,
+                        networkAllowlist: Array.isArray(mergedData?.dynamicSiteContextNetworkAllowlist) ? mergedData.dynamicSiteContextNetworkAllowlist : [],
+                        graphqlOperationAllowlist: Array.isArray(mergedData?.dynamicSiteContextGraphqlOperationAllowlist) ? mergedData.dynamicSiteContextGraphqlOperationAllowlist : [],
+                    });
 
                     // Return only public settings
                     return NextResponse.json({
@@ -200,6 +211,31 @@ export async function GET(req: Request) {
                         dynamicContextSelectors: Array.isArray(mergedData.dynamicContextSelectors)
                             ? mergedData.dynamicContextSelectors
                             : [],
+                        enableDynamicSiteContext: mergedData.enableDynamicSiteContext === true,
+                        dynamicSiteContextCollectionMode: mergedData.dynamicSiteContextCollectionMode || "dom_network",
+                        dynamicSiteContextCrawlTrigger: mergedData.dynamicSiteContextCrawlTrigger || "manual",
+                        dynamicSiteContextRouteScope: mergedData.dynamicSiteContextRouteScope || "sidebar_safe",
+                        dynamicSiteContextAllowlist: Array.isArray(mergedData.dynamicSiteContextAllowlist) ? mergedData.dynamicSiteContextAllowlist : [],
+                        dynamicSiteContextMaxRoutes: typeof mergedData.dynamicSiteContextMaxRoutes === "number" ? mergedData.dynamicSiteContextMaxRoutes : 30,
+                        dynamicSiteContextMaxDurationSec: typeof mergedData.dynamicSiteContextMaxDurationSec === "number" ? mergedData.dynamicSiteContextMaxDurationSec : 90,
+                        dynamicSiteContextHydrationWaitMs: typeof mergedData.dynamicSiteContextHydrationWaitMs === "number" ? mergedData.dynamicSiteContextHydrationWaitMs : 4000,
+                        dynamicSiteContextExcludeSelectorPrefixes: Array.isArray(mergedData.dynamicSiteContextExcludeSelectorPrefixes)
+                            ? mergedData.dynamicSiteContextExcludeSelectorPrefixes
+                            : ["#userex-", ".userex-", "#vion-", ".vion-"],
+                        dynamicSiteContextCapturePII: mergedData.dynamicSiteContextCapturePII !== false,
+                        dynamicSiteContextPresetMode: ["none", "suggested", "approved"].includes(mergedData.dynamicSiteContextPresetMode)
+                            ? mergedData.dynamicSiteContextPresetMode
+                            : "none",
+                        dynamicSiteContextPresetId: typeof mergedData.dynamicSiteContextPresetId === "string" ? mergedData.dynamicSiteContextPresetId : "",
+                        dynamicSiteContextPresetApprovedAt: typeof mergedData.dynamicSiteContextPresetApprovedAt === "string" ? mergedData.dynamicSiteContextPresetApprovedAt : "",
+                        dynamicSiteContextPresetOverrides: (mergedData.dynamicSiteContextPresetOverrides && typeof mergedData.dynamicSiteContextPresetOverrides === "object")
+                            ? mergedData.dynamicSiteContextPresetOverrides
+                            : {},
+                        dynamicSiteContextNetworkAllowlist: Array.isArray(mergedData.dynamicSiteContextNetworkAllowlist) ? mergedData.dynamicSiteContextNetworkAllowlist : [],
+                        dynamicSiteContextGraphqlOperationAllowlist: Array.isArray(mergedData.dynamicSiteContextGraphqlOperationAllowlist) ? mergedData.dynamicSiteContextGraphqlOperationAllowlist : [],
+                        dynamicSiteContextSuggestedPresetId: dynamicContextPresetSelection.suggestedPresetId,
+                        dynamicSiteContextResolvedPresetId: dynamicContextPresetSelection.activePresetId,
+                        dynamicSiteContextRuntimePreset: dynamicContextPresetSelection.runtimePreset,
                         theme: mergedData.theme || "classic",
                     }, {
                         headers: {
@@ -302,6 +338,36 @@ export async function GET(req: Request) {
                 enableDynamicContext: false,
                 dynamicContextMode: "nocode",
                 dynamicContextSelectors: [],
+                enableDynamicSiteContext: false,
+                dynamicSiteContextCollectionMode: "dom_network",
+                dynamicSiteContextCrawlTrigger: "manual",
+                dynamicSiteContextRouteScope: "sidebar_safe",
+                dynamicSiteContextAllowlist: [],
+                dynamicSiteContextMaxRoutes: 30,
+                dynamicSiteContextMaxDurationSec: 90,
+                dynamicSiteContextHydrationWaitMs: 4000,
+                dynamicSiteContextExcludeSelectorPrefixes: ["#userex-", ".userex-", "#vion-", ".vion-"],
+                dynamicSiteContextCapturePII: true,
+                dynamicSiteContextPresetMode: "none",
+                dynamicSiteContextPresetId: "",
+                dynamicSiteContextPresetApprovedAt: "",
+                dynamicSiteContextPresetOverrides: {},
+                dynamicSiteContextNetworkAllowlist: [],
+                dynamicSiteContextGraphqlOperationAllowlist: [],
+                dynamicSiteContextSuggestedPresetId: "generic-web-app",
+                dynamicSiteContextResolvedPresetId: "generic-web-app",
+                dynamicSiteContextRuntimePreset: {
+                    presetId: "generic-web-app",
+                    routeHints: ["dashboard", "overview", "profile", "account", "settings", "projects", "tasks"],
+                    entityTargets: ["dashboard", "tasks", "projects", "profile"],
+                    confidenceBase: 0.55,
+                    networkPolicy: {
+                        allowGetJson: true,
+                        allowGraphQLSummary: false,
+                        allowedPostEndpoints: [],
+                        allowedGraphQLOperations: [],
+                    },
+                },
                 theme: "classic",
             };
 

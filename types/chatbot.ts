@@ -199,4 +199,26 @@ export interface ChatbotSettings {
     classicMobileSettings?: ClassicDeviceAppearanceSettings;
     widgetLoaderStyle?: 'skeleton' | 'spinner' | 'pulsing-icon';
     enableContextAwareness?: boolean;
+    enableDynamicContext?: boolean;
+    dynamicContextMode?: "nocode" | string;
+    dynamicContextSelectors?: Array<{ id?: string; key?: string; selector?: string }>;
+    enableDynamicSiteContext?: boolean;
+    dynamicSiteContextCollectionMode?: "dom" | "dom_network";
+    dynamicSiteContextCrawlTrigger?: "manual" | "hybrid" | "auto";
+    dynamicSiteContextRouteScope?: "sidebar_safe" | "same_origin_all" | "allowlist";
+    dynamicSiteContextAllowlist?: string[];
+    dynamicSiteContextMaxRoutes?: number;
+    dynamicSiteContextMaxDurationSec?: number;
+    dynamicSiteContextHydrationWaitMs?: number;
+    dynamicSiteContextExcludeSelectorPrefixes?: string[];
+    dynamicSiteContextCapturePII?: boolean;
+    dynamicSiteContextPresetMode?: "none" | "suggested" | "approved";
+    dynamicSiteContextPresetId?: string;
+    dynamicSiteContextPresetApprovedAt?: string;
+    dynamicSiteContextPresetOverrides?: Record<string, unknown>;
+    dynamicSiteContextNetworkAllowlist?: string[];
+    dynamicSiteContextGraphqlOperationAllowlist?: string[];
+    dynamicSiteContextSuggestedPresetId?: string;
+    dynamicSiteContextResolvedPresetId?: string;
+    dynamicSiteContextRuntimePreset?: Record<string, unknown> | null;
 }

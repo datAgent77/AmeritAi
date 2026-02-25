@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { signInAsGuest } from "@/lib/firebase-guest"
@@ -38,7 +38,16 @@ export default function ChatbotContainer() {
     const visualContext = useVisualContext(chatbotId, language)
 
     // 3. Local State (Top Level)
-    const [pageContext, setPageContext] = useState<{ url: string, title: string, desc: string, pageText?: string } | null>(null)
+    const [pageContext, setPageContext] = useState<{
+        url: string
+        title: string
+        desc: string
+        description?: string
+        pageText?: string
+        dynamicData?: Record<string, any>
+        siteSessionContext?: Record<string, any>
+        crawlStatus?: Record<string, any>
+    } | null>(null)
     const [isGuestReady, setIsGuestReady] = useState(false)
     const [isClient, setIsClient] = useState(false)
     const [localInput, setLocalInput] = useState("")
@@ -146,6 +155,15 @@ export default function ChatbotContainer() {
             if (event.data.type === 'USEREX_CONTEXT_UPDATE') {
                 setPageContext(event.data.context)
             }
+            if (event.data.type === 'USEREX_SITE_SESSION_CONTEXT_UPDATE') {
+                setPageContext((prev) => prev ? { ...prev, siteSessionContext: event.data.siteSessionContext } : prev)
+            }
+            if (event.data.type === 'USEREX_FORCE_AMBIENT_FEED_CLOSE') {
+                setAmbientFeedManuallyClosed(true)
+                if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur()
+                }
+            }
         }
         window.addEventListener('message', handleMessage)
         return () => window.removeEventListener('message', handleMessage)
@@ -205,6 +223,8 @@ export default function ChatbotContainer() {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const messagesContainerRef = useRef<HTMLDivElement>(null)
     const isFirstScrollRef = useRef(true)
+    const ambientFeedAreaRef = useRef<HTMLDivElement>(null)
+    const ambientDockAreaRef = useRef<HTMLDivElement>(null)
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
         if (messagesContainerRef.current) {
@@ -401,6 +421,21 @@ export default function ChatbotContainer() {
         setAmbientFeedManuallyClosed(prev => !prev)
     }
 
+    const handleAmbientBackdropPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (!isAmbientMode || !showAmbientFeed) return
+
+        const target = event.target
+        if (!(target instanceof Node)) return
+
+        if (ambientFeedAreaRef.current?.contains(target)) return
+        if (ambientDockAreaRef.current?.contains(target)) return
+
+        setAmbientFeedManuallyClosed(true)
+        if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+        }
+    }
+
     const ambientWidthValue = typeof effectiveSettings.ambientWidth === "number"
         ? effectiveSettings.ambientWidth
         : Number(effectiveSettings.ambientWidth)
@@ -466,7 +501,10 @@ export default function ChatbotContainer() {
                 `}</style>
             )}
             {isAmbientMode ? (
-                <div className="relative flex h-full w-full flex-col justify-end overflow-visible">
+                <div
+                    className="relative flex h-full w-full flex-col justify-end overflow-visible"
+                    onPointerDownCapture={handleAmbientBackdropPointerDown}
+                >
                     {showAmbientFeed && (
                         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out opacity-100">
                             {/* Radial glow — fades to transparent on top, left, right */}
@@ -501,6 +539,7 @@ export default function ChatbotContainer() {
                         }}
                     >
                         <div
+                            ref={ambientFeedAreaRef}
                             className={`w-full overflow-y-auto overflow-x-clip transition-[height,opacity,margin,padding] duration-200 ease-in-out ${showAmbientFeed ? 'mb-1 pt-2 pb-1 opacity-100' : 'mb-0 pt-0 pb-0 opacity-0 pointer-events-none overflow-hidden'}`}
                             style={{ height: showAmbientFeed ? `${ambientRailHeight}px` : '0px' }}
                         >
@@ -520,28 +559,30 @@ export default function ChatbotContainer() {
                             />
                         </div>
 
-                        <ChatInput
-                            mode="ambient"
-                            settings={effectiveSettings}
-                            localInput={localInput}
-                            setLocalInput={setLocalInput}
-                            sendMessage={(text: string, speakResponse?: boolean, visualCtx?: string) => {
-                                setAmbientFeedManuallyClosed(false)
-                                return sendMessage(text, speakResponse, visualCtx)
-                            }}
-                            isChatLoading={isChatLoading}
-                            handleVoiceInput={handleVoiceInput}
-                            isListening={isListening}
-                            visualContext={visualContext}
-                            language={language}
-                            t={t}
-                            setMessages={setMessages}
-                            ambientInputOnly={!showAmbientFeed}
-                            onClearChat={handleClearChat}
-                            onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
-                            onToggleAmbientFeed={handleToggleAmbientFeed}
-                            showUtilityActions
-                        />
+                        <div ref={ambientDockAreaRef}>
+                            <ChatInput
+                                mode="ambient"
+                                settings={effectiveSettings}
+                                localInput={localInput}
+                                setLocalInput={setLocalInput}
+                                sendMessage={(text: string, speakResponse?: boolean, visualCtx?: string) => {
+                                    setAmbientFeedManuallyClosed(false)
+                                    return sendMessage(text, speakResponse, visualCtx)
+                                }}
+                                isChatLoading={isChatLoading}
+                                handleVoiceInput={handleVoiceInput}
+                                isListening={isListening}
+                                visualContext={visualContext}
+                                language={language}
+                                t={t}
+                                setMessages={setMessages}
+                                ambientInputOnly={!showAmbientFeed}
+                                onClearChat={handleClearChat}
+                                onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                onToggleAmbientFeed={handleToggleAmbientFeed}
+                                showUtilityActions
+                            />
+                        </div>
                     </div>
                 </div>
             ) : (

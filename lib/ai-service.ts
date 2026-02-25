@@ -262,7 +262,15 @@ export async function generateAIResponse(
     messages: AIMessage[],
     sessionId?: string,
     streamResponse: boolean = true,
-    userContext?: { url: string, title: string, desc: string, pageText?: string, dynamicData?: Record<string, any> },
+    userContext?: {
+        url: string,
+        title: string,
+        desc: string,
+        pageText?: string,
+        dynamicData?: Record<string, any>,
+        siteSessionContext?: Record<string, any>,
+        crawlStatus?: Record<string, any>
+    },
     isVoice?: boolean,
     language?: string,
     visualAnalysisContext?: string,
@@ -501,6 +509,18 @@ REMEMBER: Always think before responding. Quality > Speed.`;
             if (userContext.pageText) {
                 systemPrompt += `\n\n# PAGE CONTENT (Context Awareness)\nThe user is currently viewing the following page content. You can use this to provide highly accurate and contextual answers:\n${userContext.pageText}\n`;
             }
+            if (userContext.siteSessionContext) {
+                const crawlStatus = userContext.siteSessionContext?.crawl?.status || userContext.crawlStatus?.status || "unknown";
+                systemPrompt += `\n\n# SITE SESSION CONTEXT (B-CONTEXT APP MEMORY)\n` +
+                    `This is a summarized, multi-route app memory collected during the current browser session.\n` +
+                    `Crawl status: ${crawlStatus}\n` +
+                    `Use entityIndex first for cross-module questions (tasks/projects/profile/dashboard/orders/shipments/cart/account).\n` +
+                    `If requested data is missing, say the module may not have been scanned in this session and ask the user to navigate there or re-run crawl.\n` +
+                    `Prefer the most recent visitedAt/capturedAt facts and higher confidence when values conflict.\n` +
+                    `For e-commerce/order/shipping questions, prefer entityIndex.orders and entityIndex.shipments before raw route facts.\n` +
+                    `Do not fabricate missing records.\n` +
+                    `\nSITE SESSION DATA (summarized JSON):\n${JSON.stringify(userContext.siteSessionContext).slice(0, 14000)}\n`;
+            }
         }
 
         // Voice Mode
@@ -725,6 +745,7 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                 if (mod.id === 'dynamicContext') {
                     // This module relies on data passed from the client, not Firestore settings
                     const dynamicData = userContext?.dynamicData;
+                    const siteSessionContext = userContext?.siteSessionContext;
                     if (dynamicData) {
                         instruction += langKey === 'tr'
                             ? `\n\n📊 CANLI KULLANICI VERİLERİ (SİSTEMDEN):\n`
@@ -737,6 +758,11 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                         instruction += langKey === 'tr'
                             ? `\nBu verileri kullanarak "Kaç görevim var?" veya "Bakiyem nedir?" gibi soruları yanıtla.`
                             : `\nUse this data to answer questions like "How many tasks do I have?" or "What is my balance?".`;
+                    }
+                    if (siteSessionContext) {
+                        instruction += langKey === 'tr'
+                            ? `\n\n🧠 SİTE OTURUM HAFIZASI (BETA):\n- entityIndex içindeki görev/proje/profil/dashboard/orders/shipments/cart/account özetlerini önce kullan.\n- Sipariş/kargo sorularında önce orders + shipments alanlarını kullan; çakışma varsa en güncel capturedAt/visitedAt ve yüksek confidence değerini tercih et.\n- Veri eksikse "Bu oturumda ilgili modül (örn. sipariş/kargo) taranmamış olabilir" diyerek kullanıcıyı ilgili modüle yönlendir veya taramayı yenilemesini iste.\n- Tahmin / uydurma yapma.\n`
+                            : `\n\n🧠 SITE SESSION MEMORY (BETA):\n- Prefer task/project/profile/dashboard/orders/shipments/cart/account summaries in entityIndex first.\n- For order/shipping questions, prioritize orders + shipments entities; when conflicting, prefer newer capturedAt/visitedAt and higher confidence.\n- If missing, state that the relevant module (e.g. orders/shipping) may not have been scanned in this session and ask the user to navigate there or refresh the crawl.\n- Never fabricate values.\n`;
                     }
                 }
 

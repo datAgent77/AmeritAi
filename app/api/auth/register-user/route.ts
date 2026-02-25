@@ -30,7 +30,14 @@ export async function POST(req: Request) {
 
         const { uid, email } = decodedToken;
         const body = await req.json();
-        const { fullName, phoneNumber, industry, authProvider, plan, billingCycle } = body;
+        const { fullName, phoneNumber, industry, authProvider, plan, billingCycle, emailVerificationBypassRequested } = body;
+        const resolvedAuthProvider = authProvider || "email";
+        const emailVerificationBypassEnabled = process.env.AUTH_EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS === "true";
+        const shouldGrantEmailVerificationBypass =
+            emailVerificationBypassEnabled &&
+            emailVerificationBypassRequested === true &&
+            resolvedAuthProvider === "email" &&
+            decodedToken.email_verified !== true;
 
         // Name parsing
         const nameParts = (fullName || "").trim().split(' ');
@@ -56,8 +63,16 @@ export async function POST(req: Request) {
             fullName,
             email: email || body.email,
             emailVerified: decodedToken.email_verified === true,
+            ...(shouldGrantEmailVerificationBypass ? {
+                emailVerificationBypass: {
+                    enabled: true,
+                    grantType: "new_signup",
+                    reason: "deliverability_hotfix",
+                    grantedAt: new Date().toISOString()
+                }
+            } : {}),
             phoneNumber: phoneNumber || "",
-            authProvider: authProvider || "email",
+            authProvider: resolvedAuthProvider,
             role: "TENANT_ADMIN",
             createdAt: new Date().toISOString(),
             isActive: true,
@@ -125,6 +140,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({
             success: true,
+            emailVerificationBypassGranted: shouldGrantEmailVerificationBypass,
             plan: entitlements.planId,
             sectorId: entitlements.sectorId,
             trialEndsAt: trialEndDate.toISOString(),

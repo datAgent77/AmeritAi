@@ -36,8 +36,11 @@ type UserContextPayload = {
     url: string;
     title: string;
     desc: string;
+    description?: string;
     pageText?: string;
     dynamicData?: Record<string, any>;
+    siteSessionContext?: Record<string, any>;
+    crawlStatus?: Record<string, any>;
 };
 
 function isUserContextPayload(value: unknown): value is UserContextPayload {
@@ -45,7 +48,7 @@ function isUserContextPayload(value: unknown): value is UserContextPayload {
     const candidate = value as Record<string, unknown>;
     return typeof candidate.url === "string"
         && typeof candidate.title === "string"
-        && typeof candidate.desc === "string";
+        && (typeof candidate.desc === "string" || typeof candidate.description === "string");
 }
 
 type ShopperProduct = {
@@ -301,7 +304,14 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
-        const safeContext = isUserContextPayload(context) ? context : undefined;
+        const safeContext = isUserContextPayload(context)
+            ? {
+                ...(context as UserContextPayload),
+                desc: typeof (context as any).desc === "string"
+                    ? (context as any).desc
+                    : (typeof (context as any).description === "string" ? (context as any).description : "")
+            }
+            : undefined;
 
         // Rate limiting check
         const rateLimitResult = checkRateLimit(ip, sessionId);

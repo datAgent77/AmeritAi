@@ -50,6 +50,1033 @@
   let dynamicContextData = {};
 
   // ============================================
+  // SITE-WIDE DYNAMIC CONTEXT (BETA)
+  // ============================================
+  const SITE_CONTEXT_SELECTOR_NOISE_PREFIXES = ['#userex-', '.userex-', '#vion-', '.vion-'];
+  const SITE_CONTEXT_STORAGE_NOISE_PREFIXES = ['userex_', 'vion_'];
+  const SITE_CONTEXT_FRAMEWORK_NOISE_IDS = ['__next', '__nuxt', 'root', 'app'];
+  const SITE_CONTEXT_SENSITIVE_KEYS = [
+    'password', 'passwd', 'pwd', 'token', 'accesstoken', 'refreshtoken',
+    'authorization', 'cookie', 'secret', 'otp', 'cvv', 'cvc'
+  ];
+  const SITE_CONTEXT_ROUTE_DENYLIST = [
+    'logout', 'signout', 'delete', 'remove', 'destroy', 'create', 'edit', 'new',
+    'download', 'export', 'action', 'callback', '/api/', 'mailto:', 'tel:'
+  ];
+  const SITE_CONTEXT_TRACKING_QUERY_PREFIXES = ['utm_', 'gclid', 'fbclid', 'msclkid'];
+  const SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES = 300 * 1024;
+
+  let siteSessionContext = null;
+  let siteContextUpdateDebounceTimer = null;
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function createEmptySiteSessionContext() {
+    const ts = nowIso();
+    return {
+      version: 1,
+      startedAt: ts,
+      updatedAt: ts,
+      crawl: {
+        status: 'idle',
+        trigger: 'manual',
+        routeScope: 'sidebar_safe',
+        progress: {
+          total: 0,
+          visited: 0,
+          success: 0,
+          failed: 0,
+          currentRoute: ''
+        },
+        errors: []
+      },
+      routes: {},
+      network: {
+        resources: {}
+      },
+      entityIndex: {
+        rawRouteFacts: []
+      },
+      preset: null
+    };
+  }
+
+  siteSessionContext = createEmptySiteSessionContext();
+
+  function isWidgetNoiseStorageKey(key) {
+    const lower = String(key || '').toLowerCase();
+    return SITE_CONTEXT_STORAGE_NOISE_PREFIXES.some(prefix => lower.startsWith(prefix));
+  }
+
+  function isWidgetNoiseSelector(selector) {
+    const lower = String(selector || '').toLowerCase();
+    return SITE_CONTEXT_SELECTOR_NOISE_PREFIXES.some(prefix => lower.startsWith(prefix));
+  }
+
+  function isWidgetNoiseElement(el) {
+    if (!el || !(el instanceof Element)) return false;
+    const id = (el.id || '').toLowerCase();
+    if (id.startsWith('userex-') || id.startsWith('vion-')) return true;
+    if (SITE_CONTEXT_FRAMEWORK_NOISE_IDS.includes(id)) return true;
+    if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'NOSCRIPT') return true;
+    const className = typeof el.className === 'string' ? el.className.toLowerCase() : '';
+    return className.includes('userex-') || className.includes(' vion-') || className.startsWith('vion-');
+  }
+
+  function truncateText(input, maxLen) {
+    const text = String(input || '').replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLen) return text;
+    return text.slice(0, Math.max(0, maxLen - 1)).trim() + '…';
+  }
+
+  function normalizeFieldKey(value, fallback) {
+    const cleaned = String(value || '')
+      .trim()
+      .replace(/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return cleaned || fallback;
+  }
+
+  function escapeCssAttrValue(value) {
+    const raw = String(value || '');
+    try {
+      if (window.CSS && typeof window.CSS.escape === 'function') {
+        return window.CSS.escape(raw);
+      }
+    } catch (e) { }
+    return raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
+
+  function toSafeRouteString(urlObj) {
+    if (!urlObj) return '';
+    const clean = new URL(urlObj.toString());
+    const keysToDelete = [];
+    clean.searchParams.forEach((_, key) => {
+      const lower = key.toLowerCase();
+      if (lower === 'vion_scan' || lower === 'vion_site_crawl' || lower === 'vion_site_crawl_page' || lower.startsWith('vion_')) {
+        keysToDelete.push(key);
+        return;
+      }
+      if (SITE_CONTEXT_TRACKING_QUERY_PREFIXES.some(prefix => lower === prefix || lower.startsWith(prefix))) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach((key) => clean.searchParams.delete(key));
+    return clean.pathname + (clean.search ? clean.search : '');
+  }
+
+  function isSafeSiteRoute(urlObj) {
+    if (!urlObj || urlObj.origin !== window.location.origin) return false;
+    const route = `${urlObj.pathname}${urlObj.search}`.toLowerCase();
+    if (!urlObj.pathname || urlObj.pathname.startsWith('/api/')) return false;
+    if (/\.(pdf|zip|rar|7z|png|jpg|jpeg|gif|svg|webp|mp4|mp3|xlsx?|csv|docx?)($|\?)/i.test(route)) return false;
+    if (SITE_CONTEXT_ROUTE_DENYLIST.some(token => route.includes(token))) return false;
+    return true;
+  }
+
+  function extractShortStatsFromDocument(doc, limit) {
+    const stats = [];
+    const seen = new Set();
+    let scanned = 0;
+    const elements = doc.querySelectorAll('body *');
+
+    for (const el of elements) {
+      scanned += 1;
+      if (scanned > 1200) break;
+      if (!(el instanceof HTMLElement)) continue;
+      if (isWidgetNoiseElement(el)) continue;
+      if (el.children && el.children.length > 6) continue;
+      const text = truncateText(el.innerText || el.textContent || '', 80);
+      if (!text || text.length < 2 || text.length > 70) continue;
+      if (!/\d/.test(text)) continue;
+      if (/^(http|https):/i.test(text)) continue;
+
+      let value = '';
+      let label = '';
+      let m = text.match(/^(\d[\d.,]*)\s+(.+)$/);
+      if (m) {
+        value = m[1];
+        label = m[2];
+      } else {
+        m = text.match(/^(.+?)\s+(\d[\d.,]*)$/);
+        if (m) {
+          label = m[1];
+          value = m[2];
+        }
+      }
+      if (!m) continue;
+      label = truncateText(label, 48);
+      value = truncateText(value, 24);
+      if (!label || !value) continue;
+      const key = `${label}::${value}`.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      stats.push({ label, value });
+      if (stats.length >= (limit || 12)) break;
+    }
+
+    return stats;
+  }
+
+  function collectSelectorCandidatesFromDocument(doc, maxCount) {
+    const discovered = [];
+    const unique = new Set();
+    const addCandidate = (key, selector) => {
+      if (!selector) return;
+      if (isWidgetNoiseSelector(selector)) return;
+      const normSelector = String(selector);
+      if (unique.has(normSelector)) return;
+      unique.add(normSelector);
+      discovered.push({
+        key: normalizeFieldKey(key, 'field'),
+        selector: normSelector
+      });
+    };
+
+    try {
+      const controls = doc.querySelectorAll('input, textarea, select');
+      controls.forEach((el, index) => {
+        if (!(el instanceof HTMLElement)) return;
+        if (isWidgetNoiseElement(el)) return;
+
+        const tag = (el.tagName || '').toLowerCase();
+        const type = (el.getAttribute('type') || '').toLowerCase();
+        if (type === 'hidden' || type === 'password' || type === 'file') return;
+
+        const id = (el.id || '').trim();
+        const name = (el.getAttribute('name') || '').trim();
+        const placeholder = (el.getAttribute('placeholder') || '').trim();
+        const ariaLabel = (el.getAttribute('aria-label') || '').trim();
+        const dataAttrs = ['data-testid', 'data-test', 'data-cy', 'data-qa']
+          .map(attr => (el.getAttribute(attr) || '').trim())
+          .filter(Boolean);
+        const hint = [id, name, placeholder, ariaLabel, type, ...dataAttrs].join(' ').toLowerCase();
+        if (SITE_CONTEXT_SENSITIVE_KEYS.some(k => hint.includes(k))) return;
+
+        if (id) {
+          addCandidate(id, `#${id}`);
+          return;
+        }
+        if (name) {
+          addCandidate(name, `${tag}[name="${escapeCssAttrValue(name)}"]`);
+          return;
+        }
+        if (dataAttrs.length > 0) {
+          const val = dataAttrs[0];
+          const attrName = ['data-testid', 'data-test', 'data-cy', 'data-qa'].find(attr => el.hasAttribute(attr));
+          if (attrName) {
+            addCandidate(val, `[${attrName}="${escapeCssAttrValue(val)}"]`);
+            return;
+          }
+        }
+        if (placeholder && placeholder.length <= 60) {
+          addCandidate(placeholder, `${tag}[placeholder="${escapeCssAttrValue(placeholder)}"]`);
+          return;
+        }
+      });
+    } catch (e) { }
+
+    return discovered.slice(0, maxCount || 20);
+  }
+
+  function collectDomSummaryFromDocument(doc) {
+    const headings = [];
+    try {
+      doc.querySelectorAll('h1, h2, h3').forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        if (isWidgetNoiseElement(el)) return;
+        const text = truncateText(el.innerText || el.textContent || '', 120);
+        if (text && !headings.includes(text) && headings.length < 8) headings.push(text);
+      });
+    } catch (e) { }
+
+    const forms = [];
+    try {
+      doc.querySelectorAll('form').forEach((form) => {
+        if (!(form instanceof HTMLElement)) return;
+        if (isWidgetNoiseElement(form)) return;
+        const fields = [];
+        form.querySelectorAll('input, textarea, select').forEach((field) => {
+          if (!(field instanceof HTMLElement)) return;
+          if (isWidgetNoiseElement(field)) return;
+          const label = field.getAttribute('aria-label')
+            || field.getAttribute('name')
+            || field.getAttribute('placeholder')
+            || field.id
+            || field.tagName.toLowerCase();
+          const normalized = truncateText(label, 48);
+          if (normalized && !fields.includes(normalized) && fields.length < 12) fields.push(normalized);
+        });
+        if (fields.length > 0 && forms.length < 4) {
+          forms.push({ fields });
+        }
+      });
+    } catch (e) { }
+
+    const tables = [];
+    try {
+      doc.querySelectorAll('table').forEach((table) => {
+        if (!(table instanceof HTMLElement)) return;
+        if (isWidgetNoiseElement(table)) return;
+        if (tables.length >= 4) return;
+        const headerTexts = Array.from(table.querySelectorAll('th'))
+          .map(th => truncateText(th.innerText || th.textContent || '', 40))
+          .filter(Boolean)
+          .slice(0, 8);
+        const rowCount = Math.max(0, table.querySelectorAll('tbody tr').length || table.querySelectorAll('tr').length - 1);
+        let title = '';
+        const nearestSection = table.closest('section, article, div');
+        if (nearestSection && nearestSection instanceof HTMLElement) {
+          const maybeTitleEl = nearestSection.querySelector('h2, h3, h4, [role="heading"]');
+          if (maybeTitleEl && maybeTitleEl instanceof HTMLElement) {
+            title = truncateText(maybeTitleEl.innerText || maybeTitleEl.textContent || '', 80);
+          }
+        }
+        tables.push({
+          title: title || undefined,
+          rowCount: rowCount >= 0 ? rowCount : undefined,
+          columns: headerTexts
+        });
+      });
+    } catch (e) { }
+
+    return {
+      headings,
+      forms,
+      tables,
+      stats: extractShortStatsFromDocument(doc, 12)
+    };
+  }
+
+  function parseTableRows(doc, keywords) {
+    const items = [];
+    const statusBreakdown = {};
+    let totalCount = null;
+
+    try {
+      const tables = Array.from(doc.querySelectorAll('table'));
+      tables.forEach((table) => {
+        if (!(table instanceof HTMLElement) || isWidgetNoiseElement(table)) return;
+        const headers = Array.from(table.querySelectorAll('th'))
+          .map(th => (th.textContent || '').trim().toLowerCase());
+        if (!headers.length) return;
+        const hasKeyword = headers.some(h => keywords.some(k => h.includes(k)));
+        if (!hasKeyword) return;
+
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        if (rows.length > 0) totalCount = rows.length;
+        rows.slice(0, 10).forEach((row) => {
+          const cells = Array.from(row.querySelectorAll('td')).map(td => truncateText(td.innerText || td.textContent || '', 120));
+          if (!cells.length) return;
+          const item = {
+            title: cells[0] || '',
+            assignee: cells[1] || '',
+            status: cells[cells.length - 1] || ''
+          };
+          if (item.title) items.push(item);
+          if (item.status) {
+            statusBreakdown[item.status] = (statusBreakdown[item.status] || 0) + 1;
+          }
+        });
+      });
+    } catch (e) { }
+
+    return {
+      recentItems: items,
+      totalCount: typeof totalCount === 'number' ? totalCount : undefined,
+      statusBreakdown
+    };
+  }
+
+  function buildRouteFacts(route, domSummary) {
+    const facts = [];
+    if (!domSummary) return facts;
+    (domSummary.stats || []).slice(0, 8).forEach((stat) => {
+      if (stat && stat.label && stat.value) {
+        facts.push(`[${route}] ${stat.label}: ${stat.value}`);
+      }
+    });
+    return facts;
+  }
+
+  function getEntityTimestamp(entity) {
+    if (!entity || typeof entity !== 'object') return '';
+    return String(entity.capturedAt || entity.visitedAt || entity.updatedAt || '');
+  }
+
+  function getEntityConfidence(entity) {
+    if (!entity || typeof entity !== 'object') return 0;
+    const n = Number(entity.confidence);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function mergeEntityByFreshness(existingEntity, incomingEntity) {
+    if (!existingEntity) return incomingEntity;
+    if (!incomingEntity) return existingEntity;
+    const existingTs = getEntityTimestamp(existingEntity);
+    const incomingTs = getEntityTimestamp(incomingEntity);
+    if (incomingTs && existingTs && incomingTs !== existingTs) {
+      return incomingTs > existingTs ? incomingEntity : existingEntity;
+    }
+    const existingConf = getEntityConfidence(existingEntity);
+    const incomingConf = getEntityConfidence(incomingEntity);
+    if (incomingConf !== existingConf) {
+      return incomingConf > existingConf ? incomingEntity : existingEntity;
+    }
+    if (typeof existingEntity === 'object' && typeof incomingEntity === 'object' && !Array.isArray(existingEntity) && !Array.isArray(incomingEntity)) {
+      return { ...existingEntity, ...incomingEntity };
+    }
+    return incomingEntity;
+  }
+
+  function withEntityMeta(payload, meta) {
+    if (!payload || typeof payload !== 'object') return payload;
+    return {
+      ...payload,
+      source: meta && meta.source ? meta.source : 'dom',
+      sourceType: meta && meta.sourceType ? meta.sourceType : 'dom',
+      route: meta && meta.route ? meta.route : '',
+      capturedAt: meta && meta.capturedAt ? meta.capturedAt : nowIso(),
+      confidence: typeof (meta && meta.confidence) === 'number' ? Math.max(0.1, Math.min(1, meta.confidence)) : 0.6
+    };
+  }
+
+  function extractNameFromDoc(doc) {
+    try {
+      const bodyText = truncateText((doc.body && doc.body.innerText) || '', 2500);
+      const greetingMatch = bodyText.match(/(?:günaydın|merhaba|welcome|hello|hi)[,\s]+([A-ZÇĞİÖŞÜ][\p{L}\s.'-]{2,60})/iu);
+      if (greetingMatch) return truncateText(greetingMatch[1], 80);
+    } catch (e) { }
+    return '';
+  }
+
+  function extractOrderNumber(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    const match = raw.match(/(?:sipariş|siparis|order|no|#)\s*[:#-]?\s*([A-Z0-9-]{4,})/i);
+    if (match) return match[1];
+    if (/^[A-Z0-9-]{4,}$/.test(raw.replace(/\s+/g, ''))) return raw.replace(/\s+/g, '');
+    return '';
+  }
+
+  function extractTrackingNumber(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    const match = raw.match(/(?:takip|tracking|kargo)\s*(?:no|numarası|number)?\s*[:#-]?\s*([A-Z0-9-]{6,})/i);
+    if (match) return match[1];
+    const fallback = raw.match(/\b[A-Z0-9-]{8,}\b/);
+    return fallback ? fallback[0] : '';
+  }
+
+  function extractCurrencyAndAmount(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return {};
+    let currency = '';
+    if (/₺|TRY|TL/i.test(raw)) currency = 'TRY';
+    else if (/€|EUR/i.test(raw)) currency = 'EUR';
+    else if (/\$|USD/i.test(raw)) currency = 'USD';
+    const amountMatch = raw.match(/(\d[\d.\s,]{0,20})/);
+    return {
+      total: amountMatch ? truncateText(amountMatch[1].replace(/\s+/g, ''), 24) : undefined,
+      currency: currency || undefined
+    };
+  }
+
+  function parseDateLike(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    if (/\d{4}-\d{2}-\d{2}/.test(raw)) return raw.match(/\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?/)?.[0] || raw;
+    if (/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(raw)) return raw.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/)?.[0] || raw;
+    return '';
+  }
+
+  function normalizeObjectKeysLower(obj) {
+    const out = {};
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return out;
+    Object.keys(obj).forEach((k) => { out[String(k).toLowerCase()] = obj[k]; });
+    return out;
+  }
+
+  function coerceArrayLike(value) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== 'object') return [];
+    if (Array.isArray(value.items)) return value.items;
+    if (Array.isArray(value.data)) return value.data;
+    if (Array.isArray(value.rows)) return value.rows;
+    if (Array.isArray(value.results)) return value.results;
+    if (Array.isArray(value.nodes)) return value.nodes;
+    return [];
+  }
+
+  function collectKeyMatchesDeep(value, targetKeys, maxDepth, out, path) {
+    if (!value || maxDepth < 0) return;
+    const currentPath = path || '';
+    if (Array.isArray(value)) {
+      value.slice(0, 8).forEach((item, idx) => collectKeyMatchesDeep(item, targetKeys, maxDepth - 1, out, `${currentPath}[${idx}]`));
+      return;
+    }
+    if (typeof value !== 'object') return;
+    Object.keys(value).slice(0, 40).forEach((key) => {
+      const child = value[key];
+      const lower = String(key).toLowerCase();
+      const nextPath = currentPath ? `${currentPath}.${key}` : key;
+      if (targetKeys.some((tk) => lower.includes(tk))) {
+        out.push({ key, lowerKey: lower, value: child, path: nextPath });
+      }
+      collectKeyMatchesDeep(child, targetKeys, maxDepth - 1, out, nextPath);
+    });
+  }
+
+  function extractEcommerceDomEntities(route, doc, domSummary, presetRuntime, routeVisitedAt) {
+    const lowerRoute = String(route || '').toLowerCase();
+    const entities = {};
+    const baseConfidence = Number(presetRuntime?.confidenceBase || 0.72);
+    const statusKeywords = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'kargoda', 'teslim', 'hazırlan', 'hazirlaniyor', 'iptal'];
+
+    try {
+      const tables = Array.from(doc.querySelectorAll('table'));
+      tables.forEach((table) => {
+        if (!(table instanceof HTMLElement) || isWidgetNoiseElement(table)) return;
+        const headers = Array.from(table.querySelectorAll('th')).map((th) => truncateText(th.innerText || th.textContent || '', 80).toLowerCase());
+        const headerText = headers.join(' | ');
+        const rows = Array.from(table.querySelectorAll('tbody tr')).slice(0, 10);
+        if (!rows.length) return;
+        const isOrderTable = /(order|sipariş|siparis)/i.test(headerText);
+        const isShipmentTable = /(shipment|shipping|kargo|teslimat|tracking|takip)/i.test(headerText);
+        const isReturnTable = /(return|iade)/i.test(headerText);
+        if (!(isOrderTable || isShipmentTable || isReturnTable)) return;
+
+        const parsedRows = rows.map((row) => Array.from(row.querySelectorAll('td')).map((td) => truncateText(td.innerText || td.textContent || '', 120)));
+
+        if (isOrderTable) {
+          const recentItems = [];
+          const statusBreakdown = {};
+          parsedRows.forEach((cells) => {
+            const merged = cells.join(' | ');
+            if (!merged) return;
+            const amountCell = cells.find((c) => /₺|\$|€|TRY|USD|EUR/i.test(c)) || '';
+            const amount = extractCurrencyAndAmount(amountCell);
+            const status = cells.find((c) => statusKeywords.some((s) => c.toLowerCase().includes(s))) || cells[cells.length - 1] || '';
+            recentItems.push({
+              orderNo: extractOrderNumber(cells[0]) || extractOrderNumber(merged) || truncateText(cells[0] || '', 40) || undefined,
+              status: status ? truncateText(status, 60) : undefined,
+              total: amount.total,
+              currency: amount.currency,
+              createdAt: cells.map(parseDateLike).find(Boolean) || undefined
+            });
+            if (status) statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+          });
+          if (recentItems.length) {
+            entities.orders = withEntityMeta({ totalCount: rows.length, recentItems, statusBreakdown }, {
+              source: 'dom', sourceType: 'dom_table', route, capturedAt: routeVisitedAt, confidence: baseConfidence + 0.08
+            });
+          }
+        }
+
+        if (isShipmentTable) {
+          const recentItems = [];
+          const statusBreakdown = {};
+          parsedRows.forEach((cells) => {
+            const merged = cells.join(' | ');
+            if (!merged) return;
+            const status = cells.find((c) => statusKeywords.some((s) => c.toLowerCase().includes(s))) || cells[cells.length - 1] || '';
+            recentItems.push({
+              trackingNumber: extractTrackingNumber(merged) || undefined,
+              carrier: (cells.find((c) => /(aras|yurtiçi|yurtici|mng|ups|fedex|dhl|sürat|surat|ptt)/i.test(c)) || undefined),
+              status: status ? truncateText(status, 60) : undefined,
+              eta: cells.map(parseDateLike).find(Boolean) || undefined,
+              updatedAt: routeVisitedAt
+            });
+            if (status) statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+          });
+          if (recentItems.length) {
+            entities.shipments = withEntityMeta({ totalCount: rows.length, recentItems, statusBreakdown }, {
+              source: 'dom', sourceType: 'dom_table', route, capturedAt: routeVisitedAt, confidence: baseConfidence + 0.08
+            });
+          }
+        }
+
+        if (isReturnTable) {
+          const recentItems = parsedRows.map((cells) => ({
+            orderNo: extractOrderNumber(cells.join(' | ')) || truncateText(cells[0] || '', 40) || undefined,
+            status: truncateText(cells[cells.length - 1] || '', 60) || undefined
+          })).filter((r) => r.orderNo || r.status);
+          if (recentItems.length) {
+            entities.returns = withEntityMeta({ totalCount: rows.length, recentItems }, {
+              source: 'dom', sourceType: 'dom_table', route, capturedAt: routeVisitedAt, confidence: baseConfidence
+            });
+          }
+        }
+      });
+    } catch (e) { }
+
+    if (/(cart|sepet|checkout)/i.test(lowerRoute)) {
+      const cartStats = (domSummary?.stats || []).filter((s) => /(cart|sepet|item|ürün|urun|toplam|total)/i.test(`${s.label} ${s.value}`)).slice(0, 6);
+      if (cartStats.length) {
+        const totalStat = cartStats.find((s) => /(toplam|total|tutar|amount)/i.test(String(s.label || '')));
+        const totalParsed = extractCurrencyAndAmount(`${totalStat?.label || ''} ${totalStat?.value || ''}`);
+        entities.cart = withEntityMeta({
+          itemCount: cartStats.find((s) => /(adet|item|ürün|urun)/i.test(String(s.label || '')))?.value,
+          total: totalParsed.total || (totalStat ? totalStat.value : undefined),
+          currency: totalParsed.currency
+        }, { source: 'dom', sourceType: 'dom_stats', route, capturedAt: routeVisitedAt, confidence: baseConfidence });
+      }
+    }
+
+    if (/(account|my-account|hesabim|profil|profile)/i.test(lowerRoute)) {
+      const name = extractNameFromDoc(doc);
+      const fields = (domSummary?.forms || []).flatMap((f) => Array.isArray(f.fields) ? f.fields : []).slice(0, 10);
+      if (name || fields.length) {
+        entities.account = withEntityMeta({
+          profileSummary: { name: name || undefined, visibleFields: fields }
+        }, { source: 'dom', sourceType: 'dom_profile', route, capturedAt: routeVisitedAt, confidence: baseConfidence - 0.02 });
+      }
+    }
+
+    return entities;
+  }
+
+  function extractEcommerceNetworkEntities(route, networkResources, presetRuntime, routeVisitedAt) {
+    const entities = {};
+    const resources = Array.isArray(networkResources) ? networkResources : [];
+    if (!resources.length) return entities;
+    const baseConfidence = Number(presetRuntime?.confidenceBase || 0.72);
+
+    const buildMeta = (resource) => ({
+      source: 'network',
+      sourceType: resource?.sourceType || (String(resource?.method || 'GET').toUpperCase() === 'GET' ? 'get_json' : 'post_json'),
+      route,
+      capturedAt: resource?.capturedAt || routeVisitedAt,
+      confidence: baseConfidence + 0.1
+    });
+
+    resources.forEach((resource) => {
+      const sample = resource?.sample || resource?.summary?.sample;
+      if (!sample || typeof sample !== 'object') return;
+      const matches = [];
+      collectKeyMatchesDeep(sample, ['order', 'siparis', 'shipment', 'shipping', 'kargo', 'tracking', 'cart', 'sepet', 'account', 'profile', 'customer', 'return', 'iade'], 4, matches, '');
+      matches.forEach((entry) => {
+        const lk = entry.lowerKey || '';
+        const arr = coerceArrayLike(entry.value);
+        const obj = entry.value && typeof entry.value === 'object' && !Array.isArray(entry.value) ? entry.value : null;
+
+        if ((lk.includes('order') || lk.includes('siparis')) && arr.length) {
+          const recentItems = arr.slice(0, 8).map((item) => {
+            const o = normalizeObjectKeysLower(item);
+            return {
+              orderNo: o.orderno || o.order_id || o.orderid || o.siparisno || o.no || o.number || o.id || undefined,
+              status: o.status || o.state || undefined,
+              total: o.total || o.grandtotal || o.amount || undefined,
+              currency: o.currency || o.currencycode || undefined,
+              createdAt: o.createdat || o.created_at || o.date || o.orderdate || undefined
+            };
+          }).filter((item) => item.orderNo || item.status || item.total);
+          if (recentItems.length) {
+            const statusBreakdown = {};
+            recentItems.forEach((item) => {
+              if (item.status) statusBreakdown[item.status] = (statusBreakdown[item.status] || 0) + 1;
+            });
+            entities.orders = mergeEntityByFreshness(entities.orders, withEntityMeta({
+              totalCount: arr.length,
+              recentItems,
+              statusBreakdown
+            }, buildMeta(resource)));
+          }
+        }
+
+        if ((lk.includes('shipment') || lk.includes('tracking') || lk.includes('kargo')) && (arr.length || obj)) {
+          const list = (arr.length ? arr : [obj]).slice(0, 8);
+          const recentItems = list.map((item) => {
+            const o = normalizeObjectKeysLower(item);
+            return {
+              trackingNumber: o.trackingnumber || o.tracking || o.tracking_no || o.awb || o.waybill || undefined,
+              carrier: o.carrier || o.courier || o.company || undefined,
+              status: o.status || o.state || undefined,
+              eta: o.eta || o.estimateddelivery || o.deliverydate || undefined,
+              updatedAt: o.updatedat || o.updated_at || o.lastupdated || undefined
+            };
+          }).filter((item) => item.trackingNumber || item.status || item.carrier);
+          if (recentItems.length) {
+            const statusBreakdown = {};
+            recentItems.forEach((item) => {
+              if (item.status) statusBreakdown[item.status] = (statusBreakdown[item.status] || 0) + 1;
+            });
+            entities.shipments = mergeEntityByFreshness(entities.shipments, withEntityMeta({
+              totalCount: recentItems.length,
+              recentItems,
+              statusBreakdown
+            }, buildMeta(resource)));
+          }
+        }
+
+        if ((lk.includes('cart') || lk.includes('sepet')) && obj) {
+          const o = normalizeObjectKeysLower(obj);
+          const itemCount = o.itemcount || o.count || (Array.isArray(o.items) ? o.items.length : undefined);
+          const total = o.total || o.grandtotal || o.amount || undefined;
+          const currency = o.currency || o.currencycode || undefined;
+          if (itemCount !== undefined || total !== undefined) {
+            entities.cart = mergeEntityByFreshness(entities.cart, withEntityMeta({ itemCount, total, currency }, buildMeta(resource)));
+          }
+        }
+
+        if ((lk.includes('account') || lk.includes('profile') || lk.includes('customer')) && obj) {
+          const o = normalizeObjectKeysLower(obj);
+          const profileSummary = {
+            name: o.name || [o.firstname, o.lastname].filter(Boolean).join(' ').trim() || undefined,
+            email: o.email || undefined,
+            phone: o.phone || o.phonenumber || undefined
+          };
+          if (profileSummary.name || profileSummary.email || profileSummary.phone) {
+            entities.account = mergeEntityByFreshness(entities.account, withEntityMeta({ profileSummary }, buildMeta(resource)));
+          }
+        }
+
+        if ((lk.includes('return') || lk.includes('iade')) && arr.length) {
+          const recentItems = arr.slice(0, 8).map((item) => {
+            const o = normalizeObjectKeysLower(item);
+            return {
+              orderNo: o.orderno || o.orderid || o.siparisno || o.order_no || undefined,
+              status: o.status || o.state || undefined,
+              createdAt: o.createdat || o.created_at || o.date || undefined
+            };
+          }).filter((item) => item.orderNo || item.status);
+          if (recentItems.length) {
+            entities.returns = mergeEntityByFreshness(entities.returns, withEntityMeta({ totalCount: arr.length, recentItems }, buildMeta(resource)));
+          }
+        }
+      });
+    });
+
+    return entities;
+  }
+
+  function extractEntitiesForRoute(route, doc, domSummary, options) {
+    const lowerRoute = String(route || '').toLowerCase();
+    const entities = {};
+    const opts = options || {};
+    const presetRuntime = (opts.presetRuntime && typeof opts.presetRuntime === 'object') ? opts.presetRuntime : null;
+    const routeVisitedAt = opts.visitedAt || nowIso();
+    const baseConfidence = Number(presetRuntime?.confidenceBase || 0.62);
+
+    if (lowerRoute.includes('gorev') || lowerRoute.includes('task') || lowerRoute.includes('dashboard') || lowerRoute.includes('ozet')) {
+      const parsedTasks = parseTableRows(doc, ['görev', 'gorev', 'task']);
+      if (parsedTasks.recentItems.length || parsedTasks.totalCount !== undefined) {
+        entities.tasks = withEntityMeta(parsedTasks, {
+          source: 'dom',
+          sourceType: 'dom_table',
+          route,
+          capturedAt: routeVisitedAt,
+          confidence: baseConfidence
+        });
+      }
+      const dashboardStats = (domSummary?.stats || []).slice(0, 10);
+      if (dashboardStats.length) {
+        entities.dashboard = withEntityMeta({ stats: dashboardStats }, {
+          source: 'dom',
+          sourceType: 'dom_stats',
+          route,
+          capturedAt: routeVisitedAt,
+          confidence: baseConfidence - 0.05
+        });
+      }
+    }
+
+    if (lowerRoute.includes('proje') || lowerRoute.includes('project')) {
+      const parsedProjects = parseTableRows(doc, ['proje', 'project']);
+      if (parsedProjects.recentItems.length || parsedProjects.totalCount !== undefined) {
+        entities.projects = withEntityMeta(parsedProjects, {
+          source: 'dom',
+          sourceType: 'dom_table',
+          route,
+          capturedAt: routeVisitedAt,
+          confidence: baseConfidence
+        });
+      }
+    }
+
+    if (lowerRoute.includes('profil') || lowerRoute.includes('profile') || lowerRoute.includes('benim-sayfam') || lowerRoute.includes('my-page')) {
+      const profile = {};
+      const extractedName = extractNameFromDoc(doc);
+      if (extractedName) profile.name = extractedName;
+      if (Object.keys(profile).length) {
+        entities.profile = withEntityMeta(profile, {
+          source: 'dom',
+          sourceType: 'dom_profile',
+          route,
+          capturedAt: routeVisitedAt,
+          confidence: baseConfidence - 0.08
+        });
+      }
+    }
+
+    if (presetRuntime?.presetId === 'ecommerce-generic') {
+      const domEntities = extractEcommerceDomEntities(route, doc, domSummary, presetRuntime, routeVisitedAt);
+      Object.keys(domEntities).forEach((key) => {
+        entities[key] = mergeEntityByFreshness(entities[key], domEntities[key]);
+      });
+      if (Array.isArray(opts.networkResources) && opts.networkResources.length) {
+        const networkEntities = extractEcommerceNetworkEntities(route, opts.networkResources, presetRuntime, routeVisitedAt);
+        Object.keys(networkEntities).forEach((key) => {
+          entities[key] = mergeEntityByFreshness(entities[key], networkEntities[key]);
+        });
+      }
+    }
+
+    return entities;
+  }
+
+  function mergeRouteSnapshotIntoSiteSessionContext(snapshot) {
+    if (!snapshot || !snapshot.route) return;
+    if (!siteSessionContext) siteSessionContext = createEmptySiteSessionContext();
+
+    siteSessionContext.updatedAt = nowIso();
+    siteSessionContext.routes[snapshot.route] = snapshot;
+
+    const entities = snapshot.entities || {};
+    ['tasks', 'projects', 'profile', 'dashboard', 'orders', 'shipments', 'returns', 'cart', 'account'].forEach((entityKey) => {
+      if (!entities[entityKey]) return;
+      siteSessionContext.entityIndex[entityKey] = mergeEntityByFreshness(siteSessionContext.entityIndex[entityKey], entities[entityKey]);
+    });
+
+    const facts = buildRouteFacts(snapshot.route, snapshot.domSummary);
+    if (!Array.isArray(siteSessionContext.entityIndex.rawRouteFacts)) {
+      siteSessionContext.entityIndex.rawRouteFacts = [];
+    }
+    facts.forEach((fact) => {
+      if (!siteSessionContext.entityIndex.rawRouteFacts.includes(fact)) {
+        siteSessionContext.entityIndex.rawRouteFacts.push(fact);
+      }
+    });
+    if (siteSessionContext.entityIndex.rawRouteFacts.length > 100) {
+      siteSessionContext.entityIndex.rawRouteFacts = siteSessionContext.entityIndex.rawRouteFacts.slice(-100);
+    }
+  }
+
+  function summarizeUnknownForAI(value, depth) {
+    if (depth <= 0) return Array.isArray(value) ? `[array:${value.length}]` : (value && typeof value === 'object' ? '[object]' : value);
+    if (value === null || value === undefined) return value;
+    if (typeof value === 'string') return truncateText(value, 240);
+    if (typeof value === 'number' || typeof value === 'boolean') return value;
+    if (Array.isArray(value)) return value.slice(0, 5).map(v => summarizeUnknownForAI(v, depth - 1));
+    if (typeof value === 'object') {
+      const out = {};
+      Object.keys(value).slice(0, 12).forEach((key) => {
+        out[key] = summarizeUnknownForAI(value[key], depth - 1);
+      });
+      return out;
+    }
+    return String(value);
+  }
+
+  function isSensitiveKeyName(key) {
+    const lower = String(key || '').toLowerCase();
+    return SITE_CONTEXT_SENSITIVE_KEYS.some((token) => lower.includes(token));
+  }
+
+  function stripSensitiveData(value, depth) {
+    if (depth <= 0) return undefined;
+    if (value === null || value === undefined) return value;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+    if (Array.isArray(value)) return value.slice(0, 20).map((item) => stripSensitiveData(item, depth - 1));
+    if (typeof value === 'object') {
+      const out = {};
+      Object.keys(value).slice(0, 50).forEach((key) => {
+        if (isSensitiveKeyName(key)) return;
+        out[key] = stripSensitiveData(value[key], depth - 1);
+      });
+      return out;
+    }
+    return undefined;
+  }
+
+  function applyNetworkResponseFieldFilters(value, policy, depth) {
+    if (!policy || typeof policy !== 'object') return value;
+    const allowlist = Array.isArray(policy.responseFieldAllowlist) ? policy.responseFieldAllowlist.map((v) => String(v).toLowerCase()) : [];
+    const denylist = Array.isArray(policy.responseFieldDenylist) ? policy.responseFieldDenylist.map((v) => String(v).toLowerCase()) : [];
+    if (depth <= 0) return undefined;
+    if (value === null || value === undefined) return value;
+    if (typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.slice(0, 20).map((item) => applyNetworkResponseFieldFilters(item, policy, depth - 1));
+    const out = {};
+    Object.keys(value).slice(0, 60).forEach((key) => {
+      const lower = String(key).toLowerCase();
+      if (denylist.some((token) => lower.includes(token))) return;
+      if (allowlist.length > 0 && !allowlist.some((token) => lower.includes(token))) {
+        const child = value[key];
+        if (child && typeof child === 'object') {
+          const nested = applyNetworkResponseFieldFilters(child, policy, depth - 1);
+          if (nested && ((Array.isArray(nested) && nested.length > 0) || (!Array.isArray(nested) && Object.keys(nested).length > 0))) {
+            out[key] = nested;
+          }
+        }
+        return;
+      }
+      out[key] = applyNetworkResponseFieldFilters(value[key], policy, depth - 1);
+    });
+    return out;
+  }
+
+  function summarizeNetworkJsonForStorage(jsonValue, options) {
+    const opts = options || {};
+    const filtered = applyNetworkResponseFieldFilters(jsonValue, opts.networkPolicy || null, 5);
+    const scrubbed = stripSensitiveData(filtered, 5);
+    const sample = summarizeUnknownForAI(scrubbed, 3);
+    let topLevelType = Array.isArray(scrubbed) ? 'array' : typeof scrubbed;
+    let itemCount = undefined;
+    if (Array.isArray(scrubbed)) itemCount = scrubbed.length;
+    else if (scrubbed && typeof scrubbed === 'object') itemCount = Object.keys(scrubbed).length;
+    return {
+      topLevelType,
+      itemCount,
+      sample
+    };
+  }
+
+  function mergeNetworkResourceSummaries(resources) {
+    if (!siteSessionContext || !siteSessionContext.network || !siteSessionContext.network.resources) return;
+    if (!Array.isArray(resources)) return;
+    resources.forEach((resource) => {
+      if (!resource || !resource.key) return;
+      siteSessionContext.network.resources[resource.key] = resource;
+    });
+    const resourceKeys = Object.keys(siteSessionContext.network.resources);
+    if (resourceKeys.length > 120) {
+      resourceKeys
+        .sort((a, b) => String(siteSessionContext.network.resources[a]?.capturedAt || '').localeCompare(String(siteSessionContext.network.resources[b]?.capturedAt || '')))
+        .slice(0, resourceKeys.length - 120)
+        .forEach((key) => delete siteSessionContext.network.resources[key]);
+    }
+  }
+
+  function getSiteSessionContextForAI() {
+    if (!siteSessionContext) return undefined;
+    const routeEntries = Object.values(siteSessionContext.routes || {});
+    routeEntries.sort((a, b) => String(b.visitedAt || '').localeCompare(String(a.visitedAt || '')));
+    const recentRoutes = routeEntries.slice(0, 5).map((route) => ({
+      route: route.route,
+      title: route.title || '',
+      visitedAt: route.visitedAt,
+      pageTextSnippet: truncateText(route.pageTextSnippet || '', 400),
+      domSummary: summarizeUnknownForAI(route.domSummary || {}, 2),
+      selectorCandidates: Array.isArray(route.selectorCandidates) ? route.selectorCandidates.slice(0, 8) : [],
+      entities: summarizeUnknownForAI(route.entities || {}, 2)
+    }));
+
+    const networkEntries = Object.values(siteSessionContext.network?.resources || {})
+      .sort((a, b) => String(b.capturedAt || '').localeCompare(String(a.capturedAt || '')))
+      .slice(0, 12)
+      .map((r) => ({
+        key: r.key,
+        urlPath: r.urlPath,
+        method: r.method,
+        sourceType: r.sourceType,
+        operationName: r.operationName,
+        capturedAt: r.capturedAt,
+        summary: summarizeUnknownForAI(r.summary || {}, 2)
+      }));
+
+    return {
+      version: 1,
+      startedAt: siteSessionContext.startedAt,
+      updatedAt: siteSessionContext.updatedAt,
+      crawl: {
+        status: siteSessionContext.crawl?.status || 'idle',
+        trigger: siteSessionContext.crawl?.trigger || 'manual',
+        routeScope: siteSessionContext.crawl?.routeScope || 'sidebar_safe',
+        progress: siteSessionContext.crawl?.progress || {},
+        errors: Array.isArray(siteSessionContext.crawl?.errors) ? siteSessionContext.crawl.errors.slice(-10) : []
+      },
+      preset: summarizeUnknownForAI(siteSessionContext.preset || {}, 2),
+      entityIndex: summarizeUnknownForAI(siteSessionContext.entityIndex || {}, 3),
+      network: {
+        resourceCount: Object.keys(siteSessionContext.network?.resources || {}).length,
+        resources: networkEntries
+      },
+      routes: recentRoutes
+    };
+  }
+
+  function scheduleSiteContextUpdate() {
+    if (siteContextUpdateDebounceTimer) clearTimeout(siteContextUpdateDebounceTimer);
+    siteContextUpdateDebounceTimer = setTimeout(() => {
+      try {
+        sendContextUpdate();
+      } catch (e) { }
+    }, 200);
+  }
+
+  function getDynamicSiteContextOptions() {
+    const fallbackPreset = {
+      presetId: 'generic-web-app',
+      routeHints: ['dashboard', 'overview', 'profile', 'account', 'settings', 'projects', 'tasks'],
+      entityTargets: ['dashboard', 'tasks', 'projects', 'profile'],
+      confidenceBase: 0.55,
+      networkPolicy: {
+        allowGetJson: true,
+        allowGraphQLSummary: false,
+        allowedPostEndpoints: [],
+        allowedGraphQLOperations: []
+      }
+    };
+    const defaults = {
+      enabled: false,
+      collectionMode: 'dom_network',
+      crawlTrigger: 'manual',
+      routeScope: 'sidebar_safe',
+      allowlist: [],
+      maxRoutes: 30,
+      maxDurationSec: 90,
+      hydrationWaitMs: 4000,
+      capturePII: true
+    };
+    const runtimePreset = settings.dynamicSiteContextRuntimePreset && typeof settings.dynamicSiteContextRuntimePreset === 'object'
+      ? settings.dynamicSiteContextRuntimePreset
+      : fallbackPreset;
+    return {
+      enabled: settings.enableDynamicSiteContext === true,
+      collectionMode: settings.dynamicSiteContextCollectionMode || defaults.collectionMode,
+      crawlTrigger: settings.dynamicSiteContextCrawlTrigger || defaults.crawlTrigger,
+      routeScope: settings.dynamicSiteContextRouteScope || defaults.routeScope,
+      allowlist: Array.isArray(settings.dynamicSiteContextAllowlist) ? settings.dynamicSiteContextAllowlist : defaults.allowlist,
+      maxRoutes: Number(settings.dynamicSiteContextMaxRoutes || defaults.maxRoutes),
+      maxDurationSec: Number(settings.dynamicSiteContextMaxDurationSec || defaults.maxDurationSec),
+      hydrationWaitMs: Number(settings.dynamicSiteContextHydrationWaitMs || defaults.hydrationWaitMs),
+      capturePII: settings.dynamicSiteContextCapturePII !== false,
+      presetMode: settings.dynamicSiteContextPresetMode || 'none',
+      presetId: settings.dynamicSiteContextResolvedPresetId || settings.dynamicSiteContextPresetId || runtimePreset.presetId || 'generic-web-app',
+      suggestedPresetId: settings.dynamicSiteContextSuggestedPresetId || 'generic-web-app',
+      runtimePreset
+    };
+  }
+
+  function getWidgetSearchParam(name) {
+    try {
+      return new URLSearchParams(window.location.search).get(name);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function hasWidgetSearchFlag(name) {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.has(name);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function isSiteCrawlPageMode() {
+    return hasWidgetSearchFlag('vion_site_crawl_page');
+  }
+
+  function isSiteCrawlOrchestratorMode() {
+    return hasWidgetSearchFlag('vion_site_crawl') && !hasWidgetSearchFlag('vion_site_crawl_page');
+  }
+
+  // ============================================
   // PROACTIVE ENGAGEMENT CONTROLLER
   // ============================================
 
@@ -644,6 +1671,19 @@
         sessionStorage.setItem(this.conversationStartedKey, 'true');
         this.hideBubble();
         launcher.click();
+        return;
+      }
+
+      // Ambient / always-open modes may not render a launcher.
+      // In that case, treat "openWidget" as "focus/open input".
+      if (container) {
+        console.log('Engagement: No launcher found, focusing input for always-open widget');
+        sessionStorage.setItem(this.conversationStartedKey, 'true');
+        this.hideBubble();
+        const iframe = container.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ type: 'USEREX_ACTIVATE_INPUT' }, '*');
+        }
       }
     }
 
@@ -834,11 +1874,23 @@
     }
 
     showBubble(specificMsg = null, triggerSource = null) {
-      // Check if widget is already open
+      // Check if widget/chat is already open
       const container = document.getElementById('userex-chatbot-container');
-      const isWidgetOpen = container && container.style.display && container.style.display !== 'none';
+      const isWidgetOpen = !!(container && container.style.display && container.style.display !== 'none');
+      const isAmbientMode = !!(settings && settings.chatDisplayMode === 'ambient');
+      const isAmbientFeedOpen = !!(isAmbientMode && container && container.dataset && container.dataset.userexAmbientFeedVisible === '1');
 
-      if (isWidgetOpen) return;
+      // Never show proactive bubbles while the user is actively viewing the open chat.
+      // Ambient mode keeps the iframe container mounted/visible even in input-only state,
+      // so we only block when the expanded feed is open.
+      if ((!isAmbientMode && isWidgetOpen) || isAmbientFeedOpen) {
+        console.log('Engagement: Bubble suppressed because chat is open', {
+          isAmbientMode,
+          isWidgetOpen,
+          isAmbientFeedOpen
+        });
+        return;
+      }
 
       // Check if bubble already exists and is visible in DOM
       const existingBubble = document.getElementById('userex-engagement-bubble');
@@ -1069,6 +2121,11 @@
         const launcher = document.getElementById('userex-chatbot-launcher');
         if (launcher) {
           launcher.click();
+        } else {
+          const iframe = document.querySelector('#userex-chatbot-container iframe');
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'USEREX_ACTIVATE_INPUT' }, '*');
+          }
         }
         this.hideBubble();
 
@@ -1117,17 +2174,67 @@
 
     positionBubble(position) {
       const launcher = document.getElementById('userex-chatbot-launcher');
-      if (!launcher) return;
+      const container = document.getElementById('userex-chatbot-container');
+      let anchorRect = null;
+      let anchorKind = 'launcher';
 
-      const launcherRect = launcher.getBoundingClientRect();
+      if (launcher) {
+        anchorRect = launcher.getBoundingClientRect();
+      } else if (container) {
+        anchorRect = container.getBoundingClientRect();
+        anchorKind = 'container';
+      }
+
+      if (!anchorRect) return;
+
+      const launcherRect = anchorRect;
       const bubbleWidth = 280;
       const gap = 16;
 
       // Default to non-centered
       this.isBubbleCentered = false;
 
-      // Dynamic Alignment Logic based on Launcher Position
-      if (position === 'top') {
+      // If there's no launcher (ambient / always-open), anchor above the visible container.
+      if (anchorKind === 'container') {
+        const anchorCenter = launcherRect.left + (launcherRect.width / 2);
+        const screenW = window.innerWidth;
+        let targetBottom = Math.max(gap, window.innerHeight - launcherRect.top + gap);
+
+        // Ambient mode: anchor the proactive bubble near the input dock (form),
+        // not the top of the whole iframe container (which can be much taller).
+        if (settings && settings.chatDisplayMode === 'ambient') {
+          const distanceToBottom = Math.max(0, window.innerHeight - launcherRect.bottom);
+          const distanceToTop = Math.max(0, launcherRect.top);
+          const isBottomAnchoredAmbient = distanceToBottom <= (distanceToTop + 4);
+
+          if (isBottomAnchoredAmbient) {
+            const ambientBottomMargin = Number(settings.ambientBottomMargin || 0);
+            // Anchor near the visible input dock (not the iframe's full ambient rail height).
+            // The previous estimate was too tall and placed the bubble far above the form.
+            const estimatedDockOffset = (isMobileDevice() ? 64 : 56) + ambientBottomMargin;
+            const estimatedDockTop = Math.max(0, launcherRect.bottom - estimatedDockOffset);
+            const ambientGap = isMobileDevice() ? 10 : 12;
+            targetBottom = Math.max(ambientGap, window.innerHeight - estimatedDockTop + ambientGap);
+          }
+        }
+
+        this.bubble.style.bottom = `${targetBottom}px`;
+
+        if (anchorCenter < screenW * 0.33) {
+          this.bubble.style.left = `${Math.max(12, launcherRect.left)}px`;
+          this.bubble.style.right = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
+        } else if (anchorCenter > screenW * 0.66) {
+          this.bubble.style.right = `${Math.max(12, screenW - launcherRect.right)}px`;
+          this.bubble.style.left = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
+        } else {
+          this.bubble.style.left = `${anchorCenter}px`;
+          this.bubble.style.right = 'auto';
+          this.bubble.style.transform = 'translate(-50%, 20px)';
+          this.isBubbleCentered = true;
+        }
+      } else if (position === 'top') {
         const launcherCenter = launcherRect.left + (launcherRect.width / 2);
         const screenW = window.innerWidth;
 
@@ -2005,6 +3112,7 @@
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
     let applyAmbientContainerSize = null;
+    let ambientFeedVisible = false;
 
     // Apply View Mode Styles
     const isAmbientMode = isAmbientWidgetMode;
@@ -2027,8 +3135,13 @@
 
       let ambientShrinkTimeout = null;
 
+      iframeContainer.dataset.userexAmbientFeedVisible = '0';
+
       applyAmbientContainerSize = (hasFeed) => {
         if (ambientShrinkTimeout) clearTimeout(ambientShrinkTimeout);
+        // Update logical visibility immediately so proactive bubble guards
+        // reflect the current state (not delayed by close animation timing).
+        iframeContainer.dataset.userexAmbientFeedVisible = hasFeed ? '1' : '0';
 
         const applySizes = (isExpanding) => {
           const nextHeight = isExpanding ? (ambientExpandedHeight + bottomMargin) : (ambientInputOnlyHeight + bottomMargin);
@@ -2224,10 +3337,33 @@
     // Çözüm: Ambient modda "kapat" yerine sadece feed'i gizle ve input-only moduna al.
     // Kullanıcı tekrar yazınca feed yeniden açılıyor — launcher olmadığından tam kapama yok.
     const hideAmbientFeed = () => {
+      ambientFeedVisible = false;
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'USEREX_FORCE_AMBIENT_FEED_CLOSE' }, '*');
+      }
       if (applyAmbientContainerSize) {
         applyAmbientContainerSize(false); // Sadece boyutu küçült, container'ı gizleme
       }
     };
+
+    // Ambient mode: clicking outside the widget area on the host page should collapse the feed.
+    // We only react when the expanded ambient feed is visible.
+    const handleAmbientOutsidePointerDown = (event) => {
+      if (!isAmbientWidgetMode || !ambientFeedVisible) return;
+
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      // Ignore clicks inside the widget iframe/container itself.
+      if (iframeContainer.contains(target)) return;
+
+      // Ignore clicks on proactive bubbles (they manage their own open/focus behavior).
+      const engagementBubble = document.getElementById('userex-engagement-bubble');
+      if (engagementBubble && engagementBubble.contains(target)) return;
+
+      hideAmbientFeed();
+    };
+    document.addEventListener('pointerdown', handleAmbientOutsidePointerDown, true);
 
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
@@ -2240,7 +3376,33 @@
         }
       }
       if (event.data.type === 'USEREX_AMBIENT_FEED_VISIBILITY' && applyAmbientContainerSize) {
-        applyAmbientContainerSize(!!event.data.hasFeed);
+        ambientFeedVisible = !!event.data.hasFeed;
+        if (ambientFeedVisible && engagementController) {
+          engagementController.hideBubble();
+        }
+        applyAmbientContainerSize(ambientFeedVisible);
+      }
+      if (event.data.type === 'USEREX_SITE_CRAWL_START') {
+        startSiteContextCrawl(event.data.options || {}).then((result) => {
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: result && result.success ? 'USEREX_SITE_CRAWL_COMPLETE' : 'USEREX_SITE_CRAWL_ERROR',
+              payload: result || null
+            }, '*');
+          }
+        }).catch((err) => {
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+              type: 'USEREX_SITE_CRAWL_ERROR',
+              payload: { error: { message: err && err.message ? err.message : 'Failed to start crawl' } }
+            }, '*');
+          }
+        });
+      }
+      if (event.data.type === 'USEREX_SITE_CRAWL_CANCEL') {
+        if (window.UserexWidget && typeof window.UserexWidget.cancelSiteContextCrawl === 'function') {
+          window.UserexWidget.cancelSiteContextCrawl();
+        }
       }
       if (event.data.type === 'USEREX_TOGGLE_SIZE') {
         if (settings.viewMode === 'wide') {
@@ -2306,6 +3468,44 @@
       setTimeout(postActivateInput, 80);
       setTimeout(postActivateInput, 220);
     };
+    window.UserexWidget.startSiteContextCrawl = function (options) {
+      return startSiteContextCrawl(options || {});
+    };
+    window.UserexWidget.getSiteSessionContext = function () {
+      return getSiteSessionContextForAI();
+    };
+    window.UserexWidget.cancelSiteContextCrawl = function () {
+      if (activeSiteCrawlJob && activeSiteCrawlJob.running) {
+        try {
+          if (activeSiteCrawlJob.routeTimer) clearTimeout(activeSiteCrawlJob.routeTimer);
+          if (activeSiteCrawlJob.overallTimer) clearTimeout(activeSiteCrawlJob.overallTimer);
+          if (siteSessionContext && siteSessionContext.crawl) {
+            siteSessionContext.crawl.status = 'failed';
+            siteSessionContext.crawl.errors = siteSessionContext.crawl.errors || [];
+            siteSessionContext.crawl.errors.push({ route: '', code: 'unreachable', message: 'Crawl cancelled manually' });
+            scheduleSiteContextUpdate();
+          }
+          if (typeof activeSiteCrawlJob.cleanup === 'function') {
+            activeSiteCrawlJob.cleanup({
+              success: false,
+              status: 'failed',
+              reason: 'cancelled',
+              siteSessionContext: getSiteSessionContextForAI()
+            });
+          } else {
+            activeSiteCrawlJob.running = false;
+          }
+          activeSiteCrawlJob = null;
+          emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_ERROR', {
+            error: { code: 'unreachable', message: 'Crawl cancelled manually' }
+          });
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    };
 
     // Initial Trigger Check
     setTimeout(() => {
@@ -2356,7 +3556,7 @@
     });
 
     // Initialize Engagement Controller if enabled
-    if (settings.engagement && settings.engagement.enabled && usesLauncher) {
+    if (settings.engagement && settings.engagement.enabled) {
       // Resolve language precedence for proactive bubbles:
       // 1) engagement.language (Proactive module setting)
       // 2) initialLanguage (widget global setting)
@@ -2386,6 +3586,27 @@
       } catch (e) {
         console.error('Userex: Failed to init Dynamic Context Observer', e);
       }
+    }
+
+    // Optional site-wide dynamic context crawl (beta)
+    try {
+      const siteContextOptions = getDynamicSiteContextOptions();
+      if (siteContextOptions.enabled && (siteContextOptions.crawlTrigger === 'auto' || siteContextOptions.crawlTrigger === 'hybrid')) {
+        setTimeout(() => {
+          startSiteContextCrawl({
+            trigger: siteContextOptions.crawlTrigger,
+            routeScope: siteContextOptions.routeScope,
+            allowlist: siteContextOptions.allowlist,
+            maxRoutes: siteContextOptions.maxRoutes,
+            maxDurationSec: siteContextOptions.maxDurationSec,
+            hydrationWaitMs: siteContextOptions.hydrationWaitMs,
+            collectionMode: siteContextOptions.collectionMode,
+            capturePII: siteContextOptions.capturePII
+          }).catch(() => { });
+        }, 1500);
+      }
+    } catch (e) {
+      console.warn('Userex: Failed to auto-start site context crawl', e);
     }
 
     // AI Smart Bubbles Logic - DISABLED (Replaced by AI Engagement PRO in EngagementController.fetchAIBubble)
@@ -2574,9 +3795,12 @@
       }
     }
 
+    const siteContextForAI = getSiteSessionContextForAI();
+
     return {
       url: window.location.href,
       title: document.title,
+      desc: document.querySelector('meta[name="description"]')?.content || '',
       description: document.querySelector('meta[name="description"]')?.content || '',
       productName: document.querySelector('meta[property="og:title"]')?.content || document.title,
       productImage: document.querySelector('meta[property="og:image"]')?.content || '',
@@ -2587,7 +3811,9 @@
       // NEW: User login status
       user: getUserData(),
       // NEW: Dynamic Data
-      dynamicData: dynamicContextData
+      dynamicData: dynamicContextData,
+      siteSessionContext: siteContextForAI,
+      crawlStatus: siteContextForAI ? siteContextForAI.crawl : undefined
     };
   }
 
@@ -2612,6 +3838,12 @@
         type: 'USEREX_CONTEXT_UPDATE',
         context: context
       }, '*');
+      if (context && context.siteSessionContext) {
+        iframe.contentWindow.postMessage({
+          type: 'USEREX_SITE_SESSION_CONTEXT_UPDATE',
+          siteSessionContext: context.siteSessionContext
+        }, '*');
+      }
     }
   }
 
@@ -2686,6 +3918,11 @@
     if (bootstrapStarted) return;
     bootstrapStarted = true;
 
+    if (isSiteCrawlPageMode()) {
+      console.log('Userex Widget: Site crawl page mode detected, skipping widget UI bootstrap');
+      return;
+    }
+
     const fetchedSettings = await (settingsFetchPromise || fetchSettings());
 
     // STRICT CHECK: If disabled, abort
@@ -2715,23 +3952,722 @@
     document.addEventListener('DOMContentLoaded', bootstrap, { once: true });
   }
 
+  let activeSiteCrawlJob = null;
+
+  function emitSiteCrawlMessageToOpener(type, payload) {
+    if (!window.opener) return;
+    try {
+      window.opener.postMessage({ type, payload }, '*');
+    } catch (e) { }
+  }
+
+  function discoverSafeRoutesForSiteCrawl(options) {
+    const opts = options || {};
+    const routeScope = opts.routeScope || 'sidebar_safe';
+    const maxRoutes = Math.max(1, Math.min(100, Number(opts.maxRoutes || 30)));
+    const allowlist = Array.isArray(opts.allowlist) ? opts.allowlist : [];
+    const presetRouteHints = Array.isArray(opts.presetRuntime?.routeHints)
+      ? opts.presetRuntime.routeHints.map((h) => String(h || '').toLowerCase()).filter(Boolean)
+      : [];
+    const found = new Set();
+    const pushRoute = (urlLike) => {
+      try {
+        const u = new URL(urlLike, window.location.href);
+        if (!isSafeSiteRoute(u)) return;
+        if (routeScope === 'allowlist' && allowlist.length > 0) {
+          const normalized = toSafeRouteString(u);
+          const allowed = allowlist.some((entry) => {
+            if (!entry) return false;
+            try {
+              const eUrl = new URL(entry, window.location.href);
+              return toSafeRouteString(eUrl) === normalized;
+            } catch (e) {
+              return normalized === String(entry).trim();
+            }
+          });
+          if (!allowed) return;
+        }
+        found.add(toSafeRouteString(u));
+      } catch (e) { }
+    };
+
+    pushRoute(window.location.href);
+
+    try {
+      const selector = routeScope === 'same_origin_all'
+        ? 'a[href]'
+        : 'nav a[href], aside a[href], [role="navigation"] a[href], [data-sidebar] a[href], [class*="sidebar"] a[href], header a[href]';
+      let anchors = Array.from(document.querySelectorAll(selector));
+      if (!anchors.length && routeScope !== 'same_origin_all') {
+        anchors = Array.from(document.querySelectorAll('a[href]'));
+      }
+      anchors.forEach((a) => {
+        if (!(a instanceof HTMLAnchorElement)) return;
+        if (isWidgetNoiseElement(a)) return;
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+        pushRoute(href);
+      });
+    } catch (e) { }
+
+    const routes = Array.from(found);
+
+    // Prefer current route first, then shorter paths (often sidebar index pages)
+    const current = toSafeRouteString(new URL(window.location.href));
+    routes.sort((a, b) => {
+      if (a === current) return -1;
+      if (b === current) return 1;
+      const lowerA = a.toLowerCase();
+      const lowerB = b.toLowerCase();
+      const hintScore = (path) => presetRouteHints.reduce((acc, hint) => acc + (path.includes(hint) ? 1 : 0), 0);
+      const hintDiff = hintScore(lowerB) - hintScore(lowerA);
+      if (hintDiff !== 0) return hintDiff;
+      return a.length - b.length;
+    });
+
+    return routes.slice(0, maxRoutes);
+  }
+
+  function buildSiteCrawlPageUrl(route, options) {
+    const routeUrl = new URL(route, window.location.origin);
+    routeUrl.searchParams.set('vion_site_crawl_page', '1');
+    routeUrl.searchParams.set('vion_site_crawl_scan_id', String(options.scanId || 'scan'));
+    routeUrl.searchParams.set('vion_site_crawl_hydration_wait_ms', String(options.hydrationWaitMs || 4000));
+    routeUrl.searchParams.set('vion_site_crawl_collection_mode', String(options.collectionMode || 'dom_network'));
+    routeUrl.searchParams.set('vion_site_crawl_capture_pii', options.capturePII === false ? '0' : '1');
+    try {
+      if (options.presetRuntime && typeof options.presetRuntime === 'object') {
+        routeUrl.searchParams.set('vion_site_crawl_preset_runtime', JSON.stringify(options.presetRuntime));
+      }
+    } catch (e) { }
+    return routeUrl.toString();
+  }
+
+  function aggregateSelectorCandidatesFromSiteSessionContext() {
+    const unique = new Map();
+    const routes = Object.values(siteSessionContext?.routes || {});
+    routes.forEach((routeSnap) => {
+      const candidates = Array.isArray(routeSnap.selectorCandidates) ? routeSnap.selectorCandidates : [];
+      candidates.forEach((item) => {
+        if (!item || !item.selector || isWidgetNoiseSelector(item.selector)) return;
+        if (!unique.has(item.selector) && unique.size < 200) {
+          unique.set(item.selector, { key: item.key || 'field', selector: item.selector, route: routeSnap.route });
+        }
+      });
+    });
+    return Array.from(unique.values());
+  }
+
+  function startSiteContextCrawl(rawOptions) {
+    const opts = rawOptions || {};
+    if (activeSiteCrawlJob && activeSiteCrawlJob.running) {
+      return Promise.resolve({
+        success: false,
+        reason: 'already_running',
+        context: getSiteSessionContextForAI()
+      });
+    }
+
+    const config = getDynamicSiteContextOptions();
+    const crawlOptions = {
+      trigger: opts.trigger || 'manual',
+      routeScope: opts.routeScope || config.routeScope || 'sidebar_safe',
+      allowlist: Array.isArray(opts.allowlist) ? opts.allowlist : config.allowlist,
+      maxRoutes: Number(opts.maxRoutes || config.maxRoutes || 30),
+      maxDurationSec: Number(opts.maxDurationSec || config.maxDurationSec || 90),
+      hydrationWaitMs: Number(opts.hydrationWaitMs || config.hydrationWaitMs || 4000),
+      collectionMode: opts.collectionMode || config.collectionMode || 'dom_network',
+      capturePII: opts.capturePII !== undefined ? !!opts.capturePII : config.capturePII !== false,
+      presetRuntime: (opts.presetRuntime && typeof opts.presetRuntime === 'object') ? opts.presetRuntime : (config.runtimePreset || null),
+      scanId: opts.scanId || (`scan_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`),
+      mode: opts.mode || (isSiteCrawlOrchestratorMode() ? 'popup' : 'runtime')
+    };
+
+    const routes = discoverSafeRoutesForSiteCrawl(crawlOptions);
+    siteSessionContext = createEmptySiteSessionContext();
+    siteSessionContext.crawl.status = 'running';
+    siteSessionContext.crawl.trigger = crawlOptions.trigger;
+    siteSessionContext.crawl.routeScope = crawlOptions.routeScope;
+    siteSessionContext.preset = crawlOptions.presetRuntime ? {
+      presetId: crawlOptions.presetRuntime.presetId || config.presetId || 'generic-web-app',
+      presetMode: config.presetMode || 'none',
+      suggestedPresetId: config.suggestedPresetId || 'generic-web-app',
+      runtime: crawlOptions.presetRuntime
+    } : null;
+    siteSessionContext.crawl.progress = {
+      total: routes.length,
+      visited: 0,
+      success: 0,
+      failed: 0,
+      currentRoute: routes[0] || ''
+    };
+    scheduleSiteContextUpdate();
+
+    emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_START', {
+      scanId: crawlOptions.scanId,
+      options: crawlOptions,
+      progress: siteSessionContext.crawl.progress
+    });
+
+    if (!routes.length) {
+      siteSessionContext.crawl.status = 'failed';
+      siteSessionContext.crawl.errors.push({ route: window.location.pathname, code: 'parse_error', message: 'No safe routes discovered' });
+      scheduleSiteContextUpdate();
+      emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_ERROR', {
+        scanId: crawlOptions.scanId,
+        error: { code: 'parse_error', message: 'No safe routes discovered' }
+      });
+      return Promise.resolve({ success: false, reason: 'no_routes', context: getSiteSessionContextForAI() });
+    }
+
+    return new Promise((resolve) => {
+      const job = {
+        running: true,
+        scanId: crawlOptions.scanId,
+        routes,
+        options: crawlOptions,
+        index: 0,
+        hiddenIframe: null,
+        routeTimer: null,
+        overallTimer: null,
+        messageHandler: null,
+        resolve
+      };
+      activeSiteCrawlJob = job;
+
+      const cleanup = (finalPayload) => {
+        if (!job.running) return;
+        job.running = false;
+        if (job.routeTimer) clearTimeout(job.routeTimer);
+        if (job.overallTimer) clearTimeout(job.overallTimer);
+        if (job.messageHandler) window.removeEventListener('message', job.messageHandler);
+        if (job.hiddenIframe && job.hiddenIframe.parentNode) {
+          job.hiddenIframe.parentNode.removeChild(job.hiddenIframe);
+        }
+        if (activeSiteCrawlJob === job) activeSiteCrawlJob = null;
+        job.resolve(finalPayload);
+      };
+      job.cleanup = cleanup;
+
+      const finish = (status) => {
+        siteSessionContext.crawl.status = status;
+        siteSessionContext.updatedAt = nowIso();
+        scheduleSiteContextUpdate();
+
+        const payload = {
+          scanId: crawlOptions.scanId,
+          siteSessionContext: getSiteSessionContextForAI(),
+          discoveredSelectors: aggregateSelectorCandidatesFromSiteSessionContext(),
+          progress: siteSessionContext.crawl.progress,
+          errors: siteSessionContext.crawl.errors
+        };
+        emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_COMPLETE', payload);
+        cleanup({ success: status === 'completed' || status === 'partial', status, ...payload });
+      };
+
+      const goNext = () => {
+        if (!job.running) return;
+        if (job.index >= job.routes.length) {
+          const finalStatus = siteSessionContext.crawl.progress.failed > 0 ? 'partial' : 'completed';
+          finish(finalStatus);
+          return;
+        }
+
+        const route = job.routes[job.index];
+        siteSessionContext.crawl.progress.currentRoute = route;
+        siteSessionContext.updatedAt = nowIso();
+        scheduleSiteContextUpdate();
+        emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_PROGRESS', {
+          scanId: crawlOptions.scanId,
+          progress: siteSessionContext.crawl.progress,
+          currentRoute: route
+        });
+
+        if (job.routeTimer) clearTimeout(job.routeTimer);
+        job.routeTimer = setTimeout(() => {
+          siteSessionContext.crawl.progress.visited += 1;
+          siteSessionContext.crawl.progress.failed += 1;
+          siteSessionContext.crawl.errors.push({ route, code: 'timeout', message: 'Timed out waiting for route scan result' });
+          job.index += 1;
+          scheduleSiteContextUpdate();
+          goNext();
+        }, Math.max(5000, crawlOptions.hydrationWaitMs + 12000));
+
+        const crawlUrl = buildSiteCrawlPageUrl(route, crawlOptions);
+        job.hiddenIframe.src = crawlUrl;
+      };
+
+      job.messageHandler = (event) => {
+        const data = event && event.data;
+        if (!data || data.type !== 'USEREX_SITE_CRAWL_PAGE_RESULT') return;
+        if (String(data.scanId || '') !== String(job.scanId)) return;
+
+        const payload = data.payload || {};
+        if (job.routeTimer) {
+          clearTimeout(job.routeTimer);
+          job.routeTimer = null;
+        }
+
+        siteSessionContext.crawl.progress.visited += 1;
+        if (payload.ok === false) {
+          siteSessionContext.crawl.progress.failed += 1;
+          siteSessionContext.crawl.errors.push({
+            route: payload.route || job.routes[job.index] || '',
+            code: payload.error?.code || 'parse_error',
+            message: payload.error?.message || 'Page scan failed'
+          });
+        } else {
+          siteSessionContext.crawl.progress.success += 1;
+          if (payload.snapshot) {
+            mergeRouteSnapshotIntoSiteSessionContext(payload.snapshot);
+          }
+          if (Array.isArray(payload.networkResources)) {
+            mergeNetworkResourceSummaries(payload.networkResources);
+          }
+        }
+
+        job.index += 1;
+        scheduleSiteContextUpdate();
+        emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_PROGRESS', {
+          scanId: crawlOptions.scanId,
+          progress: siteSessionContext.crawl.progress,
+          currentRoute: siteSessionContext.crawl.progress.currentRoute,
+          lastRouteResult: {
+            route: payload.route || '',
+            ok: payload.ok !== false,
+            selectorCandidates: Array.isArray(payload.snapshot?.selectorCandidates) ? payload.snapshot.selectorCandidates.length : 0
+          }
+        });
+        goNext();
+      };
+
+      window.addEventListener('message', job.messageHandler);
+
+      job.hiddenIframe = document.createElement('iframe');
+      job.hiddenIframe.setAttribute('aria-hidden', 'true');
+      job.hiddenIframe.tabIndex = -1;
+      Object.assign(job.hiddenIframe.style, {
+        position: 'fixed',
+        width: '1px',
+        height: '1px',
+        opacity: '0',
+        pointerEvents: 'none',
+        left: '-9999px',
+        top: '-9999px',
+        border: '0'
+      });
+      document.body.appendChild(job.hiddenIframe);
+
+      job.overallTimer = setTimeout(() => {
+        siteSessionContext.crawl.status = 'failed';
+        siteSessionContext.crawl.errors.push({ route: siteSessionContext.crawl.progress.currentRoute || '', code: 'timeout', message: 'Overall crawl timed out' });
+        finish(siteSessionContext.crawl.progress.success > 0 ? 'partial' : 'failed');
+      }, Math.max(15000, crawlOptions.maxDurationSec * 1000));
+
+      goNext();
+    });
+  }
+
+  function createPageNetworkCaptureCollector(options) {
+    const opts = options || {};
+    const capturePII = opts.capturePII !== false;
+    const maxBytes = Math.max(2048, Number(opts.maxBytes || SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES));
+    const networkPolicy = (opts.networkPolicy && typeof opts.networkPolicy === 'object') ? opts.networkPolicy : {
+      allowGetJson: true,
+      allowGraphQLSummary: false,
+      allowedPostEndpoints: [],
+      allowedGraphQLOperations: []
+    };
+    const resources = new Map();
+    let totalBytes = 0;
+
+    const makeResourceKey = (method, urlString, summary) => {
+      let path = '';
+      try {
+        path = new URL(urlString, window.location.href).pathname;
+      } catch (e) {
+        path = String(urlString || '');
+      }
+      let stableKeys = '';
+      const sample = summary && summary.sample;
+      if (sample && typeof sample === 'object' && !Array.isArray(sample)) {
+        stableKeys = Object.keys(sample).slice(0, 8).sort().join(',');
+      }
+      return `${String(method || 'GET').toUpperCase()} ${path} ${stableKeys}`.trim();
+    };
+
+    const isAllowedPostEndpoint = (urlString) => {
+      const allowlist = Array.isArray(networkPolicy.allowedPostEndpoints) ? networkPolicy.allowedPostEndpoints : [];
+      if (!allowlist.length) return false;
+      try {
+        const path = new URL(urlString, window.location.href).pathname.toLowerCase();
+        return allowlist.some((entry) => {
+          const e = String(entry || '').trim().toLowerCase();
+          return e && path.includes(e);
+        });
+      } catch (e) {
+        return false;
+      }
+    };
+
+    const parseGraphQLOperationName = (bodyLike) => {
+      try {
+        if (!bodyLike) return '';
+        let raw = '';
+        if (typeof bodyLike === 'string') raw = bodyLike;
+        else if (bodyLike instanceof URLSearchParams) raw = bodyLike.toString();
+        else if (typeof bodyLike === 'object' && typeof bodyLike.text === 'function') return '';
+        if (!raw) return '';
+        if (raw.includes('operationName=')) {
+          const params = new URLSearchParams(raw);
+          return params.get('operationName') || '';
+        }
+        const parsed = JSON.parse(raw);
+        return parsed?.operationName || '';
+      } catch (e) {
+        return '';
+      }
+    };
+
+    const isAllowedGraphQLOperation = (operationName) => {
+      const allowOps = Array.isArray(networkPolicy.allowedGraphQLOperations) ? networkPolicy.allowedGraphQLOperations : [];
+      if (!allowOps.length) return false;
+      const normalized = String(operationName || '').trim().toLowerCase();
+      if (!normalized) return false;
+      return allowOps.some((op) => String(op || '').trim().toLowerCase() === normalized);
+    };
+
+    const shouldCapture = (method, urlString, contentType, bodyLike) => {
+      const m = String(method || 'GET').toUpperCase();
+      let isGraphql = false;
+      try {
+        const u = new URL(urlString, window.location.href);
+        if (u.origin !== window.location.origin) return false;
+        isGraphql = u.pathname.toLowerCase().includes('graphql');
+      } catch (e) {
+        return false;
+      }
+      if (m === 'GET') {
+        if (networkPolicy.allowGetJson === false) return false;
+      } else {
+        if (m !== 'POST') return false;
+        const postEndpointAllowed = isAllowedPostEndpoint(urlString);
+        const operationName = parseGraphQLOperationName(bodyLike);
+        const graphqlAllowed = networkPolicy.allowGraphQLSummary === true && (isGraphql || /graphql/i.test(String(urlString || '')))
+          && (!Array.isArray(networkPolicy.allowedGraphQLOperations) || networkPolicy.allowedGraphQLOperations.length === 0
+            ? true
+            : isAllowedGraphQLOperation(operationName));
+        if (!postEndpointAllowed && !graphqlAllowed) return false;
+      }
+      const ct = String(contentType || '').toLowerCase();
+      return ct.includes('application/json') || ct.includes('json');
+    };
+
+    const detectSourceType = (method, urlString, requestBody) => {
+      const m = String(method || 'GET').toUpperCase();
+      if (m === 'GET') return 'get_json';
+      let isGraphql = false;
+      try { isGraphql = new URL(urlString, window.location.href).pathname.toLowerCase().includes('graphql'); } catch (e) { }
+      const operationName = parseGraphQLOperationName(requestBody);
+      if (networkPolicy.allowGraphQLSummary && (isGraphql || operationName)) return 'graphql_summary';
+      return 'post_json';
+    };
+
+    const recordJson = (method, urlString, jsonBody, requestBody) => {
+      if (!jsonBody) return;
+      const summary = summarizeNetworkJsonForStorage(capturePII ? jsonBody : stripSensitiveData(jsonBody, 5), { networkPolicy });
+      const key = makeResourceKey(method, urlString, summary);
+      let path = '';
+      try { path = new URL(urlString, window.location.href).pathname; } catch (e) { path = String(urlString || ''); }
+      const sourceType = detectSourceType(method, urlString, requestBody);
+      const operationName = parseGraphQLOperationName(requestBody) || undefined;
+      const resource = {
+        key,
+        urlPath: path,
+        method: String(method || 'GET').toUpperCase(),
+        sourceType,
+        operationName,
+        capturedAt: nowIso(),
+        summary,
+        sample: summary.sample
+      };
+      const estimatedBytes = JSON.stringify(resource).length;
+      if (totalBytes + estimatedBytes > maxBytes) return;
+      totalBytes += estimatedBytes;
+      resources.set(key, resource);
+    };
+
+    let originalFetch = null;
+    let originalXhrOpen = null;
+    let originalXhrSend = null;
+
+    try {
+      if (typeof window.fetch === 'function') {
+        originalFetch = window.fetch.bind(window);
+        window.fetch = async function (...args) {
+          const response = await originalFetch(...args);
+          try {
+            const requestInfo = args[0];
+            const requestInit = args[1] || {};
+            const urlString = typeof requestInfo === 'string'
+              ? requestInfo
+              : (requestInfo && requestInfo.url) || '';
+            const method = (requestInit.method || (requestInfo && requestInfo.method) || 'GET').toUpperCase();
+            const contentType = response.headers && response.headers.get ? response.headers.get('content-type') || '' : '';
+            const requestBody = requestInit.body || (requestInfo && requestInfo.body) || null;
+            if (shouldCapture(method, urlString, contentType, requestBody)) {
+              const clone = response.clone();
+              clone.text().then((txt) => {
+                if (!txt || txt.length > SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES) return;
+                try {
+                  const parsed = JSON.parse(txt);
+                  recordJson(method, urlString, parsed, requestBody);
+                } catch (e) { }
+              }).catch(() => { });
+            }
+          } catch (e) { }
+          return response;
+        };
+      }
+    } catch (e) { }
+
+    try {
+      if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+        originalXhrOpen = window.XMLHttpRequest.prototype.open;
+        originalXhrSend = window.XMLHttpRequest.prototype.send;
+        window.XMLHttpRequest.prototype.open = function (method, url) {
+          this.__userexCaptureMethod = method;
+          this.__userexCaptureUrl = url;
+          return originalXhrOpen.apply(this, arguments);
+        };
+        window.XMLHttpRequest.prototype.send = function () {
+          this.__userexCaptureBody = arguments[0];
+          try {
+            this.addEventListener('load', function () {
+              try {
+                const method = String(this.__userexCaptureMethod || 'GET').toUpperCase();
+                const urlString = this.__userexCaptureUrl || '';
+                const contentType = (this.getResponseHeader && this.getResponseHeader('content-type')) || '';
+                const requestBody = this.__userexCaptureBody;
+                if (!shouldCapture(method, urlString, contentType, requestBody)) return;
+                if (typeof this.responseText !== 'string' || this.responseText.length > SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES) return;
+                const parsed = JSON.parse(this.responseText);
+                recordJson(method, urlString, parsed, requestBody);
+              } catch (e) { }
+            });
+          } catch (e) { }
+          return originalXhrSend.apply(this, arguments);
+        };
+      }
+    } catch (e) { }
+
+    return {
+      getResources() {
+        return Array.from(resources.values());
+      },
+      stop() {
+        try {
+          if (originalFetch) window.fetch = originalFetch;
+        } catch (e) { }
+        try {
+          if (originalXhrOpen) window.XMLHttpRequest.prototype.open = originalXhrOpen;
+          if (originalXhrSend) window.XMLHttpRequest.prototype.send = originalXhrSend;
+        } catch (e) { }
+      }
+    };
+  }
+
+  async function runSiteCrawlPageAgent() {
+    const params = new URLSearchParams(window.location.search);
+    const scanId = params.get('vion_site_crawl_scan_id') || 'scan';
+    const hydrationWaitMs = Math.max(800, Math.min(10000, Number(params.get('vion_site_crawl_hydration_wait_ms') || 4000)));
+    const collectionMode = params.get('vion_site_crawl_collection_mode') || 'dom_network';
+    const capturePII = params.get('vion_site_crawl_capture_pii') !== '0';
+    let presetRuntime = null;
+    try {
+      const rawPreset = params.get('vion_site_crawl_preset_runtime');
+      if (rawPreset) {
+        const parsedPreset = JSON.parse(rawPreset);
+        if (parsedPreset && typeof parsedPreset === 'object') presetRuntime = parsedPreset;
+      }
+    } catch (e) { }
+
+    const sendResult = (payload) => {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'USEREX_SITE_CRAWL_PAGE_RESULT',
+            scanId,
+            payload
+          }, '*');
+        }
+      } catch (e) { }
+    };
+
+    let networkCollector = null;
+    if (collectionMode === 'dom_network') {
+      networkCollector = createPageNetworkCaptureCollector({
+        capturePII,
+        maxBytes: SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES,
+        networkPolicy: presetRuntime?.networkPolicy || null
+      });
+    }
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, hydrationWaitMs));
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const domSummary = collectDomSummaryFromDocument(document);
+      const selectorCandidates = collectSelectorCandidatesFromDocument(document, 24);
+      const route = toSafeRouteString(new URL(window.location.href));
+      const pageTextSnippet = truncateText(((document.querySelector('main') || document.body)?.innerText || document.body?.textContent || ''), 1000);
+      const networkResources = networkCollector ? networkCollector.getResources() : [];
+      const visitedAt = nowIso();
+      const entities = extractEntitiesForRoute(route, document, domSummary, {
+        presetRuntime,
+        networkResources,
+        visitedAt
+      });
+
+      const snapshot = {
+        route,
+        title: document.title || '',
+        visitedAt,
+        pageTextSnippet,
+        domSummary,
+        selectorCandidates,
+        entities
+      };
+
+      sendResult({
+        ok: true,
+        route,
+        snapshot,
+        networkResources
+      });
+    } catch (error) {
+      sendResult({
+        ok: false,
+        route: toSafeRouteString(new URL(window.location.href)),
+        error: {
+          code: 'parse_error',
+          message: error && error.message ? error.message : 'Unknown page scan error'
+        }
+      });
+    } finally {
+      if (networkCollector) networkCollector.stop();
+    }
+  }
+
   // ============================================
   // Auto-Discovery Agent (Triggers when vion_scan=1 is in URL)
   // ============================================
   function runAutoDiscovery() {
+    if (isSiteCrawlPageMode()) {
+      console.log('Vion AI: Site Crawl Page Agent Started...');
+      runSiteCrawlPageAgent();
+      return;
+    }
+
+    if (isSiteCrawlOrchestratorMode()) {
+      console.log('Vion AI: Site Crawl Orchestrator Mode Started...');
+      const params = new URLSearchParams(window.location.search);
+      const crawlOptions = {
+        trigger: 'manual',
+        routeScope: params.get('vion_site_crawl_route_scope') || 'sidebar_safe',
+        collectionMode: params.get('vion_site_crawl_collection_mode') || 'dom_network',
+        maxRoutes: Number(params.get('vion_site_crawl_max_routes') || 30),
+        maxDurationSec: Number(params.get('vion_site_crawl_max_duration_sec') || 90),
+        hydrationWaitMs: Number(params.get('vion_site_crawl_hydration_wait_ms') || 4000),
+        capturePII: params.get('vion_site_crawl_capture_pii') !== '0',
+        scanId: params.get('vion_site_crawl_scan_id') || undefined,
+        mode: 'popup'
+      };
+
+      let tries = 0;
+      const tryStart = () => {
+        tries += 1;
+        const startFn = (window.UserexWidget && typeof window.UserexWidget.startSiteContextCrawl === 'function')
+          ? window.UserexWidget.startSiteContextCrawl
+          : (typeof startSiteContextCrawl === 'function' ? startSiteContextCrawl : null);
+        if (typeof startFn === 'function') {
+          startFn(crawlOptions).then((result) => {
+            if (params.get('vion_site_crawl_auto_close') === '1' && result && result.success) {
+              try { window.close(); } catch (e) { }
+            }
+          }).catch((err) => {
+            emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_ERROR', {
+              scanId: crawlOptions.scanId || null,
+              error: { code: 'parse_error', message: err && err.message ? err.message : 'Failed to start site crawl' }
+            });
+          });
+          return;
+        }
+        if (tries < 40) {
+          setTimeout(tryStart, 250);
+        } else {
+          emitSiteCrawlMessageToOpener('USEREX_SITE_CRAWL_ERROR', {
+            scanId: crawlOptions.scanId || null,
+            error: { code: 'unreachable', message: 'Site crawl runtime did not initialize in time' }
+          });
+        }
+      };
+
+      setTimeout(tryStart, 200);
+      return;
+    }
+
     if (window.location.search.includes('vion_scan=1') || window.location.hash.includes('vion_scan')) {
       console.log('Vion AI: Auto-Discovery Scan Started...');
       setTimeout(() => {
         const discovered = [];
+        const sanitizeKey = (value, fallback) => {
+          const cleaned = String(value || '')
+            .trim()
+            .replace(/[^a-zA-Z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+          return cleaned || fallback;
+        };
+        const escapeAttrValue = (value) => {
+          const raw = String(value || '');
+          try {
+            if (window.CSS && typeof window.CSS.escape === 'function') {
+              return window.CSS.escape(raw);
+            }
+          } catch (e) { }
+          return raw.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        };
+        const pushDiscovered = (key, selector) => {
+          if (!selector) return;
+          if (isWidgetNoiseSelector(selector)) return;
+          discovered.push({ key: sanitizeKey(key, 'field'), selector: String(selector) });
+        };
+        const isSensitiveFieldHint = (value) => {
+          const v = String(value || '').toLowerCase();
+          return (
+            v.includes('password') ||
+            v.includes('passwd') ||
+            v.includes('pwd') ||
+            v.includes('otp') ||
+            v.includes('cvv') ||
+            v.includes('cvc') ||
+            v.includes('iban') ||
+            v.includes('cardnumber') ||
+            v.includes('card-number') ||
+            v.includes('creditcard') ||
+            v.includes('credit-card')
+          );
+        };
 
         // 1. Scan LocalStorage
         try {
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (!key) continue;
+            if (isWidgetNoiseStorageKey(key)) continue;
             const lower = key.toLowerCase();
             if (lower.includes('user') || lower.includes('token') || lower.includes('cart') || lower.includes('auth') || lower.includes('basket') || lower.includes('order') || lower.includes('session') || lower.includes('price')) {
-              discovered.push({ key: key.replace(/[^a-zA-Z0-9]/g, '_'), selector: `localStorage:${key}` });
+              pushDiscovered(key, `localStorage:${key}`);
             }
           }
         } catch (e) { }
@@ -2742,9 +4678,10 @@
           cookies.forEach(c => {
             const key = c.split('=')[0].trim();
             if (!key) return;
+            if (isWidgetNoiseStorageKey(key)) return;
             const lower = key.toLowerCase();
             if (lower.includes('user') || lower.includes('token') || lower.includes('session') || lower.includes('auth')) {
-              discovered.push({ key: key.replace(/[^a-zA-Z0-9]/g, '_'), selector: `cookie:${key}` });
+              pushDiscovered(key, `cookie:${key}`);
             }
           });
         } catch (e) { }
@@ -2753,10 +4690,11 @@
         try {
           const elements = document.querySelectorAll('[id*="user"], [id*="cart"], [id*="balance"], [id*="price"], [class*="user"], [class*="cart"], [class*="balance"], [class*="price"]');
           elements.forEach(el => {
+            if (isWidgetNoiseElement(el)) return;
             if (el.id) {
               const lowerId = el.id.toLowerCase();
               if (lowerId.includes('user') || lowerId.includes('cart') || lowerId.includes('balance') || lowerId.includes('price')) {
-                discovered.push({ key: el.id.replace(/[^a-zA-Z0-9]/g, '_'), selector: `#${el.id}` });
+                pushDiscovered(el.id, `#${el.id}`);
               }
             } else if (el.className && typeof el.className === 'string') {
               const classes = el.className.split(' ').filter(c => {
@@ -2764,8 +4702,60 @@
                 return lc.includes('user') || lc.includes('cart') || lc.includes('balance') || lc.includes('price');
               });
               if (classes.length > 0) {
-                discovered.push({ key: classes[0].replace(/[^a-zA-Z0-9]/g, '_'), selector: `.${classes[0]}` });
+                pushDiscovered(classes[0], `.${classes[0]}`);
               }
+            }
+          });
+        } catch (e) { }
+
+        // 4. Scan form controls (input/textarea/select) for no-code dynamic context
+        // This is the most useful source for lead forms and checkout/contact flows.
+        try {
+          const controls = document.querySelectorAll('input, textarea, select');
+          controls.forEach((el, index) => {
+            if (isWidgetNoiseElement(el)) return;
+            const tag = (el.tagName || '').toLowerCase();
+            const type = (el.type || '').toLowerCase();
+
+            if (type === 'hidden' || type === 'password' || type === 'file') return;
+            if ((el.disabled || el.readOnly) && !el.id && !el.name) return;
+
+            const rawId = (el.id || '').trim();
+            const rawName = (el.getAttribute && el.getAttribute('name') || '').trim();
+            const placeholder = (el.getAttribute && el.getAttribute('placeholder') || '').trim();
+            const ariaLabel = (el.getAttribute && el.getAttribute('aria-label') || '').trim();
+            const hintBlob = [rawId, rawName, placeholder, ariaLabel, type].join(' ');
+            if (isSensitiveFieldHint(hintBlob)) return;
+
+            let selector = '';
+            if (rawId) {
+              selector = `#${rawId}`;
+            } else if (rawName) {
+              selector = `${tag}[name="${escapeAttrValue(rawName)}"]`;
+            } else if (placeholder && placeholder.length <= 60) {
+              selector = `${tag}[placeholder="${escapeAttrValue(placeholder)}"]`;
+            }
+
+            if (!selector) return;
+
+            const keyHint = rawName || rawId || ariaLabel || placeholder || `${tag}_${index + 1}`;
+            pushDiscovered(keyHint, selector);
+          });
+        } catch (e) { }
+
+        // 5. Scan common testing/data hooks (often stable selectors on modern apps)
+        try {
+          const dataHookAttrs = ['data-testid', 'data-test', 'data-cy', 'data-qa'];
+          const dataHookSelector = dataHookAttrs.map(attr => `[${attr}]`).join(', ');
+          const dataHookElements = document.querySelectorAll(dataHookSelector);
+          dataHookElements.forEach((el) => {
+            if (isWidgetNoiseElement(el)) return;
+            for (const attr of dataHookAttrs) {
+              const attrValue = el.getAttribute && el.getAttribute(attr);
+              if (!attrValue) continue;
+              if (isSensitiveFieldHint(attrValue)) break;
+              pushDiscovered(attrValue, `[${attr}="${escapeAttrValue(attrValue)}"]`);
+              break;
             }
           });
         } catch (e) { }

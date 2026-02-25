@@ -22,6 +22,8 @@ import { event as trackEvent } from "@/lib/gtag"
 import { trackMarketingEvent, trackSignUp } from "@/lib/marketing-tracking"
 
 type SignupStep = 'initial' | 'form' | 'success'
+const EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS_ENABLED =
+    process.env.NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS === "true"
 
 export default function SignUpForm() {
     // Step management
@@ -126,6 +128,7 @@ export default function SignUpForm() {
             const data = await response.json();
             throw new Error(data.error || "Registration failed on server");
         }
+        const registerResult = await response.json();
 
         // Send admin notification
         fetch('/api/admin/notify-signup', {
@@ -140,6 +143,45 @@ export default function SignUpForm() {
                 company: fullName || user.displayName
             })
         }).catch(err => console.error("Notify error", err));
+
+        return registerResult;
+    }
+
+    const sendVerificationEmailWithFallback = async (user: User) => {
+        const continueUrl = `${window.location.origin}/login`
+
+        try {
+            const token = await user.getIdToken()
+            const response = await fetch('/api/auth/send-verification-email', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    continueUrl,
+                    language,
+                    name: fullName || user.displayName || ""
+                })
+            })
+
+            if (!response.ok) {
+                let errorMessage = `HTTP ${response.status}`
+                try {
+                    const data = await response.json()
+                    if (data?.error) errorMessage = data.error
+                } catch {
+                    // ignore JSON parse failures and use status fallback
+                }
+                throw new Error(errorMessage)
+            }
+
+            return "custom" as const
+        } catch (customError) {
+            console.warn("Custom verification email send failed, falling back to Firebase:", customError)
+            await sendEmailVerification(user, { url: continueUrl })
+            return "firebase" as const
+        }
     }
 
     // Handle form submission
@@ -151,6 +193,7 @@ export default function SignUpForm() {
         try {
             let user = socialUser;
             let requiresEmailVerification = false;
+            let usedEmailVerificationBypass = false;
 
             if (user) {
                 // Social auth user - Register on server
@@ -170,12 +213,20 @@ export default function SignUpForm() {
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password)
                 user = userCredential.user;
-                await sendEmailVerification(user, {
-                    url: `${window.location.origin}/login`
+                const registerResult = await registerUserOnServer(user, {
+                    authProvider: 'email',
+                    emailVerificationBypassRequested: EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS_ENABLED
                 });
-                requiresEmailVerification = true;
-                await registerUserOnServer(user, { authProvider: 'email' });
-                await auth.signOut()
+
+                const bypassGranted = registerResult?.emailVerificationBypassGranted === true
+
+                if (bypassGranted) {
+                    usedEmailVerificationBypass = true;
+                } else {
+                    await sendVerificationEmailWithFallback(user)
+                    requiresEmailVerification = true;
+                    await auth.signOut()
+                }
             }
 
             if (requiresEmailVerification) {
@@ -184,6 +235,13 @@ export default function SignUpForm() {
                     description: language === 'tr'
                         ? "Giriş yapmadan önce e-posta adresinizi doğrulayın."
                         : "Please verify your email address before logging in.",
+                })
+            } else if (usedEmailVerificationBypass) {
+                toast({
+                    title: language === 'tr' ? "Hesap oluşturuldu" : "Account created",
+                    description: language === 'tr'
+                        ? "Geçici olarak e-posta doğrulaması olmadan devam edebilirsiniz."
+                        : "You can continue without email verification temporarily.",
                 })
             } else {
                 toast({

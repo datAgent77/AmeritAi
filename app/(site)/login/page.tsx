@@ -29,6 +29,43 @@ export default function LoginForm() {
   const { toast } = useToast()
   const { t, language } = useLanguage()
 
+  const sendVerificationEmailWithFallback = async (user: User) => {
+    const continueUrl = `${window.location.origin}/login`
+
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch('/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          continueUrl,
+          language,
+          name: user.displayName || "",
+        }),
+      })
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`
+        try {
+          const data = await response.json()
+          if (data?.error) errorMessage = data.error
+        } catch {
+          // ignore JSON parse failures; status is enough for fallback logs
+        }
+        throw new Error(errorMessage)
+      }
+
+      return "custom" as const
+    } catch (customError) {
+      console.warn("Custom verification email send failed, falling back to Firebase:", customError)
+      await sendEmailVerification(user, { url: continueUrl })
+      return "firebase" as const
+    }
+  }
+
   // Handle social auth success
   const handleSocialAuthSuccess = async (user: User, providerId: string) => {
     try {
@@ -68,24 +105,38 @@ export default function LoginForm() {
       await userCredential.user.reload()
 
       if (!userCredential.user.emailVerified) {
+        let emailVerificationBypassEnabled = false
         try {
-          await sendEmailVerification(userCredential.user)
-        } catch (verificationError) {
-          console.warn("Could not re-send verification email:", verificationError)
+          const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
+          if (userDoc.exists()) {
+            emailVerificationBypassEnabled = userDoc.data()?.emailVerificationBypass?.enabled === true
+          }
+        } catch (bypassCheckError) {
+          console.warn("Could not check email verification bypass marker:", bypassCheckError)
         }
-        await auth.signOut()
 
-        const verifyMsg = language === 'tr'
-          ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
-          : "You must verify your email before logging in. We've sent a new verification link."
-        setError(verifyMsg)
-        setShowResendVerificationButton(true)
-        toast({
-          title: language === 'tr' ? "E-posta doğrulaması gerekli" : "Email verification required",
-          description: verifyMsg,
-          variant: "destructive",
-        })
-        return
+        if (emailVerificationBypassEnabled) {
+          console.log("Login: Email verification bypass marker detected for user", userCredential.user.uid)
+        } else {
+          try {
+            await sendVerificationEmailWithFallback(userCredential.user)
+          } catch (verificationError) {
+            console.warn("Could not re-send verification email:", verificationError)
+          }
+          await auth.signOut()
+
+          const verifyMsg = language === 'tr'
+            ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
+            : "You must verify your email before logging in. We've sent a new verification link."
+          setError(verifyMsg)
+          setShowResendVerificationButton(true)
+          toast({
+            title: language === 'tr' ? "E-posta doğrulaması gerekli" : "Email verification required",
+            description: verifyMsg,
+            variant: "destructive",
+          })
+          return
+        }
       }
 
       // Check if user is active in Firestore (wrapped in try-catch for permission errors)
@@ -189,9 +240,7 @@ export default function LoginForm() {
         return
       }
 
-      await sendEmailVerification(userCredential.user, {
-        url: `${window.location.origin}/login`
-      })
+      await sendVerificationEmailWithFallback(userCredential.user)
       await auth.signOut()
 
       const msg = language === 'tr'

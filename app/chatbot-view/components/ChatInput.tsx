@@ -489,6 +489,30 @@ export function ChatInput({
                     </form>
                 </div>
 
+                {isAmbientMode && !ambientInputOnly && (
+                    <div className="absolute inset-x-0 top-full mt-2 z-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2">
+                        <p className="text-[10px] text-white/60 text-center text-balance">
+                            {t('aiDisclaimer')}
+                        </p>
+                        <a
+                            href="https://getvion.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity whitespace-nowrap"
+                        >
+                            <span className="text-[10px] text-white/60">Powered by</span>
+                            <Image
+                                src="/vion-logo-full-dark.png"
+                                alt="Vion"
+                                width={50}
+                                height={12}
+                                className="h-2.5 w-auto opacity-80 invert"
+                                unoptimized
+                            />
+                        </a>
+                    </div>
+                )}
+
                 {!isAmbientMode && (
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">
                         <p className="text-[10px] text-gray-400 text-center text-balance">
