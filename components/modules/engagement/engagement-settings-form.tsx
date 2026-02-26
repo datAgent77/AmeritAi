@@ -93,6 +93,18 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                             style: {
                                 ...prev.bubble.style,
                                 ...(data.engagement.bubble?.style || {})
+                            },
+                            ambientVariant: {
+                                ...(prev.bubble.ambientVariant || {}),
+                                ...(data.engagement.bubble?.ambientVariant || {}),
+                                style: {
+                                    ...((prev.bubble.ambientVariant && prev.bubble.ambientVariant.style) || {}),
+                                    ...((data.engagement.bubble?.ambientVariant && data.engagement.bubble.ambientVariant.style) || {})
+                                },
+                                typewriter: {
+                                    ...((prev.bubble.ambientVariant && prev.bubble.ambientVariant.typewriter) || {}),
+                                    ...((data.engagement.bubble?.ambientVariant && data.engagement.bubble.ambientVariant.typewriter) || {})
+                                }
                             }
                         },
                         triggers: {
@@ -172,6 +184,32 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         }
     }
 
+    const renderActionControls = (mode: "mobile" | "desktop") => {
+        const isDesktop = mode === "desktop"
+        return (
+            <div className={`flex flex-wrap items-center gap-3 ${isDesktop ? "" : "lg:hidden"}`}>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
+                    <Switch
+                        id={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                        className="scale-75"
+                        checked={settings.enabled}
+                        onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
+                    />
+                    <Label
+                        htmlFor={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                        className="text-xs font-medium cursor-pointer"
+                    >
+                        {settings.enabled ? 'Aktif' : 'Pasif'}
+                    </Label>
+                </div>
+                <Button onClick={saveSettings} disabled={isSaving} size="sm" className="h-8 shadow-sm">
+                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
+                    {t('save') || 'Kaydet'}
+                </Button>
+            </div>
+        )
+    }
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -184,7 +222,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         <div className="flex flex-col lg:flex-row gap-8 p-6 items-start">
             {/* Left Panel: Settings Controls */}
             <div className="flex-1 flex flex-col gap-6">
-                <div className="flex-none flex items-center justify-between py-2 border-b">
+                <div className="flex-none flex flex-col gap-4 py-2 border-b">
                     <div>
                         <h1 className="text-xl font-semibold flex items-center gap-2">
                             {t('modules.proactiveMessaging') || 'Etkileşim Tasarımcısı'}
@@ -193,27 +231,13 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                             Ziyaretçi balonlarını özelleştirin.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
-                            <Switch
-                                id="module-enabled"
-                                className="scale-75"
-                                checked={settings.enabled}
-                                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
-                            />
-                            <Label htmlFor="module-enabled" className="text-xs font-medium cursor-pointer">{settings.enabled ? 'Aktif' : 'Pasif'}</Label>
-                        </div>
-                        <Button onClick={saveSettings} disabled={isSaving} size="sm" className="h-8 shadow-sm">
-                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
-                            {t('save') || 'Kaydet'}
-                        </Button>
-                    </div>
+                    {renderActionControls("mobile")}
                 </div>
 
                 <div className="space-y-6">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                         <div className="sticky top-0 z-20 pb-4 pt-1 bg-[#f4f6f8]/95 backdrop-blur supports-[backdrop-filter]:bg-[#f4f6f8]/60">
-                            <TabsList className="grid grid-cols-4 w-full gap-3 bg-transparent p-0 h-auto">
+                            <TabsList className="grid grid-cols-3 w-full gap-3 bg-transparent p-0 h-auto">
                                 <TabsTrigger
                                     value="design"
                                     className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background"
@@ -237,6 +261,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                                     <Badge className="absolute -top-2 -right-1 px-1.5 py-0 text-[9px] bg-zinc-900 border-0 text-white shadow-sm ring-2 ring-background rounded-full">PRO</Badge>
                                 </TabsTrigger>
                             </TabsList>
+
                         </div>
 
                         <TabsContent value="design" className="space-y-6 mt-0">
@@ -255,7 +280,14 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
             </div>
 
             {/* Right Panel: Live Preview */}
-            <EngagementPreview settings={settings} />
+            <EngagementPreview
+                settings={settings}
+                headerActions={
+                    <div className="flex items-center justify-start">
+                        {renderActionControls("desktop")}
+                    </div>
+                }
+            />
         </div >
     )
 }

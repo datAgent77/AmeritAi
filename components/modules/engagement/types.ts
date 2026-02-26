@@ -8,31 +8,62 @@ export interface BubbleMessage {
 }
 
 export type EngagementLanguage = 'auto' | 'tr' | 'en' | 'es' | 'de' | 'fr'
+export type EngagementBubblePosition = 'top' | 'left' | 'right' | 'bottom-left' | 'bottom-right'
+export type EngagementBubbleAnimation = 'none' | 'bounce' | 'pulse' | 'shake' | 'slide' | 'fade'
+export type EngagementBubbleRenderStyle = 'custom' | 'ambient_ai_bubble' | 'ambient_ai_bubble_typewriter'
+export type EngagementAmbientAiBubbleTheme = 'default' | 'minimal' | 'glass' | 'compact'
+
+export interface EngagementBubbleStyle {
+    backgroundColor: string
+    textColor: string
+    borderRadius: number
+    shadow: 'none' | 'small' | 'medium' | 'large' | 'glow'
+    borderWidth: number
+    borderColor: string
+    opacity: number
+    backdropBlur: number
+    fontFamily: string
+    fontSize: number
+    shape: 'rounded' | 'square' | 'pill' | 'speech'
+    effect: 'solid' | 'glass' | 'gradient' | 'outline'
+}
+
+export interface AmbientBubbleTypewriterSettings {
+    enabled?: boolean
+    charDelayMs?: number
+    startDelayMs?: number
+    cursorVisible?: boolean
+    cursorChar?: string
+    completePauseMs?: number
+    reducedMotionBehavior?: 'instant' | 'fade_in'
+    replayBehavior?: 'new_text_only'
+}
+
+export interface EngagementBubbleAmbientVariant {
+    enabled: boolean
+    renderStyle?: EngagementBubbleRenderStyle
+    aiBubbleTheme?: EngagementAmbientAiBubbleTheme
+    animation?: EngagementBubbleAnimation
+    position?: EngagementBubblePosition
+    offsetX?: number
+    offsetY?: number
+    maxWidth?: number
+    typewriter?: AmbientBubbleTypewriterSettings
+    style?: Partial<EngagementBubbleStyle>
+}
 
 export interface EngagementSettings {
     enabled: boolean
     language: EngagementLanguage
     bubble: {
         messages: BubbleMessage[]
-        position: 'top' | 'left' | 'right' | 'bottom-left' | 'bottom-right'
-        animation: 'none' | 'bounce' | 'pulse' | 'shake' | 'slide' | 'fade'
+        position: EngagementBubblePosition
+        animation: EngagementBubbleAnimation
         autoDismiss: boolean
         autoDismissDelay: number
         showCloseButton: boolean
-        style: {
-            backgroundColor: string
-            textColor: string
-            borderRadius: number
-            shadow: 'none' | 'small' | 'medium' | 'large' | 'glow'
-            borderWidth: number
-            borderColor: string
-            opacity: number
-            backdropBlur: number
-            fontFamily: string
-            fontSize: number
-            shape: 'rounded' | 'square' | 'pill' | 'speech'
-            effect: 'solid' | 'glass' | 'gradient' | 'outline'
-        }
+        style: EngagementBubbleStyle
+        ambientVariant?: EngagementBubbleAmbientVariant
     }
     triggers: {
         scrollDepth: number
@@ -115,6 +146,26 @@ export const defaultSettings: EngagementSettings = {
             fontSize: 14,
             shape: 'rounded',
             effect: 'solid'
+        },
+        ambientVariant: {
+            enabled: false,
+            renderStyle: 'custom',
+            aiBubbleTheme: 'default',
+            animation: 'bounce',
+            position: 'top',
+            offsetX: 0,
+            offsetY: 0,
+            typewriter: {
+                enabled: true,
+                charDelayMs: 18,
+                startDelayMs: 100,
+                cursorVisible: true,
+                cursorChar: '▍',
+                completePauseMs: 300,
+                reducedMotionBehavior: 'instant',
+                replayBehavior: 'new_text_only'
+            },
+            style: {}
         }
     },
     triggers: {
