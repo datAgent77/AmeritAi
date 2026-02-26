@@ -45,13 +45,18 @@ function getDesktopAnimationTier(): AnimationTier {
 }
 
 function addMediaListener(query: MediaQueryList, listener: () => void) {
-  if ("addEventListener" in query) {
+  if (typeof query.addEventListener === "function") {
     query.addEventListener("change", listener)
     return () => query.removeEventListener("change", listener)
   }
 
-  query.addListener(listener)
-  return () => query.removeListener(listener)
+  const legacyQuery = query as MediaQueryList & {
+    addListener?: (listener: () => void) => void
+    removeListener?: (listener: () => void) => void
+  }
+
+  legacyQuery.addListener?.(listener)
+  return () => legacyQuery.removeListener?.(listener)
 }
 
 export function HeroBackgroundLiquidEther() {
