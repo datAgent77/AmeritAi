@@ -6,7 +6,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import NextImage from "next/image"
 import {
     ShoppingBag, Utensils, Building2, Stethoscope,
-    GraduationCap, Anchor, User, TrendingUp, ShieldCheck, Sparkles
+    GraduationCap, Anchor, User
 } from "lucide-react"
 
 interface ConversationLine {
@@ -141,27 +141,6 @@ const INDUSTRY_CONVERSATIONS: IndustryConversation[] = [
     },
 ]
 
-const FLOATING_BADGES = [
-    {
-        id: "accuracy",
-        icon: ShieldCheck,
-        label: { tr: "%98 Doğruluk", en: "98% Accuracy" },
-        position: "-top-6 -right-16 xl:-right-20",
-    },
-    {
-        id: "lift",
-        icon: TrendingUp,
-        label: { tr: "%31 Dönüşüm Artışı", en: "31% Conversion Lift" },
-        position: "top-24 -left-20 xl:-left-24",
-    },
-    {
-        id: "smart",
-        icon: Sparkles,
-        label: { tr: "Canlı AI Kararları", en: "Live AI Decisions" },
-        position: "bottom-4 -right-16 xl:-right-20",
-    },
-]
-
 export function HeroVisual() {
     const { language } = useLanguage()
     const lang = language === 'tr' ? 'tr' : 'en'
@@ -237,23 +216,6 @@ export function HeroVisual() {
                 <div className="absolute top-10 left-6 h-24 w-24 rounded-full bg-cyan-400/25 blur-3xl" />
                 <div className="absolute bottom-6 right-6 h-28 w-28 rounded-full bg-indigo-500/25 blur-3xl" />
             </div>
-
-            {/* Floating badges */}
-            {FLOATING_BADGES.map((badge, i) => {
-                const BadgeIcon = badge.icon
-                return (
-                    <motion.div
-                        key={badge.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: [0, -4, 0] }}
-                        transition={{ duration: 3.2, delay: i * 0.25, repeat: Infinity, ease: "easeInOut" }}
-                        className={`pointer-events-none absolute z-20 hidden md:flex items-center gap-2 rounded-full border border-white/25 bg-white/70 px-3 py-1.5 text-[11px] font-medium text-zinc-800 shadow-lg backdrop-blur-xl dark:border-white/15 dark:bg-zinc-900/70 dark:text-zinc-100 ${badge.position}`}
-                    >
-                        <BadgeIcon className="h-3.5 w-3.5" />
-                        <span>{badge.label[lang]}</span>
-                    </motion.div>
-                )
-            })}
 
             {/* Industry Indicator */}
             <div className="flex items-center justify-between mb-3">

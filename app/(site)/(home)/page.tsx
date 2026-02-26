@@ -6,7 +6,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
-import { HeroBackgroundModern } from "@/components/landing/hero-background-modern"
+import { HeroBackgroundLiquidEther } from "@/components/landing/hero-background-liquid-ether"
 import { trackCtaClick } from "@/lib/marketing-tracking"
 
 import { HeroVisual } from "@/components/landing/hero-visual"
@@ -34,7 +34,7 @@ export default function LandingPage() {
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-24 md:pt-40 md:pb-36 overflow-hidden">
-                <HeroBackgroundModern />
+                <HeroBackgroundLiquidEther />
 
                 <div className="container mx-auto px-4 relative z-10">
                     <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
