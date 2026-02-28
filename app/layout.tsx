@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-97SQS8BW2W";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.getvion.com'),
@@ -163,6 +165,21 @@ export default function RootLayout({
 
   return (
     <html lang={initialLanguage} suppressHydrationWarning>
+      <head>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('js', new Date());
+            gtag('config', '${GA_ID}');
+          `}
+        </Script>
+      </head>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <noscript>
           <iframe 
