@@ -16,6 +16,7 @@ import Image from "next/image"
 import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
+import { recordAuthDebug } from "@/lib/auth-debug"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -28,6 +29,12 @@ export default function LoginForm() {
   const router = useRouter()
   const { toast } = useToast()
   const { t, language } = useLanguage()
+
+  const signOutWithDebug = async (reason: string) => {
+    recordAuthDebug("login_signout_triggered", { reason })
+    await auth.signOut()
+    recordAuthDebug("login_signout_completed", { reason })
+  }
 
   const sendVerificationEmailWithFallback = async (user: User) => {
     const continueUrl = `${window.location.origin}/login`
@@ -75,7 +82,7 @@ export default function LoginForm() {
       if (userDoc.exists()) {
         const userData = userDoc.data()
         if (userData.isActive === false) {
-          await auth.signOut()
+          await signOutWithDebug("login_social_inactive_user")
           setError(t('accountPendingApproval'))
           return
         }
@@ -123,7 +130,7 @@ export default function LoginForm() {
           } catch (verificationError) {
             console.warn("Could not re-send verification email:", verificationError)
           }
-          await auth.signOut()
+          await signOutWithDebug("login_email_unverified_user")
 
           const verifyMsg = language === 'tr'
             ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
@@ -148,7 +155,7 @@ export default function LoginForm() {
             await setDoc(doc(db, "users", userCredential.user.uid), { emailVerified: true }, { merge: true })
           }
           if (userData.isActive === false) {
-            await auth.signOut()
+            await signOutWithDebug("login_email_inactive_user")
             const msg = t('accountPendingApproval')
             setError(msg)
             toast({
@@ -228,7 +235,7 @@ export default function LoginForm() {
       await userCredential.user.reload()
 
       if (userCredential.user.emailVerified) {
-        await auth.signOut()
+        await signOutWithDebug("login_resend_already_verified")
         setShowResendVerificationButton(false)
         const msg = language === 'tr'
           ? 'Bu hesap zaten doğrulanmış görünüyor. Giriş yapmayı tekrar deneyin.'
@@ -241,7 +248,7 @@ export default function LoginForm() {
       }
 
       await sendVerificationEmailWithFallback(userCredential.user)
-      await auth.signOut()
+      await signOutWithDebug("login_resend_after_send")
 
       const msg = language === 'tr'
         ? 'Doğrulama e-postası tekrar gönderildi. Spam klasörünü de kontrol edin.'

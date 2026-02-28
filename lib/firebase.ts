@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -19,23 +19,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-import { getApps, getApp } from "firebase/app";
-
 const app = getApps().find(a => a.name === '[DEFAULT]') || initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
 // const analytics = getAnalytics(app);
 
-// Initialize Guest App (Isolated session for Chatbot Visitor)
-// This prevents the chatbot anonymous session from overwriting the Admin session on localhost (same domain)
-const guestApp = getApps().find(app => app.name === "guest") || initializeApp(firebaseConfig, "guest");
-const guestDb = getFirestore(guestApp);
-const guestAuth = getAuth(guestApp);
-
 // Initialize Providers
 const googleProvider = new GoogleAuthProvider();
 const microsoftProvider = new OAuthProvider('microsoft.com');
 const appleProvider = new OAuthProvider('apple.com');
 
-export { app, db, auth, storage, guestApp, guestDb, guestAuth, googleProvider, microsoftProvider, appleProvider };
+export { app, db, auth, storage, googleProvider, microsoftProvider, appleProvider };

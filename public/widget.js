@@ -61,7 +61,8 @@
   ];
   const SITE_CONTEXT_ROUTE_DENYLIST = [
     'logout', 'signout', 'delete', 'remove', 'destroy', 'create', 'edit', 'new',
-    'download', 'export', 'action', 'callback', '/api/', 'mailto:', 'tel:'
+    'download', 'export', 'action', 'callback', '/api/', 'mailto:', 'tel:',
+    '/login', '/signup', '/onboarding', '/console', '/admin', '/platform', '/dashboard'
   ];
   const SITE_CONTEXT_TRACKING_QUERY_PREFIXES = ['utm_', 'gclid', 'fbclid', 'msclkid'];
   const SITE_CONTEXT_MAX_PAGE_NETWORK_BYTES = 300 * 1024;

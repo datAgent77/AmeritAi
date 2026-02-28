@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Save, Loader2 } from "lucide-react"
+import { recordAuthDebug } from "@/lib/auth-debug"
 
 import { EngagementSettings, defaultSettings, BubbleMessage } from "./types"
 import { EngagementDesignTab } from "./tabs/design-tab"
@@ -153,6 +154,10 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         if (!user?.uid) return
         setIsSaving(true)
         try {
+            recordAuthDebug("engagement_save_start", {
+                actorUid: user.uid,
+                targetUserId: effectiveUserId
+            })
             const idToken = await user.getIdToken()
             const response = await fetch('/api/widget-settings', {
                 method: 'POST',
@@ -165,6 +170,12 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                     engagement: settings
                 })
             })
+            recordAuthDebug("engagement_save_response", {
+                actorUid: user.uid,
+                targetUserId: effectiveUserId,
+                ok: response.ok,
+                status: response.status
+            })
 
             if (!response.ok) throw new Error('Save failed')
 
@@ -174,6 +185,11 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
             })
         } catch (error) {
             console.error("Failed to save engagement settings:", error)
+            recordAuthDebug("engagement_save_error", {
+                actorUid: user.uid,
+                targetUserId: effectiveUserId,
+                error: error instanceof Error ? error.message : String(error)
+            })
             toast({
                 title: t('error') || "Hata",
                 description: "Ayarlar kaydedilemedi.",

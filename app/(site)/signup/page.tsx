@@ -20,6 +20,7 @@ import { PasswordStrength, isPasswordStrong } from "@/components/auth/password-s
 import { PhoneInput } from "@/components/auth/phone-input"
 import { event as trackEvent } from "@/lib/gtag"
 import { trackMarketingEvent, trackSignUp } from "@/lib/marketing-tracking"
+import { recordAuthDebug } from "@/lib/auth-debug"
 
 type SignupStep = 'initial' | 'form' | 'success'
 const EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS_ENABLED =
@@ -53,6 +54,12 @@ export default function SignUpForm() {
     const { toast } = useToast()
     const { t, language } = useLanguage()
     const signupEntryTrackedRef = useRef(false)
+
+    const signOutWithDebug = async (reason: string) => {
+        recordAuthDebug("signup_signout_triggered", { reason })
+        await auth.signOut()
+        recordAuthDebug("signup_signout_completed", { reason })
+    }
 
     useEffect(() => {
         if (signupEntryTrackedRef.current) return
@@ -198,7 +205,7 @@ export default function SignUpForm() {
             if (user) {
                 // Social auth user - Register on server
                 await registerUserOnServer(user);
-                await auth.signOut()
+                await signOutWithDebug("signup_social_registration_complete")
             } else {
                 // Email/password signup
                 if (!isPasswordStrong(password)) {
@@ -225,7 +232,7 @@ export default function SignUpForm() {
                 } else {
                     await sendVerificationEmailWithFallback(user)
                     requiresEmailVerification = true;
-                    await auth.signOut()
+                    await signOutWithDebug("signup_email_requires_verification")
                 }
             }
 

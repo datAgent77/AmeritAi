@@ -18,6 +18,7 @@ import { extractEntitlementsFromDoc } from "@/lib/entitlements-normalization"
 import { getTrialDaysRemaining } from "@/lib/entitlements"
 import { ThemeProvider } from "next-themes"
 import { TrialExpiredOverlay } from "@/components/trial-expired-overlay"
+import { recordAuthDebug } from "@/lib/auth-debug"
 
 import { AlertTriangle, LogOut, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,16 +44,23 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
 
         const initialize = async () => {
             try {
+                recordAuthDebug("console_profile_fetch_start", { uid: user.uid })
                 const token = await user.getIdToken();
                 const response = await fetch("/api/console/user-profile", {
                     headers: {
                         "Authorization": `Bearer ${token}`
                     }
                 });
+                recordAuthDebug("console_profile_fetch_response", {
+                    uid: user.uid,
+                    status: response.status,
+                    ok: response.ok
+                })
 
                 if (!response.ok) {
                     if (response.status === 404) {
                         console.warn("User document not found for:", user.uid)
+                        recordAuthDebug("console_profile_missing_user_doc", { uid: user.uid })
                         setIsInitializing(false)
                         return
                     }
@@ -60,9 +68,20 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 }
 
                 const data = await response.json();
+                recordAuthDebug("console_profile_data", {
+                    uid: user.uid,
+                    status: data.status ?? null,
+                    isDeleted: data.isDeleted ?? null,
+                    isActive: data.isActive ?? null
+                })
 
                 // Check termination status
                 if (data.status === 'archived' || data.status === 'deleted' || data.isDeleted === true) {
+                    recordAuthDebug("console_profile_terminated", {
+                        uid: user.uid,
+                        status: data.status ?? null,
+                        isDeleted: data.isDeleted ?? null
+                    })
                     setIsTerminated(true)
                     setIsInitializing(false)
                     return
@@ -95,6 +114,10 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 setIsInitializing(false)
             } catch (error) {
                 console.error("Error initializing console:", error)
+                recordAuthDebug("console_profile_fetch_error", {
+                    uid: user.uid,
+                    error: error instanceof Error ? error.message : String(error)
+                })
                 setIsInitializing(false)
             }
         }
@@ -103,6 +126,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
     }, [user, authLoading, router])
 
     const handleLogout = async () => {
+        recordAuthDebug("console_manual_logout", { pathname })
         await signOut(auth)
         router.push("/login")
     }

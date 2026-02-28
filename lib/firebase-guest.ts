@@ -10,7 +10,7 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, setPersistence, browserLocalPersistence, signInAnonymously, Auth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, signInAnonymously, Auth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCUwSlqGfisUtejDfF8Snv-EzI374vcuus",
@@ -30,11 +30,11 @@ const guestApp = existingGuestApp || initializeApp(firebaseConfig, GUEST_APP_NAM
 const guestDb = getFirestore(guestApp);
 const guestAuth = getAuth(guestApp);
 
-// Set to browser persistence to keep guest logged in across refreshes
+// Keep guest auth session isolated per browser tab (reduces any cross-tab/session side effects)
 let persistenceSet = false;
 const ensureGuestPersistence = async () => {
     if (!persistenceSet) {
-        await setPersistence(guestAuth, browserLocalPersistence);
+        await setPersistence(guestAuth, browserSessionPersistence);
         persistenceSet = true;
     }
 };

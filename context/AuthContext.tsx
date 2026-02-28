@@ -6,6 +6,7 @@ import { User, onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, onSnapshot } from "firebase/firestore"
 import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
+import { installAuthDebugDump, recordAuthDebug } from "@/lib/auth-debug"
 
 // Extended user data interface
 export interface UserData {
@@ -138,9 +139,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, [trialEndsAt, isPaidPlan, subscriptionStatus])
 
     useEffect(() => {
+        installAuthDebugDump()
+        recordAuthDebug("auth_effect_start", { pathname })
+
         // Skip auth for public widget routes
         if (pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')) {
             console.log("AuthProvider: Skipping auth for widget view")
+            recordAuthDebug("auth_effect_skip_public_widget", { pathname })
             setLoading(false)
             return
         }
@@ -150,6 +155,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             console.log("AuthProvider: Auth State Changed. User:", currentUser?.uid)
+            recordAuthDebug("auth_state_changed", {
+                uid: currentUser?.uid || null,
+                email: currentUser?.email || null
+            })
 
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
@@ -184,6 +193,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     }
 
                     console.log("AuthContext Update - PlanID from Firestore:", data.planId)
+                    recordAuthDebug("auth_user_snapshot_data", {
+                        uid: currentUser.uid,
+                        role: userRole,
+                        planId: data.planId || null,
+                        isActive: data.isActive ?? null,
+                        status: data.status ?? null,
+                        isDeleted: data.isDeleted ?? null
+                    })
 
                     setUser(mergedUser as User)
                     setUserData(data as UserData)
@@ -214,12 +231,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setLoading(false)
                 }, (error) => {
                     console.error("AuthProvider: Firestore listener error", error)
+                    recordAuthDebug("auth_user_snapshot_error", {
+                        uid: currentUser.uid,
+                        error: error instanceof Error ? error.message : String(error)
+                    })
                     setUser(currentUser)
                     setLoading(false)
                 })
 
             } else {
                 // No user signed in
+                recordAuthDebug("auth_state_no_user")
                 setUser(null)
                 setUserData(null)
                 setRole(null)
@@ -232,6 +254,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         return () => {
             console.log("AuthProvider: Cleanup")
+            recordAuthDebug("auth_effect_cleanup", { pathname })
             unsubscribeAuth()
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
