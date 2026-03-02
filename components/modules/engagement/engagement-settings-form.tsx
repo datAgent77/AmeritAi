@@ -169,7 +169,8 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                 },
                 body: JSON.stringify({
                     chatbotId: effectiveUserId,
-                    engagement: settings
+                    engagement: settings,
+                    enableProactiveMessaging: settings.enabled
                 })
             })
             recordAuthDebug("engagement_save_response", {

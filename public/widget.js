@@ -1225,14 +1225,14 @@
       this.bubble = null;
       this.hasShown = false;
       this.timers = [];
-	      this.listeners = [];
-	      this.targetMessage = null; // Store selected message
-	      this.dismissTimer = null;
-	      this.typewriterTimers = [];
-	      this.lastTypedBubbleText = '';
-	      this.activeTypewriterText = '';
-	      this.bubbleTextFullyRendered = true;
-	      this.currentBubbleAnimation = null;
+      this.listeners = [];
+      this.targetMessage = null; // Store selected message
+      this.dismissTimer = null;
+      this.typewriterTimers = [];
+      this.lastTypedBubbleText = '';
+      this.activeTypewriterText = '';
+      this.bubbleTextFullyRendered = true;
+      this.currentBubbleAnimation = null;
 
       // Session storage keys
       this.shownCountKey = `userex_eng_shown_${chatbotId}`;
@@ -1575,280 +1575,280 @@
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-	    adjustColorBrightness(hex, percent) {
-	      let num = parseInt(hex.replace("#", ""), 16),
-	        amt = Math.round(2.55 * percent),
-	        R = (num >> 16) + amt,
-	        B = (num >> 8 & 0x00FF) + amt,
-	        G = (num & 0x0000FF) + amt;
-	      return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
-	    }
+    adjustColorBrightness(hex, percent) {
+      let num = parseInt(hex.replace("#", ""), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        B = (num >> 8 & 0x00FF) + amt,
+        G = (num & 0x0000FF) + amt;
+      return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
+    }
 
-	    clearDismissTimer() {
-	      if (this.dismissTimer) {
-	        clearTimeout(this.dismissTimer);
-	        this.dismissTimer = null;
-	      }
-	    }
+    clearDismissTimer() {
+      if (this.dismissTimer) {
+        clearTimeout(this.dismissTimer);
+        this.dismissTimer = null;
+      }
+    }
 
-	    clearTypewriterTimers() {
-	      if (!this.typewriterTimers || this.typewriterTimers.length === 0) return;
-	      this.typewriterTimers.forEach(timer => clearTimeout(timer));
-	      this.typewriterTimers = [];
-	    }
+    clearTypewriterTimers() {
+      if (!this.typewriterTimers || this.typewriterTimers.length === 0) return;
+      this.typewriterTimers.forEach(timer => clearTimeout(timer));
+      this.typewriterTimers = [];
+    }
 
-	    getPrefersReducedMotion() {
-	      try {
-	        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-	      } catch (e) {
-	        return false;
-	      }
-	    }
+    getPrefersReducedMotion() {
+      try {
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      } catch (e) {
+        return false;
+      }
+    }
 
-	    normalizeBubbleAnimation(animation) {
-	      const allowed = ['none', 'bounce', 'pulse', 'shake', 'slide', 'fade'];
-	      return allowed.includes(animation) ? animation : 'bounce';
-	    }
+    normalizeBubbleAnimation(animation) {
+      const allowed = ['none', 'bounce', 'pulse', 'shake', 'slide', 'fade'];
+      return allowed.includes(animation) ? animation : 'bounce';
+    }
 
-	    getAmbientVariantConfig() {
-	      const ambientVariant = this.settings && this.settings.bubble && this.settings.bubble.ambientVariant;
-	      if (!ambientVariant || !ambientVariant.enabled) return null;
-	      return ambientVariant;
-	    }
+    getAmbientVariantConfig() {
+      const ambientVariant = this.settings && this.settings.bubble && this.settings.bubble.ambientVariant;
+      if (!ambientVariant || !ambientVariant.enabled) return null;
+      return ambientVariant;
+    }
 
-	    getAmbientAiBubblePresetStyle(baseStyle = {}, theme = 'default') {
-	      const ambientColor = (settings && (settings.ambientAiBubbleColor || settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor))
-	        || baseStyle.backgroundColor
-	        || '#3B82F6';
-	      const defaults = {
-	        backgroundColor: ambientColor,
-	        textColor: '#FFFFFF',
-	        effect: 'glass',
-	        backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 14),
-	        shape: 'rounded',
-	        borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 18),
-	        shadow: 'large',
-	        borderWidth: 1,
-	        borderColor: 'rgba(255,255,255,0.22)',
-	        fontSize: baseStyle.fontSize || 14
-	      };
+    getAmbientAiBubblePresetStyle(baseStyle = {}, theme = 'default') {
+      const ambientColor = (settings && (settings.ambientAiBubbleColor || settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor))
+        || baseStyle.backgroundColor
+        || '#3B82F6';
+      const defaults = {
+        backgroundColor: ambientColor,
+        textColor: '#FFFFFF',
+        effect: 'glass',
+        backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 14),
+        shape: 'rounded',
+        borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 18),
+        shadow: 'large',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.22)',
+        fontSize: baseStyle.fontSize || 14
+      };
 
-	      if (theme === 'minimal') {
-	        return Object.assign({}, defaults, {
-	          effect: 'solid',
-	          backgroundColor: baseStyle.backgroundColor || '#101218',
-	          borderColor: 'rgba(255,255,255,0.12)',
-	          borderWidth: 1,
-	          shadow: 'small',
-	          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 16)
-	        });
-	      }
-	      if (theme === 'glass') {
-	        return Object.assign({}, defaults, {
-	          effect: 'glass',
-	          backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 18),
-	          borderColor: 'rgba(255,255,255,0.28)',
-	          shadow: 'large',
-	          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 20)
-	        });
-	      }
-	      if (theme === 'compact') {
-	        return Object.assign({}, defaults, {
-	          fontSize: Math.min(Number(baseStyle.fontSize || 14), 13),
-	          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 14),
-	          shadow: 'medium',
-	          backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 10)
-	        });
-	      }
+      if (theme === 'minimal') {
+        return Object.assign({}, defaults, {
+          effect: 'solid',
+          backgroundColor: baseStyle.backgroundColor || '#101218',
+          borderColor: 'rgba(255,255,255,0.12)',
+          borderWidth: 1,
+          shadow: 'small',
+          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 16)
+        });
+      }
+      if (theme === 'glass') {
+        return Object.assign({}, defaults, {
+          effect: 'glass',
+          backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 18),
+          borderColor: 'rgba(255,255,255,0.28)',
+          shadow: 'large',
+          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 20)
+        });
+      }
+      if (theme === 'compact') {
+        return Object.assign({}, defaults, {
+          fontSize: Math.min(Number(baseStyle.fontSize || 14), 13),
+          borderRadius: Math.max(Number(baseStyle.borderRadius || 12), 14),
+          shadow: 'medium',
+          backdropBlur: Math.max(Number(baseStyle.backdropBlur || 0), 10)
+        });
+      }
 
-	      return defaults;
-	    }
+      return defaults;
+    }
 
-	    resolveBubblePresentation(messageText) {
-	      const bubble = (this.settings && this.settings.bubble) || {};
-	      const baseStyle = Object.assign({}, bubble.style || {});
-	      const basePosition = bubble.position || 'top';
-	      const baseAnimation = this.normalizeBubbleAnimation(bubble.animation || 'bounce');
-	      const isAmbientMode = !!(settings && settings.chatDisplayMode === 'ambient');
-	      const ambientVariant = isAmbientMode ? this.getAmbientVariantConfig() : null;
-	      const renderStyle = (ambientVariant && ambientVariant.renderStyle) || 'custom';
-	      const aiBubbleTheme = (ambientVariant && ambientVariant.aiBubbleTheme) || 'default';
+    resolveBubblePresentation(messageText) {
+      const bubble = (this.settings && this.settings.bubble) || {};
+      const baseStyle = Object.assign({}, bubble.style || {});
+      const basePosition = bubble.position || 'top';
+      const baseAnimation = this.normalizeBubbleAnimation(bubble.animation || 'bounce');
+      const isAmbientMode = !!(settings && settings.chatDisplayMode === 'ambient');
+      const ambientVariant = isAmbientMode ? this.getAmbientVariantConfig() : null;
+      const renderStyle = (ambientVariant && ambientVariant.renderStyle) || 'custom';
+      const aiBubbleTheme = (ambientVariant && ambientVariant.aiBubbleTheme) || 'default';
 
-	      let resolvedStyle = Object.assign({}, baseStyle);
-	      if (ambientVariant) {
-	        if (renderStyle === 'ambient_ai_bubble' || renderStyle === 'ambient_ai_bubble_typewriter') {
-	          resolvedStyle = Object.assign({}, baseStyle, this.getAmbientAiBubblePresetStyle(baseStyle, aiBubbleTheme), ambientVariant.style || {});
-	        } else {
-	          resolvedStyle = Object.assign({}, baseStyle, ambientVariant.style || {});
-	        }
-	      }
+      let resolvedStyle = Object.assign({}, baseStyle);
+      if (ambientVariant) {
+        if (renderStyle === 'ambient_ai_bubble' || renderStyle === 'ambient_ai_bubble_typewriter') {
+          resolvedStyle = Object.assign({}, baseStyle, this.getAmbientAiBubblePresetStyle(baseStyle, aiBubbleTheme), ambientVariant.style || {});
+        } else {
+          resolvedStyle = Object.assign({}, baseStyle, ambientVariant.style || {});
+        }
+      }
 
-	      const parsedOffsetX = Number(ambientVariant && ambientVariant.offsetX);
-	      const parsedOffsetY = Number(ambientVariant && ambientVariant.offsetY);
-	      const parsedMaxWidth = Number(ambientVariant && ambientVariant.maxWidth);
-	      const typewriterDefaults = {
-	        enabled: true,
-	        charDelayMs: 18,
-	        startDelayMs: 100,
-	        cursorVisible: true,
-	        cursorChar: '▍',
-	        completePauseMs: 300,
-	        reducedMotionBehavior: 'instant',
-	        replayBehavior: 'new_text_only'
-	      };
-	      const typewriter = Object.assign({}, typewriterDefaults, (ambientVariant && ambientVariant.typewriter) || {});
-	      const typewriterEnabled = !!(
-	        ambientVariant &&
-	        renderStyle === 'ambient_ai_bubble_typewriter' &&
-	        typewriter.enabled !== false
-	      );
+      const parsedOffsetX = Number(ambientVariant && ambientVariant.offsetX);
+      const parsedOffsetY = Number(ambientVariant && ambientVariant.offsetY);
+      const parsedMaxWidth = Number(ambientVariant && ambientVariant.maxWidth);
+      const typewriterDefaults = {
+        enabled: true,
+        charDelayMs: 18,
+        startDelayMs: 100,
+        cursorVisible: true,
+        cursorChar: '▍',
+        completePauseMs: 300,
+        reducedMotionBehavior: 'instant',
+        replayBehavior: 'new_text_only'
+      };
+      const typewriter = Object.assign({}, typewriterDefaults, (ambientVariant && ambientVariant.typewriter) || {});
+      const typewriterEnabled = !!(
+        ambientVariant &&
+        renderStyle === 'ambient_ai_bubble_typewriter' &&
+        typewriter.enabled !== false
+      );
 
-	      return {
-	        isAmbientMode,
-	        useAmbientVariant: !!ambientVariant,
-	        renderStyle,
-	        aiBubbleTheme,
-	        position: (ambientVariant && ambientVariant.position) || basePosition,
-	        animation: this.normalizeBubbleAnimation((ambientVariant && ambientVariant.animation) || baseAnimation),
-	        style: resolvedStyle,
-	        offsetX: Number.isFinite(parsedOffsetX) ? parsedOffsetX : 0,
-	        offsetY: Number.isFinite(parsedOffsetY) ? parsedOffsetY : 0,
-	        maxWidth: Number.isFinite(parsedMaxWidth) && parsedMaxWidth > 0 ? parsedMaxWidth : null,
-	        typewriterEnabled,
-	        typewriter,
-	        messageText: String(messageText || '')
-	      };
-	    }
+      return {
+        isAmbientMode,
+        useAmbientVariant: !!ambientVariant,
+        renderStyle,
+        aiBubbleTheme,
+        position: (ambientVariant && ambientVariant.position) || basePosition,
+        animation: this.normalizeBubbleAnimation((ambientVariant && ambientVariant.animation) || baseAnimation),
+        style: resolvedStyle,
+        offsetX: Number.isFinite(parsedOffsetX) ? parsedOffsetX : 0,
+        offsetY: Number.isFinite(parsedOffsetY) ? parsedOffsetY : 0,
+        maxWidth: Number.isFinite(parsedMaxWidth) && parsedMaxWidth > 0 ? parsedMaxWidth : null,
+        typewriterEnabled,
+        typewriter,
+        messageText: String(messageText || '')
+      };
+    }
 
-	    removeBubbleAnimationClasses() {
-	      if (!this.bubble) return;
-	      ['bounce', 'pulse', 'shake', 'slide', 'fade'].forEach(name => {
-	        this.bubble.classList.remove(`userex-eng-${name}`);
-	        this.bubble.classList.remove(`userex-eng-${name}-center`);
-	      });
-	    }
+    removeBubbleAnimationClasses() {
+      if (!this.bubble) return;
+      ['bounce', 'pulse', 'shake', 'slide', 'fade'].forEach(name => {
+        this.bubble.classList.remove(`userex-eng-${name}`);
+        this.bubble.classList.remove(`userex-eng-${name}-center`);
+      });
+    }
 
-	    applyBubbleAnimation(animation) {
-	      if (!this.bubble) return;
-	      const normalizedAnimation = this.normalizeBubbleAnimation(animation);
-	      this.removeBubbleAnimationClasses();
-	      if (!normalizedAnimation || normalizedAnimation === 'none') return;
-	      this.addAnimationStyles();
-	      void this.bubble.offsetWidth;
-	      const animationClass = this.isBubbleCentered ? `userex-eng-${normalizedAnimation}-center` : `userex-eng-${normalizedAnimation}`;
-	      this.currentBubbleAnimation = normalizedAnimation;
-	      this.bubble.classList.add(animationClass);
-	    }
+    applyBubbleAnimation(animation) {
+      if (!this.bubble) return;
+      const normalizedAnimation = this.normalizeBubbleAnimation(animation);
+      this.removeBubbleAnimationClasses();
+      if (!normalizedAnimation || normalizedAnimation === 'none') return;
+      this.addAnimationStyles();
+      void this.bubble.offsetWidth;
+      const animationClass = this.isBubbleCentered ? `userex-eng-${normalizedAnimation}-center` : `userex-eng-${normalizedAnimation}`;
+      this.currentBubbleAnimation = normalizedAnimation;
+      this.bubble.classList.add(animationClass);
+    }
 
-	    applyBubbleContentWithTypewriter(contentEl, text, presentation, onComplete) {
-	      if (!contentEl) {
-	        if (typeof onComplete === 'function') onComplete();
-	        return;
-	      }
+    applyBubbleContentWithTypewriter(contentEl, text, presentation, onComplete) {
+      if (!contentEl) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
 
-	      const plainText = String(text || '');
-	      this.activeTypewriterText = plainText;
-	      this.bubbleTextFullyRendered = false;
-	      this.clearTypewriterTimers();
+      const plainText = String(text || '');
+      this.activeTypewriterText = plainText;
+      this.bubbleTextFullyRendered = false;
+      this.clearTypewriterTimers();
 
-	      const shouldType = !!presentation.typewriterEnabled;
-	      const reducedMotion = this.getPrefersReducedMotion();
-	      const reducedBehavior = (presentation.typewriter && presentation.typewriter.reducedMotionBehavior) || 'instant';
-	      const shouldSkipForSameText = shouldType && this.lastTypedBubbleText === plainText;
-	      const shouldSkipForReducedMotion = shouldType && reducedMotion && reducedBehavior === 'instant';
+      const shouldType = !!presentation.typewriterEnabled;
+      const reducedMotion = this.getPrefersReducedMotion();
+      const reducedBehavior = (presentation.typewriter && presentation.typewriter.reducedMotionBehavior) || 'instant';
+      const shouldSkipForSameText = shouldType && this.lastTypedBubbleText === plainText;
+      const shouldSkipForReducedMotion = shouldType && reducedMotion && reducedBehavior === 'instant';
 
-	      if (!shouldType || shouldSkipForSameText || shouldSkipForReducedMotion) {
-	        contentEl.textContent = plainText;
-	        this.bubbleTextFullyRendered = true;
-	        if (shouldType) this.lastTypedBubbleText = plainText;
-	        if (typeof onComplete === 'function') onComplete();
-	        return;
-	      }
+      if (!shouldType || shouldSkipForSameText || shouldSkipForReducedMotion) {
+        contentEl.textContent = plainText;
+        this.bubbleTextFullyRendered = true;
+        if (shouldType) this.lastTypedBubbleText = plainText;
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
 
-	      const typewriter = presentation.typewriter || {};
-	      const charDelayMs = Math.max(5, Number(typewriter.charDelayMs || 18));
-	      const startDelayMs = Math.max(0, Number(typewriter.startDelayMs || 100));
-	      const completePauseMs = Math.max(0, Number(typewriter.completePauseMs || 300));
-	      const cursorVisible = typewriter.cursorVisible !== false;
-	      const cursorChar = typeof typewriter.cursorChar === 'string' && typewriter.cursorChar.length > 0
-	        ? typewriter.cursorChar
-	        : '▍';
+      const typewriter = presentation.typewriter || {};
+      const charDelayMs = Math.max(5, Number(typewriter.charDelayMs || 18));
+      const startDelayMs = Math.max(0, Number(typewriter.startDelayMs || 100));
+      const completePauseMs = Math.max(0, Number(typewriter.completePauseMs || 300));
+      const cursorVisible = typewriter.cursorVisible !== false;
+      const cursorChar = typeof typewriter.cursorChar === 'string' && typewriter.cursorChar.length > 0
+        ? typewriter.cursorChar
+        : '▍';
 
-	      let idx = 0;
-	      const renderFrame = () => {
-	        if (!this.bubble || !this.bubble.contains(contentEl)) return;
-	        const visibleText = plainText.slice(0, idx);
-	        contentEl.textContent = cursorVisible && idx < plainText.length
-	          ? `${visibleText}${cursorChar}`
-	          : visibleText;
-	      };
+      let idx = 0;
+      const renderFrame = () => {
+        if (!this.bubble || !this.bubble.contains(contentEl)) return;
+        const visibleText = plainText.slice(0, idx);
+        contentEl.textContent = cursorVisible && idx < plainText.length
+          ? `${visibleText}${cursorChar}`
+          : visibleText;
+      };
 
-	      const finish = () => {
-	        if (!this.bubble || !this.bubble.contains(contentEl)) return;
-	        contentEl.textContent = plainText;
-	        this.lastTypedBubbleText = plainText;
-	        this.bubbleTextFullyRendered = true;
-	        const finishTimer = setTimeout(() => {
-	          if (typeof onComplete === 'function') onComplete();
-	        }, completePauseMs);
-	        this.typewriterTimers.push(finishTimer);
-	      };
+      const finish = () => {
+        if (!this.bubble || !this.bubble.contains(contentEl)) return;
+        contentEl.textContent = plainText;
+        this.lastTypedBubbleText = plainText;
+        this.bubbleTextFullyRendered = true;
+        const finishTimer = setTimeout(() => {
+          if (typeof onComplete === 'function') onComplete();
+        }, completePauseMs);
+        this.typewriterTimers.push(finishTimer);
+      };
 
-	      const step = () => {
-	        if (!this.bubble || !this.bubble.contains(contentEl)) return;
-	        if (this.activeTypewriterText !== plainText) return;
-	        idx += 1;
-	        renderFrame();
-	        if (idx >= plainText.length) {
-	          finish();
-	          return;
-	        }
-	        const t = setTimeout(step, charDelayMs);
-	        this.typewriterTimers.push(t);
-	      };
+      const step = () => {
+        if (!this.bubble || !this.bubble.contains(contentEl)) return;
+        if (this.activeTypewriterText !== plainText) return;
+        idx += 1;
+        renderFrame();
+        if (idx >= plainText.length) {
+          finish();
+          return;
+        }
+        const t = setTimeout(step, charDelayMs);
+        this.typewriterTimers.push(t);
+      };
 
-	      renderFrame();
-	      const startTimer = setTimeout(() => {
-	        if (!this.bubble || !this.bubble.contains(contentEl)) return;
-	        if (this.activeTypewriterText !== plainText) return;
-	        if (plainText.length === 0) {
-	          finish();
-	          return;
-	        }
-	        step();
-	      }, startDelayMs);
-	      this.typewriterTimers.push(startTimer);
-	    }
+      renderFrame();
+      const startTimer = setTimeout(() => {
+        if (!this.bubble || !this.bubble.contains(contentEl)) return;
+        if (this.activeTypewriterText !== plainText) return;
+        if (plainText.length === 0) {
+          finish();
+          return;
+        }
+        step();
+      }, startDelayMs);
+      this.typewriterTimers.push(startTimer);
+    }
 
-	    getDismissDelayForMessage(message, bubble) {
-	      if (typeof message === 'object' && message.duration !== undefined && message.duration > 0) {
-	        console.log(`Engagement: Using message-specific duration: ${message.duration}s`);
-	        return message.duration * 1000;
-	      }
-	      if (bubble && bubble.autoDismiss) {
-	        return (bubble.autoDismissDelay || 10) * 1000;
-	      }
-	      return null;
-	    }
+    getDismissDelayForMessage(message, bubble) {
+      if (typeof message === 'object' && message.duration !== undefined && message.duration > 0) {
+        console.log(`Engagement: Using message-specific duration: ${message.duration}s`);
+        return message.duration * 1000;
+      }
+      if (bubble && bubble.autoDismiss) {
+        return (bubble.autoDismissDelay || 10) * 1000;
+      }
+      return null;
+    }
 
-	    scheduleBubbleDismiss(dismissDelay, triggerSource) {
-	      this.clearDismissTimer();
-	      if (!dismissDelay) return;
-	      this.dismissTimer = setTimeout(() => {
-	        this.hideBubble();
+    scheduleBubbleDismiss(dismissDelay, triggerSource) {
+      this.clearDismissTimer();
+      if (!dismissDelay) return;
+      this.dismissTimer = setTimeout(() => {
+        this.hideBubble();
 
-	        if (triggerSource) {
-	          const nextMsg = this.getNextMessage(triggerSource);
-	          if (nextMsg) {
-	            console.log(`Engagement: Chaining next message for ${triggerSource}`);
-	            const chainTimer = setTimeout(() => {
-	              this.showBubble(nextMsg, triggerSource);
-	            }, 500);
-	            this.timers.push(chainTimer);
-	          }
-	        }
-	      }, dismissDelay);
-	    }
+        if (triggerSource) {
+          const nextMsg = this.getNextMessage(triggerSource);
+          if (nextMsg) {
+            console.log(`Engagement: Chaining next message for ${triggerSource}`);
+            const chainTimer = setTimeout(() => {
+              this.showBubble(nextMsg, triggerSource);
+            }, 500);
+            this.timers.push(chainTimer);
+          }
+        }
+      }, dismissDelay);
+    }
 
     selectMessage() {
       // Exclusivity Check
@@ -2103,9 +2103,9 @@
 
     async fetchContextBubble() {
       // Check if proactive messaging is enabled in settings (using legacy field or new module logic)
-      // If legacy field exists, us it. Or check specific flag.
+      // fetchContextBubble relies on the settings object passed into the EngagementController constructor.
       // Assuming settings.enableProactiveMessaging matches backend mapping.
-      if (!this.settings.enableProactiveMessaging) return;
+      if (this.settings.enableProactiveMessaging !== true) return;
 
       console.log('Engagement: Fetching context bubble...');
 
@@ -2146,124 +2146,124 @@
       }
     }
 
-	    showBubble(specificMsg = null, triggerSource = null) {
-	      const container = document.getElementById('userex-chatbot-container');
-	      const isWidgetOpen = !!(container && container.style.display && container.style.display !== 'none');
-	      const isAmbientMode = !!(settings && settings.chatDisplayMode === 'ambient');
-	      const isAmbientFeedOpen = !!(isAmbientMode && container && container.dataset && container.dataset.userexAmbientFeedVisible === '1');
+    showBubble(specificMsg = null, triggerSource = null) {
+      const container = document.getElementById('userex-chatbot-container');
+      const isWidgetOpen = !!(container && container.style.display && container.style.display !== 'none');
+      const isAmbientMode = !!(settings && settings.chatDisplayMode === 'ambient');
+      const isAmbientFeedOpen = !!(isAmbientMode && container && container.dataset && container.dataset.userexAmbientFeedVisible === '1');
 
-	      if ((!isAmbientMode && isWidgetOpen) || isAmbientFeedOpen) {
-	        console.log('Engagement: Bubble suppressed because chat is open', {
-	          isAmbientMode,
-	          isWidgetOpen,
-	          isAmbientFeedOpen
-	        });
-	        return;
-	      }
+      if ((!isAmbientMode && isWidgetOpen) || isAmbientFeedOpen) {
+        console.log('Engagement: Bubble suppressed because chat is open', {
+          isAmbientMode,
+          isWidgetOpen,
+          isAmbientFeedOpen
+        });
+        return;
+      }
 
-	      const existingBubble = document.getElementById('userex-engagement-bubble');
-	      if (existingBubble) {
-	        console.log('Engagement: Bubble already visible, skipping');
-	        return;
-	      }
+      const existingBubble = document.getElementById('userex-engagement-bubble');
+      if (existingBubble) {
+        console.log('Engagement: Bubble already visible, skipping');
+        return;
+      }
 
-	      if (this.bubble && !document.body.contains(this.bubble)) {
-	        this.bubble = null;
-	        this.currentMessageText = null;
-	      }
+      if (this.bubble && !document.body.contains(this.bubble)) {
+        this.bubble = null;
+        this.currentMessageText = null;
+      }
 
-	      let message = specificMsg;
-	      if (!message) {
-	        if (this.pendingQueue && this.pendingQueue.length > 0) {
-	          message = this.pendingQueue.shift();
-	        } else if (this.messageQueue && this.messageQueue.length > 0) {
-	          message = this.messageQueue[Math.floor(Math.random() * this.messageQueue.length)];
-	        }
-	      }
+      let message = specificMsg;
+      if (!message) {
+        if (this.pendingQueue && this.pendingQueue.length > 0) {
+          message = this.pendingQueue.shift();
+        } else if (this.messageQueue && this.messageQueue.length > 0) {
+          message = this.messageQueue[Math.floor(Math.random() * this.messageQueue.length)];
+        }
+      }
 
-	      if (!message || !message.text) return;
+      if (!message || !message.text) return;
 
-	      if (this.bubble && this.currentMessageText === message.text) return;
+      if (this.bubble && this.currentMessageText === message.text) return;
 
-	      this.currentMessageText = message.text;
-	      this.hasShown = true;
-	      this.clearDismissTimer();
-	      this.clearTypewriterTimers();
+      this.currentMessageText = message.text;
+      this.hasShown = true;
+      this.clearDismissTimer();
+      this.clearTypewriterTimers();
 
-	      const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
-	      sessionStorage.setItem(this.shownCountKey, (shownCount + 1).toString());
+      const shownCount = parseInt(sessionStorage.getItem(this.shownCountKey) || '0');
+      sessionStorage.setItem(this.shownCountKey, (shownCount + 1).toString());
 
-	      const iframe = document.querySelector('#userex-chatbot-container iframe');
-	      if (iframe && iframe.contentWindow) {
-	        iframe.contentWindow.postMessage({
-	          type: 'USEREX_ENGAGEMENT_SHOWN',
-	          message: message.text,
-	          trigger: triggerSource || 'auto'
-	        }, '*');
-	      }
+      const iframe = document.querySelector('#userex-chatbot-container iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({
+          type: 'USEREX_ENGAGEMENT_SHOWN',
+          message: message.text,
+          trigger: triggerSource || 'auto'
+        }, '*');
+      }
 
-	      const bubbleConfig = this.settings.bubble || {};
-	      const presentation = this.resolveBubblePresentation(message.text);
-	      const position = presentation.position || 'top';
-	      const style = presentation.style || {};
-	      const animation = presentation.animation || 'bounce';
-	      const messageText = presentation.messageText;
+      const bubbleConfig = this.settings.bubble || {};
+      const presentation = this.resolveBubblePresentation(message.text);
+      const position = presentation.position || 'top';
+      const style = presentation.style || {};
+      const animation = presentation.animation || 'bounce';
+      const messageText = presentation.messageText;
 
-	      this.bubble = document.createElement('div');
-	      this.bubble.id = 'userex-engagement-bubble';
-	      this.bubble.dataset.userexBubbleVariant = presentation.useAmbientVariant ? 'ambient' : 'classic';
-	      this.bubble.className = presentation.useAmbientVariant ? 'userex-engagement-bubble--ambient' : 'userex-engagement-bubble--classic';
-	      this.bubble.innerHTML = `
+      this.bubble = document.createElement('div');
+      this.bubble.id = 'userex-engagement-bubble';
+      this.bubble.dataset.userexBubbleVariant = presentation.useAmbientVariant ? 'ambient' : 'classic';
+      this.bubble.className = presentation.useAmbientVariant ? 'userex-engagement-bubble--ambient' : 'userex-engagement-bubble--classic';
+      this.bubble.innerHTML = `
 	        <div class="bubble-content"></div>
 	        <button class="bubble-close" aria-label="Close">×</button>
 	      `;
 
-	      const borderRadius = style.borderRadius !== undefined ? style.borderRadius : 12;
-	      const shadows = {
-	        'none': 'none',
-	        'small': '0 2px 8px rgba(0,0,0,0.1)',
-	        'medium': '0 4px 12px rgba(0,0,0,0.15)',
-	        'large': '0 8px 24px rgba(0,0,0,0.2)',
-	        'glow': `0 0 15px ${(style.backgroundColor || '#000000')}60`
-	      };
+      const borderRadius = style.borderRadius !== undefined ? style.borderRadius : 12;
+      const shadows = {
+        'none': 'none',
+        'small': '0 2px 8px rgba(0,0,0,0.1)',
+        'medium': '0 4px 12px rgba(0,0,0,0.15)',
+        'large': '0 8px 24px rgba(0,0,0,0.2)',
+        'glow': `0 0 15px ${(style.backgroundColor || '#000000')}60`
+      };
 
-	      let backgroundStyle = `background-color: ${style.backgroundColor || '#000000'};`;
-	      let backdropFilter = '';
-	      let borderStyle = 'border: 1px solid rgba(0,0,0,0.05);';
-	      let boxShadow = shadows[style.shadow] || shadows.medium;
-	      let textColor = style.textColor || '#FFFFFF';
+      let backgroundStyle = `background-color: ${style.backgroundColor || '#000000'};`;
+      let backdropFilter = '';
+      let borderStyle = 'border: 1px solid rgba(0,0,0,0.05);';
+      let boxShadow = shadows[style.shadow] || shadows.medium;
+      let textColor = style.textColor || '#FFFFFF';
 
-	      if (style.effect === 'glass') {
-	        backgroundStyle = `background: ${this.hexToRgba(style.backgroundColor || '#000000', 0.65)};`;
-	        backdropFilter = `backdrop-filter: blur(${style.backdropBlur || 12}px); -webkit-backdrop-filter: blur(${style.backdropBlur || 12}px);`;
-	        if (style.borderWidth && style.borderWidth > 0) {
-	          borderStyle = `border: ${style.borderWidth}px solid ${style.borderColor || this.hexToRgba(style.textColor || '#FFFFFF', 0.15)};`;
-	        } else {
-	          borderStyle = `border: 1px solid ${this.hexToRgba(style.textColor || '#FFFFFF', 0.15)};`;
-	        }
-	      } else if (style.effect === 'gradient') {
-	        const baseColor = style.backgroundColor || '#000000';
-	        const color2 = this.adjustColorBrightness(baseColor, -40);
-	        backgroundStyle = `background: linear-gradient(135deg, ${baseColor} 0%, ${color2} 100%);`;
-	        borderStyle = (style.borderWidth && style.borderWidth > 0)
-	          ? `border: ${style.borderWidth}px solid ${style.borderColor || 'transparent'};`
-	          : 'border: none;';
-	      } else if (style.effect === 'outline') {
-	        backgroundStyle = `background-color: ${style.backgroundColor || '#FFFFFF'};`;
-	        borderStyle = `border: 2px solid ${style.borderColor || textColor};`;
-	      } else {
-	        if (style.borderWidth && style.borderWidth > 0) {
-	          borderStyle = `border: ${style.borderWidth}px solid ${style.borderColor || 'rgba(0,0,0,0.05)'};`;
-	        }
-	      }
+      if (style.effect === 'glass') {
+        backgroundStyle = `background: ${this.hexToRgba(style.backgroundColor || '#000000', 0.65)};`;
+        backdropFilter = `backdrop-filter: blur(${style.backdropBlur || 12}px); -webkit-backdrop-filter: blur(${style.backdropBlur || 12}px);`;
+        if (style.borderWidth && style.borderWidth > 0) {
+          borderStyle = `border: ${style.borderWidth}px solid ${style.borderColor || this.hexToRgba(style.textColor || '#FFFFFF', 0.15)};`;
+        } else {
+          borderStyle = `border: 1px solid ${this.hexToRgba(style.textColor || '#FFFFFF', 0.15)};`;
+        }
+      } else if (style.effect === 'gradient') {
+        const baseColor = style.backgroundColor || '#000000';
+        const color2 = this.adjustColorBrightness(baseColor, -40);
+        backgroundStyle = `background: linear-gradient(135deg, ${baseColor} 0%, ${color2} 100%);`;
+        borderStyle = (style.borderWidth && style.borderWidth > 0)
+          ? `border: ${style.borderWidth}px solid ${style.borderColor || 'transparent'};`
+          : 'border: none;';
+      } else if (style.effect === 'outline') {
+        backgroundStyle = `background-color: ${style.backgroundColor || '#FFFFFF'};`;
+        borderStyle = `border: 2px solid ${style.borderColor || textColor};`;
+      } else {
+        if (style.borderWidth && style.borderWidth > 0) {
+          borderStyle = `border: ${style.borderWidth}px solid ${style.borderColor || 'rgba(0,0,0,0.05)'};`;
+        }
+      }
 
-	      let borderRad = `${borderRadius}px`;
-	      if (style.shape === 'pill') borderRad = '9999px';
-	      if (style.shape === 'square') borderRad = '0px';
-	      if (style.shape === 'speech') borderRad = `${borderRadius}px ${borderRadius}px ${borderRadius}px 4px`;
+      let borderRad = `${borderRadius}px`;
+      if (style.shape === 'pill') borderRad = '9999px';
+      if (style.shape === 'square') borderRad = '0px';
+      if (style.shape === 'speech') borderRad = `${borderRadius}px ${borderRadius}px ${borderRadius}px 4px`;
 
-	      const resolvedMaxWidth = presentation.maxWidth || 300;
-	      this.bubble.style.cssText = `
+      const resolvedMaxWidth = presentation.maxWidth || 300;
+      this.bubble.style.cssText = `
 	        position: fixed;
 	        z-index: 9998;
 	        ${backgroundStyle}
@@ -2286,27 +2286,27 @@
 	        ${borderStyle}
 	      `;
 
-	      if (presentation.useAmbientVariant) {
-	        this.bubble.style.boxShadow = this.bubble.style.boxShadow || '0 12px 32px rgba(0,0,0,0.24)';
-	      }
+      if (presentation.useAmbientVariant) {
+        this.bubble.style.boxShadow = this.bubble.style.boxShadow || '0 12px 32px rgba(0,0,0,0.24)';
+      }
 
-	      document.body.appendChild(this.bubble);
-	      this.positionBubble(position, presentation);
+      document.body.appendChild(this.bubble);
+      this.positionBubble(position, presentation);
 
-	      const content = this.bubble.querySelector('.bubble-content');
-	      if (content) {
-	        content.style.cssText = `
+      const content = this.bubble.querySelector('.bubble-content');
+      if (content) {
+        content.style.cssText = `
 	          display: block;
 	          white-space: pre-wrap;
 	          word-break: break-word;
 	          flex: 1;
 	        `;
-	      }
+      }
 
-	      const closeBtn = this.bubble.querySelector('.bubble-close');
-	      if (closeBtn) {
-	        const showCloseButton = bubbleConfig.showCloseButton !== false;
-	        closeBtn.style.cssText = `
+      const closeBtn = this.bubble.querySelector('.bubble-close');
+      if (closeBtn) {
+        const showCloseButton = bubbleConfig.showCloseButton !== false;
+        closeBtn.style.cssText = `
 	          background: none;
 	          border: none;
 	          color: ${style.textColor || '#FFFFFF'};
@@ -2323,138 +2323,138 @@
 	          justify-content: center;
 	          flex-shrink: 0;
 	        `;
-	        closeBtn.addEventListener('mouseenter', () => closeBtn.style.opacity = '1');
-	        closeBtn.addEventListener('mouseleave', () => closeBtn.style.opacity = '0.7');
-	        closeBtn.addEventListener('click', (e) => {
-	          e.stopPropagation();
-	          this.hideBubble();
-	        });
-	      }
+        closeBtn.addEventListener('mouseenter', () => closeBtn.style.opacity = '1');
+        closeBtn.addEventListener('mouseleave', () => closeBtn.style.opacity = '0.7');
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.hideBubble();
+        });
+      }
 
-	      sessionStorage.setItem(this.lastBubbleTimeKey, Date.now().toString());
+      sessionStorage.setItem(this.lastBubbleTimeKey, Date.now().toString());
 
-	      setTimeout(() => {
-	        if (!this.bubble) return;
-	        this.bubble.style.opacity = '1';
-	        this.bubble.style.transform = this.isBubbleCentered ? 'translate(-50%, 0)' : 'translateY(0)';
-	      }, 10);
+      setTimeout(() => {
+        if (!this.bubble) return;
+        this.bubble.style.opacity = '1';
+        this.bubble.style.transform = this.isBubbleCentered ? 'translate(-50%, 0)' : 'translateY(0)';
+      }, 10);
 
-	      if (animation && animation !== 'none') {
-	        setTimeout(() => {
-	          this.applyBubbleAnimation(animation);
-	        }, 300);
-	      }
+      if (animation && animation !== 'none') {
+        setTimeout(() => {
+          this.applyBubbleAnimation(animation);
+        }, 300);
+      }
 
-	      this.bubble.addEventListener('click', () => {
-	        console.log('Engagement bubble clicked - opening chat');
-	        sessionStorage.setItem(this.conversationStartedKey, 'true');
-	        this.clearTypewriterTimers();
+      this.bubble.addEventListener('click', () => {
+        console.log('Engagement bubble clicked - opening chat');
+        sessionStorage.setItem(this.conversationStartedKey, 'true');
+        this.clearTypewriterTimers();
 
-	        const launcher = document.getElementById('userex-chatbot-launcher');
-	        if (launcher) {
-	          launcher.click();
-	        } else {
-	          const bubbleIframe = document.querySelector('#userex-chatbot-container iframe');
-	          if (bubbleIframe && bubbleIframe.contentWindow) {
-	            bubbleIframe.contentWindow.postMessage({ type: 'USEREX_ACTIVATE_INPUT' }, '*');
-	          }
-	        }
+        const launcher = document.getElementById('userex-chatbot-launcher');
+        if (launcher) {
+          launcher.click();
+        } else {
+          const bubbleIframe = document.querySelector('#userex-chatbot-container iframe');
+          if (bubbleIframe && bubbleIframe.contentWindow) {
+            bubbleIframe.contentWindow.postMessage({ type: 'USEREX_ACTIVATE_INPUT' }, '*');
+          }
+        }
 
-	        const notifyIframe = document.querySelector('#userex-chatbot-container iframe');
-	        if (notifyIframe && notifyIframe.contentWindow) {
-	          notifyIframe.contentWindow.postMessage({
-	            type: 'USEREX_BUBBLE_CLICKED',
-	            message: messageText
-	          }, '*');
-	        }
+        const notifyIframe = document.querySelector('#userex-chatbot-container iframe');
+        if (notifyIframe && notifyIframe.contentWindow) {
+          notifyIframe.contentWindow.postMessage({
+            type: 'USEREX_BUBBLE_CLICKED',
+            message: messageText
+          }, '*');
+        }
 
-	        this.hideBubble();
-	      });
+        this.hideBubble();
+      });
 
-	      const dismissDelay = this.getDismissDelayForMessage(message, bubbleConfig);
-	      this.applyBubbleContentWithTypewriter(content, messageText, presentation, () => {
-	        this.scheduleBubbleDismiss(dismissDelay, triggerSource);
-	      });
-	    }
+      const dismissDelay = this.getDismissDelayForMessage(message, bubbleConfig);
+      this.applyBubbleContentWithTypewriter(content, messageText, presentation, () => {
+        this.scheduleBubbleDismiss(dismissDelay, triggerSource);
+      });
+    }
 
-	    applyBubblePositionOffsets(presentation) {
-	      if (!this.bubble || !presentation) return;
-	      const offsetX = Number.isFinite(Number(presentation.offsetX)) ? Number(presentation.offsetX) : 0;
-	      const offsetY = Number.isFinite(Number(presentation.offsetY)) ? Number(presentation.offsetY) : 0;
-	      const maxWidth = Number.isFinite(Number(presentation.maxWidth)) ? Number(presentation.maxWidth) : null;
+    applyBubblePositionOffsets(presentation) {
+      if (!this.bubble || !presentation) return;
+      const offsetX = Number.isFinite(Number(presentation.offsetX)) ? Number(presentation.offsetX) : 0;
+      const offsetY = Number.isFinite(Number(presentation.offsetY)) ? Number(presentation.offsetY) : 0;
+      const maxWidth = Number.isFinite(Number(presentation.maxWidth)) ? Number(presentation.maxWidth) : null;
 
-	      if (maxWidth && maxWidth > 0) {
-	        this.bubble.style.maxWidth = `${Math.max(180, maxWidth)}px`;
-	      }
+      if (maxWidth && maxWidth > 0) {
+        this.bubble.style.maxWidth = `${Math.max(180, maxWidth)}px`;
+      }
 
-	      if (offsetY !== 0 && this.bubble.style.bottom) {
-	        const currentBottom = parseFloat(this.bubble.style.bottom);
-	        if (!Number.isNaN(currentBottom)) {
-	          this.bubble.style.bottom = `${currentBottom + offsetY}px`;
-	        }
-	      }
+      if (offsetY !== 0 && this.bubble.style.bottom) {
+        const currentBottom = parseFloat(this.bubble.style.bottom);
+        if (!Number.isNaN(currentBottom)) {
+          this.bubble.style.bottom = `${currentBottom + offsetY}px`;
+        }
+      }
 
-	      if (offsetX !== 0) {
-	        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
-	          const currentLeft = parseFloat(this.bubble.style.left);
-	          if (!Number.isNaN(currentLeft)) {
-	            this.bubble.style.left = `${currentLeft + offsetX}px`;
-	          }
-	        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
-	          const currentRight = parseFloat(this.bubble.style.right);
-	          if (!Number.isNaN(currentRight)) {
-	            this.bubble.style.right = `${Math.max(0, currentRight - offsetX)}px`;
-	          }
-	        }
-	      }
-	    }
+      if (offsetX !== 0) {
+        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
+          const currentLeft = parseFloat(this.bubble.style.left);
+          if (!Number.isNaN(currentLeft)) {
+            this.bubble.style.left = `${currentLeft + offsetX}px`;
+          }
+        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
+          const currentRight = parseFloat(this.bubble.style.right);
+          if (!Number.isNaN(currentRight)) {
+            this.bubble.style.right = `${Math.max(0, currentRight - offsetX)}px`;
+          }
+        }
+      }
+    }
 
-	    clampBubbleToViewport() {
-	      if (!this.bubble || !document.body.contains(this.bubble)) return;
-	      const margin = 12;
-	      const rect = this.bubble.getBoundingClientRect();
-	      if (!rect || !Number.isFinite(rect.left)) return;
+    clampBubbleToViewport() {
+      if (!this.bubble || !document.body.contains(this.bubble)) return;
+      const margin = 12;
+      const rect = this.bubble.getBoundingClientRect();
+      if (!rect || !Number.isFinite(rect.left)) return;
 
-	      if (rect.left < margin) {
-	        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
-	          const left = parseFloat(this.bubble.style.left);
-	          if (!Number.isNaN(left)) this.bubble.style.left = `${left + (margin - rect.left)}px`;
-	        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
-	          const right = parseFloat(this.bubble.style.right);
-	          if (!Number.isNaN(right)) this.bubble.style.right = `${Math.max(0, right - (margin - rect.left))}px`;
-	        }
-	      }
+      if (rect.left < margin) {
+        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
+          const left = parseFloat(this.bubble.style.left);
+          if (!Number.isNaN(left)) this.bubble.style.left = `${left + (margin - rect.left)}px`;
+        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
+          const right = parseFloat(this.bubble.style.right);
+          if (!Number.isNaN(right)) this.bubble.style.right = `${Math.max(0, right - (margin - rect.left))}px`;
+        }
+      }
 
-	      if (rect.right > window.innerWidth - margin) {
-	        const overflow = rect.right - (window.innerWidth - margin);
-	        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
-	          const left = parseFloat(this.bubble.style.left);
-	          if (!Number.isNaN(left)) this.bubble.style.left = `${Math.max(margin, left - overflow)}px`;
-	        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
-	          const right = parseFloat(this.bubble.style.right);
-	          if (!Number.isNaN(right)) this.bubble.style.right = `${right + overflow}px`;
-	        }
-	      }
+      if (rect.right > window.innerWidth - margin) {
+        const overflow = rect.right - (window.innerWidth - margin);
+        if (this.bubble.style.left && this.bubble.style.left !== 'auto') {
+          const left = parseFloat(this.bubble.style.left);
+          if (!Number.isNaN(left)) this.bubble.style.left = `${Math.max(margin, left - overflow)}px`;
+        } else if (this.bubble.style.right && this.bubble.style.right !== 'auto') {
+          const right = parseFloat(this.bubble.style.right);
+          if (!Number.isNaN(right)) this.bubble.style.right = `${right + overflow}px`;
+        }
+      }
 
-	      const rectAfterX = this.bubble.getBoundingClientRect();
-	      if (rectAfterX.bottom > window.innerHeight - margin && this.bubble.style.bottom) {
-	        const bottom = parseFloat(this.bubble.style.bottom);
-	        if (!Number.isNaN(bottom)) {
-	          this.bubble.style.bottom = `${bottom + (rectAfterX.bottom - (window.innerHeight - margin))}px`;
-	        }
-	      }
-	      if (rectAfterX.top < margin && this.bubble.style.bottom) {
-	        const bottom = parseFloat(this.bubble.style.bottom);
-	        if (!Number.isNaN(bottom)) {
-	          this.bubble.style.bottom = `${Math.max(margin, bottom - (margin - rectAfterX.top))}px`;
-	        }
-	      }
-	    }
+      const rectAfterX = this.bubble.getBoundingClientRect();
+      if (rectAfterX.bottom > window.innerHeight - margin && this.bubble.style.bottom) {
+        const bottom = parseFloat(this.bubble.style.bottom);
+        if (!Number.isNaN(bottom)) {
+          this.bubble.style.bottom = `${bottom + (rectAfterX.bottom - (window.innerHeight - margin))}px`;
+        }
+      }
+      if (rectAfterX.top < margin && this.bubble.style.bottom) {
+        const bottom = parseFloat(this.bubble.style.bottom);
+        if (!Number.isNaN(bottom)) {
+          this.bubble.style.bottom = `${Math.max(margin, bottom - (margin - rectAfterX.top))}px`;
+        }
+      }
+    }
 
-	    positionBubble(position, presentation = null) {
-	      const launcher = document.getElementById('userex-chatbot-launcher');
-	      const container = document.getElementById('userex-chatbot-container');
-	      let anchorRect = null;
+    positionBubble(position, presentation = null) {
+      const launcher = document.getElementById('userex-chatbot-launcher');
+      const container = document.getElementById('userex-chatbot-container');
+      let anchorRect = null;
       let anchorKind = 'launcher';
 
       if (launcher) {
@@ -2466,10 +2466,10 @@
 
       if (!anchorRect) return;
 
-	      const launcherRect = anchorRect;
-	      const gap = 16;
+      const launcherRect = anchorRect;
+      const gap = 16;
 
-	      // Default to non-centered
+      // Default to non-centered
       this.isBubbleCentered = false;
 
       // If there's no launcher (ambient / always-open), anchor above the visible container.
@@ -2498,18 +2498,18 @@
 
         this.bubble.style.bottom = `${targetBottom}px`;
 
-	        const forcedLeft = position === 'left' || position === 'bottom-left';
-	        const forcedRight = position === 'right' || position === 'bottom-right';
-	        const forcedCenter = position === 'top';
+        const forcedLeft = position === 'left' || position === 'bottom-left';
+        const forcedRight = position === 'right' || position === 'bottom-right';
+        const forcedCenter = position === 'top';
 
-	        if (forcedLeft || (!forcedRight && !forcedCenter && anchorCenter < screenW * 0.33)) {
-	          this.bubble.style.left = `${Math.max(12, launcherRect.left)}px`;
-	          this.bubble.style.right = 'auto';
-	          this.bubble.style.transform = 'translateY(20px)';
-	        } else if (forcedRight || (!forcedCenter && anchorCenter > screenW * 0.66)) {
-	          this.bubble.style.right = `${Math.max(12, screenW - launcherRect.right)}px`;
-	          this.bubble.style.left = 'auto';
-	          this.bubble.style.transform = 'translateY(20px)';
+        if (forcedLeft || (!forcedRight && !forcedCenter && anchorCenter < screenW * 0.33)) {
+          this.bubble.style.left = `${Math.max(12, launcherRect.left)}px`;
+          this.bubble.style.right = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
+        } else if (forcedRight || (!forcedCenter && anchorCenter > screenW * 0.66)) {
+          this.bubble.style.right = `${Math.max(12, screenW - launcherRect.right)}px`;
+          this.bubble.style.left = 'auto';
+          this.bubble.style.transform = 'translateY(20px)';
         } else {
           this.bubble.style.left = `${anchorCenter}px`;
           this.bubble.style.right = 'auto';
@@ -2542,28 +2542,28 @@
           this.bubble.style.transform = 'translate(-50%, 20px)';
           this.isBubbleCentered = true;
         }
-	      } else {
-	        // Fallback for other manual positions (left/right of launcher)
-	        switch (position) {
-	          case 'left':
+      } else {
+        // Fallback for other manual positions (left/right of launcher)
+        switch (position) {
+          case 'left':
             this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
             this.bubble.style.right = `${window.innerWidth - launcherRect.left + gap}px`;
             break;
-	          case 'right':
-	            this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
-	            this.bubble.style.left = `${launcherRect.right + gap}px`;
-	            break;
-	          case 'bottom-left':
-	            this.bubble.style.bottom = `${Math.max(12, window.innerHeight - launcherRect.bottom + 8)}px`;
-	            this.bubble.style.left = `${Math.max(12, launcherRect.left)}px`;
-	            break;
-	          case 'bottom-right':
-	            this.bubble.style.bottom = `${Math.max(12, window.innerHeight - launcherRect.bottom + 8)}px`;
-	            this.bubble.style.right = `${Math.max(12, window.innerWidth - launcherRect.right)}px`;
-	            break;
-	          default:
-	            // Default check (fallback to Right-Aligned Top if unknown)
-	            this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
+          case 'right':
+            this.bubble.style.bottom = `${window.innerHeight - launcherRect.bottom}px`;
+            this.bubble.style.left = `${launcherRect.right + gap}px`;
+            break;
+          case 'bottom-left':
+            this.bubble.style.bottom = `${Math.max(12, window.innerHeight - launcherRect.bottom + 8)}px`;
+            this.bubble.style.left = `${Math.max(12, launcherRect.left)}px`;
+            break;
+          case 'bottom-right':
+            this.bubble.style.bottom = `${Math.max(12, window.innerHeight - launcherRect.bottom + 8)}px`;
+            this.bubble.style.right = `${Math.max(12, window.innerWidth - launcherRect.right)}px`;
+            break;
+          default:
+            // Default check (fallback to Right-Aligned Top if unknown)
+            this.bubble.style.bottom = `${window.innerHeight - launcherRect.top + gap}px`;
             this.bubble.style.right = `${window.innerWidth - launcherRect.right}px`;
             break;
         }
@@ -2571,20 +2571,20 @@
 
 
       // Mobile adjustments
-	      if (isMobileDevice()) {
-	        this.bubble.style.maxWidth = this.bubble.style.maxWidth || 'calc(100vw - 40px)';
-	        if (presentation && presentation.maxWidth) {
-	          this.bubble.style.maxWidth = `min(${Math.max(180, presentation.maxWidth)}px, calc(100vw - 24px))`;
-	        }
-	        // On mobile, if centered, keep it centered? Or default to full width behaviors?
-	        // Usually mobile uses specific styles injected in addMobileStyles
-	      }
+      if (isMobileDevice()) {
+        this.bubble.style.maxWidth = this.bubble.style.maxWidth || 'calc(100vw - 40px)';
+        if (presentation && presentation.maxWidth) {
+          this.bubble.style.maxWidth = `min(${Math.max(180, presentation.maxWidth)}px, calc(100vw - 24px))`;
+        }
+        // On mobile, if centered, keep it centered? Or default to full width behaviors?
+        // Usually mobile uses specific styles injected in addMobileStyles
+      }
 
-	      if (presentation) {
-	        this.applyBubblePositionOffsets(presentation);
-	      }
-	      this.clampBubbleToViewport();
-	    }
+      if (presentation) {
+        this.applyBubblePositionOffsets(presentation);
+      }
+      this.clampBubbleToViewport();
+    }
 
     addAnimationStyles() {
       if (document.getElementById('userex-engagement-animations')) return;
@@ -2676,44 +2676,44 @@
 
 
 
-	    hideBubble() {
-	      if (!this.bubble) return;
-	      this.clearDismissTimer();
-	      this.clearTypewriterTimers();
-	      this.activeTypewriterText = '';
-	      this.bubbleTextFullyRendered = true;
-	      this.removeBubbleAnimationClasses();
+    hideBubble() {
+      if (!this.bubble) return;
+      this.clearDismissTimer();
+      this.clearTypewriterTimers();
+      this.activeTypewriterText = '';
+      this.bubbleTextFullyRendered = true;
+      this.removeBubbleAnimationClasses();
 
-	      this.bubble.style.opacity = '0';
-	      this.bubble.style.transform = 'translateY(20px)';
+      this.bubble.style.opacity = '0';
+      this.bubble.style.transform = 'translateY(20px)';
 
       setTimeout(() => {
-	        if (this.bubble && this.bubble.parentNode) {
-	          this.bubble.parentNode.removeChild(this.bubble);
-	        }
-	        this.bubble = null;
-	        this.currentMessageText = null;
-	      }, 300);
-	    }
+        if (this.bubble && this.bubble.parentNode) {
+          this.bubble.parentNode.removeChild(this.bubble);
+        }
+        this.bubble = null;
+        this.currentMessageText = null;
+      }, 300);
+    }
 
-	    cleanup() {
-	      // Clear all timers
-	      this.timers.forEach(timer => clearTimeout(timer));
-	      this.timers = [];
-	      this.clearDismissTimer();
-	      this.clearTypewriterTimers();
+    cleanup() {
+      // Clear all timers
+      this.timers.forEach(timer => clearTimeout(timer));
+      this.timers = [];
+      this.clearDismissTimer();
+      this.clearTypewriterTimers();
 
-	      // Remove all event listeners
+      // Remove all event listeners
       this.listeners.forEach(({ event, handler, target }) => {
         (target || window).removeEventListener(event, handler);
       });
       this.listeners = [];
     }
 
-	    destroy() {
-	      this.hideBubble();
-	      this.cleanup();
-	    }
+    destroy() {
+      this.hideBubble();
+      this.cleanup();
+    }
   }
 
   // ============================================
@@ -3890,8 +3890,8 @@
     });
 
     // Initialize Engagement Controller if enabled
-    const proactiveModuleEnabled = settings.enableProactiveMessaging !== false;
-    if (settings.engagement && settings.engagement.enabled && proactiveModuleEnabled) {
+    const proactiveModuleEnabled = settings.enableProactiveMessaging === true;
+    if (settings.engagement && settings.engagement.enabled === true && proactiveModuleEnabled) {
       // Resolve language precedence for proactive bubbles:
       // 1) engagement.language (Proactive module setting)
       // 2) initialLanguage (widget global setting)

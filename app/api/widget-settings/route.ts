@@ -84,7 +84,7 @@ export async function GET(req: Request) {
                         if (!rawEngagement) return null;
                         return {
                             ...rawEngagement,
-                            enabled: rawEngagement.enabled !== false
+                            enabled: rawEngagement.enabled === true
                         };
                     })();
 
