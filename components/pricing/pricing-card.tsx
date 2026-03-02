@@ -18,6 +18,7 @@ interface PricingCardProps {
 
 export function PricingCard({ plan, billingCycle, index, isRecommended = false }: PricingCardProps) {
     const { t, language } = useLanguage();
+    const pricingCardVariant = "benefit_subtext_v1";
     const isPopular = isRecommended || plan.copy.badge === 'recommended' || plan.copy.badge === 'Önerilen' || plan.copy.badge === 'Recommended';
     const priceDisplay = formatPlanPrice(plan.planId, billingCycle, language as 'en' | 'tr');
     const isContact = plan.billing.contact;
@@ -39,7 +40,8 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
                 location: 'pricing_page',
                 ctaLabel: 'contact_sales',
                 destination: '/contact',
-                language
+                language,
+                metadata: { pricing_card_variant: pricingCardVariant },
             });
             return;
         }
@@ -58,14 +60,16 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
             price: selectedBilling?.amount ?? 0,
             currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD'),
             language,
-            value: selectedBilling?.amount ?? 0
+            value: selectedBilling?.amount ?? 0,
+            pricing_card_variant: pricingCardVariant,
         });
 
         trackCtaClick({
             location: 'pricing_page',
             ctaLabel: 'plan_selected',
             destination: `/signup?plan=${plan.planId}&cycle=${billingCycle}`,
-            language
+            language,
+            metadata: { pricing_card_variant: pricingCardVariant },
         });
     };
     
@@ -127,18 +131,23 @@ export function PricingCard({ plan, billingCycle, index, isRecommended = false }
                     </Button>
                 </Link>
             ) : (
-                <Link 
-                    href={`/signup?plan=${plan.planId}&cycle=${billingCycle}`} 
-                    className="w-full mb-4 block"
-                    onClick={handlePlanClick}
-                >
-                    <Button 
-                        variant={isPopular ? "default" : "outline"}
-                        className={cn("w-full", isPopular && "bg-primary hover:bg-primary/90")}
+                <div className="w-full mb-4">
+                    <Link
+                        href={`/signup?plan=${plan.planId}&cycle=${billingCycle}`}
+                        className="w-full block"
+                        onClick={handlePlanClick}
                     >
-                        {t(plan.copy.ctaLabel)}
-                    </Button>
-                </Link>
+                        <Button
+                            variant={isPopular ? "default" : "outline"}
+                            className={cn("w-full", isPopular && "bg-primary hover:bg-primary/90")}
+                        >
+                            {t(plan.copy.ctaLabel)}
+                        </Button>
+                    </Link>
+                    <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                        {language === "tr" ? "14 gün ücretsiz deneme, kredi kartı gerektirmez." : "14-day free trial, no credit card required."}
+                    </p>
+                </div>
             )}
 
             {/* Features List - Modal Style */}

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { useEffect, useRef, useState } from "react"
 import { createUserWithEmailAndPassword, sendEmailVerification, User } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
-import { doc, setDoc, getDoc } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, CheckCircle2, ArrowLeft, Eye, EyeOff } from "lucide-react"
@@ -25,6 +25,25 @@ import { recordAuthDebug } from "@/lib/auth-debug"
 type SignupStep = 'initial' | 'form' | 'success'
 const EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS_ENABLED =
     process.env.NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS === "true"
+
+function getSignupFailureReason(error: unknown): string {
+    if (!error || typeof error !== "object") return "unknown_error"
+    const maybeCode = "code" in error ? String((error as { code?: string }).code || "") : ""
+    if (!maybeCode) return "unknown_error"
+
+    switch (maybeCode) {
+        case "auth/email-already-in-use":
+            return "email_already_in_use"
+        case "auth/invalid-email":
+            return "invalid_email"
+        case "auth/weak-password":
+            return "weak_password"
+        case "auth/too-many-requests":
+            return "too_many_requests"
+        default:
+            return maybeCode.replace(/^auth\//, "")
+    }
+}
 
 export default function SignUpForm() {
     // Step management
@@ -54,6 +73,13 @@ export default function SignUpForm() {
     const { toast } = useToast()
     const { t, language } = useLanguage()
     const signupEntryTrackedRef = useRef(false)
+    const stepIndicatorText =
+        step === "initial"
+            ? (language === "tr" ? "Adım 1/2 • Hesap Başlangıcı" : "Step 1/2 • Account Start")
+            : (language === "tr" ? "Adım 2/2 • Bilgileri Tamamla" : "Step 2/2 • Complete Details")
+    const selectedPlanText = plan
+        ? `${plan.toUpperCase()}${cycle ? ` • ${cycle === "annual" ? (language === "tr" ? "Yıllık" : "Annual") : (language === "tr" ? "Aylık" : "Monthly")}` : ""}`
+        : null
 
     const signOutWithDebug = async (reason: string) => {
         recordAuthDebug("signup_signout_triggered", { reason })
@@ -72,10 +98,29 @@ export default function SignUpForm() {
         })
     }, [plan, cycle, language])
 
+    useEffect(() => {
+        if (step !== "initial" && step !== "form") return
+
+        trackMarketingEvent("signup_step_view", {
+            step,
+            plan_id: plan || "trial",
+            billing_cycle: cycle || "monthly",
+            language,
+        })
+    }, [step, plan, cycle, language])
+
     // Handle email submit to go to form step
     const handleEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (email) {
+            trackMarketingEvent("signup_step_continue", {
+                from_step: "initial",
+                to_step: "form",
+                method: "email",
+                plan_id: plan || "trial",
+                billing_cycle: cycle || "monthly",
+                language,
+            })
             setStep('form')
             trackMarketingEvent('sign_up_start', {
                 method: 'email',
@@ -107,6 +152,14 @@ export default function SignUpForm() {
         }
 
         // New user, go to form step
+        trackMarketingEvent("signup_step_continue", {
+            from_step: "initial",
+            to_step: "form",
+            method: providerId,
+            plan_id: plan || "trial",
+            billing_cycle: cycle || "monthly",
+            language,
+        })
         setStep('form')
     }
 
@@ -196,6 +249,15 @@ export default function SignUpForm() {
         e.preventDefault()
         setError("")
         setIsLoading(true)
+        const method = socialUser ? authProvider : "email"
+
+        trackMarketingEvent("signup_submit_attempt", {
+            method,
+            has_phone: Boolean(phoneNumber?.trim()),
+            plan_id: plan || "trial",
+            billing_cycle: cycle || "monthly",
+            language,
+        })
 
         try {
             let user = socialUser;
@@ -214,6 +276,13 @@ export default function SignUpForm() {
                             ? 'Şifre en az 8 karakter olmalı ve harf, sayı, sembolden en az ikisini içermelidir.'
                             : 'Password must be at least 8 characters and include at least 2 of: letters, numbers, symbols.'
                     )
+                    trackMarketingEvent("signup_submit_failed", {
+                        reason_code: "weak_password_client",
+                        method,
+                        plan_id: plan || "trial",
+                        billing_cycle: cycle || "monthly",
+                        language,
+                    })
                     setIsLoading(false)
                     return
                 }
@@ -264,11 +333,20 @@ export default function SignUpForm() {
                 label: authProvider || 'email'
             })
             trackSignUp(authProvider || 'email', language)
+            trackMarketingEvent("signup_submit_success", {
+                method,
+                requires_email_verification: requiresEmailVerification,
+                used_email_verification_bypass: usedEmailVerificationBypass,
+                plan_id: plan || "trial",
+                billing_cycle: cycle || "monthly",
+                language,
+            })
             trackMarketingEvent('signup_completed', {
                 method: authProvider || 'email',
                 plan_id: plan || 'trial',
                 billing_cycle: cycle || 'monthly',
-                language
+                language,
+                requires_email_verification: requiresEmailVerification,
             })
             trackMarketingEvent('start_trial', {
                 plan_id: plan || 'trial',
@@ -287,6 +365,7 @@ export default function SignUpForm() {
         } catch (error: any) {
             console.error("Sign up error:", error)
             let errorMessage = error.message || t('failedToCreateAccount')
+            const failureReason = getSignupFailureReason(error)
 
             if (error.code === 'auth/email-already-in-use') {
                 errorMessage = language === 'tr'
@@ -294,6 +373,13 @@ export default function SignUpForm() {
                     : "This email address is already in use. Please sign in instead."
             }
 
+            trackMarketingEvent("signup_submit_failed", {
+                reason_code: failureReason,
+                method,
+                plan_id: plan || "trial",
+                billing_cycle: cycle || "monthly",
+                language,
+            })
             setError(errorMessage)
             toast({
                 title: t('error'),
@@ -381,7 +467,19 @@ export default function SignUpForm() {
                         <p className="text-muted-foreground">
                             {language === 'tr' ? 'Kredi kartı gerekmez, anında erişim' : 'No credit card needed, instant access'}
                         </p>
+                        <p className="text-xs uppercase tracking-wide text-primary/90 font-medium">
+                            {stepIndicatorText}
+                        </p>
                     </div>
+
+                    {selectedPlanText && (
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                            <span className="text-muted-foreground">
+                                {language === "tr" ? "Seçili plan" : "Selected plan"}:
+                            </span>{" "}
+                            <span className="font-semibold text-foreground">{selectedPlanText}</span>
+                        </div>
+                    )}
 
                     {/* Error Display */}
                     {error && (
@@ -467,6 +565,14 @@ export default function SignUpForm() {
                                 size="sm"
                                 className="mb-2 -ml-2"
                                 onClick={() => {
+                                    trackMarketingEvent("signup_step_continue", {
+                                        from_step: "form",
+                                        to_step: "initial",
+                                        method: socialUser ? authProvider : "email",
+                                        plan_id: plan || "trial",
+                                        billing_cycle: cycle || "monthly",
+                                        language,
+                                    })
                                     setStep('initial')
                                     setSocialUser(null)
                                     setAuthProvider('email')
@@ -541,7 +647,7 @@ export default function SignUpForm() {
                             {/* Phone Number */}
                             <div className="space-y-2">
                                 <Label htmlFor="phone">
-                                    {language === 'tr' ? 'Cep Telefonu' : 'Mobile phone number'}
+                                    {language === 'tr' ? 'Cep Telefonu (opsiyonel)' : 'Mobile phone number (optional)'}
                                 </Label>
                                 <PhoneInput
                                     value={phoneNumber}

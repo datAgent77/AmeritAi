@@ -62,6 +62,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
     const [isSaving, setIsSaving] = useState(false)
     const [activeTab, setActiveTab] = useState("design")
     const [sector, setSector] = useState<string>("")
+    const [chatDisplayMode, setChatDisplayMode] = useState<"classic" | "ambient">("classic")
 
 
 
@@ -81,6 +82,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
             const response = await fetch(`/api/widget-settings?chatbotId=${effectiveUserId}`)
             if (response.ok) {
                 const data = await response.json()
+                setChatDisplayMode(data.chatDisplayMode === "ambient" ? "ambient" : "classic")
                 if (data.engagement) {
                     setSettings(prev => ({
                         ...prev,
@@ -281,7 +283,11 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                         </div>
 
                         <TabsContent value="design" className="space-y-6 mt-0">
-                            <EngagementDesignTab settings={settings} setSettings={setSettings} />
+                            <EngagementDesignTab
+                                settings={settings}
+                                setSettings={setSettings}
+                                chatDisplayMode={chatDisplayMode}
+                            />
                         </TabsContent>
 
                         <TabsContent value="triggers" className="space-y-6">
@@ -298,6 +304,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
             {/* Right Panel: Live Preview */}
             <EngagementPreview
                 settings={settings}
+                chatDisplayMode={chatDisplayMode}
                 headerActions={
                     <div className="flex items-center justify-start">
                         {renderActionControls("desktop")}

@@ -3,11 +3,12 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
+import { useEffect, useState } from "react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
 import { HeroBackgroundLiquidEther } from "@/components/landing/hero-background-liquid-ether"
-import { trackCtaClick } from "@/lib/marketing-tracking"
+import { getAttributionContext, trackCtaClick } from "@/lib/marketing-tracking"
 
 import { HeroVisual } from "@/components/landing/hero-visual"
 import { SkillsTicker } from "@/components/landing/skills-ticker"
@@ -27,6 +28,13 @@ const LiveDemoSection = dynamic(() => import("@/components/landing/live-demo-sec
 
 export default function LandingPage() {
     const { language } = useLanguage()
+    const adsPricingPromptEnabled = process.env.NEXT_PUBLIC_ADS_PRICING_PROMPT_ENABLED !== "false"
+    const [showAdsPricingLink, setShowAdsPricingLink] = useState(false)
+
+    useEffect(() => {
+        const attribution = getAttributionContext()
+        setShowAdsPricingLink(attribution?.traffic_segment === "ads_google")
+    }, [])
 
     return (
         <div className="min-h-screen bg-background text-foreground selection:bg-purple-500/30 font-sans overflow-x-hidden">
@@ -130,6 +138,27 @@ export default function LandingPage() {
                                     {language === 'tr' ? 'Canlı Demo' : 'Live Demo'}
                                 </Button>
                             </div>
+
+                            {adsPricingPromptEnabled && showAdsPricingLink && (
+                                <div className="flex justify-center lg:justify-start -mt-1">
+                                    <Link
+                                        href="/pricing"
+                                        className="inline-flex items-center gap-2 text-sm md:text-base font-medium text-foreground/90 underline underline-offset-4 decoration-primary/60 hover:text-foreground"
+                                        onClick={() =>
+                                            trackCtaClick({
+                                                location: "home_hero_ads",
+                                                ctaLabel: "review_pricing",
+                                                destination: "/pricing",
+                                                language,
+                                                metadata: { link_variant: "ads_secondary_pricing_v1" },
+                                            })
+                                        }
+                                    >
+                                        {language === "tr" ? "Fiyatlandırmayı İncele" : "Review Pricing"}
+                                        <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            )}
 
                             <div className="pt-4 flex items-center justify-center lg:justify-start gap-6 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">

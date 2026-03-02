@@ -12,6 +12,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: route === '' ? 1.0 : 0.9,
     }))
 
+    const adLandingRoutes = ['/demo'].map((route) => ({
+        url: `${baseUrl}${route}`,
+        lastModified: new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+    }))
+
     // Secondary pages
     const secondaryRoutes = ['/blog', '/why-us', '/resources/faq', '/resources/education'].map((route) => ({
         url: `${baseUrl}${route}`,
@@ -53,5 +60,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.6,
     }))
 
-    return [...coreRoutes, ...secondaryRoutes, ...productRoutes, ...blogRoutes, ...legalRoutes]
+    return [...coreRoutes, ...adLandingRoutes, ...secondaryRoutes, ...productRoutes, ...blogRoutes, ...legalRoutes]
 }

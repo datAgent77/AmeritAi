@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { Layout, Lock, Sparkles, TrendingUp } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -20,9 +19,8 @@ import {
 interface EngagementDesignTabProps {
     settings: EngagementSettings
     setSettings: React.Dispatch<React.SetStateAction<EngagementSettings>>
+    chatDisplayMode: "classic" | "ambient"
 }
-
-type VariantMode = "classic" | "ambient"
 
 const DEFAULT_AMBIENT_TYPEWRITER = {
     charDelayMs: 18,
@@ -32,8 +30,7 @@ const DEFAULT_AMBIENT_TYPEWRITER = {
     completePauseMs: 300,
 } as const
 
-export function EngagementDesignTab({ settings, setSettings }: EngagementDesignTabProps) {
-    const [variantMode, setVariantMode] = useState<VariantMode>("classic")
+export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: EngagementDesignTabProps) {
     const ambientVariant = (() => {
         const saved = (settings.bubble.ambientVariant || {}) as Partial<NonNullable<EngagementSettings["bubble"]["ambientVariant"]>>
         return {
@@ -53,7 +50,7 @@ export function EngagementDesignTab({ settings, setSettings }: EngagementDesignT
             }
         }
     })()
-    const isAmbientEditor = variantMode === "ambient"
+    const isAmbientEditor = chatDisplayMode === "ambient"
 
     const currentStyle = isAmbientEditor
         ? { ...settings.bubble.style, ...(ambientVariant.style || {}) }
@@ -181,22 +178,14 @@ export function EngagementDesignTab({ settings, setSettings }: EngagementDesignT
                                 </div>
 
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <div className="inline-flex rounded-lg border bg-background p-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => setVariantMode("classic")}
-                                            className={`px-3 py-1.5 rounded text-xs transition ${variantMode === "classic" ? "bg-black text-white" : "text-muted-foreground"}`}
-                                        >
-                                            Classic Balon
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setVariantMode("ambient")}
-                                            className={`px-3 py-1.5 rounded text-xs transition ${variantMode === "ambient" ? "bg-black text-white" : "text-muted-foreground"}`}
-                                        >
-                                            Ambient Balon
-                                        </button>
-                                    </div>
+                                    <Badge variant="secondary" className="text-[10px]">
+                                        Aktif görünüm: {isAmbientEditor ? "Ambient" : "Classic"}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                        {isAmbientEditor
+                                            ? "Bu chatbot ambient modda. Aşağıdaki ayarlar ambient balon görünümüne uygulanır."
+                                            : "Bu chatbot classic modda. Aşağıdaki ayarlar classic balon görünümüne uygulanır."}
+                                    </span>
                                     {isAmbientEditor && !ambientVariant.enabled && (
                                         <Badge variant="outline" className="text-[10px]">Override kapalı (fallback classic)</Badge>
                                     )}

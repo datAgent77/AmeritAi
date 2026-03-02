@@ -17,6 +17,14 @@ import { useLanguage } from "@/context/LanguageContext"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { recordAuthDebug } from "@/lib/auth-debug"
+import { trackMarketingEvent } from "@/lib/marketing-tracking"
+
+function getLoginFailureReason(error: unknown): string {
+  if (!error || typeof error !== "object") return "unknown_error"
+  const maybeCode = "code" in error ? String((error as { code?: string }).code || "") : ""
+  if (!maybeCode) return "unknown_error"
+  return maybeCode.replace(/^auth\//, "")
+}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -83,6 +91,11 @@ export default function LoginForm() {
         const userData = userDoc.data()
         if (userData.isActive === false) {
           await signOutWithDebug("login_social_inactive_user")
+          trackMarketingEvent("login_submit_failed", {
+            reason_code: "inactive_user",
+            method: providerId,
+            language,
+          })
           setError(t('accountPendingApproval'))
           return
         }
@@ -95,6 +108,11 @@ export default function LoginForm() {
       }
     } catch (error: any) {
       console.error("Social auth error:", error)
+      trackMarketingEvent("login_submit_failed", {
+        reason_code: getLoginFailureReason(error),
+        method: providerId,
+        language,
+      })
       setError(error.message || "Authentication failed")
     }
   }
@@ -135,6 +153,11 @@ export default function LoginForm() {
           const verifyMsg = language === 'tr'
             ? "E-posta adresinizi doğrulamadan giriş yapamazsınız. Doğrulama bağlantısını tekrar gönderdik."
             : "You must verify your email before logging in. We've sent a new verification link."
+          trackMarketingEvent("login_submit_failed", {
+            reason_code: "unverified_email",
+            method: "email",
+            language,
+          })
           setError(verifyMsg)
           setShowResendVerificationButton(true)
           toast({
@@ -157,6 +180,11 @@ export default function LoginForm() {
           if (userData.isActive === false) {
             await signOutWithDebug("login_email_inactive_user")
             const msg = t('accountPendingApproval')
+            trackMarketingEvent("login_submit_failed", {
+              reason_code: "inactive_user",
+              method: "email",
+              language,
+            })
             setError(msg)
             toast({
               title: t('accountPendingTitle'),
@@ -201,6 +229,11 @@ export default function LoginForm() {
           : 'This account has been disabled.'
       }
 
+      trackMarketingEvent("login_submit_failed", {
+        reason_code: getLoginFailureReason(error),
+        method: "email",
+        language,
+      })
       setError(errorMessage)
       toast({
         title: t('error'),

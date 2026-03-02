@@ -3890,7 +3890,8 @@
     });
 
     // Initialize Engagement Controller if enabled
-    if (settings.engagement && settings.engagement.enabled) {
+    const proactiveModuleEnabled = settings.enableProactiveMessaging !== false;
+    if (settings.engagement && settings.engagement.enabled && proactiveModuleEnabled) {
       // Resolve language precedence for proactive bubbles:
       // 1) engagement.language (Proactive module setting)
       // 2) initialLanguage (widget global setting)
@@ -4270,6 +4271,17 @@
       ...settings,
       ...fetchedSettings
     };
+
+    // Module toggle is the source of truth. If disabled, force runtime engagement off.
+    if (baseDeviceAwareSettings.enableProactiveMessaging === false && baseDeviceAwareSettings.engagement && typeof baseDeviceAwareSettings.engagement === 'object') {
+      baseDeviceAwareSettings = {
+        ...baseDeviceAwareSettings,
+        engagement: {
+          ...baseDeviceAwareSettings.engagement,
+          enabled: false
+        }
+      };
+    }
     settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
 
     console.log('Userex Widget: Configuration loaded');

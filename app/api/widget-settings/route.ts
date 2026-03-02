@@ -66,6 +66,27 @@ export async function GET(req: Request) {
 
                     const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
                     const isAccountActive = mergedData.isActive !== false;
+                    const isProactiveModuleEnabled = mergedData.enableProactiveMessaging !== false;
+                    const rawEngagement = mergedData.engagement && typeof mergedData.engagement === "object"
+                        ? mergedData.engagement
+                        : null;
+                    const resolvedEngagement = (() => {
+                        // Module toggle has highest priority for runtime behavior.
+                        if (!isProactiveModuleEnabled) {
+                            return rawEngagement ? { ...rawEngagement, enabled: false } : null;
+                        }
+
+                        // Legacy fallback for tenants that only have the module toggle flag.
+                        if (!rawEngagement && mergedData.enableProactiveMessaging === true) {
+                            return { enabled: true };
+                        }
+
+                        if (!rawEngagement) return null;
+                        return {
+                            ...rawEngagement,
+                            enabled: rawEngagement.enabled !== false
+                        };
+                    })();
 
                     // Only enable modules that are 'ready' in the registry
                     const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
@@ -192,7 +213,8 @@ export async function GET(req: Request) {
                         openOnExitIntent: mergedData.openOnExitIntent || false,
                         openOnScroll: mergedData.openOnScroll || 0,
                         // Engagement
-                        engagement: mergedData.engagement || (mergedData.enableProactiveMessaging ? { enabled: true } : null),
+                        enableProactiveMessaging: isProactiveModuleEnabled,
+                        engagement: resolvedEngagement,
                         // Digital Waiter (Restaurant)
                         digitalWaiter: mergedData.digitalWaiter || null,
                         // Voice Assistant - TEMPORARILY DISABLED
@@ -326,6 +348,7 @@ export async function GET(req: Request) {
                 widgetLoaderStyle: "skeleton",
                 enableContextAwareness: false,
                 initialLanguage: "tr",
+                enableProactiveMessaging: false,
                 engagement: null,
                 digitalWaiter: null,
                 enableVoiceAssistant: false,
@@ -442,6 +465,7 @@ export async function GET(req: Request) {
 
                 dynamicContextMode: "nocode",
                 dynamicContextSelectors: [],
+                enableProactiveMessaging: false,
                 theme: "classic"
             }, {
                 headers: {
@@ -493,6 +517,7 @@ export async function GET(req: Request) {
             enableDynamicContext: false,
             dynamicContextMode: "nocode",
             dynamicContextSelectors: [],
+            enableProactiveMessaging: false,
             theme: "classic"
         }, {
             headers: {

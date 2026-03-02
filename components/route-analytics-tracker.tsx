@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
-import { trackMarketingEvent } from "@/lib/marketing-tracking";
+import { persistAttributionContext, trackMarketingEvent } from "@/lib/marketing-tracking";
 
 export function RouteAnalyticsTracker() {
     const pathname = usePathname();
@@ -11,6 +11,8 @@ export function RouteAnalyticsTracker() {
     const lastTrackedRef = useRef<string>("");
 
     useEffect(() => {
+        persistAttributionContext();
+
         const queryString =
             typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "";
         const pagePath = queryString ? `${pathname}?${queryString}` : pathname;

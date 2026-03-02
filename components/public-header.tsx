@@ -222,8 +222,34 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                         </div>
                     </div>
 
-                    <Link href="/pricing" className="px-4 py-8 hover:text-foreground transition-colors">
+                    <Link
+                        href="/pricing"
+                        className="px-4 py-8 hover:text-foreground transition-colors"
+                        onClick={() =>
+                            trackCtaClick({
+                                location: "header_desktop",
+                                ctaLabel: "pricing_nav",
+                                destination: "/pricing",
+                                language,
+                                metadata: { link_variant: "header_pricing_nav_v1" },
+                            })
+                        }
+                    >
                         {t('landingPricing')}
+                    </Link>
+                    <Link
+                        href="/demo"
+                        className="px-4 py-8 hover:text-foreground transition-colors"
+                        onClick={() =>
+                            trackCtaClick({
+                                location: "header_desktop",
+                                ctaLabel: "demo_nav",
+                                destination: "/demo",
+                                language
+                            })
+                        }
+                    >
+                        Demo
                     </Link>
                     <Link href="/why-us" className="px-4 py-8 hover:text-foreground transition-colors">
                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
@@ -468,8 +494,36 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                     </div>
 
                                     {/* Direct Links */}
-                                    <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border">
+                                    <Link
+                                        href="/pricing"
+                                        onClick={() => {
+                                            trackCtaClick({
+                                                location: "header_mobile",
+                                                ctaLabel: "pricing_nav",
+                                                destination: "/pricing",
+                                                language,
+                                                metadata: { link_variant: "header_pricing_nav_v1" },
+                                            })
+                                            setIsOpen(false)
+                                        }}
+                                        className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border"
+                                    >
                                         {t('landingPricing')}
+                                    </Link>
+                                    <Link
+                                        href="/demo"
+                                        onClick={() => {
+                                            trackCtaClick({
+                                                location: "header_mobile",
+                                                ctaLabel: "demo_nav",
+                                                destination: "/demo",
+                                                language
+                                            })
+                                            setIsOpen(false)
+                                        }}
+                                        className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border"
+                                    >
+                                        Demo
                                     </Link>
                                     <Link href="/why-us" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border">
                                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}

@@ -1,15 +1,16 @@
-import { useState, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { Eye, MessageCircle } from "lucide-react"
 import { EngagementSettings } from "../types"
 import { getPreviewBubbleConfig, getPreviewStyle, type EngagementPreviewVariantMode } from "../utils"
 
 interface EngagementPreviewProps {
     settings: EngagementSettings
+    chatDisplayMode: "classic" | "ambient"
     headerActions?: ReactNode
 }
 
-export function EngagementPreview({ settings, headerActions }: EngagementPreviewProps) {
-    const [previewMode, setPreviewMode] = useState<EngagementPreviewVariantMode>("classic")
+export function EngagementPreview({ settings, chatDisplayMode, headerActions }: EngagementPreviewProps) {
+    const previewMode: EngagementPreviewVariantMode = chatDisplayMode === "ambient" ? "ambient" : "classic"
     const previewStyle = getPreviewStyle(settings, previewMode)
     const previewConfig = getPreviewBubbleConfig(settings, previewMode)
     const bubbleText = settings.bubble.messages[0]?.text || "Merhaba! Size özel bir teklifimiz var, incelemek ister misiniz?"
@@ -23,21 +24,8 @@ export function EngagementPreview({ settings, headerActions }: EngagementPreview
                         <Eye className="w-4 h-4" />
                         Canlı Önizleme
                     </div>
-                    <div className="inline-flex rounded-lg border bg-background p-1">
-                        <button
-                            type="button"
-                            onClick={() => setPreviewMode("classic")}
-                            className={`px-2 py-1 rounded text-[11px] transition ${previewMode === "classic" ? "bg-black text-white" : "text-muted-foreground"}`}
-                        >
-                            Classic
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setPreviewMode("ambient")}
-                            className={`px-2 py-1 rounded text-[11px] transition ${previewMode === "ambient" ? "bg-black text-white" : "text-muted-foreground"}`}
-                        >
-                            Ambient
-                        </button>
+                    <div className="inline-flex rounded-full border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                        {previewMode === "ambient" ? "Ambient görünüm" : "Classic görünüm"}
                     </div>
                 </div>
                 {headerActions && (
