@@ -237,20 +237,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                     >
                         {t('landingPricing')}
                     </Link>
-                    <Link
-                        href="/demo"
-                        className="px-4 py-8 hover:text-foreground transition-colors"
-                        onClick={() =>
-                            trackCtaClick({
-                                location: "header_desktop",
-                                ctaLabel: "demo_nav",
-                                destination: "/demo",
-                                language
-                            })
-                        }
-                    >
-                        Demo
-                    </Link>
+
                     <Link href="/why-us" className="px-4 py-8 hover:text-foreground transition-colors">
                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
                     </Link>
@@ -510,21 +497,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                                     >
                                         {t('landingPricing')}
                                     </Link>
-                                    <Link
-                                        href="/demo"
-                                        onClick={() => {
-                                            trackCtaClick({
-                                                location: "header_mobile",
-                                                ctaLabel: "demo_nav",
-                                                destination: "/demo",
-                                                language
-                                            })
-                                            setIsOpen(false)
-                                        }}
-                                        className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border"
-                                    >
-                                        Demo
-                                    </Link>
+
                                     <Link href="/why-us" onClick={() => setIsOpen(false)} className="flex items-center justify-between w-full py-3 text-sm font-medium text-foreground border-b border-border">
                                         {language === 'tr' ? 'Neden Biz?' : 'Why Us?'}
                                     </Link>

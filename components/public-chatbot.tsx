@@ -12,8 +12,7 @@ export function PublicChatbot() {
         pathname?.startsWith("/menu") ||
         pathname?.startsWith("/onboarding") ||
         pathname?.startsWith("/chatbot-view") ||
-        pathname?.startsWith("/widget-test") ||
-        pathname?.startsWith("/demo")) {
+        pathname?.startsWith("/widget-test")) {
         return null
     }
 
