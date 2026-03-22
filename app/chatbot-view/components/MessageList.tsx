@@ -113,13 +113,13 @@ export function MessageList({
     return (
         <div
             ref={messagesContainerRef}
-            onWheel={isAmbientMode ? handleWheelContain : undefined}
-            className={isAmbientMode
+            onWheel={isAmbientMode && !showClassicEntryOnboarding ? handleWheelContain : undefined}
+            className={isAmbientMode && !showClassicEntryOnboarding
                 ? "flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 : (showClassicEntryOnboarding
                     ? "flex-1 overflow-y-auto overflow-x-hidden bg-white"
                     : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"))}
-            style={isAmbientMode
+            style={isAmbientMode && !showClassicEntryOnboarding
                 ? {
                     WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
                     maskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
@@ -127,7 +127,7 @@ export function MessageList({
                 }
                 : undefined}
         >
-            {showClassicEntryOnboarding && !isAmbientMode ? (
+            {showClassicEntryOnboarding ? (
                 <div className="flex h-full w-full flex-col">
                     <div
                         className="px-6 pb-8 pt-6"
@@ -245,34 +245,14 @@ export function MessageList({
                         const ambientAssistantTextColor = "#111827"
                         const userTextIsLight = ambientUserTextColor === "#ffffff"
                         const assistantTextIsLight = false
-                        const bubbleClassName = isAmbientMode
-                            ? (m.role === 'user'
-                                ? 'bg-gradient-to-r from-[#171923] via-[#242836] to-[#34394d] text-white rounded-[22px] rounded-br-md border border-white/10'
-                                : 'bg-white text-gray-900 rounded-[22px] rounded-bl-md border border-gray-200')
-                            : (m.role === 'user'
-                                ? 'bg-blue-600 text-white rounded-tr-sm'
-                                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm');
-                        const ambientWidthClass = isAmbientMode
-                            ? (m.role === 'user' ? 'max-w-[68%] ml-auto' : 'max-w-[84%] mr-auto')
-                            : (hasProductCarousel && m.role !== 'user' ? 'w-[calc(100%-2.75rem)] max-w-[calc(100%-2.75rem)]' : 'max-w-[85%]');
-                        const messageContentClassName = `${isAmbientMode ? 'text-[15px] leading-[1.6] sm:text-base px-5 py-3.5' : 'text-sm leading-relaxed px-5 py-4'} text-left relative transition-all ${isAmbientMode ? '' : 'rounded-2xl hover:shadow-md shadow-sm'} ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${bubbleClassName}`
-                        const messageContentStyle = isAmbientMode
-                            ? (m.role === 'user'
-                                ? (ambientUserBg
-                                    ? {
-                                        backgroundColor: ambientUserBg,
-                                        color: ambientUserTextColor,
-                                        borderColor: userTextIsLight ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.16)'
-                                    }
-                                    : undefined)
-                                : {
-                                    backgroundColor: '#ffffff',
-                                    color: ambientAssistantTextColor,
-                                    borderColor: 'rgba(17,24,39,0.14)'
-                                })
-                            : (m.role === 'user'
-                                ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor }
-                                : undefined)
+                        const bubbleClassName = m.role === 'user'
+                                ? 'text-white rounded-tr-sm'
+                                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm';
+                        const ambientWidthClass = hasProductCarousel && m.role !== 'user' ? 'w-[calc(100%-2.75rem)] max-w-[calc(100%-2.75rem)]' : 'max-w-[85%]';
+                        const messageContentClassName = `text-sm leading-relaxed px-5 py-4 text-left relative transition-all rounded-2xl hover:shadow-md shadow-sm ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${bubbleClassName}`
+                        const messageContentStyle = m.role === 'user'
+                            ? { backgroundColor: ambientUserBg || settings.headerBackgroundColor || settings.brandColor }
+                            : undefined
                         const inlineCodeClassName = m.role === 'user'
                             ? (userTextIsLight ? 'bg-white/20 text-white' : 'bg-black/10 text-gray-900')
                             : (assistantTextIsLight ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500')
@@ -422,13 +402,13 @@ export function MessageList({
                                     <Sparkles className="w-4 h-4" />
                                 </div>
                             )}
-                            <div className={isAmbientMode ? "px-5 py-3 rounded-2xl rounded-bl-md bg-white border border-gray-200 flex items-center gap-2 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white border border-gray-100"}>
+                            <div className={isAmbientMode ? "px-6 py-4 rounded-[24px] rounded-bl-[4px] bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-750 shadow-sm flex items-center gap-3 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white border border-gray-100"}>
                                 <div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAmbientMode ? 'bg-gray-500' : 'bg-gray-400'}`}></div>
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAmbientMode ? 'bg-gray-500' : 'bg-gray-400'}`}></div>
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAmbientMode ? 'bg-gray-500' : 'bg-gray-400'}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
+                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
                                 </div>
-                                <span className={`text-xs ${isAmbientMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <span className={`text-[13px] font-medium ${isAmbientMode ? 'text-gray-500 dark:text-zinc-400' : 'text-gray-400'}`}>
                                     {language === 'tr' ? 'Düşünüyor...' : 'Thinking...'}
                                 </span>
                             </div>

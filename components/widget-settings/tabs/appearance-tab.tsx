@@ -488,17 +488,17 @@ export function AppearanceTab({
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Sağ panel sabit kalır, site içerik alanı daralır.' : 'Pinned right panel that shrinks site content.'}</span>
                     </button>
                 </div>
-                {!isAmbientMode && (
+                {!isSidecarMode && (
                     <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4">
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <Label className="text-sm font-medium">
-                                    {language === "tr" ? "Classic Entry Onboarding" : "Classic Entry Onboarding"}
+                                    {language === "tr" ? "Entry Onboarding" : "Entry Onboarding"}
                                 </Label>
                                 <p className="text-xs text-muted-foreground mt-1">
                                     {language === "tr"
-                                        ? "Classic modda kullanıcı ilk mesajı göndermeden önce onboarding ekranını gösterir."
-                                        : "Shows the onboarding screen in classic mode before the visitor sends the first message."}
+                                        ? "Kullanıcı ilk mesajı göndermeden önce karşılama ekranını gösterir."
+                                        : "Shows a welcome screen before the visitor sends the first message."}
                                 </p>
                             </div>
                             <Switch
@@ -747,7 +747,7 @@ export function AppearanceTab({
                                             />
                                         </div>
                                     </div>
-                                    <div className="grid md:grid-cols-3 gap-4 border-t pt-4">
+                                    <div className="grid md:grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label className="text-xs">{language === 'tr' ? 'Mesaj Alanı Genişliği (px)' : 'Message Width (px)'}</Label>
                                             <Input
@@ -764,29 +764,6 @@ export function AppearanceTab({
                                                         const raw = typeof prev.ambientWidth === "number" ? prev.ambientWidth : Number(prev.ambientWidth)
                                                         const next = Number.isFinite(raw) ? raw : 0
                                                         return { ...prev, ambientWidth: Math.max(0, Math.min(1200, next)) }
-                                                    })
-                                                }}
-                                            />
-                                            <p className="text-[11px] text-muted-foreground">
-                                                {language === 'tr' ? '0 = tam genişlik (full width)' : '0 = full width'}
-                                            </p>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label className="text-xs">{language === 'tr' ? 'İnput Alanı Genişliği (px)' : 'Input Width (px)'}</Label>
-                                            <Input
-                                                type="number"
-                                                min={0}
-                                                max={1200}
-                                                value={settings.ambientInputWidth !== undefined ? settings.ambientInputWidth : settings.ambientWidth}
-                                                onChange={(e) => {
-                                                    const raw = e.target.value === '' ? 0 : Number(e.target.value)
-                                                    setSettings(prev => ({ ...prev, ambientInputWidth: raw }))
-                                                }}
-                                                onBlur={() => {
-                                                    setSettings(prev => {
-                                                        const raw = typeof prev.ambientInputWidth === "number" ? prev.ambientInputWidth : Number(prev.ambientInputWidth)
-                                                        const next = Number.isFinite(raw) ? raw : 0
-                                                        return { ...prev, ambientInputWidth: Math.max(0, Math.min(1200, next)) }
                                                     })
                                                 }}
                                             />

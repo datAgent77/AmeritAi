@@ -11,7 +11,6 @@ export function shouldShowClassicEntryOnboarding({
     enableClassicEntryOnboarding,
     hasUserMessage,
 }: ClassicEntryOnboardingVisibilityInput): boolean {
-    if (chatDisplayMode === "ambient") return false
     if (enableClassicEntryOnboarding === false) return false
     return !hasUserMessage
 }

@@ -246,13 +246,13 @@ export function ChatInput({
     const ambientDockWrapperClassName = isAmbientMode
         ? `rounded-[999px] p-[2px] transition-all duration-500 ${isAmbientInputOnly
             ? (ambientDockStyles?.borderMode === 'animated'
-                ? 'ambient-border-animated shadow-md hover:shadow-lg'
-                : 'shadow-md hover:shadow-lg')
+                ? 'ambient-border-animated shadow-xl hover:shadow-2xl'
+                : 'shadow-xl hover:shadow-2xl')
             : ambientDockStyles?.borderMode === 'animated'
-                ? 'ambient-border-animated shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+                ? 'ambient-border-animated shadow-[0_22px_48px_rgba(0,0,0,0.22)]'
                 : ambientDockStyles?.borderMode === 'gradient'
-                    ? 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
-                    : 'shadow-[0_18px_36px_rgba(0,0,0,0.24)]'
+                    ? 'shadow-[0_22px_48px_rgba(0,0,0,0.22)]'
+                    : 'shadow-[0_22px_48px_rgba(0,0,0,0.22)]'
         }`
         : ""
     const ambientDockWrapperStyle = isAmbientMode
@@ -489,29 +489,7 @@ export function ChatInput({
                     </form>
                 </div>
 
-                {isAmbientMode && !ambientInputOnly && (
-                    <div className="absolute inset-x-0 top-full mt-2 z-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2">
-                        <p className="text-[10px] text-white/60 text-center text-balance">
-                            {t('aiDisclaimer')}
-                        </p>
-                        <a
-                            href="https://getvion.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 opacity-70 hover:opacity-100 transition-opacity whitespace-nowrap"
-                        >
-                            <span className="text-[10px] text-white/60">Powered by</span>
-                            <Image
-                                src="/vion-logo-full-dark.png"
-                                alt="Vion"
-                                width={50}
-                                height={12}
-                                className="h-2.5 w-auto opacity-80 invert"
-                                unoptimized
-                            />
-                        </a>
-                    </div>
-                )}
+
 
                 {!isAmbientMode && (
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">

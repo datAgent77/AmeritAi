@@ -420,7 +420,7 @@ export default function ChatbotContainer() {
         }
     }, [isTyping, isAmbientMode])
     const ambientOverlayOpacity = Math.max(0.2, Math.min(0.9, effectiveSettings.ambientOverlayOpacity || 0.55))
-    const ambientRailHeight = Math.max(220, Math.min(460, effectiveSettings.ambientMaxHeight || 300))
+    const ambientRailHeight = Math.max(220, Math.min(900, effectiveSettings.ambientMaxHeight || 300))
     // Read bottom margin: prefer settings value, fallback to URL param (passed by widget.js)
     const ambientBottomMarginFromUrl = effectiveSettings.ambientBottomMargin || Number(searchParams?.get('ambientBottomMargin') || 0)
     const hasUserMessage = messages.some((m: any) => m.role === "user")
@@ -429,7 +429,7 @@ export default function ChatbotContainer() {
         enableClassicEntryOnboarding: settings.enableClassicEntryOnboarding,
         hasUserMessage,
     })
-    const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping)
+    const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping || showClassicEntryOnboarding)
 
     // Scroll to bottom when the widget expands or ambient feed manually opens
     useEffect(() => {
@@ -517,48 +517,13 @@ export default function ChatbotContainer() {
             className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${isAmbientMode ? (effectiveSettings.ambientTheme === 'dark' || (effectiveSettings.ambientTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : '') : (effectiveSettings.theme === 'dark' ? 'dark' : '')}`}
         >
             {isAmbientMode && (
-                <style>{`
-                    html, body, #__next, #root, [class*="bg-background"], [class*="bg-white"], main {
-                        background: transparent !important;
-                        background-color: transparent !important;
-                        box-shadow: none !important;
-                        transition: background-color 0.3s ease;
-                    }
-                    :root {
-                        color-scheme: light dark !important;
-                    }
-                `}</style>
+                <style dangerouslySetInnerHTML={{ __html: `html, body, #__next, #root, main { background: transparent !important; background-color: transparent !important; box-shadow: none !important; } body { --background: transparent !important; } .vion-ambient-card { background-color: white !important; background: white !important; }` }} />
             )}
             {isAmbientMode ? (
                 <div
                     className="relative flex h-full w-full flex-col justify-end overflow-visible"
                     onPointerDownCapture={handleAmbientBackdropPointerDown}
                 >
-                    {showAmbientFeed && (
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-visible transition-opacity duration-200 ease-in-out opacity-100">
-                            {/* Radial glow — fades to transparent on top, left, right */}
-                            <div
-                                style={{
-                                    width: '140vw',
-                                    marginLeft: '-20vw',
-                                    height: `${ambientOverlayHeight + 220}px`,
-                                    background: `radial-gradient(ellipse 70% 85% at 50% 100%, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${Math.max(0.2, visibleOverlayOpacity * 0.7)}) 25%, rgba(0,0,0,${Math.max(0.08, visibleOverlayOpacity * 0.35)}) 50%, rgba(0,0,0,0) 75%)`,
-                                    transition: 'height 0.4s ease-out, opacity 0.5s ease-out',
-                                }}
-                            />
-                            {/* Solid base — covers the very bottom edge below input bar */}
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: '80px',
-                                    background: `linear-gradient(to top, rgba(0,0,0,${visibleOverlayOpacity + 0.1}) 0%, rgba(0,0,0,${visibleOverlayOpacity * 0.5}) 60%, transparent 100%)`,
-                                }}
-                            />
-                        </div>
-                    )}
 
                     <div
                         className="relative z-10 flex h-full flex-col justify-end w-full"
@@ -569,23 +534,61 @@ export default function ChatbotContainer() {
                     >
                         <div
                             ref={ambientFeedAreaRef}
-                            className={`w-full overflow-y-auto overflow-x-clip transition-[height,opacity,margin,padding] duration-200 ease-in-out ${showAmbientFeed ? 'mb-1 pt-2 pb-1 opacity-100' : 'mb-0 pt-0 pb-0 opacity-0 pointer-events-none overflow-hidden'}`}
-                            style={{ height: showAmbientFeed ? `${ambientRailHeight}px` : '0px' }}
+                            className={`w-full transition-[height,opacity,margin,padding] duration-300 ease-in-out ${showAmbientFeed ? 'mb-4 opacity-100 flex flex-col' : 'mb-0 opacity-0 pointer-events-none'}`}
+                            style={{ 
+                                height: showAmbientFeed ? `${ambientRailHeight}px` : '0px',
+                                paddingLeft: runtimeDevice === 'mobile' ? '16px' : '0',
+                                paddingRight: runtimeDevice === 'mobile' ? '16px' : '0',
+                                paddingTop: runtimeDevice === 'mobile' ? '16px' : '0'
+                            }}
                         >
-                            <MessageList
-                                mode="ambient"
-                                messages={messages}
-                                settings={effectiveSettings}
-                                isTyping={isTyping}
-                                language={language}
-                                imageMap={visualContext.imageMap}
-                                scrollToBottom={scrollToBottom}
-                                sendMessage={(text) => sendMessage(text)}
-                                messagesContainerRef={messagesContainerRef}
-                                messagesEndRef={messagesEndRef}
-                                t={t}
-                                onLeadSubmit={handleLeadSubmit}
-                            />
+                            <div
+                                className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
+                                style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
+                            >
+                                {/* Ambient Card Header — same as Classic mode */}
+                                <ChatHeader
+                                    settings={effectiveSettings}
+                                    isExpanded={false}
+                                    handleVoiceInput={handleVoiceInput}
+                                    isListening={isListening}
+                                    handleToggleSize={() => {}}
+                                    handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                    handleClearChat={handleClearChat}
+                                    t={t}
+                                    showSizeToggle={false}
+                                    showCloseButton={true}
+                                    sticky={false}
+                                    showShadow={false}
+                                    compact={true}
+                                />
+                                <div className="flex-1 overflow-hidden relative">
+                                    <MessageList
+                                        mode="ambient"
+                                        messages={messages}
+                                        settings={effectiveSettings}
+                                        isTyping={isTyping}
+                                        language={language}
+                                        imageMap={visualContext.imageMap}
+                                        scrollToBottom={scrollToBottom}
+                                        sendMessage={(text) => sendMessage(text)}
+                                        messagesContainerRef={messagesContainerRef}
+                                        messagesEndRef={messagesEndRef}
+                                        t={t}
+                                        onLeadSubmit={handleLeadSubmit}
+                                        showClassicEntryOnboarding={showClassicEntryOnboarding}
+                                    />
+                                </div>
+                                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
+                                    <p className="text-[10px] text-gray-400 text-center text-balance">
+                                        {t('aiDisclaimer')}
+                                    </p>
+                                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-[10px] text-gray-400">Powered by</span>
+                                        <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
                         <div ref={ambientDockAreaRef}>

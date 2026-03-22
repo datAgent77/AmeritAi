@@ -3560,8 +3560,8 @@
       });
       applySidecarInset(true);
     } else if (isAmbientMode) {
-      const ambientRailHeight = Math.max(220, Math.min(460, Number(settings.ambientMaxHeight || 260)));
-      const ambientExpandedHeight = Math.max(360, Math.min(760, ambientRailHeight + 220));
+      const ambientRailHeight = Math.max(220, Math.min(900, Number(settings.ambientMaxHeight || 260)));
+      const ambientExpandedHeight = Math.max(360, Math.min(1100, ambientRailHeight + 220));
       // Keep collapsed dock compact so we do not leave an oversized invisible surface.
       const ambientInputOnlyHeight = isMobileDevice() ? 112 : 96;
 
