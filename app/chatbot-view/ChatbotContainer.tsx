@@ -514,7 +514,7 @@ export default function ChatbotContainer() {
                 position: 'fixed',
                 backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}
-            className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${isAmbientMode ? (effectiveSettings.ambientTheme === 'dark' || (effectiveSettings.ambientTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : '') : (effectiveSettings.theme === 'dark' ? 'dark' : '')}`}
+            className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${!isAmbientMode && effectiveSettings.theme === 'dark' ? 'dark' : ''}`}
         >
             {isAmbientMode && (
                 <style dangerouslySetInnerHTML={{ __html: `html, body, #__next, #root, main { background: transparent !important; background-color: transparent !important; box-shadow: none !important; } body { --background: transparent !important; } .vion-ambient-card { background-color: white !important; background: white !important; }` }} />
