@@ -100,11 +100,17 @@ export default function ChatbotContainer() {
     useEffect(() => {
         if (!isClient) return
 
-        const isAmbient = settings.chatDisplayMode === "ambient"
+        const isAmbient = settings.chatDisplayMode === "ambient" || searchParams?.get("chatDisplayMode") === "ambient"
+        
         if (isAmbient) {
             // Apply via both JS and a dedicated strict style tag injected later
-            document.documentElement.style.setProperty("background-color", "transparent", "important")
-            document.body.style.setProperty("background-color", "transparent", "important")
+            const applyTransparent = (el: HTMLElement) => {
+                el.style.setProperty("background", "transparent", "important")
+                el.style.setProperty("background-color", "transparent", "important")
+            }
+            
+            applyTransparent(document.documentElement)
+            applyTransparent(document.body)
             document.documentElement.classList.add('ambient-transparent-bg')
             document.body.classList.add('ambient-transparent-bg')
             document.documentElement.classList.remove('bg-background')
@@ -112,18 +118,24 @@ export default function ChatbotContainer() {
 
             const nextRoot = document.getElementById('__next')
             if (nextRoot) {
-                nextRoot.style.setProperty("background-color", "transparent", "important")
+                applyTransparent(nextRoot)
                 nextRoot.classList.remove('bg-background')
             }
+            
+            // Also target potential main or wrapper divs
+            const main = document.querySelector('main')
+            if (main) applyTransparent(main as HTMLElement)
         }
 
         return () => {
             document.documentElement.classList.remove('ambient-transparent-bg')
             document.body.classList.remove('ambient-transparent-bg')
+            document.documentElement.style.background = ''
             document.documentElement.style.backgroundColor = ''
+            document.body.style.background = ''
             document.body.style.backgroundColor = ''
         }
-    }, [settings.chatDisplayMode, isClient])
+    }, [settings.chatDisplayMode, isClient, searchParams])
 
     // 4. Initialization Effects
     useEffect(() => {
@@ -496,10 +508,11 @@ export default function ChatbotContainer() {
         >
             {isAmbientMode && (
                 <style>{`
-                    html, body, #__next, #root, body.bg-background, div.bg-background {
+                    html, body, #__next, #root, [class*="bg-background"], [class*="bg-white"], main {
                         background: transparent !important;
                         background-color: transparent !important;
                         box-shadow: none !important;
+                        transition: background-color 0.3s ease;
                     }
                     :root {
                         color-scheme: light dark !important;

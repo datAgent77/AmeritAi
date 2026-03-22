@@ -3550,8 +3550,10 @@
             maxHeight: nextMaxHeight,
             borderRadius: '0',
             overflow: 'hidden',
+            background: 'transparent',
             backgroundColor: 'transparent',
             boxShadow: 'none',
+            border: 'none',
             transition: isExpanding ? 'height 0.28s cubic-bezier(0.22, 1, 0.36, 1), left 0.28s, right 0.28s' : 'none',
             ...ambientHorizontalStyle,
             ...ambientPositionStyle

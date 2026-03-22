@@ -107,23 +107,9 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
 
     useEffect(() => {
         let isMounted = true
-        const cacheKey = `widget_settings_${chatbotId}`
-
+        
         const loadSettings = async () => {
             try {
-                if (typeof window !== "undefined") {
-                    const cached = window.sessionStorage.getItem(cacheKey) || window.localStorage.getItem(cacheKey)
-                    if (cached) {
-                        try {
-                            const parsed = JSON.parse(cached)
-                            if (isMounted && parsed && typeof parsed === "object") {
-                                setSettings((prev) => ({ ...prev, ...parsed }))
-                                setIsLoading(false)
-                            }
-                        } catch { }
-                    }
-                }
-
                 const controller = new AbortController()
                 const timeoutId = setTimeout(() => controller.abort(), 8000)
                 const res = await fetch(`/api/widget-settings?chatbotId=${chatbotId}`, { signal: controller.signal, cache: "no-store" })
@@ -258,12 +244,6 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
 
                     if (!isMounted) return
                     setSettings(nextSettings)
-
-                    if (typeof window !== "undefined") {
-                        const serialized = JSON.stringify(nextSettings)
-                        window.sessionStorage.setItem(cacheKey, serialized)
-                        window.localStorage.setItem(cacheKey, serialized)
-                    }
                 }
             } catch (error) {
                 console.error("Error fetching settings:", error)
