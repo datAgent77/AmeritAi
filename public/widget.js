@@ -16,7 +16,11 @@
   }
 
   const scriptSrc = currentScript.src;
-  const baseUrl = new URL(scriptSrc).origin; // Dynamically get base URL
+  let baseUrl = new URL(scriptSrc).origin; // Dynamically get base URL
+  // Canonicalize to avoid CORS preflight redirects
+  if (baseUrl === 'https://getvion.com') {
+    baseUrl = 'https://www.getvion.com';
+  }
 
   const attrColor = currentScript.getAttribute('data-color');
   const chatbotId = currentScript.getAttribute('data-chatbot-id') || 'default';
