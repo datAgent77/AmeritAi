@@ -1,0 +1,1379 @@
+"use client"
+
+import { useEffect, useState, useCallback, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { auth } from "@/lib/firebase"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
+import { Switch } from "@/components/ui/switch"
+import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, Search, CreditCard, Settings, Building2 } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/context/LanguageContext"
+
+interface UserData {
+    id: string
+    email: string
+    role: string
+    isActive: boolean
+    isArchived?: boolean
+    archivedAt?: string
+    createdAt: string
+    agencyId?: string | null
+    agencyAssignedAt?: string | null
+    agencyAssignedBy?: string | null
+    companyName?: string
+    planId?: string
+    plan?: string
+    entitlements?: {
+        planId?: string
+    }
+    subscription?: {
+        planId?: string
+        status?: string
+        billingPeriod?: string
+    }
+}
+
+interface AgencyData {
+    id: string
+    email: string
+    agencyName: string
+    firstName?: string
+    lastName?: string
+    isActive: boolean
+    isArchived?: boolean
+    customerCount?: number
+}
+
+type CustomersManagementSection = "agencies" | "end-users"
+
+interface CustomersManagementPageProps {
+    section: CustomersManagementSection
+}
+
+export function CustomersManagementPage({ section }: CustomersManagementPageProps) {
+    const { t, language } = useLanguage()
+    const router = useRouter()
+    const isAgenciesSection = section === "agencies"
+    const isEndUsersSection = section === "end-users"
+    const [users, setUsers] = useState<UserData[]>([])
+    const [agencies, setAgencies] = useState<AgencyData[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [isAgenciesLoading, setIsAgenciesLoading] = useState(true)
+    const { toast } = useToast()
+
+    // Dashboard Stats
+    const [stats, setStats] = useState({
+        totalTenants: 0,
+        activeTenants: 0,
+        totalChatbots: 0,
+        totalChatSessions: 0
+    })
+
+    // Archive Tenant State (moved before useCallback that uses it)
+    const [showArchived, setShowArchived] = useState(false)
+    const [isArchiving, setIsArchiving] = useState<string | null>(null)
+    const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null)  // For AlertDialog
+
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            const currentUser = auth.currentUser;
+            if (!currentUser) return;
+
+            const token = await currentUser.getIdToken();
+            const url = showArchived
+                ? '/api/admin/dashboard-stats?includeArchived=true'
+                : '/api/admin/dashboard-stats';
+            const response = await fetch(url, {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to fetch dashboard data");
+            }
+
+            const data = await response.json();
+
+            setUsers(data.users || []);
+            setStats(data.stats || {
+                totalTenants: 0,
+                activeTenants: 0,
+                totalChatbots: 0,
+                totalChatSessions: 0
+            });
+        } catch (error: any) {
+            console.error("Error fetching dashboard data:", error)
+            toast({
+                title: "Error Debug",
+                description: JSON.stringify(error.message || error, null, 2),
+                variant: "destructive",
+                duration: 10000
+            })
+        } finally {
+            setIsLoading(false)
+        }
+    }, [toast, showArchived])
+
+    const fetchAgencies = useCallback(async () => {
+        setIsAgenciesLoading(true)
+        try {
+            const currentUser = auth.currentUser
+            if (!currentUser) return
+
+            const token = await currentUser.getIdToken()
+            const response = await fetch(`/api/admin/agencies?includeArchived=${showArchived ? "true" : "false"}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to fetch agencies")
+            }
+
+            const data = await response.json()
+            setAgencies(Array.isArray(data?.agencies) ? data.agencies : [])
+        } catch (error: any) {
+            console.error("Error fetching agencies:", error)
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to fetch agencies.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsAgenciesLoading(false)
+        }
+    }, [toast, showArchived])
+
+    // Add Tenant State
+    const [isAddTenantOpen, setIsAddTenantOpen] = useState(false)
+    const [newTenantEmail, setNewTenantEmail] = useState("")
+    const [newTenantPassword, setNewTenantPassword] = useState("")
+    const [firstName, setFirstName] = useState("")
+    const [lastName, setLastName] = useState("")
+    const [phone, setPhone] = useState("")
+    const [companyName, setCompanyName] = useState("")
+    const [companyWebsite, setCompanyWebsite] = useState("")
+    const [industry, setIndustry] = useState("ecommerce")
+    const [isCreating, setIsCreating] = useState(false)
+    const [searchTerm, setSearchTerm] = useState("")
+    const [selectedAgencyId, setSelectedAgencyId] = useState<string>("")
+    const [assigningTenantId, setAssigningTenantId] = useState<string | null>(null)
+    const [isAddAgencyOpen, setIsAddAgencyOpen] = useState(false)
+    const [isCreatingAgency, setIsCreatingAgency] = useState(false)
+    const [newAgencyName, setNewAgencyName] = useState("")
+    const [newAgencyEmail, setNewAgencyEmail] = useState("")
+    const [newAgencyPassword, setNewAgencyPassword] = useState("")
+    const [newAgencyFirstName, setNewAgencyFirstName] = useState("")
+    const [newAgencyLastName, setNewAgencyLastName] = useState("")
+    const [newAgencyPhone, setNewAgencyPhone] = useState("")
+    const [agencySearchTerm, setAgencySearchTerm] = useState("")
+    const [agencyStatusFilter, setAgencyStatusFilter] = useState<"all" | "active" | "inactive">("all")
+    const [agencyCustomerFilter, setAgencyCustomerFilter] = useState<"all" | "has-customers" | "no-customers">("all")
+    const [userStatusFilter, setUserStatusFilter] = useState<"all" | "active" | "inactive">("all")
+    const [userPlanFilter, setUserPlanFilter] = useState("all")
+    const [userAgencyFilter, setUserAgencyFilter] = useState("all")
+    const [userSubscriptionFilter, setUserSubscriptionFilter] = useState<"all" | "trial" | "paid" | "unknown">("all")
+
+    const getUserPlanId = useCallback((user: UserData) => {
+        const rawPlanId =
+            user.subscription?.planId ||
+            user.planId ||
+            user.plan ||
+            user.entitlements?.planId
+
+        if (!rawPlanId || typeof rawPlanId !== "string") return ""
+        if (rawPlanId === "trial") return "starter"
+        return rawPlanId.toLowerCase()
+    }, [])
+
+    const getUserSubscriptionType = useCallback((user: UserData): "trial" | "paid" | "unknown" => {
+        const status = String(user.subscription?.status || "").toLowerCase()
+        const rawPlanId =
+            user.subscription?.planId ||
+            user.planId ||
+            user.plan ||
+            user.entitlements?.planId
+
+        if (status === "trial" || rawPlanId === "trial") return "trial"
+        if (status || rawPlanId) return "paid"
+        return "unknown"
+    }, [])
+
+
+    const toggleStatus = async (userId: string, currentStatus: boolean) => {
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch("/api/admin/toggle-user-status", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    userId,
+                    isActive: !currentStatus
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to toggle status");
+            }
+
+            // Update local state
+            const updatedUsers = users.map(u =>
+                u.id === userId ? { ...u, isActive: !currentStatus } : u
+            )
+            setUsers(updatedUsers)
+
+            // Update stats locally
+            const tenants = updatedUsers.filter(u => u.role === 'TENANT_ADMIN')
+            const active = tenants.filter(u => u.isActive).length
+            setStats(prev => ({ ...prev, activeTenants: active }))
+
+            toast({
+                title: "Success",
+                description: `User ${!currentStatus ? 'activated' : 'deactivated'} successfully.`,
+            })
+        } catch (error: any) {
+            console.error("Error updating user:", error)
+            toast({
+                title: "Error",
+                description: error.message || "Failed to update user status.",
+                variant: "destructive",
+            })
+        }
+    }
+
+    const handleAssignTenantAgency = async (tenantId: string, agencyId: string) => {
+        setAssigningTenantId(tenantId)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/assign-tenant-agency", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    tenantId,
+                    agencyId: agencyId || null
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to assign agency")
+            }
+
+            setUsers((prev) => prev.map((user) => {
+                if (user.id !== tenantId) return user
+                return {
+                    ...user,
+                    agencyId: agencyId || null,
+                    agencyAssignedAt: agencyId ? new Date().toISOString() : null,
+                    agencyAssignedBy: agencyId ? auth.currentUser?.uid || null : null
+                }
+            }))
+
+            toast({
+                title: "Success",
+                description: agencyId ? "Agency assigned." : "Agency unassigned."
+            })
+            fetchAgencies()
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to assign agency.",
+                variant: "destructive"
+            })
+        } finally {
+            setAssigningTenantId(null)
+        }
+    }
+
+    const handleCreateTenant = async () => {
+        if (!newTenantEmail || !newTenantPassword || !companyName) {
+            toast({
+                title: "Error",
+                description: "Please fill in all required fields (Email, Password, Company Name).",
+                variant: "destructive",
+            })
+            return
+        }
+
+        setIsCreating(true)
+        try {
+            // Call our new API route to create user
+            const response = await fetch("/api/admin/create-tenant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${await auth.currentUser?.getIdToken()}`
+                },
+                body: JSON.stringify({
+                    email: newTenantEmail,
+                    password: newTenantPassword,
+                    firstName,
+                    lastName,
+                    phone,
+                    companyName,
+                    companyWebsite,
+                    industry,
+                    agencyId: selectedAgencyId || null
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to create tenant")
+            }
+
+            toast({
+                title: "Success",
+                description: "Tenant created successfully.",
+            })
+            setIsAddTenantOpen(false)
+            setNewTenantEmail("")
+            setNewTenantPassword("")
+            setFirstName("")
+            setLastName("")
+            setPhone("")
+            setCompanyName("")
+            setCompanyWebsite("")
+            setIndustry("ecommerce")
+            setSelectedAgencyId("")
+            fetchDashboardData()
+        } catch (error: any) {
+            console.error("Error creating tenant:", error)
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            })
+        } finally {
+            setIsCreating(false)
+        }
+    }
+
+    const handleCreateAgency = async () => {
+        if (!newAgencyName || !newAgencyEmail || !newAgencyPassword) {
+            toast({
+                title: "Error",
+                description: "agencyName, email and password are required.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        setIsCreatingAgency(true)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/create-agency", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    agencyName: newAgencyName,
+                    email: newAgencyEmail,
+                    password: newAgencyPassword,
+                    firstName: newAgencyFirstName,
+                    lastName: newAgencyLastName,
+                    phone: newAgencyPhone
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to create agency")
+            }
+
+            toast({
+                title: "Success",
+                description: "Agency created successfully."
+            })
+
+            setIsAddAgencyOpen(false)
+            setNewAgencyName("")
+            setNewAgencyEmail("")
+            setNewAgencyPassword("")
+            setNewAgencyFirstName("")
+            setNewAgencyLastName("")
+            setNewAgencyPhone("")
+            await fetchAgencies()
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to create agency.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsCreatingAgency(false)
+        }
+    }
+
+    const handleToggleAgencyStatus = async (agencyId: string, currentStatus: boolean) => {
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch("/api/admin/toggle-user-status", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    userId: agencyId,
+                    isActive: !currentStatus
+                })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to toggle agency status");
+            }
+
+            setAgencies((prev) => prev.map((agency) =>
+                agency.id === agencyId ? { ...agency, isActive: !currentStatus } : agency
+            ));
+
+            toast({
+                title: "Success",
+                description: `Agency ${!currentStatus ? "activated" : "deactivated"} successfully.`,
+            });
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to update agency status.",
+                variant: "destructive",
+            });
+        }
+    }
+
+    const handleArchiveTenant = async (userId: string) => {
+        // Called when user confirms in AlertDialog
+
+        setIsArchiving(userId)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/archive-tenant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to archive tenant")
+            }
+
+            // Remove from visible list (or mark as archived if showArchived is true)
+            if (!showArchived) {
+                const updatedUsers = users.filter(u => u.id !== userId)
+                setUsers(updatedUsers)
+                // Update stats
+                const tenants = updatedUsers.filter(u => u.role === 'TENANT_ADMIN')
+                const active = tenants.filter(u => u.isActive).length
+                setStats(prev => ({ ...prev, totalTenants: tenants.length, activeTenants: active }))
+            } else {
+                const updatedUsers = users.map(u =>
+                    u.id === userId ? { ...u, isArchived: true, archivedAt: new Date().toISOString() } : u
+                )
+                setUsers(updatedUsers)
+            }
+
+            toast({
+                title: t('success') || "Başarılı",
+                description: t('archiveTenantSuccess') || "Kiracı başarıyla arşivlendi.",
+            })
+        } catch (error: any) {
+            console.error("Error archiving tenant:", error)
+            toast({
+                title: "Hata",
+                description: error.message || "Kiracı arşivlenemedi.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsArchiving(null)
+        }
+    }
+
+    const handleRestoreTenant = async (userId: string) => {
+        setIsArchiving(userId)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/restore-tenant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId })
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                throw new Error(data.error || "Failed to restore tenant")
+            }
+
+            // Update local state
+            const updatedUsers = users.map(u =>
+                u.id === userId ? { ...u, isArchived: false, archivedAt: undefined } : u
+            )
+            setUsers(updatedUsers)
+
+            toast({
+                title: t('success') || "Başarılı",
+                description: t('restoreTenantSuccess') || "Kiracı başarıyla geri yüklendi.",
+            })
+        } catch (error: any) {
+            console.error("Error restoring tenant:", error)
+            toast({
+                title: "Hata",
+                description: error.message || "Kiracı geri yüklenemedi.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsArchiving(null)
+        }
+    }
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                fetchAgencies();
+                if (isEndUsersSection) {
+                    fetchDashboardData();
+                } else {
+                    setIsLoading(false)
+                }
+            } else {
+                setIsLoading(false)
+            }
+        });
+
+        return () => unsubscribe();
+    }, [fetchDashboardData, fetchAgencies, isEndUsersSection])
+
+    // Refetch when showArchived changes
+    useEffect(() => {
+        if (auth.currentUser) {
+            fetchAgencies();
+            if (isEndUsersSection) {
+                fetchDashboardData();
+            }
+        }
+    }, [showArchived, fetchDashboardData, fetchAgencies, isEndUsersSection])
+
+    const userPlanOptions = useMemo(() => {
+        const options = new Set<string>()
+        for (const user of users) {
+            const planId = getUserPlanId(user)
+            if (planId) options.add(planId)
+        }
+        return Array.from(options).sort()
+    }, [users, getUserPlanId])
+
+    const filteredAgencies = useMemo(() => {
+        const query = agencySearchTerm.trim().toLowerCase()
+
+        return agencies.filter((agency) => {
+            const matchesQuery = !query ||
+                (agency.agencyName || "").toLowerCase().includes(query) ||
+                (agency.email || "").toLowerCase().includes(query)
+
+            const matchesStatus =
+                agencyStatusFilter === "all" ||
+                (agencyStatusFilter === "active" && agency.isActive) ||
+                (agencyStatusFilter === "inactive" && !agency.isActive)
+
+            const customerCount = agency.customerCount || 0
+            const matchesCustomerCount =
+                agencyCustomerFilter === "all" ||
+                (agencyCustomerFilter === "has-customers" && customerCount > 0) ||
+                (agencyCustomerFilter === "no-customers" && customerCount === 0)
+
+            return matchesQuery && matchesStatus && matchesCustomerCount
+        })
+    }, [agencies, agencySearchTerm, agencyStatusFilter, agencyCustomerFilter])
+
+    const filteredUsers = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase()
+
+        return users.filter((user) => {
+            if (user.role !== "TENANT_ADMIN") return false
+
+            const matchesQuery = !query ||
+                (user.email || "").toLowerCase().includes(query) ||
+                (user.companyName || "").toLowerCase().includes(query)
+
+            const matchesStatus =
+                userStatusFilter === "all" ||
+                (userStatusFilter === "active" && user.isActive) ||
+                (userStatusFilter === "inactive" && !user.isActive)
+
+            const planId = getUserPlanId(user)
+            const matchesPlan = userPlanFilter === "all" || planId === userPlanFilter
+
+            const matchesAgency =
+                userAgencyFilter === "all" ||
+                (userAgencyFilter === "unassigned" && !user.agencyId) ||
+                user.agencyId === userAgencyFilter
+
+            const subscriptionType = getUserSubscriptionType(user)
+            const matchesSubscription =
+                userSubscriptionFilter === "all" ||
+                subscriptionType === userSubscriptionFilter
+
+            return matchesQuery && matchesStatus && matchesPlan && matchesAgency && matchesSubscription
+        })
+    }, [users, searchTerm, userStatusFilter, userPlanFilter, userAgencyFilter, userSubscriptionFilter, getUserPlanId, getUserSubscriptionType])
+
+    const activeAgencyCount = agencies.filter((agency) => agency.isActive).length
+    const totalAgencyCustomers = agencies.reduce((total, agency) => total + (agency.customerCount || 0), 0)
+    const hasUserFilters = Boolean(
+        searchTerm ||
+        userStatusFilter !== "all" ||
+        userPlanFilter !== "all" ||
+        userAgencyFilter !== "all" ||
+        userSubscriptionFilter !== "all"
+    )
+    const listCardClassName = "border-border/60 shadow-sm"
+    const listCardHeaderClassName = "space-y-4 border-b border-border/60 pb-5"
+    const listCardContentClassName = "pt-5"
+    const listTableWrapperClassName = "overflow-hidden rounded-xl border border-border/70 bg-background shadow-sm"
+    const listTableHeaderClassName = "bg-muted/45"
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-8 max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">
+                        {isAgenciesSection
+                            ? (t('agencies') || "Ajanslar")
+                            : (t('endUsers') || "Son Kullanıcılar")}
+                    </h2>
+                    <p className="text-muted-foreground">
+                        {isAgenciesSection
+                            ? (t('manageAgencyDesc') || "Ajans bilgileri ve atanmış müşterileri yönetin.")
+                            : (t('manageTenantsDescription') || "Sistem kullanıcılarını ve erişimlerini yönetin.")}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    {isAgenciesSection ? (
+                        <Button variant="outline" onClick={() => setIsAddAgencyOpen(true)} className="shadow-sm">
+                            <Plus className="mr-2 h-4 w-4" />
+                            {t('addAgency') || "Add Agency"}
+                        </Button>
+                    ) : (
+                        <Button onClick={() => setIsAddTenantOpen(true)} className="shadow-sm">
+                            <Plus className="mr-2 h-4 w-4" />
+                            {t('addTenant') || "+ Müşteri Ekle"}
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Stats Grid */}
+            {isAgenciesSection ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('agencies') || "Ajanslar"}</CardTitle>
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{agencies.length}</div>
+                            <p className="text-xs text-muted-foreground">{t('agency') || "Agency"} hesabı</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('active') || "Aktif"}</CardTitle>
+                            <Activity className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-green-600">{activeAgencyCount}</div>
+                            <p className="text-xs text-muted-foreground">{t('agencyActiveDesc') || "Ajans aktif — müşteriler giriş yapabilir."}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('customers') || "Müşteriler"}</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{totalAgencyCustomers}</div>
+                            <p className="text-xs text-muted-foreground">{t('assignedCustomers') || "Atanmış Müşteriler"}</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('totalTenants') || "Toplam Müşteri"}</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{stats.totalTenants}</div>
+                            <p className="text-xs text-muted-foreground">{t('registeredTenantAccounts') || "Kayıtlı müşteri hesapları"}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('activeTenants') || "Aktif Müşteriler"}</CardTitle>
+                            <Activity className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-green-600">{stats.activeTenants}</div>
+                            <p className="text-xs text-muted-foreground">{t('currentlyActiveAccounts') || "Şu anda aktif hesaplar"}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{t('totalChatbots') || "Toplam Chatbot"}</CardTitle>
+                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{stats.totalChatbots}</div>
+                            <p className="text-xs text-muted-foreground">{t('deployedChatbots') || "Tüm müşterilerde dağıtıldı"}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Toplam Sohbet Oturumu</CardTitle>
+                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{(stats as any).totalChatSessions || 0}</div>
+                            <p className="text-xs text-muted-foreground">Toplam Sohbet</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {isAgenciesSection && (
+                <Card className={listCardClassName}>
+                    <CardHeader className={listCardHeaderClassName}>
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-base font-semibold">{t('agencies') || "Agencies"}</CardTitle>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredAgencies.length} {t('results') || "results"}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative w-full min-[540px]:w-[320px]">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder={t('search') || "Search"}
+                                    className="pl-8"
+                                    value={agencySearchTerm}
+                                    onChange={(e) => setAgencySearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <select
+                                className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={agencyStatusFilter}
+                                onChange={(e) => setAgencyStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                            >
+                                <option value="all">{t('status') || "Status"}: {t('all') || "All"}</option>
+                                <option value="active">{t('active') || "Active"}</option>
+                                <option value="inactive">{t('inactive') || "Inactive"}</option>
+                            </select>
+                            <select
+                                className="flex h-9 min-w-[220px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={agencyCustomerFilter}
+                                onChange={(e) => setAgencyCustomerFilter(e.target.value as "all" | "has-customers" | "no-customers")}
+                            >
+                                <option value="all">{t('customers') || "Customers"}: {t('all') || "All"}</option>
+                                <option value="has-customers">{t('customers') || "Customers"} &gt; 0</option>
+                                <option value="no-customers">{t('customers') || "Customers"} = 0</option>
+                            </select>
+                            {(agencySearchTerm || agencyStatusFilter !== "all" || agencyCustomerFilter !== "all") && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 whitespace-nowrap"
+                                    onClick={() => {
+                                        setAgencySearchTerm("")
+                                        setAgencyStatusFilter("all")
+                                        setAgencyCustomerFilter("all")
+                                    }}
+                                >
+                                    {t('clearFilters') || "Clear filters"}
+                                </Button>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent className={listCardContentClassName}>
+                        {isAgenciesLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : (
+                            <div className={listTableWrapperClassName}>
+                                <Table>
+                                    <TableHeader className={listTableHeaderClassName}>
+                                        <TableRow>
+                                            <TableHead>{t('agency') || "Agency"}</TableHead>
+                                            <TableHead>{t('email') || "Email"}</TableHead>
+                                            <TableHead>{t('customers') || "Customers"}</TableHead>
+                                            <TableHead>{t('status') || "Status"}</TableHead>
+                                            <TableHead className="text-right">{t('actions') || "Actions"}</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAgencies.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                                    {t('noResults') || "No results found."}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : filteredAgencies.map((agency) => (
+                                            <TableRow key={agency.id}>
+                                                <TableCell className="font-medium">{agency.agencyName || "-"}</TableCell>
+                                                <TableCell>{agency.email}</TableCell>
+                                                <TableCell>{agency.customerCount || 0}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge variant={agency.isActive ? "outline" : "destructive"}>
+                                                            {agency.isActive ? (t('active') || "Active") : (t('inactive') || "Inactive")}
+                                                        </Badge>
+                                                        <Switch
+                                                            checked={agency.isActive}
+                                                            onCheckedChange={() => handleToggleAgencyStatus(agency.id, agency.isActive)}
+                                                        />
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/admin/agency/${agency.id}`)}
+                                                        title={t('manage') || "Yönet"}
+                                                    >
+                                                        <Settings className="h-4 w-4 mr-1" />
+                                                        {t('manage') || "Yönet"}
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Tenant List */}
+            {isEndUsersSection && (
+                <Card className={listCardClassName}>
+                    <CardHeader className={listCardHeaderClassName}>
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                            <CardTitle className="text-base font-semibold">
+                                {t('endUsers') || "Son Kullanıcılar"}
+                            </CardTitle>
+                            <span className="text-xs text-muted-foreground">
+                                {filteredUsers.length} {t('results') || "results"}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative w-full min-[540px]:w-[320px]">
+                                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    placeholder={t('searchTenants') || "Müşteri ara..."}
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <select
+                                aria-label={t('status') || "Status"}
+                                className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={userStatusFilter}
+                                onChange={(e) => setUserStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                            >
+                                <option value="all">{t('status') || "Status"}: {t('all') || "All"}</option>
+                                <option value="active">{t('active') || "Active"}</option>
+                                <option value="inactive">{t('inactive') || "Inactive"}</option>
+                            </select>
+                            <select
+                                aria-label={t('plan') || "Plan"}
+                                className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={userPlanFilter}
+                                onChange={(e) => setUserPlanFilter(e.target.value)}
+                            >
+                                <option value="all">{t('plan') || "Plan"}: {t('all') || "All"}</option>
+                                {userPlanOptions.map((plan) => (
+                                    <option key={plan} value={plan}>
+                                        {plan.charAt(0).toUpperCase() + plan.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                aria-label={t('agency') || "Agency"}
+                                className="flex h-9 min-w-[200px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={userAgencyFilter}
+                                onChange={(e) => setUserAgencyFilter(e.target.value)}
+                            >
+                                <option value="all">{t('agency') || "Agency"}: {t('all') || "All"}</option>
+                                <option value="unassigned">{t('unassigned') || "Unassigned"}</option>
+                                {agencies
+                                    .filter((agency) => !agency.isArchived)
+                                    .map((agency) => (
+                                        <option key={agency.id} value={agency.id}>
+                                            {agency.agencyName || agency.email}
+                                        </option>
+                                    ))}
+                            </select>
+                            <select
+                                aria-label={t('subscription') || "Subscription"}
+                                className="flex h-9 min-w-[180px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={userSubscriptionFilter}
+                                onChange={(e) => setUserSubscriptionFilter(e.target.value as "all" | "trial" | "paid" | "unknown")}
+                            >
+                                <option value="all">{t('subscription') || "Subscription"}: {t('all') || "All"}</option>
+                                <option value="trial">{t('trial') || "Trial"}</option>
+                                <option value="paid">{t('paid') || "Paid"}</option>
+                                <option value="unknown">{t('unknown') || "Unknown"}</option>
+                            </select>
+                            {hasUserFilters && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 whitespace-nowrap"
+                                    onClick={() => {
+                                        setSearchTerm("")
+                                        setUserStatusFilter("all")
+                                        setUserPlanFilter("all")
+                                        setUserAgencyFilter("all")
+                                        setUserSubscriptionFilter("all")
+                                    }}
+                                >
+                                    {t('clearFilters') || "Clear filters"}
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2">
+                            <span className="text-xs text-muted-foreground">
+                                {t('manageTenantsDescription') || "Sistem kullanıcılarını ve erişimlerini yönetin."}
+                            </span>
+                            <label className="ml-auto flex items-center gap-2 text-sm cursor-pointer">
+                                <Switch
+                                    checked={showArchived}
+                                    onCheckedChange={setShowArchived}
+                                    aria-label={t('showArchivedTenants') || "Arşivlenmiş kullanıcıları göster"}
+                                />
+                                <span className="text-muted-foreground">{t('showArchivedTenants') || "Arşivlenmiş kullanıcıları göster"}</span>
+                            </label>
+                        </div>
+                    </CardHeader>
+                    <CardContent className={listCardContentClassName}>
+                        <div className={listTableWrapperClassName}>
+                            <Table>
+                                <TableHeader className={listTableHeaderClassName}>
+                                    <TableRow>
+                                        <TableHead>{t('email')}</TableHead>
+                                        <TableHead>{t('agency') || "Agency"}</TableHead>
+                                        <TableHead>{t('plan') || "Plan"}</TableHead>
+                                        <TableHead>{t('status')}</TableHead>
+                                        <TableHead className="text-right">{t('actions')}</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredUsers.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                                {t('noResults') || "No results found."}
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : filteredUsers.map((user) => (
+                                        <TableRow key={user.id} className={`transition-colors focus-within:bg-muted/50 ${user.isArchived ? "bg-muted/45 opacity-70" : "hover:bg-muted/30"}`}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-semibold text-indigo-600">
+                                                    {(user.email || '??').substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="break-all sm:break-normal">{user.email}</span>
+                                                        {user.isArchived && (
+                                                            <Badge variant="secondary" className="bg-gray-200 text-gray-600 rounded-full px-2 py-0 text-[10px]">
+                                                                Arşiv
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{user.id.substring(0, 8)}</span>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="space-y-2">
+                                                <div className="text-sm">
+                                                    {agencies.find((agency) => agency.id === user.agencyId)?.agencyName || t('unassigned') || "Unassigned"}
+                                                </div>
+                                                <select
+                                                    className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                    value={user.agencyId || ""}
+                                                    disabled={assigningTenantId === user.id}
+                                                    onChange={(event) => handleAssignTenantAgency(user.id, event.target.value)}
+                                                >
+                                                    <option value="">{t('unassigned') || "Unassigned"}</option>
+                                                    {agencies
+                                                        .filter((agency) => !agency.isArchived)
+                                                        .map((agency) => (
+                                                            <option key={agency.id} value={agency.id}>
+                                                                {agency.agencyName || agency.email}
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                            </div>
+                                        </TableCell>
+                                        {/* Plan & Subscription Status */}
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-medium text-sm">
+                                                    {(() => {
+                                                        const planId = getUserPlanId(user)
+                                                        if (!planId) return "-"
+                                                        return planId.charAt(0).toUpperCase() + planId.slice(1)
+                                                    })()}
+                                                </span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {user.subscription?.billingPeriod === 'monthly' ? (t('monthly') || 'Aylık') : user.subscription?.billingPeriod === 'yearly' ? (t('yearly') || 'Yıllık') : ''}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                 <Badge
+                                                    variant={user.isActive ? 'outline' : 'destructive'}
+                                                    className={`rounded-full px-3 ${user.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}
+                                                >
+                                                    {user.isActive ? t('active') : t('inactive')}
+                                                </Badge>
+                                                {/* Subscription Status Badge */}
+                                                {user.subscription?.status === 'trial' && (
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200 rounded-full">
+                                                        {t('trial') || 'Deneme'}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        
+                                        <TableCell className="text-right">
+                                            {user.role !== 'SUPER_ADMIN' && (
+                                                <div className="flex flex-wrap justify-end gap-2 items-center">
+                                                    {/* Subscription Management Button */}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}/settings/customer-admin`}
+                                                        title={t('manageSubscription') || "Abonelik Yönetimi"}
+                                                    >
+                                                        <CreditCard className="h-4 w-4 mr-1" />
+                                                        <span className="hidden sm:inline">{t('subscription') || "Abonelik"}</span>
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="hover:bg-gray-100"
+                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}`}
+                                                        title={t('manage') || "Yönet"}
+                                                    >
+                                                        <Settings className="h-4 w-4" />
+                                                    </Button>
+
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={user.isActive}
+                                                            onCheckedChange={() => toggleStatus(user.id, user.isActive)}
+                                                            disabled={user.isArchived}
+                                                            aria-label={user.isActive ? t('deactivate') : t('activate')}
+                                                        />
+                                                    </div>
+                                                    {user.isArchived ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                            onClick={() => handleRestoreTenant(user.id)}
+                                                            disabled={isArchiving === user.id}
+                                                        >
+                                                            {isArchiving === user.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <ArchiveRestore className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                    ) : (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                                                            onClick={() => setArchiveConfirmId(user.id)}
+                                                            disabled={isArchiving === user.id}
+                                                        >
+                                                            {isArchiving === user.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Archive className="h-4 w-4" />
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Add Tenant Dialog */}
+            {isEndUsersSection && (
+                <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
+                <DialogContent className="max-w-2xl p-10">
+                    <DialogHeader>
+                        <DialogTitle>{t('addNewTenant') || "Yeni Müşteri Ekle"}</DialogTitle>
+                        <DialogDescription>
+                            Sistem için yeni bir kiracı hesabı oluşturun. Tüm detaylar otomatik olarak atanacaktır.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2 space-y-4">
+                                <h3 className="text-sm font-semibold border-b pb-1 uppercase tracking-wider text-gray-500">{t('companyInfo')}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="companyName">{t('companyName')}</Label>
+                                        <Input id="companyName" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme Inc." />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="industry">{t('industry')}</Label>
+                                        <select
+                                            id="industry"
+                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                            value={industry}
+                                            onChange={(e) => setIndustry(e.target.value)}
+                                        >
+                                            <option value="ecommerce">{t('industryEcommerce')}</option>
+                                            <option value="booking">{t('industryTravel') || 'Travel & Booking'}</option>
+                                            <option value="real_estate">{t('industryRealEstate')}</option>
+                                            <option value="saas">{t('industrySaas')}</option>
+                                            <option value="service">{t('industryService')}</option>
+                                            <option value="healthcare">{t('industryHealthcare')}</option>
+                                            <option value="education">{t('industryEducation')}</option>
+                                            <option value="academic">{t('industryAcademic')}</option>
+                                            <option value="finance">{t('industryFinance')}</option>
+                                            <option value="restaurant">{t('industryRestaurant') || 'Restaurant'}</option>
+                                            <option value="agriculture">{language === 'tr' ? 'Tarım' : 'Agriculture'}</option>
+                                            <option value="automotive">{language === 'tr' ? 'Otomotiv' : 'Automotive'}</option>
+                                            <option value="insurance">{language === 'tr' ? 'Sigorta' : 'Insurance'}</option>
+                                            <option value="logistics">{language === 'tr' ? 'Lojistik' : 'Logistics'}</option>
+                                            <option value="beauty">{language === 'tr' ? 'Güzellik & Wellness' : 'Beauty & Wellness'}</option>
+                                            <option value="legal">{language === 'tr' ? 'Hukuk' : 'Legal'}</option>
+                                            <option value="fitness">{language === 'tr' ? 'Spor & Fitness' : 'Sports & Fitness'}</option>
+                                            <option value="maritime">{language === 'tr' ? 'Denizcilik' : 'Maritime'}</option>
+                                            <option value="other">{t('industryOther')}</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="website">{t('website')}</Label>
+                                        <Input id="website" value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} placeholder="https://example.com" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-span-2 space-y-4 pt-2">
+                                <h3 className="text-sm font-semibold border-b pb-1 uppercase tracking-wider text-gray-500">{t('contactInfo')}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="firstName">{t('firstName')}</Label>
+                                        <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="lastName">{t('lastName')}</Label>
+                                        <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="phone">{t('phone')}</Label>
+                                        <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 890" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="col-span-2 space-y-4 pt-2">
+                                <h3 className="text-sm font-semibold border-b pb-1 uppercase tracking-wider text-gray-500">{t('accountInfo')}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">{t('email')}</Label>
+                                        <Input id="email" type="email" value={newTenantEmail} onChange={(e) => setNewTenantEmail(e.target.value)} placeholder="tenant@example.com" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password">{t('password')}</Label>
+                                        <Input id="password" type="password" value={newTenantPassword} onChange={(e) => setNewTenantPassword(e.target.value)} placeholder="******" />
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="agency">{t('agency') || "Agency"} ({t('optional') || "optional"})</Label>
+                                        <select
+                                            id="agency"
+                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                            value={selectedAgencyId}
+                                            onChange={(e) => setSelectedAgencyId(e.target.value)}
+                                        >
+                                            <option value="">{t('unassigned') || "Unassigned"}</option>
+                                            {agencies
+                                                .filter((agency) => !agency.isArchived)
+                                                .map((agency) => (
+                                                    <option key={agency.id} value={agency.id}>
+                                                        {agency.agencyName || agency.email}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="pt-4 border-t mt-4">
+                        <Button variant="outline" onClick={() => setIsAddTenantOpen(false)}>{t('cancel')}</Button>
+                        <Button onClick={handleCreateTenant} disabled={isCreating} className="bg-zinc-900 hover:bg-zinc-800 text-white">
+                            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t('createTenant')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+                </Dialog >
+            )}
+
+            {isAgenciesSection && (
+                <Dialog open={isAddAgencyOpen} onOpenChange={setIsAddAgencyOpen}>
+                <DialogContent className="max-w-xl p-8">
+                    <DialogHeader>
+                        <DialogTitle>{t('createAgency') || "Create Agency"}</DialogTitle>
+                        <DialogDescription>{t('createAgencyDesc') || "Create a new agency admin account."}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="agencyName">{t('agencyName') || "Agency Name"}</Label>
+                            <Input id="agencyName" value={newAgencyName} onChange={(e) => setNewAgencyName(e.target.value)} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="agencyFirstName">{t('firstName') || "First Name"}</Label>
+                                <Input id="agencyFirstName" value={newAgencyFirstName} onChange={(e) => setNewAgencyFirstName(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="agencyLastName">{t('lastName') || "Last Name"}</Label>
+                                <Input id="agencyLastName" value={newAgencyLastName} onChange={(e) => setNewAgencyLastName(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="agencyPhone">{t('phone') || "Phone"}</Label>
+                            <Input id="agencyPhone" value={newAgencyPhone} onChange={(e) => setNewAgencyPhone(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="agencyEmail">{t('email') || "Email"}</Label>
+                            <Input id="agencyEmail" type="email" value={newAgencyEmail} onChange={(e) => setNewAgencyEmail(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="agencyPassword">{t('password') || "Password"}</Label>
+                            <Input id="agencyPassword" type="password" value={newAgencyPassword} onChange={(e) => setNewAgencyPassword(e.target.value)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddAgencyOpen(false)}>{t('cancel') || "Cancel"}</Button>
+                        <Button onClick={handleCreateAgency} disabled={isCreatingAgency}>
+                            {isCreatingAgency && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t('createAgency') || "Create Agency"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+                </Dialog>
+            )}
+
+            {/* Archive Confirmation AlertDialog */}
+            {isEndUsersSection && (
+                <AlertDialog open={!!archiveConfirmId} onOpenChange={(open) => !open && setArchiveConfirmId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('archiveTenant') || "Kiracıyı Arşivle"}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('archiveTenantConfirm') || "Bu kiracıyı arşivlemek istediğinizden emin misiniz? Hesabı deaktive edilecek ancak veriler korunacak."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel') || "İptal"}</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-orange-500 hover:bg-orange-600"
+                            onClick={() => {
+                                if (archiveConfirmId) {
+                                    handleArchiveTenant(archiveConfirmId)
+                                    setArchiveConfirmId(null)
+                                }
+                            }}
+                        >
+                            {t('archiveTenant') || "Arşivle"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+            )}
+        </div >
+    )
+}
