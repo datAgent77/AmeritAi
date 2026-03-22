@@ -63,7 +63,6 @@ export function ChatInput({
     const isAmbientMode = mode === "ambient"
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
     const ambientPlaceholder = language === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
-    const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
 
     // Ambient input size system
     const inputSize = settings.ambientInputSize || "lg"
@@ -265,7 +264,7 @@ export function ChatInput({
                     ? {
                         background: `linear-gradient(90deg, ${ambientDockStyles.gradientColors[0]} 0%, ${ambientDockStyles.gradientColors[1]} 33%, ${ambientDockStyles.gradientColors[2]} 66%, ${ambientDockStyles.gradientColors[3]} 100%)`
                     }
-                    : {})
+                    : {}),
         } as React.CSSProperties)
         : undefined
 
@@ -275,14 +274,12 @@ export function ChatInput({
                 ? (isAmbientInputOnly
                     ? "pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
-                : (isTransparentEmbed
-                    ? "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-transparent"
-                    : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100")}
-            style={isAmbientMode || isTransparentEmbed ? { backgroundColor: 'transparent', background: 'transparent' } : undefined}
+                : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"}
+            style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
                 className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : "max-w-3xl"}`}
-                style={isAmbientMode || isTransparentEmbed ? { backgroundColor: 'transparent', background: 'transparent' } : undefined}
+                style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {/* Rainbow Border Style is now in globals.css */}
                 <div
