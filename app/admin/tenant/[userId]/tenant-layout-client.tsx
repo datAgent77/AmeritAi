@@ -20,27 +20,83 @@ export function TenantLayoutClient({
     userId,
     initialEmail
 }: TenantLayoutClientProps) {
-    const { role } = useAuth()
+    const { role, user, loading } = useAuth()
     const router = useRouter()
+    const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking")
 
     // Use initialEmail if provided, otherwise it will just show the ID
     const targetEmail = initialEmail || userId
 
-    // Redirect non-super-admins
     useEffect(() => {
-        if (role && role !== "SUPER_ADMIN") {
-            router.push("/console/chatbot")
+        if (loading) return
+
+        if (!role || !user) {
+            setAccessState("denied")
+            router.push("/login")
+            return
         }
-    }, [role, router])
 
-    // If role is not yet loaded, we might want to show a loader, 
-    // but the checking checks for `role` existence. 
-    // If role is null (loading), we might wait? 
-    // Usually useAuth returns loading state too.
-    // effective loading state is handled by the initial server fetch or auth context.
+        if (role === "SUPER_ADMIN") {
+            setAccessState("allowed")
+            return
+        }
 
-    // For now, render immediately. The AuthGuard typically handles protection, 
-    // but here we have a specific role check.
+        if (role !== "AGENCY_ADMIN") {
+            setAccessState("denied")
+            router.push("/console/chatbot")
+            return
+        }
+
+        let cancelled = false
+        const verifyAgencyCustomerAccess = async () => {
+            try {
+                const token = await user.getIdToken()
+                const response = await fetch("/api/agency/customers", {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+
+                if (!response.ok) {
+                    throw new Error("agency_customer_access_denied")
+                }
+
+                const payload = await response.json()
+                const customers = Array.isArray(payload?.customers) ? payload.customers : []
+                const canAccessTenant = customers.some((customer: { id?: string }) => customer?.id === userId)
+
+                if (cancelled) return
+                if (!canAccessTenant) {
+                    setAccessState("denied")
+                    router.push("/agency")
+                    return
+                }
+
+                setAccessState("allowed")
+            } catch {
+                if (cancelled) return
+                setAccessState("denied")
+                router.push("/agency")
+            }
+        }
+
+        verifyAgencyCustomerAccess()
+        return () => {
+            cancelled = true
+        }
+    }, [role, user, loading, userId, router])
+
+    if (loading || accessState === "checking") {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
+
+    if (accessState !== "allowed") {
+        return null
+    }
 
     return (
         <SidebarProvider>

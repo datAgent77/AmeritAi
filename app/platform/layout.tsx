@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext"
 import { AuthGuard } from "@/components/auth-guard"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ConsoleSidebar } from "@/components/console-sidebar"
+import { ThemeProvider } from "next-themes"
 
 export default function PlatformLayout({
     children,
@@ -16,21 +17,23 @@ export default function PlatformLayout({
 
     return (
         <AuthGuard>
-            <LanguageProvider>
-                <SidebarProvider>
-                    <div className="flex flex-col h-screen w-full bg-[#f4f6f8]">
-                        <SiteHeader />
-                        <div className="flex flex-1 overflow-hidden">
-                            <ConsoleSidebar />
-                            <main className="flex-1 overflow-y-auto w-full p-8">
-                                <div className="max-w-7xl mx-auto p-4 md:p-0">
-                                    {children}
-                                </div>
-                            </main>
+            <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
+                <LanguageProvider>
+                    <SidebarProvider>
+                        <div className="flex flex-col h-screen w-full bg-[#f4f6f8]">
+                            <SiteHeader />
+                            <div className="flex flex-1 overflow-hidden">
+                                <ConsoleSidebar />
+                                <main className="flex-1 overflow-y-auto w-full p-8">
+                                    <div className="max-w-7xl mx-auto p-4 md:p-0">
+                                        {children}
+                                    </div>
+                                </main>
+                            </div>
                         </div>
-                    </div>
-                </SidebarProvider>
-            </LanguageProvider>
+                    </SidebarProvider>
+                </LanguageProvider>
+            </ThemeProvider>
         </AuthGuard>
     )
 }

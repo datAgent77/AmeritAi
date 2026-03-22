@@ -5,17 +5,46 @@ import { useLanguage } from "@/context/LanguageContext"
 import { format } from "date-fns"
 import { tr, enUS } from "date-fns/locale"
 import { useAuth } from "@/context/AuthContext"
+import { useEffect, useState } from "react"
 
 interface TenantDashboardClientProps {
     userId: string
-    companyName?: string
 }
 
-export function TenantDashboardClient({ userId, companyName }: TenantDashboardClientProps) {
+export function TenantDashboardClient({ userId }: TenantDashboardClientProps) {
     const { t, language } = useLanguage()
     const { user } = useAuth()
+    const [companyName, setCompanyName] = useState("")
     const locale = language === 'tr' ? tr : enUS
     const today = format(new Date(), "d MMMM yyyy, EEEE", { locale })
+
+    useEffect(() => {
+        let cancelled = false
+        const fetchCompanyName = async () => {
+            try {
+                const token = await user?.getIdToken()
+                if (!token) return
+
+                const response = await fetch(`/api/console/settings?chatbotId=${encodeURIComponent(userId)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+
+                if (!response.ok) return
+                const data = await response.json()
+                if (cancelled) return
+                setCompanyName(data?.companyName || data?.displayName || "")
+            } catch {
+                // non-blocking
+            }
+        }
+
+        fetchCompanyName()
+        return () => {
+            cancelled = true
+        }
+    }, [user, userId])
 
     // Use companyName if available, otherwise fallback to user display name or "User"
     const displayName = companyName || user?.displayName || "User"

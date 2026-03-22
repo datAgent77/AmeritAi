@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { isSuperAdminRole } from "@/lib/user-roles";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +28,8 @@ export async function GET(req: Request) {
         const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
         const userData = userDoc.data();
 
-        if (userData?.role !== 'SUPER_ADMIN') {
+        const tokenRole = (decodedToken as any).role;
+        if (!isSuperAdminRole(userData?.role) && !isSuperAdminRole(tokenRole)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -36,6 +39,14 @@ export async function GET(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "chatbotId is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // Fetch chatbot document
@@ -87,7 +98,8 @@ export async function POST(req: Request) {
         const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
         const userData = userDoc.data();
 
-        if (userData?.role !== 'SUPER_ADMIN') {
+        const tokenRole = (decodedToken as any).role;
+        if (!isSuperAdminRole(userData?.role) && !isSuperAdminRole(tokenRole)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -96,6 +108,14 @@ export async function POST(req: Request) {
 
         if (!chatbotId) {
             return NextResponse.json({ error: "chatbotId is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // Validate provider if provided

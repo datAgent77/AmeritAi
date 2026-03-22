@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
 import { ProductCarousel } from "@/components/chatbot/product-carousel"
 import Image from "next/image"
-import { RefObject } from "react"
+import { RefObject, WheelEvent } from "react"
 
 interface MessageListProps {
     messages: any[]
@@ -20,8 +20,60 @@ interface MessageListProps {
     t: (key: string) => string
     onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
     mode?: "classic" | "ambient"
+    showClassicEntryOnboarding?: boolean
 }
 import { InlineLeadForm } from "./InlineLeadForm"
+
+type RgbColor = { r: number; g: number; b: number }
+
+function parseToRgb(color: string | undefined): RgbColor | null {
+    if (!color) return null
+    const value = color.trim()
+    if (!value) return null
+
+    const shortHex = value.match(/^#([0-9a-f]{3})$/i)
+    if (shortHex) {
+        const [r, g, b] = shortHex[1].split("")
+        return {
+            r: parseInt(r + r, 16),
+            g: parseInt(g + g, 16),
+            b: parseInt(b + b, 16),
+        }
+    }
+
+    const fullHex = value.match(/^#([0-9a-f]{6})$/i)
+    if (fullHex) {
+        return {
+            r: parseInt(fullHex[1].slice(0, 2), 16),
+            g: parseInt(fullHex[1].slice(2, 4), 16),
+            b: parseInt(fullHex[1].slice(4, 6), 16),
+        }
+    }
+
+    const rgb = value.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*[0-9.]+\s*)?\)$/i)
+    if (rgb) {
+        return {
+            r: Math.max(0, Math.min(255, Number(rgb[1]))),
+            g: Math.max(0, Math.min(255, Number(rgb[2]))),
+            b: Math.max(0, Math.min(255, Number(rgb[3]))),
+        }
+    }
+
+    return null
+}
+
+function getReadableTextColor(background: string | undefined, darkText = "#111827", lightText = "#ffffff"): string {
+    const rgb = parseToRgb(background)
+    if (!rgb) return darkText
+
+    const srgb = [rgb.r, rgb.g, rgb.b].map((v) => {
+        const n = v / 255
+        return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4)
+    })
+    const luminance = (0.2126 * srgb[0]) + (0.7152 * srgb[1]) + (0.0722 * srgb[2])
+
+    return luminance > 0.54 ? darkText : lightText
+}
 
 export function MessageList({
     messages,
@@ -35,26 +87,109 @@ export function MessageList({
     messagesEndRef,
     t,
     onLeadSubmit,
-    mode = "classic"
+    mode = "classic",
+    showClassicEntryOnboarding = false,
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
-    const ambientMaxHeight = Math.max(220, Math.min(460, settings.ambientMaxHeight || 300))
+    const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
+    const handleWheelContain = (event: WheelEvent<HTMLDivElement>) => {
+        if (!isAmbientMode) return
+
+        const container = event.currentTarget
+        const { scrollTop, scrollHeight, clientHeight } = container
+        const canScroll = scrollHeight > clientHeight + 1
+        const isAtTop = scrollTop <= 0
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1
+
+        // Prevent wheel momentum from escaping to the host page when the feed
+        // is already at the top/bottom (scroll chaining bug in embedded widget).
+        if (!canScroll || (isAtTop && event.deltaY < 0) || (isAtBottom && event.deltaY > 0)) {
+            event.preventDefault()
+        }
+
+        event.stopPropagation()
+    }
 
     return (
         <div
             ref={messagesContainerRef}
+            onWheel={isAmbientMode ? handleWheelContain : undefined}
             className={isAmbientMode
-                ? "flex flex-col h-full overflow-y-auto overflow-x-hidden px-1 py-1 sm:px-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"}
+                ? "flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                : (showClassicEntryOnboarding
+                    ? "flex-1 overflow-y-auto overflow-x-hidden bg-white"
+                    : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"))}
             style={isAmbientMode
                 ? {
-                    maxHeight: `${ambientMaxHeight}px`,
-                    WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
-                    maskImage: "linear-gradient(to top, rgba(0,0,0,1) 80%, rgba(0,0,0,0) 100%)",
+                    WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
+                    maskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
+                    overscrollBehaviorY: "contain",
                 }
                 : undefined}
         >
-            {messages.length === 0 ? (
+            {showClassicEntryOnboarding && !isAmbientMode ? (
+                <div className="flex h-full w-full flex-col">
+                    <div
+                        className="px-6 pb-8 pt-6"
+                        style={{
+                            backgroundColor: settings.headerBackgroundColor || settings.brandColor || "#111827",
+                            color: settings.headerTextColor || "#FFFFFF"
+                        }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div
+                                className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/20"
+                                style={{ width: settings.headerLogoWidth || 40, height: settings.headerLogoHeight || 40 }}
+                            >
+                                {settings.headerLogo || settings.brandLogo ? (
+                                    <Image
+                                        src={settings.headerLogo || settings.brandLogo}
+                                        alt={`${settings.companyName} logo`}
+                                        fill
+                                        className="object-contain p-1"
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <Sparkles className="h-5 w-5 text-white" />
+                                )}
+                            </div>
+                            <p className="text-sm font-semibold" style={{ color: settings.headerTextColor || "#FFFFFF" }}>{settings.companyName}</p>
+                        </div>
+                        <div className="mt-7 space-y-2">
+                            <h2 className="text-4xl font-bold leading-tight tracking-tight">
+                                {settings.welcomeTitle || `${t("welcomeTo")} ${settings.companyName}`}
+                            </h2>
+                            <p className="text-base leading-relaxed opacity-90">
+                                {settings.welcomeMessage}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 bg-white px-5 py-4">
+                        <div className="space-y-2">
+                            {settings.suggestedQuestions.filter((question) => question.trim() !== "").length > 0 ? (
+                                settings.suggestedQuestions
+                                    .filter((question) => question.trim() !== "")
+                                    .map((question, index) => (
+                                        <button
+                                            key={`${question}-${index}`}
+                                            onClick={() => sendMessage(question)}
+                                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                                        >
+                                            {question}
+                                        </button>
+                                    ))
+                            ) : (
+                                <p className="px-1 py-2 text-xs text-gray-500">
+                                    {language === "tr"
+                                        ? "Öneri bulunamadı. Doğrudan mesaj yazabilirsin."
+                                        : "No suggestion found. You can type a direct message below."}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ) : messages.length === 0 ? (
                 isAmbientMode ? (
                     <div className="flex-1 min-h-0" />
                 ) : (
@@ -88,33 +223,71 @@ export function MessageList({
                     </div>
                 )
             ) : (
-                <div className={isAmbientMode ? "mt-auto flex flex-col space-y-3 w-full" : "w-full space-y-6"}>
+                <div className={isAmbientMode ? "mt-auto flex flex-col gap-3 w-full pb-1" : "w-full space-y-6"}>
                     {messages.map((m: any) => {
                         // Render-time image recovery
                         const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
                         const displayImage = m.image || cached?.image
                         const displayMime = m.imageMimeType || cached?.mimeType
                         const hasProductCarousel = typeof m.content === 'string' && m.content.includes('"product-carousel"')
+                        const ambientUserBg = typeof settings.headerBackgroundColor === "string" && settings.headerBackgroundColor.trim()
+                            ? settings.headerBackgroundColor.trim()
+                            : typeof settings.brandColor === "string" && settings.brandColor.trim()
+                                ? settings.brandColor.trim()
+                            : undefined
 
                         // Hide empty messages (prevent empty bubble while loading or if failed)
                         if (!m.content?.trim() && !displayImage) return null;
 
-                        const isAssistant = m.role !== 'user';
                         // Remove slide-in animation to prevent replay on display toggle (widget open/close)
                         const animationClasses = '';
+                        const ambientUserTextColor = ambientUserBg ? getReadableTextColor(ambientUserBg, "#111827", "#ffffff") : "#ffffff"
+                        const ambientAssistantTextColor = "#111827"
+                        const userTextIsLight = ambientUserTextColor === "#ffffff"
+                        const assistantTextIsLight = false
                         const bubbleClassName = isAmbientMode
                             ? (m.role === 'user'
-                                ? 'bg-white/75 text-gray-800 rounded-2xl rounded-br-md shadow-[0_4px_16px_rgba(0,0,0,0.06)] backdrop-blur-xl border border-white/50'
-                                : 'text-white rounded-2xl rounded-bl-md shadow-[0_4px_16px_rgba(0,0,0,0.08)] backdrop-blur-xl border border-white/20')
+                                ? 'bg-gradient-to-r from-[#171923] via-[#242836] to-[#34394d] text-white rounded-[22px] rounded-br-md border border-white/10'
+                                : 'bg-white text-gray-900 rounded-[22px] rounded-bl-md border border-gray-200')
                             : (m.role === 'user'
                                 ? 'bg-blue-600 text-white rounded-tr-sm'
                                 : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm');
                         const ambientWidthClass = isAmbientMode
-                            ? (m.role === 'user' ? 'max-w-[70%] ml-auto' : 'max-w-[80%] mr-auto')
+                            ? (m.role === 'user' ? 'max-w-[68%] ml-auto' : 'max-w-[84%] mr-auto')
                             : (hasProductCarousel && m.role !== 'user' ? 'w-[calc(100%-2.75rem)] max-w-[calc(100%-2.75rem)]' : 'max-w-[85%]');
+                        const messageContentClassName = `${isAmbientMode ? 'text-[15px] leading-[1.6] sm:text-base px-5 py-3.5' : 'text-sm leading-relaxed px-5 py-4'} text-left relative transition-all ${isAmbientMode ? '' : 'rounded-2xl hover:shadow-md shadow-sm'} ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${bubbleClassName}`
+                        const messageContentStyle = isAmbientMode
+                            ? (m.role === 'user'
+                                ? (ambientUserBg
+                                    ? {
+                                        backgroundColor: ambientUserBg,
+                                        color: ambientUserTextColor,
+                                        borderColor: userTextIsLight ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.16)'
+                                    }
+                                    : undefined)
+                                : {
+                                    backgroundColor: '#ffffff',
+                                    color: ambientAssistantTextColor,
+                                    borderColor: 'rgba(17,24,39,0.14)'
+                                })
+                            : (m.role === 'user'
+                                ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor }
+                                : undefined)
+                        const inlineCodeClassName = m.role === 'user'
+                            ? (userTextIsLight ? 'bg-white/20 text-white' : 'bg-black/10 text-gray-900')
+                            : (assistantTextIsLight ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500')
+                        const anchorClassName = m.role === 'user'
+                            ? (userTextIsLight ? 'underline font-medium text-white' : 'underline font-medium text-gray-900')
+                            : (assistantTextIsLight ? 'underline font-medium text-white' : 'underline font-medium text-blue-600 hover:text-blue-800')
+                        const tableBaseClassName = isAmbientMode
+                            ? (m.role === 'user' ? (userTextIsLight ? 'bg-white/10' : 'bg-black/5') : (assistantTextIsLight ? 'bg-white/10' : 'bg-white'))
+                            : 'bg-white/5'
+                        const tableBorderClassName = m.role === 'user'
+                            ? (userTextIsLight ? 'border-white/20' : 'border-black/20')
+                            : (assistantTextIsLight ? 'border-white/20' : 'border-gray-200')
 
                         return (
-                            <div key={m.id} className={`flex w-full gap-3 ${isAmbientMode ? 'max-w-[1080px]' : 'max-w-3xl'} mx-auto ${m.role === 'user' ? 'justify-end' : 'justify-start'} ${isAmbientMode ? 'mb-2 px-2' : ''} ${animationClasses} group/msg`}>
+                            <div key={m.id} className={`flex w-full ${isAmbientMode ? 'gap-2' : 'gap-3'} ${isAmbientMode ? 'max-w-[1080px]' : 'max-w-3xl'} mx-auto ${m.role === 'user' ? 'justify-end' : 'justify-start'} ${isAmbientMode ? 'px-1.5' : ''} ${animationClasses} group/msg`}>
                                 {m.role !== 'user' && !isAmbientMode && (
                                     <div
                                         className="relative w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs mt-auto mb-1 shadow-sm overflow-hidden text-white"
@@ -130,18 +303,8 @@ export function MessageList({
                                         )}
                                     </div>
                                     <div
-                                        className={`text-sm leading-relaxed px-5 py-4 text-left relative transition-all ${isAmbientMode ? '' : 'rounded-2xl hover:shadow-md shadow-sm'} ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${bubbleClassName}`}
-                                        style={
-                                            isAmbientMode
-                                                ? (m.role === 'user'
-                                                    ? (settings.ambientUserBubbleColor
-                                                        ? { backgroundColor: settings.ambientUserBubbleColor }
-                                                        : undefined)
-                                                    : { backgroundColor: settings.ambientAiBubbleColor || settings.brandColor || '#3b82f6' })
-                                                : (m.role === 'user'
-                                                    ? { backgroundColor: settings.headerBackgroundColor || settings.brandColor }
-                                                    : undefined)
-                                        }
+                                        className={messageContentClassName}
+                                        style={messageContentStyle}
                                     >
                                         {/* Show image if present */}
                                         {displayImage && (
@@ -207,20 +370,20 @@ export function MessageList({
                                                             </code>
                                                         </div>
                                                     ) : (
-                                                        <code className={`${m.role === 'user' || isAmbientMode ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500'} px-1 py-0.5 rounded text-xs font-mono`} {...props}>
+                                                        <code className={`${inlineCodeClassName} px-1 py-0.5 rounded text-xs font-mono`} {...props}>
                                                             {children}
                                                         </code>
                                                     )
                                                 },
-                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={`underline font-medium ${m.role === 'user' || isAmbientMode ? 'text-white' : 'text-blue-600 hover:text-blue-800'}`} />,
+                                                a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" className={anchorClassName} />,
                                                 pre: ({ node, ...props }) => (
                                                     <div className="max-w-full overflow-hidden my-0">
                                                         {props.children}
                                                     </div>
                                                 ),
-                                                table: ({ node, ...props }) => <table className={`border-collapse table-auto w-full text-xs my-2 rounded overflow-hidden ${isAmbientMode ? 'bg-white/5' : 'bg-white/5'}`} {...props} />,
-                                                th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${m.role === 'user' || isAmbientMode ? 'border-white/20' : 'border-gray-200 bg-gray-50'}`} {...props} />,
-                                                td: ({ node, ...props }) => <td className={`border px-2 py-1 ${m.role === 'user' || isAmbientMode ? 'border-white/20' : 'border-gray-200'}`} {...props} />,
+                                                table: ({ node, ...props }) => <table className={`border-collapse table-auto w-full text-xs my-2 rounded overflow-hidden ${tableBaseClassName}`} {...props} />,
+                                                th: ({ node, ...props }) => <th className={`border px-2 py-1 font-semibold ${tableBorderClassName} ${m.role === 'user' ? '' : 'bg-gray-50 text-gray-900'}`} {...props} />,
+                                                td: ({ node, ...props }) => <td className={`border px-2 py-1 ${tableBorderClassName}`} {...props} />,
                                                 p: ({ node, ...props }) => <p className="mb-1 last:mb-0" {...props} />,
                                                 ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-1" {...props} />,
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
@@ -259,7 +422,7 @@ export function MessageList({
                                     <Sparkles className="w-4 h-4" />
                                 </div>
                             )}
-                            <div className={`px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 ${isAmbientMode ? 'bg-white/75 text-gray-800 backdrop-blur-xl border border-white/50' : 'bg-white border border-gray-100'}`}>
+                            <div className={isAmbientMode ? "px-5 py-3 rounded-2xl rounded-bl-md bg-white border border-gray-200 flex items-center gap-2 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white border border-gray-100"}>
                                 <div className="flex items-center gap-1.5">
                                     <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAmbientMode ? 'bg-gray-500' : 'bg-gray-400'}`}></div>
                                     <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAmbientMode ? 'bg-gray-500' : 'bg-gray-400'}`}></div>

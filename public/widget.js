@@ -24,8 +24,14 @@
     viewMode: 'classic',
     interactionMode: 'launcher',
     chatDisplayMode: 'classic',
-    ambientMaxHeight: 260,
-    ambientOverlayOpacity: 0.55,
+    sidecarWidth: 420,
+    sidecarMinWidth: 360,
+    sidecarMaxWidth: 560,
+    sidecarGutter: 0,
+    sidecarDesktopOnly: true,
+    ambientWidth: 800,
+    ambientInputWidth: 800,
+    ambientSideMargin: 0,
     launcherStyle: 'circle',
     launcherWidth: 60,
     launcherHeight: 60,
@@ -1113,9 +1119,8 @@
   function resolveAmbientDeviceSettingsForWidget(source, device) {
     const shared = {};
     [
-      'ambientMaxHeight',
-      'ambientOverlayOpacity',
       'ambientWidth',
+      'ambientInputWidth',
       'ambientSideMargin',
       'ambientBottomMargin',
       'ambientInputSize',
@@ -2911,7 +2916,10 @@
     // Adjust spacing for mobile
     const isMobile = window.innerWidth < 768;
     const isAmbientWidgetMode = settings.chatDisplayMode === 'ambient';
-    const isAlwaysOpenMode = settings.interactionMode === 'always_open' || isAmbientWidgetMode;
+    const isSidecarWidgetMode = settings.chatDisplayMode === 'sidecar';
+    const isSidecarDesktopOnly = settings.sidecarDesktopOnly !== false;
+    const isSidecarMode = isSidecarWidgetMode && (!isMobile || !isSidecarDesktopOnly);
+    const isAlwaysOpenMode = (settings.interactionMode === 'always_open' && !isSidecarWidgetMode) || isAmbientWidgetMode || isSidecarMode;
     const usesLauncher = !isAlwaysOpenMode;
 
     let verticalSpacing = settings.bottomSpacing !== undefined ? settings.bottomSpacing : 20;
@@ -2922,6 +2930,36 @@
       verticalSpacing = settings.mobileBottomSpacing !== undefined ? settings.mobileBottomSpacing : 20;
       sideSpacing = settings.mobileSideSpacing !== undefined ? settings.mobileSideSpacing : 20;
     }
+
+    const getSidecarWidth = () => {
+      const requestedWidth = Number(settings.sidecarWidth || 420);
+      const minWidth = Number(settings.sidecarMinWidth || 360);
+      const maxWidth = Number(settings.sidecarMaxWidth || 560);
+      const safeMin = Math.max(280, minWidth);
+      const safeMax = Math.max(safeMin, maxWidth);
+      const boundedRequested = Math.max(safeMin, Math.min(safeMax, requestedWidth));
+      const viewportLimit = Math.max(safeMin, window.innerWidth - 120);
+      return Math.max(safeMin, Math.min(boundedRequested, viewportLimit));
+    };
+
+    const applySidecarInset = (enabled) => {
+      const htmlEl = document.documentElement;
+      const bodyEl = document.body;
+      if (!htmlEl || !bodyEl) return;
+      const sidecarGutter = Number(settings.sidecarGutter || 0);
+      if (enabled) {
+        const inset = getSidecarWidth() + Math.max(0, sidecarGutter);
+        htmlEl.style.transition = 'margin-right 240ms ease';
+        bodyEl.style.transition = 'margin-right 240ms ease';
+        htmlEl.style.marginRight = `${inset}px`;
+        bodyEl.style.marginRight = `${inset}px`;
+        bodyEl.style.overflowX = 'hidden';
+      } else {
+        htmlEl.style.marginRight = '';
+        bodyEl.style.marginRight = '';
+        bodyEl.style.overflowX = '';
+      }
+    };
 
     // Mobile Styles Injection
     const addMobileStyles = () => {
@@ -3443,6 +3481,7 @@
       zIndex: '9999',
       display: usesLauncher ? 'none' : 'block',
       backgroundColor: 'transparent',
+      color: 'rgba(250, 250, 250, 0)',
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
     let applyAmbientContainerSize = null;
@@ -3451,10 +3490,28 @@
     // Apply View Mode Styles
     const isAmbientMode = isAmbientWidgetMode;
 
-    if (isAmbientMode) {
+    if (isSidecarMode) {
+      const sidecarWidth = getSidecarWidth();
+      Object.assign(iframeContainer.style, {
+        top: '0',
+        right: '0',
+        left: 'auto',
+        bottom: '0',
+        width: `${sidecarWidth}px`,
+        minWidth: `${Math.max(280, Number(settings.sidecarMinWidth || 360))}px`,
+        maxWidth: `${Math.max(Number(settings.sidecarMaxWidth || 560), Number(settings.sidecarMinWidth || 360))}px`,
+        height: '100vh',
+        maxHeight: '100vh',
+        borderRadius: '0',
+        boxShadow: '0 0 0 1px rgba(0,0,0,0.06), -8px 0 28px rgba(15,23,42,0.12)',
+        transform: 'none'
+      });
+      applySidecarInset(true);
+    } else if (isAmbientMode) {
       const ambientRailHeight = Math.max(220, Math.min(460, Number(settings.ambientMaxHeight || 260)));
       const ambientExpandedHeight = Math.max(360, Math.min(760, ambientRailHeight + 220));
-      const ambientInputOnlyHeight = 190;
+      // Keep collapsed dock compact so we do not leave an oversized invisible surface.
+      const ambientInputOnlyHeight = isMobileDevice() ? 112 : 96;
 
       const bottomMargin = settings.ambientBottomMargin || 0;
 
@@ -3478,8 +3535,13 @@
         iframeContainer.dataset.userexAmbientFeedVisible = hasFeed ? '1' : '0';
 
         const applySizes = (isExpanding) => {
-          const nextHeight = isExpanding ? (ambientExpandedHeight + bottomMargin) : (ambientInputOnlyHeight + bottomMargin);
-          const nextMaxHeight = isExpanding ? '86vh' : '160px';
+          const mobileViewportHeight = Math.round(window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || 0);
+          const nextHeight = isExpanding
+            ? (isMobileDevice() ? mobileViewportHeight : (ambientExpandedHeight + bottomMargin))
+            : (ambientInputOnlyHeight + bottomMargin);
+          const nextMaxHeight = isExpanding
+            ? (isMobileDevice() ? '100vh' : '86vh')
+            : `${ambientInputOnlyHeight + bottomMargin}px`;
 
           Object.assign(iframeContainer.style, {
             width: '100vw',
@@ -3537,7 +3599,6 @@
       // Classic Styles
       let classicVerticalStyle = {};
 
-      // Calculate effective height for positioning
       const effectiveHeight = usesLauncher
         ? (settings.launcherType === 'fullImage' ? 60 : settings.launcherHeight)
         : 0;
@@ -3569,6 +3630,7 @@
         ...horizontalStyle,
         ...classicVerticalStyle
       });
+      applySidecarInset(false);
     }
 
     // Check Availability
@@ -3622,6 +3684,9 @@
         const nextState = forceState !== undefined ? forceState : true;
         isOpen = !!nextState;
         iframeContainer.style.display = isOpen ? 'block' : 'none';
+        if (isSidecarMode) {
+          applySidecarInset(isOpen);
+        }
         return;
       }
 
@@ -3636,6 +3701,10 @@
       }
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
+
+      if (!isAmbientWidgetMode) {
+        launcherContainer.style.display = isOpen ? 'none' : 'flex';
+      }
 
       // Notify React app that visibility changed so it can instantly scroll to bottom
       if (iframe && iframe.contentWindow) {
@@ -3705,6 +3774,8 @@
         if (isAmbientWidgetMode) {
           // Ambient modda: tam kapatma yok, sadece feed'i gizle (input kalır)
           hideAmbientFeed();
+        } else if (isSidecarMode) {
+          toggleWidget(true);
         } else {
           toggleWidget(false);
         }
@@ -3863,7 +3934,7 @@
       } else if (isBottom) {
         newVertStyle = { bottom: `${newBottom}px`, top: 'auto' };
       } else if (isMiddle) {
-        newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${(resizeSettings.launcherHeight || settings.launcherHeight) / 2}px))`, bottom: 'auto' }; // Approximate re-calc
+        newVertStyle = { top: '50%', transform: `translateY(calc(-50% - ${(resizeSettings.launcherHeight || settings.launcherHeight) / 2}px))`, bottom: 'auto' };
       }
 
       let newHorizStyle = {};
@@ -3886,6 +3957,12 @@
         if (newAnim !== 'none') {
           launcher.classList.add(`userex-anim-${newAnim}`);
         }
+      }
+
+      if (isSidecarMode) {
+        const resizedSidecarWidth = getSidecarWidth();
+        iframeContainer.style.width = `${resizedSidecarWidth}px`;
+        applySidecarInset(isOpen);
       }
     });
 

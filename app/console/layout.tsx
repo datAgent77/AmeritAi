@@ -26,7 +26,7 @@ import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 
 function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
-    const { user, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
+    const { user, role, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
     const { language, t } = useLanguage() // Get t function
     const router = useRouter()
     const pathname = usePathname()
@@ -34,10 +34,21 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
     const [isInitializing, setIsInitializing] = useState(true)
     const [isTerminated, setIsTerminated] = useState(false)
 
+    useEffect(() => {
+        if (authLoading) return
+        if (role === "AGENCY_ADMIN") {
+            router.replace("/agency")
+        }
+    }, [authLoading, role, router])
+
     // Fetch user data and build context
     useEffect(() => {
         if (authLoading) return
         if (!user) {
+            setIsInitializing(false)
+            return
+        }
+        if (role === "AGENCY_ADMIN") {
             setIsInitializing(false)
             return
         }
@@ -123,7 +134,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         }
 
         initialize()
-    }, [user, authLoading, router])
+    }, [user, authLoading, role, router])
 
     const handleLogout = async () => {
         recordAuthDebug("console_manual_logout", { pathname })
@@ -138,6 +149,10 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
         )
+    }
+
+    if (role === "AGENCY_ADMIN") {
+        return null
     }
 
     // Show Termination Modal

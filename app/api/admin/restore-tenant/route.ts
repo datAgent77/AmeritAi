@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
+import { isSuperAdminRole } from "@/lib/user-roles";
 
 export async function POST(req: Request) {
     try {
@@ -34,7 +36,10 @@ export async function POST(req: Request) {
         const callerDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
         const callerData = callerDoc.data();
 
-        if (callerData?.role !== 'SUPER_ADMIN') {
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin = isSuperAdminRole(callerData?.role) || isSuperAdminRole(tokenRole);
+
+        if (!isSuperAdmin) {
             console.log("Restore Tenant API: Unauthorized - App-level role check failed");
             return NextResponse.json({ error: "Unauthorized - SUPER_ADMIN role required" }, { status: 403 });
         }
@@ -43,6 +48,14 @@ export async function POST(req: Request) {
 
         if (!userId) {
             return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, userId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: "Unauthorized - SUPER_ADMIN role required" }, { status: 403 });
         }
 
         // Check if user exists

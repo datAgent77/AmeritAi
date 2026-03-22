@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -81,25 +81,27 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
 
     const exportToExcel = () => {
         const worksheet = XLSX.utils.json_to_sheet(leads.map(l => {
-            const base = {
-                Name: l.name,
-                Email: l.email,
-                Phone: l.phone,
-                Source: l.source,
-                Date: new Date(l.createdAt).toLocaleString()
+            const sourceLabel = l.source === "In-Chat Conversation" || l.source === "Sohbet İçi Konuşma"
+                ? (t('inChatConversation') || l.source)
+                : l.source
+            const base: Record<string, string> = {
+                [t('name')]: l.name,
+                [t('email')]: l.email,
+                [t('phone')]: l.phone,
+                [t('source')]: sourceLabel,
+                [t('date')]: new Date(l.createdAt).toLocaleString()
             }
             // Merge custom fields into export
             if (l.customFields) {
                 Object.entries(l.customFields).forEach(([key, value]) => {
                     const label = fieldLabels[key] || key.replace('field_', '')
-                    const typedBase = base as any
-                    typedBase[label] = value
+                    base[label] = value
                 })
             }
             return base
         }));
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+        XLSX.utils.book_append_sheet(workbook, worksheet, t('leads'));
         XLSX.writeFile(workbook, "leads_export.xlsx");
     };
 
@@ -152,8 +154,8 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                             </TableHeader>
                             <TableBody>
                                 {leads.map((lead) => (
-                                    <>
-                                        <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50" onClick={() => lead.customFields && Object.keys(lead.customFields).length > 0 && toggleRowExpansion(lead.id)}>
+                                    <React.Fragment key={lead.id}>
+                                        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => lead.customFields && Object.keys(lead.customFields).length > 0 && toggleRowExpansion(lead.id)}>
                                             <TableCell>
                                                 {lead.customFields && Object.keys(lead.customFields).length > 0 && (
                                                     expandedRows.has(lead.id) ?
@@ -187,7 +189,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                             </TableCell>
                                         </TableRow>
                                         {expandedRows.has(lead.id) && lead.customFields && Object.keys(lead.customFields).length > 0 && (
-                                            <TableRow key={`${lead.id}-custom`} className="bg-muted/30">
+                                            <TableRow className="bg-muted/30">
                                                 <TableCell colSpan={6}>
                                                     <div className="py-2 px-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         {Object.entries(lead.customFields).map(([fieldId, value]) => (
@@ -202,7 +204,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                                 </TableCell>
                                             </TableRow>
                                         )}
-                                    </>
+                                    </React.Fragment>
                                 ))}
                             </TableBody>
                         </Table>

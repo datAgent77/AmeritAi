@@ -61,8 +61,14 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         ambientIconType: "library",
         ambientLibraryIcon: "MessageCircle",
         chatDisplayMode: "classic",
+        enableClassicEntryOnboarding: true,
         ambientMaxHeight: 260,
         ambientOverlayOpacity: 0.55,
+        sidecarWidth: 420,
+        sidecarMinWidth: 360,
+        sidecarMaxWidth: 560,
+        sidecarGutter: 0,
+        sidecarDesktopOnly: true,
         ambientInputBgColorIdle: "",
         ambientInputBgColorFocused: "",
         ambientUserBubbleColor: "",
@@ -100,12 +106,31 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
     })
 
     useEffect(() => {
+        let isMounted = true
+        const cacheKey = `widget_settings_${chatbotId}`
+
         const loadSettings = async () => {
             try {
-                const res = await fetch(`/api/widget-settings?chatbotId=${chatbotId}`)
+                if (typeof window !== "undefined") {
+                    const cached = window.sessionStorage.getItem(cacheKey) || window.localStorage.getItem(cacheKey)
+                    if (cached) {
+                        try {
+                            const parsed = JSON.parse(cached)
+                            if (isMounted && parsed && typeof parsed === "object") {
+                                setSettings((prev) => ({ ...prev, ...parsed }))
+                                setIsLoading(false)
+                            }
+                        } catch { }
+                    }
+                }
+
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 8000)
+                const res = await fetch(`/api/widget-settings?chatbotId=${chatbotId}`, { signal: controller.signal, cache: "no-store" })
+                clearTimeout(timeoutId)
                 if (res.ok) {
                     const data = await res.json()
-                    setSettings({
+                    const nextSettings: ChatbotSettings = {
                         companyName: data.companyName || "Acme Corp",
                         welcomeTitle: data.welcomeTitle || "",
                         welcomeMessage: data.welcomeMessage || "Hello! How can I help you today?",
@@ -146,13 +171,23 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : 20,
                         mobileLauncherAnimation: data.mobileLauncherAnimation || "none",
                         interactionMode:
-                            data.chatDisplayMode === "ambient"
+                            data.chatDisplayMode === "ambient" || data.chatDisplayMode === "sidecar"
                                 ? "always_open"
                                 : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
-                        chatDisplayMode: data.chatDisplayMode === "ambient" ? "ambient" : "classic",
+                        chatDisplayMode: ["ambient", "sidecar"].includes(data.chatDisplayMode) ? data.chatDisplayMode : "classic",
+                        enableClassicEntryOnboarding:
+                            typeof data.enableClassicEntryOnboarding === "boolean"
+                                ? data.enableClassicEntryOnboarding
+                                : true,
                         ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : 260,
                         ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : 0.55,
+                        sidecarWidth: typeof data.sidecarWidth === "number" ? data.sidecarWidth : 420,
+                        sidecarMinWidth: typeof data.sidecarMinWidth === "number" ? data.sidecarMinWidth : 360,
+                        sidecarMaxWidth: typeof data.sidecarMaxWidth === "number" ? data.sidecarMaxWidth : 560,
+                        sidecarGutter: typeof data.sidecarGutter === "number" ? data.sidecarGutter : 0,
+                        sidecarDesktopOnly: typeof data.sidecarDesktopOnly === "boolean" ? data.sidecarDesktopOnly : true,
                         ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : 800,
+                        ambientInputWidth: typeof data.ambientInputWidth === "number" ? data.ambientInputWidth : (typeof data.ambientWidth === "number" ? data.ambientWidth : 800),
                         ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : 0,
                         ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : 20,
                         ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : "lg") as "sm" | "md" | "lg" | "xl",
@@ -219,15 +254,29 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         dynamicSiteContextSuggestedPresetId: typeof data.dynamicSiteContextSuggestedPresetId === "string" ? data.dynamicSiteContextSuggestedPresetId : "generic-web-app",
                         dynamicSiteContextResolvedPresetId: typeof data.dynamicSiteContextResolvedPresetId === "string" ? data.dynamicSiteContextResolvedPresetId : "generic-web-app",
                         dynamicSiteContextRuntimePreset: typeof data.dynamicSiteContextRuntimePreset === "object" && data.dynamicSiteContextRuntimePreset ? data.dynamicSiteContextRuntimePreset : null,
-                    })
+                    }
+
+                    if (!isMounted) return
+                    setSettings(nextSettings)
+
+                    if (typeof window !== "undefined") {
+                        const serialized = JSON.stringify(nextSettings)
+                        window.sessionStorage.setItem(cacheKey, serialized)
+                        window.localStorage.setItem(cacheKey, serialized)
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching settings:", error)
             } finally {
-                setIsLoading(false)
+                if (isMounted) {
+                    setIsLoading(false)
+                }
             }
         }
         loadSettings()
+        return () => {
+            isMounted = false
+        }
     }, [chatbotId])
 
     // Sync language with browser language for widget UI

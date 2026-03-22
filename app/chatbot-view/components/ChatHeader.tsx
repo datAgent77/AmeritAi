@@ -19,6 +19,10 @@ interface ChatHeaderProps {
     handleClearChat: () => void
     t: (key: string) => string
     showCloseButton?: boolean
+    showSizeToggle?: boolean
+    sticky?: boolean
+    showShadow?: boolean
+    compact?: boolean
 }
 
 export function ChatHeader({
@@ -30,11 +34,25 @@ export function ChatHeader({
     handleCloseWidget,
     handleClearChat,
     t,
-    showCloseButton = true
+    showCloseButton = true,
+    showSizeToggle = true,
+    sticky = true,
+    showShadow = true,
+    compact = false
 }: ChatHeaderProps) {
+    const stickyClass = sticky ? "sticky top-0 z-10" : "relative"
+    const shadowClass = showShadow ? "shadow-sm" : ""
+    const paddingClass = compact ? "px-4 py-3" : "px-4 py-4"
+    const controlButtonClass = compact
+        ? "p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+        : "p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+    const onlinePillClass = compact
+        ? "flex items-center gap-1.5 px-2.5 py-0.5 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex"
+        : "flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex"
+
     return (
         <div
-            className="flex items-center justify-between px-4 py-4 border-b shadow-sm sticky top-0 z-10 transition-colors duration-300"
+            className={`flex items-center justify-between border-b ${paddingClass} ${shadowClass} ${stickyClass} transition-colors duration-300`}
             style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor, borderColor: 'rgba(0,0,0,0.05)' }}
         >
             <div className="flex items-center gap-3">
@@ -87,12 +105,6 @@ export function ChatHeader({
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                <div className="flex items-center gap-1.5 px-3 py-1 mr-2 bg-white/10 rounded-full border border-white/10 backdrop-blur-sm shadow-sm hidden sm:flex">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]"></span>
-                    <span className="text-[10px] font-semibold tracking-wide" style={{ color: settings.headerTextColor || '#FFFFFF' }}>
-                        {t('aiOnline')}
-                    </span>
-                </div>
                 {settings.enableVoiceAssistant && (
                     <button
                         onClick={handleVoiceInput}
@@ -104,16 +116,18 @@ export function ChatHeader({
                         <Mic className="w-4 h-4" />
                     </button>
                 )}
-                <button
-                    onClick={handleToggleSize}
-                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors hidden sm:block"
-                    title={isExpanded ? "Minimize" : "Maximize"}
-                >
-                    {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </button>
+                {showSizeToggle && (
+                    <button
+                        onClick={handleToggleSize}
+                        className={`${controlButtonClass} hidden sm:block`}
+                        title={isExpanded ? "Minimize" : "Maximize"}
+                    >
+                        {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    </button>
+                )}
                 <button
                     onClick={handleClearChat}
-                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    className={controlButtonClass}
                     title="Refresh Chat"
                 >
                     <RefreshCw className="w-4 h-4" />
@@ -121,7 +135,7 @@ export function ChatHeader({
                 {showCloseButton && (
                     <button
                         onClick={handleCloseWidget}
-                        className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                        className={controlButtonClass}
                         title="Close Widget"
                     >
                         <X className="w-4 h-4" />

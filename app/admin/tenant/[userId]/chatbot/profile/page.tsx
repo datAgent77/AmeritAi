@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
-import { db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
@@ -31,7 +30,7 @@ interface TenantData {
 }
 
 export default function TenantProfilePage({ params }: { params: { userId: string } }) {
-    const { user } = useAuth()
+    const { user, role: currentRole } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
     const [tenant, setTenant] = useState<TenantData | null>(null)
@@ -43,17 +42,24 @@ export default function TenantProfilePage({ params }: { params: { userId: string
     const [isActive, setIsActive] = useState(true)
     const [newPassword, setNewPassword] = useState("")
     const [isResettingPassword, setIsResettingPassword] = useState(false)
+    const canManageRoleAndAccount = currentRole === "SUPER_ADMIN"
 
     useEffect(() => {
         const loadTenant = async () => {
             try {
-                const userDoc = await getDoc(doc(db, "users", params.userId))
-                if (userDoc.exists()) {
-                    const data = userDoc.data() as TenantData
-                    setTenant(data)
-                    setRole(data.role || "TENANT_ADMIN")
-                    setIsActive(data.isActive !== false) // Default to true if undefined
+                const token = await auth.currentUser?.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${params.userId}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                })
+
+                if (!response.ok) {
+                    throw new Error("Failed to load tenant")
                 }
+
+                const data = await response.json() as TenantData
+                setTenant(data)
+                setRole(data.role || "TENANT_ADMIN")
+                setIsActive(data.isActive !== false)
             } catch (error) {
                 console.error("Error loading tenant:", error)
             } finally {
@@ -64,12 +70,30 @@ export default function TenantProfilePage({ params }: { params: { userId: string
     }, [params.userId])
 
     const handleSave = async () => {
+        if (!canManageRoleAndAccount) {
+            return
+        }
         setIsSaving(true)
         try {
-            await updateDoc(doc(db, "users", params.userId), {
-                role,
-                isActive
+            const token = await user?.getIdToken()
+            const response = await fetch('/api/admin/update-user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    targetUserId: params.userId,
+                    role,
+                    isActive
+                })
             })
+
+            const data = await response.json()
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to update profile')
+            }
+
             toast({
                 title: t('success'),
                 description: "Profile updated successfully.",
@@ -87,6 +111,9 @@ export default function TenantProfilePage({ params }: { params: { userId: string
     }
 
     const handlePasswordReset = async () => {
+        if (!canManageRoleAndAccount) {
+            return
+        }
         if (!newPassword || newPassword.length < 6) {
             toast({
                 title: t('error'),
@@ -150,7 +177,11 @@ export default function TenantProfilePage({ params }: { params: { userId: string
         <div className="space-y-8 p-8 max-w-3xl">
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">{t('profileSettings')}</h2>
-                <p className="text-muted-foreground">{t('manageUserRole')}</p>
+                <p className="text-muted-foreground">
+                    {canManageRoleAndAccount
+                        ? t('manageUserRole')
+                        : (t('viewOnly') || "Bu alan ajans kullanıcıları için salt okunurdur.")}
+                </p>
             </div>
 
             <div className="grid gap-6">
@@ -167,7 +198,7 @@ export default function TenantProfilePage({ params }: { params: { userId: string
 
                         <div className="grid gap-2">
                             <Label htmlFor="role">{t('userRole')}</Label>
-                            <Select value={role} onValueChange={setRole}>
+                            <Select value={role} onValueChange={setRole} disabled={!canManageRoleAndAccount}>
                                 <SelectTrigger>
                                     <SelectValue placeholder={t('selectRole')} />
                                 </SelectTrigger>
@@ -188,18 +219,22 @@ export default function TenantProfilePage({ params }: { params: { userId: string
                             <Switch
                                 checked={isActive}
                                 onCheckedChange={setIsActive}
+                                disabled={!canManageRoleAndAccount}
                             />
                         </div>
 
-                        <Button onClick={handleSave} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t('saveChanges')}
-                        </Button>
+                        {canManageRoleAndAccount && (
+                            <Button onClick={handleSave} disabled={isSaving}>
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {t('saveChanges')}
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
 
                 {/* Password Reset Section */}
-                <Card className="border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10">
+                {canManageRoleAndAccount && (
+                    <Card className="border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10">
                     <CardHeader>
                         <CardTitle className="text-red-700 dark:text-red-400">{t('passwordManagement')}</CardTitle>
                         <CardDescription>{t('overridePasswordDesc')}</CardDescription>
@@ -223,7 +258,8 @@ export default function TenantProfilePage({ params }: { params: { userId: string
                             </Button>
                         </div>
                     </CardContent>
-                </Card>
+                    </Card>
+                )}
             </div>
         </div>
     )

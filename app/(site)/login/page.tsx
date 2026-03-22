@@ -26,6 +26,13 @@ function getLoginFailureReason(error: unknown): string {
   return maybeCode.replace(/^auth\//, "")
 }
 
+function resolvePostLoginPath(role: unknown): string {
+  const normalized = typeof role === "string" ? role.trim().toUpperCase() : ""
+  if (normalized === "SUPER_ADMIN") return "/admin"
+  if (normalized === "AGENCY_ADMIN") return "/agency"
+  return "/console/chatbot"
+}
+
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -99,8 +106,8 @@ export default function LoginForm() {
           setError(t('accountPendingApproval'))
           return
         }
-        // User exists and is active, redirect to platform
-        router.push("/console/chatbot")
+        // User exists and is active
+        router.push(resolvePostLoginPath(userData.role))
       } else {
         // New user from social login - redirect to signup to complete profile
         // The signup page will detect the existing social auth and show the form step
@@ -170,10 +177,12 @@ export default function LoginForm() {
       }
 
       // Check if user is active in Firestore (wrapped in try-catch for permission errors)
+      let postLoginPath = "/console/chatbot"
       try {
         const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
         if (userDoc.exists()) {
           const userData = userDoc.data()
+          postLoginPath = resolvePostLoginPath(userData.role)
           if (userData?.emailVerified !== true) {
             await setDoc(doc(db, "users", userCredential.user.uid), { emailVerified: true }, { merge: true })
           }
@@ -197,9 +206,15 @@ export default function LoginForm() {
       } catch (firestoreError) {
         // Firestore permission error - proceed with login anyway
         console.warn("Could not check user status in Firestore:", firestoreError)
+        try {
+          const idTokenResult = await userCredential.user.getIdTokenResult(true)
+          postLoginPath = resolvePostLoginPath((idTokenResult.claims as Record<string, unknown>)?.role)
+        } catch {
+          // fallback stays /console/chatbot
+        }
       }
 
-      router.push("/console/chatbot")
+      router.push(postLoginPath)
     } catch (error: any) {
       console.error("Login error:", error)
       setShowResendVerificationButton(false)

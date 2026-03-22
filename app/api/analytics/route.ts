@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
             event_type: "analytics_fetch",
             actor: buildActorFromRequest(req, {
                 uid: authz.callerUid,
-                role: authz.isSuperAdmin ? "SUPER_ADMIN" : "TENANT_ADMIN"
+                role: authz.isSuperAdmin ? "SUPER_ADMIN" : authz.isAgencyAdmin ? "AGENCY_ADMIN" : "TENANT_ADMIN"
             }),
             source_module: "analytics_api",
             result: "success",

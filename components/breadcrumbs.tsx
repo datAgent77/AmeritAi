@@ -65,7 +65,10 @@ export function Breadcrumbs() {
                         "chats": t('chats'),
                         "leads": t('leads'),
                         "tenants": t('tenants'),
-                        "admin": t('tenants'), // Map /admin to Tenants
+                        "admin": t('endUsers') || t('tenants'),
+                        "agencies": t('agencies') || "Agencies",
+                        "agency": t('agencies') || "Agencies",
+                        "end-users": t('endUsers') || "End Users",
                         "profile": t('profile'),
                         "widget": "Widget",
                         "catalog": t('productCatalog'),

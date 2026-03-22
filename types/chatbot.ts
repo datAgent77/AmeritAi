@@ -2,6 +2,7 @@ export interface AmbientDeviceAppearanceSettings {
     ambientMaxHeight?: number;
     ambientOverlayOpacity?: number;
     ambientWidth?: number;
+    ambientInputWidth?: number;
     ambientSideMargin?: number;
     ambientBottomMargin?: number;
     ambientInputSize?: "sm" | "md" | "lg" | "xl";
@@ -158,11 +159,18 @@ export interface ChatbotSettings {
     mobileSideSpacing: number;
     mobileLauncherAnimation: string;
     interactionMode?: "launcher" | "always_open";
-    chatDisplayMode?: "classic" | "ambient";
+    chatDisplayMode?: "classic" | "ambient" | "sidecar";
+    sidecarWidth?: number;
+    sidecarMinWidth?: number;
+    sidecarMaxWidth?: number;
+    sidecarGutter?: number;
+    sidecarDesktopOnly?: boolean;
+    enableClassicEntryOnboarding?: boolean;
     position?: "bottom-right" | "bottom-left" | "bottom-center";
     ambientMaxHeight?: number;
     ambientOverlayOpacity?: number;
     ambientWidth?: number;
+    ambientInputWidth?: number;
     ambientSideMargin?: number;
     ambientBottomMargin?: number;
     ambientInputSize?: "sm" | "md" | "lg" | "xl";

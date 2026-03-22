@@ -340,7 +340,12 @@ export function useChatCore({
     useEffect(() => {
         const isOnlyWelcomeMessage = messages.length === 1 && messages[0].content === settings.welcomeMessage;
         const hasUserMessages = messages.some(m => m.role === 'user');
+        const holdProactiveForEntryOnboarding =
+            settings.chatDisplayMode !== "ambient"
+            && settings.enableClassicEntryOnboarding !== false
+            && !hasUserMessages;
 
+        if (holdProactiveForEntryOnboarding) return
         if (hasProactiveTriggered || (messages.length > 0 && !isOnlyWelcomeMessage) || hasUserMessages || !pageContext || !settings.industry) return
 
         const timer = setTimeout(() => {
@@ -376,7 +381,7 @@ export function useChatCore({
         }, 12000)
 
         return () => clearTimeout(timer)
-    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage])
+    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage, settings.chatDisplayMode, settings.enableClassicEntryOnboarding])
 
     // 6. Reset Session
     const resetSession = () => {

@@ -13,7 +13,8 @@ export function CookieConsent() {
     const { consent, acceptAll, declineAll, saveConsent } = useCookieConsent()
     const [isVisible, setIsVisible] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
-    
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+
     // Local state for settings modal
     const [preferences, setPreferences] = useState<ConsentType>({
         necessary: true,
@@ -23,6 +24,12 @@ export function CookieConsent() {
     })
 
     useEffect(() => {
+        // Don't show cookie consent in widget view
+        if (pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')) {
+            setIsVisible(false)
+            return
+        }
+
         // Only show if no consent has been given yet
         if (consent === null) {
             const timer = setTimeout(() => setIsVisible(true), 1500)
@@ -30,7 +37,7 @@ export function CookieConsent() {
         } else {
             setIsVisible(false)
         }
-    }, [consent])
+    }, [consent, pathname])
 
     const handleSavePreferences = () => {
         saveConsent(preferences)

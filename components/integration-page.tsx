@@ -680,7 +680,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     }
 
     const scriptCode = `<script src="${origin}/widget.js?v=2.0" data-chatbot-id="${userId}" data-color="${brandColor}"></script>`
-    const iframeCode = `<iframe src="${origin}/chatbot-view?id=${userId}" width="100%" height="600" frameborder="0"></iframe>`
+    const iframeCode = `<iframe src="${origin}/chatbot-view?id=${userId}" width="100%" height="600" frameborder="0" allowtransparency="true" style="background-color: transparent; border: none;"></iframe>`
     const directLink = `${origin}/chatbot-view?id=${userId}`
     const whatsappWebhookUrl = waWebhookSecret
         ? `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}&secret=${encodeURIComponent(waWebhookSecret)}`

@@ -1,6 +1,8 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { authorizeTargetAccess } from '@/lib/api-auth';
+import { isSuperAdminRole } from '@/lib/user-roles';
 
 export async function POST(req: NextRequest) {
     try {
@@ -21,7 +23,8 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const requesterDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
         const requesterRole = requesterDoc.data()?.role;
-        const isSuperAdmin = requesterRole === 'SUPER_ADMIN';
+        const tokenRole = (decodedToken as any).role;
+        const isSuperAdmin = isSuperAdminRole(requesterRole) || isSuperAdminRole(tokenRole);
         if (!isSuperAdmin) {
             return NextResponse.json({ error: 'Forbidden: Super Admin access required' }, { status: 403 });
         }
@@ -31,6 +34,14 @@ export async function POST(req: NextRequest) {
 
         if (!targetUserId || !newPassword) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(req, targetUserId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: 'Forbidden: Super Admin access required' }, { status: 403 });
         }
 
         if (newPassword.length < 6) {

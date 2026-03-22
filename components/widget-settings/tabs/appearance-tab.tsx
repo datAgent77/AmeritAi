@@ -59,11 +59,12 @@ export function AppearanceTab({
     const [ambientEditorDevice, setAmbientEditorDevice] = useState<'desktop' | 'mobile'>('desktop')
 
     const isAmbientMode = rootSettings.chatDisplayMode === "ambient"
+    const isSidecarMode = rootSettings.chatDisplayMode === "sidecar"
     const editorDevice = isAmbientMode ? ambientEditorDevice : activeDevice
     const ambientDeviceModeEnabled = rootSettings.ambientPerDeviceSettingsEnabled === true
     const classicDeviceModeEnabled = rootSettings.classicPerDeviceSettingsEnabled === true
     const deviceModeEnabled = isAmbientMode ? ambientDeviceModeEnabled : classicDeviceModeEnabled
-    const isAlwaysOpenMode = rootSettings.interactionMode === "always_open" || isAmbientMode
+    const isAlwaysOpenMode = rootSettings.interactionMode === "always_open" || isAmbientMode || isSidecarMode
 
     const ambientDeviceKeys = new Set(getAmbientDeviceSettingsKeys())
     const classicDeviceKeys = new Set(getClassicDeviceSettingsKeys())
@@ -198,7 +199,7 @@ export function AppearanceTab({
         })
     }
 
-    const applyDisplayPreset = (preset: "classic_launcher" | "classic_always_open" | "ambient_always_open") => {
+    const applyDisplayPreset = (preset: "classic_launcher" | "classic_always_open" | "ambient_always_open" | "sidecar") => {
         if (preset === "classic_launcher") {
             setSettings(prev => ({
                 ...prev,
@@ -219,6 +220,22 @@ export function AppearanceTab({
             return
         }
 
+        if (preset === "sidecar") {
+            setSettings(prev => ({
+                ...prev,
+                chatDisplayMode: "sidecar",
+                interactionMode: "always_open",
+                viewMode: "classic",
+                modalSize: "half",
+                sidecarWidth: prev.sidecarWidth || 420,
+                sidecarMinWidth: prev.sidecarMinWidth || 360,
+                sidecarMaxWidth: prev.sidecarMaxWidth || 560,
+                sidecarGutter: prev.sidecarGutter || 0,
+                sidecarDesktopOnly: prev.sidecarDesktopOnly !== false,
+            }))
+            return
+        }
+
         setSettings(prev => ({
             ...prev,
             chatDisplayMode: "ambient",
@@ -226,6 +243,45 @@ export function AppearanceTab({
             viewMode: "classic",
             modalSize: "half"
         }))
+    }
+
+    const updateSidecarWidth = (value: string) => {
+        const parsed = Number(value)
+        if (Number.isNaN(parsed)) return
+        setSettings(prev => {
+            const minWidth = Number(prev.sidecarMinWidth || 360)
+            const maxWidth = Math.max(minWidth, Number(prev.sidecarMaxWidth || 560))
+            const width = Math.max(minWidth, Math.min(maxWidth, parsed))
+            return { ...prev, sidecarWidth: width }
+        })
+    }
+
+    const updateSidecarMinWidth = (value: string) => {
+        const parsed = Number(value)
+        if (Number.isNaN(parsed)) return
+        setSettings(prev => {
+            const minWidth = Math.max(280, parsed)
+            const maxWidth = Math.max(minWidth, Number(prev.sidecarMaxWidth || 560))
+            const width = Math.max(minWidth, Math.min(maxWidth, Number(prev.sidecarWidth || 420)))
+            return { ...prev, sidecarMinWidth: minWidth, sidecarMaxWidth: maxWidth, sidecarWidth: width }
+        })
+    }
+
+    const updateSidecarMaxWidth = (value: string) => {
+        const parsed = Number(value)
+        if (Number.isNaN(parsed)) return
+        setSettings(prev => {
+            const minWidth = Number(prev.sidecarMinWidth || 360)
+            const maxWidth = Math.max(minWidth, parsed)
+            const width = Math.max(minWidth, Math.min(maxWidth, Number(prev.sidecarWidth || 420)))
+            return { ...prev, sidecarMaxWidth: maxWidth, sidecarWidth: width }
+        })
+    }
+
+    const updateSidecarGutter = (value: string) => {
+        const parsed = Number(value)
+        if (Number.isNaN(parsed)) return
+        setSettings(prev => ({ ...prev, sidecarGutter: Math.max(0, parsed) }))
     }
 
     // Branding functions
@@ -418,8 +474,8 @@ export function AppearanceTab({
                     <Label className="text-base font-semibold block">{language === 'tr' ? 'Görünüm Modu' : 'Display Mode'}</Label>
                     <p className="text-sm text-muted-foreground">{language === 'tr' ? 'Chatbotun web sitenizde nasıl görüneceğini seçin.' : 'Choose how the chatbot will appear on your website.'}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button onClick={() => applyDisplayPreset("classic_launcher")} className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all text-left ${!isAmbientMode && !isAlwaysOpenMode ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/30 bg-background'}`}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button onClick={() => applyDisplayPreset("classic_launcher")} className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all text-left ${!isAmbientMode && !isSidecarMode && !isAlwaysOpenMode ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/30 bg-background'}`}>
                         <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Klasik + Başlatıcı' : 'Classic + Launcher'}</span>
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Standart ikon ile açılır pencere.' : 'Standard popup window with an icon.'}</span>
                     </button>
@@ -427,7 +483,108 @@ export function AppearanceTab({
                         <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Ambient Mod' : 'Ambient Mode'}</span>
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Altta yatan devasa geniş premium chat arayüzü.' : 'Wide, premium bottom-fixed chat.'}</span>
                     </button>
+                    <button onClick={() => applyDisplayPreset("sidecar")} className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all text-left ${isSidecarMode ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/30 bg-background'}`}>
+                        <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Sidecar Mod' : 'Sidecar Mode'}</span>
+                        <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Sağ panel sabit kalır, site içerik alanı daralır.' : 'Pinned right panel that shrinks site content.'}</span>
+                    </button>
                 </div>
+                <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <Label className="text-sm font-medium">
+                                {language === "tr" ? "Classic Entry Onboarding" : "Classic Entry Onboarding"}
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {language === "tr"
+                                    ? "Classic modda kullanıcı ilk mesajı göndermeden önce onboarding ekranını gösterir."
+                                    : "Shows the onboarding screen in classic mode before the visitor sends the first message."}
+                            </p>
+                            {isAmbientMode && (
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                    {language === "tr"
+                                        ? "Not: Bu özellik sadece Classic modda etkindir."
+                                        : "Note: This feature only applies to classic mode."}
+                                </p>
+                            )}
+                        </div>
+                        <Switch
+                            checked={settings.enableClassicEntryOnboarding !== false}
+                            onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, enableClassicEntryOnboarding: checked }))}
+                        />
+                    </div>
+                </div>
+                {isSidecarMode && (
+                    <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4 space-y-4">
+                        <div>
+                            <Label className="text-sm font-medium">{language === "tr" ? "Sidecar Boyut Ayarları" : "Sidecar Size Settings"}</Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {language === "tr"
+                                    ? "Panel genişliği ve sayfa daraltma boşluğunu buradan yönetebilirsiniz."
+                                    : "Control panel width and site inset spacing from here."}
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="sidecar-width">{language === "tr" ? "Panel Genişliği (px)" : "Panel Width (px)"}</Label>
+                                <Input
+                                    id="sidecar-width"
+                                    type="number"
+                                    min={280}
+                                    max={1200}
+                                    value={settings.sidecarWidth ?? 420}
+                                    onChange={(e) => updateSidecarWidth(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="sidecar-gutter">{language === "tr" ? "Panel Dış Boşluğu (px)" : "Panel Gutter (px)"}</Label>
+                                <Input
+                                    id="sidecar-gutter"
+                                    type="number"
+                                    min={0}
+                                    max={240}
+                                    value={settings.sidecarGutter ?? 0}
+                                    onChange={(e) => updateSidecarGutter(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="sidecar-min-width">{language === "tr" ? "Minimum Genişlik (px)" : "Minimum Width (px)"}</Label>
+                                <Input
+                                    id="sidecar-min-width"
+                                    type="number"
+                                    min={280}
+                                    max={1200}
+                                    value={settings.sidecarMinWidth ?? 360}
+                                    onChange={(e) => updateSidecarMinWidth(e.target.value)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="sidecar-max-width">{language === "tr" ? "Maksimum Genişlik (px)" : "Maximum Width (px)"}</Label>
+                                <Input
+                                    id="sidecar-max-width"
+                                    type="number"
+                                    min={280}
+                                    max={1600}
+                                    value={settings.sidecarMaxWidth ?? 560}
+                                    onChange={(e) => updateSidecarMaxWidth(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+                            <div>
+                                <Label className="text-sm font-medium">{language === "tr" ? "Sadece Desktop'ta Sidecar" : "Sidecar on Desktop Only"}</Label>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {language === "tr"
+                                        ? "Açıksa mobilde sidecar yerine standart mod fallback kullanılır."
+                                        : "When enabled, mobile uses standard fallback mode instead of sidecar."}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={settings.sidecarDesktopOnly !== false}
+                                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, sidecarDesktopOnly: checked }))}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Common Settings */}
@@ -579,25 +736,25 @@ export function AppearanceTab({
                                             />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label>{language === 'tr' ? 'Arka Plan Siyahlığı (%)' : 'Overlay Opacity (%)'}</Label>
+                                            <Label>{language === 'tr' ? 'Yan Boşluk (px)' : 'Side Margin (px)'}</Label>
                                             <Input
                                                 type="number"
                                                 min={0}
-                                                max={90}
-                                                value={Math.round((settings.ambientOverlayOpacity || 0.55) * 100)}
+                                                max={200}
+                                                value={settings.ambientSideMargin}
                                                 onChange={(e) => {
                                                     const raw = e.target.value === '' ? 0 : Number(e.target.value)
-                                                    setSettings(prev => ({ ...prev, ambientOverlayOpacity: raw / 100 }))
+                                                    setSettings(prev => ({ ...prev, ambientSideMargin: raw }))
                                                 }}
                                                 onBlur={() => {
-                                                    setSettings(prev => ({ ...prev, ambientOverlayOpacity: Math.max(0, Math.min(0.9, prev.ambientOverlayOpacity || 0.55)) }))
+                                                    setSettings(prev => ({ ...prev, ambientSideMargin: Math.max(0, Math.min(200, prev.ambientSideMargin || 0)) }))
                                                 }}
                                             />
                                         </div>
                                     </div>
                                     <div className="grid md:grid-cols-3 gap-4 border-t pt-4">
                                         <div className="grid gap-2">
-                                            <Label className="text-xs">{language === 'tr' ? 'Maksimum Genişlik (px)' : 'Max Width (px)'}</Label>
+                                            <Label className="text-xs">{language === 'tr' ? 'Mesaj Alanı Genişliği (px)' : 'Message Width (px)'}</Label>
                                             <Input
                                                 type="number"
                                                 min={0}
@@ -620,21 +777,29 @@ export function AppearanceTab({
                                             </p>
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label className="text-xs">{language === 'tr' ? 'Yan Boşluk (px)' : 'Side Margin (px)'}</Label>
+                                            <Label className="text-xs">{language === 'tr' ? 'İnput Alanı Genişliği (px)' : 'Input Width (px)'}</Label>
                                             <Input
                                                 type="number"
                                                 min={0}
-                                                max={200}
-                                                value={settings.ambientSideMargin}
+                                                max={1200}
+                                                value={settings.ambientInputWidth !== undefined ? settings.ambientInputWidth : settings.ambientWidth}
                                                 onChange={(e) => {
                                                     const raw = e.target.value === '' ? 0 : Number(e.target.value)
-                                                    setSettings(prev => ({ ...prev, ambientSideMargin: raw }))
+                                                    setSettings(prev => ({ ...prev, ambientInputWidth: raw }))
                                                 }}
                                                 onBlur={() => {
-                                                    setSettings(prev => ({ ...prev, ambientSideMargin: Math.max(0, Math.min(200, prev.ambientSideMargin || 0)) }))
+                                                    setSettings(prev => {
+                                                        const raw = typeof prev.ambientInputWidth === "number" ? prev.ambientInputWidth : Number(prev.ambientInputWidth)
+                                                        const next = Number.isFinite(raw) ? raw : 0
+                                                        return { ...prev, ambientInputWidth: Math.max(0, Math.min(1200, next)) }
+                                                    })
                                                 }}
                                             />
+                                            <p className="text-[11px] text-muted-foreground">
+                                                {language === 'tr' ? '0 = tam genişlik (full width)' : '0 = full width'}
+                                            </p>
                                         </div>
+
                                         <div className="grid gap-2">
                                             <Label className="text-xs">{language === 'tr' ? 'Alt Boşluk (px)' : 'Bottom Margin (px)'}</Label>
                                             <Input

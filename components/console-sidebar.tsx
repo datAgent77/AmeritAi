@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
@@ -37,7 +37,7 @@ import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { PricingModal } from "@/components/pricing-modal"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     Sidebar,
     SidebarContent,
@@ -80,6 +80,7 @@ interface ConsoleSidebarProps {
 
 export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, planId, isTrial = false }: ConsoleSidebarProps) {
     const pathname = usePathname() || ""
+    const normalizedPathname = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname
     const router = useRouter()
     const { t, language, setLanguage } = useLanguage()
     const {
@@ -89,6 +90,21 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     } = useAuth()
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
+    const isAgenciesAdminRoute =
+        normalizedPathname === "/admin/agencies" ||
+        normalizedPathname.startsWith("/admin/agency/")
+    const isEndUsersAdminRoute =
+        normalizedPathname === "/admin" ||
+        normalizedPathname === "/admin/end-users" ||
+        normalizedPathname.startsWith("/admin/tenant/")
+    const isCustomersMenuActive = isAgenciesAdminRoute || isEndUsersAdminRoute
+    const [isCustomersMenuOpen, setIsCustomersMenuOpen] = useState(isCustomersMenuActive)
+
+    useEffect(() => {
+        if (isCustomersMenuActive) {
+            setIsCustomersMenuOpen(true)
+        }
+    }, [isCustomersMenuActive])
 
     // Build link based on whether we're in super admin mode (targetUserId provided)
     const buildLink = (path: string) => {
@@ -227,7 +243,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     size="lg"
-                                    onClick={() => router.push("/admin")}
+                                    onClick={() => router.push(role === "AGENCY_ADMIN" ? "/agency" : "/admin/end-users")}
                                     className="bg-white/5 hover:bg-white/10 text-white"
                                 >
                                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-white text-black">
@@ -327,21 +343,54 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
-                                        asChild
-                                        isActive={pathname === "/admin"}
+                                        onClick={() => setIsCustomersMenuOpen((prev) => !prev)}
+                                        isActive={isCustomersMenuActive}
                                         className={cn(
                                             "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
-                                            pathname === "/admin"
+                                            isCustomersMenuActive
                                                 ? "bg-white/15 text-white shadow-sm"
                                                 : "text-zinc-400 group-hover:text-white"
                                         )}
                                     >
-                                        <Link href="/admin">
-                                            <Building2 className={cn("size-4", pathname === "/admin" ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('tenants') || "Tenants"}</span>
-                                        </Link>
+                                        <Building2 className={cn("size-4", isCustomersMenuActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                        <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">
+                                            {t('customersMenu') || t('customers') || "Müşteriler"}
+                                        </span>
+                                        <ChevronDown className={cn("ml-auto size-4 transition-transform group-data-[collapsible=icon]:hidden", isCustomersMenuOpen ? "rotate-180" : "")} />
                                     </SidebarMenuButton>
+                                    {isCustomersMenuOpen && (
+                                        <SidebarMenuSub>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={isAgenciesAdminRoute}
+                                                    className={cn(
+                                                        "px-2",
+                                                        isAgenciesAdminRoute
+                                                            ? "bg-white/15 text-white"
+                                                            : "text-zinc-400 hover:text-white hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    <Link href="/admin/agencies">{t('agencies') || "Ajanslar"}</Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                            <SidebarMenuSubItem>
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={isEndUsersAdminRoute}
+                                                    className={cn(
+                                                        "px-2",
+                                                        isEndUsersAdminRoute
+                                                            ? "bg-white/15 text-white"
+                                                            : "text-zinc-400 hover:text-white hover:bg-white/10"
+                                                    )}
+                                                >
+                                                    <Link href="/admin/end-users">{t('endUsers') || "Son Kullanıcılar"}</Link>
+                                                </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                        </SidebarMenuSub>
+                                    )}
                                 </SidebarMenuItem>
                                 {/* ... other admin links ... */}
                                 {/* Removed Module Requests Link */}
@@ -530,7 +579,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
 
                                         {/* Subscription Management - Super Admin Only */}
                                         {role === 'SUPER_ADMIN' && (
-                                            <DropdownMenuItem onClick={() => router.push("/admin")} className="px-2 py-2.5 cursor-pointer">
+                                            <DropdownMenuItem onClick={() => router.push("/admin/end-users")} className="px-2 py-2.5 cursor-pointer">
                                                 <div className="flex items-center gap-3">
                                                     <Package className="size-4 text-muted-foreground" />
                                                     <span className="font-medium text-sm">{t('subscriptionManagement') || "Abonelik Yönetimi"}</span>

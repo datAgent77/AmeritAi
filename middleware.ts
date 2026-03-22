@@ -73,7 +73,7 @@ export function middleware(request: NextRequest) {
     }
 
     // === CORS SEGMENTATION ===
-    if (pathname.startsWith('/api/admin') || pathname.startsWith('/api/console')) {
+    if (pathname.startsWith('/api/admin') || pathname.startsWith('/api/console') || pathname.startsWith('/api/agency')) {
         const origin = request.headers.get('origin') || '';
 
         if (allowedOrigins.includes(origin)) {

@@ -58,10 +58,17 @@ export interface WidgetSettings {
     mobileSideSpacing: number
     mobileLauncherAnimation: string
     interactionMode: "launcher" | "always_open"
-    chatDisplayMode: "classic" | "ambient"
+    chatDisplayMode: "classic" | "ambient" | "sidecar"
+    enableClassicEntryOnboarding: boolean
     ambientMaxHeight: number
     ambientOverlayOpacity: number
+    sidecarWidth: number
+    sidecarMinWidth: number
+    sidecarMaxWidth: number
+    sidecarGutter: number
+    sidecarDesktopOnly: boolean
     ambientWidth: number
+    ambientInputWidth: number
     ambientSideMargin: number
     ambientBottomMargin: number
     ambientInputSize: "sm" | "md" | "lg" | "xl"
@@ -162,9 +169,16 @@ const defaultSettings: WidgetSettings = {
     mobileLauncherAnimation: "none",
     interactionMode: "launcher",
     chatDisplayMode: "classic",
+    enableClassicEntryOnboarding: true,
     ambientMaxHeight: 260,
     ambientOverlayOpacity: 0.55,
+    sidecarWidth: 420,
+    sidecarMinWidth: 360,
+    sidecarMaxWidth: 560,
+    sidecarGutter: 0,
+    sidecarDesktopOnly: true,
     ambientWidth: 800,
+    ambientInputWidth: 800,
     ambientSideMargin: 0,
     ambientBottomMargin: 20,
     ambientInputSize: "lg",
@@ -280,13 +294,23 @@ export function useWidgetSettings(userId?: string) {
                     mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : prev.mobileSideSpacing,
                     mobileLauncherAnimation: data.mobileLauncherAnimation || prev.mobileLauncherAnimation,
                     interactionMode:
-                        data.chatDisplayMode === "ambient"
+                        data.chatDisplayMode === "ambient" || data.chatDisplayMode === "sidecar"
                             ? "always_open"
                             : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
-                    chatDisplayMode: data.chatDisplayMode === "ambient" ? "ambient" : "classic",
+                    chatDisplayMode: ["ambient", "sidecar"].includes(data.chatDisplayMode) ? data.chatDisplayMode : "classic",
+                    enableClassicEntryOnboarding:
+                        typeof data.enableClassicEntryOnboarding === "boolean"
+                            ? data.enableClassicEntryOnboarding
+                            : prev.enableClassicEntryOnboarding,
                     ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : prev.ambientMaxHeight,
                     ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : prev.ambientOverlayOpacity,
+                    sidecarWidth: typeof data.sidecarWidth === "number" ? data.sidecarWidth : prev.sidecarWidth,
+                    sidecarMinWidth: typeof data.sidecarMinWidth === "number" ? data.sidecarMinWidth : prev.sidecarMinWidth,
+                    sidecarMaxWidth: typeof data.sidecarMaxWidth === "number" ? data.sidecarMaxWidth : prev.sidecarMaxWidth,
+                    sidecarGutter: typeof data.sidecarGutter === "number" ? data.sidecarGutter : prev.sidecarGutter,
+                    sidecarDesktopOnly: typeof data.sidecarDesktopOnly === "boolean" ? data.sidecarDesktopOnly : prev.sidecarDesktopOnly,
                     ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth,
+                    ambientInputWidth: typeof data.ambientInputWidth === "number" ? data.ambientInputWidth : (typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth),
                     ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : prev.ambientSideMargin,
                     ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : prev.ambientBottomMargin,
                     ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : prev.ambientInputSize) as "sm" | "md" | "lg" | "xl",

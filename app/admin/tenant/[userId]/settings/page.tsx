@@ -1,16 +1,20 @@
 "use client"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect } from "react"
+import { useAuth } from "@/context/AuthContext"
 
 export default function TenantSettingsPage() {
     const router = useRouter()
     const params = useParams()
+    const { role } = useAuth()
 
     useEffect(() => {
+        if (!role) return
         if (params.userId) {
-            router.replace(`/admin/tenant/${params.userId}/settings/subscription`)
+            const target = role === "SUPER_ADMIN" ? "subscription" : "ai"
+            router.replace(`/admin/tenant/${params.userId}/settings/${target}`)
         }
-    }, [router, params.userId])
+    }, [router, params.userId, role])
 
     return null
 }

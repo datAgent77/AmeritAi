@@ -9,14 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2, Save, AlertTriangle } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function TenantAccountSettingsPage() {
-    const { user } = useAuth()
+    const { user, role } = useAuth()
     const { t } = useLanguage()
     const { toast } = useToast()
     const params = useParams()
+    const router = useRouter()
     const tenantUserId = params.userId as string
 
     const [isLoading, setIsLoading] = useState(true)
@@ -26,6 +27,12 @@ export default function TenantAccountSettingsPage() {
     const [confirmPassword, setConfirmPassword] = useState("")
 
     useEffect(() => {
+        if (!role) return
+        if (role && role !== "SUPER_ADMIN") {
+            router.replace(`/admin/tenant/${tenantUserId}`)
+            return
+        }
+
         const fetchUserData = async () => {
             if (!tenantUserId || !user) return
             setIsLoading(true)
@@ -56,7 +63,15 @@ export default function TenantAccountSettingsPage() {
             }
         }
         fetchUserData()
-    }, [tenantUserId, user])
+    }, [tenantUserId, user, role, router])
+
+    if (!role) {
+        return null
+    }
+
+    if (role !== "SUPER_ADMIN") {
+        return null
+    }
 
     const handleSave = async () => {
         if (!user) return

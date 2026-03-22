@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase"
 import { doc, onSnapshot } from "firebase/firestore"
 import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
 import { installAuthDebugDump, recordAuthDebug } from "@/lib/auth-debug"
+import { UserRole } from "@/lib/user-roles"
 
 // Extended user data interface
 export interface UserData {
@@ -21,7 +22,7 @@ export interface UserData {
 interface AuthContextType {
     user: User | null
     userData: UserData | null
-    role: string | null
+    role: UserRole | null
     // Plan & Subscription
     planId: string
     planConfig: PlanConfig | null
@@ -85,7 +86,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)
     const [userData, setUserData] = useState<UserData | null>(null)
-    const [role, setRole] = useState<string | null>(null)
+    const [role, setRole] = useState<UserRole | null>(null)
     // Plan states
     const [planId, setPlanId] = useState<string>('starter')
     const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired'>('trial')
@@ -169,12 +170,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const userDocRef = doc(db, "users", currentUser.uid)
 
                 unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-                    let userRole = 'USER'
+                    let userRole: UserRole = 'USER'
                     let data: any = {}
 
                     if (docSnap.exists()) {
                         data = docSnap.data()
-                        userRole = data.role || 'USER'
+                        const roleFromData = typeof data.role === "string" ? data.role.toUpperCase() : "USER"
+                        userRole = (roleFromData === "SUPER_ADMIN" || roleFromData === "AGENCY_ADMIN" || roleFromData === "TENANT_ADMIN")
+                            ? roleFromData
+                            : "USER"
                     }
 
                     // Super admin override

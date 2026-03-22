@@ -16,14 +16,15 @@ export default function TenantSettingsLayout({
     const { role } = useAuth()
     const params = useParams()
     const userId = params.userId as string
+    const isSuperAdmin = role === "SUPER_ADMIN"
 
     const settingsMenuItems = [
-        {
+        ...(isSuperAdmin ? [{
             id: "subscription",
             label: t('subscription') || "Abonelik",
             href: `/admin/tenant/${userId}/settings/subscription`,
             icon: <CreditCard className="w-4 h-4" />
-        },
+        }] : []),
         {
             id: "ai",
             label: t('aiConfiguration') || "AI Yapılandırması",
@@ -37,7 +38,7 @@ export default function TenantSettingsLayout({
             icon: <Bell className="w-4 h-4" />
         },
         // Super Admin Only
-        ...(role === 'SUPER_ADMIN' ? [
+        ...(isSuperAdmin ? [
             {
                 id: "customer-admin",
                 label: t('customerAdmin') || "Planı Göster",

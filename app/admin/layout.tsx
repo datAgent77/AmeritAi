@@ -9,6 +9,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { ConsoleSidebar } from "@/components/console-sidebar"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { AnnouncementBanner } from "@/components/announcement-banner"
+import { ThemeProvider } from "next-themes"
 
 export default function AdminLayout({
     children,
@@ -18,16 +19,22 @@ export default function AdminLayout({
     const { user, role, loading } = useAuth()
     const router = useRouter()
     const pathname = usePathname()
+    const isTenantDetail = pathname && pathname.startsWith("/admin/tenant/") && pathname.split("/").length > 3
+    const isSuperAdmin = role === "SUPER_ADMIN"
+    const isAgencyAdmin = role === "AGENCY_ADMIN"
+    const canAccessCurrentRoute = isSuperAdmin || (isAgencyAdmin && isTenantDetail)
 
     useEffect(() => {
         if (!loading) {
             if (!user) {
                 router.push("/")
-            } else if (role !== "SUPER_ADMIN") {
+            } else if (isAgencyAdmin && !isTenantDetail) {
+                router.push("/agency")
+            } else if (!canAccessCurrentRoute) {
                 router.push("/dashboard")
             }
         }
-    }, [user, role, loading, router])
+    }, [user, loading, router, canAccessCurrentRoute, isAgencyAdmin, isTenantDetail])
 
     if (loading) {
         return (
@@ -37,13 +44,9 @@ export default function AdminLayout({
         )
     }
 
-    if (!user || role !== "SUPER_ADMIN") {
+    if (!user || !canAccessCurrentRoute) {
         return null
     }
-
-    // Check if we are in the tenant detail view (e.g., /admin/tenant/[userId])
-    // The path should contain /admin/tenant/ and have a segment after it
-    const isTenantDetail = pathname && pathname.startsWith("/admin/tenant/") && pathname.split("/").length > 3
 
     // Check if we are in the content management page
     const isContentPage = pathname && pathname.startsWith("/admin/content")
@@ -54,26 +57,28 @@ export default function AdminLayout({
     }
 
     return (
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full bg-[#f4f6f8]">
-                {/* Sidebar - full height on left */}
-                <ConsoleSidebar />
+        <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
+            <SidebarProvider>
+                <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                    {/* Sidebar - full height on left */}
+                    <ConsoleSidebar />
 
-                {/* Right side: Announcement + Header + Content */}
-                <div className="flex flex-col flex-1 min-w-0">
-                    <AnnouncementBanner />
+                    {/* Right side: Announcement + Header + Content */}
+                    <div className="flex flex-col flex-1 min-w-0">
+                        <AnnouncementBanner />
 
-                    {/* Header - only spans content area */}
-                    <SiteHeader />
+                        {/* Header - only spans content area */}
+                        <SiteHeader />
 
-                    {/* Main Content */}
-                    <main className={`flex-1 overflow-y-auto w-full ${isContentPage ? 'p-0' : 'p-8'}`}>
-                        <div className="w-full">
-                            {children}
-                        </div>
-                    </main>
+                        {/* Main Content */}
+                        <main className={`flex-1 overflow-y-auto w-full ${isContentPage ? 'p-0' : 'p-8'}`}>
+                            <div className="w-full">
+                                {children}
+                            </div>
+                        </main>
+                    </div>
                 </div>
-            </div>
-        </SidebarProvider>
+            </SidebarProvider>
+        </ThemeProvider>
     )
 }

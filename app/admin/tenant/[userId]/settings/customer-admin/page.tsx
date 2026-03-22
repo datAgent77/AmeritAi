@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
@@ -82,6 +82,7 @@ export default function CustomerAdminPage() {
     const { user: currentUser, role: currentRole } = useAuth()
     const { toast } = useToast()
     const params = useParams()
+    const router = useRouter()
     const userId = params.userId as string
 
     const [isLoading, setIsLoading] = useState(true)
@@ -118,6 +119,11 @@ export default function CustomerAdminPage() {
     // Fetch Data
     useEffect(() => {
         const fetchData = async () => {
+            if (!currentRole) return
+            if (currentRole && currentRole !== "SUPER_ADMIN") {
+                router.replace(`/admin/tenant/${userId}`)
+                return
+            }
             if (!userId || !currentUser) return
             setIsLoading(true)
             try {
@@ -190,7 +196,15 @@ export default function CustomerAdminPage() {
         }
 
         fetchData()
-    }, [userId, t, toast, currentUser])
+    }, [userId, t, toast, currentUser, currentRole, router])
+
+    if (!currentRole) {
+        return null
+    }
+
+    if (currentRole !== "SUPER_ADMIN") {
+        return null
+    }
 
     const handleSave = async () => {
         setIsSaving(true)

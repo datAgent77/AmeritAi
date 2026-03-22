@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 // Default subscription values for new/existing users without subscription data
 const DEFAULT_SUBSCRIPTION = {
@@ -104,6 +105,14 @@ export async function GET(request: Request) {
 
         if (!targetUserId) {
             return NextResponse.json({ error: "userId parameter is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(request, targetUserId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
         }
 
         // Fetch target user data
@@ -226,6 +235,14 @@ export async function PUT(request: Request) {
 
         if (!userId) {
             return NextResponse.json({ error: "userId is required" }, { status: 400 });
+        }
+
+        const authz = await authorizeTargetAccess(request, userId);
+        if (!authz.ok) {
+            return authz.response;
+        }
+        if (!authz.isSuperAdmin) {
+            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
         }
 
         if (!subscription) {

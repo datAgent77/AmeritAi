@@ -1,9 +1,11 @@
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole } from "./user-roles";
 
 type AccessAllowed = {
     ok: true;
     callerUid: string;
     isSuperAdmin: boolean;
+    isAgencyAdmin: boolean;
 };
 
 type AccessDenied = {
@@ -55,24 +57,30 @@ export async function authorizeTargetAccess(req: Request, targetUserId: string):
 
     const callerUid = decodedToken.uid;
     if (callerUid === targetUserId) {
-        return { ok: true, callerUid, isSuperAdmin: false };
+        return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: false };
     }
 
     const callerDoc = await adminDb.collection("users").doc(callerUid).get();
     const callerRole = callerDoc.data()?.role;
     const decodedRole = (decodedToken as any).role;
+    const targetDoc = await adminDb.collection("users").doc(targetUserId).get();
+    const targetRole = targetDoc.data()?.role;
+    const targetAgencyId = targetDoc.data()?.agencyId || null;
 
-    const isSuperAdmin =
-        callerRole === "SUPER_ADMIN" ||
-        decodedRole === "SUPER_ADMIN" ||
-        decodedRole === "super_admin";
+    const isSuperAdmin = isSuperAdminRole(callerRole) || isSuperAdminRole(decodedRole);
 
-    if (!isSuperAdmin) {
-        return {
-            ok: false,
-            response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
-        };
+    if (isSuperAdmin) {
+        return { ok: true, callerUid, isSuperAdmin: true, isAgencyAdmin: false };
     }
 
-    return { ok: true, callerUid, isSuperAdmin: true };
+    const isAgencyAdmin = isAgencyAdminRole(callerRole) || isAgencyAdminRole(decodedRole);
+
+    if (isAgencyAdmin && isTenantAdminRole(targetRole) && targetAgencyId === callerUid) {
+        return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: true };
+    }
+
+    return {
+        ok: false,
+        response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
+    };
 }

@@ -11,13 +11,12 @@ interface WidgetLoaderProps {
 export function WidgetLoader({ loaderStyle = 'skeleton', ambientBottomMargin = 0, showAmbientIcon = true }: WidgetLoaderProps) {
     const bottomPadding = `calc(0.75rem + ${ambientBottomMargin}px + env(safe-area-inset-bottom))`;
     const transparentRootStyle = `
-        html, body, #__next, #root, body.bg-background, div.bg-background {
+        html, body, #__next, #root, .vion-widget-runtime-root {
+            color-scheme: light dark !important;
             background: transparent !important;
             background-color: transparent !important;
+            background-image: none !important;
             box-shadow: none !important;
-        }
-        :root {
-            color-scheme: light dark !important;
         }
     `
 
