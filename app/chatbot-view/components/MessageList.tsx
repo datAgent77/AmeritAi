@@ -117,7 +117,7 @@ export function MessageList({
             className={isAmbientMode && !showClassicEntryOnboarding
                 ? "flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 : (showClassicEntryOnboarding
-                    ? "flex-1 overflow-y-auto overflow-x-hidden bg-white"
+                    ? `flex-1 overflow-y-auto overflow-x-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white'}`
                     : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"))}
             style={isAmbientMode && !showClassicEntryOnboarding
                 ? {
@@ -165,7 +165,7 @@ export function MessageList({
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-white px-5 py-4">
+                    <div className={`flex-1 px-5 py-4 ${isAmbientMode ? 'bg-transparent' : 'bg-white'}`}>
                         <div className="space-y-2">
                             {settings.suggestedQuestions.filter((question) => question.trim() !== "").length > 0 ? (
                                 settings.suggestedQuestions
