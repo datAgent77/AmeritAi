@@ -38,7 +38,7 @@ export async function GET(req: Request) {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
                             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma',
                             'Cache-Control': 'no-store, max-age=0',
                         }
                     });
@@ -273,7 +273,7 @@ export async function GET(req: Request) {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
                             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma',
                             'Cache-Control': 'no-store, max-age=0',
                         }
                     });
@@ -495,7 +495,7 @@ export async function GET(req: Request) {
                 headers: {
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma',
                     'Cache-Control': 'no-store, max-age=0',
                 }
             });
@@ -553,7 +553,7 @@ export async function GET(req: Request) {
             headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma',
                 'Cache-Control': 'no-store, max-age=0',
             }
         });
@@ -639,7 +639,7 @@ export async function OPTIONS(req: Request) {
         headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cache-Control, Pragma',
         },
     });
 }

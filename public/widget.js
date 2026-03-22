@@ -4367,9 +4367,8 @@
   // Helper: Fetch Settings
   async function fetchSettings() {
     try {
-      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`, {
+        cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch settings');
       return await response.json();
