@@ -102,13 +102,29 @@ export default function ChatbotContainer() {
 
         const isAmbient = settings.chatDisplayMode === "ambient" || searchParams?.get("chatDisplayMode") === "ambient"
         
+        const cleanupTransparent = () => {
+            const elements = [
+                document.documentElement, 
+                document.body, 
+                document.getElementById('__next'), 
+                document.querySelector('main')
+            ]
+            elements.forEach(el => {
+                if (!el) return
+                el.classList.remove('ambient-transparent-bg')
+                el.style.removeProperty("background")
+                el.style.removeProperty("background-color")
+                if (el === document.documentElement || el === document.body) {
+                    el.classList.add('bg-background')
+                }
+            })
+        }
+
         if (isAmbient) {
-            // Apply via both JS and a dedicated strict style tag injected later
             const applyTransparent = (el: HTMLElement) => {
                 el.style.setProperty("background", "transparent", "important")
                 el.style.setProperty("background-color", "transparent", "important")
             }
-            
             applyTransparent(document.documentElement)
             applyTransparent(document.body)
             document.documentElement.classList.add('ambient-transparent-bg')
@@ -121,20 +137,14 @@ export default function ChatbotContainer() {
                 applyTransparent(nextRoot)
                 nextRoot.classList.remove('bg-background')
             }
-            
-            // Also target potential main or wrapper divs
             const main = document.querySelector('main')
             if (main) applyTransparent(main as HTMLElement)
+        } else {
+            // Ensure any residual ambient styles are cleaned up if booting in classic mode
+            cleanupTransparent()
         }
 
-        return () => {
-            document.documentElement.classList.remove('ambient-transparent-bg')
-            document.body.classList.remove('ambient-transparent-bg')
-            document.documentElement.style.background = ''
-            document.documentElement.style.backgroundColor = ''
-            document.body.style.background = ''
-            document.body.style.backgroundColor = ''
-        }
+        return cleanupTransparent
     }, [settings.chatDisplayMode, isClient, searchParams])
 
     // 4. Initialization Effects

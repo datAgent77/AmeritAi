@@ -1,4 +1,11 @@
 (function () {
+  // Global Initialization Guard to prevent multiple widgets if script is included twice
+  if (window.__VION_WIDGET_INITIALIZED__) {
+    console.warn('Vion AI Widget is already initialized.');
+    return;
+  }
+  window.__VION_WIDGET_INITIALIZED__ = true;
+
   // Find the current script tag to extract configuration
   // Fallback for async scripts where document.currentScript might be null
   const currentScript = document.currentScript || document.querySelector('script[src*="/widget.js"]');
@@ -2946,18 +2953,59 @@
       const htmlEl = document.documentElement;
       const bodyEl = document.body;
       if (!htmlEl || !bodyEl) return;
+      
       const sidecarGutter = Number(settings.sidecarGutter || 0);
+      const sidecarWidth = getSidecarWidth();
+      const inset = sidecarWidth + Math.max(0, sidecarGutter);
+      const styleId = 'userex-sidecar-layout-styles';
+
       if (enabled) {
-        const inset = getSidecarWidth() + Math.max(0, sidecarGutter);
-        htmlEl.style.transition = 'margin-right 240ms ease';
-        bodyEl.style.transition = 'margin-right 240ms ease';
+        htmlEl.classList.add('userex-sidecar-active');
+        htmlEl.style.transition = 'margin-right 240ms ease, width 240ms ease';
         htmlEl.style.marginRight = `${inset}px`;
-        bodyEl.style.marginRight = `${inset}px`;
+        htmlEl.style.width = `calc(100% - ${inset}px)`;
+        
+        // Remove margin-right from body to avoid double shifting
+        bodyEl.style.marginRight = '0px';
         bodyEl.style.overflowX = 'hidden';
+
+        // Inject dynamic styles for fixed/sticky elements
+        if (!document.getElementById(styleId)) {
+          const style = document.createElement('style');
+          style.id = styleId;
+          style.innerHTML = `
+            html.userex-sidecar-active header,
+            html.userex-sidecar-active nav,
+            html.userex-sidecar-active [class*="header"],
+            html.userex-sidecar-active [class*="navbar"],
+            html.userex-sidecar-active [style*="position: fixed"],
+            html.userex-sidecar-active [style*="position: sticky"] {
+               margin-right: ${inset}px !important;
+               right: ${inset}px !important;
+            }
+          `;
+          document.head.appendChild(style);
+        } else {
+          document.getElementById(styleId).innerHTML = `
+            html.userex-sidecar-active header,
+            html.userex-sidecar-active nav,
+            html.userex-sidecar-active [class*="header"],
+            html.userex-sidecar-active [class*="navbar"],
+            html.userex-sidecar-active [style*="position: fixed"],
+            html.userex-sidecar-active [style*="position: sticky"] {
+               margin-right: ${inset}px !important;
+               right: ${inset}px !important;
+            }
+          `;
+        }
       } else {
+        htmlEl.classList.remove('userex-sidecar-active');
         htmlEl.style.marginRight = '';
+        htmlEl.style.width = '';
         bodyEl.style.marginRight = '';
         bodyEl.style.overflowX = '';
+        const style = document.getElementById(styleId);
+        if (style) style.remove();
       }
     };
 
@@ -3604,7 +3652,8 @@
       const effectiveHeight = usesLauncher
         ? (settings.launcherType === 'fullImage' ? 60 : settings.launcherHeight)
         : 0;
-      const launcherOffset = usesLauncher ? (effectiveHeight + 24) : 0;
+      // Removed launcherOffset calculation to ensure chatbot opens at the same position as the launcher
+      const launcherOffset = 0;
 
       if (isTop) {
         classicVerticalStyle = { top: `${verticalSpacing + launcherOffset}px`, bottom: 'auto' };
@@ -4318,7 +4367,10 @@
   // Helper: Fetch Settings
   async function fetchSettings() {
     try {
-      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`);
+      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      });
       if (!response.ok) throw new Error('Failed to fetch settings');
       return await response.json();
     } catch (error) {

@@ -488,31 +488,26 @@ export function AppearanceTab({
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Sağ panel sabit kalır, site içerik alanı daralır.' : 'Pinned right panel that shrinks site content.'}</span>
                     </button>
                 </div>
-                <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4">
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <Label className="text-sm font-medium">
-                                {language === "tr" ? "Classic Entry Onboarding" : "Classic Entry Onboarding"}
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {language === "tr"
-                                    ? "Classic modda kullanıcı ilk mesajı göndermeden önce onboarding ekranını gösterir."
-                                    : "Shows the onboarding screen in classic mode before the visitor sends the first message."}
-                            </p>
-                            {isAmbientMode && (
-                                <p className="text-[11px] text-muted-foreground mt-1">
+                {!isAmbientMode && (
+                    <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <Label className="text-sm font-medium">
+                                    {language === "tr" ? "Classic Entry Onboarding" : "Classic Entry Onboarding"}
+                                </Label>
+                                <p className="text-xs text-muted-foreground mt-1">
                                     {language === "tr"
-                                        ? "Not: Bu özellik sadece Classic modda etkindir."
-                                        : "Note: This feature only applies to classic mode."}
+                                        ? "Classic modda kullanıcı ilk mesajı göndermeden önce onboarding ekranını gösterir."
+                                        : "Shows the onboarding screen in classic mode before the visitor sends the first message."}
                                 </p>
-                            )}
+                            </div>
+                            <Switch
+                                checked={settings.enableClassicEntryOnboarding !== false}
+                                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, enableClassicEntryOnboarding: checked }))}
+                            />
                         </div>
-                        <Switch
-                            checked={settings.enableClassicEntryOnboarding !== false}
-                            onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, enableClassicEntryOnboarding: checked }))}
-                        />
                     </div>
-                </div>
+                )}
                 {isSidecarMode && (
                     <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4 space-y-4">
                         <div>

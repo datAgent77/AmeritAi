@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { doc, onSnapshot } from "firebase/firestore"
+import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
@@ -235,162 +235,166 @@ export function useWidgetSettings(userId?: string) {
     const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
-        if (!effectiveUserId) return
+        const fetchSettings = async () => {
+            if (!effectiveUserId) return
 
-        setIsLoading(true)
-        const chatbotDocRef = doc(db, "chatbots", effectiveUserId)
+            setIsLoading(true)
+            try {
+                const chatbotDocRef = doc(db, "chatbots", effectiveUserId)
+                const docSnap = await getDoc(chatbotDocRef)
 
-        const unsubscribe = onSnapshot(chatbotDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data()
+                if (docSnap.exists()) {
+                    const data = docSnap.data()
 
-                setSettings(prev => ({
-                    ...prev,
-                    companyName: data.companyName || prev.companyName,
-                    welcomeTitle: data.welcomeTitle || prev.welcomeTitle,
-                    welcomeMessage: data.welcomeMessage || prev.welcomeMessage,
-                    brandColor: data.brandColor || prev.brandColor,
-                    brandLogo: data.brandLogo || prev.brandLogo,
-                    headerLogo: data.headerLogo || prev.headerLogo,
-                    headerLogoWidth: data.headerLogoWidth || prev.headerLogoWidth,
-                    headerLogoHeight: data.headerLogoHeight || prev.headerLogoHeight,
-                    headerBackgroundColor: data.headerBackgroundColor || prev.headerBackgroundColor,
-                    headerTextColor: data.headerTextColor || prev.headerTextColor,
-                    suggestedQuestions: data.suggestedQuestions || prev.suggestedQuestions,
-                    enableLeadCollection: data.enableLeadCollection !== undefined ? data.enableLeadCollection : prev.enableLeadCollection,
-                    enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
-                    timezone: data.timezone || prev.timezone,
-                    businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
-                    businessHoursEnd: data.businessHoursEnd || prev.businessHoursEnd,
-                    offlineMessage: data.offlineMessage !== undefined ? data.offlineMessage : prev.offlineMessage,
-                    enableVoiceAssistant: data.enableVoiceAssistant !== undefined ? data.enableVoiceAssistant : prev.enableVoiceAssistant,
-                    enablePersonalShopper: data.enablePersonalShopper !== undefined ? data.enablePersonalShopper : prev.enablePersonalShopper,
-                    initialLanguage: data.initialLanguage || prev.initialLanguage,
-                    enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : prev.enableIndustryGreeting,
-                    industry: data.industry || prev.industry,
-                    customPrompts: data.customPrompts || prev.customPrompts,
-                    theme: data.theme || prev.theme,
-                    position: data.position || prev.position,
-                    viewMode: data.viewMode || prev.viewMode,
-                    modalSize: data.modalSize || prev.modalSize,
-                    launcherStyle: data.launcherStyle || prev.launcherStyle,
-                    launcherCollapse: data.launcherCollapse !== undefined ? data.launcherCollapse : prev.launcherCollapse,
-                    launcherText: data.launcherText || prev.launcherText,
-                    launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : prev.launcherRadius,
-                    launcherHeight: data.launcherHeight || prev.launcherHeight,
-                    launcherWidth: data.launcherWidth || prev.launcherWidth,
-                    fullImageLauncherWidth: data.fullImageLauncherWidth || prev.fullImageLauncherWidth,
-                    fullImageLauncherHeight: data.fullImageLauncherHeight || prev.fullImageLauncherHeight,
-                    launcherIcon: data.launcherIcon || prev.launcherIcon,
-                    launcherIconUrl: data.launcherIconUrl || prev.launcherIconUrl,
-                    launcherLibraryIcon: data.launcherLibraryIcon || prev.launcherLibraryIcon,
-                    launcherIconColor: data.launcherIconColor || prev.launcherIconColor,
-                    launcherBackgroundColor: data.launcherBackgroundColor || prev.launcherBackgroundColor,
-                    bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : prev.bottomSpacing,
-                    sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : prev.sideSpacing,
-                    launcherShadow: data.launcherShadow || prev.launcherShadow,
-                    launcherAnimation: data.launcherAnimation || prev.launcherAnimation,
-                    mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : prev.mobileBottomSpacing,
-                    mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : prev.mobileSideSpacing,
-                    mobileLauncherAnimation: data.mobileLauncherAnimation || prev.mobileLauncherAnimation,
-                    interactionMode:
-                        data.chatDisplayMode === "ambient" || data.chatDisplayMode === "sidecar"
-                            ? "always_open"
-                            : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
-                    chatDisplayMode: ["ambient", "sidecar"].includes(data.chatDisplayMode) ? data.chatDisplayMode : "classic",
-                    enableClassicEntryOnboarding:
-                        typeof data.enableClassicEntryOnboarding === "boolean"
-                            ? data.enableClassicEntryOnboarding
-                            : prev.enableClassicEntryOnboarding,
-                    ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : prev.ambientMaxHeight,
-                    ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : prev.ambientOverlayOpacity,
-                    sidecarWidth: typeof data.sidecarWidth === "number" ? data.sidecarWidth : prev.sidecarWidth,
-                    sidecarMinWidth: typeof data.sidecarMinWidth === "number" ? data.sidecarMinWidth : prev.sidecarMinWidth,
-                    sidecarMaxWidth: typeof data.sidecarMaxWidth === "number" ? data.sidecarMaxWidth : prev.sidecarMaxWidth,
-                    sidecarGutter: typeof data.sidecarGutter === "number" ? data.sidecarGutter : prev.sidecarGutter,
-                    sidecarDesktopOnly: typeof data.sidecarDesktopOnly === "boolean" ? data.sidecarDesktopOnly : prev.sidecarDesktopOnly,
-                    ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth,
-                    ambientInputWidth: typeof data.ambientInputWidth === "number" ? data.ambientInputWidth : (typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth),
-                    ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : prev.ambientSideMargin,
-                    ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : prev.ambientBottomMargin,
-                    ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : prev.ambientInputSize) as "sm" | "md" | "lg" | "xl",
-                    showAmbientIcon: typeof data.showAmbientIcon === "boolean" ? data.showAmbientIcon : prev.showAmbientIcon,
-                    ambientIconUrl: data.ambientIconUrl !== undefined ? data.ambientIconUrl : prev.ambientIconUrl,
-                    ambientIconType: data.ambientIconType || prev.ambientIconType,
-                    ambientLibraryIcon: data.ambientLibraryIcon || prev.ambientLibraryIcon,
-                    ambientIconColor: data.ambientIconColor !== undefined ? data.ambientIconColor : prev.ambientIconColor,
-                    ambientInputTextColor: data.ambientInputTextColor !== undefined ? data.ambientInputTextColor : prev.ambientInputTextColor,
-                    ambientPlaceholderText: data.ambientPlaceholderText !== undefined ? data.ambientPlaceholderText : prev.ambientPlaceholderText,
-                    ambientTheme: data.ambientTheme || prev.ambientTheme,
-                    enableAmbientRainbowBorder: data.enableAmbientRainbowBorder !== undefined ? data.enableAmbientRainbowBorder : prev.enableAmbientRainbowBorder,
-                    ambientBorderColorIdle: data.ambientBorderColorIdle !== undefined ? data.ambientBorderColorIdle : prev.ambientBorderColorIdle,
-                    ambientBorderColorFocused: data.ambientBorderColorFocused !== undefined ? data.ambientBorderColorFocused : prev.ambientBorderColorFocused,
-                    ambientClosedBgColor: data.ambientClosedBgColor !== undefined ? data.ambientClosedBgColor : prev.ambientClosedBgColor,
-                    ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle !== undefined ? data.ambientClosedBorderColorIdle : prev.ambientClosedBorderColorIdle,
-                    ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused !== undefined ? data.ambientClosedBorderColorFocused : prev.ambientClosedBorderColorFocused,
-                    ambientAiBubbleColor: data.ambientAiBubbleColor !== undefined ? data.ambientAiBubbleColor : prev.ambientAiBubbleColor,
-                    ambientUserBubbleColor: data.ambientUserBubbleColor !== undefined ? data.ambientUserBubbleColor : prev.ambientUserBubbleColor,
-                    ambientBorderGradientColor1: data.ambientBorderGradientColor1 !== undefined ? data.ambientBorderGradientColor1 : prev.ambientBorderGradientColor1,
-                    ambientBorderGradientColor2: data.ambientBorderGradientColor2 !== undefined ? data.ambientBorderGradientColor2 : prev.ambientBorderGradientColor2,
-                    ambientBorderGradientColor3: data.ambientBorderGradientColor3 !== undefined ? data.ambientBorderGradientColor3 : prev.ambientBorderGradientColor3,
-                    ambientBorderGradientColor4: data.ambientBorderGradientColor4 !== undefined ? data.ambientBorderGradientColor4 : prev.ambientBorderGradientColor4,
-                    ambientBorderGradientShowWhenCollapsed:
-                        typeof data.ambientBorderGradientShowWhenCollapsed === "boolean"
-                            ? data.ambientBorderGradientShowWhenCollapsed
-                            : prev.ambientBorderGradientShowWhenCollapsed,
-                    ambientBorderGradientShowWhenOpen:
-                        typeof data.ambientBorderGradientShowWhenOpen === "boolean"
-                            ? data.ambientBorderGradientShowWhenOpen
-                            : prev.ambientBorderGradientShowWhenOpen,
-                    ambientBorderGradientShowWhenThinking:
-                        typeof data.ambientBorderGradientShowWhenThinking === "boolean"
-                            ? data.ambientBorderGradientShowWhenThinking
-                            : prev.ambientBorderGradientShowWhenThinking,
-                    ambientPerDeviceSettingsEnabled:
-                        typeof data.ambientPerDeviceSettingsEnabled === "boolean"
-                            ? data.ambientPerDeviceSettingsEnabled
-                            : prev.ambientPerDeviceSettingsEnabled,
-                    ambientDesktopSettings: typeof data.ambientDesktopSettings === "object" && data.ambientDesktopSettings
-                        ? data.ambientDesktopSettings
-                        : prev.ambientDesktopSettings,
-                    ambientMobileSettings: typeof data.ambientMobileSettings === "object" && data.ambientMobileSettings
-                        ? data.ambientMobileSettings
-                        : prev.ambientMobileSettings,
-                    classicPerDeviceSettingsEnabled:
-                        typeof data.classicPerDeviceSettingsEnabled === "boolean"
-                            ? data.classicPerDeviceSettingsEnabled
-                            : prev.classicPerDeviceSettingsEnabled,
-                    classicDesktopSettings: typeof data.classicDesktopSettings === "object" && data.classicDesktopSettings
-                        ? data.classicDesktopSettings
-                        : prev.classicDesktopSettings,
-                    classicMobileSettings: typeof data.classicMobileSettings === "object" && data.classicMobileSettings
-                        ? data.classicMobileSettings
-                        : prev.classicMobileSettings,
-                    widgetLoaderStyle: data.widgetLoaderStyle || "skeleton",
-                    userGreetingCount: typeof data.userGreetingCount === 'number' ? data.userGreetingCount : prev.userGreetingCount,
-                    userInactionDelay: typeof data.userInactionDelay === 'number' ? data.userInactionDelay : prev.userInactionDelay,
-                    ambientInputBgColorIdle: data.ambientInputBgColorIdle !== undefined ? data.ambientInputBgColorIdle : prev.ambientInputBgColorIdle,
-                    ambientInputBgColorFocused: data.ambientInputBgColorFocused !== undefined ? data.ambientInputBgColorFocused : prev.ambientInputBgColorFocused,
-                    launcherType: data.launcherType || prev.launcherType,
-                    launcherImageMode: data.launcherImageMode || prev.launcherImageMode,
-                    launcherFullImageUrl: data.launcherFullImageUrl || prev.launcherFullImageUrl,
-                    launcherLottieUrl: data.launcherLottieUrl || prev.launcherLottieUrl,
-                    launcherHoverEffect: data.launcherHoverEffect || prev.launcherHoverEffect,
-                    autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
-                    openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
-                    openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
-                }))
-            } else {
-                console.log("No chatbot settings found, using defaults")
+                    setSettings(prev => ({
+                        ...prev,
+                        companyName: data.companyName || prev.companyName,
+                        welcomeTitle: data.welcomeTitle || prev.welcomeTitle,
+                        welcomeMessage: data.welcomeMessage || prev.welcomeMessage,
+                        brandColor: data.brandColor || prev.brandColor,
+                        brandLogo: data.brandLogo || prev.brandLogo,
+                        headerLogo: data.headerLogo || prev.headerLogo,
+                        headerLogoWidth: data.headerLogoWidth || prev.headerLogoWidth,
+                        headerLogoHeight: data.headerLogoHeight || prev.headerLogoHeight,
+                        headerBackgroundColor: data.headerBackgroundColor || prev.headerBackgroundColor,
+                        headerTextColor: data.headerTextColor || prev.headerTextColor,
+                        suggestedQuestions: data.suggestedQuestions || prev.suggestedQuestions,
+                        enableLeadCollection: data.enableLeadCollection !== undefined ? data.enableLeadCollection : prev.enableLeadCollection,
+                        enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
+                        timezone: data.timezone || prev.timezone,
+                        businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
+                        businessHoursEnd: data.businessHoursEnd || prev.businessHoursEnd,
+                        offlineMessage: data.offlineMessage !== undefined ? data.offlineMessage : prev.offlineMessage,
+                        enableVoiceAssistant: data.enableVoiceAssistant !== undefined ? data.enableVoiceAssistant : prev.enableVoiceAssistant,
+                        enablePersonalShopper: data.enablePersonalShopper !== undefined ? data.enablePersonalShopper : prev.enablePersonalShopper,
+                        initialLanguage: data.initialLanguage || prev.initialLanguage,
+                        enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : prev.enableIndustryGreeting,
+                        industry: data.industry || prev.industry,
+                        customPrompts: data.customPrompts || prev.customPrompts,
+                        theme: data.theme || prev.theme,
+                        position: data.position || prev.position,
+                        viewMode: data.viewMode || prev.viewMode,
+                        modalSize: data.modalSize || prev.modalSize,
+                        launcherStyle: data.launcherStyle || prev.launcherStyle,
+                        launcherCollapse: data.launcherCollapse !== undefined ? data.launcherCollapse : prev.launcherCollapse,
+                        launcherText: data.launcherText || prev.launcherText,
+                        launcherRadius: data.launcherRadius !== undefined ? data.launcherRadius : prev.launcherRadius,
+                        launcherHeight: data.launcherHeight || prev.launcherHeight,
+                        launcherWidth: data.launcherWidth || prev.launcherWidth,
+                        fullImageLauncherWidth: data.fullImageLauncherWidth || prev.fullImageLauncherWidth,
+                        fullImageLauncherHeight: data.fullImageLauncherHeight || prev.fullImageLauncherHeight,
+                        launcherIcon: data.launcherIcon || prev.launcherIcon,
+                        launcherIconUrl: data.launcherIconUrl || prev.launcherIconUrl,
+                        launcherLibraryIcon: data.launcherLibraryIcon || prev.launcherLibraryIcon,
+                        launcherIconColor: data.launcherIconColor || prev.launcherIconColor,
+                        launcherBackgroundColor: data.launcherBackgroundColor || prev.launcherBackgroundColor,
+                        bottomSpacing: data.bottomSpacing !== undefined ? data.bottomSpacing : prev.bottomSpacing,
+                        sideSpacing: data.sideSpacing !== undefined ? data.sideSpacing : prev.sideSpacing,
+                        launcherShadow: data.launcherShadow || prev.launcherShadow,
+                        launcherAnimation: data.launcherAnimation || prev.launcherAnimation,
+                        mobileBottomSpacing: data.mobileBottomSpacing !== undefined ? data.mobileBottomSpacing : prev.mobileBottomSpacing,
+                        mobileSideSpacing: data.mobileSideSpacing !== undefined ? data.mobileSideSpacing : prev.mobileSideSpacing,
+                        mobileLauncherAnimation: data.mobileLauncherAnimation || prev.mobileLauncherAnimation,
+                        interactionMode:
+                            data.chatDisplayMode === "ambient" || data.chatDisplayMode === "sidecar"
+                                ? "always_open"
+                                : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
+                        chatDisplayMode: ["ambient", "sidecar"].includes(data.chatDisplayMode) ? data.chatDisplayMode : "classic",
+                        enableClassicEntryOnboarding:
+                            typeof data.enableClassicEntryOnboarding === "boolean"
+                                ? data.enableClassicEntryOnboarding
+                                : prev.enableClassicEntryOnboarding,
+                        ambientMaxHeight: typeof data.ambientMaxHeight === "number" ? data.ambientMaxHeight : prev.ambientMaxHeight,
+                        ambientOverlayOpacity: typeof data.ambientOverlayOpacity === "number" ? data.ambientOverlayOpacity : prev.ambientOverlayOpacity,
+                        sidecarWidth: typeof data.sidecarWidth === "number" ? data.sidecarWidth : prev.sidecarWidth,
+                        sidecarMinWidth: typeof data.sidecarMinWidth === "number" ? data.sidecarMinWidth : prev.sidecarMinWidth,
+                        sidecarMaxWidth: typeof data.sidecarMaxWidth === "number" ? data.sidecarMaxWidth : prev.sidecarMaxWidth,
+                        sidecarGutter: typeof data.sidecarGutter === "number" ? data.sidecarGutter : prev.sidecarGutter,
+                        sidecarDesktopOnly: typeof data.sidecarDesktopOnly === "boolean" ? data.sidecarDesktopOnly : prev.sidecarDesktopOnly,
+                        ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth,
+                        ambientInputWidth: typeof data.ambientInputWidth === "number" ? data.ambientInputWidth : (typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth),
+                        ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : prev.ambientSideMargin,
+                        ambientBottomMargin: typeof data.ambientBottomMargin === "number" ? data.ambientBottomMargin : prev.ambientBottomMargin,
+                        ambientInputSize: (["sm", "md", "lg", "xl"].includes(data.ambientInputSize) ? data.ambientInputSize : prev.ambientInputSize) as "sm" | "md" | "lg" | "xl",
+                        showAmbientIcon: typeof data.showAmbientIcon === "boolean" ? data.showAmbientIcon : prev.showAmbientIcon,
+                        ambientIconUrl: data.ambientIconUrl !== undefined ? data.ambientIconUrl : prev.ambientIconUrl,
+                        ambientIconType: data.ambientIconType || prev.ambientIconType,
+                        ambientLibraryIcon: data.ambientLibraryIcon || prev.ambientLibraryIcon,
+                        ambientIconColor: data.ambientIconColor !== undefined ? data.ambientIconColor : prev.ambientIconColor,
+                        ambientInputTextColor: data.ambientInputTextColor !== undefined ? data.ambientInputTextColor : prev.ambientInputTextColor,
+                        ambientPlaceholderText: data.ambientPlaceholderText !== undefined ? data.ambientPlaceholderText : prev.ambientPlaceholderText,
+                        ambientTheme: data.ambientTheme || prev.ambientTheme,
+                        enableAmbientRainbowBorder: data.enableAmbientRainbowBorder !== undefined ? data.enableAmbientRainbowBorder : prev.enableAmbientRainbowBorder,
+                        ambientBorderColorIdle: data.ambientBorderColorIdle !== undefined ? data.ambientBorderColorIdle : prev.ambientBorderColorIdle,
+                        ambientBorderColorFocused: data.ambientBorderColorFocused !== undefined ? data.ambientBorderColorFocused : prev.ambientBorderColorFocused,
+                        ambientClosedBgColor: data.ambientClosedBgColor !== undefined ? data.ambientClosedBgColor : prev.ambientClosedBgColor,
+                        ambientClosedBorderColorIdle: data.ambientClosedBorderColorIdle !== undefined ? data.ambientClosedBorderColorIdle : prev.ambientClosedBorderColorIdle,
+                        ambientClosedBorderColorFocused: data.ambientClosedBorderColorFocused !== undefined ? data.ambientClosedBorderColorFocused : prev.ambientClosedBorderColorFocused,
+                        ambientAiBubbleColor: data.ambientAiBubbleColor !== undefined ? data.ambientAiBubbleColor : prev.ambientAiBubbleColor,
+                        ambientUserBubbleColor: data.ambientUserBubbleColor !== undefined ? data.ambientUserBubbleColor : prev.ambientUserBubbleColor,
+                        ambientBorderGradientColor1: data.ambientBorderGradientColor1 !== undefined ? data.ambientBorderGradientColor1 : prev.ambientBorderGradientColor1,
+                        ambientBorderGradientColor2: data.ambientBorderGradientColor2 !== undefined ? data.ambientBorderGradientColor2 : prev.ambientBorderGradientColor2,
+                        ambientBorderGradientColor3: data.ambientBorderGradientColor3 !== undefined ? data.ambientBorderGradientColor3 : prev.ambientBorderGradientColor3,
+                        ambientBorderGradientColor4: data.ambientBorderGradientColor4 !== undefined ? data.ambientBorderGradientColor4 : prev.ambientBorderGradientColor4,
+                        ambientBorderGradientShowWhenCollapsed:
+                            typeof data.ambientBorderGradientShowWhenCollapsed === "boolean"
+                                ? data.ambientBorderGradientShowWhenCollapsed
+                                : prev.ambientBorderGradientShowWhenCollapsed,
+                        ambientBorderGradientShowWhenOpen:
+                            typeof data.ambientBorderGradientShowWhenOpen === "boolean"
+                                ? data.ambientBorderGradientShowWhenOpen
+                                : prev.ambientBorderGradientShowWhenOpen,
+                        ambientBorderGradientShowWhenThinking:
+                            typeof data.ambientBorderGradientShowWhenThinking === "boolean"
+                                ? data.ambientBorderGradientShowWhenThinking
+                                : prev.ambientBorderGradientShowWhenThinking,
+                        ambientPerDeviceSettingsEnabled:
+                            typeof data.ambientPerDeviceSettingsEnabled === "boolean"
+                                ? data.ambientPerDeviceSettingsEnabled
+                                : prev.ambientPerDeviceSettingsEnabled,
+                        ambientDesktopSettings: typeof data.ambientDesktopSettings === "object" && data.ambientDesktopSettings
+                            ? data.ambientDesktopSettings
+                            : prev.ambientDesktopSettings,
+                        ambientMobileSettings: typeof data.ambientMobileSettings === "object" && data.ambientMobileSettings
+                            ? data.ambientMobileSettings
+                            : prev.ambientMobileSettings,
+                        classicPerDeviceSettingsEnabled:
+                            typeof data.classicPerDeviceSettingsEnabled === "boolean"
+                                ? data.classicPerDeviceSettingsEnabled
+                                : prev.classicPerDeviceSettingsEnabled,
+                        classicDesktopSettings: typeof data.classicDesktopSettings === "object" && data.classicDesktopSettings
+                            ? data.classicDesktopSettings
+                            : prev.classicDesktopSettings,
+                        classicMobileSettings: typeof data.classicMobileSettings === "object" && data.classicMobileSettings
+                            ? data.classicMobileSettings
+                            : prev.classicMobileSettings,
+                        widgetLoaderStyle: data.widgetLoaderStyle || "skeleton",
+                        userGreetingCount: typeof data.userGreetingCount === 'number' ? data.userGreetingCount : prev.userGreetingCount,
+                        userInactionDelay: typeof data.userInactionDelay === 'number' ? data.userInactionDelay : prev.userInactionDelay,
+                        ambientInputBgColorIdle: data.ambientInputBgColorIdle !== undefined ? data.ambientInputBgColorIdle : prev.ambientInputBgColorIdle,
+                        ambientInputBgColorFocused: data.ambientInputBgColorFocused !== undefined ? data.ambientInputBgColorFocused : prev.ambientInputBgColorFocused,
+                        launcherType: data.launcherType || prev.launcherType,
+                        launcherImageMode: data.launcherImageMode || prev.launcherImageMode,
+                        launcherFullImageUrl: data.launcherFullImageUrl || prev.launcherFullImageUrl,
+                        launcherLottieUrl: data.launcherLottieUrl || prev.launcherLottieUrl,
+                        launcherHoverEffect: data.launcherHoverEffect || prev.launcherHoverEffect,
+                        autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
+                        openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
+                        openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
+                    }))
+                } else {
+                    console.log("No chatbot settings found, using defaults")
+                }
+            } catch (error) {
+                console.error("Error fetching settings:", error)
+            } finally {
+                setIsLoading(false)
             }
-            setIsLoading(false)
-        }, (error) => {
-            console.error("Error listening to settings:", error)
-            setIsLoading(false)
-        })
+        }
 
-        return () => unsubscribe()
+        fetchSettings()
     }, [effectiveUserId])
+
 
     const saveSettings = async () => {
         if (!effectiveUserId || !user) return

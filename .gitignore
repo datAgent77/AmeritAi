@@ -38,6 +38,9 @@ firebase-debug.log*
 .env*
 !.env.example
 
+# next.js trash
+/.next_trash*/
+
 # vercel
 .vercel
 
