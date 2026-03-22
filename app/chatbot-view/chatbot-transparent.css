@@ -1,16 +1,18 @@
 /* 
- * This CSS is ONLY loaded for the /chatbot-view route (Ambient widget iframe).
- * Ensures the iframe body/html is always transparent, regardless of theme.
- * This runs before any component-level style injections.
+ * Loaded ONLY for /chatbot-view route via app/chatbot-view/layout.tsx import.
+ * Overrides any theme-based background so the iframe is always transparent.
  */
 
+/* Override the .bg-background Tailwind utility class directly */
+.bg-background {
+    background-color: transparent !important;
+}
+
+/* Override html and body elements */
 html,
 body,
 #__next {
     background: transparent !important;
     background-color: transparent !important;
     background-image: none !important;
-    box-shadow: none !important;
-    /* Override Tailwind CSS variable-based backgrounds */
-    --background: 0 0% 100% / 0 !important;
 }
