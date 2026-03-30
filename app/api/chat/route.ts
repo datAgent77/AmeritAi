@@ -5,6 +5,7 @@ import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
 import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
+import { resolveConversationLanguage, toCopyLanguage } from "@/lib/conversation-language";
 
 export const runtime = 'nodejs';
 
@@ -115,17 +116,10 @@ const FALLBACK_COPY: Record<UILang, { intro: string; closing: string; noPrice: s
 };
 
 function resolveUiLanguage(language: string | undefined, userText: string): UILang {
-    const lang = (language || "").toLowerCase();
-    if (lang === "tr" || lang.startsWith("tr-")) return "tr";
-    if (lang === "de" || lang.startsWith("de-")) return "de";
-    if (lang === "fr" || lang.startsWith("fr-")) return "fr";
-    if (lang === "es" || lang.startsWith("es-")) return "es";
-    if (lang === "en" || lang.startsWith("en-")) return "en";
-
-    if (/[çğıöşü]/i.test(userText) || /\b(hediye|ürün|öner|fiyat|alacağım|bana)\b/i.test(userText)) {
-        return "tr";
-    }
-    return "en";
+    return toCopyLanguage(resolveConversationLanguage({
+        explicitLanguage: language,
+        userText,
+    }));
 }
 
 function extractKeywords(query: string): string[] {
@@ -304,6 +298,14 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+        const latestUserText = [...normalizedMessages]
+            .reverse()
+            .find((message) => message.role === "user" && message.content.trim())
+            ?.content || "";
+        const resolvedLanguage = resolveConversationLanguage({
+            explicitLanguage: language,
+            userText: latestUserText,
+        });
         const safeContext = isUserContextPayload(context)
             ? {
                 ...(context as UserContextPayload),
@@ -385,7 +387,7 @@ export async function POST(req: Request) {
                     userId
                 )
                 : Promise.resolve(),
-            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, safeContext, isVoice, language, visualAnalysisContext, body.industry)
+            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, safeContext, isVoice, resolvedLanguage, visualAnalysisContext, body.industry)
         ]);
 
         // ... sentiment code ...
@@ -513,13 +515,13 @@ export async function POST(req: Request) {
                                             console.error("Chat API: ❌ adminDb is null for lead save!");
                                         } else {
                                             // Get translation for source based on language
-                                            const sourceText = language === 'tr'
+                                            const sourceText = resolvedLanguage === 'tr'
                                                 ? "Sohbet İçi Konuşma"
                                                 : "In-Chat Conversation";
 
                                             const leadDoc = {
                                                 chatbotId,
-                                                name: leadData.name || (language === 'tr' ? "Anonim" : "Anonymous"),
+                                                name: leadData.name || (resolvedLanguage === 'tr' ? "Anonim" : "Anonymous"),
                                                 email: leadData.email || "",
                                                 phone: leadData.phone || "",
                                                 source: sourceText,

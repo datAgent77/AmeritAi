@@ -5,6 +5,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { INDUSTRY_CONFIG } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
+import { resolveConversationLanguage } from "@/lib/conversation-language";
 
 const pineconeApiKey = process.env.PINECONE_API_KEY?.trim();
 const pc = pineconeApiKey
@@ -131,11 +132,36 @@ function hasEvidenceForSensitiveFact(context: string, factType: SensitiveFactTyp
 
 function getUnknownResponse(language?: string, question?: string): string {
     const q = (question || "").toLowerCase();
-    const isLikelyTurkish = language === "tr" || /[çğıöşü]/.test(q) || /\b(nedir|nasıl|kaç|ne kadar|adres|şifre|telefon)\b/.test(q);
+    const resolvedLanguage = resolveConversationLanguage({
+        explicitLanguage: language,
+        userText: question,
+    });
 
-    return isLikelyTurkish
-        ? "Bu konuda doğrulanmış bir bilgiye sahip değilim. Emin olmadığım bir detayı uydurmak istemem."
-        : "I don't have verified information for that detail right now, and I don't want to guess.";
+    if (resolvedLanguage === "tr" || /[çğıöşü]/.test(q) || /\b(nedir|nasıl|kaç|ne kadar|adres|şifre|telefon)\b/.test(q)) {
+        return "Bu konuda doğrulanmış bir bilgiye sahip değilim. Emin olmadığım bir detayı uydurmak istemem.";
+    }
+
+    if (resolvedLanguage === "de") {
+        return "Dazu habe ich aktuell keine verifizierte Information, deshalb mochte ich nichts erfinden.";
+    }
+
+    if (resolvedLanguage === "fr") {
+        return "Je n'ai pas d'information verifiee sur ce point pour le moment, donc je prefere ne pas deviner.";
+    }
+
+    if (resolvedLanguage === "es") {
+        return "No tengo informacion verificada sobre ese detalle en este momento, asi que prefiero no adivinar.";
+    }
+
+    if (resolvedLanguage === "ar") {
+        return "لا أملك معلومة موثقة عن هذه النقطة الآن، ولا أريد التخمين.";
+    }
+
+    if (resolvedLanguage === "ru") {
+        return "У меня сейчас нет подтвержденной информации по этой детали, и я не хочу гадать.";
+    }
+
+    return "I don't have verified information for that detail right now, and I don't want to guess.";
 }
 
 async function getSystemConfig(adminDb: any) {
@@ -286,6 +312,13 @@ export async function generateAIResponse(
         // 2. Get Chatbot Config & Context
         console.log(`AI Service: Fetching chatbot config`, { chatbotId });
         const lastMessage = messages[messages.length - 1];
+        const latestUserMessage = [...messages]
+            .reverse()
+            .find((message) => message.role === "user" && typeof message.content === "string" && message.content.trim());
+        const resolvedLanguage = resolveConversationLanguage({
+            explicitLanguage: language,
+            userText: latestUserMessage?.content || lastMessage?.content,
+        });
 
         const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
         const chatbotData = chatbotSnap.exists ? chatbotSnap.data() : null;
@@ -374,7 +407,7 @@ export async function generateAIResponse(
         const sensitiveFactType = detectSensitiveFactType(lastMessage.content || "");
         if (sensitiveFactType) {
             if (!hasKnowledgeContext || !hasEvidenceForSensitiveFact(context, sensitiveFactType)) {
-                return { content: getUnknownResponse(language, lastMessage.content || ""), isStream: false, context, modelUsed: "safety-fallback" };
+                return { content: getUnknownResponse(resolvedLanguage, lastMessage.content || ""), isStream: false, context, modelUsed: "safety-fallback" };
             }
         }
 
@@ -384,6 +417,10 @@ export async function generateAIResponse(
 You are an advanced AI Assistant for ${chatbotId}.
 Your goal is to provide accurate, helpful, and professional support.
 ${industryConfig.systemPrompt}
+
+# TURN LANGUAGE
+The latest user message is currently in "${resolvedLanguage}".
+Reply in that same language for this turn unless the user explicitly switches languages.
 
 # KNOWLEDGE BASE CONTEXT
 ${context ? `Use this context to answer:\n${context}\n\n[CONTEXT RULE]: If the context above says "visit our website for details" or "contact us for more info", YOU MUST IGNORE THAT INSTRUCTION. Instead, extract and summarize the actual information (features, specs, policies) from the context. If the specific detail is missing, say "I don't have that specific detail."` : "No specific context available."}
@@ -564,7 +601,7 @@ REMEMBER: Always think before responding. Quality > Speed.`;
 
             if (isEnabled && mod.aiSystemInstruction) {
                 console.log(`AI Service: Module ${mod.id} is ENABLED, injecting instruction`);
-                const langKey = (language === 'tr') ? 'tr' : 'en';
+                const langKey = resolvedLanguage === 'tr' ? 'tr' : 'en';
                 let instruction = mod.aiSystemInstruction[langKey] || mod.aiSystemInstruction['en'];
 
                 // For voice/appointment module, inject actual availability settings

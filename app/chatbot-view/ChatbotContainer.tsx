@@ -228,6 +228,7 @@ export default function ChatbotContainer() {
         resetSession
     } = useChatCore({
         chatbotId,
+        language,
         settings,
         pageContext,
         isGuestReady,

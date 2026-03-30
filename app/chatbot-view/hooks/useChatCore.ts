@@ -6,6 +6,7 @@ import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-
 
 export interface UseChatCoreProps {
     chatbotId: string
+    language: string
     settings: ChatbotSettings
     pageContext: any
     isGuestReady: boolean
@@ -17,6 +18,7 @@ export interface UseChatCoreProps {
 
 export function useChatCore({
     chatbotId,
+    language,
     settings,
     pageContext,
     isGuestReady,
@@ -214,7 +216,7 @@ export function useChatCore({
                     chatbotId,
                     sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
                     context: pageContext,
-                    language: settings.initialLanguage || 'auto',
+                    language,
                     isVoice: shouldSpeakResponse,
                     shouldStream: true,
                     userId: guestAuth.currentUser?.uid,
@@ -309,7 +311,7 @@ export function useChatCore({
                 
                 // Add System Error Message
                 const runtimeError = typeof error?.message === 'string' ? error.message.trim() : ''
-                const isTurkishUi = typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('tr')
+                const isTurkishUi = language === 'tr'
                 const defaultFallbackMessage = isTurkishUi
                     ? "⚠️ Bir bağlantı hatası oluştu. Lütfen tekrar deneyin."
                     : "⚠️ A connection error occurred. Please try again."
@@ -355,10 +357,7 @@ export function useChatCore({
 
             if (settings.enableIndustryGreeting && industry !== 'other') {
                 const isProductPage = pageContext.url.includes('/product/') || pageContext.url.includes('/shop/')
-                
-                // Always use browser language for greeting
-                const browserLang = typeof navigator !== 'undefined' ? navigator.language.split('-')[0] : 'en';
-                const currentLang: 'en' | 'tr' = browserLang === 'tr' ? 'tr' : 'en';
+                const currentLang: 'en' | 'tr' = language === 'tr' ? 'tr' : 'en';
 
                 if (isProductPage) {
                    greeting = config.greeting_product[currentLang] || config.greeting_general[currentLang]
@@ -381,7 +380,7 @@ export function useChatCore({
         }, 12000)
 
         return () => clearTimeout(timer)
-    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage, settings.chatDisplayMode, settings.enableClassicEntryOnboarding])
+    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage, settings.chatDisplayMode, settings.enableClassicEntryOnboarding, language])
 
     // 6. Reset Session
     const resetSession = () => {
