@@ -2,7 +2,7 @@
 
 ## Vion AI Nedir?
 
-Vion AI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış yapay zeka destekli bir chatbot platformudur. Web sitelerine kolayca entegre edilebilen akıllı asistanlar oluşturmanızı sağlar. Hem Türkçe hem İngilizce tam destek sunar.
+Vion AI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış yapay zeka destekli bir chatbot platformudur. Web sitelerine kolayca entegre edilebilen akıllı asistanlar oluşturmanızı sağlar. Otomatik modda 50'den fazla dilde akıcı destek sunar.
 
 **Resmi Web Sitesi:** https://getvion.com
 
@@ -26,7 +26,7 @@ Vion AI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış ya
 - Marka renkleri ve logonuzla uyumlu tasarım
 - Özel karşılama mesajları
 - Pozisyon ve boyut ayarları
-- Çoklu dil desteği (Türkçe/İngilizce)
+- Çoklu dil desteği (otomatik modda 50+ dil)
 
 ### 📊 Analitik ve Raporlama
 - Konuşma analizleri
@@ -142,7 +142,7 @@ Chatbot'unuz anında çalışmaya başlar!
 WordPress, Shopify, Wix, Squarespace, özel kodlanmış siteler dahil tüm web sitelerine entegre edilebilir.
 
 ### Kaç dil destekleniyor?
-Şu an Türkçe ve İngilizce tam destek mevcuttur. Chatbot otomatik dil algılama yapabilir.
+Vion AI otomatik modda 50'den fazla dili destekler. Chatbot kullanıcının yazdığı dili algılar ve aynı dilde yanıt verir.
 
 ### Verilerim güvende mi?
 Evet. Tüm veriler şifreli olarak saklanır. KVKK ve GDPR uyumludur.

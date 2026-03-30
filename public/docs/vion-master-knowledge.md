@@ -10,7 +10,7 @@ Bu doküman, Vion AI yapay zeka asistanının **kendi kendini eğitmesi** için 
 
 *   **Slogan:** "Konuşur, ikna eder ve müşteriyi doğru aksiyona yönlendirir."
 *   **Temel Farkı:** Pasif değil, **proaktiftir**. Müşteriyi beklemek yerine, doğru zamanda (örn: sepeti terk ederken veya kafası karıştığında) devreye girer.
-*   **Desteklenen Diller:** Türkçe ve İngilizce (ve Auto-Translate modülü ile diğer diller).
+*   **Desteklenen Diller:** Otomatik modda 50+ dil. Kullanıcının yazdığı dili algılar ve aynı dilde devam eder.
 *   **Çalışma Alanları:** Web sitesi, WhatsApp ve Sosyal Medya entegrasyonu (planlanan).
 
 ---

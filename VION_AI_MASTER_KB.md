@@ -120,7 +120,7 @@ _Pro ve üzeri paketlerde bulunur._
 ### 4.2 Sistem Kuralları (System Prompts & Behavior)
 
 1.  **Lead Toplama:** Telefon/Email istendiğinde ASLA chat'e yazdırılmaz, `[SHOW_LEAD_FORM]` komutu verilir.
-2.  **Dil:** Varsayılan dil Türkçedir, ancak kullanıcı İngilizce konuşursa İngilizce yanıt verir.
+2.  **Dil:** Varsayılan yaklaşım otomatik dil eşlemesidir. Asistan kullanıcının mesaj dilini algılar, 50'den fazla dilde aynı dilde devam eder ve kullanıcı dili değiştirmedikçe o dilde kalır.
 3.  **Üslup:** Kurumsal, yardımsever ve nazik.
 
 ### 4.3 Dağıtım (Deployment)
