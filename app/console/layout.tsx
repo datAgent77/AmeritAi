@@ -36,6 +36,10 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (authLoading) return
+        if (role === "SUPER_ADMIN") {
+            router.replace("/admin")
+            return
+        }
         if (role === "AGENCY_ADMIN") {
             router.replace("/agency")
         }
@@ -48,7 +52,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
             setIsInitializing(false)
             return
         }
-        if (role === "AGENCY_ADMIN") {
+        if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") {
             setIsInitializing(false)
             return
         }
@@ -151,7 +155,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         )
     }
 
-    if (role === "AGENCY_ADMIN") {
+    if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") {
         return null
     }
 

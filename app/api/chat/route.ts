@@ -1,10 +1,15 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 import { generateAIResponse, saveMessageToSession, analyzeSentiment, type AIMessage } from "@/lib/ai-service";
+import { upsertChatSessionRecord } from "@/lib/chat-sessions";
+import { normalizeGuidedSkillState } from "@/lib/guided-skills";
+import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine";
+import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types";
 import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
 import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
+import { normalizePhoneNumber, upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils";
 import { resolveConversationLanguage, toCopyLanguage } from "@/lib/conversation-language";
 
 export const runtime = 'nodejs';
@@ -27,6 +32,7 @@ type ChatRequestBody = {
     visualAnalysisContext?: string;
     assistantMessageId?: string;
     industry?: string;
+    guidedEvent?: GuidedSkillClientEvent | null;
 };
 
 type NormalizedChatMessage = AIMessage & {
@@ -50,6 +56,183 @@ function isUserContextPayload(value: unknown): value is UserContextPayload {
     return typeof candidate.url === "string"
         && typeof candidate.title === "string"
         && (typeof candidate.desc === "string" || typeof candidate.description === "string");
+}
+
+type WebIdentityHints = {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    aliases: Array<{ aliasType: string; aliasValue: string; verified?: boolean }>;
+};
+
+const EMAIL_KEYS = ["email", "customerEmail", "mail"];
+const PHONE_KEYS = ["phone", "phoneNumber", "customerPhone", "mobile", "gsm", "telephone"];
+const NAME_KEYS = ["name", "fullName", "displayName", "customerName"];
+const FIRST_NAME_KEYS = ["firstName", "firstname", "givenName"];
+const LAST_NAME_KEYS = ["lastName", "lastname", "surname", "familyName"];
+const EXTERNAL_ID_KEYS = ["customerId", "customer_id", "accountId", "account_id", "memberId", "member_id", "profileId", "profile_id", "userId", "user_id"];
+
+function asPlainObject(value: unknown): Record<string, unknown> | null {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    return value as Record<string, unknown>;
+}
+
+function findNestedString(value: unknown, keys: string[], depth = 0): string | null {
+    if (depth > 4) return null;
+    if (typeof value === "string") return null;
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            const hit = findNestedString(item, keys, depth + 1);
+            if (hit) return hit;
+        }
+        return null;
+    }
+
+    const record = asPlainObject(value);
+    if (!record) return null;
+
+    for (const [key, fieldValue] of Object.entries(record)) {
+        if (typeof fieldValue === "string" && keys.some((candidate) => candidate.toLowerCase() === key.toLowerCase()) && fieldValue.trim()) {
+            return fieldValue.trim();
+        }
+    }
+
+    for (const nestedValue of Object.values(record)) {
+        const hit = findNestedString(nestedValue, keys, depth + 1);
+        if (hit) return hit;
+    }
+
+    return null;
+}
+
+function collectNestedAliasValues(value: unknown, keys: string[], depth = 0, bucket: Array<{ aliasType: string; aliasValue: string }>) {
+    if (depth > 4) return;
+    if (Array.isArray(value)) {
+        for (const item of value) {
+            collectNestedAliasValues(item, keys, depth + 1, bucket);
+        }
+        return;
+    }
+
+    const record = asPlainObject(value);
+    if (!record) return;
+
+    for (const [key, fieldValue] of Object.entries(record)) {
+        if (typeof fieldValue === "string" && fieldValue.trim()) {
+            const normalizedKey = key.toLowerCase();
+            const matched = keys.find((candidate) => candidate.toLowerCase() === normalizedKey);
+            if (matched) {
+                bucket.push({
+                    aliasType: `external:${matched.toLowerCase()}`,
+                    aliasValue: fieldValue.trim(),
+                });
+            }
+        } else if (typeof fieldValue === "number" && Number.isFinite(fieldValue)) {
+            const normalizedKey = key.toLowerCase();
+            const matched = keys.find((candidate) => candidate.toLowerCase() === normalizedKey);
+            if (matched) {
+                bucket.push({
+                    aliasType: `external:${matched.toLowerCase()}`,
+                    aliasValue: String(fieldValue),
+                });
+            }
+        } else if (fieldValue && typeof fieldValue === "object") {
+            collectNestedAliasValues(fieldValue, keys, depth + 1, bucket);
+        }
+    }
+}
+
+function extractWebIdentityHints(context?: UserContextPayload): WebIdentityHints {
+    const sources = [context?.dynamicData, context?.siteSessionContext].filter(Boolean);
+    const aliases: Array<{ aliasType: string; aliasValue: string; verified?: boolean }> = [];
+
+    const email = sources.map((source) => findNestedString(source, EMAIL_KEYS)).find(Boolean) || null;
+    const phoneRaw = sources.map((source) => findNestedString(source, PHONE_KEYS)).find(Boolean) || null;
+    const phone = phoneRaw ? normalizePhoneNumber(phoneRaw) || phoneRaw : null;
+    const directName = sources.map((source) => findNestedString(source, NAME_KEYS)).find(Boolean) || null;
+    const firstName = sources.map((source) => findNestedString(source, FIRST_NAME_KEYS)).find(Boolean) || null;
+    const lastName = sources.map((source) => findNestedString(source, LAST_NAME_KEYS)).find(Boolean) || null;
+    const fallbackName = [firstName, lastName].filter(Boolean).join(" ").trim() || null;
+    const name = directName || fallbackName;
+
+    for (const source of sources) {
+        collectNestedAliasValues(source, EXTERNAL_ID_KEYS, 0, aliases);
+    }
+
+    if (email) {
+        aliases.push({ aliasType: "email", aliasValue: email, verified: true });
+    }
+    if (phone) {
+        aliases.push({ aliasType: "phone", aliasValue: phone });
+    }
+
+    const deduped = new Map<string, { aliasType: string; aliasValue: string; verified?: boolean }>();
+    for (const alias of aliases) {
+        const key = `${alias.aliasType}:${alias.aliasValue}`.toLowerCase();
+        const existing = deduped.get(key);
+        deduped.set(key, {
+            aliasType: alias.aliasType,
+            aliasValue: alias.aliasValue,
+            verified: alias.verified || existing?.verified || false,
+        });
+    }
+
+    return {
+        name,
+        email: email ? email.toLowerCase() : null,
+        phone,
+        aliases: Array.from(deduped.values()),
+    };
+}
+
+async function syncWebSessionIdentity(adminDb: any, params: {
+    chatbotId: string;
+    sessionId: string;
+    context?: UserContextPayload;
+}) {
+    const identity = extractWebIdentityHints(params.context);
+    const hasResolvableIdentity = Boolean(identity.email || identity.phone || identity.aliases.length > 0);
+    if (!hasResolvableIdentity) {
+        return null;
+    }
+    const contactKey =
+        identity.email ||
+        identity.phone ||
+        identity.aliases[0]?.aliasValue ||
+        params.sessionId;
+
+    const contact = await upsertContactGraph(adminDb, {
+        chatbotId: params.chatbotId,
+        channel: "web",
+        contactKey,
+        displayName: identity.name || null,
+        verifiedPhone: identity.phone || null,
+        email: identity.email || null,
+        aliases: identity.aliases.map((alias) => ({
+            aliasType: alias.aliasType,
+            aliasValue: alias.aliasValue,
+            verified: alias.verified,
+        })),
+        notes: "Synced from web widget runtime context.",
+    });
+
+    await upsertOmniSession(adminDb, {
+        sessionId: params.sessionId,
+        chatbotId: params.chatbotId,
+        channel: "web",
+        contactKey: contact.contactKey || contactKey,
+        canonicalContactId: contact.id || null,
+        visitorName: identity.name || null,
+        visitorEmail: identity.email || null,
+        channelMeta: {
+            webIdentityResolved: Boolean(identity.email || identity.phone || identity.aliases.length > 0),
+        },
+    });
+
+    return {
+        contact,
+        identity,
+    };
 }
 
 type ShopperProduct = {
@@ -246,6 +429,7 @@ async function tryShopperFallback(body: ChatRequestBody | null | undefined): Pro
 
 export async function POST(req: Request) {
     let body: ChatRequestBody = {};
+    let activeSessionId = "";
 
     try {
         const adminDb = getAdminDb();
@@ -279,6 +463,10 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+
+        activeSessionId = typeof sessionId === "string" && sessionId.trim()
+            ? sessionId.trim()
+            : `sess-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 
         const normalizedMessages: NormalizedChatMessage[] = messages
             .filter((message): message is NormalizedChatMessage => {
@@ -315,8 +503,20 @@ export async function POST(req: Request) {
             }
             : undefined;
 
+        const webIdentitySyncPromise =
+            safeContext
+                ? syncWebSessionIdentity(adminDb, {
+                    chatbotId,
+                    sessionId: activeSessionId,
+                    context: safeContext,
+                }).catch((error) => {
+                    console.error("[CHAT API] Failed to sync web identity:", error);
+                    return null;
+                })
+                : Promise.resolve(null);
+
         // Rate limiting check
-        const rateLimitResult = checkRateLimit(ip, sessionId);
+        const rateLimitResult = checkRateLimit(ip, activeSessionId);
         if (!rateLimitResult.allowed) {
             return new Response(
                 JSON.stringify({ error: "Too many requests", reason: rateLimitResult.reason }),
@@ -373,22 +573,82 @@ export async function POST(req: Request) {
 
         // ... existing pause check codes ...
 
-        // Parallelize: Save user message and start generating AI response
         const lastMessage = normalizedMessages[normalizedMessages.length - 1]!;
         const messageId = lastMessage.id || Date.now().toString();
         const userContent = typeof lastMessage.content === "string" ? lastMessage.content : "";
+        const sessionSnapshot =
+            activeSessionId
+                ? await adminDb.collection("chat_sessions").doc(activeSessionId).get().catch(() => null)
+                : null;
+        const currentGuidedState = normalizeGuidedSkillState(sessionSnapshot?.data()?.guidedSkillState);
 
-        const [saveResult, result] = await Promise.all([
-            sessionId && lastMessage.role === "user" && userContent
-                ? saveMessageToSession(
-                    sessionId,
+        if (lastMessage.role === "user" && userContent) {
+            await saveMessageToSession(
+                activeSessionId,
+                chatbotId,
+                {
+                    id: messageId,
+                    role: "user",
+                    content: userContent,
+                    sentiment: "Neutral",
+                    guidedEvent: body.guidedEvent || undefined,
+                },
+                userId
+            );
+        }
+
+        if (lastMessage.role === "user" && userContent) {
+            const syncedIdentity = await webIdentitySyncPromise;
+            const guidedResult = await resolveGuidedSkillTurn({
+                adminDb,
+                chatbotId,
+                channel: "web",
+                sessionId: activeSessionId,
+                transcript: userContent,
+                guidedEvent: body.guidedEvent || null,
+                currentState: currentGuidedState,
+                contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                canonicalContactId: syncedIdentity?.contact?.id || null,
+                language: resolvedLanguage,
+            });
+
+            if (guidedResult.handled) {
+                const guidedAssistantMessageId = assistantMessageId || `assistant-guided-${Date.now()}`
+                await upsertChatSessionRecord({
+                    sessionId: activeSessionId,
                     chatbotId,
-                    { id: messageId, role: "user", content: userContent, sentiment: "Neutral" },
-                    userId
-                )
-                : Promise.resolve(),
-            generateAIResponse(chatbotId, normalizedMessages, sessionId, shouldStream, safeContext, isVoice, resolvedLanguage, visualAnalysisContext, body.industry)
-        ]);
+                    userId,
+                    channel: "web",
+                    guidedSkillState: guidedResult.nextState ?? null,
+                    message: {
+                        id: guidedAssistantMessageId,
+                        role: "assistant",
+                        content: guidedResult.assistantContent || "",
+                        guidedUi: guidedResult.assistantGuidedUi || undefined,
+                    },
+                });
+
+                return NextResponse.json({
+                    content: guidedResult.assistantContent || "",
+                    guidedUi: guidedResult.assistantGuidedUi || null,
+                    assistantMessageId: guidedAssistantMessageId,
+                    guidedSkillState: guidedResult.nextState ?? null,
+                    sessionId: activeSessionId,
+                });
+            }
+        }
+
+        const result = await generateAIResponse(
+            chatbotId,
+            normalizedMessages,
+            activeSessionId,
+            shouldStream,
+            safeContext,
+            isVoice,
+            resolvedLanguage,
+            visualAnalysisContext,
+            body.industry
+        );
 
         // ... sentiment code ...
 
@@ -412,8 +672,8 @@ export async function POST(req: Request) {
                         }
 
                         // Save assistant response after stream completes using PRE-GENERATED ID
-                        if (sessionId && fullContent) {
-                            await saveMessageToSession(sessionId, chatbotId, {
+                        if (activeSessionId && fullContent) {
+                            await saveMessageToSession(activeSessionId, chatbotId, {
                                 role: "assistant",
                                 content: fullContent,
                                 id: assistantMessageId // <--- USE THIS ID
@@ -435,6 +695,19 @@ export async function POST(req: Request) {
                                             console.error("Chat API: ❌ adminDb is null for appointment save!");
                                         } else {
                                             // Save appointment to Firestore
+                                            const syncedIdentity = await webIdentitySyncPromise;
+                                            const contact = await upsertContactGraph(adminDb, {
+                                                chatbotId,
+                                                channel: "web",
+                                                canonicalContactId: syncedIdentity?.contact?.id || null,
+                                                contactKey: extractedData.customerPhone || extractedData.customerEmail || syncedIdentity?.contact?.contactKey || activeSessionId || null,
+                                                displayName: extractedData.customerName || syncedIdentity?.identity?.name || null,
+                                                verifiedPhone: extractedData.customerPhone || syncedIdentity?.identity?.phone || null,
+                                                email: extractedData.customerEmail || syncedIdentity?.identity?.email || null,
+                                                aliases: syncedIdentity?.identity?.aliases || [],
+                                                notes: "Updated during web appointment capture.",
+                                            });
+
                                             const appointmentDoc = {
                                                 chatbotId,
                                                 customerName: extractedData.customerName || "Guest",
@@ -442,7 +715,11 @@ export async function POST(req: Request) {
                                                 customerPhone: extractedData.customerPhone || "",
                                                 date: extractedData.date || "",
                                                 time: extractedData.time || "",
-                                                sessionId,
+                                                sessionId: activeSessionId,
+                                                sourceSessionId: activeSessionId,
+                                                sourceChannel: "web",
+                                                contactKey: contact.contactKey || extractedData.customerPhone || extractedData.customerEmail || null,
+                                                canonicalContactId: contact.id || syncedIdentity?.contact?.id || null,
                                                 status: 'pending',
                                                 createdAt: new Date()
                                             };
@@ -519,6 +796,19 @@ export async function POST(req: Request) {
                                                 ? "Sohbet İçi Konuşma"
                                                 : "In-Chat Conversation";
 
+                                            const syncedIdentity = await webIdentitySyncPromise;
+                                            const contact = await upsertContactGraph(adminDb, {
+                                                chatbotId,
+                                                channel: "web",
+                                                canonicalContactId: syncedIdentity?.contact?.id || null,
+                                                contactKey: leadData.phone || leadData.email || syncedIdentity?.contact?.contactKey || activeSessionId || null,
+                                                displayName: leadData.name || syncedIdentity?.identity?.name || null,
+                                                verifiedPhone: leadData.phone || syncedIdentity?.identity?.phone || null,
+                                                email: leadData.email || syncedIdentity?.identity?.email || null,
+                                                aliases: syncedIdentity?.identity?.aliases || [],
+                                                notes: "Updated during web lead capture.",
+                                            });
+
                                             const leadDoc = {
                                                 chatbotId,
                                                 name: leadData.name || (resolvedLanguage === 'tr' ? "Anonim" : "Anonymous"),
@@ -526,7 +816,11 @@ export async function POST(req: Request) {
                                                 phone: leadData.phone || "",
                                                 source: sourceText,
                                                 customFields: leadData.company ? { company: leadData.company } : {},
-                                                sessionId,
+                                                sessionId: activeSessionId,
+                                                sourceSessionId: activeSessionId,
+                                                sourceChannel: "web",
+                                                contactKey: contact.contactKey || leadData.phone || leadData.email || null,
+                                                canonicalContactId: contact.id || syncedIdentity?.contact?.id || null,
                                                 createdAt: new Date()
                                             };
 
@@ -573,6 +867,8 @@ export async function POST(req: Request) {
         const rawMessage = error instanceof Error ? error.message : String(error);
         const lowered = rawMessage.toLowerCase();
         const isConfigError = lowered.includes("no ai provider is configured") || lowered.includes("api key");
+        const isGuidedRequest = typeof body?.guidedEvent?.skillId === "string" && body.guidedEvent.skillId.trim().length > 0;
+        const shouldExposeGuidedError = process.env.NODE_ENV !== "production" && isGuidedRequest;
 
         if (isConfigError) {
             try {
@@ -607,10 +903,16 @@ export async function POST(req: Request) {
 
         const message = isConfigError
             ? "AI service configuration is incomplete. Please contact support."
-            : "AI service is temporarily unavailable. Please try again.";
+            : shouldExposeGuidedError
+                ? rawMessage
+                : "AI service is temporarily unavailable. Please try again.";
 
         return new Response(
-            JSON.stringify({ error: "ai_unavailable", message }),
+            JSON.stringify({
+                error: "ai_unavailable",
+                message,
+                ...(shouldExposeGuidedError ? { details: rawMessage } : {}),
+            }),
             { status: 503, headers: { 'Content-Type': 'application/json' } }
         );
     }

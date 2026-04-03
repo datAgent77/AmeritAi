@@ -1,6 +1,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { isPartnerLevel, resolvePartnerLevel } from '@/lib/management/access';
 import { isSuperAdminRole } from '@/lib/user-roles';
 import { authorizeTargetAccess } from '@/lib/api-auth';
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { targetUserId, email, password, role, isActive } = body;
+        const { targetUserId, email, password, role, isActive, partnerLevel, agencyName } = body;
 
         if (!targetUserId) {
             return NextResponse.json({ error: 'Missing targetUserId' }, { status: 400 });
@@ -47,6 +48,9 @@ export async function POST(req: NextRequest) {
         if (!authz.isSuperAdmin) {
             return NextResponse.json({ error: 'Forbidden: Super Admin access required' }, { status: 403 });
         }
+
+        const targetUserDoc = await adminDb.collection('users').doc(targetUserId).get();
+        const targetUserData = targetUserDoc.data() || {};
 
         const updates: any = {};
         if (email) updates.email = email;
@@ -74,10 +78,55 @@ export async function POST(req: NextRequest) {
                 ...currentClaims,
                 role: normalizedRole
             });
+
+            if (normalizedRole === 'AGENCY_ADMIN') {
+                const resolvedAgencyName = typeof agencyName === 'string' && agencyName.trim().length > 0
+                    ? agencyName.trim()
+                    : typeof targetUserData.agencyName === 'string' && targetUserData.agencyName.trim().length > 0
+                      ? targetUserData.agencyName.trim()
+                      : typeof targetUserData.partnerName === 'string' && targetUserData.partnerName.trim().length > 0
+                        ? targetUserData.partnerName.trim()
+                        : typeof targetUserData.companyName === 'string' && targetUserData.companyName.trim().length > 0
+                          ? targetUserData.companyName.trim()
+                          : typeof targetUserData.email === 'string' && targetUserData.email.trim().length > 0
+                            ? targetUserData.email.trim()
+                            : "";
+
+                if (!resolvedAgencyName) {
+                    return NextResponse.json({ error: 'agencyName is required when converting a user to partner' }, { status: 400 });
+                }
+
+                firestoreUpdates.agencyName = resolvedAgencyName;
+                firestoreUpdates.partnerName = resolvedAgencyName;
+                firestoreUpdates.partnerLevel =
+                    partnerLevel !== undefined
+                        ? resolvePartnerLevel(partnerLevel)
+                        : isPartnerLevel(targetUserData.partnerLevel)
+                          ? targetUserData.partnerLevel
+                          : "partner";
+                firestoreUpdates.agencyId = null;
+                firestoreUpdates.agencyAssignedAt = null;
+                firestoreUpdates.agencyAssignedBy = null;
+            }
         }
 
         if (typeof isActive === 'boolean') {
             firestoreUpdates.isActive = isActive;
+        }
+
+        if (partnerLevel !== undefined && firestoreUpdates.role !== 'AGENCY_ADMIN') {
+            if (!isPartnerLevel(partnerLevel)) {
+                return NextResponse.json({ error: 'Invalid partnerLevel value' }, { status: 400 });
+            }
+            firestoreUpdates.partnerLevel = resolvePartnerLevel(partnerLevel);
+        }
+
+        if (agencyName !== undefined && firestoreUpdates.role !== 'AGENCY_ADMIN') {
+            if (typeof agencyName !== 'string' || agencyName.trim().length === 0) {
+                return NextResponse.json({ error: 'Invalid agencyName value' }, { status: 400 });
+            }
+            firestoreUpdates.agencyName = agencyName.trim();
+            firestoreUpdates.partnerName = agencyName.trim();
         }
 
         if (Object.keys(updates).length === 0 && Object.keys(firestoreUpdates).length === 0) {

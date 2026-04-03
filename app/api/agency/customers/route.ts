@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { listManagedAccountsForViewer } from "@/lib/management/accounts";
+import { getPartnerDoc } from "@/lib/management/partners";
 import { provisionTenantAccount } from "@/lib/tenant-provisioning";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 import { isAgencyAdminRole } from "@/lib/user-roles";
@@ -39,7 +41,8 @@ async function getAgencyCaller(req: Request) {
         ok: true as const,
         adminAuth,
         adminDb,
-        decoded
+        decoded,
+        partner: await getPartnerDoc(adminDb, decoded.uid)
     };
 }
 
@@ -52,40 +55,35 @@ export async function GET(req: Request) {
 
         const { searchParams } = new URL(req.url);
         const includeArchived = searchParams.get("includeArchived") === "true";
-        const snap = await authz.adminDb
-            .collection("users")
-            .where("role", "==", "TENANT_ADMIN")
-            .where("agencyId", "==", authz.decoded.uid)
-            .get();
-
-        let customers = snap.docs.map((doc) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                email: data.email || "",
-                firstName: data.firstName || "",
-                lastName: data.lastName || "",
-                phone: data.phone || "",
-                companyName: data.companyName || "",
-                companyWebsite: data.companyWebsite || "",
-                industry: data.industry || "ecommerce",
-                role: data.role || "TENANT_ADMIN",
-                isActive: data.isActive !== false,
-                isArchived: data.isArchived === true,
-                createdAt: data.createdAt || null,
-                subscription: data.subscription || null
-            };
+        const result = await listManagedAccountsForViewer({
+            adminDb: authz.adminDb,
+            viewerId: authz.decoded.uid,
+            viewerRole: "AGENCY_ADMIN",
+            canSwitchOmniAccounts: authz.partner?.capabilities.canSwitchOmniAccounts,
+            includeArchived,
         });
 
-        if (!includeArchived) {
-            customers = customers.filter((customer) => !customer.isArchived);
-        }
-
-        customers.sort((a, b) => {
-            const left = (a.companyName || a.email).toLowerCase();
-            const right = (b.companyName || b.email).toLowerCase();
-            return left.localeCompare(right);
-        });
+        const customers = result.accounts.map((account) => ({
+            id: account.id,
+            email: account.email || "",
+            firstName: account.firstName || "",
+            lastName: account.lastName || "",
+            phone: account.phone || "",
+            companyName: account.companyName || "",
+            industry: account.industry || "ecommerce",
+            role: "TENANT_ADMIN",
+            isActive: account.isActive,
+            isArchived: account.isArchived,
+            createdAt: account.createdAt || null,
+            agencyId: account.agencyId || null,
+            partnerId: account.partnerId || null,
+            partnerName: account.partnerName || null,
+            partnerLevel: account.partnerLevel || null,
+            partnerLogoUrl: account.partnerLogoUrl || null,
+            planId: account.planId || null,
+            subscriptionStatus: account.subscriptionStatus || null,
+            subscriptionBillingPeriod: account.subscriptionBillingPeriod || null,
+        }));
 
         await logPlatformEvent({
             event_type: "agency_customers_list",
@@ -95,7 +93,11 @@ export async function GET(req: Request) {
             metadata: { count: customers.length }
         });
 
-        return NextResponse.json({ customers });
+        return NextResponse.json({
+            customers,
+            viewerPartner: authz.partner,
+            viewerCapabilities: authz.partner?.capabilities || null,
+        });
     } catch (error: any) {
         console.error("Agency customers list error:", error);
         return NextResponse.json({ error: error?.message || "Failed to fetch customers" }, { status: 500 });
@@ -124,6 +126,10 @@ export async function POST(req: Request) {
 
         if (!email || !password || !companyName) {
             return NextResponse.json({ error: "email, password and companyName are required" }, { status: 400 });
+        }
+
+        if (!authz.partner?.capabilities.canCreateManagedAccounts) {
+            return NextResponse.json({ error: "Forbidden: Partner level cannot create customers" }, { status: 403 });
         }
 
         const created = await provisionTenantAccount(authz.adminAuth, authz.adminDb, {

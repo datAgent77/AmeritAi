@@ -14,7 +14,7 @@ export default function PlatformPage() {
 
         const normalizedRole = typeof role === "string" ? role.toUpperCase() : ""
         if (normalizedRole === "SUPER_ADMIN") {
-            router.replace("/console/chatbot")
+            router.replace("/admin")
             return
         }
         if (normalizedRole === "AGENCY_ADMIN") {

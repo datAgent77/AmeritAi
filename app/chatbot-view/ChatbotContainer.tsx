@@ -68,32 +68,52 @@ export default function ChatbotContainer() {
 
 
     // Mobile Keyboard Fix: Visual Viewport
-    const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0 });
+    const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0, left: 0, width: '100%' });
+    const [isMobileKeyboardOpen, setIsMobileKeyboardOpen] = useState(false)
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && window.visualViewport) {
-            const handleResize = () => {
-                // Only apply on mobile where keyboard creates visual viewport shift
-                if (window.innerWidth < 768) {
-                    const vvHeight = window.visualViewport?.height ?? window.innerHeight
-                    const keyboardDelta = window.innerHeight - vvHeight
-                    setViewportStyle({
-                        height: keyboardDelta > 80 ? `${vvHeight}px` : '100%',
-                        top: 0
-                    })
-                } else {
-                    setViewportStyle({ height: '100%', top: 0 })
-                }
+        if (typeof window === 'undefined') return
+
+        const handleResize = () => {
+            const isMobile = window.innerWidth < 768
+            const visualViewport = window.visualViewport
+
+            if (!isMobile || !visualViewport) {
+                setViewportStyle({ height: '100%', top: 0, left: 0, width: '100%' })
+                setIsMobileKeyboardOpen(false)
+                return
             }
 
-            window.visualViewport.addEventListener('resize', handleResize)
+            const viewportHeight = Math.round(visualViewport.height || window.innerHeight || 0)
+            const viewportWidth = Math.round(visualViewport.width || window.innerWidth || 0)
+            const offsetTop = Math.max(0, Math.round(visualViewport.offsetTop || 0))
+            const offsetLeft = Math.max(0, Math.round(visualViewport.offsetLeft || 0))
+            const obscuredBottom = Math.max(0, Math.round(window.innerHeight - (offsetTop + viewportHeight)))
+            const keyboardDelta = Math.max(0, Math.round(window.innerHeight - viewportHeight))
+            const keyboardOpen = keyboardDelta > 120 || obscuredBottom > 120
 
-            // Initial check
-            handleResize()
+            setViewportStyle({
+                height: `${viewportHeight}px`,
+                top: offsetTop,
+                left: offsetLeft,
+                width: `${viewportWidth}px`,
+            })
+            setIsMobileKeyboardOpen(keyboardOpen)
+        }
 
-            return () => {
-                window.visualViewport?.removeEventListener('resize', handleResize)
-            }
+        window.addEventListener('resize', handleResize)
+        window.addEventListener('orientationchange', handleResize)
+        window.visualViewport?.addEventListener('resize', handleResize)
+        window.visualViewport?.addEventListener('scroll', handleResize)
+
+        // Initial check
+        handleResize()
+
+        return () => {
+            window.removeEventListener('resize', handleResize)
+            window.removeEventListener('orientationchange', handleResize)
+            window.visualViewport?.removeEventListener('resize', handleResize)
+            window.visualViewport?.removeEventListener('scroll', handleResize)
         }
     }, [])
 
@@ -504,7 +524,7 @@ export default function ChatbotContainer() {
     if (!isClient || !settings) return null
 
     const runtimeViewportStyle = isAmbientMode
-        ? { height: '100%', top: 0 }
+        ? { height: '100%', top: 0, left: 0, width: '100%' }
         : viewportStyle
 
     return (
@@ -512,10 +532,12 @@ export default function ChatbotContainer() {
             style={{
                 height: runtimeViewportStyle.height,
                 top: runtimeViewportStyle.top,
+                left: runtimeViewportStyle.left,
+                width: runtimeViewportStyle.width,
                 position: 'fixed',
-                backgroundColor: isAmbientMode ? 'transparent' : undefined
+                backgroundColor: isAmbientMode ? 'transparent' : undefined,
             }}
-            className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${!isAmbientMode && effectiveSettings.theme === 'dark' ? 'dark' : ''}`}
+            className={`vion-widget-runtime-root fixed overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${!isAmbientMode && effectiveSettings.theme === 'dark' ? 'dark' : ''}`}
         >
             {isAmbientMode && (
                 <style dangerouslySetInnerHTML={{ __html: `html, body, #__next, #root, main { background: transparent !important; background-color: transparent !important; box-shadow: none !important; } body { --background: transparent !important; } .vion-ambient-card { background-color: white !important; background: white !important; }` }} />
@@ -619,7 +641,7 @@ export default function ChatbotContainer() {
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full flex-col">
+                <div className="flex h-full min-h-0 flex-col">
                     {!showClassicEntryOnboarding && (
                         <ChatHeader
                             settings={effectiveSettings}
@@ -630,6 +652,7 @@ export default function ChatbotContainer() {
                             handleCloseWidget={handleCloseWidget}
                             handleClearChat={handleClearChat}
                             t={t}
+                            compact={isMobileKeyboardOpen}
                         />
                     )}
 
@@ -662,6 +685,7 @@ export default function ChatbotContainer() {
                         language={language}
                         t={t}
                         setMessages={setMessages}
+                        isKeyboardOpen={isMobileKeyboardOpen}
                     />
                 </div>
             )}

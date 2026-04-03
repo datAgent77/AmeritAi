@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { listPartners } from "@/lib/management/partners";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 import { isSuperAdminRole } from "@/lib/user-roles";
 
@@ -38,44 +39,7 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const includeArchived = searchParams.get("includeArchived") === "true";
 
-        const [agencySnap, tenantsSnap] = await Promise.all([
-            adminDb.collection("users").where("role", "==", "AGENCY_ADMIN").get(),
-            adminDb.collection("users").where("role", "==", "TENANT_ADMIN").get()
-        ]);
-
-        const customerCountByAgency = new Map<string, number>();
-        for (const doc of tenantsSnap.docs) {
-            const agencyId = doc.data()?.agencyId;
-            if (typeof agencyId === "string" && agencyId.length > 0) {
-                customerCountByAgency.set(agencyId, (customerCountByAgency.get(agencyId) || 0) + 1);
-            }
-        }
-
-        let agencies = agencySnap.docs.map((doc) => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                email: data.email || "",
-                agencyName: data.agencyName || "",
-                firstName: data.firstName || "",
-                lastName: data.lastName || "",
-                phone: data.phone || "",
-                isActive: data.isActive !== false,
-                isArchived: data.isArchived === true,
-                createdAt: data.createdAt || null,
-                customerCount: customerCountByAgency.get(doc.id) || 0
-            };
-        });
-
-        if (!includeArchived) {
-            agencies = agencies.filter((agency) => !agency.isArchived);
-        }
-
-        agencies.sort((a, b) => {
-            const left = (a.agencyName || a.email || "").toLowerCase();
-            const right = (b.agencyName || b.email || "").toLowerCase();
-            return left.localeCompare(right);
-        });
+        const agencies = await listPartners(adminDb, { includeArchived });
 
         await logPlatformEvent({
             event_type: "agencies_list",
@@ -85,7 +49,7 @@ export async function GET(req: Request) {
             metadata: { count: agencies.length }
         });
 
-        return NextResponse.json({ agencies });
+        return NextResponse.json({ agencies, partners: agencies });
     } catch (error: any) {
         console.error("Agencies list error:", error);
         return NextResponse.json({ error: error?.message || "Failed to list agencies" }, { status: 500 });

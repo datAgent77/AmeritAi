@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
+import { getPartnerLevelLabel } from "@/lib/management/access"
+import type { PartnerCapabilities, PartnerLevel } from "@/lib/management/types"
 import {
     Table,
     TableBody,
@@ -67,11 +69,17 @@ interface AgencyData {
     id: string
     email: string
     agencyName: string
+    partnerName?: string | null
     firstName?: string
     lastName?: string
+    phone?: string | null
     isActive: boolean
     isArchived?: boolean
     customerCount?: number
+    omniEnabledAccounts?: number
+    partnerLevel: PartnerLevel
+    partnerLogoUrl?: string | null
+    capabilities?: PartnerCapabilities
 }
 
 type CustomersManagementSection = "agencies" | "end-users"
@@ -106,33 +114,81 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
     const fetchDashboardData = useCallback(async () => {
         try {
-            const currentUser = auth.currentUser;
-            if (!currentUser) return;
+            const currentUser = auth.currentUser
+            if (!currentUser) return
 
-            const token = await currentUser.getIdToken();
-            const url = showArchived
-                ? '/api/admin/dashboard-stats?includeArchived=true'
-                : '/api/admin/dashboard-stats';
-            const response = await fetch(url, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
+            const token = await currentUser.getIdToken()
+            const dashboardUrl = showArchived
+                ? "/api/admin/dashboard-stats?includeArchived=true"
+                : "/api/admin/dashboard-stats"
+            const accountsUrl = `/api/omni/directory/accounts?includeArchived=${showArchived ? "true" : "false"}`
+            const [dashboardResponse, accountsResponse] = await Promise.all([
+                fetch(dashboardUrl, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }),
+                fetch(accountsUrl, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+            ])
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Failed to fetch dashboard data");
+            if (!dashboardResponse.ok) {
+                const errorData = await dashboardResponse.json().catch(() => ({}))
+                throw new Error(errorData.error || "Failed to fetch dashboard data")
             }
 
-            const data = await response.json();
+            if (!accountsResponse.ok) {
+                const errorData = await accountsResponse.json().catch(() => ({}))
+                throw new Error(errorData.error || "Failed to fetch managed accounts")
+            }
 
-            setUsers(data.users || []);
-            setStats(data.stats || {
+            const dashboardData = await dashboardResponse.json()
+            const accountsData = await accountsResponse.json()
+            const legacyUsers = Array.isArray(dashboardData?.users) ? dashboardData.users : []
+            const legacyUserMap = new Map(legacyUsers.map((user: UserData) => [user.id, user]))
+            const sharedAccounts = Array.isArray(accountsData?.accounts) ? accountsData.accounts : []
+
+            setUsers(
+                sharedAccounts.map((account: any) => {
+                    const legacy = legacyUserMap.get(account.id) as UserData | undefined
+                    const subscription = legacy?.subscription || (
+                        account.planId || account.subscriptionStatus || account.subscriptionBillingPeriod
+                            ? {
+                                planId: account.planId || undefined,
+                                status: account.subscriptionStatus || undefined,
+                                billingPeriod: account.subscriptionBillingPeriod || undefined,
+                            }
+                            : undefined
+                    )
+
+                    return {
+                        id: account.id,
+                        email: account.email || legacy?.email || "",
+                        role: "TENANT_ADMIN",
+                        isActive: account.isActive !== false,
+                        isArchived: account.isArchived === true,
+                        archivedAt: legacy?.archivedAt,
+                        createdAt: account.createdAt || legacy?.createdAt || "",
+                        agencyId: account.partnerId || account.agencyId || legacy?.agencyId || null,
+                        agencyAssignedAt: legacy?.agencyAssignedAt || null,
+                        agencyAssignedBy: legacy?.agencyAssignedBy || null,
+                        companyName: account.companyName || legacy?.companyName,
+                        planId: account.planId || legacy?.planId,
+                        plan: legacy?.plan,
+                        entitlements: legacy?.entitlements || (account.planId ? { planId: account.planId } : undefined),
+                        subscription,
+                    } satisfies UserData
+                })
+            )
+            setStats(dashboardData?.stats || {
                 totalTenants: 0,
                 activeTenants: 0,
                 totalChatbots: 0,
                 totalChatSessions: 0
-            });
+            })
         } catch (error: any) {
             console.error("Error fetching dashboard data:", error)
             toast({
@@ -200,13 +256,34 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
     const [newAgencyFirstName, setNewAgencyFirstName] = useState("")
     const [newAgencyLastName, setNewAgencyLastName] = useState("")
     const [newAgencyPhone, setNewAgencyPhone] = useState("")
+    const [newAgencyPartnerLevel, setNewAgencyPartnerLevel] = useState<PartnerLevel>("partner")
     const [agencySearchTerm, setAgencySearchTerm] = useState("")
     const [agencyStatusFilter, setAgencyStatusFilter] = useState<"all" | "active" | "inactive">("all")
     const [agencyCustomerFilter, setAgencyCustomerFilter] = useState<"all" | "has-customers" | "no-customers">("all")
+    const [agencyLevelFilter, setAgencyLevelFilter] = useState<PartnerLevel | "all">("all")
     const [userStatusFilter, setUserStatusFilter] = useState<"all" | "active" | "inactive">("all")
     const [userPlanFilter, setUserPlanFilter] = useState("all")
     const [userAgencyFilter, setUserAgencyFilter] = useState("all")
     const [userSubscriptionFilter, setUserSubscriptionFilter] = useState<"all" | "trial" | "paid" | "unknown">("all")
+    const [partnerConversionUser, setPartnerConversionUser] = useState<UserData | null>(null)
+    const [conversionPartnerName, setConversionPartnerName] = useState("")
+    const [conversionPartnerLevel, setConversionPartnerLevel] = useState<PartnerLevel>("partner")
+    const [isConvertingPartner, setIsConvertingPartner] = useState(false)
+
+    const getPartnerName = useCallback((agency: AgencyData) => {
+        return agency.partnerName || agency.agencyName || agency.email || agency.id
+    }, [])
+
+    const derivePartnerNameFromUser = useCallback((user: UserData) => {
+        const companyName = typeof user.companyName === "string" ? user.companyName.trim() : ""
+        if (companyName) return companyName
+        const email = typeof user.email === "string" ? user.email.trim() : ""
+        if (email) {
+            const [local] = email.split("@")
+            return local || email
+        }
+        return "Partner"
+    }, [])
 
     const getUserPlanId = useCallback((user: UserData) => {
         const rawPlanId =
@@ -297,7 +374,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.error || "Failed to assign agency")
+                throw new Error(data.error || "Failed to assign partner")
             }
 
             setUsers((prev) => prev.map((user) => {
@@ -312,13 +389,13 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             toast({
                 title: "Success",
-                description: agencyId ? "Agency assigned." : "Agency unassigned."
+                description: agencyId ? "Partner assigned." : "Partner unassigned."
             })
             fetchAgencies()
         } catch (error: any) {
             toast({
                 title: "Error",
-                description: error?.message || "Failed to assign agency.",
+                description: error?.message || "Failed to assign partner.",
                 variant: "destructive"
             })
         } finally {
@@ -411,6 +488,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 },
                 body: JSON.stringify({
                     agencyName: newAgencyName,
+                    partnerLevel: newAgencyPartnerLevel,
                     email: newAgencyEmail,
                     password: newAgencyPassword,
                     firstName: newAgencyFirstName,
@@ -421,12 +499,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             if (!response.ok) {
                 const data = await response.json()
-                throw new Error(data.error || "Failed to create agency")
+                throw new Error(data.error || "Failed to create partner")
             }
 
             toast({
                 title: "Success",
-                description: "Agency created successfully."
+                description: "Partner created successfully."
             })
 
             setIsAddAgencyOpen(false)
@@ -436,11 +514,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             setNewAgencyFirstName("")
             setNewAgencyLastName("")
             setNewAgencyPhone("")
+            setNewAgencyPartnerLevel("partner")
             await fetchAgencies()
         } catch (error: any) {
             toast({
                 title: "Error",
-                description: error?.message || "Failed to create agency.",
+                description: error?.message || "Failed to create partner.",
                 variant: "destructive"
             })
         } finally {
@@ -465,7 +544,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.error || "Failed to toggle agency status");
+                throw new Error(data.error || "Failed to toggle partner status");
             }
 
             setAgencies((prev) => prev.map((agency) =>
@@ -474,14 +553,75 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             toast({
                 title: "Success",
-                description: `Agency ${!currentStatus ? "activated" : "deactivated"} successfully.`,
+                description: `Partner ${!currentStatus ? "activated" : "deactivated"} successfully.`,
             });
         } catch (error: any) {
             toast({
                 title: "Error",
-                description: error?.message || "Failed to update agency status.",
+                description: error?.message || "Failed to update partner status.",
                 variant: "destructive",
             });
+        }
+    }
+
+    const openPartnerConversionDialog = (user: UserData) => {
+        setPartnerConversionUser(user)
+        setConversionPartnerName(derivePartnerNameFromUser(user))
+        setConversionPartnerLevel("partner")
+    }
+
+    const handleConvertUserToPartner = async () => {
+        if (!partnerConversionUser) return
+
+        const normalizedPartnerName = conversionPartnerName.trim()
+        if (!normalizedPartnerName) {
+            toast({
+                title: "Error",
+                description: t('agencyName') || "Partner adı gerekli.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        setIsConvertingPartner(true)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/update-user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    targetUserId: partnerConversionUser.id,
+                    role: "AGENCY_ADMIN",
+                    partnerLevel: conversionPartnerLevel,
+                    agencyName: normalizedPartnerName,
+                })
+            })
+
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to convert user to partner")
+            }
+
+            toast({
+                title: "Success",
+                description: "Kullanıcı partner hesabına dönüştürüldü."
+            })
+
+            setPartnerConversionUser(null)
+            setConversionPartnerName("")
+            setConversionPartnerLevel("partner")
+            await Promise.all([fetchDashboardData(), fetchAgencies()])
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Kullanıcı partner hesabına dönüştürülemedi.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsConvertingPartner(false)
         }
     }
 
@@ -617,7 +757,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
         return agencies.filter((agency) => {
             const matchesQuery = !query ||
-                (agency.agencyName || "").toLowerCase().includes(query) ||
+                getPartnerName(agency).toLowerCase().includes(query) ||
                 (agency.email || "").toLowerCase().includes(query)
 
             const matchesStatus =
@@ -631,9 +771,13 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 (agencyCustomerFilter === "has-customers" && customerCount > 0) ||
                 (agencyCustomerFilter === "no-customers" && customerCount === 0)
 
-            return matchesQuery && matchesStatus && matchesCustomerCount
+            const matchesLevel =
+                agencyLevelFilter === "all" ||
+                agency.partnerLevel === agencyLevelFilter
+
+            return matchesQuery && matchesStatus && matchesCustomerCount && matchesLevel
         })
-    }, [agencies, agencySearchTerm, agencyStatusFilter, agencyCustomerFilter])
+    }, [agencies, agencySearchTerm, agencyStatusFilter, agencyCustomerFilter, agencyLevelFilter, getPartnerName])
 
     const filteredUsers = useMemo(() => {
         const query = searchTerm.trim().toLowerCase()
@@ -697,12 +841,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">
                         {isAgenciesSection
-                            ? (t('agencies') || "Ajanslar")
+                            ? (t('agencies') || "Partnerler")
                             : (t('endUsers') || "Son Kullanıcılar")}
                     </h2>
                     <p className="text-muted-foreground">
                         {isAgenciesSection
-                            ? (t('manageAgencyDesc') || "Ajans bilgileri ve atanmış müşterileri yönetin.")
+                            ? (t('manageAgencyDesc') || "Partner bilgilerini ve bağlı müşterileri yönetin.")
                             : (t('manageTenantsDescription') || "Sistem kullanıcılarını ve erişimlerini yönetin.")}
                     </p>
                 </div>
@@ -710,7 +854,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                     {isAgenciesSection ? (
                         <Button variant="outline" onClick={() => setIsAddAgencyOpen(true)} className="shadow-sm">
                             <Plus className="mr-2 h-4 w-4" />
-                            {t('addAgency') || "Add Agency"}
+                            {t('addAgency') || "Add Partner"}
                         </Button>
                     ) : (
                         <Button onClick={() => setIsAddTenantOpen(true)} className="shadow-sm">
@@ -726,12 +870,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('agencies') || "Ajanslar"}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('agencies') || "Partnerler"}</CardTitle>
                             <Building2 className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold">{agencies.length}</div>
-                            <p className="text-xs text-muted-foreground">{t('agency') || "Agency"} hesabı</p>
+                            <p className="text-xs text-muted-foreground">{t('agency') || "Partner"} hesabı</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -741,7 +885,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-green-600">{activeAgencyCount}</div>
-                            <p className="text-xs text-muted-foreground">{t('agencyActiveDesc') || "Ajans aktif — müşteriler giriş yapabilir."}</p>
+                            <p className="text-xs text-muted-foreground">{t('agencyActiveDesc') || "Partner aktif — müşteriler erişebilir."}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -804,7 +948,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <Card className={listCardClassName}>
                     <CardHeader className={listCardHeaderClassName}>
                         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                            <CardTitle className="text-base font-semibold">{t('agencies') || "Agencies"}</CardTitle>
+                            <CardTitle className="text-base font-semibold">{t('agencies') || "Partners"}</CardTitle>
                             <span className="text-xs text-muted-foreground">
                                 {filteredAgencies.length} {t('results') || "results"}
                             </span>
@@ -837,7 +981,17 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="has-customers">{t('customers') || "Customers"} &gt; 0</option>
                                 <option value="no-customers">{t('customers') || "Customers"} = 0</option>
                             </select>
-                            {(agencySearchTerm || agencyStatusFilter !== "all" || agencyCustomerFilter !== "all") && (
+                            <select
+                                className="flex h-9 min-w-[220px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                                value={agencyLevelFilter}
+                                onChange={(e) => setAgencyLevelFilter(e.target.value as PartnerLevel | "all")}
+                            >
+                                <option value="all">Partner Level: All</option>
+                                <option value="partner">Partner</option>
+                                <option value="solution_partner">Solution Partner</option>
+                                <option value="strategic_partner">Strategic Partner</option>
+                            </select>
+                            {(agencySearchTerm || agencyStatusFilter !== "all" || agencyCustomerFilter !== "all" || agencyLevelFilter !== "all") && (
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -846,6 +1000,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                         setAgencySearchTerm("")
                                         setAgencyStatusFilter("all")
                                         setAgencyCustomerFilter("all")
+                                        setAgencyLevelFilter("all")
                                     }}
                                 >
                                     {t('clearFilters') || "Clear filters"}
@@ -863,8 +1018,9 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <Table>
                                     <TableHeader className={listTableHeaderClassName}>
                                         <TableRow>
-                                            <TableHead>{t('agency') || "Agency"}</TableHead>
+                                            <TableHead>{t('agency') || "Partner"}</TableHead>
                                             <TableHead>{t('email') || "Email"}</TableHead>
+                                            <TableHead>Partner Level</TableHead>
                                             <TableHead>{t('customers') || "Customers"}</TableHead>
                                             <TableHead>{t('status') || "Status"}</TableHead>
                                             <TableHead className="text-right">{t('actions') || "Actions"}</TableHead>
@@ -873,14 +1029,17 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     <TableBody>
                                         {filteredAgencies.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                                                     {t('noResults') || "No results found."}
                                                 </TableCell>
                                             </TableRow>
                                         ) : filteredAgencies.map((agency) => (
                                             <TableRow key={agency.id}>
-                                                <TableCell className="font-medium">{agency.agencyName || "-"}</TableCell>
+                                                <TableCell className="font-medium">{getPartnerName(agency)}</TableCell>
                                                 <TableCell>{agency.email}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary">{getPartnerLevelLabel(agency.partnerLevel)}</Badge>
+                                                </TableCell>
                                                 <TableCell>{agency.customerCount || 0}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
@@ -960,18 +1119,18 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 ))}
                             </select>
                             <select
-                                aria-label={t('agency') || "Agency"}
+                                aria-label={t('agency') || "Partner"}
                                 className="flex h-9 min-w-[200px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={userAgencyFilter}
                                 onChange={(e) => setUserAgencyFilter(e.target.value)}
                             >
-                                <option value="all">{t('agency') || "Agency"}: {t('all') || "All"}</option>
+                                <option value="all">{t('agency') || "Partner"}: {t('all') || "All"}</option>
                                 <option value="unassigned">{t('unassigned') || "Unassigned"}</option>
                                 {agencies
                                     .filter((agency) => !agency.isArchived)
                                     .map((agency) => (
                                         <option key={agency.id} value={agency.id}>
-                                            {agency.agencyName || agency.email}
+                                            {getPartnerName(agency)}
                                         </option>
                                     ))}
                             </select>
@@ -1023,7 +1182,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <TableHeader className={listTableHeaderClassName}>
                                     <TableRow>
                                         <TableHead>{t('email')}</TableHead>
-                                        <TableHead>{t('agency') || "Agency"}</TableHead>
+                                        <TableHead>{t('agency') || "Partner"}</TableHead>
                                         <TableHead>{t('plan') || "Plan"}</TableHead>
                                         <TableHead>{t('status')}</TableHead>
                                         <TableHead className="text-right">{t('actions')}</TableHead>
@@ -1059,7 +1218,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                         <TableCell>
                                             <div className="space-y-2">
                                                 <div className="text-sm">
-                                                    {agencies.find((agency) => agency.id === user.agencyId)?.agencyName || t('unassigned') || "Unassigned"}
+                                                    {agencies.find((agency) => agency.id === user.agencyId)?.partnerName || agencies.find((agency) => agency.id === user.agencyId)?.agencyName || t('unassigned') || "Unassigned"}
                                                 </div>
                                                 <select
                                                     className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -1072,7 +1231,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                         .filter((agency) => !agency.isArchived)
                                                         .map((agency) => (
                                                             <option key={agency.id} value={agency.id}>
-                                                                {agency.agencyName || agency.email}
+                                                                {getPartnerName(agency)}
                                                             </option>
                                                         ))}
                                                 </select>
@@ -1123,6 +1282,18 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                     >
                                                         <CreditCard className="h-4 w-4 mr-1" />
                                                         <span className="hidden sm:inline">{t('subscription') || "Abonelik"}</span>
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+                                                        onClick={() => openPartnerConversionDialog(user)}
+                                                        disabled={user.isArchived}
+                                                        title={t('makePartner') || "Partner Yap"}
+                                                    >
+                                                        <Building2 className="h-4 w-4 mr-1" />
+                                                        <span className="hidden sm:inline">{t('makePartner') || "Partner Yap"}</span>
                                                     </Button>
 
                                                     <Button
@@ -1269,7 +1440,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                         <Input id="password" type="password" value={newTenantPassword} onChange={(e) => setNewTenantPassword(e.target.value)} placeholder="******" />
                                     </div>
                                     <div className="space-y-2 col-span-2">
-                                        <Label htmlFor="agency">{t('agency') || "Agency"} ({t('optional') || "optional"})</Label>
+                                        <Label htmlFor="agency">{t('agency') || "Partner"} ({t('optional') || "optional"})</Label>
                                         <select
                                             id="agency"
                                             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -1281,7 +1452,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                 .filter((agency) => !agency.isArchived)
                                                 .map((agency) => (
                                                     <option key={agency.id} value={agency.id}>
-                                                        {agency.agencyName || agency.email}
+                                                        {getPartnerName(agency)}
                                                     </option>
                                                 ))}
                                         </select>
@@ -1305,12 +1476,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <Dialog open={isAddAgencyOpen} onOpenChange={setIsAddAgencyOpen}>
                 <DialogContent className="max-w-xl p-8">
                     <DialogHeader>
-                        <DialogTitle>{t('createAgency') || "Create Agency"}</DialogTitle>
-                        <DialogDescription>{t('createAgencyDesc') || "Create a new agency admin account."}</DialogDescription>
+                        <DialogTitle>{t('createAgency') || "Create Partner"}</DialogTitle>
+                        <DialogDescription>{t('createAgencyDesc') || "Create a new partner admin account."}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-2">
                         <div className="space-y-2">
-                            <Label htmlFor="agencyName">{t('agencyName') || "Agency Name"}</Label>
+                            <Label htmlFor="agencyName">{t('agencyName') || "Partner Name"}</Label>
                             <Input id="agencyName" value={newAgencyName} onChange={(e) => setNewAgencyName(e.target.value)} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -1335,15 +1506,100 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                             <Label htmlFor="agencyPassword">{t('password') || "Password"}</Label>
                             <Input id="agencyPassword" type="password" value={newAgencyPassword} onChange={(e) => setNewAgencyPassword(e.target.value)} />
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="agencyPartnerLevel">Partner Level</Label>
+                            <select
+                                id="agencyPartnerLevel"
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                value={newAgencyPartnerLevel}
+                                onChange={(e) => setNewAgencyPartnerLevel(e.target.value as PartnerLevel)}
+                            >
+                                <option value="partner">Partner</option>
+                                <option value="solution_partner">Solution Partner</option>
+                                <option value="strategic_partner">Strategic Partner</option>
+                            </select>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsAddAgencyOpen(false)}>{t('cancel') || "Cancel"}</Button>
                         <Button onClick={handleCreateAgency} disabled={isCreatingAgency}>
                             {isCreatingAgency && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t('createAgency') || "Create Agency"}
+                            {t('createAgency') || "Create Partner"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
+                </Dialog>
+            )}
+
+            {isEndUsersSection && (
+                <Dialog
+                    open={!!partnerConversionUser}
+                    onOpenChange={(open) => {
+                        if (!open && !isConvertingPartner) {
+                            setPartnerConversionUser(null)
+                            setConversionPartnerName("")
+                            setConversionPartnerLevel("partner")
+                        }
+                    }}
+                >
+                    <DialogContent className="max-w-xl p-8">
+                        <DialogHeader>
+                            <DialogTitle>{t('convertUserToPartner') || "Kullanıcıyı Partnera Dönüştür"}</DialogTitle>
+                            <DialogDescription>
+                                Seçilen son kullanıcı partner hesabına çevrilecek. Kullanıcı müşteri listesinden çıkar ve Partnerler listesinde görünür.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-2">
+                            <div className="space-y-2">
+                                <Label>{t('email') || "E-posta"}</Label>
+                                <Input value={partnerConversionUser?.email || ""} disabled className="bg-muted/50" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="conversionPartnerName">{t('agencyName') || "Partner Adı"}</Label>
+                                <Input
+                                    id="conversionPartnerName"
+                                    value={conversionPartnerName}
+                                    onChange={(e) => setConversionPartnerName(e.target.value)}
+                                    placeholder={t('agencyName') || "Partner adı"}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="conversionPartnerLevel">Partner Level</Label>
+                                <select
+                                    id="conversionPartnerLevel"
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    value={conversionPartnerLevel}
+                                    onChange={(e) => setConversionPartnerLevel(e.target.value as PartnerLevel)}
+                                >
+                                    <option value="partner">Partner</option>
+                                    <option value="solution_partner">Solution Partner</option>
+                                    <option value="strategic_partner">Strategic Partner</option>
+                                </select>
+                            </div>
+                            {partnerConversionUser?.agencyId ? (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                    Bu kullanıcı şu anda bir partnere bağlı. Dönüştürme işlemi mevcut partner atamasını temizler ve hesabı partner dizinine taşır.
+                                </div>
+                            ) : null}
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setPartnerConversionUser(null)
+                                    setConversionPartnerName("")
+                                    setConversionPartnerLevel("partner")
+                                }}
+                                disabled={isConvertingPartner}
+                            >
+                                {t('cancel') || "Cancel"}
+                            </Button>
+                            <Button onClick={handleConvertUserToPartner} disabled={isConvertingPartner}>
+                                {isConvertingPartner && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {t('makePartner') || "Partner Yap"}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
                 </Dialog>
             )}
 

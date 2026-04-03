@@ -24,6 +24,7 @@ interface ChatInputProps {
     onCloseWidget?: () => void
     onToggleAmbientFeed?: () => void
     showUtilityActions?: boolean
+    isKeyboardOpen?: boolean
 }
 
 export function ChatInput({
@@ -43,7 +44,8 @@ export function ChatInput({
     onClearChat,
     onCloseWidget,
     onToggleAmbientFeed,
-    showUtilityActions = false
+    showUtilityActions = false,
+    isKeyboardOpen = false
 }: ChatInputProps) {
     const {
         selectedImage,
@@ -79,6 +81,7 @@ export function ChatInput({
     const [isInputFocused, setIsInputFocused] = React.useState(false)
     const [isMobileViewport, setIsMobileViewport] = React.useState(false)
     const inputRef = React.useRef<HTMLInputElement>(null)
+    const isCompactClassicComposer = !isAmbientMode && isMobileViewport && isKeyboardOpen
     const ambientDockStyles = isAmbientMode
         ? resolveAmbientDockStyle({
             settings,
@@ -267,6 +270,21 @@ export function ChatInput({
                     : {}),
         } as React.CSSProperties)
         : undefined
+    const classicComposerClassName = isCompactClassicComposer
+        ? "px-3 pt-2 pb-2 bg-white border-t border-gray-100"
+        : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"
+    const classicFormClassName = isCompactClassicComposer
+        ? "relative flex items-center gap-1.5"
+        : "relative flex items-center gap-2"
+    const classicInputClassName = isCompactClassicComposer
+        ? "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
+        : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
+    const classicActionButtonClass = isCompactClassicComposer
+        ? "p-2.5 rounded-full transition-all shadow-sm border"
+        : "p-3 rounded-full transition-all shadow-sm border"
+    const classicSendButtonClass = isCompactClassicComposer
+        ? `p-2.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`
+        : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`
 
     return (
         <div
@@ -274,7 +292,7 @@ export function ChatInput({
                 ? (isAmbientInputOnly
                     ? "pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
-                : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"}
+                : classicComposerClassName}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
@@ -286,13 +304,13 @@ export function ChatInput({
                     className={ambientDockWrapperClassName}
                     style={ambientDockWrapperStyle}
                 >
-                    <form
-                        onSubmit={handleSubmit}
-                        className={isAmbientMode
-                            ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
-                            : "relative flex items-center gap-2"}
-                        style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || '#f3f4f6' } : undefined}
-                    >
+                        <form
+                            onSubmit={handleSubmit}
+                            className={isAmbientMode
+                                ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
+                                : classicFormClassName}
+                            style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || '#f3f4f6' } : undefined}
+                        >
                         {/* Image Preview */}
                         {selectedImage && (
                             <div className="absolute bottom-full left-0 mb-4 ml-2 animate-in fade-in slide-in-from-bottom-2 z-20">
@@ -333,7 +351,7 @@ export function ChatInput({
                             <button
                                 type="button"
                                 onClick={handleVoiceInput}
-                                className={`p-3 rounded-full transition-all shadow-sm border ${isListening
+                                className={`${classicActionButtonClass} ${isListening
                                     ? 'text-white bg-red-500 border-red-400 animate-pulse shadow-md shadow-red-200'
                                     : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border-gray-200'}`}
                                 title={t('voiceReady')}
@@ -347,7 +365,7 @@ export function ChatInput({
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
-                                className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
+                                className={`${classicActionButtonClass} ${selectedImage
                                     ? 'text-green-600 bg-green-50 border border-green-200'
                                     : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
@@ -404,7 +422,7 @@ export function ChatInput({
                                     : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
                                 className={isAmbientMode
                                     ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400`
-                                    : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"}
+                                    : classicInputClassName}
                                 style={isAmbientMode
                                     ? {
                                         color: settings.ambientInputTextColor || '#4b5563',
@@ -481,7 +499,7 @@ export function ChatInput({
                             disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
                             className={isAmbientMode
                                 ? ambientSendButtonClass
-                                : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                : classicSendButtonClass}
                             style={isAmbientMode ? { backgroundColor: settings.ambientIconColor || settings.brandColor || '#1f2937' } : { backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                         >
                             <Send className={isAmbientMode ? sizeConfig.iconSize : "w-5 h-5"} />
@@ -491,7 +509,7 @@ export function ChatInput({
 
 
 
-                {!isAmbientMode && (
+                {!isAmbientMode && !isCompactClassicComposer && (
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">
                         <p className="text-[10px] text-gray-400 text-center text-balance">
                             {t('aiDisclaimer')}

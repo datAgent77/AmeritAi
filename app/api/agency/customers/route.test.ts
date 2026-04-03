@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { GET, POST } from "./route";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { listManagedAccountsForViewer } from "@/lib/management/accounts";
+import { getPartnerDoc } from "@/lib/management/partners";
 import { provisionTenantAccount } from "@/lib/tenant-provisioning";
 
 vi.mock("@/lib/firebase-admin", () => ({
@@ -10,6 +12,14 @@ vi.mock("@/lib/firebase-admin", () => ({
 
 vi.mock("@/lib/tenant-provisioning", () => ({
     provisionTenantAccount: vi.fn()
+}));
+
+vi.mock("@/lib/management/accounts", () => ({
+    listManagedAccountsForViewer: vi.fn()
+}));
+
+vi.mock("@/lib/management/partners", () => ({
+    getPartnerDoc: vi.fn()
 }));
 
 vi.mock("@/lib/server-event-log", () => ({
@@ -46,14 +56,6 @@ describe("GET /api/agency/customers", () => {
         const adminAuth = {
             verifyIdToken: vi.fn().mockResolvedValue({ uid: "agency-1", role: "AGENCY_ADMIN" })
         };
-
-        const queryDocs = [
-            {
-                id: "tenant-1",
-                data: () => ({ email: "tenant@example.com", role: "TENANT_ADMIN", agencyId: "agency-1", isActive: true })
-            }
-        ];
-
         const adminDb = {
             collection: vi.fn().mockImplementation((name: string) => {
                 if (name === "users") {
@@ -63,12 +65,7 @@ describe("GET /api/agency/customers", () => {
                                 exists: true,
                                 data: () => (id === "agency-1" ? { role: "AGENCY_ADMIN" } : {})
                             })
-                        })),
-                        where: vi.fn().mockReturnValue({
-                            where: vi.fn().mockReturnValue({
-                                get: vi.fn().mockResolvedValue({ docs: queryDocs })
-                            })
-                        })
+                        }))
                     };
                 }
                 throw new Error(`Unexpected collection ${name}`);
@@ -77,6 +74,33 @@ describe("GET /api/agency/customers", () => {
 
         vi.mocked(getAdminAuth).mockReturnValue(adminAuth as any);
         vi.mocked(getAdminDb).mockReturnValue(adminDb as any);
+        vi.mocked(getPartnerDoc).mockResolvedValue({
+            id: "agency-1",
+            partnerLevel: "solution_partner",
+            capabilities: {
+                canCreateManagedAccounts: true,
+                canAccessManagedAccountWorkspace: true,
+                canAssignManagedAccounts: true,
+                canSwitchOmniAccounts: true,
+                canUsePartnerBranding: false,
+            }
+        } as any);
+        vi.mocked(listManagedAccountsForViewer).mockResolvedValue({
+            accounts: [{
+                id: "tenant-1",
+                email: "tenant@example.com",
+                companyName: "Acme",
+                industry: "ecommerce",
+                isActive: true,
+                isArchived: false,
+                agencyId: "agency-1",
+                partnerId: "agency-1",
+                partnerName: "North Partner",
+                partnerLevel: "solution_partner",
+                partnerLogoUrl: null,
+            }],
+            meta: { canSwitchAccounts: true }
+        } as any);
 
         const response = await GET(createGetRequest());
         const payload = await response.json();
@@ -84,6 +108,7 @@ describe("GET /api/agency/customers", () => {
         expect(response.status).toBe(200);
         expect(payload.customers).toHaveLength(1);
         expect(payload.customers[0].id).toBe("tenant-1");
+        expect(payload.viewerCapabilities?.canAccessManagedAccountWorkspace).toBe(true);
     });
 });
 
@@ -110,6 +135,17 @@ describe("POST /api/agency/customers", () => {
 
         vi.mocked(getAdminAuth).mockReturnValue(adminAuth as any);
         vi.mocked(getAdminDb).mockReturnValue(adminDb as any);
+        vi.mocked(getPartnerDoc).mockResolvedValue({
+            id: "agency-7",
+            partnerLevel: "solution_partner",
+            capabilities: {
+                canCreateManagedAccounts: true,
+                canAccessManagedAccountWorkspace: true,
+                canAssignManagedAccounts: true,
+                canSwitchOmniAccounts: true,
+                canUsePartnerBranding: false,
+            }
+        } as any);
         vi.mocked(provisionTenantAccount).mockResolvedValue({ userId: "tenant-7" });
 
         const response = await POST(createPostRequest({
@@ -127,5 +163,49 @@ describe("POST /api/agency/customers", () => {
                 agencyAssignedBy: "agency-7"
             })
         );
+    });
+
+    test("blocks basic partner level from creating customers", async () => {
+        const adminAuth = {
+            verifyIdToken: vi.fn().mockResolvedValue({ uid: "agency-7", role: "AGENCY_ADMIN" })
+        };
+        const adminDb = {
+            collection: vi.fn().mockImplementation((name: string) => {
+                if (name === "users") {
+                    return {
+                        doc: vi.fn().mockImplementation(() => ({
+                            get: vi.fn().mockResolvedValue({
+                                exists: true,
+                                data: () => ({ role: "AGENCY_ADMIN", partnerLevel: "partner" })
+                            })
+                        }))
+                    };
+                }
+                throw new Error(`Unexpected collection ${name}`);
+            })
+        };
+
+        vi.mocked(getAdminAuth).mockReturnValue(adminAuth as any);
+        vi.mocked(getAdminDb).mockReturnValue(adminDb as any);
+        vi.mocked(getPartnerDoc).mockResolvedValue({
+            id: "agency-7",
+            partnerLevel: "partner",
+            capabilities: {
+                canCreateManagedAccounts: false,
+                canAccessManagedAccountWorkspace: false,
+                canAssignManagedAccounts: false,
+                canSwitchOmniAccounts: false,
+                canUsePartnerBranding: false,
+            }
+        } as any);
+
+        const response = await POST(createPostRequest({
+            email: "tenant@example.com",
+            password: "123456",
+            companyName: "Acme"
+        }));
+
+        expect(response.status).toBe(403);
+        expect(provisionTenantAccount).not.toHaveBeenCalled();
     });
 });

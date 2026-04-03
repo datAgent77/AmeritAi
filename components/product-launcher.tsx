@@ -4,19 +4,15 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LayoutGrid } from "lucide-react"
-import { products } from "@/lib/product-items"
+import { getVisibleProducts } from "@/lib/product-items"
 
 import { useAuth } from "@/context/AuthContext"
 
 export function ProductLauncher() {
     const router = useRouter()
-    const { enableChatbot, enableCopywriter, enableLeadCollection } = useAuth()
-
-    const visibleProducts = products.filter(product => {
-        if (product.id === 'chatbot') return enableChatbot
-        if (product.id === 'copywriter') return enableCopywriter
-        if (product.id === 'lead-finder') return enableLeadCollection
-        return false // Don't show unknown products by default
+    const { productEntitlements, role } = useAuth()
+    const visibleProducts = getVisibleProducts(productEntitlements, {
+        includeAll: role === "SUPER_ADMIN",
     })
 
     // Don't render the launcher if no products are visible
