@@ -376,6 +376,7 @@ const SCENARIO_D: PlanConfig[] = [
                 'generalChatbot',
                 'knowledgeBase',
                 'leadCollection',
+                'guided',
                 'proactiveMessaging'
                 // 'liveChat' implied as core feature
             ],
@@ -412,7 +413,7 @@ const SCENARIO_D: PlanConfig[] = [
         } as any,
         modules: {
             included: [
-                'generalChatbot', 'knowledgeBase', 'leadCollection', 'proactiveMessaging',
+                'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
                 'productCatalog', 'digitalWaiter'
             ],
             defaultEnabled: ['generalChatbot', 'productCatalog'],
@@ -453,7 +454,7 @@ const SCENARIO_D: PlanConfig[] = [
         } as any,
         modules: {
             included: [
-                'generalChatbot', 'knowledgeBase', 'leadCollection', 'proactiveMessaging',
+                'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
                 'productCatalog', 'digitalWaiter',
                 'salesOptimization', 'visualDiagnosis',
                 'dynamicContext'

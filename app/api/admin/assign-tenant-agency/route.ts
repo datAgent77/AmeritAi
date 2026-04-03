@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { assignManagedAccountPartner } from "@/lib/management/accounts";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole } from "@/lib/user-roles";
 import { authorizeTargetAccess } from "@/lib/api-auth";
@@ -62,14 +63,12 @@ export async function POST(req: Request) {
             }
         }
 
-        const assignedAt = agencyId ? new Date().toISOString() : null;
-        const updateData = {
-            agencyId: agencyId || null,
-            agencyAssignedAt: assignedAt,
-            agencyAssignedBy: agencyId ? decoded.uid : null
-        };
-
-        await adminDb.collection("users").doc(tenantId).set(updateData, { merge: true });
+        await assignManagedAccountPartner({
+            adminDb,
+            tenantId,
+            partnerId: agencyId || null,
+            assignedBy: decoded.uid
+        });
 
         await logPlatformEvent({
             event_type: "tenant_agency_assign",

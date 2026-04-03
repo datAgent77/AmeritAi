@@ -114,9 +114,9 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
         <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-3xl mx-auto">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{t('voiceSettingsTitle')}</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{t('widgetVoiceSettingsTitle') || 'Widget Voice'}</h2>
                     <p className="text-muted-foreground mt-2">
-                        {t('voiceSettingsDesc')}
+                        {t('widgetVoiceSettingsDesc') || 'Manage browser-based voice conversations for the web widget.'}
                     </p>
                 </div>
                 <Button onClick={handleSave} disabled={isSaving} size="lg">

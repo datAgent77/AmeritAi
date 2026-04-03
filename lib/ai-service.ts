@@ -3,6 +3,8 @@ import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { upsertChatSessionRecord } from "@/lib/chat-sessions";
+import type { ChatSessionMessageRecord } from "@/lib/chat-session-messages";
 import { INDUSTRY_CONFIG } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
 import { resolveConversationLanguage } from "@/lib/conversation-language";
@@ -146,7 +148,7 @@ function getUnknownResponse(language?: string, question?: string): string {
         ar: "لا أملك معلومة موثقة عن هذه النقطة الآن، ولا أريد التخمين.",
         ru: "У меня сейчас нет подтвержденной информации по этой детали, и я не хочу гадать.",
         it: "Non ho informazioni verificate su questo dettaglio in questo momento, quindi preferisco non indovinare.",
-        pt: "Nao tenho informacao verificada sobre esse dettaglio neste momento, entao prefiro nao adivinhar.",
+        pt: "Nao tenho informacao verificada sobre esse detalhe neste momento, entao prefiro nao adivinhar.",
         nl: "Ik heb daar op dit moment geen geverifieerde informatie over, dus ik wil niet gokken.",
         pl: "Nie mam teraz potwierdzonej informacji na ten temat, wiec wole nie zgadywac.",
         uk: "Зараз у мене немає підтвердженої інформації щодо цієї деталі, тому я не хочу вгадувати.",
@@ -956,37 +958,22 @@ export async function analyzeSentiment(text: string): Promise<"Positive" | "Neut
 export async function saveMessageToSession(
     sessionId: string,
     chatbotId: string,
-    message: { role: string, content: string, id?: string, sentiment?: string },
+    message: Partial<ChatSessionMessageRecord> & { role: string; content: string },
     userId?: string
 ) {
-    const adminDb = getAdminDb();
-    if (!adminDb) return;
-
-    const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
-    const sessionSnap = await sessionRef.get();
-
-    if (!sessionSnap.exists) {
-        await sessionRef.set({
-            chatbotId,
-            createdAt: new Date().toISOString(),
-            messages: [],
-            ...(userId ? { userId } : {})
-        });
-    } else if (userId && !sessionSnap.data()?.userId) {
-        // Backfill userId if missing (and provided)
-        await sessionRef.update({ userId });
-    }
-
-    const m = {
-        id: message.id || Date.now().toString(),
-        role: message.role,
-        content: message.content,
-        createdAt: new Date().toISOString(),
-        ...(message.sentiment ? { sentiment: message.sentiment } : {})
-    };
-
-    const { FieldValue } = require('firebase-admin/firestore');
-    await sessionRef.update({ messages: FieldValue.arrayUnion(m) }).catch(() => {
-        sessionRef.set({ messages: [m] }, { merge: true });
+    await upsertChatSessionRecord({
+        sessionId,
+        chatbotId,
+        userId,
+        message: {
+            id: message.id || Date.now().toString(),
+            role: message.role,
+            content: message.content,
+            sentiment: message.sentiment,
+            guidedUi: message.guidedUi,
+            guidedEvent: message.guidedEvent,
+            externalId: message.externalId,
+            createdAt: message.createdAt || new Date().toISOString(),
+        },
     });
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { resolvePartnerLevel } from "@/lib/management/access";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 import { isSuperAdminRole } from "@/lib/user-roles";
 
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
             email,
             password,
             agencyName,
+            partnerLevel,
             firstName,
             lastName,
             phone
@@ -50,6 +52,8 @@ export async function POST(req: Request) {
         if (!email || !password || !agencyName) {
             return NextResponse.json({ error: "email, password and agencyName are required" }, { status: 400 });
         }
+
+        const resolvedPartnerLevel = resolvePartnerLevel(partnerLevel)
 
         const userRecord = await adminAuth.createUser({
             email,
@@ -67,6 +71,8 @@ export async function POST(req: Request) {
             phone: phone || "",
             role: "AGENCY_ADMIN",
             agencyName: agencyName,
+            partnerLevel: resolvedPartnerLevel,
+            partnerLogoUrl: null,
             isActive: true,
             isArchived: false,
             createdAt: new Date().toISOString(),
@@ -84,6 +90,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             success: true,
             agencyId: userRecord.uid,
+            partnerLevel: resolvedPartnerLevel,
         });
     } catch (error: any) {
         console.error("Create agency error:", error);

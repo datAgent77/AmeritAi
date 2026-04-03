@@ -94,7 +94,6 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         normalizedPathname === "/admin/agencies" ||
         normalizedPathname.startsWith("/admin/agency/")
     const isEndUsersAdminRoute =
-        normalizedPathname === "/admin" ||
         normalizedPathname === "/admin/end-users" ||
         normalizedPathname.startsWith("/admin/tenant/")
     const isCustomersMenuActive = isAgenciesAdminRoute || isEndUsersAdminRoute
@@ -129,11 +128,21 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     }
 
     // Top-level overview item (outside groups)
+    const overviewHref = targetUserId
+        ? buildLink("/console/chatbot")
+        : role === "SUPER_ADMIN"
+            ? "/admin"
+            : "/console/chatbot"
+    const isOverviewActive = targetUserId
+        ? pathname === buildLink("/console/chatbot")
+        : role === "SUPER_ADMIN"
+            ? normalizedPathname === "/admin"
+            : pathname === "/console/chatbot"
     const overviewItem = {
         title: t('overview') || "Genel Bakış",
         icon: LayoutDashboard,
-        href: "/console/chatbot",
-        active: pathname === "/console/chatbot" || (pathname === buildLink("/console/chatbot"))
+        href: overviewHref,
+        active: isOverviewActive
     }
 
     const tenantGroups = [
@@ -272,7 +281,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                                         : "text-zinc-400 group-hover:text-white"
                                 )}
                             >
-                                <Link href={buildLink(overviewItem.href)}>
+                                <Link href={overviewItem.href}>
                                     <overviewItem.icon className={cn("size-4 transition-colors", overviewItem.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
                                     <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{overviewItem.title}</span>
                                 </Link>

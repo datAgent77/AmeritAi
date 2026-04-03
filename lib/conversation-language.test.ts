@@ -68,7 +68,6 @@ describe("conversation-language", () => {
         expect(detectConversationLanguage("我想了解价格")).toBe("zh");
         expect(detectConversationLanguage("Привет, сколько стоит?")).toBe("ru");
     });
-
     test("maps unsupported copy languages back to English copy", () => {
         expect(toCopyLanguage("ru")).toBe("en");
         expect(toCopyLanguage("ar")).toBe("en");

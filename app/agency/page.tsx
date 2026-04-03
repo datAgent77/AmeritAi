@@ -1,14 +1,17 @@
 "use client"
 
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { ShieldCheck, Loader2, Plus, Search, Settings, Users, Activity } from "lucide-react"
 import { auth } from "@/lib/firebase"
+import { uploadLogo } from "@/lib/widget-settings-utils"
+import type { ManagementPartnerRecord, PartnerCapabilities } from "@/lib/management/types"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Plus, Search, Settings, Users, Activity } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -26,7 +29,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
-interface AgencyCustomer {
+interface ManagedCustomer {
     id: string
     email: string
     firstName?: string
@@ -37,11 +40,20 @@ interface AgencyCustomer {
     isArchived?: boolean
 }
 
+function getPartnerLevelLabel(level?: string | null) {
+    if (level === "strategic_partner") return "Strategic Partner"
+    if (level === "partner") return "Partner"
+    return "Solution Partner"
+}
+
 export default function AgencyPage() {
     const { toast } = useToast()
-    const [customers, setCustomers] = useState<AgencyCustomer[]>([])
+    const [customers, setCustomers] = useState<ManagedCustomer[]>([])
+    const [viewerPartner, setViewerPartner] = useState<ManagementPartnerRecord | null>(null)
+    const [viewerCapabilities, setViewerCapabilities] = useState<PartnerCapabilities | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isCreating, setIsCreating] = useState(false)
+    const [isSavingLogo, setIsSavingLogo] = useState(false)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [showArchived, setShowArchived] = useState(false)
@@ -57,7 +69,7 @@ export default function AgencyPage() {
     const [companyWebsite, setCompanyWebsite] = useState("")
     const [industry, setIndustry] = useState("ecommerce")
 
-    const fetchCustomers = useCallback(async () => {
+    const fetchWorkspace = useCallback(async () => {
         try {
             const token = await auth.currentUser?.getIdToken()
             if (!token) return
@@ -68,13 +80,14 @@ export default function AgencyPage() {
                 }
             })
 
+            const data = await response.json().catch(() => ({}))
             if (!response.ok) {
-                const data = await response.json()
                 throw new Error(data?.error || "Failed to fetch customers")
             }
 
-            const data = await response.json()
             setCustomers(Array.isArray(data?.customers) ? data.customers : [])
+            setViewerPartner(data?.viewerPartner || null)
+            setViewerCapabilities(data?.viewerCapabilities || null)
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -89,20 +102,20 @@ export default function AgencyPage() {
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
-                fetchCustomers()
+                fetchWorkspace()
             } else {
                 setIsLoading(false)
             }
         })
 
         return () => unsubscribe()
-    }, [fetchCustomers])
+    }, [fetchWorkspace])
 
     useEffect(() => {
         if (auth.currentUser) {
-            fetchCustomers()
+            fetchWorkspace()
         }
-    }, [showArchived, fetchCustomers])
+    }, [showArchived, fetchWorkspace])
 
     const industryOptions = useMemo(() => {
         const values = new Set<string>()
@@ -142,7 +155,21 @@ export default function AgencyPage() {
         [customers]
     )
 
+    const partnerLevelLabel = getPartnerLevelLabel(viewerPartner?.partnerLevel)
+    const isStrategicPartner = viewerPartner?.partnerLevel === "strategic_partner"
+    const canCreateManagedAccounts = viewerCapabilities?.canCreateManagedAccounts === true
+    const canAccessManagedWorkspaces = viewerCapabilities?.canAccessManagedAccountWorkspace === true
+
     const handleCreateCustomer = async () => {
+        if (!canCreateManagedAccounts) {
+            toast({
+                title: "Access denied",
+                description: "This partner level cannot create managed accounts.",
+                variant: "destructive"
+            })
+            return
+        }
+
         if (!email || !password || !companyName) {
             toast({
                 title: "Error",
@@ -173,14 +200,14 @@ export default function AgencyPage() {
                 })
             })
 
+            const data = await response.json().catch(() => ({}))
             if (!response.ok) {
-                const data = await response.json()
                 throw new Error(data?.error || "Failed to create customer")
             }
 
             toast({
                 title: "Success",
-                description: "Customer created successfully."
+                description: "Managed account created successfully."
             })
 
             setIsCreateOpen(false)
@@ -192,7 +219,7 @@ export default function AgencyPage() {
             setCompanyName("")
             setCompanyWebsite("")
             setIndustry("ecommerce")
-            await fetchCustomers()
+            await fetchWorkspace()
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -201,6 +228,48 @@ export default function AgencyPage() {
             })
         } finally {
             setIsCreating(false)
+        }
+    }
+
+    const handlePartnerLogoUpload = async (file?: File | null) => {
+        if (!file || !auth.currentUser || !isStrategicPartner) return
+
+        setIsSavingLogo(true)
+        try {
+            const token = await auth.currentUser.getIdToken()
+            const uploadedUrl = await uploadLogo(file, auth.currentUser.uid, token, () => undefined)
+            if (!uploadedUrl) {
+                throw new Error("Logo upload failed")
+            }
+
+            const response = await fetch("/api/agency/profile", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ partnerLogoUrl: uploadedUrl })
+            })
+
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                throw new Error(data?.error || "Failed to update partner logo")
+            }
+
+            setViewerPartner(data?.partner || null)
+            setViewerCapabilities(data?.capabilities || null)
+            toast({
+                title: "Success",
+                description: "Partner logo updated successfully."
+            })
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || "Failed to update partner logo.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSavingLogo(false)
         }
     }
 
@@ -214,18 +283,36 @@ export default function AgencyPage() {
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Agency Customers</h1>
-                    <p className="text-muted-foreground">Manage only your assigned customer accounts.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Partner Workspace</h1>
+                    <p className="text-muted-foreground">Manage the customer accounts assigned to your partner organization.</p>
                 </div>
-                <Button onClick={() => setIsCreateOpen(true)}>
+                <Button onClick={() => setIsCreateOpen(true)} disabled={!canCreateManagedAccounts}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Customer
+                    Add Managed Account
                 </Button>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Partner Level</CardTitle>
+                        <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline">{partnerLevelLabel}</Badge>
+                            {!canCreateManagedAccounts ? <Badge variant="secondary">View Only</Badge> : null}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            {canAccessManagedWorkspaces
+                                ? "This partner level can manage assigned customer workspaces."
+                                : "This partner level can review assigned customers but cannot enter their workspaces."}
+                        </p>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -246,6 +333,57 @@ export default function AgencyPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Card>
+                <CardHeader className="pb-4">
+                    <CardTitle className="text-base">Partner Branding</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 overflow-hidden rounded-2xl border bg-white">
+                            {viewerPartner?.partnerLogoUrl ? (
+                                <Image
+                                    src={viewerPartner.partnerLogoUrl}
+                                    alt={viewerPartner.partnerName || "Partner"}
+                                    fill
+                                    className="object-contain p-2"
+                                    unoptimized
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-muted-foreground">
+                                    No Logo
+                                </div>
+                            )}
+                        </div>
+                        <div className="min-w-0">
+                            <div className="truncate font-medium">{viewerPartner?.partnerName || viewerPartner?.email || "Partner"}</div>
+                            <div className="text-sm text-muted-foreground">
+                                {isStrategicPartner
+                                    ? "Your logo will appear on the right side of the header for your team and linked customer accounts."
+                                    : "Header branding is available only for Strategic Partner accounts."}
+                            </div>
+                        </div>
+                    </div>
+                    {isStrategicPartner ? (
+                        <div className="space-y-2">
+                            <Label htmlFor="partner-logo-upload">Strategic Partner Logo</Label>
+                            <Input
+                                id="partner-logo-upload"
+                                type="file"
+                                accept="image/*"
+                                disabled={isSavingLogo}
+                                onChange={(event) => handlePartnerLogoUpload(event.target.files?.[0] || null)}
+                            />
+                            {isSavingLogo ? (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    Uploading partner logo...
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </CardContent>
+            </Card>
 
             <Card>
                 <CardHeader>
@@ -344,6 +482,7 @@ export default function AgencyPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                disabled={!canAccessManagedWorkspaces}
                                                 onClick={() => {
                                                     window.location.href = `/admin/tenant/${customer.id}`
                                                 }}
@@ -363,8 +502,8 @@ export default function AgencyPage() {
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>Create Customer</DialogTitle>
-                        <DialogDescription>Customer is automatically assigned to your agency.</DialogDescription>
+                        <DialogTitle>Create Managed Account</DialogTitle>
+                        <DialogDescription>Customers created here are automatically assigned to your partner organization.</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-2">
                         <div className="grid grid-cols-2 gap-4">
@@ -427,7 +566,7 @@ export default function AgencyPage() {
                         <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
                             Cancel
                         </Button>
-                        <Button onClick={handleCreateCustomer} disabled={isCreating}>
+                        <Button onClick={handleCreateCustomer} disabled={isCreating || !canCreateManagedAccounts}>
                             {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Create
                         </Button>

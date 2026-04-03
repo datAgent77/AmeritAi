@@ -1,3 +1,5 @@
+import type { GuidedSkillShortcut } from "@/lib/guided-skills/types"
+
 export interface AmbientDeviceAppearanceSettings {
     ambientMaxHeight?: number;
     ambientOverlayOpacity?: number;
@@ -73,6 +75,7 @@ export interface ChatbotSettings {
     headerTextColor: string;
     suggestedQuestions: string[];
     enableLeadCollection: boolean;
+    enableGuided?: boolean;
     enableInitialLeadCollection: boolean;
     enableInChatLeadCollection: boolean;
     leadFormConfig: {
@@ -229,4 +232,5 @@ export interface ChatbotSettings {
     dynamicSiteContextSuggestedPresetId?: string;
     dynamicSiteContextResolvedPresetId?: string;
     dynamicSiteContextRuntimePreset?: Record<string, unknown> | null;
+    guidedSkills?: GuidedSkillShortcut[];
 }

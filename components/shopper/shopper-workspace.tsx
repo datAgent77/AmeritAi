@@ -480,28 +480,28 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
                 <div className="overflow-x-auto">
-                    <TabsList className="inline-flex h-auto w-max min-w-full justify-start gap-1 rounded-xl border border-zinc-200 bg-zinc-100 p-1">
-                        <TabsTrigger value="overview" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                    <TabsList className="inline-flex h-auto w-max min-w-full justify-start gap-1 rounded-[12px] border border-zinc-300 bg-zinc-200 p-1">
+                        <TabsTrigger value="overview" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <LineChartIcon className="mr-2 h-4 w-4" />
                             {text.tabOverview}
                         </TabsTrigger>
-                        <TabsTrigger value="catalog" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                        <TabsTrigger value="catalog" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <Layers3 className="mr-2 h-4 w-4" />
                             {text.tabCatalog}
                         </TabsTrigger>
-                        <TabsTrigger value="datasources" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                        <TabsTrigger value="datasources" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <Database className="mr-2 h-4 w-4" />
                             {text.tabDataSources}
                         </TabsTrigger>
-                        <TabsTrigger value="recommendation" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                        <TabsTrigger value="recommendation" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <Bot className="mr-2 h-4 w-4" />
                             {text.tabRecommendation}
                         </TabsTrigger>
-                        <TabsTrigger value="experiments" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                        <TabsTrigger value="experiments" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <Beaker className="mr-2 h-4 w-4" />
                             {text.tabExperiments}
                         </TabsTrigger>
-                        <TabsTrigger value="settings" className="rounded-lg px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
+                        <TabsTrigger value="settings" className="rounded-[8px] px-4 py-2 data-[state=active]:bg-black data-[state=active]:text-white">
                             <Target className="mr-2 h-4 w-4" />
                             {text.tabSettings}
                         </TabsTrigger>

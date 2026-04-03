@@ -3013,6 +3013,59 @@
       }
     };
 
+    let mobileScrollLockState = null;
+    const shouldLockMobileScroll = () => window.innerWidth < 768 && usesLauncher;
+    const applyMobileScrollLock = (enabled) => {
+      const htmlEl = document.documentElement;
+      const bodyEl = document.body;
+      if (!htmlEl || !bodyEl) return;
+
+      if (!enabled) {
+        if (!mobileScrollLockState) return;
+
+        htmlEl.style.overflow = mobileScrollLockState.htmlOverflow;
+        htmlEl.style.overscrollBehavior = mobileScrollLockState.htmlOverscrollBehavior;
+        bodyEl.style.position = mobileScrollLockState.bodyPosition;
+        bodyEl.style.top = mobileScrollLockState.bodyTop;
+        bodyEl.style.left = mobileScrollLockState.bodyLeft;
+        bodyEl.style.right = mobileScrollLockState.bodyRight;
+        bodyEl.style.width = mobileScrollLockState.bodyWidth;
+        bodyEl.style.overflow = mobileScrollLockState.bodyOverflow;
+        bodyEl.style.overscrollBehavior = mobileScrollLockState.bodyOverscrollBehavior;
+
+        const restoreScrollY = mobileScrollLockState.scrollY;
+        mobileScrollLockState = null;
+        window.scrollTo(0, restoreScrollY);
+        return;
+      }
+
+      if (mobileScrollLockState || !shouldLockMobileScroll()) return;
+
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      mobileScrollLockState = {
+        scrollY,
+        htmlOverflow: htmlEl.style.overflow,
+        htmlOverscrollBehavior: htmlEl.style.overscrollBehavior,
+        bodyPosition: bodyEl.style.position,
+        bodyTop: bodyEl.style.top,
+        bodyLeft: bodyEl.style.left,
+        bodyRight: bodyEl.style.right,
+        bodyWidth: bodyEl.style.width,
+        bodyOverflow: bodyEl.style.overflow,
+        bodyOverscrollBehavior: bodyEl.style.overscrollBehavior
+      };
+
+      htmlEl.style.overflow = 'hidden';
+      htmlEl.style.overscrollBehavior = 'none';
+      bodyEl.style.position = 'fixed';
+      bodyEl.style.top = `-${scrollY}px`;
+      bodyEl.style.left = '0';
+      bodyEl.style.right = '0';
+      bodyEl.style.width = '100%';
+      bodyEl.style.overflow = 'hidden';
+      bodyEl.style.overscrollBehavior = 'none';
+    };
+
     // Mobile Styles Injection
     const addMobileStyles = () => {
       if (document.getElementById('userex-mobile-styles')) return;
@@ -3756,6 +3809,7 @@
       }
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
+      applyMobileScrollLock(isOpen);
 
       if (!isAmbientWidgetMode) {
         launcherContainer.style.display = isOpen ? 'none' : 'flex';
@@ -4018,6 +4072,10 @@
         const resizedSidecarWidth = getSidecarWidth();
         iframeContainer.style.width = `${resizedSidecarWidth}px`;
         applySidecarInset(isOpen);
+      }
+
+      if (usesLauncher) {
+        applyMobileScrollLock(isOpen && isNowMobile);
       }
     });
 

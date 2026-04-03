@@ -1,5 +1,5 @@
-import { permanentRedirect } from "next/navigation"
+import { SuperAdminDashboard } from "@/components/super-admin-dashboard"
 
 export default function AdminRootPage() {
-  permanentRedirect("/admin/end-users")
+  return <SuperAdminDashboard />
 }
