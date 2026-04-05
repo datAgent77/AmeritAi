@@ -352,13 +352,23 @@ export function MessageList({
             {showClassicEntryOnboarding ? (
                 <div className="flex h-full w-full flex-col">
                     <div
-                        className="px-6 pb-8 pt-6"
+                        className="relative px-6 pb-8 pt-5"
                         style={{
                             backgroundColor: settings.headerBackgroundColor || settings.brandColor || "#111827",
                             color: settings.headerTextColor || "#FFFFFF"
                         }}
                     >
-                        <div className="flex items-start justify-between gap-3">
+                        {onCloseWidget ? (
+                            <button
+                                type="button"
+                                onClick={onCloseWidget}
+                                className="md:hidden absolute right-2 top-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
+                                aria-label="Close Widget"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        ) : null}
+                        <div className="flex items-start gap-3 pr-12">
                             <div className="flex items-center gap-3 min-w-0">
                                 <div
                                     className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/20"
@@ -378,16 +388,6 @@ export function MessageList({
                                 </div>
                                 <p className="text-sm font-semibold truncate" style={{ color: settings.headerTextColor || "#FFFFFF" }}>{settings.companyName}</p>
                             </div>
-                            {onCloseWidget ? (
-                                <button
-                                    type="button"
-                                    onClick={onCloseWidget}
-                                    className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
-                                    aria-label="Close Widget"
-                                >
-                                    <X className="h-5 w-5" />
-                                </button>
-                            ) : null}
                         </div>
                         <div className="mt-7 space-y-2">
                             <h2 className="text-4xl font-bold leading-tight tracking-tight">

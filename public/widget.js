@@ -3918,6 +3918,8 @@
     }
 
     iframe.src = iframeSrc;
+    iframe.loading = 'eager';
+    iframe.setAttribute('fetchpriority', 'high');
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -4578,6 +4580,7 @@
 
   let settingsFetchPromise = null;
   let bootstrapStarted = false;
+  let widgetOriginPrewarmed = false;
 
   function getSettingsCacheKey() {
     return `userex_widget_settings_v1:${baseUrl}:${chatbotId}`;
@@ -4620,6 +4623,34 @@
       window.localStorage.removeItem(getSettingsCacheKey());
     } catch (error) {
       console.warn('Userex Widget: Failed to clear settings cache', error);
+    }
+  }
+
+  function prewarmWidgetOrigin() {
+    if (widgetOriginPrewarmed || !document.head) return;
+    widgetOriginPrewarmed = true;
+
+    try {
+      const origin = new URL(baseUrl).origin;
+
+      if (!document.head.querySelector(`link[data-userex-preconnect="${origin}"]`)) {
+        const preconnect = document.createElement('link');
+        preconnect.rel = 'preconnect';
+        preconnect.href = origin;
+        preconnect.crossOrigin = 'anonymous';
+        preconnect.setAttribute('data-userex-preconnect', origin);
+        document.head.appendChild(preconnect);
+      }
+
+      if (!document.head.querySelector(`link[data-userex-dns-prefetch="${origin}"]`)) {
+        const dnsPrefetch = document.createElement('link');
+        dnsPrefetch.rel = 'dns-prefetch';
+        dnsPrefetch.href = origin;
+        dnsPrefetch.setAttribute('data-userex-dns-prefetch', origin);
+        document.head.appendChild(dnsPrefetch);
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to prewarm widget origin', error);
     }
   }
 
@@ -4755,6 +4786,7 @@
   }
 
   // Start fetching settings immediately so network overlaps with page render.
+  prewarmWidgetOrigin();
   settingsFetchPromise = fetchSettings();
 
   // Start Initialization
