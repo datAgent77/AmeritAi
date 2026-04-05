@@ -3420,6 +3420,39 @@
       collapseTimer = setTimeout(() => collapseLauncher(), delayMs);
     };
 
+    const applyOpenLauncherPosition = () => {
+      const isMobileFullscreenOverlay = window.innerWidth < 768 && !isAlwaysOpenMode;
+
+      if (isMobileFullscreenOverlay) {
+        Object.assign(launcherContainer.style, {
+          display: 'flex',
+          position: 'fixed',
+          zIndex: '10001',
+          top: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))',
+          right: '16px',
+          left: 'auto',
+          bottom: 'auto',
+          transform: 'none',
+        });
+        return;
+      }
+
+      // Keep the close button anchored where the launcher normally lives.
+      // Only raise its stacking context so it stays clickable above the iframe.
+      Object.assign(launcherContainer.style, {
+        display: 'flex',
+        position: 'fixed',
+        zIndex: '10001',
+        right: '',
+        left: '',
+        top: '',
+        bottom: '',
+        transform: '',
+      });
+      Object.assign(launcherContainer.style, horizontalStyle);
+      Object.assign(launcherContainer.style, verticalStyle);
+    };
+
     const renderLauncherContent = (isOpen) => {
       if (isOpen) {
         launcher.innerHTML = closeSvg;
@@ -3435,20 +3468,7 @@
         launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
         launcher.style.boxShadow = shadowStyle;
 
-        // Keep the close button anchored where the launcher normally lives.
-        // Only raise its stacking context so it stays clickable above the iframe.
-        Object.assign(launcherContainer.style, {
-          display: 'flex',
-          position: 'fixed',
-          zIndex: '10001',
-          right: '',
-          left: '',
-          top: '',
-          bottom: '',
-          transform: '',
-        });
-        Object.assign(launcherContainer.style, horizontalStyle);
-        Object.assign(launcherContainer.style, verticalStyle);
+        applyOpenLauncherPosition();
 
         // Pause animation while widget is open
         launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
@@ -4124,8 +4144,15 @@
       }
 
       if (usesLauncher) {
+        horizontalStyle = newHorizStyle;
+        verticalStyle = newVertStyle;
+
         // Apply new positioning
-        Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
+        if (isOpen) {
+          applyOpenLauncherPosition();
+        } else {
+          Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
+        }
 
         // 2. Update Animation
         const newAnim = resizeSettings.launcherAnimation || 'none';
