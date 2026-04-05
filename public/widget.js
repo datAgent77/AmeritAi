@@ -4688,13 +4688,15 @@
       return;
     }
 
+    const isIdentical = cachedSettings && JSON.stringify(cachedSettings) === JSON.stringify(fetchedSettings);
     applyBootstrapSettings(fetchedSettings, widgetShellReady ? 'network refresh' : 'network');
     
-    if (widgetShellReady) {
-      removeBootstrappedWidgetShell();
+    if (!widgetShellReady || !isIdentical) {
+      if (widgetShellReady) {
+        removeBootstrappedWidgetShell();
+      }
+      initWidget();
     }
-    
-    initWidget();
   }
 
   // Start fetching settings immediately so network overlaps with page render.
