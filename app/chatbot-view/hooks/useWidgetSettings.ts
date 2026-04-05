@@ -44,6 +44,22 @@ function writeCachedSettings(chatbotId: string, settings: ChatbotSettings) {
     }
 }
 
+function readPreviewDraftSettings(previewDraftKey: string | null | undefined): Partial<ChatbotSettings> | null {
+    if (typeof window === "undefined" || !previewDraftKey) return null
+
+    try {
+        const raw = window.localStorage.getItem(previewDraftKey)
+        if (!raw) return null
+
+        const parsed = JSON.parse(raw)
+        if (!parsed || typeof parsed !== "object") return null
+        return parsed as Partial<ChatbotSettings>
+    } catch (error) {
+        console.warn("Widget iframe: Failed to read preview draft settings", error)
+        return null
+    }
+}
+
 const DEFAULT_SETTINGS: ChatbotSettings = {
     companyName: "Vion AI",
     welcomeTitle: "",
@@ -149,15 +165,24 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
 }
 
 export function useWidgetSettings(chatbotId: string, searchParams: any, setLanguage: any) {
+    const previewDraftKey = searchParams?.get("previewDraftKey")
+    const initialPreviewSettings = typeof window !== "undefined" ? readPreviewDraftSettings(previewDraftKey) : null
     const initialCachedSettings = typeof window !== "undefined" ? readCachedSettings(chatbotId) : null
-    const [isLoading, setIsLoading] = useState(!initialCachedSettings)
-    const [settings, setSettings] = useState<ChatbotSettings>(initialCachedSettings || DEFAULT_SETTINGS)
+    const initialSettings = initialPreviewSettings
+        ? ({ ...(initialCachedSettings || DEFAULT_SETTINGS), ...initialPreviewSettings } as ChatbotSettings)
+        : (initialCachedSettings || DEFAULT_SETTINGS)
+    const [isLoading, setIsLoading] = useState(!(initialPreviewSettings || initialCachedSettings))
+    const [settings, setSettings] = useState<ChatbotSettings>(initialSettings)
 
     useEffect(() => {
         let isMounted = true
+        const previewSettings = readPreviewDraftSettings(previewDraftKey)
         const cachedSettings = readCachedSettings(chatbotId)
 
-        if (cachedSettings) {
+        if (previewSettings) {
+            setSettings({ ...(cachedSettings || DEFAULT_SETTINGS), ...previewSettings } as ChatbotSettings)
+            setIsLoading(false)
+        } else if (cachedSettings) {
             setSettings(cachedSettings)
             setIsLoading(false)
         } else {
@@ -302,8 +327,12 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                     }
 
                     if (!isMounted) return
-                    writeCachedSettings(chatbotId, nextSettings)
-                    setSettings(nextSettings)
+                    const latestPreviewSettings = readPreviewDraftSettings(previewDraftKey)
+                    const resolvedSettings = latestPreviewSettings
+                        ? ({ ...nextSettings, ...latestPreviewSettings } as ChatbotSettings)
+                        : nextSettings
+                    writeCachedSettings(chatbotId, resolvedSettings)
+                    setSettings(resolvedSettings)
                 }
             } catch (error) {
                 console.error("Error fetching settings:", error)
@@ -317,7 +346,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         return () => {
             isMounted = false
         }
-    }, [chatbotId])
+    }, [chatbotId, previewDraftKey])
 
     // Sync language with browser language for widget UI
     useEffect(() => {

@@ -24,6 +24,9 @@
 
   const attrColor = currentScript.getAttribute('data-color');
   const chatbotId = currentScript.getAttribute('data-chatbot-id') || 'default';
+  const previewDraftKey = currentScript.getAttribute('data-preview-draft-key') || '';
+  const previewAmbientDockState = currentScript.getAttribute('data-preview-ambient-dock-state') || '';
+  const previewAmbientThinking = currentScript.getAttribute('data-preview-ambient-thinking') === 'true';
 
   console.log('Userex Widget Initializing...');
   console.log('Chatbot ID:', chatbotId);
@@ -3916,6 +3919,15 @@
     if (isAmbientMode && settings.ambientBottomMargin > 0) {
       iframeSrc += `&ambientBottomMargin=${settings.ambientBottomMargin}`;
     }
+    if (previewDraftKey) {
+      iframeSrc += `&previewDraftKey=${encodeURIComponent(previewDraftKey)}`;
+    }
+    if (previewAmbientDockState) {
+      iframeSrc += `&previewAmbientDockState=${encodeURIComponent(previewAmbientDockState)}`;
+    }
+    if (previewAmbientThinking) {
+      iframeSrc += `&previewAmbientThinking=1`;
+    }
 
     iframe.src = iframeSrc;
     iframe.loading = 'eager';
@@ -3931,6 +3943,12 @@
 
     // Toggle Logic
     let isOpen = !usesLauncher;
+    if (usesLauncher) {
+      const persistedPreviewOpenState = readPreviewOpenState();
+      if (typeof persistedPreviewOpenState === 'boolean') {
+        isOpen = persistedPreviewOpenState;
+      }
+    }
     const toggleWidget = (forceState) => {
       if (!usesLauncher) {
         const nextState = forceState !== undefined ? forceState : true;
@@ -3954,6 +3972,7 @@
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
       applyMobileScrollLock(isOpen);
+      writePreviewOpenState(isOpen);
 
       if (!isAmbientWidgetMode) {
         launcherContainer.style.display = 'flex';
@@ -3987,6 +4006,9 @@
 
     if (usesLauncher) {
       launcher.onclick = () => toggleWidget();
+      iframeContainer.style.display = isOpen ? 'block' : 'none';
+      renderLauncherContent(isOpen);
+      applyMobileScrollLock(isOpen);
     }
 
     // Sorun 2: Ambient modda X butonuna basınca widget tamamen kapanıyor ve geri açılamıyordu.
@@ -4626,6 +4648,55 @@
     }
   }
 
+  function readPreviewDraftSettings() {
+    if (!previewDraftKey) return null;
+
+    try {
+      if (!window.localStorage) return null;
+      const raw = window.localStorage.getItem(previewDraftKey);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read preview draft settings', error);
+      return null;
+    }
+  }
+
+  function getPreviewOpenStateKey() {
+    return previewDraftKey ? `${previewDraftKey}:open` : '';
+  }
+
+  function readPreviewOpenState() {
+    const key = getPreviewOpenStateKey();
+    if (!key) return null;
+
+    try {
+      if (!window.localStorage) return null;
+      const raw = window.localStorage.getItem(key);
+      if (raw === 'true') return true;
+      if (raw === 'false') return false;
+      return null;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read preview open state', error);
+      return null;
+    }
+  }
+
+  function writePreviewOpenState(isOpen) {
+    const key = getPreviewOpenStateKey();
+    if (!key) return;
+
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.setItem(key, isOpen ? 'true' : 'false');
+    } catch (error) {
+      console.warn('Userex Widget: Failed to persist preview open state', error);
+    }
+  }
+
   function prewarmWidgetOrigin() {
     if (widgetOriginPrewarmed || !document.head) return;
     widgetOriginPrewarmed = true;
@@ -4720,15 +4791,25 @@
 
   // Helper: Fetch Settings
   async function fetchSettings() {
+    const previewDraftSettings = readPreviewDraftSettings();
+
     try {
       const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`, {
         cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch settings');
       const fetchedSettings = await response.json();
-      writeCachedSettings(fetchedSettings);
-      return fetchedSettings;
+      const resolvedSettings = previewDraftSettings
+        ? { ...fetchedSettings, ...previewDraftSettings }
+        : fetchedSettings;
+      writeCachedSettings(resolvedSettings);
+      return resolvedSettings;
     } catch (error) {
+      if (previewDraftSettings) {
+        console.warn('Userex Widget: Using preview draft settings (Fetch failed)', error);
+        return previewDraftSettings;
+      }
+
       console.warn('Userex Widget: Using default settings (Fetch failed)', error);
       return {};
     }
@@ -4746,9 +4827,14 @@
 
     let widgetShellReady = false;
 
+    const previewDraftSettings = readPreviewDraftSettings();
     const cachedSettings = readCachedSettings();
-    if (cachedSettings && cachedSettings.isEnabled !== false) {
-      applyBootstrapSettings(cachedSettings, 'cache');
+    const bootstrapSettings = previewDraftSettings
+      ? { ...(cachedSettings || {}), ...previewDraftSettings }
+      : cachedSettings;
+
+    if (bootstrapSettings && bootstrapSettings.isEnabled !== false) {
+      applyBootstrapSettings(bootstrapSettings, previewDraftSettings ? 'preview draft' : 'cache');
       initWidget();
       widgetShellReady = true;
     }

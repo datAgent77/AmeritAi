@@ -424,6 +424,8 @@ export default function ChatbotContainer() {
 
     const urlTheme = searchParams?.get("theme")
     const inheritedTheme = urlTheme === "dark" || urlTheme === "light" ? urlTheme : null
+    const previewAmbientDockState = searchParams?.get("previewAmbientDockState")
+    const previewAmbientThinking = searchParams?.get("previewAmbientThinking") === "1"
     const isAmbientMode = settings.chatDisplayMode === "ambient" || searchParams?.get("chatDisplayMode") === "ambient"
     const runtimeDevice = (isClient && typeof window !== "undefined" && window.innerWidth < 768) ? "mobile" : "desktop"
     const resolvedClassicTheme = settings.theme === "dark" || settings.theme === "light"
@@ -453,6 +455,19 @@ export default function ChatbotContainer() {
             setAmbientFeedManuallyClosed(false)
         }
     }, [isTyping, isAmbientMode])
+
+    useEffect(() => {
+        if (!isAmbientMode) return
+
+        if (previewAmbientThinking || previewAmbientDockState?.startsWith("open")) {
+            setAmbientFeedManuallyClosed(false)
+            return
+        }
+
+        if (previewAmbientDockState?.startsWith("collapsed")) {
+            setAmbientFeedManuallyClosed(true)
+        }
+    }, [isAmbientMode, previewAmbientDockState, previewAmbientThinking])
 
     // Sync dark class to <html> so CSS custom properties (--background etc.) resolve correctly in ambient mode
     useEffect(() => {
