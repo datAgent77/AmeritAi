@@ -28,11 +28,11 @@ export function ConfirmationModal({
             onClick={onCancel}
         >
             <div 
-                className="bg-white rounded-xl shadow-xl p-6 max-w-xs w-full animate-in zoom-in-95 duration-200"
+                className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6 max-w-xs w-full animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="font-semibold text-lg mb-2">{title || t('clearHistoryTitle') || "Clear History?"}</h3>
-                <p className="text-sm text-gray-500 mb-4">{description || t('clearHistoryDesc') || "This will delete your current conversation. This action cannot be undone."}</p>
+                <h3 className="font-semibold text-lg mb-2 dark:text-zinc-100">{title || t('clearHistoryTitle') || "Clear History?"}</h3>
+                <p className="text-sm text-gray-500 dark:text-zinc-400 mb-4">{description || t('clearHistoryDesc') || "This will delete your current conversation. This action cannot be undone."}</p>
                 <div className="flex gap-3 justify-end">
                     <button
                         type="button"

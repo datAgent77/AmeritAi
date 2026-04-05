@@ -16,6 +16,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         headerTextColor: "",
         suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
         enableLeadCollection: false,
+        enableGuided: false,
         enableInitialLeadCollection: false,
         enableInChatLeadCollection: false,
         leadFormConfig: null,
@@ -103,6 +104,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         dynamicSiteContextSuggestedPresetId: "generic-web-app",
         dynamicSiteContextResolvedPresetId: "generic-web-app",
         dynamicSiteContextRuntimePreset: null,
+        guidedSkills: [],
     })
 
     useEffect(() => {
@@ -129,6 +131,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
+                        enableGuided: data.enableGuided === true,
                         enableInitialLeadCollection: (data.enableLeadCollection && data.enableInitialLeadCollection) ?? false,
                         enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
                         leadFormConfig: data.leadFormConfig || null,
@@ -240,6 +243,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         dynamicSiteContextSuggestedPresetId: typeof data.dynamicSiteContextSuggestedPresetId === "string" ? data.dynamicSiteContextSuggestedPresetId : "generic-web-app",
                         dynamicSiteContextResolvedPresetId: typeof data.dynamicSiteContextResolvedPresetId === "string" ? data.dynamicSiteContextResolvedPresetId : "generic-web-app",
                         dynamicSiteContextRuntimePreset: typeof data.dynamicSiteContextRuntimePreset === "object" && data.dynamicSiteContextRuntimePreset ? data.dynamicSiteContextRuntimePreset : null,
+                        guidedSkills: Array.isArray(data.guidedSkills) ? data.guidedSkills : [],
                     }
 
                     if (!isMounted) return

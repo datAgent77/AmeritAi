@@ -1,14 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import dynamic from 'next/dynamic'
-
-// Dynamically import AuthProvider so that firebase/auth is NOT initialized 
-// when visiting public widget routes.
-const AuthProvider = dynamic(
-    () => import('@/context/AuthContext').then((mod) => mod.AuthProvider),
-    { ssr: false }
-)
+import { AuthProvider } from "@/context/AuthContext"
 
 // Public routes that should NOT use AuthProvider to prevent session conflicts
 const PUBLIC_WIDGET_ROUTES = ['/chatbot-view', '/widget-test']

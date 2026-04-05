@@ -2,6 +2,7 @@ import { executeOmniAction } from "@/lib/omni/action-execution"
 import {
     buildGuidedSkillMessageUi,
     buildGuidedSkillStartMenu,
+    getGuidedLocale,
     getGuidedSkillStep,
     getGuidedStepVirtualIndexes,
     isGuidedModuleEnabled,
@@ -131,7 +132,7 @@ function buildActionPayload(skill: GuidedSkillRecord, state: GuidedSkillState) {
     )
 }
 
-function resolveStepAction(step: GuidedSkillStep, transcript?: string | null, guidedEvent?: GuidedSkillClientEvent | null) {
+function resolveStepAction(step: GuidedSkillStep, transcript?: string | null, guidedEvent?: GuidedSkillClientEvent | null, language?: string | null) {
     const explicitOptionId = guidedEvent?.optionId?.trim()
     if (explicitOptionId === "__cancel") {
         return { type: "cancel" as const }
@@ -164,21 +165,22 @@ function resolveStepAction(step: GuidedSkillStep, transcript?: string | null, gu
         }
     }
 
-    const lowered = normalizedTranscript.toLocaleLowerCase("tr-TR")
+    const locale = getGuidedLocale(language, transcript)
+    const lowered = normalizedTranscript.toLocaleLowerCase(locale)
     const matchedOption = step.options.find((option) => {
-        if (option.label.toLocaleLowerCase("tr-TR") === lowered) return true
-        return option.aliases.some((alias) => alias.toLocaleLowerCase("tr-TR") === lowered)
+        if (option.label.toLocaleLowerCase(locale) === lowered) return true
+        return option.aliases.some((alias) => alias.toLocaleLowerCase(locale) === lowered)
     })
 
     if (matchedOption) {
         return { type: "option" as const, optionId: matchedOption.id }
     }
 
-    if (step.submit?.label?.toLocaleLowerCase("tr-TR") === lowered) {
+    if (step.submit?.label?.toLocaleLowerCase(locale) === lowered) {
         return { type: "submit" as const }
     }
 
-    if (step.cancelLabel?.toLocaleLowerCase("tr-TR") === lowered) {
+    if (step.cancelLabel?.toLocaleLowerCase(locale) === lowered) {
         return { type: "cancel" as const }
     }
 
@@ -231,6 +233,7 @@ export async function resolveGuidedSkillTurn(input: GuidedSkillEngineInput): Pro
         const selectedSkill = matchGuidedSkillShortcut(skills, {
             transcript: input.transcript,
             guidedEvent: input.guidedEvent,
+            language: input.language,
         })
 
         if (!selectedSkill) {
@@ -312,7 +315,7 @@ export async function resolveGuidedSkillTurn(input: GuidedSkillEngineInput): Pro
         }
     }
 
-    const resolvedAction = resolveStepAction(step, input.transcript, input.guidedEvent)
+    const resolvedAction = resolveStepAction(step, input.transcript, input.guidedEvent, input.language)
     if (!resolvedAction) {
         return {
             handled: false,
@@ -430,45 +433,74 @@ export async function resolveGuidedSkillTurn(input: GuidedSkillEngineInput): Pro
     }
 
     if (step.submit.mode === "omni_action") {
-        const actionResult = await executeOmniAction(input.adminDb, {
-            chatbotId: input.chatbotId,
-            actionId: step.submit.actionId,
-            sourceChannel: input.channel,
-            sourceSessionId: input.sessionId || null,
-            contactKey: input.contactKey || null,
-            canonicalContactId: input.canonicalContactId || null,
-            payload: buildActionPayload(
-                activeSkill,
-                buildState({
+        try {
+            const actionResult = await executeOmniAction(input.adminDb, {
+                chatbotId: input.chatbotId,
+                actionId: step.submit.actionId,
+                sourceChannel: input.channel,
+                sourceSessionId: input.sessionId || null,
+                contactKey: input.contactKey || null,
+                canonicalContactId: input.canonicalContactId || null,
+                payload: buildActionPayload(
+                    activeSkill,
+                    buildState({
+                        previous: activeState,
+                        skillId: activeSkill.id,
+                        channel: input.channel,
+                        stepId: step.id,
+                        selections: nextSelections,
+                    })
+                ),
+            })
+
+            const handoffStatus =
+                actionResult.actionId === "create_callback_request" || actionResult.actionId === "handoff_to_human"
+                    ? "callback_requested"
+                    : null
+
+            return {
+                handled: true,
+                assistantContent: step.submit.successMessage,
+                assistantGuidedUi: null,
+                nextState: buildState({
                     previous: activeState,
                     skillId: activeSkill.id,
                     channel: input.channel,
                     stepId: step.id,
                     selections: nextSelections,
-                })
-            ),
-        })
+                    status: "completed",
+                }),
+                guidedTextMenu: null,
+                lastDisposition: actionResult.actionId,
+                handoffStatus,
+            }
+        } catch (error) {
+            const locale = resolveGuidedLanguage(input.language, input.transcript)
+            const errorMessage = locale === "tr"
+                ? "İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin."
+                : locale === "de"
+                ? "Bei der Verarbeitung ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+                : locale === "es"
+                ? "Ocurrió un error durante el proceso. Por favor, inténtelo de nuevo."
+                : locale === "fr"
+                ? "Une erreur s'est produite lors du traitement. Veuillez réessayer."
+                : "An error occurred while processing. Please try again."
 
-        const handoffStatus =
-            actionResult.actionId === "create_callback_request" || actionResult.actionId === "handoff_to_human"
-                ? "callback_requested"
-                : null
-
-        return {
-            handled: true,
-            assistantContent: step.submit.successMessage,
-            assistantGuidedUi: null,
-            nextState: buildState({
-                previous: activeState,
-                skillId: activeSkill.id,
-                channel: input.channel,
-                stepId: step.id,
-                selections: nextSelections,
-                status: "completed",
-            }),
-            guidedTextMenu: null,
-            lastDisposition: actionResult.actionId,
-            handoffStatus,
+            return {
+                handled: true,
+                assistantContent: errorMessage,
+                assistantGuidedUi: null,
+                nextState: buildState({
+                    previous: activeState,
+                    skillId: activeSkill.id,
+                    channel: input.channel,
+                    stepId: step.id,
+                    selections: nextSelections,
+                    status: "cancelled",
+                }),
+                guidedTextMenu: null,
+                lastDisposition: "guided_skill_action_error",
+            }
         }
     }
 

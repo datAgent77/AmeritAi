@@ -1,4 +1,10 @@
 import { ChatbotSettings } from "@/types/chatbot"
+import type {
+    GuidedSkillClientEvent,
+    GuidedSkillMessageUi,
+    GuidedSkillShortcut,
+    GuidedSkillState,
+} from "@/lib/guided-skills/types"
 import { Sparkles } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -6,6 +12,7 @@ import { ProductCard } from "@/components/chatbot/product-card"
 import { ProductCarousel } from "@/components/chatbot/product-carousel"
 import Image from "next/image"
 import { RefObject, WheelEvent } from "react"
+import { InlineLeadForm } from "./InlineLeadForm"
 
 interface MessageListProps {
     messages: any[]
@@ -14,7 +21,9 @@ interface MessageListProps {
     language: string
     imageMap: Record<string, any>
     scrollToBottom: (behavior?: ScrollBehavior) => void
-    sendMessage: (text: string) => void
+    sendMessage: (text: string) => void | Promise<string>
+    sendGuidedMessage: (event: GuidedSkillClientEvent) => void | Promise<string>
+    guidedSkillState?: GuidedSkillState | null
     messagesContainerRef: RefObject<HTMLDivElement | null>
     messagesEndRef: RefObject<HTMLDivElement | null>
     t: (key: string) => string
@@ -22,7 +31,6 @@ interface MessageListProps {
     mode?: "classic" | "ambient"
     showClassicEntryOnboarding?: boolean
 }
-import { InlineLeadForm } from "./InlineLeadForm"
 
 type RgbColor = { r: number; g: number; b: number }
 
@@ -75,6 +83,206 @@ function getReadableTextColor(background: string | undefined, darkText = "#11182
     return luminance > 0.54 ? darkText : lightText
 }
 
+function getGuidedCopy(language: string) {
+    if (language === "tr") {
+        return {
+            flowsTitle: "Guided",
+            flowsDescription: "Aşağıdaki butonlardan biriyle yönlendirmeli akış başlatabilirsin.",
+            suggestedTitle: "Önerilen sorular",
+        }
+    }
+    if (language === "de") {
+        return {
+            flowsTitle: "Guided",
+            flowsDescription: "Starte einen gefuhrten Ablauf mit einer der folgenden Optionen.",
+            suggestedTitle: "Vorgeschlagene Fragen",
+        }
+    }
+    if (language === "es") {
+        return {
+            flowsTitle: "Guided",
+            flowsDescription: "Inicia un flujo guiado con una de las opciones a continuacion.",
+            suggestedTitle: "Preguntas sugeridas",
+        }
+    }
+    if (language === "fr") {
+        return {
+            flowsTitle: "Guided",
+            flowsDescription: "Demarrez un flux guide avec l'une des options ci-dessous.",
+            suggestedTitle: "Questions suggerees",
+        }
+    }
+    return {
+        flowsTitle: "Guided",
+        flowsDescription: "Start a guided flow with one of the options below.",
+        suggestedTitle: "Suggested prompts",
+    }
+}
+
+function isGuidedUiInteractive(guidedUi: GuidedSkillMessageUi | undefined, guidedSkillState?: GuidedSkillState | null) {
+    if (!guidedUi || !guidedSkillState) return false
+    return (
+        guidedSkillState.status === "active"
+        && guidedSkillState.skillId === guidedUi.skillId
+        && guidedSkillState.stepId === guidedUi.stepId
+    )
+}
+
+function GuidedShortcutButtons({
+    shortcuts,
+    onSelect,
+    language,
+}: {
+    shortcuts: GuidedSkillShortcut[]
+    onSelect: (shortcut: GuidedSkillShortcut) => void
+    language: string
+}) {
+    if (shortcuts.length === 0) return null
+
+    const copy = getGuidedCopy(language)
+
+    return (
+        <div className="space-y-3">
+            <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-100">{copy.flowsTitle}</h3>
+                <p className="text-xs text-gray-500 dark:text-zinc-400">{copy.flowsDescription}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 w-full">
+                {shortcuts.map((shortcut) => (
+                    <button
+                        key={shortcut.id}
+                        onClick={() => onSelect(shortcut)}
+                        className="w-full rounded-xl border border-emerald-200/80 bg-white px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-emerald-900/70 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+                    >
+                        <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{shortcut.title}</div>
+                        {shortcut.description ? (
+                            <div className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{shortcut.description}</div>
+                        ) : null}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function GuidedStepActions({
+    guidedUi,
+    isInteractive,
+    isBusy,
+    onSelect,
+}: {
+    guidedUi: GuidedSkillMessageUi
+    isInteractive: boolean
+    isBusy: boolean
+    onSelect: (event: GuidedSkillClientEvent) => void
+}) {
+    const isDisabled = !isInteractive || isBusy
+
+    return (
+        <div className="mt-4 space-y-3">
+            {guidedUi.presentation === "cards" && guidedUi.cards.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {guidedUi.cards.map((card) => (
+                        <button
+                            key={card.optionId}
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => onSelect({
+                                skillId: guidedUi.skillId,
+                                stepId: guidedUi.stepId,
+                                optionId: card.optionId,
+                                label: card.title,
+                                source: "guided_ui",
+                            })}
+                            className={`rounded-2xl border p-4 text-left transition ${
+                                card.selected
+                                    ? "border-emerald-400 bg-emerald-50/80 shadow-sm dark:border-emerald-500 dark:bg-emerald-950/30"
+                                    : "border-gray-200 bg-white/80 hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-900/60 dark:hover:border-emerald-700"
+                            } ${isDisabled ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                            {card.badge ? (
+                                <div className="mb-2 inline-flex rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
+                                    {card.badge}
+                                </div>
+                            ) : null}
+                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{card.title}</div>
+                            {card.description ? (
+                                <div className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{card.description}</div>
+                            ) : null}
+                            {card.metadata ? (
+                                <div className="mt-3 text-[11px] font-medium text-gray-600 dark:text-zinc-300">{card.metadata}</div>
+                            ) : null}
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+
+            {guidedUi.options.length > 0 && (guidedUi.presentation !== "cards" || guidedUi.cards.length === 0) ? (
+                <div className="flex flex-wrap gap-2">
+                    {guidedUi.options.map((option) => (
+                        <button
+                            key={option.id}
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => onSelect({
+                                skillId: guidedUi.skillId,
+                                stepId: guidedUi.stepId,
+                                optionId: option.id,
+                                label: option.label,
+                                source: "guided_ui",
+                            })}
+                            className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                                option.selected
+                                    ? "border-emerald-500 bg-emerald-500 text-white"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-emerald-700"
+                            } ${isDisabled ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            ) : null}
+
+            {(guidedUi.submit || guidedUi.cancelLabel) ? (
+                <div className="flex flex-wrap gap-2">
+                    {guidedUi.submit ? (
+                        <button
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => onSelect({
+                                skillId: guidedUi.skillId,
+                                stepId: guidedUi.stepId,
+                                optionId: "__submit",
+                                label: guidedUi.submit?.label,
+                                source: "guided_ui",
+                            })}
+                            className={`rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-600 ${isDisabled ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                            {guidedUi.submit.label}
+                        </button>
+                    ) : null}
+                    {guidedUi.cancelLabel ? (
+                        <button
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => onSelect({
+                                skillId: guidedUi.skillId,
+                                stepId: guidedUi.stepId,
+                                optionId: "__cancel",
+                                label: guidedUi.cancelLabel,
+                                source: "guided_ui",
+                            })}
+                            className={`rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 ${isDisabled ? "cursor-not-allowed opacity-60" : ""}`}
+                        >
+                            {guidedUi.cancelLabel}
+                        </button>
+                    ) : null}
+                </div>
+            ) : null}
+        </div>
+    )
+}
+
 export function MessageList({
     messages,
     settings,
@@ -83,6 +291,8 @@ export function MessageList({
     imageMap,
     scrollToBottom,
     sendMessage,
+    sendGuidedMessage,
+    guidedSkillState,
     messagesContainerRef,
     messagesEndRef,
     t,
@@ -92,6 +302,16 @@ export function MessageList({
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
     const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
+    const suggestedQuestions = settings.suggestedQuestions.filter((question) => question.trim() !== "")
+    const guidedShortcuts = settings.guidedSkills || []
+    const guidedCopy = getGuidedCopy(language)
+    const handleGuidedShortcut = (shortcut: GuidedSkillShortcut) => {
+        sendGuidedMessage({
+            skillId: shortcut.id,
+            label: shortcut.title,
+            source: "shortcut",
+        })
+    }
     const handleWheelContain = (event: WheelEvent<HTMLDivElement>) => {
         if (!isAmbientMode) return
 
@@ -117,8 +337,8 @@ export function MessageList({
             className={isAmbientMode && !showClassicEntryOnboarding
                 ? "flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 : (showClassicEntryOnboarding
-                    ? `flex-1 overflow-y-auto overflow-x-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white'}`
-                    : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50"))}
+                    ? `flex-1 overflow-y-auto overflow-x-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`
+                    : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50 dark:bg-zinc-900"))}
             style={isAmbientMode && !showClassicEntryOnboarding
                 ? {
                     WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
@@ -163,29 +383,41 @@ export function MessageList({
                                 {settings.welcomeMessage}
                             </p>
                         </div>
-                    </div>
+                        </div>
 
-                    <div className={`flex-1 px-5 py-4 ${isAmbientMode ? 'bg-transparent' : 'bg-white'}`}>
-                        <div className="space-y-2">
-                            {settings.suggestedQuestions.filter((question) => question.trim() !== "").length > 0 ? (
-                                settings.suggestedQuestions
-                                    .filter((question) => question.trim() !== "")
-                                    .map((question, index) => (
+                    <div className={`flex-1 px-5 py-4 ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`}>
+                        <div className="space-y-5">
+                            <GuidedShortcutButtons
+                                shortcuts={guidedShortcuts}
+                                onSelect={handleGuidedShortcut}
+                                language={language}
+                            />
+                            <div className="space-y-2">
+                                {suggestedQuestions.length > 0 ? (
+                                    <>
+                                        {guidedShortcuts.length > 0 ? (
+                                            <p className="px-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-zinc-400">
+                                                {guidedCopy.suggestedTitle}
+                                            </p>
+                                        ) : null}
+                                        {suggestedQuestions.map((question, index) => (
                                         <button
                                             key={`${question}-${index}`}
                                             onClick={() => sendMessage(question)}
-                                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-left text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                                            className="w-full rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-zinc-200 transition hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700"
                                         >
                                             {question}
                                         </button>
-                                    ))
-                            ) : (
-                                <p className="px-1 py-2 text-xs text-gray-500">
-                                    {language === "tr"
-                                        ? "Öneri bulunamadı. Doğrudan mesaj yazabilirsin."
-                                        : "No suggestion found. You can type a direct message below."}
-                                </p>
-                            )}
+                                        ))}
+                                    </>
+                                ) : guidedShortcuts.length === 0 ? (
+                                    <p className="px-1 py-2 text-xs text-gray-500">
+                                        {language === "tr"
+                                            ? "Öneri bulunamadı. Doğrudan mesaj yazabilirsin."
+                                            : "No suggestion found. You can type a direct message below."}
+                                    </p>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -201,24 +433,36 @@ export function MessageList({
                             <Sparkles className="w-8 h-8" />
                         </div>
                         <div className="space-y-2 max-w-xs">
-                            <h2 className="text-xl font-bold text-gray-800">{settings.welcomeTitle || `${t('welcomeTo')} ${settings.companyName}`}</h2>
-                            <p className="text-sm text-gray-500 leading-relaxed">
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-zinc-100">{settings.welcomeTitle || `${t('welcomeTo')} ${settings.companyName}`}</h2>
+                            <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
                                 {settings.welcomeMessage}
                             </p>
                         </div>
-                        <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
-                            {settings.suggestedQuestions.filter(q => q.trim() !== "").map((q, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => {
-                                        sendMessage(q)
-                                    }}
-                                    className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all hover:shadow-sm shadow-sm"
-                                    style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
-                                >
-                                    {q}
-                                </button>
-                            ))}
+                        <div className="w-full max-w-xs space-y-4">
+                            <GuidedShortcutButtons
+                                shortcuts={guidedShortcuts}
+                                onSelect={handleGuidedShortcut}
+                                language={language}
+                            />
+                            <div className="grid grid-cols-1 gap-2 w-full">
+                                {guidedShortcuts.length > 0 && suggestedQuestions.length > 0 ? (
+                                    <p className="px-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-zinc-400">
+                                        {guidedCopy.suggestedTitle}
+                                    </p>
+                                ) : null}
+                                {suggestedQuestions.map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => {
+                                            sendMessage(q)
+                                        }}
+                                        className="text-xs text-left px-4 py-3 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-100 dark:border-zinc-700 rounded-xl transition-all hover:shadow-sm shadow-sm text-gray-700 dark:text-zinc-200"
+                                        style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40` }}
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )
@@ -229,6 +473,7 @@ export function MessageList({
                         const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
                         const displayImage = m.image || cached?.image
                         const displayMime = m.imageMimeType || cached?.mimeType
+                        const messageContent = typeof m.content === 'string' ? m.content : ''
                         const hasProductCarousel = typeof m.content === 'string' && m.content.includes('"product-carousel"')
                         const ambientUserBg = typeof settings.headerBackgroundColor === "string" && settings.headerBackgroundColor.trim()
                             ? settings.headerBackgroundColor.trim()
@@ -237,7 +482,7 @@ export function MessageList({
                             : undefined
 
                         // Hide empty messages (prevent empty bubble while loading or if failed)
-                        if (!m.content?.trim() && !displayImage) return null;
+                        if (!m.content?.trim() && !displayImage && !m.guidedUi) return null;
 
                         // Remove slide-in animation to prevent replay on display toggle (widget open/close)
                         const animationClasses = '';
@@ -247,7 +492,7 @@ export function MessageList({
                         const assistantTextIsLight = false
                         const bubbleClassName = m.role === 'user'
                                 ? 'text-white rounded-tr-sm'
-                                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-sm';
+                                : 'bg-white dark:bg-zinc-900/40 border border-gray-100 dark:border-zinc-800 text-gray-800 dark:text-zinc-100 rounded-tl-sm';
                         const ambientWidthClass = hasProductCarousel && m.role !== 'user' ? 'w-[calc(100%-2.75rem)] max-w-[calc(100%-2.75rem)]' : 'max-w-[85%]';
                         const messageContentClassName = `text-sm leading-relaxed px-5 py-4 text-left relative transition-all rounded-2xl hover:shadow-md shadow-sm ${hasProductCarousel && m.role !== 'user' ? 'block w-full max-w-full overflow-hidden' : 'inline-block'} ${bubbleClassName}`
                         const messageContentStyle = m.role === 'user'
@@ -255,16 +500,18 @@ export function MessageList({
                             : undefined
                         const inlineCodeClassName = m.role === 'user'
                             ? (userTextIsLight ? 'bg-white/20 text-white' : 'bg-black/10 text-gray-900')
-                            : (assistantTextIsLight ? 'bg-white/20 text-white' : 'bg-gray-100 text-red-500')
+                            : (assistantTextIsLight ? 'bg-white/20 text-white' : 'bg-gray-100 dark:bg-zinc-800 text-red-500 dark:text-red-400')
                         const anchorClassName = m.role === 'user'
                             ? (userTextIsLight ? 'underline font-medium text-white' : 'underline font-medium text-gray-900')
-                            : (assistantTextIsLight ? 'underline font-medium text-white' : 'underline font-medium text-blue-600 hover:text-blue-800')
+                            : (assistantTextIsLight ? 'underline font-medium text-white' : 'underline font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800')
                         const tableBaseClassName = isAmbientMode
-                            ? (m.role === 'user' ? (userTextIsLight ? 'bg-white/10' : 'bg-black/5') : (assistantTextIsLight ? 'bg-white/10' : 'bg-white'))
-                            : 'bg-white/5'
+                            ? (m.role === 'user' ? (userTextIsLight ? 'bg-white/10' : 'bg-black/5') : (assistantTextIsLight ? 'bg-white/10' : 'bg-white dark:bg-zinc-900/50'))
+                            : 'bg-white/5 dark:bg-zinc-900/20'
                         const tableBorderClassName = m.role === 'user'
                             ? (userTextIsLight ? 'border-white/20' : 'border-black/20')
-                            : (assistantTextIsLight ? 'border-white/20' : 'border-gray-200')
+                            : (assistantTextIsLight ? 'border-white/20' : 'border-gray-200 dark:border-zinc-800')
+                        const isGuidedStep = m.role === 'assistant' && m.guidedUi?.type === 'guided-step'
+                        const isGuidedInteractive = isGuidedUiInteractive(m.guidedUi, guidedSkillState)
 
                         return (
                             <div key={m.id} className={`flex w-full ${isAmbientMode ? 'gap-2' : 'gap-3'} ${isAmbientMode ? 'max-w-[1080px]' : 'max-w-3xl'} mx-auto ${m.role === 'user' ? 'justify-end' : 'justify-start'} ${isAmbientMode ? 'px-1.5' : ''} ${animationClasses} group/msg`}>
@@ -369,17 +616,25 @@ export function MessageList({
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
                                             }}
                                         >
-                                            {m.content.replace('[SHOW_LEAD_FORM]', '')}
+                                            {messageContent.replace('[SHOW_LEAD_FORM]', '')}
                                         </ReactMarkdown>
 
                                         {/* Inline Lead Form */}
-                                        {m.content.includes('[SHOW_LEAD_FORM]') && (
+                                        {messageContent.includes('[SHOW_LEAD_FORM]') && (
                                             <InlineLeadForm
                                                 onSubmit={(data) => onLeadSubmit(data, { source: "inline" })}
                                                 settings={settings}
                                                 t={t}
                                             />
                                         )}
+                                        {isGuidedStep ? (
+                                            <GuidedStepActions
+                                                guidedUi={m.guidedUi}
+                                                isInteractive={isGuidedInteractive}
+                                                isBusy={isTyping}
+                                                onSelect={sendGuidedMessage}
+                                            />
+                                        ) : null}
                                         {!isAmbientMode && (
                                             <div className={`text-[10px] mt-1 opacity-70 flex justify-end ${m.role === 'user' || isAmbientMode ? 'text-white/70' : 'text-gray-400'}`}>
                                                 {m.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -402,7 +657,7 @@ export function MessageList({
                                     <Sparkles className="w-4 h-4" />
                                 </div>
                             )}
-                            <div className={isAmbientMode ? "px-6 py-4 rounded-[24px] rounded-bl-[4px] bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-750 shadow-sm flex items-center gap-3 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white border border-gray-100"}>
+                            <div className={isAmbientMode ? "px-6 py-4 rounded-[24px] rounded-bl-[4px] bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-750 shadow-sm flex items-center gap-3 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700"}>
                                 <div className="flex items-center gap-1.5">
                                     <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
                                     <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>

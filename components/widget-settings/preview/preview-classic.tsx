@@ -21,6 +21,76 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
         return <IconComponent className={className} />;
     };
 
+    // Sidecar mode: panel pinned to the right, always open
+    const isSidecarMode = settings.chatDisplayMode === 'sidecar'
+    const isSidecarMobileHidden = isSidecarMode && settings.sidecarDesktopOnly !== false && previewMode === 'mobile'
+    const showSidecar = isSidecarMode && !isSidecarMobileHidden
+
+    if (showSidecar) {
+        const panelWidth = previewMode === 'mobile' ? '70%' : '42%'
+        const brandColor = settings.headerBackgroundColor || settings.brandColor
+        return (
+            <div className="absolute inset-0 overflow-hidden">
+                {/* Mock page content pushed left */}
+                <div className="absolute top-0 left-0 bottom-0 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-3 space-y-2 overflow-hidden"
+                    style={{ right: panelWidth }}>
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24 mt-1"></div>
+                    <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                    <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded mt-2"></div>
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
+                </div>
+                {/* Sidecar panel on the right */}
+                <div
+                    className="absolute top-0 right-0 bottom-0 flex flex-col bg-white dark:bg-gray-950 border-l border-border shadow-[-4px_0_16px_rgba(0,0,0,0.10)]"
+                    style={{ width: panelWidth }}
+                >
+                    <div className="p-3 flex items-center justify-between shrink-0 border-b"
+                        style={{ backgroundColor: brandColor }}>
+                        <div className="flex items-center gap-2">
+                            {settings.headerLogo || settings.brandLogo ? (
+                                <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0">
+                                    <Image src={settings.headerLogo || settings.brandLogo} alt="Logo" fill className="object-cover" unoptimized />
+                                </div>
+                            ) : (
+                                <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
+                                    <MessageSquare className="w-3 h-3 text-white" />
+                                </div>
+                            )}
+                            <span className="font-semibold text-white text-[11px] truncate">{settings.companyName || 'AI Assist'}</span>
+                        </div>
+                        <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
+                            <X className="w-2.5 h-2.5 text-white" />
+                        </div>
+                    </div>
+                    <div className="flex-1 p-2 space-y-2 overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
+                        <div className="flex gap-1.5 max-w-[90%]">
+                            <div className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[7px] text-white mt-0.5"
+                                style={{ backgroundColor: brandColor }}>AI</div>
+                            <div className="bg-white dark:bg-gray-800 p-2 rounded-xl rounded-tl-none shadow-sm text-[10px] border leading-relaxed">
+                                {settings.welcomeMessage || 'Hello! How can I help you?'}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-2 border-t bg-white dark:bg-gray-950 shrink-0">
+                        <div className="flex gap-1.5">
+                            <div className="flex-1 text-[9px] bg-gray-100 dark:bg-gray-900 rounded-full px-2 py-1.5 text-gray-400 flex items-center">
+                                Type a message...
+                            </div>
+                            <button className="p-1.5 rounded-full text-white" style={{ backgroundColor: brandColor }}>
+                                <Send className="w-2.5 h-2.5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Sidecar on mobile with desktopOnly=true → fall through to classic launcher
     return (
         <>
             {isPreviewOpen ? (

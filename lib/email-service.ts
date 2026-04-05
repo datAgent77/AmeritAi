@@ -17,6 +17,108 @@ const parseBooleanEnv = (value?: string | null): boolean => {
     return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 };
 
+const EMAIL_ADDRESS_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i;
+
+const normalizeEmailAddress = (value?: string | null): string | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const bracketMatch = trimmed.match(/<([^>]+)>/);
+    const candidate = (bracketMatch?.[1] || trimmed).trim().replace(/^"+|"+$/g, "");
+    return EMAIL_ADDRESS_PATTERN.test(candidate) ? candidate.toLowerCase() : null;
+};
+
+const getEmailDomain = (email?: string | null): string | null => {
+    const normalized = normalizeEmailAddress(email);
+    return normalized ? normalized.split("@")[1] || null : null;
+};
+
+const isGmailLikeTransport = (smtpHost?: string | null): boolean => {
+    const normalizedHost = smtpHost?.trim().toLowerCase();
+    return !normalizedHost || normalizedHost.includes("gmail.com");
+};
+
+export interface ResolveSenderIdentityOptions {
+    smtpHost?: string | null;
+    authenticatedEmail?: string | null;
+    configuredFromEmail?: string | null;
+    configuredFromName?: string | null;
+    fallbackName?: string;
+}
+
+export interface ResolvedSenderIdentity {
+    fromEmail: string;
+    fromName: string;
+    replyTo?: string;
+    sender?: string;
+}
+
+export function resolveSenderIdentity(options: ResolveSenderIdentityOptions = {}): ResolvedSenderIdentity {
+    const {
+        smtpHost = process.env.SMTP_HOST,
+        authenticatedEmail = process.env.SMTP_USER || process.env.EMAIL_USER,
+        configuredFromEmail = process.env.SMTP_FROM_EMAIL,
+        configuredFromName = process.env.SMTP_FROM_NAME,
+        fallbackName = "Vion AI",
+    } = options;
+
+    const normalizedAuthenticatedEmail = normalizeEmailAddress(authenticatedEmail);
+    const normalizedConfiguredFromEmail = normalizeEmailAddress(configuredFromEmail);
+    const fromName = configuredFromName?.trim() || fallbackName;
+    const gmailLikeTransport = isGmailLikeTransport(smtpHost);
+
+    if (normalizedConfiguredFromEmail) {
+        if (!gmailLikeTransport) {
+            return {
+                fromEmail: normalizedConfiguredFromEmail,
+                fromName,
+                sender: normalizedAuthenticatedEmail && normalizedAuthenticatedEmail !== normalizedConfiguredFromEmail
+                    ? normalizedAuthenticatedEmail
+                    : undefined,
+            };
+        }
+
+        if (!normalizedAuthenticatedEmail || getEmailDomain(normalizedConfiguredFromEmail) === getEmailDomain(normalizedAuthenticatedEmail)) {
+            return {
+                fromEmail: normalizedConfiguredFromEmail,
+                fromName,
+                sender: normalizedAuthenticatedEmail && normalizedAuthenticatedEmail !== normalizedConfiguredFromEmail
+                    ? normalizedAuthenticatedEmail
+                    : undefined,
+            };
+        }
+
+        console.warn(
+            `Email Service: SMTP_FROM_EMAIL domain (${getEmailDomain(normalizedConfiguredFromEmail)}) does not align with Gmail-authenticated mailbox (${getEmailDomain(normalizedAuthenticatedEmail)}). Using authenticated mailbox as From and configured address as Reply-To.`
+        );
+
+        return {
+            fromEmail: normalizedAuthenticatedEmail,
+            fromName,
+            replyTo: normalizedConfiguredFromEmail,
+            sender: normalizedAuthenticatedEmail,
+        };
+    }
+
+    return {
+        fromEmail: normalizedAuthenticatedEmail || "no-reply@vion.ai",
+        fromName,
+    };
+}
+
+function buildMailSenderOptions(identity: ResolvedSenderIdentity): Pick<nodemailer.SendMailOptions, "from" | "replyTo" | "sender" | "headers"> {
+    return {
+        from: `"${identity.fromName}" <${identity.fromEmail}>`,
+        ...(identity.replyTo ? { replyTo: identity.replyTo } : {}),
+        ...(identity.sender ? { sender: identity.sender } : {}),
+        headers: {
+            "Auto-Submitted": "auto-generated",
+            "X-Auto-Response-Suppress": "OOF, AutoReply",
+        },
+    };
+}
+
 // Create reusable transporter
 const createTransporter = () => {
     // Check for credentials (support both naming conventions)
@@ -108,11 +210,9 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
     } = data;
 
     const isTurkish = String(language).toLowerCase().startsWith("tr");
-    const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER || "no-reply@vion.ai";
-    const fromName = process.env.SMTP_FROM_NAME || companyName;
     const subject = isTurkish
-        ? `${companyName} e-posta doğrulama bağlantınız`
-        : `${companyName} email verification link`;
+        ? `${companyName} hesabınızı doğrulayın`
+        : `Verify your ${companyName} email address`;
     const ctaText = isTurkish ? "E-postamı Doğrula" : "Verify My Email";
     const fallbackLine = isTurkish
         ? "Buton çalışmazsa aşağıdaki bağlantıyı tarayıcınıza yapıştırın:"
@@ -123,6 +223,13 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
     const expiryNote = isTurkish
         ? "Bu bağlantı güvenlik nedeniyle bir süre sonra geçersiz olabilir."
         : "This link may expire after some time for security reasons.";
+    const transactionalNote = isTurkish
+        ? "Bu işlem e-postası, bu adresle bir kayıt isteği başlatıldığı için gönderildi."
+        : "This transactional email was sent because a signup request was made for this address.";
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -165,6 +272,9 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
               <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;">
                 ${expiryNote}
               </p>
+              <p style="margin:12px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">
+                ${transactionalNote}
+              </p>
             </td>
           </tr>
         </table>
@@ -176,11 +286,11 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
     `;
 
     const textContent = isTurkish
-        ? `Merhaba ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}`.trim()
-        : `Hello ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}`.trim();
+        ? `Merhaba ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}\n\n${transactionalNote}`.trim()
+        : `Hello ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${verificationLink}\n\n${expiryNote}\n\n${transactionalNote}`.trim();
 
     return sendEmailOrMock(transporter, {
-        from: `"${fromName}" <${fromEmail}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: recipientEmail,
         subject,
         text: textContent,

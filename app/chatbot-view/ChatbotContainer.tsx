@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent } f
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { signInAsGuest } from "@/lib/firebase-guest"
+import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
 import { event as trackEvent } from "@/lib/gtag"
 
 // Hooks
 import { useWidgetSettings } from "./hooks/useWidgetSettings"
 import { useVisualContext } from "./hooks/useVisualContext"
 import { useVoiceInput } from "./hooks/useVoiceInput"
-import { useChatCore } from "./hooks/useChatCore"
+import { useChatCore, type UserMessageMediaPayload } from "./hooks/useChatCore"
 
 import { ChatHeader } from "./components/ChatHeader"
 import { MessageList } from "./components/MessageList"
@@ -52,6 +53,7 @@ export default function ChatbotContainer() {
     const [isGuestReady, setIsGuestReady] = useState(false)
     const [isClient, setIsClient] = useState(false)
     const [localInput, setLocalInput] = useState("")
+    const [conversationMode, setConversationMode] = useState<"text" | "voice">("text")
     const [isExpanded, setIsExpanded] = useState(false)
     const [isConfirmingClear, setIsConfirmingClear] = useState(false)
     const [showBooking, setShowBooking] = useState(false)
@@ -68,52 +70,32 @@ export default function ChatbotContainer() {
 
 
     // Mobile Keyboard Fix: Visual Viewport
-    const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0, left: 0, width: '100%' });
-    const [isMobileKeyboardOpen, setIsMobileKeyboardOpen] = useState(false)
+    const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0 });
 
     useEffect(() => {
-        if (typeof window === 'undefined') return
-
-        const handleResize = () => {
-            const isMobile = window.innerWidth < 768
-            const visualViewport = window.visualViewport
-
-            if (!isMobile || !visualViewport) {
-                setViewportStyle({ height: '100%', top: 0, left: 0, width: '100%' })
-                setIsMobileKeyboardOpen(false)
-                return
+        if (typeof window !== 'undefined' && window.visualViewport) {
+            const handleResize = () => {
+                // Only apply on mobile where keyboard creates visual viewport shift
+                if (window.innerWidth < 768) {
+                    const vvHeight = window.visualViewport?.height ?? window.innerHeight
+                    const keyboardDelta = window.innerHeight - vvHeight
+                    setViewportStyle({
+                        height: keyboardDelta > 80 ? `${vvHeight}px` : '100%',
+                        top: 0
+                    })
+                } else {
+                    setViewportStyle({ height: '100%', top: 0 })
+                }
             }
 
-            const viewportHeight = Math.round(visualViewport.height || window.innerHeight || 0)
-            const viewportWidth = Math.round(visualViewport.width || window.innerWidth || 0)
-            const offsetTop = Math.max(0, Math.round(visualViewport.offsetTop || 0))
-            const offsetLeft = Math.max(0, Math.round(visualViewport.offsetLeft || 0))
-            const obscuredBottom = Math.max(0, Math.round(window.innerHeight - (offsetTop + viewportHeight)))
-            const keyboardDelta = Math.max(0, Math.round(window.innerHeight - viewportHeight))
-            const keyboardOpen = keyboardDelta > 120 || obscuredBottom > 120
+            window.visualViewport.addEventListener('resize', handleResize)
 
-            setViewportStyle({
-                height: `${viewportHeight}px`,
-                top: offsetTop,
-                left: offsetLeft,
-                width: `${viewportWidth}px`,
-            })
-            setIsMobileKeyboardOpen(keyboardOpen)
-        }
+            // Initial check
+            handleResize()
 
-        window.addEventListener('resize', handleResize)
-        window.addEventListener('orientationchange', handleResize)
-        window.visualViewport?.addEventListener('resize', handleResize)
-        window.visualViewport?.addEventListener('scroll', handleResize)
-
-        // Initial check
-        handleResize()
-
-        return () => {
-            window.removeEventListener('resize', handleResize)
-            window.removeEventListener('orientationchange', handleResize)
-            window.visualViewport?.removeEventListener('resize', handleResize)
-            window.visualViewport?.removeEventListener('scroll', handleResize)
+            return () => {
+                window.visualViewport?.removeEventListener('resize', handleResize)
+            }
         }
     }, [])
 
@@ -225,15 +207,12 @@ export default function ChatbotContainer() {
 
     // 6. Voice Hook (Uses proxySendMessage)
     const {
-        handleVoiceInput,
-        cancelVoiceMode,
         speakText,
-        handleSpeak,
-        isListening,
-        isSpeaking,
-        isVoiceMode,
+        isMuted,
         voiceStatus,
-        setIsVoiceMode
+        startVoiceSession,
+        endVoiceSession,
+        toggleMute
     } = useVoiceInput(chatbotId, language, settings, setLocalInput, proxySendMessage)
 
     // 7. Chat Core Hook (Uses speakText)
@@ -241,10 +220,12 @@ export default function ChatbotContainer() {
         messages,
         setMessages,
         sendMessage, // The REAL function
+        sendGuidedMessage,
         chatStatus,
         isTyping,
         isChatLoading,
         sessionId,
+        guidedSkillState,
         resetSession
     } = useChatCore({
         chatbotId,
@@ -253,6 +234,7 @@ export default function ChatbotContainer() {
         pageContext,
         isGuestReady,
         speakText: (text, id) => speakText(text, id), // Wrap to match signature
+        saveImageToCache: visualContext.saveImageToCache,
         getImageFromCache: visualContext.getImageFromCache,
         findImageByContent: visualContext.findImageByContent,
         onShowLeadForm: () => setShowLeadCollection(true)
@@ -262,6 +244,24 @@ export default function ChatbotContainer() {
     useEffect(() => {
         sendMessageRef.current = sendMessage
     }, [sendMessage])
+
+    useEffect(() => {
+        if (settings.enableVoiceAssistant) return
+
+        setConversationMode("text")
+        endVoiceSession()
+    }, [endVoiceSession, settings.enableVoiceAssistant])
+
+    const handleConversationModeChange = (nextMode: "text" | "voice") => {
+        if (nextMode === "voice") {
+            setConversationMode("voice")
+            startVoiceSession()
+            return
+        }
+
+        setConversationMode("text")
+        endVoiceSession()
+    }
 
     // 8. Scrolling Logic
     const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -422,15 +422,28 @@ export default function ChatbotContainer() {
         }, 1000)
     }
 
-    const isAmbientMode = settings.chatDisplayMode === "ambient"
+    const urlTheme = searchParams?.get("theme")
+    const inheritedTheme = urlTheme === "dark" || urlTheme === "light" ? urlTheme : null
+    const isAmbientMode = settings.chatDisplayMode === "ambient" || searchParams?.get("chatDisplayMode") === "ambient"
     const runtimeDevice = (isClient && typeof window !== "undefined" && window.innerWidth < 768) ? "mobile" : "desktop"
+    const resolvedClassicTheme = settings.theme === "dark" || settings.theme === "light"
+        ? settings.theme
+        : "light"
+    const resolvedAmbientTheme = settings.ambientTheme === "dark" || settings.ambientTheme === "light"
+        ? settings.ambientTheme
+        : settings.ambientTheme === "auto"
+            ? inheritedTheme || "light"
+            : "light"
+    
     const effectiveAmbientSettings = {
         ...settings,
         ...resolveAmbientDeviceSettings(settings, runtimeDevice),
+        theme: resolvedAmbientTheme
     }
     const effectiveClassicSettings = {
         ...settings,
         ...resolveClassicDeviceSettings(settings, runtimeDevice),
+        theme: resolvedClassicTheme
     }
     const effectiveSettings = isAmbientMode ? effectiveAmbientSettings : effectiveClassicSettings
 
@@ -440,6 +453,21 @@ export default function ChatbotContainer() {
             setAmbientFeedManuallyClosed(false)
         }
     }, [isTyping, isAmbientMode])
+
+    // Sync dark class to <html> so CSS custom properties (--background etc.) resolve correctly in ambient mode
+    useEffect(() => {
+        if (!isClient) return
+        if (!isAmbientMode) return
+        const isDark = effectiveSettings.theme === 'dark'
+        if (isDark) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+        return () => {
+            document.documentElement.classList.remove('dark')
+        }
+    }, [effectiveSettings.theme, isClient, isAmbientMode])
     const ambientOverlayOpacity = Math.max(0.2, Math.min(0.9, effectiveSettings.ambientOverlayOpacity || 0.55))
     const ambientRailHeight = Math.max(220, Math.min(900, effectiveSettings.ambientMaxHeight || 300))
     // Read bottom margin: prefer settings value, fallback to URL param (passed by widget.js)
@@ -524,7 +552,7 @@ export default function ChatbotContainer() {
     if (!isClient || !settings) return null
 
     const runtimeViewportStyle = isAmbientMode
-        ? { height: '100%', top: 0, left: 0, width: '100%' }
+        ? { height: '100%', top: 0 }
         : viewportStyle
 
     return (
@@ -532,15 +560,27 @@ export default function ChatbotContainer() {
             style={{
                 height: runtimeViewportStyle.height,
                 top: runtimeViewportStyle.top,
-                left: runtimeViewportStyle.left,
-                width: runtimeViewportStyle.width,
                 position: 'fixed',
-                backgroundColor: isAmbientMode ? 'transparent' : undefined,
+                backgroundColor: isAmbientMode ? 'transparent' : undefined
             }}
-            className={`vion-widget-runtime-root fixed overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${!isAmbientMode && effectiveSettings.theme === 'dark' ? 'dark' : ''}`}
+            className={`vion-widget-runtime-root fixed inset-0 w-full overflow-hidden font-sans text-gray-800 transition-colors duration-300 ${effectiveSettings.theme === 'dark' ? 'dark' : ''}`}
         >
             {isAmbientMode && (
-                <style dangerouslySetInnerHTML={{ __html: `html, body, #__next, #root, main { background: transparent !important; background-color: transparent !important; box-shadow: none !important; } body { --background: transparent !important; } .vion-ambient-card { background-color: white !important; background: white !important; }` }} />
+                <style dangerouslySetInnerHTML={{ __html: `
+                    html, body, #__next, #root, main { 
+                        background: transparent !important; 
+                        background-color: transparent !important; 
+                        box-shadow: none !important; 
+                    } 
+                    body { 
+                        --background: transparent !important; 
+                        color-scheme: ${effectiveSettings.theme === 'dark' ? 'dark' : 'light'};
+                    } 
+                    .vion-ambient-card { 
+                        background-color: ${effectiveSettings.theme === 'dark' ? '#18181b' : 'white'} !important; 
+                        background: ${effectiveSettings.theme === 'dark' ? '#18181b' : 'white'} !important; 
+                    }
+                ` }} />
             )}
             {isAmbientMode ? (
                 <div
@@ -573,8 +613,6 @@ export default function ChatbotContainer() {
                                 <ChatHeader
                                     settings={effectiveSettings}
                                     isExpanded={false}
-                                    handleVoiceInput={handleVoiceInput}
-                                    isListening={isListening}
                                     handleToggleSize={() => {}}
                                     handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
                                     handleClearChat={handleClearChat}
@@ -595,6 +633,8 @@ export default function ChatbotContainer() {
                                         imageMap={visualContext.imageMap}
                                         scrollToBottom={scrollToBottom}
                                         sendMessage={(text) => sendMessage(text)}
+                                        sendGuidedMessage={sendGuidedMessage}
+                                        guidedSkillState={guidedSkillState}
                                         messagesContainerRef={messagesContainerRef}
                                         messagesEndRef={messagesEndRef}
                                         t={t}
@@ -620,13 +660,17 @@ export default function ChatbotContainer() {
                                 settings={effectiveSettings}
                                 localInput={localInput}
                                 setLocalInput={setLocalInput}
-                                sendMessage={(text: string, speakResponse?: boolean, visualCtx?: string) => {
+                                sendMessage={(
+                                    text: string,
+                                    speakResponse?: boolean,
+                                    visualCtx?: string,
+                                    guidedEvent?: GuidedSkillClientEvent | null,
+                                    mediaPayload?: UserMessageMediaPayload | null
+                                ) => {
                                     setAmbientFeedManuallyClosed(false)
-                                    return sendMessage(text, speakResponse, visualCtx)
+                                    return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
                                 }}
                                 isChatLoading={isChatLoading}
-                                handleVoiceInput={handleVoiceInput}
-                                isListening={isListening}
                                 visualContext={visualContext}
                                 language={language}
                                 t={t}
@@ -636,23 +680,23 @@ export default function ChatbotContainer() {
                                 onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
                                 onToggleAmbientFeed={handleToggleAmbientFeed}
                                 showUtilityActions
+                                showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
+                                conversationMode={conversationMode}
+                                onConversationModeChange={handleConversationModeChange}
                             />
                         </div>
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full min-h-0 flex-col">
+                <div className="flex h-full flex-col bg-white dark:bg-zinc-900">
                     {!showClassicEntryOnboarding && (
                         <ChatHeader
                             settings={effectiveSettings}
                             isExpanded={isExpanded}
-                            handleVoiceInput={handleVoiceInput}
-                            isListening={isListening}
                             handleToggleSize={handleToggleSize}
                             handleCloseWidget={handleCloseWidget}
                             handleClearChat={handleClearChat}
                             t={t}
-                            compact={isMobileKeyboardOpen}
                         />
                     )}
 
@@ -665,6 +709,8 @@ export default function ChatbotContainer() {
                         imageMap={visualContext.imageMap}
                         scrollToBottom={scrollToBottom}
                         sendMessage={(text) => sendMessage(text)}
+                        sendGuidedMessage={sendGuidedMessage}
+                        guidedSkillState={guidedSkillState}
                         messagesContainerRef={messagesContainerRef}
                         messagesEndRef={messagesEndRef}
                         t={t}
@@ -673,19 +719,19 @@ export default function ChatbotContainer() {
                     />
 
                     <ChatInput
-                        mode="classic"
+                        mode={effectiveSettings.chatDisplayMode === "sidecar" ? "sidecar" : "classic"}
                         settings={effectiveSettings}
                         localInput={localInput}
                         setLocalInput={setLocalInput}
                         sendMessage={sendMessage}
                         isChatLoading={isChatLoading}
-                        handleVoiceInput={handleVoiceInput}
-                        isListening={isListening}
                         visualContext={visualContext}
                         language={language}
                         t={t}
                         setMessages={setMessages}
-                        isKeyboardOpen={isMobileKeyboardOpen}
+                        showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
+                        conversationMode={conversationMode}
+                        onConversationModeChange={handleConversationModeChange}
                     />
                 </div>
             )}
@@ -695,7 +741,7 @@ export default function ChatbotContainer() {
                 show={showLeadCollection}
                 onSubmit={handleLeadSubmit}
                 isSubmitting={isSubmittingLead}
-                settings={settings}
+                settings={effectiveSettings}
                 t={t}
                 description={settings.leadFormConfig?.title}
             />
@@ -707,7 +753,7 @@ export default function ChatbotContainer() {
                 setBookingData={setBookingData}
                 handleBookingSubmit={handleBookingSubmit}
                 isSubmittingBooking={isSubmittingBooking}
-                settings={settings}
+                settings={effectiveSettings}
                 t={t}
             />
 
@@ -719,10 +765,15 @@ export default function ChatbotContainer() {
             />
 
             <VoiceOverlay
-                isVoiceMode={isVoiceMode}
+                isOpen={effectiveSettings.enableVoiceAssistant && conversationMode === "voice"}
                 voiceStatus={voiceStatus}
                 localInput={localInput}
-                cancelVoiceMode={cancelVoiceMode}
+                isMuted={isMuted}
+                settings={effectiveSettings}
+                language={language}
+                onConversationModeChange={handleConversationModeChange}
+                onToggleMute={toggleMute}
+                onEndCall={() => handleConversationModeChange("text")}
                 t={t}
             />
         </div>

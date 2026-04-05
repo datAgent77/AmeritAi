@@ -108,7 +108,7 @@ export function LeadCollectionOverlay({
     }
 
     return (
-        <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="absolute inset-0 z-50 bg-white/95 dark:bg-zinc-950/98 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
         <div className="w-full max-w-sm space-y-6 overflow-y-auto max-h-full p-4">
                 <div className="text-center space-y-2">
                     <div
@@ -117,8 +117,8 @@ export function LeadCollectionOverlay({
                     >
                         <UserPlus className="w-8 h-8" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800">{settings.leadFormConfig?.title || t('getStarted')}</h2>
-                    <p className="text-sm text-gray-500">{settings.leadFormConfig?.subtitle || t('leadFormSubtitle') || "Please fill in your details to start chatting."}</p>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">{settings.leadFormConfig?.title || t('getStarted')}</h2>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">{settings.leadFormConfig?.subtitle || t('leadFormSubtitle') || "Please fill in your details to start chatting."}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -136,8 +136,8 @@ export function LeadCollectionOverlay({
                                         setFormData({ ...formData, name: e.target.value })
                                         if (errors.name) setErrors({ ...errors, name: "" })
                                     }}
-                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                        errors.name ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 ${
+                                        errors.name ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                     }`}
                                     style={{ '--tw-ring-color': errors.name ? '#EF4444' : settings.brandColor } as any}
                                 />
@@ -160,8 +160,8 @@ export function LeadCollectionOverlay({
                                         setFormData({ ...formData, email: e.target.value })
                                         if (errors.email) setErrors({ ...errors, email: "" })
                                     }}
-                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                        errors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 ${
+                                        errors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                     }`}
                                     style={{ '--tw-ring-color': errors.email ? '#EF4444' : settings.brandColor } as any}
                                 />
@@ -184,8 +184,8 @@ export function LeadCollectionOverlay({
                                         setFormData({ ...formData, phone: e.target.value })
                                         if (errors.phone) setErrors({ ...errors, phone: "" })
                                     }}
-                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                        errors.phone ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 ${
+                                        errors.phone ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                     }`}
                                     style={{ '--tw-ring-color': errors.phone ? '#EF4444' : settings.brandColor } as any}
                                 />
@@ -210,7 +210,7 @@ export function LeadCollectionOverlay({
                                         {field.type === 'textarea' ? (
                                             // Textarea with label
                                             <>
-                                                <label className="text-xs font-medium text-gray-500 ml-1">
+                                                <label className="text-xs font-medium text-gray-500 dark:text-zinc-400 ml-1">
                                                     {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
                                                 </label>
                                                 <textarea
@@ -227,8 +227,8 @@ export function LeadCollectionOverlay({
                                                             setErrors(newErrors)
                                                         }
                                                     }}
-                                                    className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white min-h-[80px] resize-none ${
-                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 min-h-[80px] resize-none ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                                     }`}
                                                     style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
                                                     placeholder={field.placeholder || ''}
@@ -252,8 +252,8 @@ export function LeadCollectionOverlay({
                                                             setErrors(newErrors)
                                                         }
                                                     }}
-                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white appearance-none ${
-                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 appearance-none ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                                     }`}
                                                     style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
                                                 >
@@ -282,8 +282,8 @@ export function LeadCollectionOverlay({
                                                             setErrors(newErrors)
                                                         }
                                                     }}
-                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white ${
-                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200'
+                                                    className={`w-full pl-10 pr-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all bg-white dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500 ${
+                                                        errors[field.id] ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 dark:border-zinc-700'
                                                     }`}
                                                     style={{ '--tw-ring-color': errors[field.id] ? '#EF4444' : settings.brandColor } as any}
                                                     placeholder={field.placeholder || field.label || ''}
@@ -313,7 +313,7 @@ export function LeadCollectionOverlay({
                         )}
                     </button>
                     
-                    <p className="text-xs text-center text-gray-400">
+                    <p className="text-xs text-center text-gray-400 dark:text-zinc-500">
                         {t('secureInfo') || "Your information is secure and private."}
                     </p>
                 </form>

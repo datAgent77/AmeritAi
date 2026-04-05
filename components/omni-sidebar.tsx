@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Building2, Check, ChevronDown, Globe, Loader2 } from "lucide-react"
+import { Building2, Check, ChevronDown, Globe, Loader2, LogOut, Settings, ShieldCheck, UserCircle, Users } from "lucide-react"
+import { signOut } from "firebase/auth"
 import {
     Sidebar,
     SidebarContent,
@@ -34,8 +35,14 @@ import {
 import { useAuth } from "@/context/AuthContext"
 import { useOmniAccount } from "@/context/OmniAccountContext"
 import { useLanguage } from "@/context/LanguageContext"
+import { auth } from "@/lib/firebase"
 import { cn } from "@/lib/utils"
 import { getOmniNavGroups, getOmniTopLevelItems } from "@/lib/omni/navigation"
+
+type PartnerContext = {
+    name: string
+    logoUrl: string | null
+}
 
 function getNavGroupsStorageKey(uid: string) {
     return `omni:nav-groups:${uid}`
@@ -78,13 +85,14 @@ function OmniNavButton({ href, title, icon: Icon, pathname }: { href: string; ti
 export function OmniSidebar() {
     const pathname = usePathname() || "/omni"
     const router = useRouter()
-    const { user, omniPermissions } = useAuth()
+    const { user, role, omniPermissions } = useAuth()
     const { isMobile, state } = useSidebar()
     const { language, setLanguage, t } = useLanguage()
     const { accounts, activeAccount, canSwitchAccounts, isLoading, selectAccount } = useOmniAccount()
     const topLevelItems = getOmniTopLevelItems(t, omniPermissions)
     const navGroups = getOmniNavGroups(t, omniPermissions)
-    const userFallback = user?.displayName || t("omni.userMenu.userFallback")
+    const [partnerContext, setPartnerContext] = useState<PartnerContext | null>(null)
+    const userFallback = user?.displayName || partnerContext?.name || t("omni.userMenu.userFallback")
     const navGroupIds = useMemo(() => navGroups.map((group) => group.id), [navGroups])
     const navGroupIdsKey = navGroupIds.join("|")
     const activeGroupId = useMemo(
@@ -94,6 +102,51 @@ export function OmniSidebar() {
     const [openGroupIds, setOpenGroupIds] = useState<string[]>(navGroupIds)
     const [groupStateReady, setGroupStateReady] = useState(false)
     const isSidebarIconCollapsed = state === "collapsed"
+    const canOpenManagedAccounts = role === "AGENCY_ADMIN" || role === "SUPER_ADMIN"
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadPartnerContext = async () => {
+            if (!user) {
+                setPartnerContext(null)
+                return
+            }
+
+            try {
+                const token = await user.getIdToken()
+                const response = await fetch("/api/management/viewer-context", {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error("Failed to load viewer context")
+                }
+
+                const data = await response.json()
+                if (cancelled) return
+
+                setPartnerContext({
+                    name: data?.partner?.partnerName || data?.partner?.agencyName || user.displayName || user.email || t("omni.userMenu.userFallback"),
+                    logoUrl: data?.partner?.partnerLogoUrl || null,
+                })
+            } catch (error) {
+                if (cancelled) return
+                setPartnerContext({
+                    name: user.displayName || user.email || t("omni.userMenu.userFallback"),
+                    logoUrl: null,
+                })
+            }
+        }
+
+        void loadPartnerContext()
+
+        return () => {
+            cancelled = true
+        }
+    }, [t, user])
 
     useEffect(() => {
         const defaultIds: string[] = [...navGroupIds]
@@ -143,6 +196,11 @@ export function OmniSidebar() {
 
     const toggleGroup = (groupId: string) => {
         setOpenGroupIds((current) => (current.includes(groupId) ? current.filter((id) => id !== groupId) : [...current, groupId]))
+    }
+
+    const handleLogout = async () => {
+        await signOut(auth)
+        router.push("/login")
     }
 
     return (
@@ -198,7 +256,9 @@ export function OmniSidebar() {
                                 <DropdownMenuLabel>{t("omni.accountSwitcher.title")}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 {accounts.length === 0 ? (
-                                    <DropdownMenuItem disabled>{t("omni.accountSwitcher.empty")}</DropdownMenuItem>
+                                    <DropdownMenuItem disabled>
+                                        {role === "AGENCY_ADMIN" ? t("omni.accounts.emptyManagedTitle") : t("omni.accountSwitcher.empty")}
+                                    </DropdownMenuItem>
                                 ) : (
                                     accounts.map((account) => (
                                         <DropdownMenuItem
@@ -288,15 +348,15 @@ export function OmniSidebar() {
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton
                                     size="lg"
-                                    className="rounded-xl text-white data-[state=open]:bg-white/10 hover:bg-white/5"
-                                >
-                                    <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-white/10 text-white font-bold">
-                                        {user?.email?.[0]?.toUpperCase() || "U"}
-                                    </div>
-                                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                        <span className="truncate font-semibold">{userFallback}</span>
-                                        <span className="truncate text-xs text-zinc-400">{user?.email}</span>
-                                    </div>
+                                className="rounded-xl text-white data-[state=open]:bg-white/10 hover:bg-white/5"
+                            >
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-xl bg-white/10 text-white font-bold">
+                                    {userFallback[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                                </div>
+                                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate font-semibold">{userFallback}</span>
+                                    <span className="truncate text-xs text-zinc-400">{user?.email}</span>
+                                </div>
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
@@ -308,9 +368,22 @@ export function OmniSidebar() {
                             >
                                 <div className="p-4 border-b">
                                     <div className="flex items-center gap-3">
-                                        <div className="flex aspect-square size-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
-                                            {user?.email?.[0]?.toUpperCase() || "U"}
-                                        </div>
+                                        {partnerContext?.logoUrl ? (
+                                            <div className="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-full border bg-white">
+                                                <Image
+                                                    src={partnerContext.logoUrl}
+                                                    alt={partnerContext.name}
+                                                    width={40}
+                                                    height={40}
+                                                    className="h-full w-full object-cover"
+                                                    unoptimized
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="flex aspect-square size-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-lg">
+                                                {userFallback[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                                            </div>
+                                        )}
                                         <div className="flex flex-col overflow-hidden">
                                             <span className="truncate font-semibold text-sm">{userFallback}</span>
                                             <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
@@ -340,6 +413,51 @@ export function OmniSidebar() {
                                             </DropdownMenuItem>
                                         </DropdownMenuSubContent>
                                     </DropdownMenuSub>
+                                    <DropdownMenuItem onClick={() => router.push("/omni/settings/account-center")} className="px-2 py-2.5 cursor-pointer">
+                                        <div className="flex items-center gap-3 w-full">
+                                            <UserCircle className="size-4 text-muted-foreground" />
+                                            <span className="flex-1 font-medium text-sm">{t("omni.nav.accountCenter")}</span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => router.push("/omni/settings")} className="px-2 py-2.5 cursor-pointer">
+                                        <div className="flex items-center gap-3 w-full">
+                                            <Settings className="size-4 text-muted-foreground" />
+                                            <span className="flex-1 font-medium text-sm">{t("omni.nav.settings")}</span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    {role === "AGENCY_ADMIN" ? (
+                                        <DropdownMenuItem onClick={() => router.push("/agency")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <ShieldCheck className="size-4 text-muted-foreground" />
+                                                <span className="flex-1 font-medium text-sm">{t("omni.userMenu.partnerPortal")}</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    ) : null}
+                                    {canOpenManagedAccounts ? (
+                                        <DropdownMenuItem onClick={() => router.push(role === "SUPER_ADMIN" ? "/admin/end-users" : "/agency/end-users")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <Users className="size-4 text-muted-foreground" />
+                                                <span className="flex-1 font-medium text-sm">{t("omni.userMenu.managedAccounts")}</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    ) : null}
+                                    {role === "SUPER_ADMIN" ? (
+                                        <DropdownMenuItem onClick={() => router.push("/platform/products")} className="px-2 py-2.5 cursor-pointer">
+                                            <div className="flex items-center gap-3 w-full">
+                                                <Building2 className="size-4 text-muted-foreground" />
+                                                <span className="flex-1 font-medium text-sm">{t("omni.userMenu.platform")}</span>
+                                            </div>
+                                        </DropdownMenuItem>
+                                    ) : null}
+                                </div>
+                                <div className="p-1 border-t">
+                                    <DropdownMenuItem
+                                        onClick={handleLogout}
+                                        className="px-2 py-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4 text-red-600" />
+                                        <span className="font-medium text-sm">{t("omni.userMenu.signOut")}</span>
+                                    </DropdownMenuItem>
                                 </div>
                             </DropdownMenuContent>
                         </DropdownMenu>

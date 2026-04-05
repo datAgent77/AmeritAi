@@ -18,7 +18,20 @@ import type {
 const SUPPORTED_CHANNELS: GuidedSkillChannel[] = ["web", "whatsapp", "instagram"]
 const SUPPORTED_PRESENTATIONS = new Set(["chips", "cards"])
 const SUPPORTED_SUBMIT_MODES = new Set(["confirm_only", "omni_action"])
+const VALID_OMNI_ACTION_IDS = new Set<string>(["create_callback_request", "create_appointment", "create_lead", "check_business_hours", "handoff_to_human"])
 export type GuidedLanguage = "tr" | "en" | "de" | "es" | "fr"
+
+const LOCALE_MAP: Record<GuidedLanguage, string> = {
+    tr: "tr-TR",
+    en: "en-US",
+    de: "de-DE",
+    es: "es-ES",
+    fr: "fr-FR",
+}
+
+export function getGuidedLocale(language?: string | null, transcript?: string | null): string {
+    return LOCALE_MAP[resolveGuidedLanguage(language, transcript)] || "en-US"
+}
 
 const GUIDED_COPY: Record<GuidedLanguage, {
     startMenuTitle: string
@@ -77,7 +90,7 @@ function normalizeSubmit(value: unknown): GuidedSkillSubmit | null {
 
     if (mode === "omni_action") {
         const actionId = String(record.actionId || "").trim()
-        if (!actionId) return null
+        if (!actionId || !VALID_OMNI_ACTION_IDS.has(actionId)) return null
         return {
             mode: "omni_action",
             label,
@@ -212,6 +225,14 @@ export function normalizeGuidedSkillRecord(input: unknown, overrides?: { id?: st
     const stepIds = new Set(steps.map((step) => step.id))
     const startStepCandidate = String(record.startStepId || steps[0]?.id || "").trim()
     const startStepId = stepIds.has(startStepCandidate) ? startStepCandidate : steps[0].id
+
+    for (const step of steps) {
+        for (const option of step.options) {
+            if (option.nextStepId && !stepIds.has(option.nextStepId)) {
+                option.nextStepId = null
+            }
+        }
+    }
 
     const channels = normalizeStringArray(record.channels).filter((channel): channel is GuidedSkillChannel =>
         SUPPORTED_CHANNELS.includes(channel as GuidedSkillChannel)
@@ -405,15 +426,17 @@ export async function isGuidedModuleEnabled(adminDb: any, chatbotId: string) {
         return false
     }
 
-    const [chatbotSnapshot, userSnapshot] = await Promise.all([
-        adminDb.collection("chatbots").doc(chatbotId).get().catch(() => null),
-        adminDb.collection("users").doc(chatbotId).get().catch(() => null),
-    ])
+    const chatbotSnapshot = await adminDb.collection("chatbots").doc(chatbotId).get().catch(() => null)
+    if (!chatbotSnapshot?.exists) return false
 
-    const chatbotEnabled = chatbotSnapshot?.exists ? chatbotSnapshot.data()?.enableGuided === true : false
-    const userEnabled = userSnapshot?.exists ? userSnapshot.data()?.enableGuided === true : false
+    const chatbotData = chatbotSnapshot.data()
+    if (chatbotData?.enableGuided === true) return true
 
-    return chatbotEnabled || userEnabled
+    const ownerId = chatbotData?.userId || chatbotData?.ownerId
+    if (!ownerId) return false
+
+    const userSnapshot = await adminDb.collection("users").doc(ownerId).get().catch(() => null)
+    return userSnapshot?.exists ? userSnapshot.data()?.enableGuided === true : false
 }
 
 export function buildGuidedSkillStartMenu(
@@ -431,7 +454,7 @@ export function buildGuidedSkillStartMenu(
 
 export function matchGuidedSkillShortcut(
     skills: GuidedSkillRecord[],
-    input: { transcript?: string | null; guidedEvent?: GuidedSkillClientEvent | null }
+    input: { transcript?: string | null; guidedEvent?: GuidedSkillClientEvent | null; language?: string | null }
 ) {
     const guidedSkillId = input.guidedEvent?.skillId?.trim()
     if (guidedSkillId) {
@@ -446,10 +469,11 @@ export function matchGuidedSkillShortcut(
         return skills[numeric - 1] || null
     }
 
-    const lowered = transcript.toLocaleLowerCase("tr-TR")
+    const locale = getGuidedLocale(input.language, input.transcript)
+    const lowered = transcript.toLocaleLowerCase(locale)
     return (
-        skills.find((skill) => skill.title.toLocaleLowerCase("tr-TR") === lowered) ||
-        skills.find((skill) => skill.startAliases.some((alias) => alias.toLocaleLowerCase("tr-TR") === lowered)) ||
+        skills.find((skill) => skill.title.toLocaleLowerCase(locale) === lowered) ||
+        skills.find((skill) => skill.startAliases.some((alias) => alias.toLocaleLowerCase(locale) === lowered)) ||
         null
     )
 }

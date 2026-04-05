@@ -18,7 +18,17 @@ type HeaderBranding = {
     placement?: "header-right"
 }
 
-export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?: boolean }) {
+export function SiteHeader({
+    showSidebarTrigger = true,
+    showProductLauncher = true,
+    showNotifications = true,
+    forcePartnerBranding = false,
+}: {
+    showSidebarTrigger?: boolean
+    showProductLauncher?: boolean
+    showNotifications?: boolean
+    forcePartnerBranding?: boolean
+}) {
     const { user } = useAuth()
     const { t } = useLanguage()
     const pathname = usePathname()
@@ -48,7 +58,17 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
 
                 const data = await response.json()
                 if (cancelled) return
-                setPartnerBranding(data?.resolvedPartnerBranding || null)
+                const resolvedBranding = data?.resolvedPartnerBranding || null
+                const forcedBranding = forcePartnerBranding && data?.partner?.partnerLogoUrl
+                    ? {
+                        show: true,
+                        partnerName: data?.partner?.partnerName || data?.partner?.agencyName || data?.partner?.email || "Partner",
+                        logoUrl: data?.partner?.partnerLogoUrl,
+                        placement: "header-right" as const,
+                    }
+                    : null
+
+                setPartnerBranding(forcedBranding || resolvedBranding)
             } catch (error) {
                 if (cancelled) return
                 console.error("Failed to load header partner branding", error)
@@ -60,7 +80,7 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
         return () => {
             cancelled = true
         }
-    }, [user])
+    }, [forcePartnerBranding, user])
 
     return (
         <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-6 shadow-sm w-full">
@@ -80,34 +100,7 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
                 />
             </div>
             <div className="ml-auto flex items-center gap-2">
-                {partnerBranding?.show && partnerBranding.logoUrl ? (
-                    <div className="hidden items-center gap-2 rounded-full border border-border/70 bg-muted/60 px-2.5 py-1.5 md:flex">
-                        <div className="relative h-7 w-7 overflow-hidden rounded-full border bg-white">
-                            <Image
-                                src={partnerBranding.logoUrl}
-                                alt={partnerBranding.partnerName || "Partner"}
-                                fill
-                                className="object-contain p-1"
-                                unoptimized
-                            />
-                        </div>
-                        <div className="max-w-[180px] truncate text-xs font-medium text-foreground">
-                            {partnerBranding.partnerName || "Strategic Partner"}
-                        </div>
-                    </div>
-                ) : null}
-                {partnerBranding?.show && partnerBranding.logoUrl ? (
-                    <div className="relative h-8 w-8 overflow-hidden rounded-full border bg-white md:hidden">
-                        <Image
-                            src={partnerBranding.logoUrl}
-                            alt={partnerBranding.partnerName || "Partner"}
-                            fill
-                            className="object-contain p-1"
-                            unoptimized
-                        />
-                    </div>
-                ) : null}
-                <ProductLauncher />
+                {showProductLauncher ? <ProductLauncher /> : null}
                 {showWidgetTest ? (
                     <Button
                         variant="outline"
@@ -118,7 +111,19 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
                         {t('widgetTest') || "Widget Test"}
                     </Button>
                 ) : null}
-                <NotificationBell />
+                {showNotifications ? <NotificationBell /> : null}
+                {partnerBranding?.show && partnerBranding.logoUrl ? (
+                    <div className="flex h-9 shrink-0 items-center rounded-md border bg-white px-2 shadow-sm">
+                        <Image
+                            src={partnerBranding.logoUrl}
+                            alt={partnerBranding.partnerName || "Partner"}
+                            width={120}
+                            height={36}
+                            className="h-5 w-auto max-w-[132px] object-contain"
+                            unoptimized
+                        />
+                    </div>
+                ) : null}
             </div>
         </header>
     )

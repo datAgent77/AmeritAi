@@ -1,10 +1,25 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { buildGuidedSkillShortcut, listEnabledGuidedSkills } from "@/lib/guided-skills";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
 import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
+
+function normalizeWebChannelEnabled(config: any) {
+    return config?.enabled !== false;
+}
+
+function hasConfiguredWebVoiceProvider(
+    userData: Record<string, any> | null | undefined,
+    mergedData: Record<string, any> | null | undefined
+) {
+    const apiKey = typeof userData?.elevenLabsApiKey === "string" ? userData.elevenLabsApiKey.trim() : "";
+    const voiceId = typeof mergedData?.elevenLabsVoiceId === "string" ? mergedData.elevenLabsVoiceId.trim() : "";
+
+    return apiKey.length > 0 && voiceId.length > 0;
+}
 
 export async function GET(req: Request) {
     try {
@@ -47,7 +62,9 @@ export async function GET(req: Request) {
                 const isChatbotEnabled = userData?.enableChatbot !== false;
                 const isAccountActive = userData?.isActive !== false;
 
-                const shouldEnable = isChatbotEnabled && isAccountActive;
+                const channelConfigSnap = await adminDb.collection("omni_channel_configs").doc(chatbotId).get();
+                const omniChannelConfig = channelConfigSnap.exists ? channelConfigSnap.data() || {} : {};
+                const isWebChannelEnabled = normalizeWebChannelEnabled(omniChannelConfig?.web);
 
                 const docSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
 
@@ -66,6 +83,7 @@ export async function GET(req: Request) {
 
                     const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
                     const isAccountActive = mergedData.isActive !== false;
+                    const shouldEnable = isChatbotEnabled && isAccountActive && isWebChannelEnabled;
                     const isProactiveModuleEnabled = mergedData.enableProactiveMessaging !== false;
                     const rawEngagement = mergedData.engagement && typeof mergedData.engagement === "object"
                         ? mergedData.engagement
@@ -90,6 +108,16 @@ export async function GET(req: Request) {
 
                     // Only enable modules that are 'ready' in the registry
                     const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
+                    const isWebVoiceAssistantEnabled = isVoiceAssistantAvailable
+                        && isWebChannelEnabled
+                        && mergedData.enableVoiceAssistant === true
+                        && hasConfiguredWebVoiceProvider(userData, mergedData);
+                    const isGuidedEnabled = MODULES_REGISTRY.guided?.status === "ready" && mergedData.enableGuided === true;
+                    const guidedSkills = isGuidedEnabled
+                        ? await listEnabledGuidedSkills(adminDb, chatbotId, "web")
+                            .then((skills) => skills.map(buildGuidedSkillShortcut))
+                            .catch(() => [])
+                        : [];
                     const dynamicContextPresetSelection = resolveDynamicContextPresetSelection({
                         sectorId: mergedData?.sector || mergedData?.sectorId || mergedData?.industry,
                         presetMode: mergedData?.dynamicSiteContextPresetMode,
@@ -103,7 +131,7 @@ export async function GET(req: Request) {
 
                     // Return only public settings
                     return NextResponse.json({
-                        isEnabled: isChatbotEnabled && isAccountActive,
+                        isEnabled: shouldEnable,
                         companyName: mergedData.companyName || "Acme Corp",
                         welcomeTitle: mergedData.welcomeTitle || "",
                         welcomeMessage: mergedData.welcomeMessage || "Hello! How can I help you today?",
@@ -116,6 +144,7 @@ export async function GET(req: Request) {
                         headerTextColor: mergedData.headerTextColor || "#FFFFFF",
                         suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: mergedData.enableLeadCollection || false,
+                        enableGuided: isGuidedEnabled,
                         enableBusinessHours: mergedData.enableBusinessHours || false,
                         timezone: mergedData.timezone || "UTC",
                         businessHoursStart: mergedData.businessHoursStart || "09:00",
@@ -227,9 +256,8 @@ export async function GET(req: Request) {
                         engagement: resolvedEngagement,
                         // Digital Waiter (Restaurant)
                         digitalWaiter: mergedData.digitalWaiter || null,
-                        // Voice Assistant - TEMPORARILY DISABLED
-                        enableVoiceAssistant: false, // TODO: Re-enable when voice assistant is production-ready
-                        // enableVoiceAssistant: isVoiceAssistantAvailable && (mergedData.enableVoiceAssistant || false),
+                        // Web-only browser voice mode; no telephony/omni coupling here.
+                        enableVoiceAssistant: isWebVoiceAssistantEnabled,
                         voiceProvider: mergedData.voiceProvider || "klassifier",
                         elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
                         enablePersonalShopper: mergedData.enablePersonalShopper || false,
@@ -268,6 +296,7 @@ export async function GET(req: Request) {
                         dynamicSiteContextSuggestedPresetId: dynamicContextPresetSelection.suggestedPresetId,
                         dynamicSiteContextResolvedPresetId: dynamicContextPresetSelection.activePresetId,
                         dynamicSiteContextRuntimePreset: dynamicContextPresetSelection.runtimePreset,
+                        guidedSkills,
                         theme: mergedData.theme || "classic",
                     }, {
                         headers: {
@@ -291,6 +320,7 @@ export async function GET(req: Request) {
                 headerTextColor: "#FFFFFF",
                 suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
                 enableLeadCollection: false,
+                enableGuided: false,
                 enableBusinessHours: false,
                 timezone: "UTC",
                 businessHoursStart: "09:00",
@@ -408,6 +438,7 @@ export async function GET(req: Request) {
                         allowedGraphQLOperations: [],
                     },
                 },
+                guidedSkills: [],
                 theme: "classic",
             };
 
@@ -429,6 +460,7 @@ export async function GET(req: Request) {
                 welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
                 brandColor: "#000000",
                 suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
+                enableGuided: false,
                 enableBusinessHours: false,
                 timezone: "UTC",
                 businessHoursStart: "09:00",
@@ -509,6 +541,7 @@ export async function GET(req: Request) {
             welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
             brandColor: "#000000",
             suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
+            enableGuided: false,
             enableBusinessHours: false,
             timezone: "UTC",
             businessHoursStart: "09:00",

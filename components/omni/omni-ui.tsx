@@ -86,15 +86,17 @@ export function OmniStateShell({
     title,
     description,
     tone = "default",
+    action,
 }: {
     title: string
     description?: string
     tone?: "default" | "warning"
+    action?: ReactNode
 }) {
     return (
         <Card className={cn(tone === "warning" && "border-amber-200 bg-amber-50/60")}>
             <CardContent className="p-10">
-                <div className="space-y-2">
+                <div className="space-y-4">
                     <div className={cn("text-base font-medium", tone === "warning" ? "text-amber-900" : "text-foreground")}>
                         {title}
                     </div>
@@ -103,6 +105,7 @@ export function OmniStateShell({
                             {description}
                         </p>
                     ) : null}
+                    {action ? <div className="flex flex-wrap items-center gap-2">{action}</div> : null}
                 </div>
             </CardContent>
         </Card>

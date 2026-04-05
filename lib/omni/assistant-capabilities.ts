@@ -1,4 +1,5 @@
 import type { AssistantCapability, AssistantCapabilityId, OmniAssistantCoreSettings, OmniChannel } from "@/lib/omni/types"
+import { MODULES_REGISTRY, type ModuleId } from "@/lib/modules-registry"
 
 export const OMNI_CHANNELS: OmniChannel[] = ["web", "whatsapp", "instagram", "voice"]
 
@@ -138,6 +139,26 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
 
 const CAPABILITY_IDS = new Set(ASSISTANT_CAPABILITIES.map((capability) => capability.id))
 
+const CAPABILITY_TO_MODULE: Partial<Record<AssistantCapabilityId, ModuleId>> = {
+    generalChatbot: "generalChatbot",
+    knowledgeBase: "knowledgeBase",
+    appointments: "appointments",
+    leadCollection: "leadCollection",
+    dynamicContext: "dynamicContext",
+    productCatalog: "productCatalog",
+    salesOptimization: "salesOptimization",
+    digitalWaiter: "digitalWaiter",
+    visualDiagnosis: "visualDiagnosis",
+    gamification: "gamification",
+}
+
+export function isCapabilityModuleReady(capabilityId: AssistantCapabilityId): boolean {
+    const moduleId = CAPABILITY_TO_MODULE[capabilityId]
+    if (!moduleId) return true
+    const mod = MODULES_REGISTRY[moduleId]
+    return mod ? mod.status === "ready" || mod.status === "beta" : false
+}
+
 export function getCapabilitiesForChannel(channel: OmniChannel) {
     return ASSISTANT_CAPABILITIES.filter((capability) => capability.supportedChannels.includes(channel))
 }
@@ -163,16 +184,18 @@ export function resolveCapabilityIdsForChannel(
     const supportedIds = new Set(supportedCapabilities.map((capability) => capability.id))
     const hasChannelOverride = Boolean(settings?.channelCapabilityOverrides && Object.prototype.hasOwnProperty.call(settings.channelCapabilityOverrides, channel))
 
+    let resolvedIds: AssistantCapabilityId[]
+
     if (hasChannelOverride) {
-        return normalizeCapabilityIds(settings?.channelCapabilityOverrides?.[channel]).filter((id) => supportedIds.has(id))
+        resolvedIds = normalizeCapabilityIds(settings?.channelCapabilityOverrides?.[channel]).filter((id) => supportedIds.has(id))
+    } else {
+        const globalIds = normalizeCapabilityIds(settings?.enabledCapabilityIds)
+        resolvedIds = globalIds.length > 0
+            ? globalIds.filter((id) => supportedIds.has(id))
+            : supportedCapabilities.map((capability) => capability.id)
     }
 
-    const globalIds = normalizeCapabilityIds(settings?.enabledCapabilityIds)
-    if (globalIds.length > 0) {
-        return globalIds.filter((id) => supportedIds.has(id))
-    }
-
-    return supportedCapabilities.map((capability) => capability.id)
+    return resolvedIds.filter((id) => isCapabilityModuleReady(id))
 }
 
 export function getConfiguredCapabilitiesForChannel(

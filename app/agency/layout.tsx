@@ -6,6 +6,8 @@ import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
 import { AuthGuard } from "@/components/auth-guard"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AgencySidebar } from "@/components/agency-sidebar"
 
 function AgencyLayoutContent({ children }: { children: React.ReactNode }) {
     const { user, role, loading } = useAuth()
@@ -41,12 +43,17 @@ function AgencyLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-[#f4f6f8]">
-            <SiteHeader showSidebarTrigger={false} />
-            <main className="p-8">
-                {children}
-            </main>
-        </div>
+        <SidebarProvider>
+            <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                <AgencySidebar />
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <SiteHeader showProductLauncher={false} showNotifications forcePartnerBranding />
+                    <main className="flex-1 min-w-0 px-6 py-8 lg:px-8">
+                        {children}
+                    </main>
+                </div>
+            </div>
+        </SidebarProvider>
     )
 }
 

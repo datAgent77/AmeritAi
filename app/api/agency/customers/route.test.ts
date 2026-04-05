@@ -165,7 +165,7 @@ describe("POST /api/agency/customers", () => {
         );
     });
 
-    test("blocks basic partner level from creating customers", async () => {
+    test("allows basic partner level to create customers", async () => {
         const adminAuth = {
             verifyIdToken: vi.fn().mockResolvedValue({ uid: "agency-7", role: "AGENCY_ADMIN" })
         };
@@ -198,6 +198,7 @@ describe("POST /api/agency/customers", () => {
                 canUsePartnerBranding: false,
             }
         } as any);
+        vi.mocked(provisionTenantAccount).mockResolvedValue({ userId: "tenant-8" });
 
         const response = await POST(createPostRequest({
             email: "tenant@example.com",
@@ -205,7 +206,14 @@ describe("POST /api/agency/customers", () => {
             companyName: "Acme"
         }));
 
-        expect(response.status).toBe(403);
-        expect(provisionTenantAccount).not.toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(provisionTenantAccount).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.anything(),
+            expect.objectContaining({
+                agencyId: "agency-7",
+                agencyAssignedBy: "agency-7"
+            })
+        );
     });
 });

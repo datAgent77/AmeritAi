@@ -86,17 +86,11 @@ export async function GET(request: Request) {
 
         const token = authHeader.split("Bearer ")[1];
         const { getAuth } = await import("firebase-admin/auth");
-        const decodedToken = await getAuth().verifyIdToken(token);
+        await getAuth().verifyIdToken(token);
 
         const adminDb = getAdminDb();
         if (!adminDb) {
             return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
-        }
-
-        // Verify SUPER_ADMIN role
-        const callerDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
-        if (!callerDoc.exists || callerDoc.data()?.role !== "SUPER_ADMIN") {
-            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
         }
 
         // Get target user ID from query
@@ -107,12 +101,12 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: "userId parameter is required" }, { status: 400 });
         }
 
-        const authz = await authorizeTargetAccess(request, targetUserId);
+        const authz = await authorizeTargetAccess(request, targetUserId, { enforcePartnerWorkspaceCapability: false });
         if (!authz.ok) {
             return authz.response;
         }
-        if (!authz.isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
+        if (!authz.isSuperAdmin && !authz.isAgencyAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         // Fetch target user data
@@ -222,12 +216,6 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "Database not initialized" }, { status: 500 });
         }
 
-        // Verify SUPER_ADMIN role
-        const callerDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
-        if (!callerDoc.exists || callerDoc.data()?.role !== "SUPER_ADMIN") {
-            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
-        }
-
         // Parse request body
         const body = await request.json()
         console.log("Admin Save Request Body:", JSON.stringify(body, null, 2))
@@ -237,12 +225,12 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: "userId is required" }, { status: 400 });
         }
 
-        const authz = await authorizeTargetAccess(request, userId);
+        const authz = await authorizeTargetAccess(request, userId, { enforcePartnerWorkspaceCapability: false });
         if (!authz.ok) {
             return authz.response;
         }
-        if (!authz.isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden: Super Admin access required" }, { status: 403 });
+        if (!authz.isSuperAdmin && !authz.isAgencyAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         if (!subscription) {

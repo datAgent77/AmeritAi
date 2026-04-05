@@ -1130,6 +1130,8 @@
   function resolveAmbientDeviceSettingsForWidget(source, device) {
     const shared = {};
     [
+      'ambientMaxHeight',
+      'ambientOverlayOpacity',
       'ambientWidth',
       'ambientInputWidth',
       'ambientSideMargin',
@@ -2978,12 +2980,12 @@
           const style = document.createElement('style');
           style.id = styleId;
           style.innerHTML = `
-            html.userex-sidecar-active header,
-            html.userex-sidecar-active nav,
-            html.userex-sidecar-active [class*="header"],
-            html.userex-sidecar-active [class*="navbar"],
-            html.userex-sidecar-active [style*="position: fixed"],
-            html.userex-sidecar-active [style*="position: sticky"] {
+            html.userex-sidecar-active header:not([id^="userex-"]),
+            html.userex-sidecar-active nav:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="header"]:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="navbar"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: fixed"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: sticky"]:not([id^="userex-"]) {
                margin-right: ${inset}px !important;
                right: ${inset}px !important;
             }
@@ -2991,12 +2993,12 @@
           document.head.appendChild(style);
         } else {
           document.getElementById(styleId).innerHTML = `
-            html.userex-sidecar-active header,
-            html.userex-sidecar-active nav,
-            html.userex-sidecar-active [class*="header"],
-            html.userex-sidecar-active [class*="navbar"],
-            html.userex-sidecar-active [style*="position: fixed"],
-            html.userex-sidecar-active [style*="position: sticky"] {
+            html.userex-sidecar-active header:not([id^="userex-"]),
+            html.userex-sidecar-active nav:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="header"]:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="navbar"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: fixed"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: sticky"]:not([id^="userex-"]) {
                margin-right: ${inset}px !important;
                right: ${inset}px !important;
             }
@@ -3191,11 +3193,62 @@
             .userex-anim-spin {
                 animation: userex-spin 4s linear infinite;
             }
+
+            /* --- New animations --- */
+
+            /* Shake: quick left-right vibrate with pause */
+            @keyframes userex-shake {
+                0%, 70%, 100% { transform: translateX(0); }
+                72%, 76%, 80%, 84% { transform: translateX(-5px); }
+                74%, 78%, 82% { transform: translateX(5px); }
+            }
+            .userex-anim-shake {
+                animation: userex-shake 3s ease-in-out infinite;
+            }
+
+            /* Glow: pulsing color halo */
+            @keyframes userex-glow {
+                0%, 100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.25), 0 4px 16px rgba(0,0,0,0.3); }
+                50% { box-shadow: 0 0 22px 8px rgba(255,255,255,0.55), 0 4px 16px rgba(0,0,0,0.3); }
+            }
+            .userex-anim-glow {
+                animation: userex-glow 2s ease-in-out infinite;
+            }
+
+            /* Border: rotating arc around button */
+            @keyframes userex-border-rotate {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+            }
+            #userex-chatbot-launcher.userex-anim-border {
+                overflow: visible;
+                z-index: 0;
+            }
+            #userex-chatbot-launcher.userex-anim-border::before {
+                content: '';
+                position: absolute;
+                inset: -3px;
+                border-radius: inherit;
+                background: conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.9) 20%, transparent 40%);
+                animation: userex-border-rotate 1.8s linear infinite;
+                z-index: -1;
+            }
+            #userex-chatbot-launcher.userex-anim-border::after {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: inherit;
+                background: inherit;
+                z-index: -1;
+            }
         `;
       document.head.appendChild(style);
     };
 
-    if (usesLauncher && (settings.launcherAnimation !== 'none' || (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none'))) {
+    if (usesLauncher && (
+      (settings.launcherAnimation && settings.launcherAnimation !== 'none') ||
+      (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none')
+    )) {
       addAnimationStyles();
     }
 
@@ -3344,6 +3397,15 @@
       launcher.classList.add('userex-anim-float');
     } else if (activeAnimation === 'spin') {
       launcher.classList.add('userex-anim-spin');
+    } else if (activeAnimation === 'shake') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-shake');
+    } else if (activeAnimation === 'glow') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-glow');
+    } else if (activeAnimation === 'border') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-border');
     }
 
     const closeSvg = `
@@ -3415,33 +3477,84 @@
       if (isOpen) {
         launcher.innerHTML = closeSvg;
 
-        // Fix: Even if it is fullImage, when open, we want a visible close button.
-        // We revert the background, shadow, and DIMENSIONS to match standard style so the white 'X' is visible.
-        if (settings.launcherType === 'fullImage') {
-          launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
-          launcher.style.boxShadow = shadowStyle;
-          launcher.style.borderRadius = '50%'; // Make it circular
-          // Force standard dimensions for the close button (Standard default is 60px)
-          // We intentionally ignore settings.launcherWidth here because in fullImage mode that controls the image size (which can be large)
-          launcher.style.width = '60px';
-          launcher.style.height = '60px';
-        }
+        // Compact to icon-only for all launcher types when widget is open
+        const iconSize = settings.launcherHeight || 52;
+        launcher.style.width = `${iconSize}px`;
+        launcher.style.minWidth = `${iconSize}px`;
+        launcher.style.height = `${iconSize}px`;
+        launcher.style.padding = '0';
+        launcher.style.gap = '0';
+        launcher.style.borderRadius = '50%';
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
+        launcher.style.boxShadow = shadowStyle;
+
+        // Move compact button to bottom-right empty space and raise above iframe so it's always clickable
+        const compactBottomPx = verticalSpacing || 20;
+        const compactRightPx = sideSpacing || 20;
+        Object.assign(launcherContainer.style, {
+          display: 'flex',
+          position: 'fixed',
+          right: `${compactRightPx}px`,
+          bottom: `${compactBottomPx}px`,
+          left: 'auto',
+          top: 'auto',
+          transform: 'none',
+          zIndex: '10001',
+        });
+
+        // Pause animation while widget is open
+        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
         return;
       }
 
-      // Reset styles for Full Image mode when closed (transparent, no shadow, etc)
-      // Reset styles for Full Image mode when closed (transparent, no shadow, etc)
+      // Restore position, z-index and visibility when widget is closed
+      Object.assign(launcherContainer.style, {
+        display: 'flex',
+        position: 'fixed',
+        zIndex: '9999',
+        right: '',
+        left: '',
+        top: '',
+        bottom: '',
+        transform: '',
+      });
+      // Now apply original horizontal + vertical styles (may override the blanks above)
+      Object.assign(launcherContainer.style, horizontalStyle);
+      Object.assign(launcherContainer.style, verticalStyle);
+
+      // Restore dimensions when closed
       if (settings.launcherType === 'fullImage') {
         launcher.style.backgroundColor = 'transparent';
         launcher.style.boxShadow = 'none';
         launcher.style.borderRadius = '0';
-        // Reset dimensions to full image size (handled by image content usually, but let's ensure we don't force standard size if it was different)
-        // Actually, for fullImage, width/height are set in initial styles based on settings or content. 
-        // We just need to ensure we don't keep the forced dimensions if they differ.
-        // We just need to ensure we don't keep the forced dimensions if they differ.
-        // Re-applying basic style logic from initialization.
         launcher.style.width = `${settings.fullImageLauncherWidth || 60}px`;
         launcher.style.height = `${settings.fullImageLauncherHeight || 60}px`;
+        launcher.style.minWidth = '';
+        launcher.style.padding = '';
+        launcher.style.gap = '';
+      } else if (isTextStyle) {
+        launcher.style.width = 'auto';
+        launcher.style.minWidth = `${settings.launcherWidth || 100}px`;
+        launcher.style.height = `${settings.launcherHeight || 52}px`;
+        launcher.style.padding = '0 16px';
+        launcher.style.gap = '8px';
+        launcher.style.borderRadius = `${settings.launcherRadius}px`;
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor;
+        launcher.style.boxShadow = shadowStyle;
+      } else {
+        launcher.style.width = `${currentWidth}px`;
+        launcher.style.minWidth = `${currentWidth}px`;
+        launcher.style.height = `${currentHeight}px`;
+        launcher.style.padding = '0';
+        launcher.style.gap = '0';
+        launcher.style.borderRadius = `${settings.launcherRadius}px`;
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor;
+        launcher.style.boxShadow = shadowStyle;
+      }
+
+      // Resume animation when widget is closed
+      if (activeAnimation && activeAnimation !== 'none') {
+        launcher.classList.add(`userex-anim-${activeAnimation}`);
       }
 
       // Full Image Mode (PNG/GIF or Lottie)
@@ -3762,6 +3875,14 @@
       iframeSrc += `&lang=${settings.initialLanguage}`;
     }
 
+    // Only inherit the parent theme when ambient mode explicitly uses auto.
+    if (settings.chatDisplayMode === 'ambient' && settings.ambientTheme === 'auto') {
+      const isDarkMode = document.documentElement.classList.contains('dark') || 
+                         document.body.classList.contains('dark') || 
+                         (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      iframeSrc += `&theme=${isDarkMode ? 'dark' : 'light'}`;
+    }
+
     if (!isAvailable && settings.offlineMessage) {
       iframeSrc += `&offlineMessage=${encodeURIComponent(settings.offlineMessage)}`;
     }
@@ -3812,7 +3933,7 @@
       applyMobileScrollLock(isOpen);
 
       if (!isAmbientWidgetMode) {
-        launcherContainer.style.display = isOpen ? 'none' : 'flex';
+        launcherContainer.style.display = 'flex';
       }
 
       // Notify React app that visibility changed so it can instantly scroll to bottom
@@ -3884,7 +4005,7 @@
           // Ambient modda: tam kapatma yok, sadece feed'i gizle (input kalır)
           hideAmbientFeed();
         } else if (isSidecarMode) {
-          toggleWidget(true);
+          toggleWidget(false);
         } else {
           toggleWidget(false);
         }
@@ -4061,9 +4182,10 @@
 
         // 2. Update Animation
         const newAnim = resizeSettings.launcherAnimation || 'none';
-        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin');
+        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
 
         if (newAnim !== 'none') {
+          addAnimationStyles();
           launcher.classList.add(`userex-anim-${newAnim}`);
         }
       }

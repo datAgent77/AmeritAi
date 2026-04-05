@@ -128,10 +128,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "email, password and companyName are required" }, { status: 400 });
         }
 
-        if (!authz.partner?.capabilities.canCreateManagedAccounts) {
-            return NextResponse.json({ error: "Forbidden: Partner level cannot create customers" }, { status: 403 });
-        }
-
         const created = await provisionTenantAccount(authz.adminAuth, authz.adminDb, {
             email,
             password,

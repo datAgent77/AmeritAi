@@ -12,8 +12,6 @@ import {
 interface ChatHeaderProps {
     settings: ChatbotSettings
     isExpanded: boolean
-    handleVoiceInput: () => void
-    isListening: boolean
     handleToggleSize: () => void
     handleCloseWidget: () => void
     handleClearChat: () => void
@@ -28,8 +26,6 @@ interface ChatHeaderProps {
 export function ChatHeader({
     settings,
     isExpanded,
-    handleVoiceInput,
-    isListening,
     handleToggleSize,
     handleCloseWidget,
     handleClearChat,
@@ -105,17 +101,6 @@ export function ChatHeader({
                 </div>
             </div>
             <div className="flex items-center gap-1">
-                {settings.enableVoiceAssistant && (
-                    <button
-                        onClick={handleVoiceInput}
-                        className={`p-2 rounded-full transition-all ${isListening 
-                            ? 'text-white bg-red-500/80 animate-pulse shadow-lg shadow-red-500/30' 
-                            : 'text-white/80 hover:text-white hover:bg-white/20'}`}
-                        title={t('voiceReady')}
-                    >
-                        <Mic className="w-4 h-4" />
-                    </button>
-                )}
                 {showSizeToggle && (
                     <button
                         onClick={handleToggleSize}
