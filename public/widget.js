@@ -3478,11 +3478,11 @@
 
       if (isMobileFullscreenOverlay) {
         Object.assign(launcherContainer.style, {
-          display: 'flex',
+          display: 'none',
           position: 'fixed',
           zIndex: '10001',
-          top: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))',
-          right: '16px',
+          top: '',
+          right: '',
           left: 'auto',
           bottom: 'auto',
           transform: 'none',
