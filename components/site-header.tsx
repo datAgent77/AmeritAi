@@ -1,59 +1,86 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useAuth } from "@/context/AuthContext"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Settings, LayoutDashboard, Globe, Check, Bell } from "lucide-react"
-import { signOut } from "firebase/auth"
-import { auth } from "@/lib/firebase"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
-
+import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { NotificationBell } from "@/components/notification-bell"
-
-import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLanguage } from "@/context/LanguageContext"
 import { ProductLauncher } from "@/components/product-launcher"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 
-export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?: boolean }) {
-    const { user, role } = useAuth()
-    const { t, language, setLanguage } = useLanguage()
-    const router = useRouter()
-    const { toast } = useToast()
+type HeaderBranding = {
+    show: boolean
+    partnerName?: string
+    logoUrl?: string
+    placement?: "header-right"
+}
 
-    const handleLogout = async () => {
-        try {
-            await signOut(auth)
-            router.push("/")
-            toast({
-                title: "Logged out",
-                description: "You have been successfully logged out.",
-            })
-        } catch (error) {
-            console.error("Logout error:", error)
-            toast({
-                title: "Error",
-                description: "Failed to log out.",
-                variant: "destructive",
-            })
+export function SiteHeader({
+    showSidebarTrigger = true,
+    showProductLauncher = true,
+    showNotifications = true,
+    forcePartnerBranding = false,
+}: {
+    showSidebarTrigger?: boolean
+    showProductLauncher?: boolean
+    showNotifications?: boolean
+    forcePartnerBranding?: boolean
+}) {
+    const { user } = useAuth()
+    const { t } = useLanguage()
+    const pathname = usePathname()
+    const showWidgetTest = pathname?.startsWith("/console") || pathname?.startsWith("/admin/tenant/")
+    const [partnerBranding, setPartnerBranding] = useState<HeaderBranding | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadBranding = async () => {
+            if (!user) {
+                setPartnerBranding(null)
+                return
+            }
+
+            try {
+                const token = await user.getIdToken()
+                const response = await fetch("/api/management/viewer-context", {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+
+                if (!response.ok) {
+                    throw new Error("Failed to load viewer context")
+                }
+
+                const data = await response.json()
+                if (cancelled) return
+                const resolvedBranding = data?.resolvedPartnerBranding || null
+                const forcedBranding = forcePartnerBranding && data?.partner?.partnerLogoUrl
+                    ? {
+                        show: true,
+                        partnerName: data?.partner?.partnerName || data?.partner?.agencyName || data?.partner?.email || "Partner",
+                        logoUrl: data?.partner?.partnerLogoUrl,
+                        placement: "header-right" as const,
+                    }
+                    : null
+
+                setPartnerBranding(forcedBranding || resolvedBranding)
+            } catch (error) {
+                if (cancelled) return
+                console.error("Failed to load header partner branding", error)
+                setPartnerBranding(null)
+            }
         }
-    }
 
-    const getInitials = (email: string) => {
-        return email?.substring(0, 2).toUpperCase() || "U"
-    }
+        loadBranding()
+        return () => {
+            cancelled = true
+        }
+    }, [forcePartnerBranding, user])
 
     return (
         <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-6 shadow-sm w-full">
@@ -73,15 +100,30 @@ export function SiteHeader({ showSidebarTrigger = true }: { showSidebarTrigger?:
                 />
             </div>
             <div className="ml-auto flex items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`/widget-test?id=${user?.uid}`, "_blank")}
-                    className="hidden md:flex items-center gap-2"
-                >
-                    {t('widgetTest') || "Widget Test"}
-                </Button>
-                <NotificationBell />
+                {showProductLauncher ? <ProductLauncher /> : null}
+                {showWidgetTest ? (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/widget-test?id=${user?.uid}`, "_blank")}
+                        className="hidden md:flex items-center gap-2"
+                    >
+                        {t('widgetTest') || "Widget Test"}
+                    </Button>
+                ) : null}
+                {showNotifications ? <NotificationBell /> : null}
+                {partnerBranding?.show && partnerBranding.logoUrl ? (
+                    <div className="flex h-9 shrink-0 items-center rounded-md border bg-white px-2 shadow-sm">
+                        <Image
+                            src={partnerBranding.logoUrl}
+                            alt={partnerBranding.partnerName || "Partner"}
+                            width={120}
+                            height={36}
+                            className="h-5 w-auto max-w-[132px] object-contain"
+                            unoptimized
+                        />
+                    </div>
+                ) : null}
             </div>
         </header>
     )

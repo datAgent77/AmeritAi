@@ -96,7 +96,13 @@ export async function GET(req: Request) {
                 isPaused: data.isPaused || false,
                 visitorEmail: data.visitorEmail || null,
                 visitorName: data.visitorName || null,
-                channel: data.channel || "web"
+                channel: data.channel || "web",
+                contactKey: data.contactKey || null,
+                canonicalContactId: data.canonicalContactId || null,
+                channelMeta: data.channelMeta || null,
+                transcriptSummary: data.transcriptSummary || null,
+                lastDisposition: data.lastDisposition || null,
+                assistantProfileId: data.assistantProfileId || null
             };
         });
 

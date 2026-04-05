@@ -1,4 +1,5 @@
-import { MessageSquare, ShoppingBag, PenTool, Search } from "lucide-react"
+import { Headset, MessageSquare } from "lucide-react"
+import type { ProductEntitlementKey, ProductEntitlements } from "@/lib/omni/types"
 
 export interface ProductItem {
     id: string
@@ -9,6 +10,7 @@ export interface ProductItem {
     href: string
     color: string
     bgColor: string
+    requiredEntitlement: ProductEntitlementKey
 }
 
 export const products: ProductItem[] = [
@@ -20,28 +22,26 @@ export const products: ProductItem[] = [
         status: "active",
         href: "/console/chatbot",
         color: "text-blue-500",
-        bgColor: "bg-blue-50"
-    },
-
-    {
-        id: "copywriter",
-        title: "AI Copywriter",
-        description: "Generate SEO-optimized blog posts and marketing copy in seconds.",
-        icon: PenTool,
-        status: "active",
-        href: "/console/copywriter",
-        color: "text-orange-500",
-        bgColor: "bg-orange-50"
+        bgColor: "bg-blue-50",
+        requiredEntitlement: "chatbot"
     },
     {
-        id: "lead-finder",
-        title: "AI Lead Finder",
-        description: "Find B2B leads with contact info from Google Maps in seconds.",
-        icon: Search,
+        id: "omni-channel",
+        title: "Vion AI Omni-Channel",
+        description: "Run web, WhatsApp, Instagram DM, and phone voice operations from one shared AI core.",
+        icon: Headset,
         status: "active",
-        href: "/console/lead-finder",
-        color: "text-purple-500",
-        bgColor: "bg-purple-50"
+        href: "/omni",
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-50",
+        requiredEntitlement: "omniChannel"
     },
-
 ]
+
+export function getVisibleProducts(entitlements: ProductEntitlements, options?: { includeAll?: boolean }) {
+    if (options?.includeAll) {
+        return products
+    }
+
+    return products.filter((product) => entitlements[product.requiredEntitlement])
+}

@@ -9,6 +9,8 @@ type AmbientSource = Record<string, any> & {
 }
 
 const AMBIENT_DEVICE_KEYS = [
+  "ambientMaxHeight",
+  "ambientOverlayOpacity",
   "ambientWidth",
   "ambientInputWidth",
   "ambientSideMargin",

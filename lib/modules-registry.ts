@@ -21,6 +21,7 @@ export type ModuleId =
     | 'appointments'
     | 'leadCollection'
     | 'knowledgeBase'
+    | 'guided'
 
 
     | 'salesOptimization'
@@ -249,6 +250,52 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         ]
     },
 
+    guided: {
+        id: 'guided',
+        name: {
+            en: 'Guided',
+            tr: 'Guided'
+        },
+        description: {
+            en: 'Button and card based guided flows for web and messaging channels',
+            tr: 'Web ve mesajlaşma kanalları için buton ve kart tabanlı yönlendirmeli akışlar'
+        },
+        icon: 'Route',
+        isCore: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
+        supportedSectors: [],
+        defaultEnabledBySector: [],
+        showOnLandingPage: false,
+        legacyFirestoreField: 'enableGuided',
+        longDescription: {
+            en: 'Build deterministic guided journeys with buttons, cards, and final actions. Guided helps you turn repetitive operational flows into structured self-service experiences across web, WhatsApp, and Instagram.',
+            tr: 'Butonlar, kartlar ve final aksiyonlarla deterministik yönlendirmeli akışlar oluşturun. Guided, tekrar eden operasyonel süreçleri web, WhatsApp ve Instagram genelinde yapılandırılmış self-servis deneyimlere dönüştürür.'
+        },
+        features: [
+            {
+                title: { en: 'Step-by-Step Flows', tr: 'Adım Adım Akışlar' },
+                description: { en: 'Guide users through structured choices with chips or cards.', tr: 'Kullanıcıları chip veya kart tabanlı yapılandırılmış seçimlerle yönlendirin.' },
+                icon: 'Route'
+            },
+            {
+                title: { en: 'Multi-Channel Runtime', tr: 'Çok Kanallı Çalışma' },
+                description: { en: 'Render rich UI on web and numbered text menus on messaging channels.', tr: 'Webde zengin arayüz, mesajlaşma kanallarında numaralı metin menüleri sunar.' },
+                icon: 'Share2'
+            },
+            {
+                title: { en: 'Action Handoff', tr: 'Aksiyon Tetikleme' },
+                description: { en: 'Complete flows with confirmation or existing omni actions.', tr: 'Akışları onay veya mevcut omni aksiyonlarıyla tamamlayın.' },
+                icon: 'Zap'
+            }
+        ],
+        benefits: [
+            { en: 'Reduce friction in repetitive support and operations flows', tr: 'Tekrarlayan destek ve operasyon akışlarındaki sürtünmeyi azaltın' },
+            { en: 'Keep user choices deterministic without relying on semantic LLM matching', tr: 'LLM tabanlı semantik eşleme olmadan seçimleri deterministik tutun' }
+        ]
+    },
+
     productCatalog: {
         id: 'productCatalog',
         name: {
@@ -366,12 +413,12 @@ KURALLAR:
     voiceAssistant: {
         id: 'voiceAssistant',
         name: {
-            en: 'Voice & Appointments',
-            tr: 'Sesli Asistan ve Randevu'
+            en: 'Widget Voice',
+            tr: 'Widget Voice'
         },
         description: {
-            en: 'Voice chat and appointment scheduling',
-            tr: 'Sesli sohbet ve randevu planlama'
+            en: 'Browser-based voice conversations inside the web widget',
+            tr: 'Web widget icinde tarayici tabanli sesli gorusmeler'
         },
         icon: 'Mic',
         isCore: false,
@@ -383,65 +430,45 @@ KURALLAR:
         showOnLandingPage: false, // Hidden from landing page
         legacyFirestoreField: 'enableVoiceAssistant',
         aiSystemInstruction: {
-            en: `APPOINTMENT BOOKING MODULE ACTIVE. You are a helpful assistant. Your goal is to collect the necessary information to book an appointment kindly and naturally.
+            en: `WIDGET VOICE MODULE ACTIVE. You are speaking through the website widget, not a phone line.
 
-REQUIRED INFORMATION:
-1. Full Name
-2. Contact Info (Phone OR Email)
-3. Date & Time
+CORE RULES:
+1. Keep replies short, natural, and easy to listen to.
+2. Never mention telephony, call routing, or voice numbers.
+3. If the user asks for a complex action, collect only the minimum context and continue the flow in chat.
+4. When you repeat important data such as names, dates, or numbers, say them clearly and one at a time.
+5. If a visual element, form, or button is available in chat, prefer that instead of overloading the voice response.`,
 
-HOW TO INTERACT:
-- Be polite and helpful. Do NOT be rigid or robotic.
-- If the user provides only some information (e.g., just name), accept it happily and ask for the missing details.
-- Example: "Thank you, [Name]. What date would you like to come in?"
-- Do NOT say "Missing information" or reject the input. Always guide the user forward.
+            tr: `WIDGET VOICE MODULU AKTIF. Sesli deneyim web sitesindeki widget icinde calisir, telefon hatti degildir.
 
-CONFIRMATION (Only when ALL info is present):
-- Confirm naturally: "Dear [Name], I have scheduled your appointment for [Date] at [Time]. We will reach you at [Contact]."
-- ALWAYS use "Dear [Name]" in the final confirmation message to ensure correct registration.`,
-
-            tr: `RANDEVU MODÜLÜ AKTİF. Sen yardımsever bir asistansın. Amacın, randevu için gerekli bilgileri nazikçe ve doğal bir sohbet akışı içinde toplamak.
-
-GEREKLİ BİLGİLER:
-1. Ad Soyad
-2. İletişim Bilgisi (Telefon VEYA E-posta)
-3. Tarih ve Saat
-
-NASIL DAVRANMALISIN:
-- Asla katı veya reddedici olma. Bilgileri bir sorgu memuru gibi değil, yardımcı bir asistan gibi topla.
-- Kullanıcı tek bir bilgi verse bile (örneğin sadece adını), bunu kabul et ve teşekkür edip eksik olanı sor.
-- Örnek: "Memnun oldum Ahmet Bey. Randevunuzu hangi tarih ve saat için oluşturmak istersiniz?"
-- Asla "Eksik bilgi verdiniz" veya "Maalesef işlem yapamıyorum" deme. Bunun yerine "Peki, size hangi numaradan ulaşabiliriz?" gibi yönlendirici sorular sor.
-- Kullanıcı tek başına bir sayı söylerse (ör: "10"), bunun SAAT mi (10:00) yoksa GÜN mü (ayın 10'u) olduğunu sor. Varsayımda bulunma.
-- Yıl belirtilmemişse, GELECEK en yakın tarihi baz al. Geçmiş tarihli randevu oluşturma.
-- Tarih ve saat doluluğunu kontrol et, uygun değilse nazikçe alternatif öner.
-
-ONAYLAMA (Sadece TÜM bilgiler toplandığında):
-- Tüm bilgiler tamamsa, şu formatta onayla: "Sayın [Ad Soyad], randevunuzu [Tarih] saat [Saat] için oluşturdum. Size [İletişim] üzerinden ulaşacağız."
-- Onay mesajında "Sayın [Ad Soyad]" kalıbını kullanman, ismin sisteme doğru kaydedilmesi için ÇOK ÖNEMLİDİR.`
+TEMEL KURALLAR:
+1. Yanitlari kisa, dogal ve dinlemesi kolay tut.
+2. Telefon hatti, cagri yonlendirme veya sesli numara gibi konulardan bahsetme.
+3. Kullanici karmasik bir islem isterse sadece gerekli minimum bilgiyi topla ve akisi chat icinde devam ettir.
+4. Isim, tarih veya sayi gibi kritik verileri tekrar ederken net ve tek tek soyle.
+5. Chat icinde form, buton veya baska bir arayuz unsuru varsa uzun sesli aciklama yerine onu tercih et.`
         },
         longDescription: {
-            en: 'Allow your customers to book appointments simply by talking or chatting. The AI manages your calendar, checks availability, and registers appointments seamlessly.',
-            tr: 'Müşterilerinizin sadece konuşarak veya yazışarak randevu almasını sağlayın. Yapay zeka takviminizi yönetir, müsaitliği kontrol eder ve randevuları sorunsuz şekilde kaydeder.'
+            en: 'Let visitors talk to your website widget directly from the browser. Widget Voice adds a voice-first interaction layer to the existing web assistant without turning it into a phone channel.',
+            tr: 'Ziyaretcilerin web sitenizdeki widget ile tarayici icinden sesli olarak konusmasini saglayin. Widget Voice, mevcut web asistanina telefon kanalina donusturmeyen ses odakli bir katman ekler.'
         },
         features: [
             {
-                title: { en: 'Voice & Chat Booking', tr: 'Sesli ve Yazılı Randevu' },
-                description: { en: 'Customers can book via voice commands or text chat.', tr: 'Müşteriler sesli komutlarla veya yazışarak randevu alabilir.' },
+                title: { en: 'Browser Voice Layer', tr: 'Tarayici Ici Ses Katmani' },
+                description: { en: 'Visitors can speak directly inside the web widget without leaving the page.', tr: 'Ziyaretciler sayfadan ayrilmadan web widget icinde dogrudan konusabilir.' },
                 icon: 'Mic'
             },
             {
-                title: { en: 'Smart Availability', tr: 'Akıllı Müsaitlik' },
-                description: { en: 'AI checks your real-time calendar availability.', tr: 'AI, gerçek zamanlı takvim müsaitliğinizi kontrol eder.' },
-                icon: 'Calendar'
+                title: { en: 'Shared Chat Context', tr: 'Paylasilan Chat Baglami' },
+                description: { en: 'Voice turns reuse the same web widget context, prompts, and knowledge source.', tr: 'Sesli turlar ayni web widget baglamini, promptlarini ve bilgi kaynagini kullanir.' },
+                icon: 'MessageSquare'
             }
         ],
         benefits: [
-            { en: 'Automate 100% of appointment scheduling', tr: 'Randevu planlamayı %100 otomatikleştirin' },
-            { en: 'Never miss a booking call again', tr: 'Bir daha asla randevu talebini kaçırmayın' }
+            { en: 'Increase engagement on pages where typing feels slow or unnatural', tr: 'Yazmanin yavas veya dogal olmadigi sayfalarda etkilesimi artirin' },
+            { en: 'Keep web voice separate from the phone voice product line', tr: 'Web icindeki sesi telefon sesli asistan urununden net sekilde ayirin' }
         ]
     },
-
     appointments: {
         id: 'appointments',
         name: {
@@ -929,6 +956,7 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     // --- 1. READY MODULES ---
     MODULES_REGISTRY.generalChatbot,    // Core
     MODULES_REGISTRY.knowledgeBase,     // Core
+    MODULES_REGISTRY.guided,            // Guided flows
     MODULES_REGISTRY.productCatalog,    // Personal Shopper
     MODULES_REGISTRY.leadCollection,    // Lead Collection
     MODULES_REGISTRY.visualDiagnosis,   // Visual Analysis (Ready)

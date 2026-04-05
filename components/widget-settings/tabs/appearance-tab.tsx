@@ -484,7 +484,7 @@ export function AppearanceTab({
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Altta yatan devasa geniş premium chat arayüzü.' : 'Wide, premium bottom-fixed chat.'}</span>
                     </button>
                     <button onClick={() => applyDisplayPreset("sidecar")} className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all text-left ${isSidecarMode ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/30 bg-background'}`}>
-                        <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Sidecar Mod' : 'Sidecar Mode'}</span>
+                        <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Side Mod' : 'Side Mode'}</span>
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Sağ panel sabit kalır, site içerik alanı daralır.' : 'Pinned right panel that shrinks site content.'}</span>
                     </button>
                 </div>
@@ -1764,7 +1764,17 @@ export function AppearanceTab({
                                                 </p>
                                             ) : (
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    {['none', 'pulse', 'bounce', 'wiggle', 'float', 'spin'].map((anim) => {
+                                                    {[
+                                                        { id: 'none',   label: language === 'tr' ? 'Yok' : 'None' },
+                                                        { id: 'pulse',  label: 'Pulse' },
+                                                        { id: 'bounce', label: 'Bounce' },
+                                                        { id: 'wiggle', label: 'Wiggle' },
+                                                        { id: 'float',  label: 'Float' },
+                                                        { id: 'spin',   label: 'Spin' },
+                                                        { id: 'shake',  label: 'Shake' },
+                                                        { id: 'glow',   label: 'Glow' },
+                                                        { id: 'border', label: language === 'tr' ? 'Kenarlık' : 'Border' },
+                                                    ].map(({ id: anim, label }) => {
                                                         const currentAnim = classicDeviceModeEnabled
                                                             ? (settings.launcherAnimation ?? 'none')
                                                             : (activeDevice === 'desktop' ? settings.launcherAnimation : (settings.mobileLauncherAnimation ?? 'none'));
@@ -1778,9 +1788,9 @@ export function AppearanceTab({
                                                                         setSettings(prev => ({ ...prev, mobileLauncherAnimation: anim }))
                                                                     }
                                                                 }}
-                                                                className={`p-2 rounded-md border text-xs capitalize transition-all ${currentAnim === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
+                                                                className={`p-2 rounded-md border text-xs transition-all ${currentAnim === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
                                                             >
-                                                                {anim}
+                                                                {label}
                                                             </button>
                                                         )
                                                     })}

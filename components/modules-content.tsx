@@ -36,6 +36,7 @@ import {
     Scan,
     Utensils,
     MessageCircle,
+    Route,
     PenTool, // Email Feature
     Send, // Email Feature Feature
     Inbox, // Review Feature
@@ -96,6 +97,7 @@ export const ICON_MAP = {
     Scan,
     Utensils,
     MessageCircle,
+    Route,
     PenTool,
     Send,
     Inbox,
@@ -115,6 +117,7 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     appointments: 'enableAppointments',
     leadCollection: 'enableLeadCollection',
     knowledgeBase: 'enableKnowledgeBase',
+    guided: 'enableGuided',
 
 
     salesOptimization: 'enableSalesOptimization',
@@ -189,6 +192,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         productCatalog: data.enablePersonalShopper ?? false,
                         voiceAssistant: data.enableVoiceAssistant ?? false,
                         knowledgeBase: data.enableKnowledgeBase ?? true,
+                        guided: data.enableGuided ?? false,
                         leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
                         appointments: data.enableAppointments ?? false,
 
@@ -211,6 +215,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         productCatalog: false,
                         voiceAssistant: false,
                         knowledgeBase: true,
+                        guided: false,
                         leadCollection: false,
                         appointments: false,
 
@@ -345,6 +350,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'knowledgeBase':
                     router.push(`${basePath}/knowledge`)
                     break
+                case 'guided':
+                    router.push(`${basePath}/modules/guided`)
+                    break
                 case 'appointments':
                     router.push(`${basePath}/chatbot/appointments`)
                     break
@@ -397,6 +405,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'knowledgeBase':
                 router.push(`${basePath}/knowledge`)
+                break
+            case 'guided':
+                router.push(`/console/modules/guided${queryParams}`)
                 break
             case 'leadCollection':
                 router.push(`/console/modules/leads/settings${queryParams}`)

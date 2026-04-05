@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { authorizeTargetAccess } from "@/lib/api-auth";
-import { isSuperAdminRole } from "@/lib/user-roles";
 
 export const dynamic = 'force-dynamic';
 
@@ -20,17 +19,7 @@ export async function POST(req: Request) {
         }
 
         const token = authHeader.split("Bearer ")[1];
-        const decodedToken = await adminAuth.verifyIdToken(token);
-
-        // Check Super Admin
-        const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-        const userData = userDoc.data();
-        const tokenRole = (decodedToken as any).role;
-        const isSuperAdmin = isSuperAdminRole(userData?.role) || isSuperAdminRole(tokenRole);
-
-        if (!isSuperAdmin) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
+        await adminAuth.verifyIdToken(token);
 
         const body = await req.json();
         const { userId, isActive } = body;
@@ -39,11 +28,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing userId" }, { status: 400 });
         }
 
-        const authz = await authorizeTargetAccess(req, userId);
+        const authz = await authorizeTargetAccess(req, userId, { enforcePartnerWorkspaceCapability: false });
         if (!authz.ok) {
             return authz.response;
         }
-        if (!authz.isSuperAdmin) {
+        if (!authz.isSuperAdmin && !authz.isAgencyAdmin) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 

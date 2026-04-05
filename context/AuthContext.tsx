@@ -8,6 +8,9 @@ import { doc, onSnapshot } from "firebase/firestore"
 import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
 import { installAuthDebugDump, recordAuthDebug } from "@/lib/auth-debug"
 import { UserRole } from "@/lib/user-roles"
+import { DEFAULT_PRODUCT_ENTITLEMENTS, ProductEntitlements } from "@/lib/omni/types"
+import { hasOmniPermission as hasOmniPermissionValue, resolveOmniPermissions, type OmniPermission } from "@/lib/omni/permissions"
+import { resolveChatbotEnabled, resolveOmniWorkspaceEnabled } from "@/lib/omni/workspace-access"
 
 // Extended user data interface
 export interface UserData {
@@ -23,6 +26,9 @@ interface AuthContextType {
     user: User | null
     userData: UserData | null
     role: UserRole | null
+    productEntitlements: ProductEntitlements
+    omniPermissions: OmniPermission[]
+    hasOmniPermission: (permission: OmniPermission) => boolean
     // Plan & Subscription
     planId: string
     planConfig: PlanConfig | null
@@ -40,6 +46,8 @@ interface AuthContextType {
     visibleCopywriter: boolean
     enableLeadCollection: boolean
     visibleLeadCollection: boolean
+    enableOmniChannel: boolean
+    visibleOmniChannel: boolean
     enableVoiceAssistant: boolean
     visibleVoiceAssistant: boolean
     enableKnowledgeBase: boolean
@@ -56,6 +64,9 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     userData: null,
     role: null,
+    productEntitlements: DEFAULT_PRODUCT_ENTITLEMENTS,
+    omniPermissions: [],
+    hasOmniPermission: () => false,
     // Plan & Subscription defaults
     planId: 'starter',
     planConfig: null,
@@ -69,10 +80,12 @@ const AuthContext = createContext<AuthContextType>({
     visiblePersonalShopper: true,
     enableChatbot: true,
     visibleChatbot: true,
-    enableCopywriter: true,
+    enableCopywriter: false,
     visibleCopywriter: true,
-    enableLeadCollection: true,
+    enableLeadCollection: false,
     visibleLeadCollection: true,
+    enableOmniChannel: false,
+    visibleOmniChannel: false,
     enableVoiceAssistant: false,
     visibleVoiceAssistant: true,
     enableKnowledgeBase: true,
@@ -83,10 +96,32 @@ const AuthContext = createContext<AuthContextType>({
     loading: true,
 })
 
+function resolveProductEntitlements(data: any, userRole: UserRole): ProductEntitlements {
+    if (userRole === 'SUPER_ADMIN') {
+        return {
+            chatbot: true,
+            omniChannel: true,
+            copywriter: false,
+            leadFinder: false,
+        }
+    }
+
+    const explicitEntitlements = data.productEntitlements || {}
+
+    return {
+        chatbot: resolveChatbotEnabled(data),
+        omniChannel: resolveOmniWorkspaceEnabled(data, userRole),
+        copywriter: explicitEntitlements.copywriter === true,
+        leadFinder: explicitEntitlements.leadFinder === true,
+    }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null)
     const [userData, setUserData] = useState<UserData | null>(null)
     const [role, setRole] = useState<UserRole | null>(null)
+    const [productEntitlements, setProductEntitlements] = useState<ProductEntitlements>(DEFAULT_PRODUCT_ENTITLEMENTS)
+    const [omniPermissions, setOmniPermissions] = useState<OmniPermission[]>([])
     // Plan states
     const [planId, setPlanId] = useState<string>('starter')
     const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired'>('trial')
@@ -96,10 +131,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [visiblePersonalShopper, setVisiblePersonalShopper] = useState(true)
     const [enableChatbot, setEnableChatbot] = useState(true)
     const [visibleChatbot, setVisibleChatbot] = useState(true)
-    const [enableCopywriter, setEnableCopywriter] = useState(true)
+    const [enableCopywriter, setEnableCopywriter] = useState(false)
     const [visibleCopywriter, setVisibleCopywriter] = useState(true)
-    const [enableLeadCollection, setEnableLeadCollection] = useState(true)
+    const [enableLeadCollection, setEnableLeadCollection] = useState(false)
     const [visibleLeadCollection, setVisibleLeadCollection] = useState(true)
+    const [enableOmniChannel, setEnableOmniChannel] = useState(false)
+    const [visibleOmniChannel, setVisibleOmniChannel] = useState(false)
     const [enableVoiceAssistant, setEnableVoiceAssistant] = useState(false)
     const [visibleVoiceAssistant, setVisibleVoiceAssistant] = useState(true)
     const [enableKnowledgeBase, setEnableKnowledgeBase] = useState(true)
@@ -210,6 +247,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setUserData(data as UserData)
                     setRole(userRole)
 
+                    const resolvedProductEntitlements = resolveProductEntitlements(data, userRole)
+                    const resolvedOmniPermissions = resolveOmniPermissions(userRole, data.omniPermissions, data.omniDeniedPermissions)
+                    setProductEntitlements(resolvedProductEntitlements)
+                    setOmniPermissions(resolvedOmniPermissions)
+
                     // Set plan & subscription data
                     setPlanId(data.planId || 'starter')
                     setSubscriptionStatus(data.subscriptionStatus || 'trial')
@@ -220,10 +262,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setVisibleChatbot(data.visibleChatbot !== false)
                     setEnablePersonalShopper(data.enablePersonalShopper === true)
                     setVisiblePersonalShopper(data.visiblePersonalShopper !== false)
-                    setEnableCopywriter(data.enableCopywriter !== false)
+                    setEnableCopywriter(resolvedProductEntitlements.copywriter)
                     setVisibleCopywriter(data.visibleCopywriter !== false)
-                    setEnableLeadCollection(data.enableLeadCollection !== false)
+                    setEnableLeadCollection(resolvedProductEntitlements.leadFinder)
                     setVisibleLeadCollection(data.visibleLeadCollection !== false)
+                    setEnableOmniChannel(resolvedProductEntitlements.omniChannel)
+                    setVisibleOmniChannel(data.visibleOmniChannel ?? resolvedProductEntitlements.omniChannel)
                     setEnableVoiceAssistant(data.enableVoiceAssistant === true)
                     setVisibleVoiceAssistant(data.visibleVoiceAssistant !== false)
                     setEnableKnowledgeBase(data.enableKnowledgeBase !== false)
@@ -252,6 +296,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setPlanId('starter')
                 setSubscriptionStatus('trial')
                 setTrialEndsAt(null)
+                setProductEntitlements(DEFAULT_PRODUCT_ENTITLEMENTS)
+                setOmniPermissions([])
+                setEnableOmniChannel(false)
+                setVisibleOmniChannel(false)
                 setLoading(false)
             }
         })
@@ -271,6 +319,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             user,
             userData,
             role,
+            productEntitlements,
+            omniPermissions,
+            hasOmniPermission: (permission: OmniPermission) => hasOmniPermissionValue(omniPermissions, permission),
             // Plan & Subscription
             planId,
             planConfig,
@@ -289,6 +340,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             visibleCopywriter,
             enableLeadCollection,
             visibleLeadCollection,
+            enableOmniChannel,
+            visibleOmniChannel,
             enableVoiceAssistant,
             visibleVoiceAssistant,
             enableKnowledgeBase,

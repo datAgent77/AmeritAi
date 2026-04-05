@@ -1,12 +1,18 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { products } from "@/lib/product-items"
+import { getVisibleProducts } from "@/lib/product-items"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
 
 export default function ProductsPage() {
+    const { productEntitlements, role } = useAuth()
+    const visibleProducts = getVisibleProducts(productEntitlements, {
+        includeAll: role === "SUPER_ADMIN",
+    })
+
     return (
         <div className="p-8 space-y-6">
             <div>
@@ -15,7 +21,7 @@ export default function ProductsPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {products.map((product) => (
+                {visibleProducts.map((product) => (
                     <Card key={product.id} className="relative overflow-hidden hover:shadow-lg transition-shadow">
                         <div className={`absolute top-0 left-0 right-0 h-1 ${product.bgColor}`}></div>
                         <CardHeader>

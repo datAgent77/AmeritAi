@@ -272,24 +272,31 @@ export function canEnableModule(
         return { moduleId, status: 'enabled' };
     }
 
-    // Check sector support (informational only, not blocking)
-    const isSectorCompatible = mod.supportedSectors.length === 0 || 
-        mod.supportedSectors.includes(entitlements.sectorId);
-
     // If module is included in plan (or trial)
     if (isHasAccess) {
         return { moduleId, status: 'available' };
     }
 
     // Module is NOT included in plan - check upgrade path
+    const plan = getPlan(entitlements.planId);
+
+    if (plan.canAccessPremiumModules && mod.isPremium && !entitlements.modules.addOns.includes(moduleId)) {
+        return {
+            moduleId,
+            status: 'addon_required',
+            reason: 'Module available as add-on for current plan',
+            upgradeHint: `Add this module to your ${plan.name.en} plan`
+        };
+    }
+
     const upgradeTarget = getModuleUpgradeTarget(entitlements.planId, moduleId);
-    
+
     if (upgradeTarget) {
         const targetPlan = getPlan(upgradeTarget);
-        const upgradeHint = targetPlan 
+        const upgradeHint = targetPlan
             ? `Upgrade to ${targetPlan.name.en} to unlock this module`
             : 'Upgrade required';
-            
+
         return {
             moduleId,
             status: 'premium_locked',
@@ -337,16 +344,20 @@ export function getEffectiveEnabledModules(
 /**
  * Get upgrade hint for a module
  */
-export function getUpgradeHint(moduleId: ModuleId): string {
+export function getUpgradeHint(moduleId: ModuleId, locale: 'en' | 'tr' = 'tr'): string {
     const mod = getModule(moduleId);
 
-    if (!mod) return 'Upgrade required';
+    if (!mod) return locale === 'tr' ? 'Yükseltme gerekli' : 'Upgrade required';
 
     if (mod.isPremium) {
-        return 'Premium modül - Pro planına yükseltin';
+        return locale === 'tr'
+            ? 'Premium modül - Pro planına yükseltin'
+            : 'Premium module - Upgrade to Pro plan';
     }
 
-    return 'Bu modül için plan yükseltmesi gerekli';
+    return locale === 'tr'
+        ? 'Bu modül için plan yükseltmesi gerekli'
+        : 'Plan upgrade required for this module';
 }
 
 /**

@@ -39,6 +39,8 @@ describe("conversation-language", () => {
     test("normalizes locale tags", () => {
         expect(normalizeConversationLanguage("en-US")).toBe("en");
         expect(normalizeConversationLanguage("tr-TR")).toBe("tr");
+        expect(normalizeConversationLanguage("pt-BR")).toBe("pt");
+        expect(normalizeConversationLanguage("it_IT")).toBe("it");
         expect(normalizeConversationLanguage("auto")).toBeNull();
     });
 
@@ -46,6 +48,25 @@ describe("conversation-language", () => {
         expect(detectConversationLanguage("Wie viel kostet das Produkt?")).toBe("de");
         expect(detectConversationLanguage("Bonjour, quel est le prix ?")).toBe("fr");
         expect(detectConversationLanguage("Hola, cuanto cuesta este producto?")).toBe("es");
+    });
+
+    test("preserves broader browser locales when user text is ambiguous", () => {
+        expect(resolveConversationLanguage({
+            explicitLanguage: "pt-BR",
+            userText: "ok",
+        })).toBe("pt");
+
+        expect(resolveConversationLanguage({
+            explicitLanguage: "it-IT",
+            userText: "ok",
+        })).toBe("it");
+    });
+
+    test("detects non-latin scripts for broader automatic language support", () => {
+        expect(detectConversationLanguage("こんにちは、価格はいくらですか？")).toBe("ja");
+        expect(detectConversationLanguage("안녕하세요 가격이 얼마인가요?")).toBe("ko");
+        expect(detectConversationLanguage("我想了解价格")).toBe("zh");
+        expect(detectConversationLanguage("Привет, сколько стоит?")).toBe("ru");
     });
 
     test("maps unsupported copy languages back to English copy", () => {

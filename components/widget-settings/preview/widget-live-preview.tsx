@@ -27,6 +27,7 @@ export function WidgetLivePreview({
     const [lottieData, setLottieData] = useState<any>(null)
 
     const isAmbientMode = settings.chatDisplayMode === "ambient"
+    const isSidecarMode = settings.chatDisplayMode === "sidecar"
     const previewDevice = previewMode === "mobile" ? "mobile" : "desktop"
     const effectivePreviewSettings = isAmbientMode
         ? { ...settings, ...resolveAmbientDeviceSettings(settings, previewDevice) }

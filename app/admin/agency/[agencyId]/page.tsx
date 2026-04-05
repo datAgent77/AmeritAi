@@ -1,16 +1,19 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
+import { getPartnerLevelLabel } from "@/lib/management/access"
+import type { PartnerLevel } from "@/lib/management/types"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2, ArrowLeft, Users, Building2, Mail, Settings, ExternalLink, Trash2 } from "lucide-react"
+import { Loader2, ArrowLeft, Users, Building2, Mail, Settings, ExternalLink, Trash2, ShieldCheck } from "lucide-react"
 import {
     Table,
     TableBody,
@@ -34,6 +37,7 @@ interface AgencyDetail {
     id: string
     email: string
     agencyName: string
+    partnerName?: string | null
     firstName?: string
     lastName?: string
     phone?: string
@@ -41,6 +45,8 @@ interface AgencyDetail {
     isArchived?: boolean
     createdAt?: any
     customerCount?: number
+    partnerLevel: PartnerLevel
+    partnerLogoUrl?: string | null
 }
 
 interface TenantUser {
@@ -52,6 +58,7 @@ interface TenantUser {
     agencyId?: string | null
     planId?: string
     subscriptionStatus?: string
+    subscriptionBillingPeriod?: string
 }
 
 export default function AgencyManagementPage() {
@@ -66,7 +73,9 @@ export default function AgencyManagementPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [isTogglingStatus, setIsTogglingStatus] = useState(false)
     const [editedEmail, setEditedEmail] = useState("")
+    const [editedPartnerLevel, setEditedPartnerLevel] = useState<PartnerLevel>("solution_partner")
     const [isSavingEmail, setIsSavingEmail] = useState(false)
+    const [isSavingPartnerLevel, setIsSavingPartnerLevel] = useState(false)
     const [isDeletingAgency, setIsDeletingAgency] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
@@ -76,38 +85,37 @@ export default function AgencyManagementPage() {
             const token = await auth.currentUser?.getIdToken()
             if (!token) return
 
-            // Fetch agencies list and filter by id
-            const [agenciesRes, dashboardRes] = await Promise.all([
+            const [agenciesRes, accountsRes] = await Promise.all([
                 fetch(`/api/admin/agencies?includeArchived=true`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                fetch(`/api/admin/dashboard-stats?includeArchived=true`, {
+                fetch(`/api/omni/directory/accounts?includeArchived=true`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ])
 
-            if (!agenciesRes.ok) throw new Error("Failed to fetch agency")
-            if (!dashboardRes.ok) throw new Error("Failed to fetch tenants")
+            if (!agenciesRes.ok) throw new Error("Failed to fetch partner")
+            if (!accountsRes.ok) throw new Error("Failed to fetch managed accounts")
 
             const agenciesData = await agenciesRes.json()
-            const dashboardData = await dashboardRes.json()
+            const accountsData = await accountsRes.json()
 
             const found = (agenciesData.agencies || []).find((a: AgencyDetail) => a.id === agencyId)
             if (!found) {
-                toast({ title: t('error') || "Hata", description: "Ajans bulunamadı.", variant: "destructive" })
+                toast({ title: t('error') || "Hata", description: "Partner bulunamadı.", variant: "destructive" })
                 router.push("/admin/agencies")
                 return
             }
             setAgency(found)
             setEditedEmail(found.email || "")
+            setEditedPartnerLevel(found.partnerLevel || "solution_partner")
 
-            // Filter tenants assigned to this agency
-            const tenants = (dashboardData.users || []).filter(
-                (u: TenantUser) => u.agencyId === agencyId
+            const tenants = (accountsData.accounts || []).filter(
+                (u: TenantUser & { partnerId?: string | null }) => (u.agencyId || u.partnerId) === agencyId
             )
             setAssignedTenants(tenants)
         } catch (error: any) {
-            console.error("Error fetching agency data:", error)
+            console.error("Error fetching partner data:", error)
             toast({ title: t('error') || "Hata", description: error?.message || "Veri yüklenemedi.", variant: "destructive" })
         } finally {
             setIsLoading(false)
@@ -143,8 +151,8 @@ export default function AgencyManagementPage() {
             toast({
                 title: t('success') || "Başarılı",
                 description: agency.isActive
-                    ? (t('deactivated') || "Ajans devre dışı bırakıldı.")
-                    : (t('activated') || "Ajans etkinleştirildi.")
+                    ? (t('deactivated') || "Partner devre dışı bırakıldı.")
+                    : (t('activated') || "Partner etkinleştirildi.")
             })
         } catch (error: any) {
             toast({ title: t('error') || "Hata", description: error?.message, variant: "destructive" })
@@ -202,13 +210,13 @@ export default function AgencyManagementPage() {
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}))
-                throw new Error(data.error || "Failed to update agency email")
+                throw new Error(data.error || "Failed to update partner email")
             }
 
             setAgency((prev) => prev ? { ...prev, email: normalizedEmail } : prev)
             toast({
                 title: t('success') || "Başarılı",
-                description: t('agencyEmailUpdated') || "Ajans e-posta adresi güncellendi."
+                description: t('agencyEmailUpdated') || "Partner e-posta adresi güncellendi."
             })
         } catch (error: any) {
             toast({
@@ -218,6 +226,49 @@ export default function AgencyManagementPage() {
             })
         } finally {
             setIsSavingEmail(false)
+        }
+    }
+
+    const handleUpdatePartnerLevel = async () => {
+        if (!agency || editedPartnerLevel === agency.partnerLevel) return
+
+        setIsSavingPartnerLevel(true)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            if (!token) {
+                throw new Error(t('unauthorized') || "Unauthorized")
+            }
+
+            const response = await fetch("/api/admin/update-user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    targetUserId: agency.id,
+                    partnerLevel: editedPartnerLevel
+                })
+            })
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}))
+                throw new Error(data.error || "Failed to update partner level")
+            }
+
+            setAgency((prev) => prev ? { ...prev, partnerLevel: editedPartnerLevel } : prev)
+            toast({
+                title: t('success') || "Başarılı",
+                description: "Partner level updated successfully."
+            })
+        } catch (error: any) {
+            toast({
+                title: t('error') || "Hata",
+                description: error?.message || "Partner level could not be updated.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSavingPartnerLevel(false)
         }
     }
 
@@ -250,14 +301,14 @@ export default function AgencyManagementPage() {
             toast({
                 title: t('success') || "Başarılı",
                 description: unassignedTenants > 0
-                    ? `${t('agencyDeleted') || "Ajans silindi."} ${unassignedTenants} ${t('customers') || "müşteri"} ${t('unassigned') || "Unassigned"}.`
-                    : (t('agencyDeleted') || "Ajans silindi.")
+                    ? `${t('agencyDeleted') || "Partner silindi."} ${unassignedTenants} ${t('customers') || "müşteri"} ${t('unassigned') || "Unassigned"}.`
+                    : (t('agencyDeleted') || "Partner silindi.")
             })
             router.push("/admin/agencies")
         } catch (error: any) {
             toast({
                 title: t('error') || "Hata",
-                description: error?.message || "Ajans silinemedi.",
+                description: error?.message || "Partner silinemedi.",
                 variant: "destructive"
             })
         } finally {
@@ -291,8 +342,8 @@ export default function AgencyManagementPage() {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{agency.agencyName || agency.email}</h1>
-                    <p className="text-muted-foreground mt-1">{t('manageAgencyDesc') || "Ajans bilgileri ve atanmış müşterileri yönetin."}</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{agency.partnerName || agency.agencyName || agency.email}</h1>
+                    <p className="text-muted-foreground mt-1">{t('manageAgencyDesc') || "Partner bilgilerini ve bağlı müşterileri yönetin."}</p>
                 </div>
                 <Badge
                     variant={agency.isActive ? "outline" : "destructive"}
@@ -303,15 +354,15 @@ export default function AgencyManagementPage() {
             </div>
 
             {/* Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="pb-2 flex flex-row items-center gap-3">
                         <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
                             <Building2 className="h-4 w-4" />
                         </div>
                         <div>
-                            <CardTitle className="text-sm text-muted-foreground font-normal">{t('agencyName') || "Ajans Adı"}</CardTitle>
-                            <p className="font-semibold text-sm">{agency.agencyName || "-"}</p>
+                            <CardTitle className="text-sm text-muted-foreground font-normal">{t('agencyName') || "Partner Adı"}</CardTitle>
+                            <p className="font-semibold text-sm">{agency.partnerName || agency.agencyName || "-"}</p>
                         </div>
                     </CardHeader>
                 </Card>
@@ -339,6 +390,18 @@ export default function AgencyManagementPage() {
                         </div>
                     </CardHeader>
                 </Card>
+
+                <Card>
+                    <CardHeader className="pb-2 flex flex-row items-center gap-3">
+                        <div className="h-9 w-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                            <ShieldCheck className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-sm text-muted-foreground font-normal">Partner Level</CardTitle>
+                            <p className="font-semibold text-sm">{getPartnerLevelLabel(agency.partnerLevel)}</p>
+                        </div>
+                    </CardHeader>
+                </Card>
             </div>
 
             {/* Status Management */}
@@ -346,18 +409,18 @@ export default function AgencyManagementPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                         <Settings className="h-4 w-4" />
-                        {t('agencySettings') || "Ajans Ayarları"}
+                        {t('agencySettings') || "Partner Ayarları"}
                     </CardTitle>
-                    <CardDescription>{t('agencySettingsDesc') || "Ajansın aktiflik durumunu ve genel ayarlarını yönetin."}</CardDescription>
+                    <CardDescription>{t('agencySettingsDesc') || "Partner aktifliğini, seviyesini ve iletişim bilgilerini yönetin."}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-100">
                         <div>
-                            <div className="font-medium text-sm">{t('agencyStatus') || "Ajans Durumu"}</div>
+                            <div className="font-medium text-sm">{t('agencyStatus') || "Partner Durumu"}</div>
                             <div className="text-xs text-muted-foreground mt-0.5">
                                 {agency.isActive
-                                    ? (t('agencyActiveDesc') || "Ajans aktif — müşteriler giriş yapabilir.")
-                                    : (t('agencyInactiveDesc') || "Ajans pasif — müşteriler giriş yapamaz.")}
+                                    ? (t('agencyActiveDesc') || "Partner aktif ve bağlı müşterilerle çalışmaya devam edebilir.")
+                                    : (t('agencyInactiveDesc') || "Partner pasif, bu yüzden yönetim akışları sınırlandırılır.")}
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -376,7 +439,7 @@ export default function AgencyManagementPage() {
                         <div>
                             <div className="font-medium text-sm">{t('email') || "E-posta"}</div>
                             <div className="text-xs text-muted-foreground mt-0.5">
-                                {t('agencyEmailEditHint') || "Ajans giriş için kullandığı e-posta adresini güncelleyin."}
+                                {t('agencyEmailEditHint') || "Partner giriş için kullandığı e-posta adresini güncelleyin."}
                             </div>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -398,10 +461,64 @@ export default function AgencyManagementPage() {
                         </div>
                     </div>
 
+                    <div className="grid gap-4 rounded-lg border border-gray-100 bg-gray-50 p-4 lg:grid-cols-[1fr_auto]">
+                        <div className="space-y-3">
+                            <div>
+                                <div className="font-medium text-sm">Partner Level</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                    Capability ve strategic branding erişimi bu seviyeden çözülür.
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <select
+                                    className="flex h-9 min-w-[240px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                    value={editedPartnerLevel}
+                                    onChange={(event) => setEditedPartnerLevel(event.target.value as PartnerLevel)}
+                                >
+                                    <option value="partner">Partner</option>
+                                    <option value="solution_partner">Solution Partner</option>
+                                    <option value="strategic_partner">Strategic Partner</option>
+                                </select>
+                                <Button
+                                    onClick={handleUpdatePartnerLevel}
+                                    disabled={isSavingPartnerLevel || editedPartnerLevel === agency.partnerLevel}
+                                >
+                                    {isSavingPartnerLevel ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Save Level
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border bg-white px-4 py-3">
+                            <div className="relative h-14 w-14 overflow-hidden rounded-2xl border bg-white">
+                                {agency.partnerLogoUrl ? (
+                                    <Image
+                                        src={agency.partnerLogoUrl}
+                                        alt={agency.partnerName || agency.agencyName || "Partner"}
+                                        fill
+                                        className="object-contain p-2"
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-muted-foreground">
+                                        No Logo
+                                    </div>
+                                )}
+                            </div>
+                            <div className="max-w-[220px] text-sm">
+                                <div className="font-medium">Strategic Branding Preview</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {agency.partnerLevel === "strategic_partner"
+                                        ? "Header-right branding is active for this partner and its linked customer accounts."
+                                        : "Logo visibility opens only when this partner reaches Strategic Partner level."}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="flex flex-col gap-3 p-4 rounded-lg border border-red-200 bg-red-50/60 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <div className="font-medium text-sm text-red-700">
-                                {t('deleteAgency') || "Ajansı Sil"}
+                                {t('deleteAgency') || "Partneri Sil"}
                             </div>
                             <div className="text-xs text-red-700/80 mt-0.5">
                                 {assignedTenants.length > 0
@@ -420,7 +537,7 @@ export default function AgencyManagementPage() {
                             ) : (
                                 <>
                                     <Trash2 className="mr-2 h-4 w-4" />
-                                    {t('deleteAgency') || "Ajansı Sil"}
+                                    {t('deleteAgency') || "Partneri Sil"}
                                 </>
                             )}
                         </Button>
@@ -433,10 +550,10 @@ export default function AgencyManagementPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
                         <Users className="h-4 w-4" />
-                        {t('assignedCustomers') || "Atanmış Müşteriler"}
+                        {t('assignedCustomers') || "Bağlı Müşteriler"}
                     </CardTitle>
                     <CardDescription>
-                        {t('assignedCustomersDesc') || "Bu ajansa bağlı tüm müşteri hesapları."}
+                        {t('assignedCustomersDesc') || "Bu partnere bağlı tüm müşteri hesapları."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -454,7 +571,7 @@ export default function AgencyManagementPage() {
                                 {assignedTenants.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                            {t('noTenantsAssigned') || "Bu ajansa henüz müşteri atanmamış."}
+                                            {t('noTenantsAssigned') || "Bu partnere henüz müşteri atanmamış."}
                                         </TableCell>
                                     </TableRow>
                                 ) : assignedTenants.map((tenant) => (
@@ -507,11 +624,11 @@ export default function AgencyManagementPage() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{t('deleteAgency') || "Ajansı Sil"}</AlertDialogTitle>
+                        <AlertDialogTitle>{t('deleteAgency') || "Partneri Sil"}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {assignedTenants.length > 0
-                                ? `${agency.agencyName || agency.email} ${(t('agencyDeleteConfirmWithCustomers') || "silinecek ve bu ajansa bağlı müşteriler ajanssız hale getirilecektir. Bu işlem geri alınamaz.")}`
-                                : (t('agencyDeleteConfirm') || "Bu ajansı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")}
+                                ? `${agency.partnerName || agency.agencyName || agency.email} ${(t('agencyDeleteConfirmWithCustomers') || "silinecek ve bu partnere bağlı müşteriler partnersiz hale getirilecektir. Bu işlem geri alınamaz.")}`
+                                : (t('agencyDeleteConfirm') || "Bu partneri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -526,7 +643,7 @@ export default function AgencyManagementPage() {
                             {isDeletingAgency ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                                t('deleteAgency') || "Ajansı Sil"
+                                t('deleteAgency') || "Partneri Sil"
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>

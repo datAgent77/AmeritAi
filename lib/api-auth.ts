@@ -1,4 +1,5 @@
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { resolvePartnerCapabilities, resolvePartnerLevel } from "@/lib/management/access";
 import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole } from "./user-roles";
 
 type AccessAllowed = {
@@ -15,6 +16,10 @@ type AccessDenied = {
 
 type AccessResult = AccessAllowed | AccessDenied;
 
+type AuthorizeTargetAccessOptions = {
+    enforcePartnerWorkspaceCapability?: boolean;
+};
+
 function getBearerToken(req: Request): string | null {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -26,7 +31,11 @@ function getBearerToken(req: Request): string | null {
 /**
  * Allows access when caller owns target resource or has SUPER_ADMIN privileges.
  */
-export async function authorizeTargetAccess(req: Request, targetUserId: string): Promise<AccessResult> {
+export async function authorizeTargetAccess(
+    req: Request,
+    targetUserId: string,
+    options?: AuthorizeTargetAccessOptions
+): Promise<AccessResult> {
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
 
@@ -61,7 +70,8 @@ export async function authorizeTargetAccess(req: Request, targetUserId: string):
     }
 
     const callerDoc = await adminDb.collection("users").doc(callerUid).get();
-    const callerRole = callerDoc.data()?.role;
+    const callerData = callerDoc.data() || {};
+    const callerRole = callerData?.role;
     const decodedRole = (decodedToken as any).role;
     const targetDoc = await adminDb.collection("users").doc(targetUserId).get();
     const targetRole = targetDoc.data()?.role;
@@ -76,6 +86,16 @@ export async function authorizeTargetAccess(req: Request, targetUserId: string):
     const isAgencyAdmin = isAgencyAdminRole(callerRole) || isAgencyAdminRole(decodedRole);
 
     if (isAgencyAdmin && isTenantAdminRole(targetRole) && targetAgencyId === callerUid) {
+        const enforceWorkspaceCapability = options?.enforcePartnerWorkspaceCapability !== false;
+        if (enforceWorkspaceCapability) {
+            const partnerCapabilities = resolvePartnerCapabilities(resolvePartnerLevel(callerData.partnerLevel));
+            if (!partnerCapabilities.canAccessManagedAccountWorkspace) {
+                return {
+                    ok: false,
+                    response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
+                };
+            }
+        }
         return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: true };
     }
 

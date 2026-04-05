@@ -63,10 +63,12 @@ export function TenantLayoutClient({
 
                 const payload = await response.json()
                 const customers = Array.isArray(payload?.customers) ? payload.customers : []
+                const viewerCapabilities = payload?.viewerCapabilities || null
+                const canEnterWorkspace = viewerCapabilities?.canAccessManagedAccountWorkspace === true
                 const canAccessTenant = customers.some((customer: { id?: string }) => customer?.id === userId)
 
                 if (cancelled) return
-                if (!canAccessTenant) {
+                if (!canAccessTenant || !canEnterWorkspace) {
                     setAccessState("denied")
                     router.push("/agency")
                     return

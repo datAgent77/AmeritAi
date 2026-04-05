@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { getPartnerDoc } from "@/lib/management/partners";
 import { provisionTenantAccount } from "@/lib/tenant-provisioning";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 import { isAgencyAdminRole, isSuperAdminRole } from "@/lib/user-roles";
@@ -57,6 +58,10 @@ export async function POST(req: Request) {
         let agencyId: string | null = null;
 
         if (isAgencyAdmin) {
+            const partner = await getPartnerDoc(adminDb, decoded.uid)
+            if (!partner?.capabilities.canCreateManagedAccounts) {
+                return NextResponse.json({ error: "Forbidden: Partner level cannot create customers" }, { status: 403 });
+            }
             agencyId = decoded.uid;
         } else if (typeof requestedAgencyId === "string" && requestedAgencyId.trim().length > 0) {
             const agencyDoc = await adminDb.collection("users").doc(requestedAgencyId.trim()).get();

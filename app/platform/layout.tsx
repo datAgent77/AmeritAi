@@ -2,7 +2,6 @@
 
 import { SiteHeader } from "@/components/site-header"
 import { LanguageProvider } from "@/context/LanguageContext"
-import { useAuth } from "@/context/AuthContext"
 import { AuthGuard } from "@/components/auth-guard"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { ConsoleSidebar } from "@/components/console-sidebar"
@@ -13,19 +12,17 @@ export default function PlatformLayout({
 }: {
     children: React.ReactNode
 }) {
-    const { user, enableChatbot } = useAuth()
-
     return (
         <AuthGuard>
             <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
                 <LanguageProvider>
                     <SidebarProvider>
-                        <div className="flex flex-col h-screen w-full bg-[#f4f6f8]">
-                            <SiteHeader />
-                            <div className="flex flex-1 overflow-hidden">
-                                <ConsoleSidebar />
-                                <main className="flex-1 overflow-y-auto w-full p-8">
-                                    <div className="max-w-7xl mx-auto p-4 md:p-0">
+                        <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                            <ConsoleSidebar />
+                            <div className="flex min-w-0 flex-1 flex-col">
+                                <SiteHeader />
+                                <main className="relative flex-1 overflow-y-auto bg-[#f4f6f8]">
+                                    <div className="mx-auto max-w-7xl p-8">
                                         {children}
                                     </div>
                                 </main>
