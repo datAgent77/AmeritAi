@@ -1478,7 +1478,6 @@ export function AppearanceTab({
                                                         <Label>{t('hoverEffect') || 'Hover Effect'}</Label>
                                                         <div className="grid grid-cols-3 gap-2">
                                                             <Button size="sm" variant={settings.launcherHoverEffect === "scale" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "scale" }))}>{t('scale') || 'Scale'}</Button>
-                                                            <Button size="sm" variant={settings.launcherHoverEffect === "opacity" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "opacity" }))}>{t('opacity') || 'Opacity'}</Button>
                                                             <Button size="sm" variant={settings.launcherHoverEffect === "none" ? "secondary" : "outline"} onClick={() => setSettings(prev => ({ ...prev, launcherHoverEffect: "none" }))}>{t('none') || 'None'}</Button>
                                                         </div>
                                                     </div>

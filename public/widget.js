@@ -2300,7 +2300,7 @@
 	        gap: 10px;
 	        opacity: 0;
 	        transform: translateY(20px);
-	        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	        transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	        ${borderStyle}
 	      `;
 
@@ -2703,7 +2703,7 @@
       this.removeBubbleAnimationClasses();
 
       this.bubble.style.opacity = '0';
-      this.bubble.style.transform = 'translateY(20px)';
+      this.bubble.style.transform = this.isBubbleCentered ? 'translate(-50%, 20px)' : 'translateY(20px)';
 
       setTimeout(() => {
         if (this.bubble && this.bubble.parentNode) {
@@ -3618,18 +3618,14 @@
         // Handle hover effect based on launcherHoverEffect setting
         if (settings.launcherHoverEffect === 'none') return;
 
-        if (settings.launcherHoverEffect === 'opacity') {
-          launcher.style.opacity = '0.8';
-          return;
-        }
-
-        // Default: scale effect
+        // Force scale effect regardless of legacy 'opacity' setting
         // Simplified: Container handles position, so just scale relative
         launcher.style.transform = 'scale(1.05)';
       };
       launcher.onmouseleave = () => {
         launcher.style.opacity = '1';
-        launcher.style.transform = 'scale(1)';
+        // Use empty string to remove inline style and allow CSS animations to resume
+        launcher.style.transform = '';
       };
 
       // Auto Collapse Logic for Icon + Text
@@ -3640,8 +3636,10 @@
         const originalEnter = launcher.onmouseenter;
         launcher.onmouseenter = (e) => {
           if (originalEnter) originalEnter(e);
-          clearCollapseTimer();
-          expandLauncher();
+          if (!isOpen) {
+            clearCollapseTimer();
+            expandLauncher();
+          }
         };
 
         const originalLeave = launcher.onmouseleave;
