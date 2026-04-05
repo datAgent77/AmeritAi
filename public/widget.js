@@ -2303,7 +2303,7 @@
 	        gap: 10px;
 	        opacity: 0;
 	        transform: translateY(20px);
-	        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	        transition: opacity 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	        ${borderStyle}
 	      `;
 
@@ -2706,7 +2706,7 @@
       this.removeBubbleAnimationClasses();
 
       this.bubble.style.opacity = '0';
-      this.bubble.style.transform = 'translateY(20px)';
+      this.bubble.style.transform = this.isBubbleCentered ? 'translate(-50%, 20px)' : 'translateY(20px)';
 
       setTimeout(() => {
         if (this.bubble && this.bubble.parentNode) {
@@ -3481,11 +3481,11 @@
 
       if (isMobileFullscreenOverlay) {
         Object.assign(launcherContainer.style, {
-          display: 'none',
+          display: 'flex',
           position: 'fixed',
           zIndex: '10001',
-          top: '',
-          right: '',
+          top: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))',
+          right: '16px',
           left: 'auto',
           bottom: 'auto',
           transform: 'none',
@@ -3674,18 +3674,14 @@
         // Handle hover effect based on launcherHoverEffect setting
         if (settings.launcherHoverEffect === 'none') return;
 
-        if (settings.launcherHoverEffect === 'opacity') {
-          launcher.style.opacity = '0.8';
-          return;
-        }
-
-        // Default: scale effect
+        // Force scale effect regardless of legacy 'opacity' setting
         // Simplified: Container handles position, so just scale relative
         launcher.style.transform = 'scale(1.05)';
       };
       launcher.onmouseleave = () => {
         launcher.style.opacity = '1';
-        launcher.style.transform = 'scale(1)';
+        // Use empty string to remove inline style and allow CSS animations to resume
+        launcher.style.transform = '';
       };
 
       // Auto Collapse Logic for Icon + Text
@@ -3696,8 +3692,10 @@
         const originalEnter = launcher.onmouseenter;
         launcher.onmouseenter = (e) => {
           if (originalEnter) originalEnter(e);
-          clearCollapseTimer();
-          expandLauncher();
+          if (!isOpen) {
+            clearCollapseTimer();
+            expandLauncher();
+          }
         };
 
         const originalLeave = launcher.onmouseleave;
@@ -4789,6 +4787,114 @@
     }
   }
 
+  function getSettingsCacheKey() {
+    return `userex_widget_settings_v1:${baseUrl}:${chatbotId}`;
+  }
+
+  function readCachedSettings() {
+    try {
+      const raw = window.localStorage && window.localStorage.getItem(getSettingsCacheKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || !parsed.settings || typeof parsed.settings !== 'object') {
+        return null;
+      }
+      const savedAt = Number(parsed.savedAt || 0);
+      if (!savedAt || (Date.now() - savedAt) > SETTINGS_CACHE_TTL_MS) {
+        return null;
+      }
+      return parsed.settings;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read cached settings', error);
+      return null;
+    }
+  }
+
+  function writeCachedSettings(nextSettings) {
+    try {
+      if (!nextSettings || typeof nextSettings !== 'object' || !window.localStorage) return;
+      window.localStorage.setItem(getSettingsCacheKey(), JSON.stringify({
+        savedAt: Date.now(),
+        settings: nextSettings
+      }));
+    } catch (error) {
+      console.warn('Userex Widget: Failed to persist settings cache', error);
+    }
+  }
+
+  function clearCachedSettings() {
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.removeItem(getSettingsCacheKey());
+    } catch (error) {
+      console.warn('Userex Widget: Failed to clear settings cache', error);
+    }
+  }
+
+  function normalizeBootstrapSettings(nextSettings) {
+    let resolvedSettings = {
+      ...settings,
+      ...(nextSettings && typeof nextSettings === 'object' ? nextSettings : {})
+    };
+
+    // Module toggle is the source of truth. If disabled, force runtime engagement off.
+    if (resolvedSettings.enableProactiveMessaging === false && resolvedSettings.engagement && typeof resolvedSettings.engagement === 'object') {
+      resolvedSettings = {
+        ...resolvedSettings,
+        engagement: {
+          ...resolvedSettings.engagement,
+          enabled: false
+        }
+      };
+    }
+
+    return resolvedSettings;
+  }
+
+  function applyBootstrapSettings(nextSettings, sourceLabel) {
+    baseDeviceAwareSettings = normalizeBootstrapSettings(nextSettings);
+    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
+    console.log(`Userex Widget: Configuration loaded${sourceLabel ? ` (${sourceLabel})` : ''}`);
+  }
+
+  function removeBootstrappedWidgetShell() {
+    try {
+      if (engagementController && typeof engagementController.destroy === 'function') {
+        engagementController.destroy();
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to destroy engagement controller during cleanup', error);
+    }
+    engagementController = null;
+
+    [
+      'userex-chatbot-launcher',
+      'userex-chatbot-container',
+      'userex-launcher-wrapper',
+      'userex-engagement-bubble',
+      'userex-mobile-styles',
+      'userex-sidecar-layout-styles'
+    ].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    });
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    if (htmlEl) {
+      htmlEl.classList.remove('userex-sidecar-active');
+      htmlEl.style.marginRight = '';
+      htmlEl.style.width = '';
+      htmlEl.style.transition = '';
+    }
+    if (bodyEl) {
+      bodyEl.style.marginRight = '';
+      bodyEl.style.overflowX = '';
+    }
+  }
+
   // Helper: Fetch Settings
   async function fetchSettings() {
     const previewDraftSettings = readPreviewDraftSettings();
@@ -4799,11 +4905,8 @@
       });
       if (!response.ok) throw new Error('Failed to fetch settings');
       const fetchedSettings = await response.json();
-      const resolvedSettings = previewDraftSettings
-        ? { ...fetchedSettings, ...previewDraftSettings }
-        : fetchedSettings;
-      writeCachedSettings(resolvedSettings);
-      return resolvedSettings;
+      writeCachedSettings(fetchedSettings);
+      return fetchedSettings;
     } catch (error) {
       if (previewDraftSettings) {
         console.warn('Userex Widget: Using preview draft settings (Fetch failed)', error);
@@ -4827,14 +4930,9 @@
 
     let widgetShellReady = false;
 
-    const previewDraftSettings = readPreviewDraftSettings();
     const cachedSettings = readCachedSettings();
-    const bootstrapSettings = previewDraftSettings
-      ? { ...(cachedSettings || {}), ...previewDraftSettings }
-      : cachedSettings;
-
-    if (bootstrapSettings && bootstrapSettings.isEnabled !== false) {
-      applyBootstrapSettings(bootstrapSettings, previewDraftSettings ? 'preview draft' : 'cache');
+    if (cachedSettings && cachedSettings.isEnabled !== false) {
+      applyBootstrapSettings(cachedSettings, 'cache');
       initWidget();
       widgetShellReady = true;
     }
