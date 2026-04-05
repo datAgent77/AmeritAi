@@ -4964,9 +4964,12 @@
     }
 
     applyBootstrapSettings(fetchedSettings, widgetShellReady ? 'network refresh' : 'network');
-    if (!widgetShellReady) {
-      initWidget();
+    
+    if (widgetShellReady) {
+      removeBootstrappedWidgetShell();
     }
+    
+    initWidget();
   }
 
   // Start fetching settings immediately so network overlaps with page render.
