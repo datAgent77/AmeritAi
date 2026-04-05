@@ -3488,19 +3488,20 @@
         launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
         launcher.style.boxShadow = shadowStyle;
 
-        // Move compact button to bottom-right empty space and raise above iframe so it's always clickable
-        const compactBottomPx = verticalSpacing || 20;
-        const compactRightPx = sideSpacing || 20;
+        // Keep the close button anchored where the launcher normally lives.
+        // Only raise its stacking context so it stays clickable above the iframe.
         Object.assign(launcherContainer.style, {
           display: 'flex',
           position: 'fixed',
-          right: `${compactRightPx}px`,
-          bottom: `${compactBottomPx}px`,
-          left: 'auto',
-          top: 'auto',
-          transform: 'none',
           zIndex: '10001',
+          right: '',
+          left: '',
+          top: '',
+          bottom: '',
+          transform: '',
         });
+        Object.assign(launcherContainer.style, horizontalStyle);
+        Object.assign(launcherContainer.style, verticalStyle);
 
         // Pause animation while widget is open
         launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
