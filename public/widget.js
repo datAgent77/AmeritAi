@@ -4546,8 +4546,119 @@
 
   // Voice interface is handled inside the chatbot iframe (ChatInput mic button + VoiceOverlay component)
 
+  const SETTINGS_CACHE_TTL_MS = 15 * 60 * 1000;
+  const SETTINGS_FALLBACK_LAUNCHER_DELAY_MS = 700;
+
   let settingsFetchPromise = null;
   let bootstrapStarted = false;
+
+  function getSettingsCacheKey() {
+    return `userex_widget_settings_v1:${baseUrl}:${chatbotId}`;
+  }
+
+  function readCachedSettings() {
+    try {
+      const raw = window.localStorage && window.localStorage.getItem(getSettingsCacheKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || !parsed.settings || typeof parsed.settings !== 'object') {
+        return null;
+      }
+      const savedAt = Number(parsed.savedAt || 0);
+      if (!savedAt || (Date.now() - savedAt) > SETTINGS_CACHE_TTL_MS) {
+        return null;
+      }
+      return parsed.settings;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read cached settings', error);
+      return null;
+    }
+  }
+
+  function writeCachedSettings(nextSettings) {
+    try {
+      if (!nextSettings || typeof nextSettings !== 'object' || !window.localStorage) return;
+      window.localStorage.setItem(getSettingsCacheKey(), JSON.stringify({
+        savedAt: Date.now(),
+        settings: nextSettings
+      }));
+    } catch (error) {
+      console.warn('Userex Widget: Failed to persist settings cache', error);
+    }
+  }
+
+  function clearCachedSettings() {
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.removeItem(getSettingsCacheKey());
+    } catch (error) {
+      console.warn('Userex Widget: Failed to clear settings cache', error);
+    }
+  }
+
+  function normalizeBootstrapSettings(nextSettings) {
+    let resolvedSettings = {
+      ...settings,
+      ...(nextSettings && typeof nextSettings === 'object' ? nextSettings : {})
+    };
+
+    // Module toggle is the source of truth. If disabled, force runtime engagement off.
+    if (resolvedSettings.enableProactiveMessaging === false && resolvedSettings.engagement && typeof resolvedSettings.engagement === 'object') {
+      resolvedSettings = {
+        ...resolvedSettings,
+        engagement: {
+          ...resolvedSettings.engagement,
+          enabled: false
+        }
+      };
+    }
+
+    return resolvedSettings;
+  }
+
+  function applyBootstrapSettings(nextSettings, sourceLabel) {
+    baseDeviceAwareSettings = normalizeBootstrapSettings(nextSettings);
+    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
+    console.log(`Userex Widget: Configuration loaded${sourceLabel ? ` (${sourceLabel})` : ''}`);
+  }
+
+  function removeBootstrappedWidgetShell() {
+    try {
+      if (engagementController && typeof engagementController.destroy === 'function') {
+        engagementController.destroy();
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to destroy engagement controller during cleanup', error);
+    }
+    engagementController = null;
+
+    [
+      'userex-chatbot-launcher',
+      'userex-chatbot-container',
+      'userex-launcher-wrapper',
+      'userex-engagement-bubble',
+      'userex-mobile-styles',
+      'userex-sidecar-layout-styles'
+    ].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    });
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    if (htmlEl) {
+      htmlEl.classList.remove('userex-sidecar-active');
+      htmlEl.style.marginRight = '';
+      htmlEl.style.width = '';
+      htmlEl.style.transition = '';
+    }
+    if (bodyEl) {
+      bodyEl.style.marginRight = '';
+      bodyEl.style.overflowX = '';
+    }
+  }
 
   // Helper: Fetch Settings
   async function fetchSettings() {
@@ -4556,7 +4667,9 @@
         cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch settings');
-      return await response.json();
+      const fetchedSettings = await response.json();
+      writeCachedSettings(fetchedSettings);
+      return fetchedSettings;
     } catch (error) {
       console.warn('Userex Widget: Using default settings (Fetch failed)', error);
       return {};
@@ -4573,34 +4686,45 @@
       return;
     }
 
+    let widgetShellReady = false;
+
+    const cachedSettings = readCachedSettings();
+    if (cachedSettings && cachedSettings.isEnabled !== false) {
+      applyBootstrapSettings(cachedSettings, 'cache');
+      initWidget();
+      widgetShellReady = true;
+    }
+
+    let fallbackTimer = null;
+    if (!widgetShellReady) {
+      fallbackTimer = setTimeout(() => {
+        if (widgetShellReady) return;
+        applyBootstrapSettings({}, 'fallback');
+        initWidget();
+        widgetShellReady = true;
+      }, SETTINGS_FALLBACK_LAUNCHER_DELAY_MS);
+    }
+
     const fetchedSettings = await (settingsFetchPromise || fetchSettings());
 
-    // STRICT CHECK: If disabled, abort
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+    }
+
+    // STRICT CHECK: If disabled, abort and remove any optimistic shell.
     if (fetchedSettings.isEnabled === false) {
+      clearCachedSettings();
+      if (widgetShellReady) {
+        removeBootstrappedWidgetShell();
+      }
       console.warn('Userex Widget is disabled for this account.');
       return;
     }
 
-    // Merge fetched settings into global settings object
-    baseDeviceAwareSettings = {
-      ...settings,
-      ...fetchedSettings
-    };
-
-    // Module toggle is the source of truth. If disabled, force runtime engagement off.
-    if (baseDeviceAwareSettings.enableProactiveMessaging === false && baseDeviceAwareSettings.engagement && typeof baseDeviceAwareSettings.engagement === 'object') {
-      baseDeviceAwareSettings = {
-        ...baseDeviceAwareSettings,
-        engagement: {
-          ...baseDeviceAwareSettings.engagement,
-          enabled: false
-        }
-      };
+    applyBootstrapSettings(fetchedSettings, widgetShellReady ? 'network refresh' : 'network');
+    if (!widgetShellReady) {
+      initWidget();
     }
-    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
-
-    console.log('Userex Widget: Configuration loaded');
-    initWidget();
   }
 
   // Start fetching settings immediately so network overlaps with page render.
