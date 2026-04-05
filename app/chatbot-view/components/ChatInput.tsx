@@ -1,30 +1,39 @@
 import React from "react"
 import { ChatbotSettings } from "@/types/chatbot"
-import { Send, ImageIcon, Mic, X, ChevronDown, ChevronUp, RefreshCw, MessageCircle } from "lucide-react"
+import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
+import { Send, ImageIcon, X, ChevronDown, ChevronUp, RefreshCw, MessageCircle } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
+import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
 import { event as trackEvent } from "@/lib/gtag"
 import { getAmbientDockStateKey, resolveAmbientDockStyle } from "@/lib/ambient-dock-style"
+import { ConversationModeSwitch, type ConversationMode } from "./ConversationModeSwitch"
 
 interface ChatInputProps {
     settings: ChatbotSettings
     localInput: string
     setLocalInput: (val: string) => void
-    sendMessage: (text: string, speakResponse?: boolean, visualContext?: string) => Promise<string>
+    sendMessage: (
+        text: string,
+        speakResponse?: boolean,
+        visualContext?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null
+    ) => Promise<string>
     isChatLoading: boolean
-    handleVoiceInput: () => void
-    isListening: boolean
     visualContext: ReturnType<typeof useVisualContext>
     language: string
     t: (key: string) => string
     setMessages: React.Dispatch<React.SetStateAction<any[]>>
-    mode?: "classic" | "ambient"
+    mode?: "classic" | "ambient" | "sidecar"
     ambientInputOnly?: boolean
     onClearChat?: () => void
     onCloseWidget?: () => void
     onToggleAmbientFeed?: () => void
     showUtilityActions?: boolean
-    isKeyboardOpen?: boolean
+    showConversationModeSwitch?: boolean
+    conversationMode?: ConversationMode
+    onConversationModeChange?: (mode: ConversationMode) => void
 }
 
 export function ChatInput({
@@ -33,8 +42,6 @@ export function ChatInput({
     setLocalInput,
     sendMessage,
     isChatLoading,
-    handleVoiceInput,
-    isListening,
     visualContext,
     language,
     t,
@@ -45,7 +52,9 @@ export function ChatInput({
     onCloseWidget,
     onToggleAmbientFeed,
     showUtilityActions = false,
-    isKeyboardOpen = false
+    showConversationModeSwitch = false,
+    conversationMode = "text",
+    onConversationModeChange
 }: ChatInputProps) {
     const {
         selectedImage,
@@ -63,6 +72,7 @@ export function ChatInput({
 
     const fileInputRef = React.useRef<HTMLInputElement>(null)
     const isAmbientMode = mode === "ambient"
+    const isSidecarMode = mode === "sidecar"
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
     const ambientPlaceholder = language === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
 
@@ -77,11 +87,14 @@ export function ChatInput({
 
     const ambientActionButtonClass = `${sizeConfig.btnSize} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700 dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70 dark:hover:bg-zinc-700/95 dark:hover:text-zinc-100 dark:hover:border-zinc-600`
     const ambientSendButtonClass = `${sizeConfig.btnSize} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
+    const sidecarActionButtonClass = "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+    const sidecarSendButtonClass = "flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+    const textModeLabel = language === "tr" ? "Yazi" : "Text"
+    const voiceModeLabel = language === "tr" ? "Ses" : "Voice"
 
     const [isInputFocused, setIsInputFocused] = React.useState(false)
     const [isMobileViewport, setIsMobileViewport] = React.useState(false)
-    const inputRef = React.useRef<HTMLInputElement>(null)
-    const isCompactClassicComposer = !isAmbientMode && isMobileViewport && isKeyboardOpen
+    const inputRef = React.useRef<HTMLInputElement | HTMLTextAreaElement>(null)
     const ambientDockStyles = isAmbientMode
         ? resolveAmbientDockStyle({
             settings,
@@ -92,6 +105,15 @@ export function ChatInput({
             isChatLoading,
         })
         : null
+    const resizeSidecarTextarea = React.useCallback(() => {
+        if (!isSidecarMode || !(inputRef.current instanceof HTMLTextAreaElement)) return
+
+        const textarea = inputRef.current
+        textarea.style.height = "0px"
+        const nextHeight = Math.min(Math.max(textarea.scrollHeight, 56), 56)
+        textarea.style.height = `${nextHeight}px`
+        textarea.style.overflowY = textarea.scrollHeight > 56 ? "auto" : "hidden"
+    }, [isSidecarMode])
 
     React.useEffect(() => {
         const updateViewportFlags = () => {
@@ -113,6 +135,10 @@ export function ChatInput({
             }, 10)
         }
     }, [isChatLoading, ambientInputOnly, isMobileViewport])
+
+    React.useEffect(() => {
+        resizeSidecarTextarea()
+    }, [localInput, resizeSidecarTextarea])
 
     React.useEffect(() => {
         const handleActivateInput = (event: MessageEvent) => {
@@ -194,7 +220,16 @@ export function ChatInput({
                         return;
                     }
 
-                    await sendMessage(textToSend, false, analysisResult.context)
+                    await sendMessage(
+                        textToSend,
+                        false,
+                        analysisResult.context,
+                        undefined,
+                        {
+                            image: currentImage,
+                            imageMimeType: currentMimeType,
+                        }
+                    )
                 } catch (error) {
                     console.error("Failed to send image message", error)
                 }
@@ -211,8 +246,14 @@ export function ChatInput({
                     id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
                     role: 'user',
                     content: currentInput.trim() || (language === 'tr' ? "Görseli analiz et" : "Analyze this image"),
+                    image: currentImage,
+                    imageMimeType: currentMimeType,
                     createdAt: new Date()
                 };
+
+                if (currentImage && currentMimeType) {
+                    saveImageToCache(userMsg.id, currentImage, currentMimeType, userMsg.content)
+                }
 
                 // Add assistant error message directly (without calling AI)
                 const assistantMsg = {
@@ -239,7 +280,7 @@ export function ChatInput({
         }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
             handleSubmit(e as any)
@@ -270,21 +311,6 @@ export function ChatInput({
                     : {}),
         } as React.CSSProperties)
         : undefined
-    const classicComposerClassName = isCompactClassicComposer
-        ? "px-3 pt-2 pb-2 bg-white border-t border-gray-100"
-        : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white border-t border-gray-100"
-    const classicFormClassName = isCompactClassicComposer
-        ? "relative flex items-center gap-1.5"
-        : "relative flex items-center gap-2"
-    const classicInputClassName = isCompactClassicComposer
-        ? "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-2.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
-        : "w-full text-base bg-gray-50 border border-gray-200 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white transition-all shadow-sm group-hover:bg-white group-hover:shadow-md group-hover:border-gray-300"
-    const classicActionButtonClass = isCompactClassicComposer
-        ? "p-2.5 rounded-full transition-all shadow-sm border"
-        : "p-3 rounded-full transition-all shadow-sm border"
-    const classicSendButtonClass = isCompactClassicComposer
-        ? `p-2.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`
-        : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`
 
     return (
         <div
@@ -292,25 +318,40 @@ export function ChatInput({
                 ? (isAmbientInputOnly
                     ? "pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
-                : classicComposerClassName}
+                : isSidecarMode
+                    ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"
+                    : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
-                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : "max-w-3xl"}`}
+                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "max-w-3xl"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
+                {showConversationModeSwitch && !isAmbientMode && onConversationModeChange && (
+                    <div className="mb-3 flex justify-center">
+                        <ConversationModeSwitch
+                            value={conversationMode}
+                            onChange={onConversationModeChange}
+                            textLabel={textModeLabel}
+                            voiceLabel={voiceModeLabel}
+                        />
+                    </div>
+                )}
+
                 {/* Rainbow Border Style is now in globals.css */}
                 <div
                     className={ambientDockWrapperClassName}
                     style={ambientDockWrapperStyle}
                 >
-                        <form
-                            onSubmit={handleSubmit}
-                            className={isAmbientMode
-                                ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
-                                : classicFormClassName}
-                            style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || '#f3f4f6' } : undefined}
-                        >
+                    <form
+                        onSubmit={handleSubmit}
+                        className={isAmbientMode
+                            ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
+                            : isSidecarMode
+                                ? "relative flex flex-col gap-2.5 rounded-[12px] border border-gray-200 bg-white px-3.5 py-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.07)] dark:border-zinc-700 dark:bg-zinc-950"
+                                : "relative flex items-center gap-2"}
+                        style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || (settings.theme === 'dark' ? '#18181b' : '#f3f4f6') } : undefined}
+                    >
                         {/* Image Preview */}
                         {selectedImage && (
                             <div className="absolute bottom-full left-0 mb-4 ml-2 animate-in fade-in slide-in-from-bottom-2 z-20">
@@ -346,26 +387,12 @@ export function ChatInput({
                             />
                         )}
 
-                        {/* Classic: Left-side controls */}
-                        {!isAmbientMode && settings.enableVoiceAssistant && (
-                            <button
-                                type="button"
-                                onClick={handleVoiceInput}
-                                className={`${classicActionButtonClass} ${isListening
-                                    ? 'text-white bg-red-500 border-red-400 animate-pulse shadow-md shadow-red-200'
-                                    : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border-gray-200'}`}
-                                title={t('voiceReady')}
-                            >
-                                <Mic className="w-4 h-4" />
-                            </button>
-                        )}
-
-                        {!isAmbientMode && settings.enableVisualDiagnosis && (
+                        {!isAmbientMode && !isSidecarMode && settings.enableVisualDiagnosis && (
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
-                                className={`${classicActionButtonClass} ${selectedImage
+                                className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
                                     ? 'text-green-600 bg-green-50 border border-green-200'
                                     : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
@@ -402,40 +429,108 @@ export function ChatInput({
                             </div>
                         )}
 
-                        <div className={`relative flex-1 ${isAmbientMode ? '-ml-3' : 'group'}`}>
-                            <input
-                                ref={inputRef}
-                                value={localInput}
-                                onChange={(e) => setLocalInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                type="text"
-                                autoFocus={isAmbientMode && !isMobileViewport}
-                                disabled={isChatLoading}
-                                autoComplete="off"
-                                autoCorrect="off"
-                                autoCapitalize="off"
-                                spellCheck={false}
-                                enterKeyHint="send"
-                                name="vion-chat-input"
-                                placeholder={selectedImage
-                                    ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
-                                    : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
-                                className={isAmbientMode
-                                    ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400`
-                                    : classicInputClassName}
-                                style={isAmbientMode
-                                    ? {
-                                        color: settings.ambientInputTextColor || '#4b5563',
-                                        fontSize: isMobileViewport ? '16px' : undefined,
-                                    }
-                                    : ({
-                                        '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor,
-                                        fontSize: isMobileViewport ? '16px' : undefined,
-                                    } as any)}
-                                onFocus={() => isAmbientMode && setIsInputFocused(true)}
-                                onBlur={() => isAmbientMode && setIsInputFocused(false)}
+                        {showConversationModeSwitch && isAmbientMode && onConversationModeChange && (
+                            <ConversationModeSwitch
+                                value={conversationMode}
+                                onChange={onConversationModeChange}
+                                textLabel={textModeLabel}
+                                voiceLabel={voiceModeLabel}
+                                compact
+                                className="ml-1 mr-1"
                             />
+                        )}
+
+                        <div className={`relative flex-1 ${isAmbientMode ? '-ml-3' : isSidecarMode ? '' : 'group'}`}>
+                            {isSidecarMode ? (
+                                <textarea
+                                    ref={(node) => {
+                                        inputRef.current = node
+                                    }}
+                                    value={localInput}
+                                    onChange={(e) => setLocalInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    rows={1}
+                                    disabled={isChatLoading}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                    enterKeyHint="send"
+                                    name="vion-chat-input"
+                                    placeholder={selectedImage
+                                        ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
+                                        : t('messagePlaceholder')}
+                                    className="block min-h-[56px] max-h-[56px] w-full resize-none border-0 bg-transparent px-1 py-0.5 text-[14px] leading-6 text-gray-900 placeholder:text-gray-400 focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                    style={{ fontSize: isMobileViewport ? '16px' : undefined }}
+                                />
+                            ) : (
+                                <input
+                                    ref={(node) => {
+                                        inputRef.current = node
+                                    }}
+                                    value={localInput}
+                                    onChange={(e) => setLocalInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    type="text"
+                                    autoFocus={isAmbientMode && !isMobileViewport}
+                                    disabled={isChatLoading}
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="off"
+                                    spellCheck={false}
+                                    enterKeyHint="send"
+                                    name="vion-chat-input"
+                                    placeholder={selectedImage
+                                        ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
+                                        : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
+                                    className={isAmbientMode
+                                        ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400 dark:placeholder:text-zinc-500`
+                                        : "w-full text-base bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white dark:focus:bg-zinc-900 transition-all shadow-sm group-hover:bg-white dark:group-hover:bg-zinc-800/80 group-hover:shadow-md group-hover:border-gray-300 dark:group-hover:border-zinc-700 text-gray-800 dark:text-zinc-100"}
+                                    style={isAmbientMode
+                                        ? {
+                                            color: settings.ambientInputTextColor || (settings.theme === 'dark' ? '#f4f4f5' : '#4b5563'),
+                                            fontSize: isMobileViewport ? '16px' : undefined,
+                                        }
+                                        : ({
+                                            '--tw-ring-color': settings.headerBackgroundColor || settings.brandColor,
+                                            fontSize: isMobileViewport ? '16px' : undefined,
+                                        } as any)}
+                                    onFocus={() => isAmbientMode && setIsInputFocused(true)}
+                                    onBlur={() => isAmbientMode && setIsInputFocused(false)}
+                                />
+                            )}
                         </div>
+
+                        {isSidecarMode && (
+                            <div className="flex items-center justify-between gap-2.5 pt-2">
+                                <div className="flex items-center gap-2">
+                                    {settings.enableVisualDiagnosis && (
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isAnalyzingImage}
+                                            className={`${sidecarActionButtonClass} ${selectedImage
+                                                ? '!border-emerald-200 !bg-emerald-50 !text-emerald-700 dark:!border-emerald-800 dark:!bg-emerald-950/60 dark:!text-emerald-300'
+                                                : ''}`}
+                                            title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
+                                        >
+                                            <ImageIcon className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="submit"
+                                        disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
+                                        className={`${sidecarSendButtonClass} ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                        style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
+                                    >
+                                        <Send className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Ambient: controls inside the dock, on the right side */}
                         {isAmbientMode && showUtilityActions && !ambientInputOnly && (
@@ -483,33 +578,24 @@ export function ChatInput({
                             </button>
                         )}
 
-                        {isAmbientMode && settings.enableVoiceAssistant && (
+                        {!isSidecarMode && (
                             <button
-                                type="button"
-                                onClick={handleVoiceInput}
-                                className={`${ambientActionButtonClass} ${isListening ? '!bg-red-50 !text-red-600 !border-red-200 dark:!bg-red-950/60 dark:!text-red-300 dark:!border-red-800/70 animate-pulse' : ''}`}
-                                title={t('voiceReady')}
+                                type="submit"
+                                disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
+                                className={isAmbientMode
+                                    ? ambientSendButtonClass
+                                    : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                style={isAmbientMode ? { backgroundColor: settings.ambientIconColor || settings.brandColor || '#1f2937' } : { backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                             >
-                                <Mic className={sizeConfig.iconSize} />
+                                <Send className={isAmbientMode ? sizeConfig.iconSize : "w-5 h-5"} />
                             </button>
                         )}
-
-                        <button
-                            type="submit"
-                            disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
-                            className={isAmbientMode
-                                ? ambientSendButtonClass
-                                : classicSendButtonClass}
-                            style={isAmbientMode ? { backgroundColor: settings.ambientIconColor || settings.brandColor || '#1f2937' } : { backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
-                        >
-                            <Send className={isAmbientMode ? sizeConfig.iconSize : "w-5 h-5"} />
-                        </button>
                     </form>
                 </div>
 
 
 
-                {!isAmbientMode && !isCompactClassicComposer && (
+                {!isAmbientMode && (
                     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">
                         <p className="text-[10px] text-gray-400 text-center text-balance">
                             {t('aiDisclaimer')}

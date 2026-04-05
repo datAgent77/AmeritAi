@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { OmniPageContent } from "@/components/omni/omni-page-content"
-import { isKnownOmniPage } from "@/lib/omni/navigation"
+import { getOmniLegacyRedirect, isKnownOmniPage } from "@/lib/omni/navigation"
 
 interface OmniPageProps {
     params: {
@@ -11,6 +11,11 @@ interface OmniPageProps {
 export default function OmniPage({ params }: OmniPageProps) {
     const slug = params.slug || []
     const path = slug.length ? `/omni/${slug.join("/")}` : "/omni"
+    const legacyRedirect = getOmniLegacyRedirect(path)
+
+    if (legacyRedirect) {
+        redirect(legacyRedirect)
+    }
 
     if (!isKnownOmniPage(path)) {
         notFound()

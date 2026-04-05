@@ -57,10 +57,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 })
         }
 
-        if (sessionData.isPaused !== true) {
-            return NextResponse.json({ error: "Pause AI before sending a manual reply" }, { status: 409 })
-        }
-
         const channel = detectChannel(sessionId, sessionData.channel || null)
         const omniConfigSnapshot =
             channel === "whatsapp" || channel === "instagram"

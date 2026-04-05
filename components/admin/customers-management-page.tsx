@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, Search, CreditCard, Settings, Building2 } from "lucide-react"
+import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, Search, CreditCard, Settings, Building2, MoreHorizontal, Trash2 } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -39,6 +39,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/context/LanguageContext"
 
 interface UserData {
@@ -111,6 +118,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
     const [showArchived, setShowArchived] = useState(false)
     const [isArchiving, setIsArchiving] = useState<string | null>(null)
     const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null)  // For AlertDialog
+    const [deleteConfirmUser, setDeleteConfirmUser] = useState<UserData | null>(null)
+    const [isDeletingTenant, setIsDeletingTenant] = useState<string | null>(null)
 
     const fetchDashboardData = useCallback(async () => {
         try {
@@ -673,6 +682,43 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             })
         } finally {
             setIsArchiving(null)
+        }
+    }
+
+    const handleDeleteTenant = async (user: UserData) => {
+        setIsDeletingTenant(user.id)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/delete-tenant", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ userId: user.id })
+            })
+
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to delete tenant")
+            }
+
+            await Promise.all([fetchDashboardData(), fetchAgencies()])
+
+            toast({
+                title: t('success') || "Başarılı",
+                description: t('deleteTenantSuccess') || "Müşteri verileri başarıyla silindi.",
+            })
+        } catch (error: any) {
+            console.error("Error deleting tenant:", error)
+            toast({
+                title: "Hata",
+                description: error?.message || t('failedToDeleteTenant') || "Müşteri verileri silinemedi.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsDeletingTenant(null)
+            setDeleteConfirmUser(null)
         }
     }
 
@@ -1253,7 +1299,13 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex gap-2">
+                                            <div className="flex items-center gap-3">
+                                                <Switch
+                                                    checked={user.isActive}
+                                                    onCheckedChange={() => toggleStatus(user.id, user.isActive)}
+                                                    disabled={user.isArchived}
+                                                    aria-label={user.isActive ? t('deactivate') : t('activate')}
+                                                />
                                                  <Badge
                                                     variant={user.isActive ? 'outline' : 'destructive'}
                                                     className={`rounded-full px-3 ${user.isActive ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}
@@ -1271,78 +1323,52 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                         
                                         <TableCell className="text-right">
                                             {user.role !== 'SUPER_ADMIN' && (
-                                                <div className="flex flex-wrap justify-end gap-2 items-center">
-                                                    {/* Subscription Management Button */}
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}/settings/customer-admin`}
-                                                        title={t('manageSubscription') || "Abonelik Yönetimi"}
-                                                    >
-                                                        <CreditCard className="h-4 w-4 mr-1" />
-                                                        <span className="hidden sm:inline">{t('subscription') || "Abonelik"}</span>
-                                                    </Button>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
-                                                        onClick={() => openPartnerConversionDialog(user)}
-                                                        disabled={user.isArchived}
-                                                        title={t('makePartner') || "Partner Yap"}
-                                                    >
-                                                        <Building2 className="h-4 w-4 mr-1" />
-                                                        <span className="hidden sm:inline">{t('makePartner') || "Partner Yap"}</span>
-                                                    </Button>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="hover:bg-gray-100"
-                                                        onClick={() => window.location.href = `/admin/tenant/${user.id}`}
-                                                        title={t('manage') || "Yönet"}
-                                                    >
-                                                        <Settings className="h-4 w-4" />
-                                                    </Button>
-
-                                                    <div className="flex items-center gap-2">
-                                                        <Switch
-                                                            checked={user.isActive}
-                                                            onCheckedChange={() => toggleStatus(user.id, user.isActive)}
-                                                            disabled={user.isArchived}
-                                                            aria-label={user.isActive ? t('deactivate') : t('activate')}
-                                                        />
-                                                    </div>
-                                                    {user.isArchived ? (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                            onClick={() => handleRestoreTenant(user.id)}
-                                                            disabled={isArchiving === user.id}
-                                                        >
-                                                            {isArchiving === user.id ? (
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <ArchiveRestore className="h-4 w-4" />
-                                                            )}
-                                                        </Button>
-                                                    ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-orange-500 hover:text-orange-600 hover:bg-orange-50"
-                                                            onClick={() => setArchiveConfirmId(user.id)}
-                                                            disabled={isArchiving === user.id}
-                                                        >
-                                                            {isArchiving === user.id ? (
-                                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                            ) : (
-                                                                <Archive className="h-4 w-4" />
-                                                            )}
-                                                        </Button>
-                                                    )}
+                                                <div className="flex justify-end">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 rounded-full"
+                                                                aria-label={t('actions') || "Actions"}
+                                                            >
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-52">
+                                                            <DropdownMenuItem
+                                                                className="cursor-pointer"
+                                                                onClick={() => router.push(`/admin/tenant/${user.id}/settings/customer-admin`)}
+                                                            >
+                                                                <CreditCard className="h-4 w-4" />
+                                                                {t('manageSubscription') || "Abonelik"}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="cursor-pointer"
+                                                                disabled={user.isArchived}
+                                                                onClick={() => openPartnerConversionDialog(user)}
+                                                            >
+                                                                <Building2 className="h-4 w-4" />
+                                                                {t('makePartner') || "Partner Yap"}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="cursor-pointer"
+                                                                onClick={() => router.push(`/admin/tenant/${user.id}`)}
+                                                            >
+                                                                <Settings className="h-4 w-4" />
+                                                                {t('details') || "Detay"}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                variant="destructive"
+                                                                className="cursor-pointer"
+                                                                onClick={() => setDeleteConfirmUser(user)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                                {t('deleteTenantAction') || (language === 'tr' ? 'Üyeliği Sil' : 'Delete Membership')}
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             )}
                                         </TableCell>
@@ -1628,6 +1654,40 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
+                </AlertDialog>
+            )}
+
+            {isEndUsersSection && (
+                <AlertDialog open={!!deleteConfirmUser} onOpenChange={(open) => !open && !isDeletingTenant && setDeleteConfirmUser(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{language === 'tr' ? 'Üyeliği Sil' : 'Delete Membership'}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t('deleteTenantConfirm') || "Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem tüm verilerini silecektir."}
+                                {deleteConfirmUser?.email ? (
+                                    <span className="mt-2 block font-medium text-foreground">{deleteConfirmUser.email}</span>
+                                ) : null}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isDeletingTenant === deleteConfirmUser?.id}>
+                                {t('cancel') || "İptal"}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                className="bg-destructive text-white hover:bg-destructive/90"
+                                onClick={() => {
+                                    if (deleteConfirmUser) {
+                                        handleDeleteTenant(deleteConfirmUser)
+                                    }
+                                }}
+                            >
+                                {isDeletingTenant === deleteConfirmUser?.id ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : null}
+                                {t('deleteTenantAction') || (language === 'tr' ? 'Üyeliği Sil' : 'Delete Membership')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
                 </AlertDialog>
             )}
         </div >

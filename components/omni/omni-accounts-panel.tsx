@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Building2, Loader2, RefreshCw, Search } from "lucide-react"
@@ -17,7 +18,7 @@ import { getPartnerLevelLabel } from "@/lib/management/access"
 
 export function OmniAccountsPanel() {
     const router = useRouter()
-    const { user, hasOmniPermission } = useAuth()
+    const { user, role, hasOmniPermission } = useAuth()
     const { t } = useLanguage()
     const { accounts, activeAccount, selectAccount, refreshAccounts, isLoading } = useOmniAccount()
     const { toast } = useToast()
@@ -43,6 +44,44 @@ export function OmniAccountsPanel() {
                 .some((value) => String(value).toLowerCase().includes(normalized))
         })
     }, [accounts, search, omniOnly, agencyFilter])
+
+    const emptyState = useMemo(() => {
+        if (isLoading) {
+            return {
+                title: t("omni.common.loading"),
+                description: t("omni.accounts.loading"),
+                ctaHref: null as string | null,
+                ctaLabel: null as string | null,
+            }
+        }
+
+        if (accounts.length === 0) {
+            if (role === "AGENCY_ADMIN") {
+                return {
+                    title: t("omni.accounts.emptyManagedTitle"),
+                    description: t("omni.accounts.emptyManagedDescription"),
+                    ctaHref: "/agency/end-users",
+                    ctaLabel: t("omni.accounts.openManagedAccounts"),
+                }
+            }
+
+            if (role === "SUPER_ADMIN") {
+                return {
+                    title: t("omni.accounts.emptySuperTitle"),
+                    description: t("omni.accounts.emptySuperDescription"),
+                    ctaHref: null,
+                    ctaLabel: null,
+                }
+            }
+        }
+
+        return {
+            title: t("omni.accounts.empty"),
+            description: t("omni.accounts.emptyFiltered"),
+            ctaHref: null,
+            ctaLabel: null,
+        }
+    }, [accounts.length, isLoading, role, t])
 
     if (!hasOmniPermission("directory.accounts.view")) {
         return (
@@ -154,8 +193,18 @@ export function OmniAccountsPanel() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {filteredAccounts.length === 0 ? (
-                        <div className="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground">
-                            {isLoading ? t("omni.accounts.loading") : t("omni.accounts.empty")}
+                        <div className="rounded-lg border border-dashed px-4 py-10 text-center">
+                            <div className="space-y-3">
+                                <div className="text-sm font-medium text-foreground">{emptyState.title}</div>
+                                <div className="text-sm text-muted-foreground">{emptyState.description}</div>
+                                {emptyState.ctaHref && emptyState.ctaLabel ? (
+                                    <div className="flex justify-center">
+                                        <Button asChild variant="outline">
+                                            <Link href={emptyState.ctaHref}>{emptyState.ctaLabel}</Link>
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
                         </div>
                     ) : (
                         filteredAccounts.map((account) => (

@@ -4,6 +4,7 @@ import { getConfiguredCapabilitiesForChannel } from "@/lib/omni/assistant-capabi
 import { getChannelPolicy } from "@/lib/omni/channel-policies"
 import { getOmniContactMemory } from "@/lib/omni/memory"
 import type {
+    OmniAllowedAction,
     OmniAssistantCoreSettings,
     OmniAssistantProfile,
     OmniChannel,
@@ -14,7 +15,7 @@ import type {
 export interface OmniAssistantCoreContext {
     channel: OmniChannel
     capabilityIds: string[]
-    allowedActions: string[]
+    allowedActions: OmniAllowedAction[]
     policy: ReturnType<typeof getChannelPolicy>
     supportsRichUi: boolean
     requiresIdentityForSensitiveData: boolean

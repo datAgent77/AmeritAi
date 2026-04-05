@@ -3,6 +3,14 @@
         {
             "path": "/api/admin/shopper-site-crawl-cron",
             "schedule": "0 3 * * *"
+        },
+        {
+            "path": "/api/admin/omni-delivery-retry-cron",
+            "schedule": "0 5 * * *"
+        },
+        {
+            "path": "/api/admin/omni-voice-tts-cleanup-cron",
+            "schedule": "0 4 * * *"
         }
     ]
 }

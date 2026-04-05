@@ -43,7 +43,7 @@ export interface AssistantCapability {
     defaultEnabledChannels: OmniChannel[]
     requiresIdentity?: boolean
     requiresRichUI?: boolean
-    allowedActions: string[]
+    allowedActions: OmniAllowedAction[]
     channelBehaviorOverrides?: Partial<Record<OmniChannel, ChannelBehaviorOverride>>
 }
 
@@ -63,7 +63,7 @@ export interface ChannelPolicy {
 export interface OmniAssistantCoreSettings {
     enabledCapabilityIds?: AssistantCapabilityId[]
     channelCapabilityOverrides?: Partial<Record<OmniChannel, AssistantCapabilityId[]>>
-    enabledActions?: string[]
+    enabledActions?: OmniAllowedAction[]
     brandVoicePrompt?: string | null
     channelPolicyOverrides?: Partial<Record<OmniChannel, Partial<ChannelPolicy>>>
     knowledgeGovernance?: OmniKnowledgeGovernanceSettings
@@ -94,6 +94,142 @@ export interface OmniAssistantProfile {
     prompt?: string | null
     active?: boolean
     channelToneOverrides?: Partial<Record<OmniChannel, string>>
+}
+
+export type OmniWorkspaceAgentStatus = "primary" | "active" | "inactive"
+
+export interface OmniWorkspaceAgentSummary {
+    id: string
+    name: string
+    description?: string | null
+    prompt?: string | null
+    active: boolean
+    status: OmniWorkspaceAgentStatus
+    isPrimary: boolean
+    channels: OmniChannel[]
+    capabilityIds: AssistantCapabilityId[]
+    conversationVolume: number
+    openCallbacks: number
+    openLeads: number
+    pendingAppointments: number
+    outcomeRate: number
+    averageDurationSeconds: number
+    lastActivityAt?: string | null
+}
+
+export interface OmniAgentAnalysisDraft {
+    successCriteria: string[]
+    failureSignals: string[]
+    reviewerNotes?: string | null
+}
+
+export interface OmniAgentDataCollectionDraft {
+    enabled: boolean
+    fields: Array<{
+        id: string
+        label: string
+        description?: string | null
+        required?: boolean
+    }>
+    destination?: string | null
+}
+
+export interface OmniWorkspaceAgentDetail {
+    agent: OmniWorkspaceAgentSummary
+    general: {
+        brandVoicePrompt?: string | null
+        channelAssignments: Partial<Record<OmniChannel, string>>
+        toneOverrides: Partial<Record<OmniChannel, string>>
+    }
+    evaluation: {
+        draft: OmniAgentAnalysisDraft
+        implemented: false
+    }
+    dataCollection: {
+        draft: OmniAgentDataCollectionDraft
+        implemented: false
+    }
+    audio: {
+        voiceEnabled: boolean
+        activeNumbers: number
+        usesElevenLabs: boolean
+        defaultProvider?: string | null
+        fallbackProvider?: string | null
+    }
+    tools: {
+        enabledActions: OmniAllowedAction[]
+        integrationDependencies: string[]
+    }
+    llms: {
+        mode: "workspace-shared"
+        channelAssignments: Partial<Record<OmniChannel, string>>
+        notes: string[]
+    }
+    knowledge: {
+        knowledgeGovernance: OmniKnowledgeGovernanceSettings
+        sharedKnowledgeBase: true
+    }
+    advanced: {
+        customerMemory: OmniCustomerMemorySettings
+        channelPolicies: Partial<Record<OmniChannel, Partial<ChannelPolicy>>>
+        futureSlots: string[]
+    }
+}
+
+export interface OmniOverviewFilters {
+    range: "7d" | "30d" | "90d"
+    granularity: "day" | "week"
+    agentId?: string | null
+}
+
+export interface OmniOverviewPayload {
+    generatedAt: string
+    filters: OmniOverviewFilters
+    scope: {
+        chatbotId: string
+        accountName?: string | null
+        activeAgentId?: string | null
+    }
+    availableAgents: Array<{
+        id: string
+        name: string
+        isPrimary: boolean
+    }>
+    headline: {
+        activeConversations: number
+        conversationCount: number
+        averageDurationSeconds: number
+        totalCostUsd: number
+        averageCostUsd: number
+        openCallbacks: number
+        openLeads: number
+    }
+    timeline: Array<{
+        bucket: string
+        label: string
+        conversations: number
+        callbacks: number
+        leads: number
+    }>
+    insights: {
+        successRate: number
+        csatScore?: number | null
+        criticalEvents: number
+    }
+    channelHealth: Array<{
+        channel: OmniChannel
+        enabled: boolean
+        ready: boolean
+        blockers: string[]
+    }>
+    criticalEvents: Array<{
+        id?: string
+        channel: string
+        eventType: string
+        message?: string | null
+        createdAt?: string | null
+        result: string
+    }>
 }
 
 export interface OmniDirectoryAccountRecord {
@@ -234,6 +370,28 @@ export type OmniActionId =
     | "create_lead"
     | "check_business_hours"
     | "handoff_to_human"
+
+/** Prompt-level action hints used in AI system instructions. Not executable via executeOmniAction. */
+export type OmniPromptActionHint =
+    | "answer"
+    | "summarize"
+    | "retrieve_knowledge"
+    | "cite_policy"
+    | "search_catalog"
+    | "recommend_product"
+    | "share_follow_up_link"
+    | "qualify_lead"
+    | "nudge_conversion"
+    | "browse_menu"
+    | "capture_order_intent"
+    | "inspect_image"
+    | "ask_for_upload"
+    | "launch_game"
+    | "award_points"
+    | "read_customer_context"
+    | "confirm_slot"
+
+export type OmniAllowedAction = OmniActionId | OmniPromptActionHint
 
 export interface OmniActionExecutionRequest {
     chatbotId: string

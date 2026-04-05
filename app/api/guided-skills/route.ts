@@ -92,6 +92,15 @@ export async function DELETE(req: Request) {
         return authz.response
     }
 
-    await adminDb.collection("guided_skills").doc(id).delete()
+    const docRef = adminDb.collection("guided_skills").doc(id)
+    const docSnap = await docRef.get()
+    if (!docSnap.exists) {
+        return jsonError("Guided skill not found", 404)
+    }
+    if (docSnap.data()?.chatbotId !== chatbotId) {
+        return jsonError("Guided skill does not belong to this chatbot", 403)
+    }
+
+    await docRef.delete()
     return NextResponse.json({ ok: true })
 }

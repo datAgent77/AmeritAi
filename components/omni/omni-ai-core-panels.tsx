@@ -465,7 +465,7 @@ export function OmniActionsPanel() {
     }
 
     const handleSave = async () => {
-        const result = await save({ enabledActions: selectedActions })
+        const result = await save({ enabledActions: selectedActions as any })
         if (result) {
             toast({
                 title: t("omni.aiCore.actions.toast.saved.title"),

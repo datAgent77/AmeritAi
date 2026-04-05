@@ -142,6 +142,7 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
 
                 {/* Right Panel: Live Preview */}
                 <WidgetLivePreview
+                    userId={userId || ''}
                     settings={settings}
                     t={t}
                     ambientPreviewDockState={ambientPreviewDockState}

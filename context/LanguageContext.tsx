@@ -37,7 +37,7 @@ function setLanguageCookie(language: Language) {
 
 function humanizeTranslationKey(key: string): string {
     const readable = key
-        .replace(/[_-]+/g, ' ')
+        .replace(/[._-]+/g, ' ')
         .replace(/([a-z])([A-Z])/g, '$1 $2')
         .trim();
 

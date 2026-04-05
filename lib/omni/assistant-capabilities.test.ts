@@ -17,7 +17,7 @@ describe("assistant capability resolution", () => {
         expect(ids).toEqual(["generalChatbot", "knowledgeBase"])
     })
 
-    test("honors explicit channel overrides including empty arrays", () => {
+    test("honors explicit channel overrides including empty arrays while filtering unavailable modules", () => {
         const voiceIds = resolveCapabilityIdsForChannel("voice", {
             enabledCapabilityIds: ["generalChatbot", "knowledgeBase"],
             channelCapabilityOverrides: {
@@ -33,6 +33,6 @@ describe("assistant capability resolution", () => {
         })
 
         expect(voiceIds).toEqual([])
-        expect(webCapabilities.map((capability) => capability.id)).toEqual(["generalChatbot", "gamification"])
+        expect(webCapabilities.map((capability) => capability.id)).toEqual(["generalChatbot"])
     })
 })

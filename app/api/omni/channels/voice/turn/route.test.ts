@@ -9,6 +9,7 @@ import {
     getOmniChannelConfig,
     normalizeVoiceIntegrationConfig,
     upsertCallbackRequest,
+    upsertContactGraph,
     upsertOmniSession,
     verifyTwilioWebhookSignature,
 } from "@/lib/omni/server-utils";
@@ -44,6 +45,7 @@ vi.mock("@/lib/omni/server-utils", async () => {
         getOmniChannelConfig: vi.fn(),
         normalizeVoiceIntegrationConfig: vi.fn(),
         upsertCallbackRequest: vi.fn(),
+        upsertContactGraph: vi.fn(),
         upsertOmniSession: vi.fn(),
         verifyTwilioWebhookSignature: vi.fn(),
     };
@@ -117,6 +119,9 @@ beforeEach(() => {
     } as any);
     vi.mocked(normalizeVoiceIntegrationConfig).mockReturnValue({
         authToken: "auth-token",
+    } as any);
+    vi.mocked(upsertContactGraph).mockResolvedValue({
+        id: "contact-1",
     } as any);
     vi.mocked(verifyTwilioWebhookSignature).mockReturnValue(true);
     vi.mocked(generateOmniVoiceTurn).mockResolvedValue({

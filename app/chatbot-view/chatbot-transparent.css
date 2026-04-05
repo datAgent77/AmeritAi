@@ -1,18 +1,24 @@
 /* 
  * Loaded ONLY for /chatbot-view route via app/chatbot-view/layout.tsx import.
- * Overrides any theme-based background so the iframe is always transparent.
+ * Overrides any theme-based background so the iframe is always transparent
+ * at the HTML/body level. Individual components (classic mode wrapper, message list)
+ * set their own backgrounds explicitly.
  */
 
-/* Override the .bg-background Tailwind utility class directly */
-.bg-background {
+/* Override the .bg-background Tailwind utility on root elements only */
+html.bg-background,
+body.bg-background {
     background-color: transparent !important;
 }
 
-/* Override html and body elements */
+/* Explicitly target the root containers used in ChatbotContainer */
 html,
 body,
-#__next {
+#__next,
+#root,
+main {
     background: transparent !important;
     background-color: transparent !important;
     background-image: none !important;
+    box-shadow: none !important;
 }

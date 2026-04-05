@@ -41,6 +41,7 @@
   "exclude": [
     "node_modules",
     "node_modules_trash",
-    "chrome-extension"
+    "chrome-extension",
+    "tmp-widget-check.spec.ts"
   ]
 }

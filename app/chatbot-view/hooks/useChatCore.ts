@@ -3,6 +3,9 @@ import { doc, updateDoc, arrayUnion, onSnapshot, getDoc } from "firebase/firesto
 import { guestDb as db, guestAuth } from "@/lib/firebase-guest"
 import { ChatbotSettings } from "@/types/chatbot"
 import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
+import { hydrateChatSessionMessage } from "@/lib/chat-session-messages"
+import { normalizeGuidedSkillState } from "@/lib/guided-skills"
+import type { GuidedSkillClientEvent, GuidedSkillState } from "@/lib/guided-skills/types"
 
 export interface UseChatCoreProps {
     chatbotId: string
@@ -11,9 +14,23 @@ export interface UseChatCoreProps {
     pageContext: any
     isGuestReady: boolean
     speakText?: (text: string, id: string) => void
+    saveImageToCache: (msgId: string, imageData: string, mimeType: string, content?: string) => void
     getImageFromCache: (msgId: string) => any
     findImageByContent: (content: string) => any
     onShowLeadForm?: () => void
+}
+
+export interface UserMessageMediaPayload {
+    image: string
+    imageMimeType?: string
+}
+
+function getImageFingerprint(message: any) {
+    if (!message) return null
+    const image = typeof message.image === "string" ? message.image : ""
+    if (!image.trim()) return null
+    const mimeType = typeof message.imageMimeType === "string" ? message.imageMimeType : ""
+    return `${mimeType}:${image.length}:${image.slice(0, 32)}`
 }
 
 export function useChatCore({
@@ -23,6 +40,7 @@ export function useChatCore({
     pageContext,
     isGuestReady,
     speakText,
+    saveImageToCache,
     getImageFromCache,
     findImageByContent,
     onShowLeadForm
@@ -34,6 +52,7 @@ export function useChatCore({
     const [isTyping, setIsTyping] = useState(false)
     const [hasProactiveTriggered, setHasProactiveTriggered] = useState(false)
     const [listenerTrigger, setListenerTrigger] = useState(0)
+    const [guidedSkillState, setGuidedSkillState] = useState<GuidedSkillState | null>(null)
     const messagesRef = useRef<any[]>([])
     const sendQueueRef = useRef<Promise<string>>(Promise.resolve(""))
     
@@ -44,11 +63,13 @@ export function useChatCore({
     const proactiveTimerRef = useRef<NodeJS.Timeout | null>(null)
     
     // Store callback refs to prevent infinite loops from recreated functions
+    const saveImageToCacheRef = useRef(saveImageToCache)
     const getImageFromCacheRef = useRef(getImageFromCache)
     const findImageByContentRef = useRef(findImageByContent)
     
     // Update refs when callbacks change (but don't trigger re-renders)
     useEffect(() => {
+        saveImageToCacheRef.current = saveImageToCache
         getImageFromCacheRef.current = getImageFromCache
         findImageByContentRef.current = findImageByContent
     })
@@ -72,6 +93,26 @@ export function useChatCore({
         setSessionId(storedSid)
     }, [chatbotId])
 
+    const ensureSessionId = () => {
+        if (!chatbotId || typeof window === "undefined") {
+            return sessionId
+        }
+
+        const storageKey = `chat_session_id_${chatbotId}`
+        let activeSessionId = sessionId || localStorage.getItem(storageKey) || ""
+
+        if (!activeSessionId || !activeSessionId.startsWith("sess-")) {
+            activeSessionId = 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+            localStorage.setItem(storageKey, activeSessionId)
+        }
+
+        if (activeSessionId !== sessionId) {
+            setSessionId(activeSessionId)
+        }
+
+        return activeSessionId
+    }
+
     // 2. Firebase Listener
     useEffect(() => {
         if (!isGuestReady || !sessionId) return
@@ -89,23 +130,45 @@ export function useChatCore({
                 unsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data()
+                        setGuidedSkillState(normalizeGuidedSkillState(data.guidedSkillState))
                         if (data.messages && Array.isArray(data.messages)) {
-                            const history = data.messages.map((m: any, idx: number) => ({
-                                id: m.id || `${sessionId}-${idx}`,
-                                role: m.role,
-                                content: m.content,
-                                createdAt: m.createdAt ? (typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate() : new Date(m.createdAt)) : new Date()
-                            }))
+                            const history = data.messages
+                                .map((m: any, idx: number) => {
+                                    const hydrated = hydrateChatSessionMessage(m)
+                                    if (hydrated) return hydrated
+
+                                    return {
+                                        id: m.id || `${sessionId}-${idx}`,
+                                        role: m.role,
+                                        content: m.content,
+                                        createdAt: m.createdAt ? (typeof m.createdAt.toDate === 'function' ? m.createdAt.toDate() : new Date(m.createdAt)) : new Date(),
+                                        guidedUi: undefined,
+                                        guidedEvent: undefined,
+                                    }
+                                })
+                                .filter(Boolean)
                             
                             // Create a hash to detect actual changes and prevent infinite loops
-                            const messageHash = JSON.stringify(history.map(m => ({ id: m.id, role: m.role, content: m.content })))
+                            const messageHash = JSON.stringify(history.map(m => ({
+                                id: m.id,
+                                role: m.role,
+                                content: m.content,
+                                hasImage: Boolean(getImageFingerprint(m)),
+                                guidedUi: m.guidedUi || null,
+                                guidedEvent: m.guidedEvent || null
+                            })))
                             
                             // Only update if messages actually changed
                             if (messageHash !== lastMessageHash) {
                                 lastMessageHash = messageHash
                                 setInitialMessages(history)
                             }
+                        } else {
+                            setInitialMessages([])
                         }
+                    } else {
+                        setGuidedSkillState(null)
+                        setInitialMessages([])
                     }
                 })
             } catch (err: any) {
@@ -164,7 +227,18 @@ export function useChatCore({
                         // Check if content changed
                         let contentChanged = false
                         for (let i = 0; i < prevMessages.length; i++) {
-                            if (prevMessages[i].content !== newMessages[i].content) {
+                            const prevGuidedUi = JSON.stringify(prevMessages[i].guidedUi || null)
+                            const nextGuidedUi = JSON.stringify(newMessages[i].guidedUi || null)
+                            const prevGuidedEvent = JSON.stringify(prevMessages[i].guidedEvent || null)
+                            const nextGuidedEvent = JSON.stringify(newMessages[i].guidedEvent || null)
+                            const prevImage = getImageFingerprint(prevMessages[i])
+                            const nextImage = getImageFingerprint(newMessages[i])
+                            if (
+                                prevMessages[i].content !== newMessages[i].content ||
+                                prevImage !== nextImage ||
+                                prevGuidedUi !== nextGuidedUi ||
+                                prevGuidedEvent !== nextGuidedEvent
+                            ) {
                                 contentChanged = true
                                 break
                             }
@@ -181,51 +255,82 @@ export function useChatCore({
     }, [initialMessages]) // Only depend on initialMessages - callbacks accessed via refs
 
     // 4. Send Message
-    const sendMessage = async (content: string, shouldSpeakResponse: boolean = false, visualAnalysisContext?: string): Promise<string> => {
+    const sendMessage = async (
+        content: string,
+        shouldSpeakResponse: boolean = false,
+        visualAnalysisContext?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null
+    ): Promise<string> => {
         if (!content.trim()) return ""
 
         const run = async (): Promise<string> => {
+            const activeSessionId = ensureSessionId()
+            const normalizedMedia = mediaPayload && typeof mediaPayload.image === "string" && mediaPayload.image.trim()
+                ? {
+                    image: mediaPayload.image.trim(),
+                    imageMimeType: typeof mediaPayload.imageMimeType === "string" && mediaPayload.imageMimeType.trim()
+                        ? mediaPayload.imageMimeType.trim()
+                        : "image/jpeg",
+                }
+                : null
 
-        const userMessage = {
-            id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
-            role: 'user',
-            content: content,
-            createdAt: new Date()
-        }
-        const outboundMessages = [...messagesRef.current, userMessage]
-        setMessages((prev: any) => {
-            const next = [...prev, userMessage]
-            messagesRef.current = next
-            return next
-        })
-        setChatStatus('submitted')
-        setIsTyping(true)
+            const userMessage = {
+                id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9),
+                role: 'user',
+                content: content,
+                createdAt: new Date(),
+                guidedEvent: guidedEvent || undefined,
+                ...(normalizedMedia ? {
+                    image: normalizedMedia.image,
+                    imageMimeType: normalizedMedia.imageMimeType,
+                } : {}),
+            }
 
-        // Generate Assistant ID beforehand to prevent duplicates during sync
-        const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+            if (normalizedMedia) {
+                saveImageToCacheRef.current(userMessage.id, normalizedMedia.image, normalizedMedia.imageMimeType, content)
+            }
 
-        try {
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 60000)
-
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: outboundMessages,
-                    chatbotId,
-                    sessionId: sessionId || localStorage.getItem(`chat_session_id_${chatbotId}`),
-                    context: pageContext,
-                    language,
-                    isVoice: shouldSpeakResponse,
-                    shouldStream: true,
-                    userId: guestAuth.currentUser?.uid,
-                    industry: settings.industry,
-                    visualAnalysisContext, // Pass dynamic context
-                    assistantMessageId: assistantMsgId // <--- PASS THIS ID
-                }),
-                signal: controller.signal
+            const outboundMessages = [...messagesRef.current, userMessage]
+            const requestMessages = outboundMessages.map((message: any) => ({
+                id: message.id,
+                role: message.role,
+                content: message.content,
+            }))
+            setMessages((prev: any) => {
+                const next = [...prev, userMessage]
+                messagesRef.current = next
+                return next
             })
+            setChatStatus('submitted')
+            setIsTyping(true)
+
+            // Generate Assistant ID beforehand to prevent duplicates during sync
+            const assistantMsgId = 'assistant-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+
+            try {
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: requestMessages,
+                        chatbotId,
+                        sessionId: activeSessionId,
+                        context: pageContext,
+                        language,
+                        isVoice: shouldSpeakResponse,
+                        shouldStream: true,
+                        userId: guestAuth.currentUser?.uid,
+                        industry: settings.industry,
+                        visualAnalysisContext, // Pass dynamic context
+                        assistantMessageId: assistantMsgId, // <--- PASS THIS ID
+                        guidedEvent: guidedEvent || undefined,
+                    }),
+                    signal: controller.signal
+                })
 
             clearTimeout(timeoutId)
             if (!response.ok) {
@@ -243,6 +348,48 @@ export function useChatCore({
                     // Keep generic message when body isn't JSON
                 }
                 throw new Error(serverMessage)
+            }
+
+            const responseType = response.headers.get('content-type') || ''
+            if (responseType.includes('application/json')) {
+                const payload = await response.json()
+                const assistantContent = typeof payload?.content === 'string' ? payload.content : ''
+                const resolvedAssistantId = typeof payload?.assistantMessageId === 'string' && payload.assistantMessageId.trim()
+                    ? payload.assistantMessageId
+                    : assistantMsgId
+                const resolvedSessionId = typeof payload?.sessionId === 'string' && payload.sessionId.trim()
+                    ? payload.sessionId
+                    : activeSessionId
+
+                if (resolvedSessionId && chatbotId) {
+                    localStorage.setItem(`chat_session_id_${chatbotId}`, resolvedSessionId)
+                    if (resolvedSessionId !== sessionId) {
+                        setSessionId(resolvedSessionId)
+                    }
+                }
+
+                setGuidedSkillState(normalizeGuidedSkillState(payload?.guidedSkillState))
+                setMessages((prev: any) => {
+                    const nextAssistantMessage = {
+                        id: resolvedAssistantId,
+                        role: 'assistant',
+                        content: assistantContent,
+                        createdAt: new Date(),
+                        guidedUi: payload?.guidedUi || undefined,
+                    }
+                    const next = [...prev, nextAssistantMessage]
+                    messagesRef.current = next
+                    return next
+                })
+                setIsTyping(false)
+                setChatStatus('idle')
+                setListenerTrigger(prev => prev + 1)
+
+                if ((shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
+                    speakText(assistantContent, resolvedAssistantId)
+                }
+
+                return assistantContent
             }
 
             setChatStatus('streaming')
@@ -338,6 +485,13 @@ export function useChatCore({
         return queued
     }
 
+    const sendGuidedMessage = async (guidedEvent: GuidedSkillClientEvent): Promise<string> => {
+        const content = (guidedEvent.label || "").trim()
+            || settings.guidedSkills?.find((skill) => skill.id === guidedEvent.skillId)?.title
+            || "guided-skill"
+        return sendMessage(content, false, undefined, guidedEvent)
+    }
+
     // 5. Proactive Engagement
     useEffect(() => {
         const isOnlyWelcomeMessage = messages.length === 1 && messages[0].content === settings.welcomeMessage;
@@ -396,6 +550,7 @@ export function useChatCore({
         setHasProactiveTriggered(false)
         setChatStatus('idle')
         setIsTyping(false)
+        setGuidedSkillState(null)
         
         // Force reload iframe to ensure clean state
         setTimeout(() => {
@@ -408,10 +563,12 @@ export function useChatCore({
         messages,
         setMessages,
         sendMessage,
+        sendGuidedMessage,
         chatStatus,
         isTyping,
         isChatLoading,
         sessionId,
+        guidedSkillState,
         hasProactiveTriggered, // Exposed if needed
         resetSession
     }

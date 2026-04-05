@@ -20,47 +20,46 @@ import { useOmniAccount } from "@/context/OmniAccountContext"
 import { getOmniPageDefinition, type OmniPageDefinition } from "@/lib/omni/navigation"
 import {
     OmniActionsPanel,
-    OmniBrandVoicePanel,
-    OmniCapabilitiesPanel,
-    OmniChannelPoliciesPanel,
     OmniKnowledgeGovernancePanel,
 } from "@/components/omni/omni-ai-core-panels"
 import { OmniAnalyticsPanel } from "@/components/omni/omni-analytics-panel"
 import { OmniAnnouncementsPanel } from "@/components/omni/omni-announcements-panel"
 import { OmniAccountsPanel } from "@/components/omni/omni-accounts-panel"
+import { OmniAgentDetailPanel } from "@/components/omni/omni-agent-detail-panel"
+import { OmniAgentsPanel } from "@/components/omni/omni-agents-panel"
 import { OmniAgenciesPanel } from "@/components/omni/omni-agencies-panel"
 import { OmniAppointmentsPanel } from "@/components/omni/omni-appointments-panel"
-import { OmniCallbackQueuePanel } from "@/components/omni/omni-callback-queue-panel"
 import { OmniChannelsOverviewPanel } from "@/components/omni/omni-channels-overview-panel"
 import { OmniContentPanel } from "@/components/omni/omni-content-panel"
 import { OmniContactsPanel } from "@/components/omni/omni-contacts-panel"
-import { OmniDashboardPanel } from "@/components/omni/omni-dashboard-panel"
 import { OmniDeliveryMonitorPanel } from "@/components/omni/omni-delivery-monitor-panel"
 import { OmniInstagramPanel } from "@/components/omni/omni-instagram-panel"
 import { OmniLeadsPanel } from "@/components/omni/omni-leads-panel"
 import { OmniAccountCenterPanel } from "@/components/omni/omni-account-center-panel"
 import { OmniSettingsPanel } from "@/components/omni/omni-settings-panel"
+import { OmniTestsPanel } from "@/components/omni/omni-tests-panel"
 import { OmniUnifiedInboxPanel } from "@/components/omni/omni-unified-inbox-panel"
 import { OmniVoiceCallsPanel } from "@/components/omni/omni-voice-calls-panel"
 import { OmniWhatsAppPanel } from "@/components/omni/omni-whatsapp-panel"
 import { OmniWebWidgetPanel } from "@/components/omni/omni-web-widget-panel"
+import { OmniWorkspaceOverviewPanel } from "@/components/omni/omni-workspace-overview-panel"
 
-function renderSpecialView(view?: OmniPageDefinition["specialView"]) {
+function renderSpecialView(page: OmniPageDefinition) {
+    const view = page.specialView
+
     switch (view) {
-        case "dashboard":
-            return <OmniDashboardPanel />
+        case "workspace-overview":
+            return <OmniWorkspaceOverviewPanel />
+        case "agents":
+            return <OmniAgentsPanel />
+        case "agent-detail":
+            return <OmniAgentDetailPanel agentId={page.context?.agentId || "omni-default"} tab={(page.context?.tab as any) || "general"} />
         case "web-widget":
             return <OmniWebWidgetPanel />
         case "knowledge-governance":
             return <OmniKnowledgeGovernancePanel />
-        case "capabilities":
-            return <OmniCapabilitiesPanel />
-        case "channel-policies":
-            return <OmniChannelPoliciesPanel />
         case "actions":
             return <OmniActionsPanel />
-        case "brand-voice":
-            return <OmniBrandVoicePanel />
         case "channels-overview":
             return <OmniChannelsOverviewPanel />
         case "voice-calls":
@@ -71,8 +70,6 @@ function renderSpecialView(view?: OmniPageDefinition["specialView"]) {
             return <OmniInstagramPanel />
         case "unified-inbox":
             return <OmniUnifiedInboxPanel />
-        case "callback-queue":
-            return <OmniCallbackQueuePanel />
         case "contacts":
             return <OmniContactsPanel />
         case "appointments":
@@ -99,6 +96,8 @@ function renderSpecialView(view?: OmniPageDefinition["specialView"]) {
             return <OmniAccountCenterPanel />
         case "settings":
             return <OmniSettingsPanel />
+        case "tests":
+            return <OmniTestsPanel />
         default:
             return null
     }
@@ -106,14 +105,14 @@ function renderSpecialView(view?: OmniPageDefinition["specialView"]) {
 
 export function OmniPageContent({ path }: { path: string }) {
     const { t } = useLanguage()
-    const { activeAccount, activeAccountId, canSwitchAccounts, isLoading } = useOmniAccount()
+    const { activeAccount, activeAccountId, canSwitchAccounts, isLoading, refreshAccounts } = useOmniAccount()
     const page = getOmniPageDefinition(path, t)
 
     if (!page) {
         return null
     }
 
-    const renderStaticContent = page.specialView !== "dashboard"
+    const renderStaticContent = page.specialView !== "workspace-overview" && page.specialView !== "agent-detail"
     const hasInfoDrawer = renderStaticContent && Boolean(page.sections?.length)
     const isGlobalPage = ["accounts", "agencies", "content-blog", "content-faq", "content-education", "content-announcements"].includes(
         page.specialView || ""
@@ -147,7 +146,26 @@ export function OmniPageContent({ path }: { path: string }) {
                     </div>
                 </div>
                 <Card className="border-amber-200 bg-amber-50/60">
-                    <CardContent className="p-10 text-sm text-amber-900">{t("omni.accountScope.empty")}</CardContent>
+                    <CardContent className="p-10">
+                        <div className="space-y-4">
+                            <div className="text-sm text-amber-900">{t("omni.accountScope.empty")}</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button asChild variant="outline" className="border-amber-300 bg-white/80 text-amber-950 hover:bg-white">
+                                    <Link href="/omni/directory/accounts">{t("omni.accountSwitcher.manageAccounts")}</Link>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className="text-amber-950 hover:bg-amber-100"
+                                    onClick={() => {
+                                        void refreshAccounts()
+                                    }}
+                                >
+                                    {t("omni.common.retry")}
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
                 </Card>
             </div>
         )
@@ -163,7 +181,7 @@ export function OmniPageContent({ path }: { path: string }) {
                         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{page.description}</p>
                         {!isGlobalPage && activeAccount ? (
                             <p className="mt-3 text-xs text-muted-foreground">
-                                Account: {activeAccount.companyName || activeAccount.email || activeAccount.id}
+                                {t("omni.common.account")}: {activeAccount.companyName || activeAccount.email || activeAccount.id}
                             </p>
                         ) : null}
                     </div>
@@ -236,7 +254,7 @@ export function OmniPageContent({ path }: { path: string }) {
                 </div>
             ) : null}
 
-            {renderSpecialView(page.specialView)}
+            {renderSpecialView(page)}
         </div>
     )
 }

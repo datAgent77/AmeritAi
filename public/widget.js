@@ -24,6 +24,9 @@
 
   const attrColor = currentScript.getAttribute('data-color');
   const chatbotId = currentScript.getAttribute('data-chatbot-id') || 'default';
+  const previewDraftKey = currentScript.getAttribute('data-preview-draft-key') || '';
+  const previewAmbientDockState = currentScript.getAttribute('data-preview-ambient-dock-state') || '';
+  const previewAmbientThinking = currentScript.getAttribute('data-preview-ambient-thinking') === 'true';
 
   console.log('Userex Widget Initializing...');
   console.log('Chatbot ID:', chatbotId);
@@ -1130,6 +1133,8 @@
   function resolveAmbientDeviceSettingsForWidget(source, device) {
     const shared = {};
     [
+      'ambientMaxHeight',
+      'ambientOverlayOpacity',
       'ambientWidth',
       'ambientInputWidth',
       'ambientSideMargin',
@@ -2978,12 +2983,12 @@
           const style = document.createElement('style');
           style.id = styleId;
           style.innerHTML = `
-            html.userex-sidecar-active header,
-            html.userex-sidecar-active nav,
-            html.userex-sidecar-active [class*="header"],
-            html.userex-sidecar-active [class*="navbar"],
-            html.userex-sidecar-active [style*="position: fixed"],
-            html.userex-sidecar-active [style*="position: sticky"] {
+            html.userex-sidecar-active header:not([id^="userex-"]),
+            html.userex-sidecar-active nav:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="header"]:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="navbar"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: fixed"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: sticky"]:not([id^="userex-"]) {
                margin-right: ${inset}px !important;
                right: ${inset}px !important;
             }
@@ -2991,12 +2996,12 @@
           document.head.appendChild(style);
         } else {
           document.getElementById(styleId).innerHTML = `
-            html.userex-sidecar-active header,
-            html.userex-sidecar-active nav,
-            html.userex-sidecar-active [class*="header"],
-            html.userex-sidecar-active [class*="navbar"],
-            html.userex-sidecar-active [style*="position: fixed"],
-            html.userex-sidecar-active [style*="position: sticky"] {
+            html.userex-sidecar-active header:not([id^="userex-"]),
+            html.userex-sidecar-active nav:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="header"]:not([id^="userex-"]),
+            html.userex-sidecar-active [class*="navbar"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: fixed"]:not([id^="userex-"]),
+            html.userex-sidecar-active [style*="position: sticky"]:not([id^="userex-"]) {
                margin-right: ${inset}px !important;
                right: ${inset}px !important;
             }
@@ -3191,11 +3196,62 @@
             .userex-anim-spin {
                 animation: userex-spin 4s linear infinite;
             }
+
+            /* --- New animations --- */
+
+            /* Shake: quick left-right vibrate with pause */
+            @keyframes userex-shake {
+                0%, 70%, 100% { transform: translateX(0); }
+                72%, 76%, 80%, 84% { transform: translateX(-5px); }
+                74%, 78%, 82% { transform: translateX(5px); }
+            }
+            .userex-anim-shake {
+                animation: userex-shake 3s ease-in-out infinite;
+            }
+
+            /* Glow: pulsing color halo */
+            @keyframes userex-glow {
+                0%, 100% { box-shadow: 0 0 6px 2px rgba(255,255,255,0.25), 0 4px 16px rgba(0,0,0,0.3); }
+                50% { box-shadow: 0 0 22px 8px rgba(255,255,255,0.55), 0 4px 16px rgba(0,0,0,0.3); }
+            }
+            .userex-anim-glow {
+                animation: userex-glow 2s ease-in-out infinite;
+            }
+
+            /* Border: rotating arc around button */
+            @keyframes userex-border-rotate {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+            }
+            #userex-chatbot-launcher.userex-anim-border {
+                overflow: visible;
+                z-index: 0;
+            }
+            #userex-chatbot-launcher.userex-anim-border::before {
+                content: '';
+                position: absolute;
+                inset: -3px;
+                border-radius: inherit;
+                background: conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.9) 20%, transparent 40%);
+                animation: userex-border-rotate 1.8s linear infinite;
+                z-index: -1;
+            }
+            #userex-chatbot-launcher.userex-anim-border::after {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: inherit;
+                background: inherit;
+                z-index: -1;
+            }
         `;
       document.head.appendChild(style);
     };
 
-    if (usesLauncher && (settings.launcherAnimation !== 'none' || (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none'))) {
+    if (usesLauncher && (
+      (settings.launcherAnimation && settings.launcherAnimation !== 'none') ||
+      (settings.mobileLauncherAnimation && settings.mobileLauncherAnimation !== 'none')
+    )) {
       addAnimationStyles();
     }
 
@@ -3344,6 +3400,15 @@
       launcher.classList.add('userex-anim-float');
     } else if (activeAnimation === 'spin') {
       launcher.classList.add('userex-anim-spin');
+    } else if (activeAnimation === 'shake') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-shake');
+    } else if (activeAnimation === 'glow') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-glow');
+    } else if (activeAnimation === 'border') {
+      addAnimationStyles();
+      launcher.classList.add('userex-anim-border');
     }
 
     const closeSvg = `
@@ -3411,37 +3476,109 @@
       collapseTimer = setTimeout(() => collapseLauncher(), delayMs);
     };
 
+    const applyOpenLauncherPosition = () => {
+      const isMobileFullscreenOverlay = window.innerWidth < 768 && !isAlwaysOpenMode;
+
+      if (isMobileFullscreenOverlay) {
+        Object.assign(launcherContainer.style, {
+          display: 'none',
+          position: 'fixed',
+          zIndex: '10001',
+          top: '',
+          right: '',
+          left: 'auto',
+          bottom: 'auto',
+          transform: 'none',
+        });
+        return;
+      }
+
+      // Keep the close button anchored where the launcher normally lives.
+      // Only raise its stacking context so it stays clickable above the iframe.
+      Object.assign(launcherContainer.style, {
+        display: 'flex',
+        position: 'fixed',
+        zIndex: '10001',
+        right: '',
+        left: '',
+        top: '',
+        bottom: '',
+        transform: '',
+      });
+      Object.assign(launcherContainer.style, horizontalStyle);
+      Object.assign(launcherContainer.style, verticalStyle);
+    };
+
     const renderLauncherContent = (isOpen) => {
       if (isOpen) {
         launcher.innerHTML = closeSvg;
 
-        // Fix: Even if it is fullImage, when open, we want a visible close button.
-        // We revert the background, shadow, and DIMENSIONS to match standard style so the white 'X' is visible.
-        if (settings.launcherType === 'fullImage') {
-          launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
-          launcher.style.boxShadow = shadowStyle;
-          launcher.style.borderRadius = '50%'; // Make it circular
-          // Force standard dimensions for the close button (Standard default is 60px)
-          // We intentionally ignore settings.launcherWidth here because in fullImage mode that controls the image size (which can be large)
-          launcher.style.width = '60px';
-          launcher.style.height = '60px';
-        }
+        // Compact to icon-only for all launcher types when widget is open
+        const iconSize = settings.launcherHeight || 52;
+        launcher.style.width = `${iconSize}px`;
+        launcher.style.minWidth = `${iconSize}px`;
+        launcher.style.height = `${iconSize}px`;
+        launcher.style.padding = '0';
+        launcher.style.gap = '0';
+        launcher.style.borderRadius = '50%';
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor || settings.primaryColor || '#000000';
+        launcher.style.boxShadow = shadowStyle;
+
+        applyOpenLauncherPosition();
+
+        // Pause animation while widget is open
+        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
         return;
       }
 
-      // Reset styles for Full Image mode when closed (transparent, no shadow, etc)
-      // Reset styles for Full Image mode when closed (transparent, no shadow, etc)
+      // Restore position, z-index and visibility when widget is closed
+      Object.assign(launcherContainer.style, {
+        display: 'flex',
+        position: 'fixed',
+        zIndex: '9999',
+        right: '',
+        left: '',
+        top: '',
+        bottom: '',
+        transform: '',
+      });
+      // Now apply original horizontal + vertical styles (may override the blanks above)
+      Object.assign(launcherContainer.style, horizontalStyle);
+      Object.assign(launcherContainer.style, verticalStyle);
+
+      // Restore dimensions when closed
       if (settings.launcherType === 'fullImage') {
         launcher.style.backgroundColor = 'transparent';
         launcher.style.boxShadow = 'none';
         launcher.style.borderRadius = '0';
-        // Reset dimensions to full image size (handled by image content usually, but let's ensure we don't force standard size if it was different)
-        // Actually, for fullImage, width/height are set in initial styles based on settings or content. 
-        // We just need to ensure we don't keep the forced dimensions if they differ.
-        // We just need to ensure we don't keep the forced dimensions if they differ.
-        // Re-applying basic style logic from initialization.
         launcher.style.width = `${settings.fullImageLauncherWidth || 60}px`;
         launcher.style.height = `${settings.fullImageLauncherHeight || 60}px`;
+        launcher.style.minWidth = '';
+        launcher.style.padding = '';
+        launcher.style.gap = '';
+      } else if (isTextStyle) {
+        launcher.style.width = 'auto';
+        launcher.style.minWidth = `${settings.launcherWidth || 100}px`;
+        launcher.style.height = `${settings.launcherHeight || 52}px`;
+        launcher.style.padding = '0 16px';
+        launcher.style.gap = '8px';
+        launcher.style.borderRadius = `${settings.launcherRadius}px`;
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor;
+        launcher.style.boxShadow = shadowStyle;
+      } else {
+        launcher.style.width = `${currentWidth}px`;
+        launcher.style.minWidth = `${currentWidth}px`;
+        launcher.style.height = `${currentHeight}px`;
+        launcher.style.padding = '0';
+        launcher.style.gap = '0';
+        launcher.style.borderRadius = `${settings.launcherRadius}px`;
+        launcher.style.backgroundColor = settings.launcherBackgroundColor || settings.brandColor;
+        launcher.style.boxShadow = shadowStyle;
+      }
+
+      // Resume animation when widget is closed
+      if (activeAnimation && activeAnimation !== 'none') {
+        launcher.classList.add(`userex-anim-${activeAnimation}`);
       }
 
       // Full Image Mode (PNG/GIF or Lottie)
@@ -3762,6 +3899,14 @@
       iframeSrc += `&lang=${settings.initialLanguage}`;
     }
 
+    // Only inherit the parent theme when ambient mode explicitly uses auto.
+    if (settings.chatDisplayMode === 'ambient' && settings.ambientTheme === 'auto') {
+      const isDarkMode = document.documentElement.classList.contains('dark') || 
+                         document.body.classList.contains('dark') || 
+                         (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      iframeSrc += `&theme=${isDarkMode ? 'dark' : 'light'}`;
+    }
+
     if (!isAvailable && settings.offlineMessage) {
       iframeSrc += `&offlineMessage=${encodeURIComponent(settings.offlineMessage)}`;
     }
@@ -3774,8 +3919,19 @@
     if (isAmbientMode && settings.ambientBottomMargin > 0) {
       iframeSrc += `&ambientBottomMargin=${settings.ambientBottomMargin}`;
     }
+    if (previewDraftKey) {
+      iframeSrc += `&previewDraftKey=${encodeURIComponent(previewDraftKey)}`;
+    }
+    if (previewAmbientDockState) {
+      iframeSrc += `&previewAmbientDockState=${encodeURIComponent(previewAmbientDockState)}`;
+    }
+    if (previewAmbientThinking) {
+      iframeSrc += `&previewAmbientThinking=1`;
+    }
 
     iframe.src = iframeSrc;
+    iframe.loading = 'eager';
+    iframe.setAttribute('fetchpriority', 'high');
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -3787,6 +3943,12 @@
 
     // Toggle Logic
     let isOpen = !usesLauncher;
+    if (usesLauncher) {
+      const persistedPreviewOpenState = readPreviewOpenState();
+      if (typeof persistedPreviewOpenState === 'boolean') {
+        isOpen = persistedPreviewOpenState;
+      }
+    }
     const toggleWidget = (forceState) => {
       if (!usesLauncher) {
         const nextState = forceState !== undefined ? forceState : true;
@@ -3810,9 +3972,10 @@
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
       applyMobileScrollLock(isOpen);
+      writePreviewOpenState(isOpen);
 
       if (!isAmbientWidgetMode) {
-        launcherContainer.style.display = isOpen ? 'none' : 'flex';
+        launcherContainer.style.display = 'flex';
       }
 
       // Notify React app that visibility changed so it can instantly scroll to bottom
@@ -3843,6 +4006,9 @@
 
     if (usesLauncher) {
       launcher.onclick = () => toggleWidget();
+      iframeContainer.style.display = isOpen ? 'block' : 'none';
+      renderLauncherContent(isOpen);
+      applyMobileScrollLock(isOpen);
     }
 
     // Sorun 2: Ambient modda X butonuna basınca widget tamamen kapanıyor ve geri açılamıyordu.
@@ -3884,7 +4050,7 @@
           // Ambient modda: tam kapatma yok, sadece feed'i gizle (input kalır)
           hideAmbientFeed();
         } else if (isSidecarMode) {
-          toggleWidget(true);
+          toggleWidget(false);
         } else {
           toggleWidget(false);
         }
@@ -4056,14 +4222,22 @@
       }
 
       if (usesLauncher) {
+        horizontalStyle = newHorizStyle;
+        verticalStyle = newVertStyle;
+
         // Apply new positioning
-        Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
+        if (isOpen) {
+          applyOpenLauncherPosition();
+        } else {
+          Object.assign(launcherContainer.style, { ...newHorizStyle, ...newVertStyle });
+        }
 
         // 2. Update Animation
         const newAnim = resizeSettings.launcherAnimation || 'none';
-        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin');
+        launcher.classList.remove('userex-anim-pulse', 'userex-anim-bounce', 'userex-anim-wiggle', 'userex-anim-float', 'userex-anim-spin', 'userex-anim-shake', 'userex-anim-glow', 'userex-anim-border');
 
         if (newAnim !== 'none') {
+          addAnimationStyles();
           launcher.classList.add(`userex-anim-${newAnim}`);
         }
       }
@@ -4423,18 +4597,219 @@
 
   // Voice interface is handled inside the chatbot iframe (ChatInput mic button + VoiceOverlay component)
 
+  const SETTINGS_CACHE_TTL_MS = 15 * 60 * 1000;
+  const SETTINGS_FALLBACK_LAUNCHER_DELAY_MS = 700;
+
   let settingsFetchPromise = null;
   let bootstrapStarted = false;
+  let widgetOriginPrewarmed = false;
+
+  function getSettingsCacheKey() {
+    return `userex_widget_settings_v1:${baseUrl}:${chatbotId}`;
+  }
+
+  function readCachedSettings() {
+    try {
+      const raw = window.localStorage && window.localStorage.getItem(getSettingsCacheKey());
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object' || !parsed.settings || typeof parsed.settings !== 'object') {
+        return null;
+      }
+      const savedAt = Number(parsed.savedAt || 0);
+      if (!savedAt || (Date.now() - savedAt) > SETTINGS_CACHE_TTL_MS) {
+        return null;
+      }
+      return parsed.settings;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read cached settings', error);
+      return null;
+    }
+  }
+
+  function writeCachedSettings(nextSettings) {
+    try {
+      if (!nextSettings || typeof nextSettings !== 'object' || !window.localStorage) return;
+      window.localStorage.setItem(getSettingsCacheKey(), JSON.stringify({
+        savedAt: Date.now(),
+        settings: nextSettings
+      }));
+    } catch (error) {
+      console.warn('Userex Widget: Failed to persist settings cache', error);
+    }
+  }
+
+  function clearCachedSettings() {
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.removeItem(getSettingsCacheKey());
+    } catch (error) {
+      console.warn('Userex Widget: Failed to clear settings cache', error);
+    }
+  }
+
+  function readPreviewDraftSettings() {
+    if (!previewDraftKey) return null;
+
+    try {
+      if (!window.localStorage) return null;
+      const raw = window.localStorage.getItem(previewDraftKey);
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return parsed;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read preview draft settings', error);
+      return null;
+    }
+  }
+
+  function getPreviewOpenStateKey() {
+    return previewDraftKey ? `${previewDraftKey}:open` : '';
+  }
+
+  function readPreviewOpenState() {
+    const key = getPreviewOpenStateKey();
+    if (!key) return null;
+
+    try {
+      if (!window.localStorage) return null;
+      const raw = window.localStorage.getItem(key);
+      if (raw === 'true') return true;
+      if (raw === 'false') return false;
+      return null;
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read preview open state', error);
+      return null;
+    }
+  }
+
+  function writePreviewOpenState(isOpen) {
+    const key = getPreviewOpenStateKey();
+    if (!key) return;
+
+    try {
+      if (!window.localStorage) return;
+      window.localStorage.setItem(key, isOpen ? 'true' : 'false');
+    } catch (error) {
+      console.warn('Userex Widget: Failed to persist preview open state', error);
+    }
+  }
+
+  function prewarmWidgetOrigin() {
+    if (widgetOriginPrewarmed || !document.head) return;
+    widgetOriginPrewarmed = true;
+
+    try {
+      const origin = new URL(baseUrl).origin;
+
+      if (!document.head.querySelector(`link[data-userex-preconnect="${origin}"]`)) {
+        const preconnect = document.createElement('link');
+        preconnect.rel = 'preconnect';
+        preconnect.href = origin;
+        preconnect.crossOrigin = 'anonymous';
+        preconnect.setAttribute('data-userex-preconnect', origin);
+        document.head.appendChild(preconnect);
+      }
+
+      if (!document.head.querySelector(`link[data-userex-dns-prefetch="${origin}"]`)) {
+        const dnsPrefetch = document.createElement('link');
+        dnsPrefetch.rel = 'dns-prefetch';
+        dnsPrefetch.href = origin;
+        dnsPrefetch.setAttribute('data-userex-dns-prefetch', origin);
+        document.head.appendChild(dnsPrefetch);
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to prewarm widget origin', error);
+    }
+  }
+
+  function normalizeBootstrapSettings(nextSettings) {
+    let resolvedSettings = {
+      ...settings,
+      ...(nextSettings && typeof nextSettings === 'object' ? nextSettings : {})
+    };
+
+    // Module toggle is the source of truth. If disabled, force runtime engagement off.
+    if (resolvedSettings.enableProactiveMessaging === false && resolvedSettings.engagement && typeof resolvedSettings.engagement === 'object') {
+      resolvedSettings = {
+        ...resolvedSettings,
+        engagement: {
+          ...resolvedSettings.engagement,
+          enabled: false
+        }
+      };
+    }
+
+    return resolvedSettings;
+  }
+
+  function applyBootstrapSettings(nextSettings, sourceLabel) {
+    baseDeviceAwareSettings = normalizeBootstrapSettings(nextSettings);
+    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
+    console.log(`Userex Widget: Configuration loaded${sourceLabel ? ` (${sourceLabel})` : ''}`);
+  }
+
+  function removeBootstrappedWidgetShell() {
+    try {
+      if (engagementController && typeof engagementController.destroy === 'function') {
+        engagementController.destroy();
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to destroy engagement controller during cleanup', error);
+    }
+    engagementController = null;
+
+    [
+      'userex-chatbot-launcher',
+      'userex-chatbot-container',
+      'userex-launcher-wrapper',
+      'userex-engagement-bubble',
+      'userex-mobile-styles',
+      'userex-sidecar-layout-styles'
+    ].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node && node.parentNode) {
+        node.parentNode.removeChild(node);
+      }
+    });
+
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    if (htmlEl) {
+      htmlEl.classList.remove('userex-sidecar-active');
+      htmlEl.style.marginRight = '';
+      htmlEl.style.width = '';
+      htmlEl.style.transition = '';
+    }
+    if (bodyEl) {
+      bodyEl.style.marginRight = '';
+      bodyEl.style.overflowX = '';
+    }
+  }
 
   // Helper: Fetch Settings
   async function fetchSettings() {
+    const previewDraftSettings = readPreviewDraftSettings();
+
     try {
       const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`, {
         cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch settings');
-      return await response.json();
+      const fetchedSettings = await response.json();
+      const resolvedSettings = previewDraftSettings
+        ? { ...fetchedSettings, ...previewDraftSettings }
+        : fetchedSettings;
+      writeCachedSettings(resolvedSettings);
+      return resolvedSettings;
     } catch (error) {
+      if (previewDraftSettings) {
+        console.warn('Userex Widget: Using preview draft settings (Fetch failed)', error);
+        return previewDraftSettings;
+      }
+
       console.warn('Userex Widget: Using default settings (Fetch failed)', error);
       return {};
     }
@@ -4450,37 +4825,54 @@
       return;
     }
 
+    let widgetShellReady = false;
+
+    const previewDraftSettings = readPreviewDraftSettings();
+    const cachedSettings = readCachedSettings();
+    const bootstrapSettings = previewDraftSettings
+      ? { ...(cachedSettings || {}), ...previewDraftSettings }
+      : cachedSettings;
+
+    if (bootstrapSettings && bootstrapSettings.isEnabled !== false) {
+      applyBootstrapSettings(bootstrapSettings, previewDraftSettings ? 'preview draft' : 'cache');
+      initWidget();
+      widgetShellReady = true;
+    }
+
+    let fallbackTimer = null;
+    if (!widgetShellReady) {
+      fallbackTimer = setTimeout(() => {
+        if (widgetShellReady) return;
+        applyBootstrapSettings({}, 'fallback');
+        initWidget();
+        widgetShellReady = true;
+      }, SETTINGS_FALLBACK_LAUNCHER_DELAY_MS);
+    }
+
     const fetchedSettings = await (settingsFetchPromise || fetchSettings());
 
-    // STRICT CHECK: If disabled, abort
+    if (fallbackTimer) {
+      clearTimeout(fallbackTimer);
+    }
+
+    // STRICT CHECK: If disabled, abort and remove any optimistic shell.
     if (fetchedSettings.isEnabled === false) {
+      clearCachedSettings();
+      if (widgetShellReady) {
+        removeBootstrappedWidgetShell();
+      }
       console.warn('Userex Widget is disabled for this account.');
       return;
     }
 
-    // Merge fetched settings into global settings object
-    baseDeviceAwareSettings = {
-      ...settings,
-      ...fetchedSettings
-    };
-
-    // Module toggle is the source of truth. If disabled, force runtime engagement off.
-    if (baseDeviceAwareSettings.enableProactiveMessaging === false && baseDeviceAwareSettings.engagement && typeof baseDeviceAwareSettings.engagement === 'object') {
-      baseDeviceAwareSettings = {
-        ...baseDeviceAwareSettings,
-        engagement: {
-          ...baseDeviceAwareSettings.engagement,
-          enabled: false
-        }
-      };
+    applyBootstrapSettings(fetchedSettings, widgetShellReady ? 'network refresh' : 'network');
+    if (!widgetShellReady) {
+      initWidget();
     }
-    settings = applyDeviceResolvedWidgetSettings(baseDeviceAwareSettings, isMobileDevice() ? 'mobile' : 'desktop');
-
-    console.log('Userex Widget: Configuration loaded');
-    initWidget();
   }
 
   // Start fetching settings immediately so network overlaps with page render.
+  prewarmWidgetOrigin();
   settingsFetchPromise = fetchSettings();
 
   // Start Initialization

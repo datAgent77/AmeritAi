@@ -7,21 +7,36 @@ vi.mock("@/lib/omni/action-execution", () => ({
     executeOmniAction: vi.fn(),
 }))
 
-function createAdminDb(skills: GuidedSkillRecord[]) {
+function createAdminDb(skills: GuidedSkillRecord[], opts?: { enableGuided?: boolean }) {
     return {
         collection: vi.fn().mockImplementation((name: string) => {
-            if (name !== "guided_skills") {
-                throw new Error(`Unexpected collection: ${name}`)
+            if (name === "guided_skills") {
+                return {
+                    where: vi.fn().mockReturnValue({
+                        get: vi.fn().mockResolvedValue({
+                            docs: skills.map((skill) => ({
+                                id: skill.id,
+                                data: () => skill,
+                            })),
+                        }),
+                    }),
+                }
+            }
+
+            if (name === "chatbots") {
+                return {
+                    doc: vi.fn().mockReturnValue({
+                        get: vi.fn().mockResolvedValue({
+                            exists: true,
+                            data: () => ({ enableGuided: opts?.enableGuided ?? true }),
+                        }),
+                    }),
+                }
             }
 
             return {
-                where: vi.fn().mockReturnValue({
-                    get: vi.fn().mockResolvedValue({
-                        docs: skills.map((skill) => ({
-                            id: skill.id,
-                            data: () => skill,
-                        })),
-                    }),
+                doc: vi.fn().mockReturnValue({
+                    get: vi.fn().mockResolvedValue({ exists: false }),
                 }),
             }
         }),
@@ -328,5 +343,126 @@ describe("resolveGuidedSkillTurn", () => {
 
         expect(result.handled).toBe(false)
         expect(result.guidedTextMenu).toBeNull()
+    })
+
+    test("isGuidedModuleEnabled path: resolves from chatbots collection", async () => {
+        const adminDb = createAdminDb([createSkill()], { enableGuided: true })
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "web",
+            // guidedModuleEnabled not passed — triggers Firestore lookup
+            guidedEvent: { skillId: "flight-ops" },
+        })
+
+        expect(result.handled).toBe(true)
+        expect(result.nextState?.skillId).toBe("flight-ops")
+    })
+
+    test("isGuidedModuleEnabled path: returns false when chatbot has enableGuided=false", async () => {
+        const adminDb = createAdminDb([createSkill()], { enableGuided: false })
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "web",
+            guidedEvent: { skillId: "flight-ops" },
+        })
+
+        expect(result.handled).toBe(false)
+    })
+
+    test("matches skill by text alias", async () => {
+        const adminDb = createAdminDb([createSkill()])
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "whatsapp",
+            guidedModuleEnabled: true,
+            transcript: "flight help",
+            language: "en",
+        })
+
+        expect(result.handled).toBe(true)
+        expect(result.nextState?.skillId).toBe("flight-ops")
+    })
+
+    test("matches option by text label on active step", async () => {
+        const adminDb = createAdminDb([createSkill()])
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "whatsapp",
+            guidedModuleEnabled: true,
+            transcript: "Check-in",
+            language: "en",
+            currentState: createState({ channel: "whatsapp" }),
+        })
+
+        expect(result.handled).toBe(true)
+        expect(result.nextState?.stepId).toBe("ticket")
+    })
+
+    test("does not match when numeric input exceeds options count", async () => {
+        const adminDb = createAdminDb([createSkill()])
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "web",
+            guidedModuleEnabled: true,
+            transcript: "99",
+            currentState: createState(),
+        })
+
+        expect(result.handled).toBe(false)
+    })
+
+    test("returns error message and cancels state when executeOmniAction throws", async () => {
+        const adminDb = createAdminDb([
+            createSkill({
+                steps: [
+                    createSkill().steps[0],
+                    {
+                        ...createSkill().steps[1],
+                        submit: {
+                            mode: "omni_action",
+                            label: "Request callback",
+                            actionId: "create_callback_request",
+                            successMessage: "Callback requested.",
+                        },
+                    },
+                ],
+            }),
+        ])
+        vi.mocked(executeOmniAction).mockRejectedValue(new Error("Network failure"))
+
+        const result = await resolveGuidedSkillTurn({
+            adminDb,
+            chatbotId: "tenant-1",
+            channel: "web",
+            guidedModuleEnabled: true,
+            transcript: "2",
+            language: "en",
+            currentState: createState({
+                stepId: "ticket",
+                selections: {
+                    ticket: {
+                        stepId: "ticket",
+                        optionId: "pnr-1",
+                        label: "TK123",
+                        selectionValue: "TK123",
+                    },
+                },
+            }),
+        })
+
+        expect(result.handled).toBe(true)
+        expect(result.nextState?.status).toBe("cancelled")
+        expect(result.lastDisposition).toBe("guided_skill_action_error")
+        expect(result.assistantContent).toContain("error")
     })
 })

@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { format, isValid } from "date-fns"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
+import { CalendarDays, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { formatOmniDateTime, getOmniChannelLabel } from "@/lib/omni/i18n"
@@ -52,7 +53,7 @@ function fallbackSessionKey(sessionId: string) {
 
 export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const { language, t } = useLanguage()
-    const { user } = useAuth()
+    const { user, hasOmniPermission } = useAuth()
     const { toast } = useToast()
     const router = useRouter()
     const [sessions, setSessions] = useState<ChatSession[]>([])
@@ -66,6 +67,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const [isTogglingPause, setIsTogglingPause] = useState(false)
     const [isCreatingCallback, setIsCreatingCallback] = useState(false)
     const [isCreatingLead, setIsCreatingLead] = useState(false)
+    const [isSessionDetailsOpen, setIsSessionDetailsOpen] = useState(false)
 
     const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -190,6 +192,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const selectedChannel = selectedSession ? resolveSessionChannel(selectedSession) : null
     const canReply = selectedChannel !== "voice"
     const canManualReply = canReply && Boolean(selectedSession?.isPaused)
+    const canOpenOmniOperations = hasOmniPermission("operations.view")
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -460,34 +463,39 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const selectedSessionMessageCount = selectedSession?.messages?.length ?? 0
     const selectedSessionLastActivity = selectedSession?.lastMessageTime || selectedSession?.createdAt || null
 
+    const sessionMetaSummary = selectedSession?.channelMeta
+        ? Object.values(selectedSession.channelMeta).filter(Boolean).join(" • ")
+        : t("omni.common.notAvailable")
+
     return (
-        <div className="grid h-[calc(100vh-12rem)] gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)]">
-                <div className="space-y-4 border-b border-border/70 bg-white/80 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
+        <>
+        <div className="grid h-full min-h-0 gap-5 overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+            <div className="relative z-10 flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)]">
+                <div className="space-y-3 border-b border-border/70 bg-white/80 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
                             <div className="text-sm font-semibold text-foreground">{t("omni.inbox.sidebar.sessions")}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                 {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? (language === "tr" ? "tüm kanallar" : "all channels") : getOmniChannelLabel(t, channelFilter)}
                             </div>
                         </div>
-                        <Badge variant="outline" className="rounded-full bg-white/80">
+                        <Badge variant="outline" className="h-6 rounded-full bg-white/80 px-2.5 text-[11px]">
                             {filteredSessions.length}
                         </Badge>
                     </div>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder={t("searchChats")}
-                            className="rounded-lg bg-white pl-9"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-[minmax(0,1fr)_120px_36px] items-center gap-2">
+                        <div className="relative min-w-0">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder={t("searchChats")}
+                                className="h-9 rounded-md bg-white pl-9 text-sm"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                         <select
                             aria-label={t("omni.inbox.filter.allChannels")}
-                            className="flex h-10 flex-1 rounded-lg border border-input bg-white px-3 py-2 text-sm"
+                            className="flex h-9 min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm"
                             value={channelFilter}
                             onChange={(e) => setChannelFilter(e.target.value)}
                         >
@@ -501,7 +509,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-lg bg-white/80"
+                            className="h-9 w-9 rounded-md bg-white/80"
                             onClick={() => fetchSessions(true)}
                             disabled={isRefreshing}
                             aria-label={t("omni.dashboard.refresh")}
@@ -510,19 +518,19 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                             {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-                            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("omni.inbox.sidebar.visible")}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground">{filteredSessions.length}</div>
+                    <div className="flex flex-wrap gap-2">
+                        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
+                            <span className="uppercase tracking-[0.16em] text-muted-foreground">{t("omni.inbox.sidebar.visible")}</span>
+                            <span className="font-semibold text-foreground">{filteredSessions.length}</span>
                         </div>
-                        <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2">
-                            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t("omni.inbox.sidebar.paused")}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground">{pausedSessionCount}</div>
+                        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
+                            <span className="uppercase tracking-[0.16em] text-muted-foreground">{t("omni.inbox.sidebar.paused")}</span>
+                            <span className="font-semibold text-foreground">{pausedSessionCount}</span>
                         </div>
                     </div>
                 </div>
-                <ScrollArea className="flex-1">
-                    <div className="space-y-2 p-3">
+                <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+                    <div className="space-y-2 p-2.5 pr-4">
                         {filteredSessions.length === 0 ? (
                             <div className="rounded-lg border border-dashed border-border/70 px-4 py-10 text-center text-sm text-muted-foreground">
                                 {t("noConversationsFound")}
@@ -537,22 +545,22 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         aria-pressed={isSelected}
                                         onClick={() => setSelectedSessionId(session.id)}
                                         className={cn(
-                                            "flex w-full min-w-0 items-start gap-3 rounded-lg border border-transparent px-3 py-3 text-left transition-all",
+                                            "flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-md border border-transparent px-3 py-2.5 text-left transition-all",
                                             isSelected
                                                 ? "border-primary/25 bg-primary/5 shadow-sm"
                                                 : "border-border/60 bg-white/80 hover:border-border hover:bg-muted/30"
                                         )}
                                     >
-                                        <Avatar className="h-10 w-10 flex-shrink-0 border bg-white">
+                                        <Avatar className="h-9 w-9 flex-shrink-0 border bg-white">
                                             <AvatarFallback className="bg-gray-100 text-gray-500">
-                                                <User className="h-5 w-5" />
+                                                <User className="h-4 w-4" />
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className="min-w-0 flex-1 overflow-hidden">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
                                                     <div className="truncate text-sm font-semibold text-foreground">{getSessionDisplayName(session)}</div>
-                                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
                                                         <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white px-2 py-0.5">
                                                             {getChannelIcon(session)}
                                                             {getChannelName(session)}
@@ -564,9 +572,9 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                                         ) : null}
                                                     </div>
                                                 </div>
-                                                <span className="whitespace-nowrap text-[11px] text-muted-foreground">{formatDateSafe(session.lastMessageTime, "HH:mm")}</span>
+                                                <span className="shrink-0 whitespace-nowrap pt-0.5 text-[10px] text-muted-foreground">{formatDateSafe(session.lastMessageTime, "HH:mm")}</span>
                                             </div>
-                                            <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{session.lastMessage || t("noMessages")}</p>
+                                            <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{session.lastMessage || t("noMessages")}</p>
                                         </div>
                                     </button>
                                 )
@@ -576,64 +584,82 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                 </ScrollArea>
             </div>
 
-            <div className="min-h-0 overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)]">
+            <div className="relative z-0 min-h-0 min-w-0 overflow-hidden rounded-lg border border-border/70 bg-card/95 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_32px_rgba(15,23,42,0.06)]">
                 {selectedSession ? (
                     <div className="flex h-full min-h-0 flex-col">
-                        <div className="space-y-4 border-b border-border/70 bg-white/80 p-5">
-                            <div className="flex items-start gap-3">
-                                <Avatar className="h-12 w-12 border bg-white">
-                                    <AvatarFallback className="bg-primary/10 text-primary">{selectedSession.id.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0 flex-1 space-y-2">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="min-w-0 truncate text-base font-semibold text-foreground">{getSessionDisplayName(selectedSession)}</h3>
-                                        {selectedSession.isPaused ? (
-                                            <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-700">
-                                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
-                                                {t("aiPaused")}
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
-                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                                {t("aiActive")}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                        <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white px-2.5 py-1">
-                                            {getChannelIcon(selectedSession)}
-                                            {getChannelName(selectedSession)}
-                                        </span>
-                                        <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-2.5 py-1">
-                                            {selectedSessionMessageCount} {t("omni.inbox.section.messages")}
-                                        </span>
-                                        <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-2.5 py-1">
-                                            {t("omni.inbox.section.lastUpdated")}: {selectedSessionLastActivity ? formatDateSafe(selectedSessionLastActivity, "PP p") : t("omni.common.notAvailable")}
-                                        </span>
+                        <div className="sticky top-0 z-10 space-y-3 border-b border-border/70 bg-white/95 p-4 backdrop-blur-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-start gap-3">
+                                    <Avatar className="h-11 w-11 border bg-white">
+                                        <AvatarFallback className="bg-primary/10 text-primary">{selectedSession.id.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1 space-y-2">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h3 className="min-w-0 truncate text-base font-semibold text-foreground">{getSessionDisplayName(selectedSession)}</h3>
+                                            {selectedSession.isPaused ? (
+                                                <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-700">
+                                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
+                                                    {t("aiPaused")}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                                    {t("aiActive")}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                            <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-white px-2.5 py-1">
+                                                {getChannelIcon(selectedSession)}
+                                                {getChannelName(selectedSession)}
+                                            </span>
+                                            <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-2.5 py-1">
+                                                {selectedSessionMessageCount} {t("omni.inbox.section.messages")}
+                                            </span>
+                                            <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-2.5 py-1">
+                                                {t("omni.inbox.section.lastUpdated")}: {selectedSessionLastActivity ? formatDateSafe(selectedSessionLastActivity, "PP p") : t("omni.common.notAvailable")}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                                    {t("omni.inbox.section.quickActions")}
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                                        {t("omni.inbox.section.quickActions")}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 rounded-full bg-white/80 px-3 text-xs"
+                                        onClick={() => setIsSessionDetailsOpen(true)}
+                                        type="button"
+                                    >
+                                        <Info className="mr-1.5 h-3.5 w-3.5" />
+                                        {t("omni.pageInfo.button")}
+                                    </Button>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleOpenContact} disabled={!selectedSession.contactKey && !selectedSession.visitorEmail}>
-                                        {t("omni.inbox.action.openContact")}
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleOpenAppointment}>
-                                        <CalendarDays className="mr-2 h-4 w-4" />
-                                        {t("omni.inbox.action.createAppointment")}
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleCreateLead} disabled={isCreatingLead}>
-                                        {isCreatingLead ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {t("omni.inbox.action.createLead")}
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleCreateCallback} disabled={isCreatingCallback}>
-                                        {isCreatingCallback ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {t("omni.inbox.action.createCallback")}
-                                    </Button>
+                                    {canOpenOmniOperations ? (
+                                        <>
+                                            <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleOpenContact} disabled={!selectedSession.contactKey && !selectedSession.visitorEmail}>
+                                                {t("omni.inbox.action.openContact")}
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleOpenAppointment}>
+                                                <CalendarDays className="mr-2 h-4 w-4" />
+                                                {t("omni.inbox.action.createAppointment")}
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleCreateLead} disabled={isCreatingLead}>
+                                                {isCreatingLead ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                {t("omni.inbox.action.createLead")}
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="rounded-lg bg-white/80" onClick={handleCreateCallback} disabled={isCreatingCallback}>
+                                                {isCreatingCallback ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                                {t("omni.inbox.action.createCallback")}
+                                            </Button>
+                                        </>
+                                    ) : null}
                                     <Button
                                         variant={selectedSession.isPaused ? "default" : "outline"}
                                         size="sm"
@@ -672,14 +698,14 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                             ))}
                         </div>
 
-                        <div className="space-y-4 border-t border-border/70 bg-white/80 p-4">
+                        <div className="sticky bottom-0 z-10 space-y-3 border-t border-border/70 bg-white/95 p-4 backdrop-blur-sm">
                             {canReply ? (
                                 <div className="space-y-2">
                                     <form onSubmit={handleSendMessage} className="flex gap-2">
                                         <Input
                                             value={replyText}
                                             onChange={(e) => setReplyText(e.target.value)}
-                                            placeholder={selectedSession?.isPaused ? t("typeReply") : t("pauseAiToReply")}
+                                            placeholder={canManualReply ? t("typeReply") : t("omni.inbox.pauseToReply")}
                                             className="h-11 flex-1 rounded-lg bg-white"
                                             disabled={isSending || !canManualReply}
                                         />
@@ -693,10 +719,14 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         </Button>
                                     </form>
                                     <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                                        <span>{t("omni.inbox.replyHint").replace("{channel}", getChannelName(selectedSession))}</span>
-                                        {selectedSession.isPaused
-                                            ? <span className="font-medium text-amber-600">({t("omni.inbox.aiPausedHint")})</span>
-                                            : <span className="font-medium text-sky-700">({t("aiActiveReplyLockedHint")})</span>}
+                                        {canManualReply ? (
+                                            <>
+                                                <span>{t("omni.inbox.replyHint").replace("{channel}", getChannelName(selectedSession))}</span>
+                                                <span className="font-medium text-amber-600">({t("omni.inbox.aiPausedHint")})</span>
+                                            </>
+                                        ) : (
+                                            <span>{t("omni.inbox.pauseToReplyHint")}</span>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -705,29 +735,6 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                 </div>
                             )}
 
-                            <div className="space-y-3">
-                                <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                                    {t("omni.inbox.section.sessionDetails")}
-                                </div>
-                                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                    <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
-                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.contact")}</p>
-                                        <p className="mt-1 break-words font-medium text-foreground">{selectedSession.contactKey || selectedSession.visitorEmail || t("omni.inbox.unknown")}</p>
-                                    </div>
-                                    <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
-                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.disposition")}</p>
-                                        <p className="mt-1 break-words font-medium text-foreground">{selectedSession.lastDisposition || t("omni.inbox.active")}</p>
-                                    </div>
-                                    <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
-                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.assistantProfile")}</p>
-                                        <p className="mt-1 break-words font-medium text-foreground">{selectedSession.assistantProfileId || t("omni.inbox.defaultProfile")}</p>
-                                    </div>
-                                    <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
-                                        <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.channelMeta")}</p>
-                                        <p className="mt-1 break-words font-medium text-foreground">{selectedSession.channelMeta ? Object.values(selectedSession.channelMeta).filter(Boolean).join(" • ") : t("omni.common.notAvailable")}</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 ) : (
@@ -739,5 +746,48 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                 )}
             </div>
         </div>
+        {selectedSession ? (
+            <Dialog open={isSessionDetailsOpen} onOpenChange={setIsSessionDetailsOpen}>
+                <DialogContent className="max-w-3xl overflow-hidden p-0 sm:rounded-xl">
+                    <DialogHeader className="border-b border-border/70 bg-white/90 px-5 py-4 text-left">
+                        <DialogTitle>{t("omni.inbox.section.sessionDetails")}</DialogTitle>
+                        <DialogDescription>{t("omni.inbox.sessionDetailsDescription")}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.contact")}</p>
+                            <p className="mt-1 break-words font-medium text-foreground">{selectedSession.contactKey || selectedSession.visitorEmail || t("omni.inbox.unknown")}</p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.disposition")}</p>
+                            <p className="mt-1 break-words font-medium text-foreground">{selectedSession.lastDisposition || t("omni.inbox.active")}</p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.assistantProfile")}</p>
+                            <p className="mt-1 break-words font-medium text-foreground">{selectedSession.assistantProfileId || t("omni.inbox.defaultProfile")}</p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.common.sourceSession")}</p>
+                            <p className="mt-1 break-all font-medium text-foreground">{selectedSession.id}</p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.section.lastUpdated")}</p>
+                            <p className="mt-1 break-words font-medium text-foreground">{selectedSessionLastActivity ? formatDateSafe(selectedSessionLastActivity, "PP p") : t("omni.common.notAvailable")}</p>
+                        </div>
+                        <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.channelMeta")}</p>
+                            <p className="mt-1 break-words font-medium text-foreground">{sessionMetaSummary}</p>
+                        </div>
+                        {selectedSession.transcriptSummary ? (
+                            <div className="rounded-lg border border-violet-100 bg-violet-50 p-4 text-sm text-violet-950 sm:col-span-2 xl:col-span-3">
+                                <p className="text-xs uppercase tracking-wide text-violet-700">{t("omni.inbox.transcriptSummary")}</p>
+                                <p className="mt-1 leading-6">{selectedSession.transcriptSummary}</p>
+                            </div>
+                        ) : null}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        ) : null}
+        </>
     )
 }

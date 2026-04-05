@@ -28,7 +28,7 @@ function getLoginFailureReason(error: unknown): string {
 
 function resolvePostLoginPath(role: unknown): string {
   const normalized = typeof role === "string" ? role.trim().toUpperCase() : ""
-  if (normalized === "SUPER_ADMIN") return "/admin"
+  if (normalized === "SUPER_ADMIN") return "/console/chatbot"
   if (normalized === "AGENCY_ADMIN") return "/agency"
   return "/console/chatbot"
 }
