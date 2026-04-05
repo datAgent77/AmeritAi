@@ -640,6 +640,7 @@ export default function ChatbotContainer() {
                                         t={t}
                                         onLeadSubmit={handleLeadSubmit}
                                         showClassicEntryOnboarding={showClassicEntryOnboarding}
+                                        onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
                                     />
                                 </div>
                                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
@@ -716,6 +717,7 @@ export default function ChatbotContainer() {
                         t={t}
                         onLeadSubmit={handleLeadSubmit}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
+                        onCloseWidget={handleCloseWidget}
                     />
 
                     <ChatInput

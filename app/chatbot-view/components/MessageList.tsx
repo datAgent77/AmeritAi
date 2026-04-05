@@ -5,7 +5,7 @@ import type {
     GuidedSkillShortcut,
     GuidedSkillState,
 } from "@/lib/guided-skills/types"
-import { Sparkles } from "lucide-react"
+import { Sparkles, X } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
@@ -30,6 +30,7 @@ interface MessageListProps {
     onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
     mode?: "classic" | "ambient"
     showClassicEntryOnboarding?: boolean
+    onCloseWidget?: () => void
 }
 
 type RgbColor = { r: number; g: number; b: number }
@@ -299,6 +300,7 @@ export function MessageList({
     onLeadSubmit,
     mode = "classic",
     showClassicEntryOnboarding = false,
+    onCloseWidget,
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
     const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
@@ -356,24 +358,36 @@ export function MessageList({
                             color: settings.headerTextColor || "#FFFFFF"
                         }}
                     >
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/20"
-                                style={{ width: settings.headerLogoWidth || 40, height: settings.headerLogoHeight || 40 }}
-                            >
-                                {settings.headerLogo || settings.brandLogo ? (
-                                    <Image
-                                        src={settings.headerLogo || settings.brandLogo}
-                                        alt={`${settings.companyName} logo`}
-                                        fill
-                                        className="object-contain p-1"
-                                        unoptimized
-                                    />
-                                ) : (
-                                    <Sparkles className="h-5 w-5 text-white" />
-                                )}
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                    className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/20"
+                                    style={{ width: settings.headerLogoWidth || 40, height: settings.headerLogoHeight || 40 }}
+                                >
+                                    {settings.headerLogo || settings.brandLogo ? (
+                                        <Image
+                                            src={settings.headerLogo || settings.brandLogo}
+                                            alt={`${settings.companyName} logo`}
+                                            fill
+                                            className="object-contain p-1"
+                                            unoptimized
+                                        />
+                                    ) : (
+                                        <Sparkles className="h-5 w-5 text-white" />
+                                    )}
+                                </div>
+                                <p className="text-sm font-semibold truncate" style={{ color: settings.headerTextColor || "#FFFFFF" }}>{settings.companyName}</p>
                             </div>
-                            <p className="text-sm font-semibold" style={{ color: settings.headerTextColor || "#FFFFFF" }}>{settings.companyName}</p>
+                            {onCloseWidget ? (
+                                <button
+                                    type="button"
+                                    onClick={onCloseWidget}
+                                    className="md:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
+                                    aria-label="Close Widget"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            ) : null}
                         </div>
                         <div className="mt-7 space-y-2">
                             <h2 className="text-4xl font-bold leading-tight tracking-tight">
