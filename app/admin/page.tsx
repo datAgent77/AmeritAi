@@ -1,5 +1,9 @@
-import { permanentRedirect } from "next/navigation"
+import { SuperAdminDashboard } from "@/components/super-admin-dashboard"
 
 export default function AdminRootPage() {
-  permanentRedirect("/console/chatbot")
+  return (
+    <div className="p-8">
+      <SuperAdminDashboard />
+    </div>
+  )
 }
