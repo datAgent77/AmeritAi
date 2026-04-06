@@ -11,12 +11,10 @@ import {
     TrendingUp,
     Users,
     Wrench,
-    BadgePercent,
     Crown,
     Globe,
     ShieldCheck,
     Zap,
-    Building2,
     DollarSign,
     Star
 } from "lucide-react"
@@ -30,21 +28,22 @@ const content = {
         cta_contact: "Bize Ulaşın",
         why_title: "Neden Vion Partner'ı Olmalısınız?",
         why_items: [
-            { icon: DollarSign, title: "%25'e Kadar Yinelenen Komisyon", desc: "Getirdiğiniz müşteri aktif olduğu sürece her ay komisyon kazanırsınız. Tek seferlik değil, sürdürülebilir gelir." },
+            { icon: DollarSign, title: "Yinelenen Komisyon Geliriniz Olsun", desc: "Getirdiğiniz müşteri aktif olduğu sürece her ay komisyon kazanırsınız. Tek seferlik değil, sürdürülebilir gelir." },
             { icon: Crown, title: "Müşteri Sahipliği", desc: "Getirdiğiniz müşteri sizindir. 12 ay boyunca başka partner veya Vion direkt satış ekibi müdahale edemez." },
-            { icon: Globe, title: "Beyaz Etiket Seçeneği", desc: "Solution Partner olarak Vion'u kendi markanızla sunabilirsiniz. Müşteri sizin markanızla tanışır." },
+            { icon: Globe, title: "Beyaz Etiket Seçeneği", desc: "Çözüm Partner olarak Vion'u kendi markanızla sunabilirsiniz. Müşteri sizin markanızla tanışır." },
             { icon: ShieldCheck, title: "Teknik Destek & Eğitim", desc: "Satış öncesi ve sonrası teknik destek, demo hesabı, eğitim materyalleri ve co-branded dokümanlar." },
         ],
         tiers_title: "Partner Seviyeleri",
-        tiers_desc: "Katılım seviyenize göre farklı avantajlar ve komisyon oranları sunuluyor.",
+        tiers_desc: "Katılım seviyenize göre farklı avantajlar sunuluyor. Detaylı komisyon oranları başvuru onayı sonrası paylaşılır.",
         tiers: [
             {
                 icon: Star,
                 name: "Referans Partner",
                 color: "border-slate-400/30 bg-slate-500/5",
                 badge_color: "bg-slate-500/10 text-slate-400",
-                commission: "%15",
-                commission_label: "İlk yıl, tek seferlik",
+                commission: "Temel Komisyon",
+                commission_desc: "İlk satışta tek seferlik",
+                commission_level: 1,
                 for_whom: "Freelancer, içerik üretici, topluluk yöneticisi, sektör blogu",
                 how: "Referral linkinizle müşteri yönlendirirsiniz. Satış Vion tarafından yapılır.",
                 features: [
@@ -59,8 +58,9 @@ const content = {
                 name: "Satış Partneri",
                 color: "border-blue-400/30 bg-blue-500/5",
                 badge_color: "bg-blue-500/10 text-blue-400",
-                commission: "%25",
-                commission_label: "Yıllık sözleşmede, yinelenen",
+                commission: "Yüksek Komisyon",
+                commission_desc: "Yıllık sözleşmede, yinelenen",
+                commission_level: 2,
                 for_whom: "Dijital ajanslar, yazılım bayileri, teknoloji danışmanları",
                 how: "Teklif sunup anlaşmayı kapatırsınız. Satış süreci sizin kontrolünüzde.",
                 features: [
@@ -77,8 +77,9 @@ const content = {
                 name: "Çözüm Partneri",
                 color: "border-purple-400/30 bg-purple-500/5",
                 badge_color: "bg-purple-500/10 text-purple-400",
-                commission: "%30",
-                commission_label: "Lisans marjı + sınırsız hizmet geliri",
+                commission: "En Yüksek Komisyon",
+                commission_desc: "Lisans marjı + sınırsız hizmet geliri",
+                commission_level: 3,
                 for_whom: "Dijital dönüşüm şirketleri, sistem entegratörleri, danışmanlık firmaları",
                 how: "Kurulum, entegrasyon ve optimizasyon yaparsınız. Enterprise anlaşmalarını Vion ile birlikte satarsınız.",
                 features: [
@@ -92,14 +93,16 @@ const content = {
                 limit: null
             },
         ],
-        commission_title: "Komisyon Yapısı",
-        commission_desc: "Hangi plan satarsanız kazancınız değişir. Partnerlerimizi Pro ve Enterprise'a yönlendiriyoruz.",
-        commission_table: [
-            { plan: "Starter", rate: "%5", note: "Yalnızca Referans Partner" },
-            { plan: "Growth", rate: "%15", note: "Tüm partner seviyeleri" },
-            { plan: "Pro", rate: "%25", note: "Tüm partner seviyeleri" },
-            { plan: "Enterprise", rate: "%30 + hizmet geliri", note: "Sınırsız potansiyel" },
+        commission_title: "Kazanç Potansiyelinizi Keşfedin",
+        commission_desc: "Hangi seviyede yer aldığınıza ve sattığınız planlara göre kazanç potansiyeliniz artar. Detaylı komisyon oranları, başvurunuz onaylandıktan sonra paylaşılır.",
+        commission_levels: [
+            { label: "Referans Partner", level: 1, highlight: false, note: "İlk satışta kazanım" },
+            { label: "Satış Partneri", level: 2, highlight: false, note: "Yinelenen komisyon" },
+            { label: "Çözüm Partneri", level: 3, highlight: true, note: "En yüksek potansiyel" },
         ],
+        commission_cta_q: "Detaylı komisyon oranlarını öğrenmek ister misiniz?",
+        commission_cta_desc: "Partner başvurunuz onaylandıktan sonra ekibimiz size özel oranları ve kazanç planını detaylıca paylaşır.",
+        commission_cta_btn: "Başvuru Yap →",
         rules_title: "Partner Kuralları",
         rules: [
             "Partnerler resmi liste fiyatının altına inemez. İndirim yetkisi Vion'a aittir.",
@@ -111,6 +114,7 @@ const content = {
         faq_title: "Sıkça Sorulan Sorular",
         faqs: [
             { q: "Başvurmak için ödeme yapmam gerekiyor mu?", a: "Hayır. Partner programına katılım tamamen ücretsizdir." },
+            { q: "Komisyon oranları ne kadar?", a: "Komisyon oranları partner seviyenize ve sattığınız plana göre belirlenir. Başvuru onaylandıktan sonra ekibimiz detayları paylaşır." },
             { q: "Komisyon ne zaman ödenir?", a: "Müşteri ödeme yaptıktan sonraki 30 gün içinde ödeme yapılır." },
             { q: "Müşteri planını değiştirirse ne olur?", a: "Komisyon oranı güncel plana göre yeniden hesaplanır." },
             { q: "Beyaz etiket için ek ücret var mı?", a: "Beyaz etiket yalnızca Çözüm Partneri seviyesinde mevcuttur. Kurulum ücreti hakkında ekibimizle görüşebilirsiniz." },
@@ -126,21 +130,22 @@ const content = {
         cta_contact: "Contact Us",
         why_title: "Why Become a Vion Partner?",
         why_items: [
-            { icon: DollarSign, title: "Up to 25% Recurring Commission", desc: "Earn commission every month as long as your referred customer stays active. Sustainable, not one-time income." },
+            { icon: DollarSign, title: "Earn Recurring Commission", desc: "Earn commission every month as long as your referred customer stays active. Sustainable, not one-time income." },
             { icon: Crown, title: "Customer Ownership", desc: "The customer you bring is yours. No other partner or Vion direct sales team can interfere for 12 months." },
             { icon: Globe, title: "White Label Option", desc: "As a Solution Partner, you can present Vion under your own brand. The customer meets your brand first." },
             { icon: ShieldCheck, title: "Technical Support & Training", desc: "Pre- and post-sales technical support, demo account, training materials, and co-branded documents." },
         ],
         tiers_title: "Partner Tiers",
-        tiers_desc: "Different benefits and commission rates depending on your level of involvement.",
+        tiers_desc: "Different benefits depending on your level of involvement. Exact commission rates are shared after application approval.",
         tiers: [
             {
                 icon: Star,
                 name: "Referral Partner",
                 color: "border-slate-400/30 bg-slate-500/5",
                 badge_color: "bg-slate-500/10 text-slate-400",
-                commission: "15%",
-                commission_label: "First year, one-time",
+                commission: "Base Commission",
+                commission_desc: "One-time on first sale",
+                commission_level: 1,
                 for_whom: "Freelancers, content creators, community managers, industry blogs",
                 how: "You refer customers via your referral link. Vion closes the sale.",
                 features: [
@@ -155,8 +160,9 @@ const content = {
                 name: "Sales Partner",
                 color: "border-blue-400/30 bg-blue-500/5",
                 badge_color: "bg-blue-500/10 text-blue-400",
-                commission: "25%",
-                commission_label: "Annual contract, recurring",
+                commission: "High Commission",
+                commission_desc: "Annual contract, recurring",
+                commission_level: 2,
                 for_whom: "Digital agencies, software resellers, technology consultants",
                 how: "You present proposals and close deals. You control the sales process.",
                 features: [
@@ -173,8 +179,9 @@ const content = {
                 name: "Solution Partner",
                 color: "border-purple-400/30 bg-purple-500/5",
                 badge_color: "bg-purple-500/10 text-purple-400",
-                commission: "30%",
-                commission_label: "License margin + unlimited service revenue",
+                commission: "Highest Commission",
+                commission_desc: "License margin + unlimited service revenue",
+                commission_level: 3,
                 for_whom: "Digital transformation companies, system integrators, consulting firms",
                 how: "You handle setup, integration, and optimization. You co-sell Enterprise deals with Vion.",
                 features: [
@@ -188,14 +195,16 @@ const content = {
                 limit: null
             },
         ],
-        commission_title: "Commission Structure",
-        commission_desc: "Your earnings vary by plan sold. We guide our partners toward Pro and Enterprise.",
-        commission_table: [
-            { plan: "Starter", rate: "5%", note: "Referral Partner only" },
-            { plan: "Growth", rate: "15%", note: "All partner tiers" },
-            { plan: "Pro", rate: "25%", note: "All partner tiers" },
-            { plan: "Enterprise", rate: "30% + service revenue", note: "Unlimited potential" },
+        commission_title: "Discover Your Earning Potential",
+        commission_desc: "Your earning potential grows with your tier and the plans you sell. Exact commission rates are shared after your application is approved.",
+        commission_levels: [
+            { label: "Referral Partner", level: 1, highlight: false, note: "Earn on referral" },
+            { label: "Sales Partner", level: 2, highlight: false, note: "Recurring commissions" },
+            { label: "Solution Partner", level: 3, highlight: true, note: "Highest potential" },
         ],
+        commission_cta_q: "Want to learn the exact commission rates?",
+        commission_cta_desc: "After your partner application is approved, our team will share your personalized rates and earning structure.",
+        commission_cta_btn: "Apply Now →",
         rules_title: "Partner Rules",
         rules: [
             "Partners cannot go below official list price. Discount authority belongs to Vion.",
@@ -207,6 +216,7 @@ const content = {
         faq_title: "Frequently Asked Questions",
         faqs: [
             { q: "Do I need to pay to apply?", a: "No. Joining the partner program is completely free." },
+            { q: "What are the commission rates?", a: "Commission rates depend on your partner tier and the plans you sell. Exact details are shared after your application is approved." },
             { q: "When are commissions paid?", a: "Within 30 days after the customer makes a payment." },
             { q: "What happens if the customer changes plans?", a: "Commission rate is recalculated based on the current plan." },
             { q: "Is there an extra fee for white label?", a: "White label is available only at the Solution Partner level. Contact our team for setup pricing." },
@@ -286,8 +296,21 @@ export default function PartnerPage() {
                                 </div>
 
                                 <div>
-                                    <div className="text-2xl font-bold">{tier.commission}</div>
-                                    <div className="text-xs text-muted-foreground">{tier.commission_label}</div>
+                                    <div className="text-lg font-bold">{tier.commission}</div>
+                                    <div className="text-xs text-muted-foreground">{tier.commission_desc}</div>
+                                    {/* Commission level indicator */}
+                                    <div className="flex gap-1 mt-2">
+                                        {[1, 2, 3].map((dot) => (
+                                            <div
+                                                key={dot}
+                                                className={`h-1.5 w-6 rounded-full ${
+                                                    dot <= tier.commission_level
+                                                        ? tier.commission_level === 3 ? 'bg-purple-400' : tier.commission_level === 2 ? 'bg-blue-400' : 'bg-slate-400'
+                                                        : 'bg-muted-foreground/20'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="text-xs text-muted-foreground border-t border-border pt-3">
@@ -320,32 +343,45 @@ export default function PartnerPage() {
                 </div>
             </section>
 
-            {/* Commission Table */}
+            {/* Commission Potential */}
             <section className="py-16 px-4 border-t border-border bg-muted/20">
                 <div className="container mx-auto max-w-3xl">
                     <div className="text-center mb-10">
                         <h2 className="text-3xl font-bold mb-3">{c.commission_title}</h2>
-                        <p className="text-muted-foreground">{c.commission_desc}</p>
+                        <p className="text-muted-foreground max-w-xl mx-auto">{c.commission_desc}</p>
                     </div>
-                    <div className="rounded-2xl border border-border overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-border bg-muted/40">
-                                    <th className="text-left px-5 py-3 font-semibold text-foreground">Plan</th>
-                                    <th className="text-left px-5 py-3 font-semibold text-foreground">{lang === 'tr' ? 'Komisyon' : 'Commission'}</th>
-                                    <th className="text-left px-5 py-3 font-semibold text-foreground">{lang === 'tr' ? 'Not' : 'Note'}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {c.commission_table.map((row, i) => (
-                                    <tr key={i} className={`border-b border-border last:border-0 ${row.plan === 'Enterprise' ? 'bg-purple-500/5' : ''}`}>
-                                        <td className="px-5 py-4 font-medium">{row.plan}</td>
-                                        <td className="px-5 py-4 font-bold text-green-500">{row.rate}</td>
-                                        <td className="px-5 py-4 text-muted-foreground">{row.note}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="grid grid-cols-3 gap-4 mb-8">
+                        {c.commission_levels.map((item, i) => (
+                            <div key={i} className={`rounded-2xl border p-5 text-center flex flex-col gap-3 ${
+                                item.highlight
+                                    ? 'border-purple-400/40 bg-purple-500/10'
+                                    : 'border-border bg-muted/20'
+                            }`}>
+                                <div className="text-sm font-semibold">{item.label}</div>
+                                <div className="flex gap-1 justify-center">
+                                    {[1, 2, 3].map((dot) => (
+                                        <div
+                                            key={dot}
+                                            className={`h-2 w-8 rounded-full ${
+                                                dot <= item.level
+                                                    ? item.level === 3 ? 'bg-purple-400' : item.level === 2 ? 'bg-blue-400' : 'bg-slate-400'
+                                                    : 'bg-muted-foreground/20'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                                <div className="text-xs text-muted-foreground">{item.note}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="rounded-2xl border border-purple-400/30 bg-purple-500/5 p-6 text-center">
+                        <div className="text-sm font-medium mb-2">{c.commission_cta_q}</div>
+                        <p className="text-xs text-muted-foreground mb-4">{c.commission_cta_desc}</p>
+                        <Link href="/contact">
+                            <Button size="sm" variant="outline" className="rounded-full border-purple-400/40 hover:bg-purple-500/10">
+                                {c.commission_cta_btn}
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>
