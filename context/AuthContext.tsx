@@ -176,6 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [trialEndsAt, isPaidPlan, subscriptionStatus])
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         installAuthDebugDump()
         recordAuthDebug("auth_effect_start", { pathname })
@@ -312,7 +313,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 unsubscribeSnapshot();
             }
         }
-    }, [pathname])
+    }, [])
 
     return (
         <AuthContext.Provider value={{
