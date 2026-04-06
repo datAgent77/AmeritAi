@@ -1012,10 +1012,10 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                         <p className="font-medium text-blue-800">Yapmanız gerekenler:</p>
                                                         <ol className="list-decimal list-inside space-y-1.5 text-blue-700 ml-1">
                                                             <li>Meta for Developers sitesine gidin</li>
-                                                            <li>"My Apps" → "Create App" butonuna tıklayın</li>
-                                                            <li>App türü olarak <strong>"Business"</strong> seçin</li>
+                                                            <li>&quot;My Apps&quot; → &quot;Create App&quot; butonuna tıklayın</li>
+                                                            <li>App türü olarak <strong>&quot;Business&quot;</strong> seçin</li>
                                                             <li>Uygulamanıza bir isim verin ve oluşturun</li>
-                                                            <li>Uygulamanıza <strong>"WhatsApp"</strong> ürününü ekleyin</li>
+                                                            <li>Uygulamanıza <strong>&quot;WhatsApp&quot;</strong> ürününü ekleyin</li>
                                                         </ol>
                                                     </div>
                                                     <Button variant="outline" size="sm" className="w-full gap-2"
@@ -1030,12 +1030,12 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                             {waStep === 2 && (
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <h4 className="font-semibold text-sm">Adım 2: Phone Number ID'yi Girin</h4>
+                                                        <h4 className="font-semibold text-sm">Adım 2: Phone Number ID&apos;yi Girin</h4>
                                                         <p className="text-xs text-muted-foreground mt-1">Meta Developer panelinde WhatsApp → Getting Started sayfasından bulabilirsiniz.</p>
                                                     </div>
                                                     <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
                                                         <p className="font-medium mb-1">Nerede bulunur?</p>
-                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>"Phone number ID"</strong> alanı (14-16 haneli sayı)</p>
+                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>&quot;Phone number ID&quot;</strong> alanı (14-16 haneli sayı)</p>
                                                     </div>
                                                     <div className="space-y-1.5">
                                                         <Label className="text-xs">{t('phoneNumberId')}</Label>
@@ -1057,12 +1057,12 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                             {waStep === 3 && (
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <h4 className="font-semibold text-sm">Adım 3: Access Token'ı Girin</h4>
-                                                        <p className="text-xs text-muted-foreground mt-1">Kalıcı (System User) token önerilir. Geçici test token'ı 24 saatte sona erer.</p>
+                                                        <h4 className="font-semibold text-sm">Adım 3: Access Token&apos;ı Girin</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Kalıcı (System User) token önerilir. Geçici test token&apos;ı 24 saatte sona erer.</p>
                                                     </div>
                                                     <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
                                                         <p className="font-medium mb-1">Nerede bulunur?</p>
-                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>"Temporary access token"</strong> alanı</p>
+                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>&quot;Temporary access token&quot;</strong> alanı</p>
                                                         <p className="mt-1 text-amber-700">💡 Üretim ortamı için: Business Manager → System Users → <strong>Kalıcı Token Oluştur</strong></p>
                                                     </div>
                                                     <div className="space-y-1.5">
@@ -1082,11 +1082,11 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                 <div className="space-y-3">
                                                     <div>
                                                         <h4 className="font-semibold text-sm">Adım 4: Webhook Kurulumu</h4>
-                                                        <p className="text-xs text-muted-foreground mt-1">Meta panelinde bu URL ve token'ı webhook olarak kaydedin, sonra bağlantıyı tamamlayın.</p>
+                                                        <p className="text-xs text-muted-foreground mt-1">Meta panelinde bu URL ve token&apos;ı webhook olarak kaydedin, sonra bağlantıyı tamamlayın.</p>
                                                     </div>
                                                     <div className="space-y-3">
                                                         <div>
-                                                            <p className="text-xs font-medium mb-1">Webhook URL (Meta'ya girin):</p>
+                                                            <p className="text-xs font-medium mb-1">Webhook URL (Meta&apos;ya girin):</p>
                                                             <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
                                                                 <code className="text-xs break-all flex-1">{whatsappWebhookUrl}</code>
                                                                 <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
@@ -1096,7 +1096,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs font-medium mb-1">Verify Token (Meta'ya girin):</p>
+                                                            <p className="text-xs font-medium mb-1">Verify Token (Meta&apos;ya girin):</p>
                                                             <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
                                                                 <code className="text-xs break-all flex-1">{waVerifyToken}</code>
                                                                 <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
@@ -1110,16 +1110,16 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                                         <p className="font-medium mb-1">Meta panelinde yapmanız gerekenler:</p>
                                                         <ol className="list-decimal list-inside space-y-1 text-blue-700 ml-1">
                                                             <li>WhatsApp → <strong>Configuration</strong> sekmesine gidin</li>
-                                                            <li><strong>"Edit"</strong> butonuna tıklayın</li>
-                                                            <li>Yukarıdaki URL ve Token'ı girin</li>
-                                                            <li><strong>"Verify and Save"</strong> butonuna basın</li>
+                                                            <li><strong>&quot;Edit&quot;</strong> butonuna tıklayın</li>
+                                                            <li>Yukarıdaki URL ve Token&apos;ı girin</li>
+                                                            <li><strong>&quot;Verify and Save&quot;</strong> butonuna basın</li>
                                                             <li><strong>messages</strong> webhook alanını subscribe edin</li>
                                                         </ol>
                                                     </div>
                                                     <Button variant="outline" size="sm" className="w-full gap-2"
                                                         onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
                                                         <ExternalLink className="h-3.5 w-3.5" />
-                                                        Webhook Configuration'ı Aç
+                                                        Webhook Configuration Sayfasını Aç
                                                     </Button>
                                                 </div>
                                             )}
