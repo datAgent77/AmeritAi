@@ -286,7 +286,7 @@ export function AppearanceTab({
 
     // Branding functions
     const addSuggestedQuestion = () => {
-        if (settings.suggestedQuestions.length >= 4) {
+        if (settings.suggestedQuestions.length >= 5) {
             return
         }
 
@@ -308,6 +308,16 @@ export function AppearanceTab({
             ...prev,
             suggestedQuestions: [...prev.suggestedQuestions, nextQuestion]
         }))
+    }
+
+    const autoFillSuggestedQuestions = () => {
+        const industryConfig = settings.industry ? INDUSTRY_CONFIG[settings.industry] : INDUSTRY_CONFIG['other']
+        const pool: string[] = (industryConfig as any).suggestedQuestions?.[language === 'tr' ? 'tr' : 'en'] || []
+        const companyName = settings.companyName?.trim() || ''
+        const questions = pool.slice(0, 5).map((q: string) =>
+            companyName ? q.replace(/\{company\}/g, companyName) : q
+        )
+        setSettings(prev => ({ ...prev, suggestedQuestions: questions }))
     }
 
     const updateSuggestedQuestion = (index: number, value: string) => {
@@ -634,12 +644,28 @@ export function AppearanceTab({
                         </AccordionTrigger>
                         <AccordionContent className="pt-4 pb-6">
                             <div className="space-y-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs text-muted-foreground">
+                                        {language === 'tr'
+                                            ? `${settings.industry ? (INDUSTRY_CONFIG[settings.industry] as any)?.names?.tr || '' : ''} sektörüne göre otomatik öneriler`
+                                            : `Auto-suggestions for ${settings.industry ? (INDUSTRY_CONFIG[settings.industry] as any)?.names?.en || '' : 'your industry'}`
+                                        }
+                                    </p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={autoFillSuggestedQuestions}
+                                        className="shrink-0 text-xs h-7 px-2 gap-1"
+                                    >
+                                        ✦ {language === 'tr' ? 'Otomatik Doldur' : 'Auto-fill'}
+                                    </Button>
+                                </div>
                                 {settings.suggestedQuestions.map((question, index) => (
                                     <div key={index} className="flex items-center gap-2">
                                         <Input
                                             value={question}
                                             onChange={(e) => updateSuggestedQuestion(index, e.target.value)}
-                                            placeholder={`Question ${index + 1}`}
+                                            placeholder={`${language === 'tr' ? 'Soru' : 'Question'} ${index + 1}`}
                                         />
                                         <Button
                                             variant="ghost"
@@ -651,7 +677,7 @@ export function AppearanceTab({
                                         </Button>
                                     </div>
                                 ))}
-                                {settings.suggestedQuestions.length < 4 && (
+                                {settings.suggestedQuestions.length < 5 && (
                                     <Button variant="outline" size="sm" onClick={addSuggestedQuestion}>
                                         + {t('addQuestion')}
                                     </Button>

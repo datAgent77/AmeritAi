@@ -7,6 +7,7 @@ import { ShieldCheck, Loader2, Plus, Search, Settings, Users, Activity } from "l
 import { auth } from "@/lib/firebase"
 import { uploadLogo } from "@/lib/widget-settings-utils"
 import type { ManagementPartnerRecord, PartnerCapabilities } from "@/lib/management/types"
+import { getPartnerLevelLabel } from "@/lib/management/access"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
@@ -42,11 +43,7 @@ interface ManagedCustomer {
     isArchived?: boolean
 }
 
-function getPartnerLevelLabel(level: string | null | undefined, t: (key: string) => string) {
-    if (level === "strategic_partner") return t("partnerLevelStrategic")
-    if (level === "partner") return t("partnerLevelBasic")
-    return t("partnerLevelSolution")
-}
+
 
 function getIndustryLabel(industry: string | null | undefined, t: (key: string) => string) {
     switch (industry) {
@@ -180,7 +177,7 @@ export default function AgencyPage() {
         [customers]
     )
 
-    const partnerLevelLabel = getPartnerLevelLabel(viewerPartner?.partnerLevel, t)
+    const partnerLevelLabel = getPartnerLevelLabel(viewerPartner?.partnerLevel)
     const isStrategicPartner = viewerPartner?.partnerLevel === "strategic_partner"
     const canCreateManagedAccounts = viewerCapabilities?.canCreateManagedAccounts === true
     const canAccessManagedWorkspaces = viewerCapabilities?.canAccessManagedAccountWorkspace === true

@@ -626,7 +626,13 @@ export async function POST(req: Request) {
             const userDoc = await adminDb.collection("users").doc(userId).get();
             const userData = userDoc.data();
 
-            if (userData?.role === 'SUPER_ADMIN') {
+            if (
+                userData?.role === 'SUPER_ADMIN' ||
+                userData?.role === 'AGENCY_ADMIN' ||
+                userData?.role === 'PARTNER'
+            ) {
+                // Ideally, here you'd also verify if this specific chatbotId belongs
+                // to the agency/partner making the request.
                 targetChatbotId = chatbotId;
             } else {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });

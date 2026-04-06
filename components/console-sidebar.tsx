@@ -127,6 +127,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         router.push("/login")
     }
 
+    // Determine if chatbot menus (Build, Connect, Grow) should be visible
+    const showChatbotMenus = true
+
     // Top-level overview item (outside groups)
     const overviewHref = targetUserId
         ? buildLink("/console/chatbot")
@@ -146,6 +149,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     }
 
     const tenantGroups = [
+// ... unchanged ...
         {
             label: t('build') || "Build",
             items: [
@@ -208,6 +212,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
 
     // Special items that don't fit groups or are conditional
     const specialItems = [
+// ... unchanged ...
         // Restaurant Menu
         ...(sectorId === 'restaurant' ? [{
             title: t('menu') || "Menu & QR",
@@ -267,60 +272,64 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                         </SidebarMenu>
                     )}
 
-                    {/* TOP OVERVIEW ITEM (Outside Groups) */}
-                    <SidebarMenu className="mb-2">
-                        <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={overviewItem.active}
-                                className={cn(
-                                    "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                    "hover:bg-white/10 hover:text-white",
-                                    overviewItem.active
-                                        ? "bg-white/15 text-white shadow-sm"
-                                        : "text-zinc-400 group-hover:text-white"
-                                )}
-                            >
-                                <Link href={overviewItem.href}>
-                                    <overviewItem.icon className={cn("size-4 transition-colors", overviewItem.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                    <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{overviewItem.title}</span>
-                                </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarMenu>
+                    {showChatbotMenus && (
+                        <>
+                            {/* TOP OVERVIEW ITEM (Outside Groups) */}
+                            <SidebarMenu className="mb-2">
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={overviewItem.active}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            overviewItem.active
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href={buildLink(overviewItem.href)}>
+                                            <overviewItem.icon className={cn("size-4 transition-colors", overviewItem.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{overviewItem.title}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            </SidebarMenu>
 
-                    {/* TENANT NAVIGATION GROUPS */}
-                    {tenantGroups.map((group) => (
-                        <SidebarGroup key={group.label} className="group-data-[collapsible=icon]:p-0">
-                            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-zinc-500 font-semibold uppercase tracking-wider text-xs px-2 mb-1">
-                                {group.label}
-                            </SidebarGroupLabel>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    {group.items.map((item) => (
-                                        <SidebarMenuItem key={item.href}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={item.active}
-                                                className={cn(
-                                                    "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
-                                                    "hover:bg-white/10 hover:text-white",
-                                                    item.active
-                                                        ? "bg-white/15 text-white shadow-sm"
-                                                        : "text-zinc-400 group-hover:text-white"
-                                                )}
-                                            >
-                                                <Link href={buildLink(item.href)}>
-                                                    <item.icon className={cn("size-4 transition-colors", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                                    <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{item.title}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    ))}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                    ))}
+                            {/* TENANT NAVIGATION GROUPS */}
+                            {tenantGroups.map((group) => (
+                                <SidebarGroup key={group.label} className="group-data-[collapsible=icon]:p-0">
+                                    <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-zinc-500 font-semibold uppercase tracking-wider text-xs px-2 mb-1">
+                                        {group.label}
+                                    </SidebarGroupLabel>
+                                    <SidebarGroupContent>
+                                        <SidebarMenu>
+                                            {group.items.map((item) => (
+                                                <SidebarMenuItem key={item.href}>
+                                                    <SidebarMenuButton
+                                                        asChild
+                                                        isActive={item.active}
+                                                        className={cn(
+                                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                                            "hover:bg-white/10 hover:text-white",
+                                                            item.active
+                                                                ? "bg-white/15 text-white shadow-sm"
+                                                                : "text-zinc-400 group-hover:text-white"
+                                                        )}
+                                                    >
+                                                        <Link href={buildLink(item.href)}>
+                                                            <item.icon className={cn("size-4 transition-colors", item.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{item.title}</span>
+                                                        </Link>
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            ))}
+                                        </SidebarMenu>
+                                    </SidebarGroupContent>
+                                </SidebarGroup>
+                            ))}
+                        </>
+                    )}
 
                     {/* Special Items (Restaurant Menu etc.) */}
                     {specialItems.length > 0 && (
