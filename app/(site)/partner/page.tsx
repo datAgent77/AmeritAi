@@ -38,7 +38,7 @@ const content = {
         tiers: [
             {
                 icon: Star,
-                name: "Referans Partner",
+                name: "Partner",
                 color: "border-slate-400/30 bg-slate-500/5",
                 badge_color: "bg-slate-500/10 text-slate-400",
                 commission: "Temel Komisyon",
@@ -55,7 +55,7 @@ const content = {
             },
             {
                 icon: TrendingUp,
-                name: "Satış Partneri",
+                name: "Solution Partner",
                 color: "border-blue-400/30 bg-blue-500/5",
                 badge_color: "bg-blue-500/10 text-blue-400",
                 commission: "Yüksek Komisyon",
@@ -74,7 +74,7 @@ const content = {
             },
             {
                 icon: Wrench,
-                name: "Çözüm Partneri",
+                name: "Strategic Partner",
                 color: "border-purple-400/30 bg-purple-500/5",
                 badge_color: "bg-purple-500/10 text-purple-400",
                 commission: "En Yüksek Komisyon",
@@ -96,9 +96,9 @@ const content = {
         commission_title: "Kazanç Potansiyelinizi Keşfedin",
         commission_desc: "Hangi seviyede yer aldığınıza ve sattığınız planlara göre kazanç potansiyeliniz artar. Detaylı komisyon oranları, başvurunuz onaylandıktan sonra paylaşılır.",
         commission_levels: [
-            { label: "Referans Partner", level: 1, highlight: false, note: "İlk satışta kazanım" },
-            { label: "Satış Partneri", level: 2, highlight: false, note: "Yinelenen komisyon" },
-            { label: "Çözüm Partneri", level: 3, highlight: true, note: "En yüksek potansiyel" },
+            { label: "Partner", level: 1, highlight: false, note: "İlk satışta kazanım" },
+            { label: "Solution Partner", level: 2, highlight: false, note: "Yinelenen komisyon" },
+            { label: "Strategic Partner", level: 3, highlight: true, note: "En yüksek potansiyel" },
         ],
         commission_cta_q: "Detaylı komisyon oranlarını öğrenmek ister misiniz?",
         commission_cta_desc: "Partner başvurunuz onaylandıktan sonra ekibimiz size özel oranları ve kazanç planını detaylıca paylaşır.",
@@ -140,7 +140,7 @@ const content = {
         tiers: [
             {
                 icon: Star,
-                name: "Referral Partner",
+                name: "Partner",
                 color: "border-slate-400/30 bg-slate-500/5",
                 badge_color: "bg-slate-500/10 text-slate-400",
                 commission: "Base Commission",
@@ -157,7 +157,7 @@ const content = {
             },
             {
                 icon: TrendingUp,
-                name: "Sales Partner",
+                name: "Solution Partner",
                 color: "border-blue-400/30 bg-blue-500/5",
                 badge_color: "bg-blue-500/10 text-blue-400",
                 commission: "High Commission",
@@ -176,7 +176,7 @@ const content = {
             },
             {
                 icon: Wrench,
-                name: "Solution Partner",
+                name: "Strategic Partner",
                 color: "border-purple-400/30 bg-purple-500/5",
                 badge_color: "bg-purple-500/10 text-purple-400",
                 commission: "Highest Commission",
@@ -198,9 +198,9 @@ const content = {
         commission_title: "Discover Your Earning Potential",
         commission_desc: "Your earning potential grows with your tier and the plans you sell. Exact commission rates are shared after your application is approved.",
         commission_levels: [
-            { label: "Referral Partner", level: 1, highlight: false, note: "Earn on referral" },
-            { label: "Sales Partner", level: 2, highlight: false, note: "Recurring commissions" },
-            { label: "Solution Partner", level: 3, highlight: true, note: "Highest potential" },
+            { label: "Partner", level: 1, highlight: false, note: "Earn on referral" },
+            { label: "Solution Partner", level: 2, highlight: false, note: "Recurring commissions" },
+            { label: "Strategic Partner", level: 3, highlight: true, note: "Highest potential" },
         ],
         commission_cta_q: "Want to learn the exact commission rates?",
         commission_cta_desc: "After your partner application is approved, our team will share your personalized rates and earning structure.",

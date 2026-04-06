@@ -272,13 +272,7 @@ export function HeroVisual() {
                             </div>
                         </div>
 
-                        {/* Scanning beam */}
-                        <motion.div
-                            aria-hidden="true"
-                            className="pointer-events-none absolute top-12 h-px w-24 bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent"
-                            animate={{ x: ["-20%", "135%"] }}
-                            transition={{ duration: 3.8, repeat: Infinity, ease: "linear" }}
-                        />
+
 
                         {/* Messages */}
                         <div className="relative p-4 space-y-3 h-[326px] overflow-y-auto">

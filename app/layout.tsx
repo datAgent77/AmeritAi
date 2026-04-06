@@ -180,7 +180,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={`${inter.className} antialiased bg-background text-foreground`}>
+      <body className={`${inter.className} antialiased bg-background text-foreground`} suppressHydrationWarning>
         <noscript>
           <iframe 
             src="https://www.googletagmanager.com/ns.html?id=GTM-K5ZJL5W2"
