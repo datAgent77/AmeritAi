@@ -621,18 +621,25 @@ export async function POST(req: Request) {
 
         let targetChatbotId = userId;
 
-        // If trying to edit another chatbot, check permissions
+        // If trying to edit another chatbot, check permissions properly
         if (chatbotId && chatbotId !== userId) {
             const userDoc = await adminDb.collection("users").doc(userId).get();
             const userData = userDoc.data();
+            const callerRole = userData?.role;
 
-            if (
-                userData?.role === 'SUPER_ADMIN' ||
-                userData?.role === 'AGENCY_ADMIN' ||
-                userData?.role === 'PARTNER'
-            ) {
-                // Ideally, here you'd also verify if this specific chatbotId belongs
-                // to the agency/partner making the request.
+            if (callerRole === 'SUPER_ADMIN') {
+                // Super admin can edit any chatbot
+                targetChatbotId = chatbotId;
+            } else if (callerRole === 'AGENCY_ADMIN' || callerRole === 'PARTNER') {
+                // Agency admin can only edit chatbots belonging to their managed customers
+                const targetUserDoc = await adminDb.collection("users").doc(chatbotId).get();
+                const targetUserData = targetUserDoc.data();
+                const targetAgencyId = targetUserData?.agencyId || null;
+
+                if (targetAgencyId !== userId) {
+                    console.warn(`[widget-settings] AGENCY_ADMIN ${userId} tried to edit chatbot ${chatbotId} not assigned to them (agencyId=${targetAgencyId})`);
+                    return NextResponse.json({ error: "Forbidden: This customer does not belong to your agency" }, { status: 403 });
+                }
                 targetChatbotId = chatbotId;
             } else {
                 return NextResponse.json({ error: "Forbidden" }, { status: 403 });

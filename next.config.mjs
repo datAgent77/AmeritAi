@@ -46,6 +46,21 @@ const nextConfig = {
                     { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
                     { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
                 ]
+            },
+            {
+                // Prevent Vercel CDN from caching widget.js so settings changes reflect immediately
+                source: "/widget.js",
+                headers: [
+                    { key: "Cache-Control", value: "no-store, max-age=0, must-revalidate" },
+                    { key: "Pragma", value: "no-cache" },
+                ]
+            },
+            {
+                // Also no-cache widget-related API settings endpoint
+                source: "/api/widget-settings",
+                headers: [
+                    { key: "Cache-Control", value: "no-store, max-age=0" },
+                ]
             }
         ]
     }
