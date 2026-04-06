@@ -3424,15 +3424,10 @@
       const isMobileFullscreenOverlay = window.innerWidth < 768 && !isAlwaysOpenMode;
 
       if (isMobileFullscreenOverlay) {
+        // On mobile fullscreen, ChatHeader inside the iframe already has a close button.
+        // Hide the external launcher close button to avoid duplication.
         Object.assign(launcherContainer.style, {
-          display: 'flex',
-          position: 'fixed',
-          zIndex: '10001',
-          top: 'max(16px, calc(env(safe-area-inset-top, 0px) + 12px))',
-          right: '16px',
-          left: 'auto',
-          bottom: 'auto',
-          transform: 'none',
+          display: 'none',
         });
         return;
       }
