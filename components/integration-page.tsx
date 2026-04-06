@@ -70,8 +70,11 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false)
     const [waPhoneNumberId, setWaPhoneNumberId] = useState("")
     const [waAccessToken, setWaAccessToken] = useState("")
-    const [waVerifyToken, setWaVerifyToken] = useState("")
+    const [waVerifyToken, setWaVerifyToken] = useState(() =>
+        Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
+    )
     const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
+    const [waStep, setWaStep] = useState(1)
 
     // Slack State
     const [isSlackOpen, setIsSlackOpen] = useState(false)
@@ -895,65 +898,220 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                             </Card>
                         )}
 
-                        {/* WhatsApp Dialog */}
+                        {/* WhatsApp Wizard */}
                         {currentIntegration.id === "whatsapp" && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">{t('whatsappBusinessApi')}</CardTitle>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                        {whatsAppConnected ? (
+                                            <><Check className="h-4 w-4 text-green-500" /> {t('connected')}</>
+                                        ) : (
+                                            t('whatsappBusinessApi')
+                                        )}
+                                    </CardTitle>
                                     <CardDescription>
-                                        {whatsAppConnected
-                                            ? t('connected')
-                                            : t('connectWhatsApp')
-                                        }
+                                        {whatsAppConnected ? t('whatsappConnectedDesc') || "WhatsApp Business API başarıyla bağlandı" : t('connectWhatsApp')}
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
+                                <CardContent className="space-y-5">
+                                    {whatsAppConnected ? (
+                                        <div className="space-y-3">
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+                                                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                                <div className="text-sm">
+                                                    <p className="font-medium text-green-800">WhatsApp Business API Aktif</p>
+                                                    <p className="text-green-700 mt-1">Müşterileriniz artık WhatsApp üzerinden sizinle konuşabilir.</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                                <p className="font-medium mb-1">Webhook URL:</p>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="break-all flex-1">{whatsappWebhookUrl}</code>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                        onClick={() => copyToClipboard(whatsappWebhookUrl, "wa-webhook")}>
+                                                        {copied === "wa-webhook" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {/* Step progress bar */}
+                                            <div className="flex items-center gap-1">
+                                                {[1,2,3,4].map((s) => (
+                                                    <div key={s} className="flex items-center gap-1 flex-1">
+                                                        <div className={cn(
+                                                            "h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 transition-colors",
+                                                            waStep > s ? "bg-green-500 text-white" :
+                                                            waStep === s ? "bg-black text-white" :
+                                                            "bg-muted text-muted-foreground"
+                                                        )}>
+                                                            {waStep > s ? <Check className="h-3 w-3" /> : s}
+                                                        </div>
+                                                        {s < 4 && <div className={cn("flex-1 h-0.5 rounded", waStep > s ? "bg-green-500" : "bg-muted")} />}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Step 1: Create Meta App */}
+                                            {waStep === 1 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 1: Meta Business Hesabı Oluştur</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">WhatsApp Business API kullanmak için bir Meta Developer hesabına ve uygulamasına ihtiyacınız var.</p>
+                                                    </div>
+                                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-2 text-xs">
+                                                        <p className="font-medium text-blue-800">Yapmanız gerekenler:</p>
+                                                        <ol className="list-decimal list-inside space-y-1.5 text-blue-700 ml-1">
+                                                            <li>Meta for Developers sitesine gidin</li>
+                                                            <li>"My Apps" → "Create App" butonuna tıklayın</li>
+                                                            <li>App türü olarak <strong>"Business"</strong> seçin</li>
+                                                            <li>Uygulamanıza bir isim verin ve oluşturun</li>
+                                                            <li>Uygulamanıza <strong>"WhatsApp"</strong> ürününü ekleyin</li>
+                                                        </ol>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Meta Developer Panelini Aç
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {/* Step 2: Phone Number ID */}
+                                            {waStep === 2 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 2: Phone Number ID'yi Girin</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Meta Developer panelinde WhatsApp → Getting Started sayfasından bulabilirsiniz.</p>
+                                                    </div>
+                                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                        <p className="font-medium mb-1">Nerede bulunur?</p>
+                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>"Phone number ID"</strong> alanı (14-16 haneli sayı)</p>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs">{t('phoneNumberId')}</Label>
+                                                        <Input
+                                                            placeholder="Örnek: 100609346333333"
+                                                            value={waPhoneNumberId}
+                                                            onChange={(e) => setWaPhoneNumberId(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Getting Started Sayfasını Aç
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {/* Step 3: Access Token */}
+                                            {waStep === 3 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 3: Access Token'ı Girin</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Kalıcı (System User) token önerilir. Geçici test token'ı 24 saatte sona erer.</p>
+                                                    </div>
+                                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                        <p className="font-medium mb-1">Nerede bulunur?</p>
+                                                        <p>WhatsApp → <strong>Getting Started</strong> → <strong>"Temporary access token"</strong> alanı</p>
+                                                        <p className="mt-1 text-amber-700">💡 Üretim ortamı için: Business Manager → System Users → <strong>Kalıcı Token Oluştur</strong></p>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs">{t('accessToken')}</Label>
+                                                        <Input
+                                                            type="password"
+                                                            placeholder="EAAG... ile başlar"
+                                                            value={waAccessToken}
+                                                            onChange={(e) => setWaAccessToken(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Step 4: Webhook Setup */}
+                                            {waStep === 4 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 4: Webhook Kurulumu</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Meta panelinde bu URL ve token'ı webhook olarak kaydedin, sonra bağlantıyı tamamlayın.</p>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <p className="text-xs font-medium mb-1">Webhook URL (Meta'ya girin):</p>
+                                                            <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                                                                <code className="text-xs break-all flex-1">{whatsappWebhookUrl}</code>
+                                                                <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                                    onClick={() => copyToClipboard(whatsappWebhookUrl, "wa-webhook")}>
+                                                                    {copied === "wa-webhook" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium mb-1">Verify Token (Meta'ya girin):</p>
+                                                            <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                                                                <code className="text-xs break-all flex-1">{waVerifyToken}</code>
+                                                                <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                                    onClick={() => copyToClipboard(waVerifyToken, "wa-verify")}>
+                                                                    {copied === "wa-verify" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800">
+                                                        <p className="font-medium mb-1">Meta panelinde yapmanız gerekenler:</p>
+                                                        <ol className="list-decimal list-inside space-y-1 text-blue-700 ml-1">
+                                                            <li>WhatsApp → <strong>Configuration</strong> sekmesine gidin</li>
+                                                            <li><strong>"Edit"</strong> butonuna tıklayın</li>
+                                                            <li>Yukarıdaki URL ve Token'ı girin</li>
+                                                            <li><strong>"Verify and Save"</strong> butonuna basın</li>
+                                                            <li><strong>messages</strong> webhook alanını subscribe edin</li>
+                                                        </ol>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Webhook Configuration'ı Aç
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter className="flex gap-2">
                                     {!whatsAppConnected && (
                                         <>
-                                            <div className="space-y-2">
-                                                <Label>{t('phoneNumberId')}</Label>
-                                                <Input
-                                                    placeholder="e.g. 100609346333333"
-                                                    value={waPhoneNumberId}
-                                                    onChange={(e) => setWaPhoneNumberId(e.target.value)}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>{t('accessToken')}</Label>
-                                                <Input
-                                                    type="password"
-                                                    placeholder="e.g. EAAG..."
-                                                    value={waAccessToken}
-                                                    onChange={(e) => setWaAccessToken(e.target.value)}
-                                                />
-                                                <p className="text-xs text-muted-foreground">{t('accessTokenHelp')}</p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>{t('verifyToken')}</Label>
-                                                <Input
-                                                    placeholder="e.g. my_secure_token"
-                                                    value={waVerifyToken}
-                                                    onChange={(e) => setWaVerifyToken(e.target.value)}
-                                                />
-                                                <p className="text-xs text-muted-foreground">{t('verifyTokenHelp')}</p>
-                                            </div>
+                                            {waStep > 1 && (
+                                                <Button variant="outline" className="flex-1"
+                                                    onClick={() => setWaStep(s => s - 1)}>
+                                                    Geri
+                                                </Button>
+                                            )}
+                                            {waStep < 4 ? (
+                                                <Button className="flex-1"
+                                                    disabled={
+                                                        (waStep === 2 && !waPhoneNumberId) ||
+                                                        (waStep === 3 && !waAccessToken)
+                                                    }
+                                                    onClick={() => setWaStep(s => s + 1)}>
+                                                    İleri
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    onClick={handleConnectWhatsApp}
+                                                    disabled={isConnectingWhatsApp}
+                                                    className="flex-1">
+                                                    {isConnectingWhatsApp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Bağlantıyı Tamamla
+                                                </Button>
+                                            )}
                                         </>
                                     )}
-                                    <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
-                                        <p className="font-medium mb-1">{t('webhookUrl') || 'Webhook URL'}:</p>
-                                        <code className="break-all">{whatsappWebhookUrl}</code>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button
-                                        onClick={handleConnectWhatsApp}
-                                        disabled={isConnectingWhatsApp || (!waPhoneNumberId || !waAccessToken || !waVerifyToken) && !whatsAppConnected}
-                                        className="w-full"
-                                        variant={whatsAppConnected ? "outline" : "default"}
-                                    >
-                                        {isConnectingWhatsApp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {whatsAppConnected ? t('manageSettings') : t('connect')}
-                                    </Button>
+                                    {whatsAppConnected && (
+                                        <Button variant="outline" className="w-full" onClick={() => setWaStep(1)}>
+                                            {t('manageSettings')}
+                                        </Button>
+                                    )}
                                 </CardFooter>
                             </Card>
                         )}
