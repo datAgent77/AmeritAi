@@ -424,7 +424,7 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'coming_soon', // TEMPORARILY DISABLED - re-enable when production-ready
+        status: 'ready', // ENABLED
         supportedSectors: [],
         defaultEnabledBySector: [], // Cleared - no sector gets this by default
         showOnLandingPage: false, // Hidden from landing page
