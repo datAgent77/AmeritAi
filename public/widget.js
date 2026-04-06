@@ -4662,21 +4662,7 @@
       widgetShellReady = true;
     }
 
-    let fallbackTimer = null;
-    if (!widgetShellReady) {
-      fallbackTimer = setTimeout(() => {
-        if (widgetShellReady) return;
-        applyBootstrapSettings({}, 'fallback');
-        initWidget();
-        widgetShellReady = true;
-      }, SETTINGS_FALLBACK_LAUNCHER_DELAY_MS);
-    }
-
     const fetchedSettings = await (settingsFetchPromise || fetchSettings());
-
-    if (fallbackTimer) {
-      clearTimeout(fallbackTimer);
-    }
 
     // STRICT CHECK: If disabled, abort and remove any optimistic shell.
     if (fetchedSettings.isEnabled === false) {
