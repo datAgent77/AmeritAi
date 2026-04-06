@@ -3839,8 +3839,8 @@
       const effectiveHeight = usesLauncher
         ? (settings.launcherType === 'fullImage' ? 60 : settings.launcherHeight)
         : 0;
-      // Removed launcherOffset calculation to ensure chatbot opens at the same position as the launcher
-      const launcherOffset = 0;
+      // Offset applied so the chatbot opens above the launcher
+      const launcherOffset = usesLauncher ? effectiveHeight + 16 : 0;
 
       if (isTop) {
         classicVerticalStyle = { top: `${verticalSpacing + launcherOffset}px`, bottom: 'auto' };
@@ -3863,6 +3863,7 @@
 
       Object.assign(iframeContainer.style, {
         width: '420px',
+        maxWidth: 'calc(100vw - 32px)',
         height: '700px',
         maxHeight: '85vh',
         ...horizontalStyle,
