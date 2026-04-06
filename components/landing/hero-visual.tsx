@@ -261,7 +261,7 @@ export function HeroVisual() {
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold truncate">{currentConversation.label[lang]}</div>
                                     <div className="text-[10px] opacity-80 flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 inline-block animate-pulse" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 inline-block" />
                                         Vion AI
                                     </div>
                                 </div>
