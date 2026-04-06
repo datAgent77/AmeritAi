@@ -51,7 +51,7 @@ export function TenantLayoutClient({
         const verifyAgencyCustomerAccess = async () => {
             try {
                 const token = await user.getIdToken()
-                const response = await fetch("/api/agency/customers", {
+                const response = await fetch(`/api/agency/verify-access?targetUserId=${encodeURIComponent(userId)}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }
@@ -61,19 +61,7 @@ export function TenantLayoutClient({
                     throw new Error("agency_customer_access_denied")
                 }
 
-                const payload = await response.json()
-                const customers = Array.isArray(payload?.customers) ? payload.customers : []
-                const viewerCapabilities = payload?.viewerCapabilities || null
-                const canEnterWorkspace = viewerCapabilities?.canAccessManagedAccountWorkspace === true
-                const canAccessTenant = customers.some((customer: { id?: string }) => customer?.id === userId)
-
                 if (cancelled) return
-                if (!canAccessTenant || !canEnterWorkspace) {
-                    setAccessState("denied")
-                    router.push("/agency")
-                    return
-                }
-
                 setAccessState("allowed")
             } catch {
                 if (cancelled) return
