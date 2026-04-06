@@ -76,6 +76,15 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
     const [waStep, setWaStep] = useState(1)
 
+    // Instagram State
+    const [igPageId, setIgPageId] = useState("")
+    const [igAccessToken, setIgAccessToken] = useState("")
+    const [igVerifyToken, setIgVerifyToken] = useState(() =>
+        Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
+    )
+    const [isConnectingInstagram, setIsConnectingInstagram] = useState(false)
+    const [igStep, setIgStep] = useState(1)
+
     // Slack State
     const [isSlackOpen, setIsSlackOpen] = useState(false)
     const [slackBotToken, setSlackBotToken] = useState("")
@@ -129,6 +138,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
 
     const whatsAppConnected = settings?.integrations?.whatsapp?.connected
     const waWebhookSecret = settings?.integrations?.whatsapp?.webhookSecret
+    const instagramConnected = settings?.integrations?.instagram?.connected
+    const igWebhookSecret = settings?.integrations?.instagram?.webhookSecret
 
     const getAuthHeaders = async () => {
         if (!user) {
@@ -277,9 +288,43 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             iconBg: "bg-gray-100",
             connected: constantContactConnected,
         },
+        {
+            id: "instagram",
+            name: "Instagram DM",
+            description: t('instagramDescription') || "Instagram Direct mesajlarını chatbot ile otomatik yanıtlayın",
+            logo: "/integrations/instagram.svg",
+            iconBg: "bg-gray-100",
+            connected: instagramConnected,
+        },
     ]
 
     // Connection handlers
+    const handleConnectInstagram = async () => {
+        if (!igPageId || !igAccessToken || !igVerifyToken) {
+            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
+            return
+        }
+        setIsConnectingInstagram(true)
+        try {
+            const response = await fetch("/api/integrations/instagram/connect", {
+                method: "POST",
+                headers: await getAuthHeaders(),
+                body: JSON.stringify({ chatbotId: userId, pageId: igPageId, accessToken: igAccessToken, verifyToken: igVerifyToken })
+            })
+            const data = await response.json()
+            if (!response.ok) throw new Error(data.error || "Instagram bağlantısı kurulamadı")
+            toast({ title: t('success'), description: "Instagram DM entegrasyonu aktif!" })
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
+            if (res.ok) {
+                const d = await res.json()
+                setSettings(d)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingInstagram(false)
+        }
+    }
     const handleConnectWhatsApp = async () => {
         if (!waPhoneNumberId || !waAccessToken || !waVerifyToken) {
             toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
@@ -688,6 +733,9 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const whatsappWebhookUrl = waWebhookSecret
         ? `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}&secret=${encodeURIComponent(waWebhookSecret)}`
         : `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}`
+    const instagramWebhookUrl = igWebhookSecret
+        ? `${origin}/api/integrations/instagram/webhook?chatbotId=${userId}&secret=${encodeURIComponent(igWebhookSecret)}`
+        : `${origin}/api/integrations/instagram/webhook?chatbotId=${userId}`
 
     // Hide deprecated integrations and apply search filter
     const visibleIntegrations = integrations.filter(
@@ -1116,7 +1164,234 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                             </Card>
                         )}
 
+                        {/* Instagram DM Wizard */}
+                        {currentIntegration.id === "instagram" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base flex items-center gap-2">
+                                        {instagramConnected ? (
+                                            <><Check className="h-4 w-4 text-green-500" /> {t('connected')}</>
+                                        ) : "Instagram DM"}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {instagramConnected
+                                            ? "Instagram Direct mesajlar chatbot ile otomatik yanıtlanıyor"
+                                            : "Instagram Business hesabınızı bağlayarak DM mesajlarını otomatikleştirin"}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-5">
+                                    {instagramConnected ? (
+                                        <div className="space-y-3">
+                                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+                                                <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                                <div className="text-sm">
+                                                    <p className="font-medium text-green-800">Instagram DM Entegrasyonu Aktif</p>
+                                                    <p className="text-green-700 mt-1">Instagram DM mesajları artık chatbot tarafından yanıtlanıyor.</p>
+                                                </div>
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                                                <p className="font-medium mb-1">Webhook URL:</p>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="break-all flex-1">{instagramWebhookUrl}</code>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                        onClick={() => copyToClipboard(instagramWebhookUrl, "ig-webhook")}>
+                                                        {copied === "ig-webhook" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {/* Step progress bar */}
+                                            <div className="flex items-center gap-1">
+                                                {[1,2,3,4].map((s) => (
+                                                    <div key={s} className="flex items-center gap-1 flex-1">
+                                                        <div className={cn(
+                                                            "h-6 w-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 transition-colors",
+                                                            igStep > s ? "bg-green-500 text-white" :
+                                                            igStep === s ? "bg-black text-white" :
+                                                            "bg-muted text-muted-foreground"
+                                                        )}>
+                                                            {igStep > s ? <Check className="h-3 w-3" /> : s}
+                                                        </div>
+                                                        {s < 4 && <div className={cn("flex-1 h-0.5 rounded", igStep > s ? "bg-green-500" : "bg-muted")} />}
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Step 1: Meta Business App */}
+                                            {igStep === 1 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 1: Meta Business Hesabı ve Uygulama</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Instagram API kullanmak için Meta Developer hesabı ve Instagram Basic Display veya Messenger API kurulumu gerekli.</p>
+                                                    </div>
+                                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-2 text-xs">
+                                                        <p className="font-medium text-blue-800">Yapmanız gerekenler:</p>
+                                                        <ol className="list-decimal list-inside space-y-1.5 text-blue-700 ml-1">
+                                                            <li>Meta Developer paneline gidin</li>
+                                                            <li>Bir Business tipi uygulama oluşturun</li>
+                                                            <li>Uygulamaya <strong>Instagram</strong> veya <strong>Messenger</strong> ürününü ekleyin</li>
+                                                            <li>Instagram Business hesabınızı Facebook sayfanıza bağlayın</li>
+                                                        </ol>
+                                                    </div>
+                                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                        <p className="font-medium mb-1">Gereksinim:</p>
+                                                        <p>Instagram hesabınız <strong>Business</strong> veya <strong>Creator</strong> hesabı olmalı ve bir Facebook Sayfasına bağlı olmalıdır.</p>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Meta Developer Panelini Aç
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {/* Step 2: Page ID */}
+                                            {igStep === 2 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 2: Facebook Page ID</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Instagram hesabınıza bağlı Facebook Sayfasının ID numarası gereklidir.</p>
+                                                    </div>
+                                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                        <p className="font-medium mb-1">Nerede bulunur?</p>
+                                                        <p>Facebook Sayfanız → <strong>Hakkında</strong> bölümü → <strong>Sayfa ID</strong></p>
+                                                        <p className="mt-1">veya: Meta Business Suite → Settings → Page ID</p>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs">Facebook Page ID</Label>
+                                                        <Input
+                                                            placeholder="Örnek: 259873456789012"
+                                                            value={igPageId}
+                                                            onChange={(e) => setIgPageId(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Step 3: Access Token */}
+                                            {igStep === 3 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 3: Page Access Token</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Uzun ömürlü (Long-lived) Page Access Token kullanmanız önerilir.</p>
+                                                    </div>
+                                                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                        <p className="font-medium mb-1">Token nasıl alınır?</p>
+                                                        <ol className="list-decimal list-inside space-y-1 ml-1">
+                                                            <li>Meta Developer → Tools → <strong>Graph API Explorer</strong></li>
+                                                            <li>Uygulamanızı seçin</li>
+                                                            <li>Generate Token ile <strong>Page Access Token</strong> oluşturun</li>
+                                                            <li><strong>instagram_manage_messages</strong> iznini ekleyin</li>
+                                                        </ol>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className="text-xs">Page Access Token</Label>
+                                                        <Input
+                                                            type="password"
+                                                            placeholder="EAAb... ile başlar"
+                                                            value={igAccessToken}
+                                                            onChange={(e) => setIgAccessToken(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/tools/explorer/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Graph API Explorer
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {/* Step 4: Webhook */}
+                                            {igStep === 4 && (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <h4 className="font-semibold text-sm">Adım 4: Webhook Kurulumu</h4>
+                                                        <p className="text-xs text-muted-foreground mt-1">Meta Developer panelinde bu webhook bilgilerini girerek doğrulayın.</p>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <div>
+                                                            <p className="text-xs font-medium mb-1">Webhook URL:</p>
+                                                            <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                                                                <code className="text-xs break-all flex-1">{instagramWebhookUrl}</code>
+                                                                <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                                    onClick={() => copyToClipboard(instagramWebhookUrl, "ig-webhook")}>
+                                                                    {copied === "ig-webhook" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-medium mb-1">Verify Token:</p>
+                                                            <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-2">
+                                                                <code className="text-xs break-all flex-1">{igVerifyToken}</code>
+                                                                <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0"
+                                                                    onClick={() => copyToClipboard(igVerifyToken, "ig-verify")}>
+                                                                    {copied === "ig-verify" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800">
+                                                        <p className="font-medium mb-1">Meta panelinde yapmanız gerekenler:</p>
+                                                        <ol className="list-decimal list-inside space-y-1 text-blue-700 ml-1">
+                                                            <li>Meta Developer App → <strong>Webhooks</strong> sekmesi</li>
+                                                            <li>Instagram veya Messenger webhook ekleyin</li>
+                                                            <li>Yukarıdaki URL ve Token bilgilerini girin</li>
+                                                            <li><strong>Verify and Save</strong> butonuna basın</li>
+                                                            <li><strong>messages</strong> alanını subscribe edin</li>
+                                                        </ol>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="w-full gap-2"
+                                                        onClick={() => window.open("https://developers.facebook.com/apps/", "_blank")}>
+                                                        <ExternalLink className="h-3.5 w-3.5" />
+                                                        Webhook Ayarlarını Aç
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter className="flex gap-2">
+                                    {!instagramConnected && (
+                                        <>
+                                            {igStep > 1 && (
+                                                <Button variant="outline" className="flex-1"
+                                                    onClick={() => setIgStep(s => s - 1)}>
+                                                    Geri
+                                                </Button>
+                                            )}
+                                            {igStep < 4 ? (
+                                                <Button className="flex-1"
+                                                    disabled={
+                                                        (igStep === 2 && !igPageId) ||
+                                                        (igStep === 3 && !igAccessToken)
+                                                    }
+                                                    onClick={() => setIgStep(s => s + 1)}>
+                                                    İleri
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    onClick={handleConnectInstagram}
+                                                    disabled={isConnectingInstagram}
+                                                    className="flex-1">
+                                                    {isConnectingInstagram && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Bağlantıyı Tamamla
+                                                </Button>
+                                            )}
+                                        </>
+                                    )}
+                                    {instagramConnected && (
+                                        <Button variant="outline" className="w-full" onClick={() => setIgStep(1)}>
+                                            {t('manageSettings')}
+                                        </Button>
+                                    )}
+                                </CardFooter>
+                            </Card>
+                        )}
+
                         {/* Slack Dialog */}
+
                         {currentIntegration.id === "slack" && (
                             <Card>
                                 <CardHeader>
