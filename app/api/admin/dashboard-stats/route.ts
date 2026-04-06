@@ -102,12 +102,12 @@ export async function GET(request: Request) {
                 ? allUsers
                 : allUsers.filter((u: any) => u.isArchived !== true);
 
-            // Use simple get instead of count if count fails (fallback)
-            const chatbotsSnapshot = await adminDb.collection('chatbots').get();
-            totalChatbots = chatbotsSnapshot.size;
+            // Firestore native count aggregation requires no memory allocations and executes instantly
+            const chatbotsCountQuery = await adminDb.collection('chatbots').count().get();
+            totalChatbots = chatbotsCountQuery.data().count;
 
-            const sessionsSnapshot = await adminDb.collection('chat_sessions').get();
-            totalChatSessions = sessionsSnapshot.size;
+            const sessionsCountQuery = await adminDb.collection('chat_sessions').count().get();
+            totalChatSessions = sessionsCountQuery.data().count;
         } catch (dbError: any) {
             console.error("[Stats API] DB Fetch Error:", dbError);
             throw new Error(`DB Fetch Error: ${dbError.message}`);

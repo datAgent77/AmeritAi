@@ -95,13 +95,17 @@ export default function ChatbotConsolePage() {
 
     const uiAction = experienceState ? getUIExperienceAction(experienceState) : null
 
+    const uiActionStr = uiAction ? JSON.stringify(uiAction) : null;
+    
     // Handle upgrade modal action (MUST be before any conditional returns)
     useEffect(() => {
-        if (uiAction && isModalAction(uiAction)) {
-            setUpgradeModalData(uiAction.prompt)
+        if (!uiActionStr) return;
+        const action = JSON.parse(uiActionStr);
+        if (action && isModalAction(action)) {
+            setUpgradeModalData((prev: any) => JSON.stringify(prev) === JSON.stringify(action.prompt) ? prev : action.prompt)
             setIsPricingModalOpen(true)
         }
-    }, [uiAction])
+    }, [uiActionStr])
 
     // Super admin dashboard
     if (role === 'SUPER_ADMIN') {
