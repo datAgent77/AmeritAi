@@ -6,7 +6,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/run-next-dev.js",
     "test": "vitest run",
     "test:omni": "vitest run lib/omni app/api/omni app/api/admin",
     "check:env:build": "node scripts/check-build-env.js",
