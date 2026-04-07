@@ -28,6 +28,12 @@ function serializePartnerDoc(doc: any, counts: { customerCount: number; omniEnab
         agreementVersion: typeof data.agreementVersion === "string" ? data.agreementVersion : null,
         agreementAcceptedAt: toIsoOrNull(data.agreementAcceptedAt),
         programPolicyUrl: typeof data.programPolicyUrl === "string" ? data.programPolicyUrl : null,
+        supportContactName: typeof data.supportContactName === "string" ? data.supportContactName : null,
+        supportEmail: typeof data.supportEmail === "string" ? data.supportEmail : null,
+        supportPhone: typeof data.supportPhone === "string" ? data.supportPhone : null,
+        supportWhatsapp: typeof data.supportWhatsapp === "string" ? data.supportWhatsapp : null,
+        supportHours: typeof data.supportHours === "string" ? data.supportHours : null,
+        supportNotes: typeof data.supportNotes === "string" ? data.supportNotes : null,
         capabilities: resolvePartnerCapabilities(partnerLevel),
     }
 }

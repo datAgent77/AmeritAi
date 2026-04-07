@@ -46,8 +46,9 @@ export function DatePicker({ date, setDate, label, placeholder }: DatePickerProp
                     {date ? format(date, "d MMM yyyy", { locale }) : <span>{placeholder || "Pick a date"}</span>}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" sideOffset={10} className="w-auto rounded-xl border border-border/70 p-0 shadow-xl">
+            <PopoverContent align="end" sideOffset={10} className="w-[320px] rounded-xl border border-border/70 p-0 shadow-xl">
                 <Calendar
+                    className="w-full"
                     mode="single"
                     selected={date}
                     onSelect={handleSelect}

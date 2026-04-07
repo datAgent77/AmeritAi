@@ -42,6 +42,12 @@ export interface ManagementPartnerRecord {
     agreementVersion?: string | null
     agreementAcceptedAt?: string | null
     programPolicyUrl?: string | null
+    supportContactName?: string | null
+    supportEmail?: string | null
+    supportPhone?: string | null
+    supportWhatsapp?: string | null
+    supportHours?: string | null
+    supportNotes?: string | null
     capabilities: PartnerCapabilities
 }
 

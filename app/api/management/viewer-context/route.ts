@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { authorizeTargetAccess } from "@/lib/api-auth"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
 import { resolvePartnerBranding } from "@/lib/management/access"
-import { resolveManagedAccountPartnerBranding } from "@/lib/management/accounts"
+import { getLinkedPartnerForManagedAccount, resolveManagedAccountPartnerBranding } from "@/lib/management/accounts"
 import { getPartnerDoc } from "@/lib/management/partners"
 import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole, type UserRole } from "@/lib/user-roles"
 
@@ -32,7 +32,6 @@ export async function GET(req: Request) {
     const callerDoc = await adminDb.collection("users").doc(decoded.uid).get()
     const callerData = callerDoc.data() || {}
     const viewerRole = resolveUserRole(callerData.role || (decoded as any)?.role)
-    const partner = viewerRole === "AGENCY_ADMIN" ? await getPartnerDoc(adminDb, decoded.uid) : null
 
     const { searchParams } = new URL(req.url)
     const accountId = searchParams.get("accountId")
@@ -43,6 +42,19 @@ export async function GET(req: Request) {
             return authz.response
         }
     }
+
+    const linkedAccountId =
+        typeof accountId === "string" && accountId.trim().length > 0
+            ? accountId
+            : viewerRole === "TENANT_ADMIN"
+              ? decoded.uid
+              : null
+
+    const partner = viewerRole === "AGENCY_ADMIN"
+        ? await getPartnerDoc(adminDb, decoded.uid)
+        : linkedAccountId
+          ? await getLinkedPartnerForManagedAccount(adminDb, linkedAccountId)
+          : null
 
     let resolvedPartnerBranding = resolvePartnerBranding({
         viewerRole,

@@ -73,6 +73,8 @@ export function Breadcrumbs() {
                         "agencies": t('agencies') || "Agencies",
                         "agency": t('agency') || "Partner",
                         "partnership": t("agencyPartnership") || "Partnership",
+                        "training": t("training") || "Training",
+                        "help-center": t("footerHelp") || "Help Center",
                         "end-users": t('endUsers') || "End Users",
                         "profile": t('profile'),
                         "widget": "Widget",

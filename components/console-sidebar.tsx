@@ -29,7 +29,8 @@ import {
     Activity,
     Utensils,
     FileText,
-    Rocket
+    Rocket,
+    LifeBuoy
 } from "lucide-react"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
@@ -207,6 +208,17 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     icon: BarChart3,
                     href: "/console/chatbot/analytics",
                     active: isActive("/console/chatbot/analytics")
+                }
+            ]
+        },
+        {
+            label: language === "tr" ? "Destek" : "Support",
+            items: [
+                {
+                    title: t('footerHelp') || "Help Center",
+                    icon: LifeBuoy,
+                    href: "/console/help-center",
+                    active: isActive("/console/help-center")
                 }
             ]
         }

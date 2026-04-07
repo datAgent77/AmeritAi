@@ -9,8 +9,10 @@ import {
     Globe,
     Handshake,
     LayoutDashboard,
+    LifeBuoy,
     LogOut,
     ShieldCheck,
+    GraduationCap,
     Users,
 } from "lucide-react"
 import { signOut } from "firebase/auth"
@@ -110,9 +112,19 @@ export function AgencySidebar() {
         router.push("/agency/partnership")
     }
 
+    const navigateToTraining = () => {
+        router.push("/agency/training")
+    }
+
+    const navigateToHelpCenter = () => {
+        router.push("/agency/help-center")
+    }
+
     const isOverviewActive = pathname === "/agency"
     const isCustomersActive = pathname === "/agency/end-users" || pathname.startsWith("/agency/end-users/")
     const isPartnershipActive = pathname === "/agency/partnership" || pathname.startsWith("/agency/partnership/")
+    const isTrainingActive = pathname === "/agency/training" || pathname.startsWith("/agency/training/")
+    const isHelpCenterActive = pathname === "/agency/help-center" || pathname.startsWith("/agency/help-center/")
 
     return (
         <Sidebar collapsible="icon" className="!top-0 !h-screen border-r-0 bg-[#000000] text-white z-40" variant="sidebar">
@@ -199,6 +211,38 @@ export function AgencySidebar() {
                         >
                             <BadgePercent className={cn("size-4", isPartnershipActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
                             <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t("agencyPartnership")}</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            isActive={isTrainingActive}
+                            onClick={navigateToTraining}
+                            className={cn(
+                                "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                "hover:bg-white/10 hover:text-white",
+                                isTrainingActive
+                                    ? "bg-white/15 text-white shadow-sm"
+                                    : "text-zinc-400 group-hover:text-white"
+                            )}
+                        >
+                            <GraduationCap className={cn("size-4", isTrainingActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t("training") || "Eğitim"}</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            isActive={isHelpCenterActive}
+                            onClick={navigateToHelpCenter}
+                            className={cn(
+                                "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                "hover:bg-white/10 hover:text-white",
+                                isHelpCenterActive
+                                    ? "bg-white/15 text-white shadow-sm"
+                                    : "text-zinc-400 group-hover:text-white"
+                            )}
+                        >
+                            <LifeBuoy className={cn("size-4", isHelpCenterActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t("footerHelp") || "Yardım Merkezi"}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

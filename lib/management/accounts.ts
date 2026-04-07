@@ -111,18 +111,7 @@ export async function assignManagedAccountPartner(input: {
 }
 
 export async function resolveManagedAccountPartnerBranding(adminDb: any, managedAccountId: string) {
-    const snapshot = await adminDb.collection("users").doc(managedAccountId).get()
-    if (!snapshot.exists) {
-        return { show: false, placement: "header-right" } satisfies ResolvedPartnerBranding
-    }
-
-    const data = snapshot.data() || {}
-    const partnerId = typeof data.agencyId === "string" ? data.agencyId : null
-    if (!partnerId) {
-        return { show: false, placement: "header-right" } satisfies ResolvedPartnerBranding
-    }
-
-    const partner = await getPartnerDoc(adminDb, partnerId)
+    const partner = await getLinkedPartnerForManagedAccount(adminDb, managedAccountId)
     if (!partner) {
         return { show: false, placement: "header-right" } satisfies ResolvedPartnerBranding
     }
@@ -134,4 +123,19 @@ export async function resolveManagedAccountPartnerBranding(adminDb: any, managed
         linkedPartnerLevel: partner.partnerLevel,
         linkedPartnerLogoUrl: partner.partnerLogoUrl || null,
     })
+}
+
+export async function getLinkedPartnerForManagedAccount(adminDb: any, managedAccountId: string) {
+    const snapshot = await adminDb.collection("users").doc(managedAccountId).get()
+    if (!snapshot.exists) {
+        return null
+    }
+
+    const data = snapshot.data() || {}
+    const partnerId = typeof data.agencyId === "string" ? data.agencyId : null
+    if (!partnerId) {
+        return null
+    }
+
+    return getPartnerDoc(adminDb, partnerId)
 }

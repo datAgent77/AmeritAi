@@ -5,6 +5,12 @@ import { isAgencyAdminRole } from "@/lib/user-roles"
 
 export const dynamic = "force-dynamic"
 
+function normalizeOptionalText(value: unknown) {
+    if (typeof value !== "string") return null
+    const normalized = value.trim()
+    return normalized.length > 0 ? normalized : null
+}
+
 async function authorizePartner(req: Request) {
     const adminAuth = getAdminAuth()
     const adminDb = getAdminDb()
@@ -45,20 +51,36 @@ export async function PATCH(req: Request) {
     const authz = await authorizePartner(req)
     if (!authz.ok) return authz.response
 
-    if (!authz.partner?.capabilities.canUsePartnerBranding) {
+    const body = await req.json().catch(() => null)
+    const requestedLogoUpdate = body && Object.prototype.hasOwnProperty.call(body, "partnerLogoUrl")
+    if (requestedLogoUpdate && !authz.partner?.capabilities.canUsePartnerBranding) {
         return NextResponse.json({ error: "Forbidden: Partner level cannot manage branding" }, { status: 403 })
     }
 
-    const body = await req.json().catch(() => null)
-    const partnerLogoUrl =
-        typeof body?.partnerLogoUrl === "string" && body.partnerLogoUrl.trim().length > 0
-            ? body.partnerLogoUrl.trim()
-            : null
-
-    await authz.adminDb.collection("users").doc(authz.decoded.uid).set({
-        partnerLogoUrl,
+    const updatePayload: Record<string, string | null> = {
         updatedAt: new Date().toISOString(),
-    }, { merge: true })
+    }
+
+    if (requestedLogoUpdate) {
+        updatePayload.partnerLogoUrl = normalizeOptionalText(body?.partnerLogoUrl)
+    }
+
+    const editableFields = [
+        "supportContactName",
+        "supportEmail",
+        "supportPhone",
+        "supportWhatsapp",
+        "supportHours",
+        "supportNotes",
+    ] as const
+
+    editableFields.forEach((field) => {
+        if (body && Object.prototype.hasOwnProperty.call(body, field)) {
+            updatePayload[field] = normalizeOptionalText(body[field])
+        }
+    })
+
+    await authz.adminDb.collection("users").doc(authz.decoded.uid).set(updatePayload, { merge: true })
 
     const partner = await getPartnerDoc(authz.adminDb, authz.decoded.uid)
     return NextResponse.json({
