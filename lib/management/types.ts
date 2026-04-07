@@ -35,6 +35,13 @@ export interface ManagementPartnerRecord {
     createdAt?: string | null
     partnerLevel: PartnerLevel
     partnerLogoUrl?: string | null
+    commissionRate?: number | null
+    commissionModel?: string | null
+    commissionNotes?: string | null
+    payoutScheduleDays?: number | null
+    agreementVersion?: string | null
+    agreementAcceptedAt?: string | null
+    programPolicyUrl?: string | null
     capabilities: PartnerCapabilities
 }
 

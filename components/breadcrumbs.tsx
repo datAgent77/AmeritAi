@@ -72,6 +72,7 @@ export function Breadcrumbs() {
                         "admin": t('superAdminDashboard') || "Super Admin Panel",
                         "agencies": t('agencies') || "Agencies",
                         "agency": t('agency') || "Partner",
+                        "partnership": t("agencyPartnership") || "Partnership",
                         "end-users": t('endUsers') || "End Users",
                         "profile": t('profile'),
                         "widget": "Widget",

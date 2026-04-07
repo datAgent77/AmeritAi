@@ -21,6 +21,13 @@ function serializePartnerDoc(doc: any, counts: { customerCount: number; omniEnab
         createdAt: toIsoOrNull(data.createdAt),
         partnerLevel,
         partnerLogoUrl: typeof data.partnerLogoUrl === "string" ? data.partnerLogoUrl : null,
+        commissionRate: typeof data.commissionRate === "number" ? data.commissionRate : null,
+        commissionModel: typeof data.commissionModel === "string" ? data.commissionModel : null,
+        commissionNotes: typeof data.commissionNotes === "string" ? data.commissionNotes : null,
+        payoutScheduleDays: typeof data.payoutScheduleDays === "number" ? data.payoutScheduleDays : null,
+        agreementVersion: typeof data.agreementVersion === "string" ? data.agreementVersion : null,
+        agreementAcceptedAt: toIsoOrNull(data.agreementAcceptedAt),
+        programPolicyUrl: typeof data.programPolicyUrl === "string" ? data.programPolicyUrl : null,
         capabilities: resolvePartnerCapabilities(partnerLevel),
     }
 }

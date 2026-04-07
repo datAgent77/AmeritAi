@@ -4,8 +4,10 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import {
+    BadgePercent,
     Check,
     Globe,
+    Handshake,
     LayoutDashboard,
     LogOut,
     ShieldCheck,
@@ -104,8 +106,13 @@ export function AgencySidebar() {
         router.push("/agency/end-users")
     }
 
+    const navigateToPartnership = () => {
+        router.push("/agency/partnership")
+    }
+
     const isOverviewActive = pathname === "/agency"
     const isCustomersActive = pathname === "/agency/end-users" || pathname.startsWith("/agency/end-users/")
+    const isPartnershipActive = pathname === "/agency/partnership" || pathname.startsWith("/agency/partnership/")
 
     return (
         <Sidebar collapsible="icon" className="!top-0 !h-screen border-r-0 bg-[#000000] text-white z-40" variant="sidebar">
@@ -176,6 +183,22 @@ export function AgencySidebar() {
                         >
                             <Users className={cn("size-4", isCustomersActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
                             <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t("endUsers")}</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            isActive={isPartnershipActive}
+                            onClick={navigateToPartnership}
+                            className={cn(
+                                "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                "hover:bg-white/10 hover:text-white",
+                                isPartnershipActive
+                                    ? "bg-white/15 text-white shadow-sm"
+                                    : "text-zinc-400 group-hover:text-white"
+                            )}
+                        >
+                            <BadgePercent className={cn("size-4", isPartnershipActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t("agencyPartnership")}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -250,6 +273,12 @@ export function AgencySidebar() {
                                         <div className="flex items-center gap-3">
                                             <Users className="size-4 text-muted-foreground" />
                                             <span className="text-sm font-medium">{t("endUsers")}</span>
+                                        </div>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={navigateToPartnership} className="cursor-pointer px-2 py-2.5">
+                                        <div className="flex items-center gap-3">
+                                            <Handshake className="size-4 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("agencyPartnership")}</span>
                                         </div>
                                     </DropdownMenuItem>
                                 </div>
