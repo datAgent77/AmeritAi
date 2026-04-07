@@ -11,6 +11,9 @@ import { getAmbientDockStateKey, resolveAmbientDockStyle } from "@/lib/ambient-d
 import { resolveAmbientInputSizeConfig } from "@/lib/ambient-layout"
 import { ConversationModeSwitch, type ConversationMode } from "./ConversationModeSwitch"
 
+type AmbientIconComponent = React.ComponentType<{ className?: string; color?: string }>
+const ambientIconRegistry = LucideIcons as unknown as Record<string, AmbientIconComponent>
+
 interface ChatInputProps {
     settings: ChatbotSettings
     localInput: string
@@ -297,7 +300,7 @@ export function ChatInput({
         }
 
         const IconComponent = (settings.ambientIconType === "library" && settings.ambientLibraryIcon)
-            ? (LucideIcons as Record<string, React.ComponentType<{ className?: string; color?: string }>>)[settings.ambientLibraryIcon] || MessageCircle
+            ? ambientIconRegistry[settings.ambientLibraryIcon] || MessageCircle
             : MessageCircle
 
         return (
