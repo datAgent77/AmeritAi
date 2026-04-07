@@ -127,8 +127,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         router.push("/login")
     }
 
-    // Super admins should only see tenant-specific chatbot menus while viewing a tenant.
-    // Otherwise, `/console/*` links bounce back to `/admin` via console layout guards.
+    // Super admins keep a global admin dashboard at `/admin`.
+    // Tenant-scoped chatbot menus only make sense while viewing a specific tenant.
+    const showGlobalAdminOverview = role === "SUPER_ADMIN" && !targetUserId
     const showChatbotMenus = role !== "SUPER_ADMIN" || !!targetUserId
 
     // Top-level overview item (outside groups)
@@ -268,6 +269,29 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                                         <span className="truncate font-semibold">{t('backToTenants')}</span>
                                         <span className="truncate text-xs text-white/70">{targetEmail || targetUserId}</span>
                                     </div>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    )}
+
+                    {showGlobalAdminOverview && (
+                        <SidebarMenu className="mb-2">
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={overviewItem.active}
+                                    className={cn(
+                                        "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                        "hover:bg-white/10 hover:text-white",
+                                        overviewItem.active
+                                            ? "bg-white/15 text-white shadow-sm"
+                                            : "text-zinc-400 group-hover:text-white"
+                                    )}
+                                >
+                                    <Link href={overviewItem.href}>
+                                        <overviewItem.icon className={cn("size-4 transition-colors", overviewItem.active ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                        <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{overviewItem.title}</span>
+                                    </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>

@@ -69,7 +69,7 @@ export function Breadcrumbs() {
                         "conversations": t("omni.nav.conversations"),
                         "leads": t('leads'),
                         "tenants": t('tenants'),
-                        "admin": t('endUsers') || t('tenants'),
+                        "admin": t('superAdminDashboard') || "Super Admin Panel",
                         "agencies": t('agencies') || "Agencies",
                         "agency": t('agency') || "Partner",
                         "end-users": t('endUsers') || "End Users",
