@@ -122,14 +122,14 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
 
     return (
         <div className="p-8 space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{t('analytics')}</h1>
                     <p className="text-muted-foreground">{t('analyticsSubtitle')}</p>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background/80 p-2 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
                         <DatePicker date={startDate} setDate={setStartDate} placeholder={t('startDate')} />
                         <span className="text-muted-foreground">-</span>
                         <DatePicker date={endDate} setDate={setEndDate} placeholder={t('endDate')} />

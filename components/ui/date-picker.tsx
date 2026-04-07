@@ -38,7 +38,7 @@ export function DatePicker({ date, setDate, label, placeholder }: DatePickerProp
                 <Button
                     variant={"outline"}
                     className={cn(
-                        "w-[200px] justify-start text-left font-normal",
+                        "h-10 min-w-[168px] justify-start rounded-lg border-border/70 bg-background px-3 text-left font-medium shadow-sm sm:min-w-[184px]",
                         !date && "text-muted-foreground"
                     )}
                 >
@@ -46,7 +46,7 @@ export function DatePicker({ date, setDate, label, placeholder }: DatePickerProp
                     {date ? format(date, "d MMM yyyy", { locale }) : <span>{placeholder || "Pick a date"}</span>}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent align="end" sideOffset={10} className="w-auto rounded-xl border border-border/70 p-0 shadow-xl">
                 <Calendar
                     mode="single"
                     selected={date}

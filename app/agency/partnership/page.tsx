@@ -65,13 +65,13 @@ function getDefaultProgram(level: PartnerLevel, isTr: boolean): PartnershipProgr
                         "Yönlendirme hakkı müşteri ilk kayıt tarihinden itibaren 30 gün boyunca korunur.",
                         "Aynı müşteri için ilk kayıt oluşturan partner komisyon hakkını alır.",
                         "Ödeme, tahsil edilen faturadan sonra 30 gün içinde yapılır.",
-                        "Bu seviye müşteri hesaplarını inceleyebilir ancak çalışma alanlarına giremez.",
+                        "Bu seviye son kullanıcıları inceleyebilir ancak çalışma alanlarına giremez.",
                     ]
                     : [
                         "Referral ownership is protected for 30 days from the customer's first registration.",
                         "For duplicate referrals, the first registered partner receives the commission.",
                         "Payout is made within 30 days after the invoice is collected.",
-                        "This tier can review managed accounts but cannot enter their workspaces.",
+                        "This tier can review end users but cannot enter their workspaces.",
                     ],
             }
         case "strategic_partner":
@@ -85,13 +85,13 @@ function getDefaultProgram(level: PartnerLevel, isTr: boolean): PartnershipProgr
                 rules: isTr
                     ? [
                         "Yinelenen lisans komisyonu aktif abonelik devam ettiği sürece işler.",
-                        "Partner logonuz bağlı müşteri hesaplarının başlığında gösterilebilir.",
+                        "Partner logonuz bağlı son kullanıcı başlıklarında gösterilebilir.",
                         "Tahsil edilen faturalar için ödeme hedefi 15 gündür.",
                         "Sözleşme ve marka kurallarının ihlali komisyon akışını durdurabilir.",
                     ]
                     : [
                         "Recurring license commission applies while the customer subscription remains active.",
-                        "Your partner logo can be shown in linked customer account headers.",
+                        "Your partner logo can be shown in linked end-user headers.",
                         "Collected invoices target a 15-day payout window.",
                         "Violations of agreement or brand rules can suspend commission flow.",
                     ],
@@ -102,20 +102,20 @@ function getDefaultProgram(level: PartnerLevel, isTr: boolean): PartnershipProgr
                 commissionModel: "recurring",
                 payoutScheduleDays: 30,
                 summary: isTr
-                    ? "Solution Partner paketi. Yönetilen hesaplar oluşturabilir ve aktif aboneliklerden yinelenen komisyon kazanabilirsiniz."
-                    : "Solution Partner plan. You can create managed accounts and earn recurring commission from active subscriptions.",
+                    ? "Solution Partner paketi. Son kullanıcılar oluşturabilir ve aktif aboneliklerden yinelenen komisyon kazanabilirsiniz."
+                    : "Solution Partner plan. You can create end users and earn recurring commission from active subscriptions.",
                 rules: isTr
                     ? [
                         "Yinelenen komisyon aktif aboneliklerde aylık olarak işler.",
                         "Yönlendirilen müşteri için ilk temas kuralı geçerlidir.",
                         "Tahsil edilen faturalar için ödeme 30 gün içinde hedeflenir.",
-                        "Bu seviye bağlı müşteri çalışma alanlarına erişebilir.",
+                        "Bu seviye bağlı son kullanıcı çalışma alanlarına erişebilir.",
                     ]
                     : [
                         "Recurring commission is paid monthly on active subscriptions.",
                         "First-touch attribution applies to referred customers.",
                         "Collected invoices target a 30-day payout window.",
-                        "This tier can access linked customer workspaces.",
+                        "This tier can access linked end-user workspaces.",
                     ],
             }
     }
@@ -193,52 +193,52 @@ export default function AgencyPartnershipPage() {
             ? [
                 {
                     enabled: resolvedCapabilities?.canCreateManagedAccounts === true,
-                    title: "Yönetilen hesap oluşturma",
-                    on: "Yeni müşteri hesabı açabilir ve kendi partnerliğinize bağlayabilirsiniz.",
-                    off: "Bu partner seviyesi yeni yönetilen hesap açamaz.",
+                    title: "Son kullanıcı oluşturma",
+                    on: "Yeni bir son kullanıcı açabilir ve kendi partnerliğinize bağlayabilirsiniz.",
+                    off: "Bu partner seviyesi yeni son kullanıcı açamaz.",
                 },
                 {
                     enabled: resolvedCapabilities?.canAccessManagedAccountWorkspace === true,
-                    title: "Müşteri çalışma alanı erişimi",
-                    on: "Bağlı müşteri çalışma alanlarına girip operasyonu yönetebilirsiniz.",
-                    off: "Bu partner seviyesi müşteri çalışma alanlarına giriş yetkisi vermez.",
+                    title: "Son kullanıcı çalışma alanı erişimi",
+                    on: "Bağlı son kullanıcı çalışma alanlarına girip operasyonu yönetebilirsiniz.",
+                    off: "Bu partner seviyesi son kullanıcı çalışma alanlarına giriş yetkisi vermez.",
                 },
                 {
                     enabled: resolvedCapabilities?.canSwitchOmniAccounts === true,
-                    title: "Hesaplar arasında geçiş",
-                    on: "Bağlı hesaplar arasında geçiş yapıp destek sağlayabilirsiniz.",
-                    off: "Bu partner seviyesi hesaplar arasında geçiş yapamaz.",
+                    title: "Son kullanıcı geçişi",
+                    on: "Bağlı son kullanıcılar arasında geçiş yapıp destek sağlayabilirsiniz.",
+                    off: "Bu partner seviyesi son kullanıcılar arasında geçiş yapamaz.",
                 },
                 {
                     enabled: resolvedCapabilities?.canUsePartnerBranding === true,
                     title: "Partner markalama",
-                    on: "Logo ve marka görünümü bağlı hesaplarda gösterilebilir.",
+                    on: "Logo ve marka görünümü bağlı son kullanıcı alanlarında gösterilebilir.",
                     off: "Partner markalama yalnızca Strategic Partner seviyesinde aktiftir.",
                 },
             ]
             : [
                 {
                     enabled: resolvedCapabilities?.canCreateManagedAccounts === true,
-                    title: "Managed account creation",
-                    on: "You can create new customer accounts and attach them to your partner organization.",
-                    off: "This partner tier cannot create managed accounts.",
+                    title: "End-user creation",
+                    on: "You can create new end users and attach them to your partner organization.",
+                    off: "This partner tier cannot create end users.",
                 },
                 {
                     enabled: resolvedCapabilities?.canAccessManagedAccountWorkspace === true,
-                    title: "Managed workspace access",
-                    on: "You can enter linked customer workspaces and operate them directly.",
-                    off: "This tier does not include direct access to customer workspaces.",
+                    title: "End-user workspace access",
+                    on: "You can enter linked end-user workspaces and operate them directly.",
+                    off: "This tier does not include direct access to end-user workspaces.",
                 },
                 {
                     enabled: resolvedCapabilities?.canSwitchOmniAccounts === true,
-                    title: "Account switching",
-                    on: "You can switch across linked accounts to provide partner-side support.",
-                    off: "This tier cannot switch between linked accounts.",
+                    title: "End-user switching",
+                    on: "You can switch across linked end users to provide partner-side support.",
+                    off: "This tier cannot switch between linked end users.",
                 },
                 {
                     enabled: resolvedCapabilities?.canUsePartnerBranding === true,
                     title: "Partner branding",
-                    on: "Your logo and brand treatment can be shown across linked accounts.",
+                    on: "Your logo and brand treatment can be shown across linked end-user spaces.",
                     off: "Partner branding is available only for Strategic Partner tier.",
                 },
             ]
@@ -332,11 +332,11 @@ export default function AgencyPartnershipPage() {
                             <div className="mt-1 font-medium">{partnerSince}</div>
                         </div>
                         <div>
-                            <div className="text-xs uppercase tracking-wide text-muted-foreground">{isTr ? "Toplam müşteri" : "Total customers"}</div>
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground">{isTr ? "Toplam son kullanıcı" : "Total end users"}</div>
                             <div className="mt-1 font-medium">{partner.customerCount}</div>
                         </div>
                         <div>
-                            <div className="text-xs uppercase tracking-wide text-muted-foreground">{isTr ? "Omni aktif hesap" : "Omni-enabled accounts"}</div>
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground">{isTr ? "Omni aktif son kullanıcı" : "Omni-enabled end users"}</div>
                             <div className="mt-1 font-medium">{partner.omniEnabledAccounts}</div>
                         </div>
                     </CardContent>

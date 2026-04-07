@@ -101,6 +101,7 @@ export function SiteHeader({
             </div>
             <div className="ml-auto flex items-center gap-2">
                 {showProductLauncher ? <ProductLauncher /> : null}
+                {showNotifications ? <NotificationBell /> : null}
                 {showWidgetTest ? (
                     <Button
                         variant="outline"
@@ -111,7 +112,6 @@ export function SiteHeader({
                         {t('widgetTest') || "Widget Test"}
                     </Button>
                 ) : null}
-                {showNotifications ? <NotificationBell /> : null}
                 {partnerBranding?.show && partnerBranding.logoUrl ? (
                     <div className="flex h-9 shrink-0 items-center rounded-md border bg-white px-2 shadow-sm">
                         <Image

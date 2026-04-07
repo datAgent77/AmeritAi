@@ -905,7 +905,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                     ) : (
                         <Button onClick={() => setIsAddTenantOpen(true)} className="shadow-sm">
                             <Plus className="mr-2 h-4 w-4" />
-                            {t('addTenant') || "+ Müşteri Ekle"}
+                            {t('addTenant') || "+ Son Kullanıcı Ekle"}
                         </Button>
                     )}
                 </div>
@@ -931,7 +931,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-green-600">{activeAgencyCount}</div>
-                            <p className="text-xs text-muted-foreground">{t('agencyActiveDesc') || "Partner aktif — müşteriler erişebilir."}</p>
+                            <p className="text-xs text-muted-foreground">{t('agencyActiveDesc') || "Partner aktif ve bağlı son kullanıcı akışları kullanılabilir."}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -949,22 +949,22 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <div className="grid gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('totalTenants') || "Toplam Müşteri"}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('totalTenants') || "Toplam Son Kullanıcı"}</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold">{stats.totalTenants}</div>
-                            <p className="text-xs text-muted-foreground">{t('registeredTenantAccounts') || "Kayıtlı müşteri hesapları"}</p>
+                            <p className="text-xs text-muted-foreground">{t('registeredTenantAccounts') || "Kayıtlı son kullanıcılar"}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{t('activeTenants') || "Aktif Müşteriler"}</CardTitle>
+                            <CardTitle className="text-sm font-medium">{t('activeTenants') || "Aktif Son Kullanıcılar"}</CardTitle>
                             <Activity className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-green-600">{stats.activeTenants}</div>
-                            <p className="text-xs text-muted-foreground">{t('currentlyActiveAccounts') || "Şu anda aktif hesaplar"}</p>
+                            <p className="text-xs text-muted-foreground">{t('currentlyActiveAccounts') || "Şu anda aktif son kullanıcılar"}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -1135,7 +1135,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                             <div className="relative w-full min-[540px]:w-[320px]">
                                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder={t('searchTenants') || "Müşteri ara..."}
+                                    placeholder={t('searchTenants') || "Son kullanıcı ara..."}
                                     className="pl-8"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -1386,7 +1386,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                 <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
                 <DialogContent className="max-w-2xl p-10">
                     <DialogHeader>
-                        <DialogTitle>{t('addNewTenant') || "Yeni Müşteri Ekle"}</DialogTitle>
+                        <DialogTitle>{t('addNewTenant') || "Yeni Son Kullanıcı Ekle"}</DialogTitle>
                         <DialogDescription>
                             Sistem için yeni bir kiracı hesabı oluşturun. Tüm detaylar otomatik olarak atanacaktır.
                         </DialogDescription>

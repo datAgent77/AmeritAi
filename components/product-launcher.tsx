@@ -15,8 +15,8 @@ export function ProductLauncher() {
         includeAll: role === "SUPER_ADMIN",
     })
 
-    // Don't render the launcher if no products are visible
-    if (visibleProducts.length === 0) {
+    // Keep the app switcher exclusive to super admins until omni access is finalized.
+    if (role !== "SUPER_ADMIN" || visibleProducts.length === 0) {
         return null
     }
 

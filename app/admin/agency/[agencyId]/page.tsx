@@ -301,7 +301,7 @@ export default function AgencyManagementPage() {
             toast({
                 title: t('success') || "Başarılı",
                 description: unassignedTenants > 0
-                    ? `${t('agencyDeleted') || "Partner silindi."} ${unassignedTenants} ${t('customers') || "müşteri"} ${t('unassigned') || "Unassigned"}.`
+                    ? `${t('agencyDeleted') || "Partner silindi."} ${unassignedTenants} ${t('endUsers') || "son kullanıcı"} ${t('unassigned') || "Unassigned"}.`
                     : (t('agencyDeleted') || "Partner silindi.")
             })
             router.push("/admin/agencies")
@@ -385,7 +385,7 @@ export default function AgencyManagementPage() {
                             <Users className="h-4 w-4" />
                         </div>
                         <div>
-                            <CardTitle className="text-sm text-muted-foreground font-normal">{t('customers') || "Müşteriler"}</CardTitle>
+                            <CardTitle className="text-sm text-muted-foreground font-normal">{t('endUsers') || "Son Kullanıcılar"}</CardTitle>
                             <p className="font-semibold text-sm">{assignedTenants.length}</p>
                         </div>
                     </CardHeader>
@@ -508,7 +508,7 @@ export default function AgencyManagementPage() {
                                 <div className="font-medium">Strategic Branding Preview</div>
                                 <div className="text-xs text-muted-foreground">
                                     {agency.partnerLevel === "strategic_partner"
-                                        ? "Header-right branding is active for this partner and its linked customer accounts."
+                                        ? "Header-right branding is active for this partner and its linked end users."
                                         : "Logo visibility opens only when this partner reaches Strategic Partner level."}
                                 </div>
                             </div>
@@ -522,7 +522,7 @@ export default function AgencyManagementPage() {
                             </div>
                             <div className="text-xs text-red-700/80 mt-0.5">
                                 {assignedTenants.length > 0
-                                    ? `${assignedTenants.length} ${(t('customers') || "müşteri")} ${(t('unassigned') || "Unassigned")} olacak.`
+                                    ? `${assignedTenants.length} ${(t('endUsers') || "son kullanıcı")} ${(t('unassigned') || "Unassigned")} olacak.`
                                     : (t('deleteAgencyHint') || "Bu işlem geri alınamaz.")}
                             </div>
                         </div>
@@ -553,7 +553,7 @@ export default function AgencyManagementPage() {
                         {t('assignedCustomers') || "Bağlı Müşteriler"}
                     </CardTitle>
                     <CardDescription>
-                        {t('assignedCustomersDesc') || "Bu partnere bağlı tüm müşteri hesapları."}
+                        {t('assignedCustomersDesc') || "Bu partnere bağlı tüm son kullanıcılar."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

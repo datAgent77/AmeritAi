@@ -18,35 +18,35 @@ function Calendar({
     return (
         <DayPicker
             showOutsideDays={showOutsideDays}
-            className={cn("p-3", className)}
+            className={cn("p-4", className)}
             classNames={{
-                months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                months: "flex flex-col gap-4",
                 month: "space-y-4",
-                caption: "flex justify-center pt-1 relative items-center",
-                caption_label: "text-sm font-medium",
-                nav: "space-x-1 flex items-center",
+                caption: "relative flex items-center justify-center border-b border-border/60 pb-3 pt-1",
+                caption_label: "text-sm font-semibold tracking-tight",
+                nav: "absolute right-0 top-0 flex items-center gap-1",
                 nav_button: cn(
                     buttonVariants({ variant: "outline" }),
-                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                    "h-8 w-8 rounded-md border-border/70 bg-background p-0 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground"
                 ),
-                nav_button_previous: "absolute left-1",
-                nav_button_next: "absolute right-1",
-                table: "w-full border-collapse space-y-1",
+                button_previous: "shrink-0",
+                button_next: "shrink-0",
+                table: "w-full border-collapse",
                 weekdays: "flex w-full",
                 weekday:
-                    "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-                week: "flex w-full mt-2",
-                day: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    "w-10 rounded-md pb-2 text-center text-[0.72rem] font-medium uppercase tracking-[0.18em] text-muted-foreground",
+                week: "mt-1 flex w-full",
+                day: "h-10 w-10 p-0 text-center text-sm [&:has([aria-selected].day-range-end)]:rounded-r-lg [&:has([aria-selected].day-outside)]:bg-accent/40 [&:has([aria-selected])]:bg-accent/60 first:[&:has([aria-selected])]:rounded-l-lg last:[&:has([aria-selected])]:rounded-r-lg focus-within:relative focus-within:z-20",
                 day_button: cn(
                     buttonVariants({ variant: "ghost" }),
-                    "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-                ), // v9 uses day_button for the button element
+                    "h-10 w-10 rounded-lg p-0 font-medium text-foreground aria-selected:opacity-100"
+                ),
                 range_end: "day-range-end",
                 selected:
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-                today: "bg-accent text-accent-foreground",
+                    "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                today: "bg-accent/70 text-accent-foreground",
                 outside:
-                    "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+                    "day-outside text-muted-foreground opacity-45 aria-selected:bg-accent/40 aria-selected:text-muted-foreground aria-selected:opacity-60",
                 disabled: "text-muted-foreground opacity-50",
                 range_middle:
                     "aria-selected:bg-accent aria-selected:text-accent-foreground",
