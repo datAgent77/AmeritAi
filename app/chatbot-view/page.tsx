@@ -1,13 +1,11 @@
-"use client"
-
-import { Suspense } from "react"
-import ChatbotContainer from "./ChatbotContainer"
+import dynamic from "next/dynamic"
 import { WidgetLoader } from "./components/WidgetLoader"
 
+const ChatbotContainer = dynamic(() => import("./ChatbotContainer"), {
+    ssr: false,
+    loading: () => <WidgetLoader loaderStyle="skeleton" ambientBottomMargin={0} showAmbientIcon={false} />,
+})
+
 export default function ChatbotView() {
-    return (
-        <Suspense fallback={<WidgetLoader loaderStyle="skeleton" ambientBottomMargin={0} showAmbientIcon={false} />}>
-            <ChatbotContainer />
-        </Suspense>
-    )
+    return <ChatbotContainer />
 }

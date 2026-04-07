@@ -1,4 +1,24 @@
 (function () {
+  const BLOCKED_WIDGET_ROUTE_PREFIXES = [
+    '/admin',
+    '/agency',
+    '/console',
+    '/onboarding',
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/reset-password'
+  ];
+
+  function isBlockedWidgetRoute(pathname) {
+    const currentPath = pathname || window.location.pathname || '';
+    return BLOCKED_WIDGET_ROUTE_PREFIXES.some((prefix) => currentPath.startsWith(prefix));
+  }
+
+  if (isBlockedWidgetRoute()) {
+    return;
+  }
+
   // Global Initialization Guard to prevent multiple widgets if script is included twice
   if (window.__VION_WIDGET_INITIALIZED__) {
     console.warn('Vion AI Widget is already initialized.');
@@ -8,7 +28,7 @@
 
   // Find the current script tag to extract configuration
   // Fallback for async scripts where document.currentScript might be null
-  const currentScript = document.currentScript || document.querySelector('script[src*="/widget.js"]');
+  const currentScript = document.currentScript || Array.from(document.querySelectorAll('script[src*="/widget.js"]')).at(-1);
 
   if (!currentScript) {
     console.error('Userex Widget: Could not find script tag to initialize.');
@@ -4129,6 +4149,24 @@
     window.UserexWidget.close = function () {
       if (usesLauncher) toggleWidget(false);
     };
+    window.UserexWidget.destroy = function () {
+      try {
+        removeBootstrappedWidgetShell();
+      } catch (error) {
+        console.warn('Userex Widget: Failed to remove widget shell during destroy', error);
+      }
+
+      try {
+        if (window.userexEngagement && typeof window.userexEngagement.destroy === 'function') {
+          window.userexEngagement.destroy();
+        }
+      } catch (error) {
+        console.warn('Userex Widget: Failed to destroy engagement controller', error);
+      }
+
+      delete window.userexEngagement;
+      delete window.__VION_WIDGET_INITIALIZED__;
+    };
     window.UserexWidget.toggle = function () {
       if (usesLauncher) toggleWidget();
       else toggleWidget(true);
@@ -4524,6 +4562,13 @@
 
   // Send context update to iframe
   function sendContextUpdate() {
+    if (isBlockedWidgetRoute()) {
+      if (window.UserexWidget && typeof window.UserexWidget.destroy === 'function') {
+        window.UserexWidget.destroy();
+      }
+      return;
+    }
+
     const iframe = document.querySelector('#userex-chatbot-container iframe');
     if (iframe && iframe.contentWindow) {
       const context = getPageContext();

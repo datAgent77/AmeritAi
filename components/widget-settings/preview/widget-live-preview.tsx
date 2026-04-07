@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { WidgetSettings } from "@/hooks/use-widget-settings"
+import { PreviewAmbient } from "./preview-ambient"
+import { PreviewClassic } from "./preview-classic"
 import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 
 interface WidgetLivePreviewProps {
@@ -13,243 +15,155 @@ interface WidgetLivePreviewProps {
     ambientPreviewThinking?: boolean
 }
 
-function escapeHtmlAttr(value: string) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-}
+function PreviewBackdrop({ previewMode }: { previewMode: "mobile" | "desktop" }) {
+    const wrapperClass = previewMode === "mobile" ? "p-4" : "p-7"
 
-function buildPreviewSrcDoc({
-    origin,
-    chatbotId,
-    previewDraftKey,
-    previewMode,
-    ambientPreviewDockState,
-    ambientPreviewThinking,
-}: {
-    origin: string
-    chatbotId: string
-    previewDraftKey: string
-    previewMode: "mobile" | "desktop"
-    ambientPreviewDockState: AmbientDockPreviewState
-    ambientPreviewThinking: boolean
-}) {
-    const safeOrigin = escapeHtmlAttr(origin)
-    const safeChatbotId = escapeHtmlAttr(chatbotId || "preview")
-    const safeDraftKey = escapeHtmlAttr(previewDraftKey)
-    const safeDockState = escapeHtmlAttr(ambientPreviewDockState)
-    const safeThinking = ambientPreviewThinking ? "true" : "false"
-    const isMobile = previewMode === "mobile"
-
-    return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-      * { box-sizing: border-box; }
-      html, body { margin: 0; height: 100%; overflow: hidden; }
-      body {
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at top left, rgba(139, 92, 246, 0.08), transparent 28%),
-          radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 30%),
-          #f8fafc;
-        color: #0f172a;
-      }
-      .preview-host {
-        position: relative;
-        height: 100%;
-        overflow: hidden;
-      }
-      .preview-page {
-        min-height: 100%;
-        padding: ${isMobile ? "20px 16px 28px" : "28px 28px 40px"};
-      }
-      .hero {
-        height: ${isMobile ? "120px" : "152px"};
-        border-radius: ${isMobile ? "24px" : "28px"};
-        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-      }
-      .hero-lines {
-        display: grid;
-        gap: 14px;
-        padding: ${isMobile ? "20px" : "28px"};
-      }
-      .line {
-        height: 12px;
-        border-radius: 999px;
-        background: linear-gradient(90deg, rgba(148, 163, 184, 0.22), rgba(226, 232, 240, 0.75));
-      }
-      .cards {
-        display: grid;
-        grid-template-columns: ${isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))"};
-        gap: 14px;
-        margin-top: 18px;
-      }
-      .card {
-        height: ${isMobile ? "76px" : "104px"};
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.75);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
-      }
-      .card.tall {
-        height: ${isMobile ? "140px" : "180px"};
-        margin-top: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="preview-host">
-      <div class="preview-page">
-        <div class="hero">
-          <div class="hero-lines">
-            <div class="line" style="width: 42%;"></div>
-            <div class="line" style="width: 88%;"></div>
-            <div class="line" style="width: 66%;"></div>
-          </div>
+    return (
+        <div className="absolute inset-0 overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(139,92,246,0.08),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.08),transparent_30%),#f8fafc]">
+            <div className={`${wrapperClass} h-full`}>
+                <div className={`rounded-[28px] border border-slate-200/70 bg-white/90 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ${previewMode === "mobile" ? "h-[120px]" : "h-[152px]"}`}>
+                    <div className={`${previewMode === "mobile" ? "p-5 gap-3.5" : "p-7 gap-3.5"} grid`}>
+                        <div className="h-3 w-[42%] rounded-full bg-gradient-to-r from-slate-300/60 to-slate-200/80" />
+                        <div className="h-3 w-[88%] rounded-full bg-gradient-to-r from-slate-300/60 to-slate-200/80" />
+                        <div className="h-3 w-[66%] rounded-full bg-gradient-to-r from-slate-300/60 to-slate-200/80" />
+                    </div>
+                </div>
+                <div className={`mt-4 grid gap-3.5 ${previewMode === "mobile" ? "grid-cols-1" : "grid-cols-3"}`}>
+                    <div className={`rounded-3xl border border-slate-200/60 bg-white/75 shadow-[0_10px_28px_rgba(15,23,42,0.05)] ${previewMode === "mobile" ? "h-[76px]" : "h-[104px]"}`} />
+                    <div className={`rounded-3xl border border-slate-200/60 bg-white/75 shadow-[0_10px_28px_rgba(15,23,42,0.05)] ${previewMode === "mobile" ? "h-[76px]" : "h-[104px]"}`} />
+                    <div className={`rounded-3xl border border-slate-200/60 bg-white/75 shadow-[0_10px_28px_rgba(15,23,42,0.05)] ${previewMode === "mobile" ? "h-[76px]" : "h-[104px]"}`} />
+                </div>
+                <div className={`mt-3.5 rounded-3xl border border-slate-200/60 bg-white/75 shadow-[0_10px_28px_rgba(15,23,42,0.05)] ${previewMode === "mobile" ? "h-[140px]" : "h-[180px]"}`} />
+            </div>
         </div>
-        <div class="cards">
-          <div class="card"></div>
-          <div class="card"></div>
-          <div class="card"></div>
-        </div>
-        <div class="card tall"></div>
-      </div>
-      <script
-        async
-        src="${safeOrigin}/widget.js"
-        data-chatbot-id="${safeChatbotId}"
-        data-preview-draft-key="${safeDraftKey}"
-        data-preview-ambient-dock-state="${safeDockState}"
-        data-preview-ambient-thinking="${safeThinking}"
-      ></script>
-    </div>
-  </body>
-</html>`
+    )
 }
 
 export function WidgetLivePreview({
-    userId,
     settings,
     t,
     ambientPreviewDockState = "auto",
     ambientPreviewThinking = false,
 }: WidgetLivePreviewProps) {
-    const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('mobile')
-    const [origin, setOrigin] = useState("")
-    const [frameVersion, setFrameVersion] = useState(0)
+    const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile")
+    const [lottieData, setLottieData] = useState<any>(null)
 
-    const previewDraftKey = useMemo(
-        () => `userex_widget_preview_draft:${userId || "anonymous"}`,
-        [userId]
-    )
-    const serializedDraft = useMemo(() => JSON.stringify(settings), [settings])
+    const previewShouldStartOpen = useMemo(() => {
+        if (settings.chatDisplayMode === "sidecar") return true
+        if (settings.interactionMode === "always_open") return true
+        if (ambientPreviewThinking) return true
+        return ambientPreviewDockState.startsWith("open")
+    }, [ambientPreviewDockState, ambientPreviewThinking, settings.chatDisplayMode, settings.interactionMode])
 
-    useEffect(() => {
-        if (typeof window === "undefined") return
-        setOrigin(window.location.origin)
-    }, [])
+    const [isPreviewOpen, setIsPreviewOpen] = useState(previewShouldStartOpen)
 
     useEffect(() => {
-        if (typeof window === "undefined") return
-        try {
-            window.localStorage.setItem(previewDraftKey, serializedDraft)
-        } catch (error) {
-            console.warn("Widget preview: Failed to persist draft settings", error)
-        }
-    }, [previewDraftKey, serializedDraft])
+        setIsPreviewOpen(previewShouldStartOpen)
+    }, [previewShouldStartOpen])
 
     useEffect(() => {
-        const timeoutId = window.setTimeout(() => {
-            setFrameVersion((current) => current + 1)
-        }, 180)
+        let cancelled = false
 
-        return () => window.clearTimeout(timeoutId)
-    }, [previewMode, ambientPreviewDockState, ambientPreviewThinking, serializedDraft])
+        const loadLottie = async () => {
+            if (settings.launcherType !== "fullImage" || settings.launcherImageMode !== "lottie" || !settings.launcherLottieUrl) {
+                setLottieData(null)
+                return
+            }
 
-    useEffect(() => {
-        return () => {
-            if (typeof window === "undefined") return
             try {
-                window.localStorage.removeItem(previewDraftKey)
-                window.localStorage.removeItem(`${previewDraftKey}:open`)
+                const response = await fetch(settings.launcherLottieUrl)
+                if (!response.ok) {
+                    throw new Error(`Failed to load Lottie animation (${response.status})`)
+                }
+
+                const data = await response.json()
+                if (!cancelled) {
+                    setLottieData(data)
+                }
             } catch (error) {
-                console.warn("Widget preview: Failed to clean preview draft", error)
+                if (!cancelled) {
+                    console.warn("Widget preview: Failed to load Lottie animation", error)
+                    setLottieData(null)
+                }
             }
         }
-    }, [previewDraftKey])
 
-    const previewSrcDoc = useMemo(() => {
-        if (!origin) return ""
-        return buildPreviewSrcDoc({
-            origin,
-            chatbotId: userId || "preview",
-            previewDraftKey,
-            previewMode,
-            ambientPreviewDockState,
-            ambientPreviewThinking,
-        })
-    }, [origin, userId, previewDraftKey, previewMode, ambientPreviewDockState, ambientPreviewThinking])
+        loadLottie()
+        return () => {
+            cancelled = true
+        }
+    }, [settings.launcherImageMode, settings.launcherLottieUrl, settings.launcherType])
+
+    const previewCanvas = (
+        <div className="relative h-full w-full overflow-hidden rounded-[inherit] bg-white">
+            <PreviewBackdrop previewMode={previewMode} />
+            {settings.chatDisplayMode === "ambient" ? (
+                <PreviewAmbient
+                    settings={settings}
+                    previewMode={previewMode}
+                    isPreviewOpen={isPreviewOpen}
+                    setIsPreviewOpen={setIsPreviewOpen}
+                    previewAmbientDockState={ambientPreviewDockState}
+                    previewAmbientThinking={ambientPreviewThinking}
+                />
+            ) : (
+                <PreviewClassic
+                    settings={settings}
+                    previewMode={previewMode}
+                    isPreviewOpen={isPreviewOpen}
+                    setIsPreviewOpen={setIsPreviewOpen}
+                    lottieData={lottieData}
+                />
+            )}
+        </div>
+    )
 
     return (
-        <div className="flex-1 flex flex-col items-center bg-muted/30 rounded-xl border border-dashed border-border/50 p-6 min-h-[600px] h-full overflow-y-auto">
-            <div className="flex gap-2 mb-4">
+        <div className="flex h-full min-h-[600px] flex-1 flex-col items-center overflow-y-auto rounded-xl border border-dashed border-border/50 bg-muted/30 p-6">
+            <div className="mb-4 flex gap-2">
                 <Button
-                    variant={previewMode === 'mobile' ? 'default' : 'outline'}
+                    variant={previewMode === "mobile" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setPreviewMode('mobile')}
+                    onClick={() => setPreviewMode("mobile")}
                 >
-                    {t('mobile') || 'Mobile'}
+                    {t("mobile") || "Mobile"}
                 </Button>
                 <Button
-                    variant={previewMode === 'desktop' ? 'default' : 'outline'}
+                    variant={previewMode === "desktop" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setPreviewMode('desktop')}
+                    onClick={() => setPreviewMode("desktop")}
                 >
-                    {t('desktop') || 'Desktop'}
+                    {t("desktop") || "Desktop"}
                 </Button>
             </div>
 
-            <div className="sticky top-8 w-full max-w-[700px] flex justify-center">
-                {previewMode === 'mobile' ? (
-                    <div className="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.8rem] h-[740px] w-[360px] shadow-xl shrink-0">
-                        <div className="w-[178px] h-[22px] bg-gray-800 top-0 rounded-b-[1.1rem] left-1/2 -translate-x-1/2 absolute z-50"></div>
-                        <div className="h-[36px] w-[3px] bg-gray-800 absolute -start-[17px] top-[88px] rounded-s-lg"></div>
-                        <div className="h-[52px] w-[3px] bg-gray-800 absolute -start-[17px] top-[146px] rounded-s-lg"></div>
-                        <div className="h-[52px] w-[3px] bg-gray-800 absolute -start-[17px] top-[206px] rounded-s-lg"></div>
-                        <div className="h-[72px] w-[3px] bg-gray-800 absolute -end-[17px] top-[164px] rounded-e-lg"></div>
-
-                        <iframe
-                            key={`mobile-${frameVersion}`}
-                            title="Widget live preview mobile"
-                            srcDoc={previewSrcDoc}
-                            className="rounded-[2rem] overflow-hidden w-full h-full bg-white border-0"
-                        />
+            <div className="sticky top-8 flex w-full max-w-[700px] justify-center">
+                {previewMode === "mobile" ? (
+                    <div className="relative mx-auto h-[740px] w-[360px] shrink-0 rounded-[2.8rem] border-[14px] border-gray-800 bg-gray-800 shadow-xl">
+                        <div className="absolute left-1/2 top-0 z-50 h-[22px] w-[178px] -translate-x-1/2 rounded-b-[1.1rem] bg-gray-800"></div>
+                        <div className="absolute -start-[17px] top-[88px] h-[36px] w-[3px] rounded-s-lg bg-gray-800"></div>
+                        <div className="absolute -start-[17px] top-[146px] h-[52px] w-[3px] rounded-s-lg bg-gray-800"></div>
+                        <div className="absolute -start-[17px] top-[206px] h-[52px] w-[3px] rounded-s-lg bg-gray-800"></div>
+                        <div className="absolute -end-[17px] top-[164px] h-[72px] w-[3px] rounded-e-lg bg-gray-800"></div>
+                        <div className="h-full w-full overflow-hidden rounded-[2rem] border-0 bg-white">
+                            {previewCanvas}
+                        </div>
                     </div>
                 ) : (
-                    <div className="w-full max-w-[600px] bg-white rounded-lg shadow-2xl border overflow-hidden shrink-0">
-                        <div className="bg-gray-100 dark:bg-gray-800 p-3 flex items-center gap-2 border-b">
+                    <div className="w-full max-w-[600px] shrink-0 overflow-hidden rounded-lg border bg-white shadow-2xl">
+                        <div className="flex items-center gap-2 border-b bg-gray-100 p-3 dark:bg-gray-800">
                             <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                                <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                                <div className="h-3 w-3 rounded-full bg-green-500"></div>
                             </div>
-                            <div className="flex-1 bg-white dark:bg-gray-700 rounded px-3 py-1 text-xs text-gray-500 text-center">
+                            <div className="flex-1 rounded bg-white px-3 py-1 text-center text-xs text-gray-500 dark:bg-gray-700">
                                 yourwebsite.com
                             </div>
                         </div>
-                        <iframe
-                            key={`desktop-${frameVersion}`}
-                            title="Widget live preview desktop"
-                            srcDoc={previewSrcDoc}
-                            className="h-[500px] w-full border-0 bg-white"
-                        />
+                        <div className="h-[500px] w-full border-0 bg-white">
+                            {previewCanvas}
+                        </div>
                     </div>
                 )}
             </div>

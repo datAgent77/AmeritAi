@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useAuth } from "@/context/AuthContext"
+import { cleanupVionWidgetRuntime } from "@/lib/widget-runtime-dom"
 
 interface ChatbotLoaderProps {
     chatbotId: string
@@ -41,34 +41,9 @@ export function ChatbotLoader({ chatbotId, color }: ChatbotLoaderProps) {
     useEffect(() => {
         if (!chatbotId || !shouldLoad) return
 
-        // Cleanup function to remove existing widget elements
         const cleanup = () => {
-            const elementsToRemove = [
-                'userex-chatbot-launcher',
-                'userex-launcher-wrapper',
-                'userex-chatbot-container',
-                'userex-engagement-bubble',
-                'userex-mobile-styles',
-                'userex-animation-styles',
-                'userex-engagement-animations',
-                'userex-lucide-script'
-            ]
-
-            elementsToRemove.forEach(id => {
-                const el = document.getElementById(id)
-                if (el) el.remove()
-            })
-
-            // Remove the script tag itself if we tracked it
-            if (scriptRef.current) {
-                scriptRef.current.remove()
-                scriptRef.current = null
-            } else {
-                // Fallback: try to find script by src if ref wasn't set (e.g. from previous nav)
-                // Only remove exact widget.js matches to avoid removing other scripts
-                const scripts = document.querySelectorAll(`script[src="/widget.js"], script[src^="/widget.js?"]`)
-                scripts.forEach(s => s.remove())
-            }
+            cleanupVionWidgetRuntime()
+            scriptRef.current = null
         }
 
         // Run cleanup first to ensure clean slate

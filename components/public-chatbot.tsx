@@ -1,18 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { ChatbotLoader } from "./chatbot-loader"
+import { cleanupVionWidgetRuntime, shouldDisablePublicWidget } from "@/lib/widget-runtime-dom"
 
 export function PublicChatbot() {
     const pathname = usePathname()
+    const shouldDisableWidget = shouldDisablePublicWidget(pathname)
 
-    // Don't show on admin, console, or tenant menu pages
-    if (pathname?.startsWith("/admin") ||
-        pathname?.startsWith("/console") ||
-        pathname?.startsWith("/menu") ||
-        pathname?.startsWith("/onboarding") ||
-        pathname?.startsWith("/chatbot-view") ||
-        pathname?.startsWith("/widget-test")) {
+    useEffect(() => {
+        if (shouldDisableWidget) {
+            cleanupVionWidgetRuntime()
+        }
+    }, [pathname, shouldDisableWidget])
+
+    if (shouldDisableWidget) {
         return null
     }
 

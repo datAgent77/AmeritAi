@@ -10,7 +10,7 @@
 
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, setPersistence, browserSessionPersistence, signInAnonymously, Auth } from "firebase/auth";
+import { getAuth, setPersistence, inMemoryPersistence, signInAnonymously, Auth } from "firebase/auth";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCUwSlqGfisUtejDfF8Snv-EzI374vcuus",
@@ -30,29 +30,50 @@ const guestApp = existingGuestApp || initializeApp(firebaseConfig, GUEST_APP_NAM
 const guestDb = getFirestore(guestApp);
 const guestAuth = getAuth(guestApp);
 
-// Keep guest auth session isolated per browser tab (reduces any cross-tab/session side effects)
+// Keep guest auth fully in-memory so widget auth never persists into the host app session.
 let persistenceSet = false;
+let persistencePromise: Promise<void> | null = null;
+let guestSignInPromise: Promise<Auth> | null = null;
+
 const ensureGuestPersistence = async () => {
-    if (!persistenceSet) {
-        await setPersistence(guestAuth, browserSessionPersistence);
-        persistenceSet = true;
+    if (persistenceSet) {
+        return;
     }
+
+    if (!persistencePromise) {
+        persistencePromise = setPersistence(guestAuth, inMemoryPersistence)
+            .then(() => {
+                persistenceSet = true;
+            })
+            .finally(() => {
+                persistencePromise = null;
+            });
+    }
+
+    await persistencePromise;
 };
 
-// Helper function to sign in anonymously with guaranteed browser persistence
-// CRITICAL: Only signs in if no user is already logged in (preserves session across refreshes)
+// Helper function to sign in anonymously without touching persistent auth storage.
 const signInAsGuest = async (): Promise<Auth> => {
     await ensureGuestPersistence();
 
-    // Check if user is already logged in from a previous session
-    if (!guestAuth.currentUser) {
-        const credential = await signInAnonymously(guestAuth);
-        console.log("Guest login: Created new anonymous user", credential.user.uid);
-    } else {
+    if (guestAuth.currentUser) {
         console.log("Guest login: Reusing existing user", guestAuth.currentUser.uid);
+        return guestAuth;
     }
 
-    return guestAuth;
+    if (!guestSignInPromise) {
+        guestSignInPromise = signInAnonymously(guestAuth)
+            .then((credential) => {
+                console.log("Guest login: Created new anonymous user", credential.user.uid);
+                return guestAuth;
+            })
+            .finally(() => {
+                guestSignInPromise = null;
+            });
+    }
+
+    return guestSignInPromise;
 };
 
 export { guestApp, guestDb, guestAuth, signInAsGuest, ensureGuestPersistence };

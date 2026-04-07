@@ -166,6 +166,7 @@ export default function RootLayout({
   return (
     <html lang={initialLanguage} suppressHydrationWarning>
       <head>
+        <meta name="mobile-web-app-capable" content="yes" />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
           strategy="afterInteractive"

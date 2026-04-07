@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 import { Loader2, LifeBuoy, Mail, MessageCircle, Phone, Save, Clock3, UserRound } from "lucide-react"
 import type { ManagementPartnerRecord } from "@/lib/management/types"
 
@@ -184,7 +185,14 @@ export function PartnerSupportCenterContent({
                 {partner?.partnerLevel ? <Badge variant="outline">{partner.partnerLevel.replaceAll("_", " ")}</Badge> : null}
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+            <div
+                className={cn(
+                    "grid w-full items-start gap-6",
+                    editable
+                        ? "xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+                        : "max-w-3xl"
+                )}
+            >
                 {editable ? (
                     <Card className="border-border/70">
                         <CardHeader>
