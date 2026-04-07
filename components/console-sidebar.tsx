@@ -127,8 +127,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         router.push("/login")
     }
 
-    // Determine if chatbot menus (Build, Connect, Grow) should be visible
-    const showChatbotMenus = true
+    // Super admins should only see tenant-specific chatbot menus while viewing a tenant.
+    // Otherwise, `/console/*` links bounce back to `/admin` via console layout guards.
+    const showChatbotMenus = role !== "SUPER_ADMIN" || !!targetUserId
 
     // Top-level overview item (outside groups)
     const overviewHref = targetUserId
