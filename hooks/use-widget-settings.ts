@@ -67,6 +67,7 @@ export interface WidgetSettings {
     sidecarMaxWidth: number
     sidecarGutter: number
     sidecarDesktopOnly: boolean
+    sidecarAlwaysOpen: boolean
     ambientWidth: number
     ambientInputWidth: number
     ambientSideMargin: number
@@ -177,6 +178,7 @@ const defaultSettings: WidgetSettings = {
     sidecarMaxWidth: 560,
     sidecarGutter: 0,
     sidecarDesktopOnly: true,
+    sidecarAlwaysOpen: false,
     ambientWidth: 800,
     ambientInputWidth: 800,
     ambientSideMargin: 0,
@@ -311,6 +313,7 @@ export function useWidgetSettings(userId?: string) {
                         sidecarMaxWidth: typeof data.sidecarMaxWidth === "number" ? data.sidecarMaxWidth : prev.sidecarMaxWidth,
                         sidecarGutter: typeof data.sidecarGutter === "number" ? data.sidecarGutter : prev.sidecarGutter,
                         sidecarDesktopOnly: typeof data.sidecarDesktopOnly === "boolean" ? data.sidecarDesktopOnly : prev.sidecarDesktopOnly,
+                        sidecarAlwaysOpen: typeof data.sidecarAlwaysOpen === "boolean" ? data.sidecarAlwaysOpen : prev.sidecarAlwaysOpen,
                         ambientWidth: typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth,
                         ambientInputWidth: typeof data.ambientInputWidth === "number" ? data.ambientInputWidth : (typeof data.ambientWidth === "number" ? data.ambientWidth : prev.ambientWidth),
                         ambientSideMargin: typeof data.ambientSideMargin === "number" ? data.ambientSideMargin : prev.ambientSideMargin,

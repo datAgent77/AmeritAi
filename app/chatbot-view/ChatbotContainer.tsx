@@ -24,6 +24,7 @@ import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
+import { resolveAmbientSurfaceLayout } from "@/lib/ambient-layout"
 
 type LeadSubmitOptions = {
     source?: "inline" | "overlay"
@@ -448,6 +449,8 @@ export default function ChatbotContainer() {
         theme: resolvedClassicTheme
     }
     const effectiveSettings = isAmbientMode ? effectiveAmbientSettings : effectiveClassicSettings
+    const isPersistentSidecar = effectiveSettings.chatDisplayMode === "sidecar" && effectiveSettings.sidecarAlwaysOpen === true
+    const canCloseClassicWidget = !isPersistentSidecar
 
     // Open ambient feed automatically when there's an active interaction (typing)
     useEffect(() => {
@@ -493,7 +496,7 @@ export default function ChatbotContainer() {
         enableClassicEntryOnboarding: settings.enableClassicEntryOnboarding,
         hasUserMessage,
     })
-    const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping || showClassicEntryOnboarding)
+    const showAmbientFeed = !ambientFeedManuallyClosed
 
     // Scroll to bottom when the widget expands or ambient feed manually opens
     useEffect(() => {
@@ -531,18 +534,23 @@ export default function ChatbotContainer() {
     const ambientWidthValue = typeof effectiveSettings.ambientWidth === "number"
         ? effectiveSettings.ambientWidth
         : Number(effectiveSettings.ambientWidth)
-    const ambientMaxWidthStyle = Number.isFinite(ambientWidthValue)
-        ? (ambientWidthValue > 0 ? `${ambientWidthValue}px` : '100%')
-        : '1080px'
-
-    const ambientAlignmentStyle = {
-        maxWidth: ambientMaxWidthStyle,
+    const ambientLayout = resolveAmbientSurfaceLayout(
+        {
+            ...effectiveSettings,
+            ambientWidth: ambientWidthValue,
+            ambientBottomMargin: ambientBottomMarginFromUrl,
+        },
+        runtimeDevice,
+    )
+    const ambientShellStyle = {
+        width: '100%',
         marginLeft: 'auto',
         marginRight: 'auto',
-        paddingLeft: `${effectiveSettings.ambientSideMargin || 0}px`,
-        paddingRight: `${effectiveSettings.ambientSideMargin || 0}px`,
+        paddingLeft: `${ambientLayout.shellSidePaddingPx}px`,
+        paddingRight: `${ambientLayout.shellSidePaddingPx}px`,
         boxSizing: 'border-box' as const,
     }
+    const ambientFeedHeight = ambientRailHeight + ambientLayout.feedTopInsetPx
 
     useEffect(() => {
         if (!isAmbientMode) return
@@ -606,71 +614,86 @@ export default function ChatbotContainer() {
                     <div
                         className="relative z-10 flex h-full flex-col justify-end w-full"
                         style={{
-                            ...ambientAlignmentStyle,
-                            paddingBottom: `${ambientBottomMarginFromUrl || 4}px`
+                            ...ambientShellStyle,
+                            paddingBottom: `${ambientLayout.bottomMarginPx || 4}px`
                         }}
                     >
                         <div
                             ref={ambientFeedAreaRef}
                             className={`w-full transition-[height,opacity,margin,padding] duration-300 ease-in-out ${showAmbientFeed ? 'mb-4 opacity-100 flex flex-col' : 'mb-0 opacity-0 pointer-events-none'}`}
                             style={{ 
-                                height: showAmbientFeed ? `${ambientRailHeight}px` : '0px',
-                                paddingLeft: runtimeDevice === 'mobile' ? '16px' : '0',
-                                paddingRight: runtimeDevice === 'mobile' ? '16px' : '0',
-                                paddingTop: runtimeDevice === 'mobile' ? '16px' : '0'
+                                height: showAmbientFeed ? `${ambientFeedHeight}px` : '0px',
+                                paddingTop: showAmbientFeed ? `${ambientLayout.feedTopInsetPx}px` : '0px'
                             }}
                         >
                             <div
-                                className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
-                                style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
+                                className="mx-auto flex h-full w-full"
+                                style={{
+                                    maxWidth: ambientLayout.railMaxWidth,
+                                    paddingLeft: `${ambientLayout.feedViewportInsetPx}px`,
+                                    paddingRight: `${ambientLayout.feedViewportInsetPx}px`,
+                                }}
                             >
-                                {/* Ambient Card Header — same as Classic mode */}
-                                <ChatHeader
-                                    settings={effectiveSettings}
-                                    isExpanded={false}
-                                    handleToggleSize={() => {}}
-                                    handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
-                                    handleClearChat={handleClearChat}
-                                    t={t}
-                                    showSizeToggle={false}
-                                    showCloseButton={true}
-                                    sticky={false}
-                                    showShadow={false}
-                                    compact={true}
-                                />
-                                <div className="flex-1 overflow-hidden relative">
-                                    <MessageList
-                                        mode="ambient"
-                                        messages={messages}
+                                <div
+                                    className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
+                                    style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
+                                >
+                                    {/* Ambient Card Header — same as Classic mode */}
+                                    <ChatHeader
                                         settings={effectiveSettings}
-                                        isTyping={isTyping}
-                                        language={language}
-                                        imageMap={visualContext.imageMap}
-                                        scrollToBottom={scrollToBottom}
-                                        sendMessage={(text) => sendMessage(text)}
-                                        sendGuidedMessage={sendGuidedMessage}
-                                        guidedSkillState={guidedSkillState}
-                                        messagesContainerRef={messagesContainerRef}
-                                        messagesEndRef={messagesEndRef}
+                                        isExpanded={false}
+                                        handleToggleSize={() => {}}
+                                        handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                        handleClearChat={handleClearChat}
                                         t={t}
-                                        onLeadSubmit={handleLeadSubmit}
-                                        showClassicEntryOnboarding={showClassicEntryOnboarding}
-                                        onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                        showSizeToggle={false}
+                                        showCloseButton={true}
+                                        sticky={false}
+                                        showShadow={false}
+                                        compact={true}
                                     />
-                                </div>
-                                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
-                                    <p className="text-[10px] text-gray-400 text-center text-balance">
-                                        {t('aiDisclaimer')}
-                                    </p>
-                                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                        <span className="text-[10px] text-gray-400">Powered by</span>
-                                        <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
-                                    </a>
+                                    <div className="flex-1 overflow-hidden relative">
+                                        <MessageList
+                                            mode="ambient"
+                                            messages={messages}
+                                            settings={effectiveSettings}
+                                            isTyping={isTyping}
+                                            language={language}
+                                            imageMap={visualContext.imageMap}
+                                            scrollToBottom={scrollToBottom}
+                                            sendMessage={(text) => sendMessage(text)}
+                                            sendGuidedMessage={sendGuidedMessage}
+                                            guidedSkillState={guidedSkillState}
+                                            messagesContainerRef={messagesContainerRef}
+                                            messagesEndRef={messagesEndRef}
+                                            t={t}
+                                            onLeadSubmit={handleLeadSubmit}
+                                            showClassicEntryOnboarding={showClassicEntryOnboarding}
+                                            onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                        />
+                                    </div>
+                                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
+                                        <p className="text-[10px] text-gray-400 text-center text-balance">
+                                            {t('aiDisclaimer')}
+                                        </p>
+                                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                            <span className="text-[10px] text-gray-400">Powered by</span>
+                                            <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div ref={ambientDockAreaRef}>
+                        <div
+                            ref={ambientDockAreaRef}
+                            className="mx-auto w-full"
+                            style={{
+                                maxWidth: ambientLayout.dockMaxWidth,
+                                paddingLeft: `${ambientLayout.feedViewportInsetPx}px`,
+                                paddingRight: `${ambientLayout.feedViewportInsetPx}px`,
+                            }}
+                        >
                             <ChatInput
                                 mode="ambient"
                                 settings={effectiveSettings}
@@ -713,6 +736,7 @@ export default function ChatbotContainer() {
                             handleCloseWidget={handleCloseWidget}
                             handleClearChat={handleClearChat}
                             t={t}
+                            showCloseButton={canCloseClassicWidget}
                         />
                     )}
 
@@ -732,7 +756,7 @@ export default function ChatbotContainer() {
                         t={t}
                         onLeadSubmit={handleLeadSubmit}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
-                        onCloseWidget={handleCloseWidget}
+                        onCloseWidget={canCloseClassicWidget ? handleCloseWidget : undefined}
                     />
 
                     <ChatInput

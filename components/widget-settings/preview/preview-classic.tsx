@@ -21,10 +21,11 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
         return <IconComponent className={className} />;
     };
 
-    // Sidecar mode: panel pinned to the right, always open
+    // Sidecar mode: panel pinned to the right, but can collapse back to launcher
     const isSidecarMode = settings.chatDisplayMode === 'sidecar'
+    const sidecarAlwaysOpen = settings.sidecarAlwaysOpen === true
     const isSidecarMobileHidden = isSidecarMode && settings.sidecarDesktopOnly !== false && previewMode === 'mobile'
-    const showSidecar = isSidecarMode && !isSidecarMobileHidden
+    const showSidecar = isSidecarMode && !isSidecarMobileHidden && (sidecarAlwaysOpen || isPreviewOpen)
 
     if (showSidecar) {
         const panelWidth = previewMode === 'mobile' ? '70%' : '42%'
@@ -45,7 +46,7 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                 </div>
                 {/* Sidecar panel on the right */}
                 <div
-                    className="absolute top-0 right-0 bottom-0 flex flex-col bg-white dark:bg-gray-950 border-l border-border shadow-[-4px_0_16px_rgba(0,0,0,0.10)]"
+                    className="absolute top-0 right-0 bottom-0 flex flex-col bg-white dark:bg-gray-950 border-l border-border shadow-[-2px_0_12px_rgba(15,23,42,0.08)]"
                     style={{ width: panelWidth }}
                 >
                     <div className="p-3 flex items-center justify-between shrink-0 border-b"
@@ -62,9 +63,16 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                             )}
                             <span className="font-semibold text-white text-[11px] truncate">{settings.companyName || 'AI Assist'}</span>
                         </div>
-                        <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
-                            <X className="w-2.5 h-2.5 text-white" />
-                        </div>
+                        {!sidecarAlwaysOpen ? (
+                            <button
+                                type="button"
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+                                aria-label="Close side preview"
+                            >
+                                <X className="w-2.5 h-2.5 text-white" />
+                            </button>
+                        ) : null}
                     </div>
                     <div className="flex-1 p-2 space-y-2 overflow-y-auto bg-gray-50 dark:bg-gray-900/50">
                         <div className="flex gap-1.5 max-w-[90%]">
@@ -171,9 +179,15 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                                 <div className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>AI</div>
                                 <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm border">{settings.welcomeMessage}</div>
                             </div>
-                            <div className="grid grid-cols-1 gap-2 w-full max-w-xs ml-8">
+                            <div className="ml-8 grid w-[calc(100%-2rem)] grid-cols-1 gap-2">
                                 {settings.suggestedQuestions?.filter((q: string) => q && q.trim() !== "").map((q: string, i: number) => (
-                                    <button key={i} className="text-xs text-left px-4 py-3 bg-white hover:bg-gray-50 border rounded-xl transition-all shadow-sm truncate" style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}>{q}</button>
+                                    <button
+                                        key={i}
+                                        className="rounded-xl border bg-white px-4 py-3 text-left text-xs leading-snug text-gray-700 shadow-sm transition-all hover:bg-gray-50 break-words whitespace-normal"
+                                        style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
+                                    >
+                                        {q}
+                                    </button>
                                 ))}
                             </div>
                         </div>

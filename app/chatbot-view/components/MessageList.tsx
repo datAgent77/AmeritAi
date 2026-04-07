@@ -13,6 +13,7 @@ import { ProductCarousel } from "@/components/chatbot/product-carousel"
 import Image from "next/image"
 import { RefObject, WheelEvent } from "react"
 import { InlineLeadForm } from "./InlineLeadForm"
+import { ThinkingIndicatorBubble } from "@/components/chatbot/thinking-indicator-bubble"
 
 interface MessageListProps {
     messages: any[]
@@ -671,16 +672,11 @@ export function MessageList({
                                     <Sparkles className="w-4 h-4" />
                                 </div>
                             )}
-                            <div className={isAmbientMode ? "px-6 py-4 rounded-[24px] rounded-bl-[4px] bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-750 shadow-sm flex items-center gap-3 text-gray-500" : "px-5 py-4 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-2 bg-white dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700"}>
-                                <div className="flex items-center gap-1.5">
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
-                                    <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAmbientMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></div>
-                                </div>
-                                <span className={`text-[13px] font-medium ${isAmbientMode ? 'text-gray-500 dark:text-zinc-400' : 'text-gray-400'}`}>
-                                    {language === 'tr' ? 'Düşünüyor...' : 'Thinking...'}
-                                </span>
-                            </div>
+                            <ThinkingIndicatorBubble
+                                language={language}
+                                className={isAmbientMode ? "rounded-[24px] rounded-bl-[4px] text-gray-500 dark:text-zinc-400" : ""}
+                                textClassName={isAmbientMode ? "text-gray-500 dark:text-zinc-400" : ""}
+                            />
                         </div>
                     )}
                     <div ref={messagesEndRef} />

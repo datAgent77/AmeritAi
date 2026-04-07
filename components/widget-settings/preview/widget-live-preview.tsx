@@ -47,19 +47,36 @@ export function WidgetLivePreview({
 }: WidgetLivePreviewProps) {
     const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile")
     const [lottieData, setLottieData] = useState<any>(null)
+    const isSidecarPreviewActive =
+        settings.chatDisplayMode === "sidecar" &&
+        (previewMode === "desktop" || settings.sidecarDesktopOnly === false)
 
     const previewShouldStartOpen = useMemo(() => {
-        if (settings.chatDisplayMode === "sidecar") return true
-        if (settings.interactionMode === "always_open") return true
+        if (isSidecarPreviewActive) return true
+        if (settings.chatDisplayMode === "sidecar") return false
         if (ambientPreviewThinking) return true
+        if (settings.chatDisplayMode === "ambient") {
+            return ambientPreviewDockState.startsWith("open")
+        }
+        if (settings.interactionMode === "always_open") return true
         return ambientPreviewDockState.startsWith("open")
-    }, [ambientPreviewDockState, ambientPreviewThinking, settings.chatDisplayMode, settings.interactionMode])
+    }, [
+        ambientPreviewDockState,
+        ambientPreviewThinking,
+        isSidecarPreviewActive,
+        settings.chatDisplayMode,
+        settings.interactionMode,
+    ])
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(previewShouldStartOpen)
 
     useEffect(() => {
+        if (settings.chatDisplayMode === "sidecar" && settings.sidecarAlwaysOpen === true) {
+            setIsPreviewOpen(isSidecarPreviewActive)
+            return
+        }
         setIsPreviewOpen(previewShouldStartOpen)
-    }, [previewShouldStartOpen])
+    }, [isSidecarPreviewActive, previewShouldStartOpen, settings.chatDisplayMode, settings.sidecarAlwaysOpen])
 
     useEffect(() => {
         let cancelled = false

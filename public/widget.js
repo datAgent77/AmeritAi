@@ -63,6 +63,7 @@
     sidecarMaxWidth: 560,
     sidecarGutter: 0,
     sidecarDesktopOnly: true,
+    sidecarAlwaysOpen: false,
     ambientWidth: 800,
     ambientInputWidth: 800,
     ambientSideMargin: 0,
@@ -2955,8 +2956,9 @@
     const isSidecarWidgetMode = settings.chatDisplayMode === 'sidecar';
     const isSidecarDesktopOnly = settings.sidecarDesktopOnly !== false;
     const isSidecarMode = isSidecarWidgetMode && (!isMobile || !isSidecarDesktopOnly);
+    const isPersistentSidecar = isSidecarMode && settings.sidecarAlwaysOpen === true;
     const isAlwaysOpenMode = (settings.interactionMode === 'always_open' && !isSidecarWidgetMode) || isAmbientWidgetMode || isSidecarMode;
-    const usesLauncher = !isAlwaysOpenMode;
+    const usesLauncher = isSidecarMode ? !isPersistentSidecar : !isAlwaysOpenMode;
 
     let verticalSpacing = settings.bottomSpacing !== undefined ? settings.bottomSpacing : 20;
     let sideSpacing = settings.sideSpacing !== undefined ? settings.sideSpacing : 20;
@@ -3498,9 +3500,10 @@
 
     const applyOpenLauncherPosition = () => {
       const isMobileFullscreenOverlay = window.innerWidth < 768 && !isAlwaysOpenMode;
+      const shouldHideOpenLauncher = isMobileFullscreenOverlay || isSidecarMode;
 
-      if (isMobileFullscreenOverlay) {
-        // On mobile fullscreen, ChatHeader inside the iframe already has a close button.
+      if (shouldHideOpenLauncher) {
+        // Fullscreen mobile and sidecar both have internal close controls.
         // Hide the external launcher close button to avoid duplication.
         Object.assign(launcherContainer.style, {
           display: 'none',
@@ -3758,7 +3761,7 @@
         height: '100vh',
         maxHeight: '100vh',
         borderRadius: '0',
-        boxShadow: '0 0 0 1px rgba(0,0,0,0.06), -8px 0 28px rgba(15,23,42,0.12)',
+        boxShadow: '0 0 0 1px rgba(15,23,42,0.04), -2px 0 12px rgba(15,23,42,0.08)',
         transform: 'none'
       });
       applySidecarInset(true);
@@ -3956,7 +3959,7 @@
     iframeContainer.appendChild(iframe);
 
     // Toggle Logic
-    let isOpen = !usesLauncher;
+    let isOpen = isSidecarMode ? true : !usesLauncher;
     if (usesLauncher) {
       const persistedPreviewOpenState = readPreviewOpenState();
       if (typeof persistedPreviewOpenState === 'boolean') {
@@ -3985,6 +3988,9 @@
       }
 
       iframeContainer.style.display = isOpen ? 'block' : 'none';
+      if (isSidecarMode) {
+        applySidecarInset(isOpen);
+      }
       applyMobileScrollLock(isOpen);
       writePreviewOpenState(isOpen);
 
@@ -4021,6 +4027,9 @@
     if (usesLauncher) {
       launcher.onclick = () => toggleWidget();
       iframeContainer.style.display = isOpen ? 'block' : 'none';
+      if (isSidecarMode) {
+        applySidecarInset(isOpen);
+      }
       renderLauncherContent(isOpen);
       applyMobileScrollLock(isOpen);
     }
@@ -4063,9 +4072,9 @@
         if (isAmbientWidgetMode) {
           // Ambient modda: tam kapatma yok, sadece feed'i gizle (input kalır)
           hideAmbientFeed();
-        } else if (isSidecarMode) {
+        } else if (isSidecarMode && !isPersistentSidecar) {
           toggleWidget(false);
-        } else {
+        } else if (!isSidecarMode) {
           toggleWidget(false);
         }
       }

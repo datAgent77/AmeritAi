@@ -232,6 +232,7 @@ export function AppearanceTab({
                 sidecarMaxWidth: prev.sidecarMaxWidth || 560,
                 sidecarGutter: prev.sidecarGutter || 0,
                 sidecarDesktopOnly: prev.sidecarDesktopOnly !== false,
+                sidecarAlwaysOpen: prev.sidecarAlwaysOpen === true,
             }))
             return
         }
@@ -586,6 +587,20 @@ export function AppearanceTab({
                             <Switch
                                 checked={settings.sidecarDesktopOnly !== false}
                                 onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, sidecarDesktopOnly: checked }))}
+                            />
+                        </div>
+                        <div className="flex items-start justify-between gap-4 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+                            <div>
+                                <Label className="text-sm font-medium">{language === "tr" ? "Sürekli Açık Sidecar" : "Always Open Sidecar"}</Label>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {language === "tr"
+                                        ? "Açıksa panel sürekli açık kalır, launcher kullanılmaz ve üstteki kapatma butonu gizlenir."
+                                        : "Keeps the panel permanently open, disables the launcher, and hides the header close button."}
+                                </p>
+                            </div>
+                            <Switch
+                                checked={settings.sidecarAlwaysOpen === true}
+                                onCheckedChange={(checked) => setSettings((prev) => ({ ...prev, sidecarAlwaysOpen: checked }))}
                             />
                         </div>
                     </div>

@@ -1,12 +1,14 @@
 import React from "react"
 import { ChatbotSettings } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
-import { Send, ImageIcon, X, ChevronDown, ChevronUp, RefreshCw, MessageCircle } from "lucide-react"
+import * as LucideIcons from "lucide-react"
+import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
 import { event as trackEvent } from "@/lib/gtag"
 import { getAmbientDockStateKey, resolveAmbientDockStyle } from "@/lib/ambient-dock-style"
+import { resolveAmbientInputSizeConfig } from "@/lib/ambient-layout"
 import { ConversationModeSwitch, type ConversationMode } from "./ConversationModeSwitch"
 
 interface ChatInputProps {
@@ -48,7 +50,6 @@ export function ChatInput({
     setMessages,
     mode = "classic",
     ambientInputOnly = false,
-    onClearChat,
     onCloseWidget,
     onToggleAmbientFeed,
     showUtilityActions = false,
@@ -76,17 +77,10 @@ export function ChatInput({
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
     const ambientPlaceholder = language === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
 
-    // Ambient input size system
-    const inputSize = settings.ambientInputSize || "lg"
-    const sizeConfig = {
-        sm: { height: 'h-11', btnSize: 'h-8 w-8', iconSize: 'w-4 h-4', textSize: 'text-sm', inputPy: 'py-2', inputPl: 'pl-4', inputPr: 'pr-2', gap: 'gap-1.5' },
-        md: { height: 'h-[52px]', btnSize: 'h-9 w-9', iconSize: 'w-[18px] h-[18px]', textSize: 'text-base', inputPy: 'py-2.5', inputPl: 'pl-5', inputPr: 'pr-2', gap: 'gap-2' },
-        lg: { height: 'h-[60px]', btnSize: 'h-10 w-10', iconSize: 'w-5 h-5', textSize: 'text-lg', inputPy: 'py-3', inputPl: 'pl-5', inputPr: 'pr-2', gap: 'gap-2' },
-        xl: { height: 'h-[68px]', btnSize: 'h-11 w-11', iconSize: 'w-5 h-5', textSize: 'text-xl', inputPy: 'py-3.5', inputPl: 'pl-6', inputPr: 'pr-2', gap: 'gap-2.5' },
-    }[inputSize]
+    const sizeConfig = resolveAmbientInputSizeConfig(settings.ambientInputSize)
 
-    const ambientActionButtonClass = `${sizeConfig.btnSize} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700 dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70 dark:hover:bg-zinc-700/95 dark:hover:text-zinc-100 dark:hover:border-zinc-600`
-    const ambientSendButtonClass = `${sizeConfig.btnSize} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
+    const ambientActionButtonClass = `${sizeConfig.buttonSizeClass} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700 dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70 dark:hover:bg-zinc-700/95 dark:hover:text-zinc-100 dark:hover:border-zinc-600`
+    const ambientSendButtonClass = `${sizeConfig.buttonSizeClass} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
     const sidecarActionButtonClass = "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
     const sidecarSendButtonClass = "flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
     const textModeLabel = language === "tr" ? "Yazi" : "Text"
@@ -287,6 +281,35 @@ export function ChatInput({
         }
     }
 
+    const renderAmbientLeadingIcon = () => {
+        if (!isAmbientMode || settings.showAmbientIcon === false) return null
+
+        if (settings.ambientIconType === "custom" && (settings.ambientIconUrl || settings.launcherIconUrl)) {
+            return (
+                <div className={`ml-1 flex shrink-0 items-center justify-center rounded-full overflow-hidden ${sizeConfig.leadingSizeClass} bg-transparent`}>
+                    <img
+                        src={settings.ambientIconUrl || settings.launcherIconUrl}
+                        alt="Widget Icon"
+                        className="h-full w-full object-contain p-[2px]"
+                    />
+                </div>
+            )
+        }
+
+        const IconComponent = (settings.ambientIconType === "library" && settings.ambientLibraryIcon)
+            ? (LucideIcons as Record<string, React.ComponentType<{ className?: string; color?: string }>>)[settings.ambientLibraryIcon] || MessageCircle
+            : MessageCircle
+
+        return (
+            <div className={`ml-1 flex shrink-0 items-center justify-center rounded-full ${sizeConfig.leadingSizeClass} bg-transparent`}>
+                <IconComponent
+                    className={sizeConfig.leadingIconSizeClass}
+                    color={settings.ambientIconColor || settings.brandColor || '#3b82f6'}
+                />
+            </div>
+        )
+    }
+
     const ambientDockWrapperClassName = isAmbientMode
         ? `rounded-[999px] p-[2px] transition-all duration-500 ${isAmbientInputOnly
             ? (ambientDockStyles?.borderMode === 'animated'
@@ -346,7 +369,7 @@ export function ChatInput({
                     <form
                         onSubmit={handleSubmit}
                         className={isAmbientMode
-                            ? `relative flex items-center gap-2 rounded-[999px] px-3 py-2.5 shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
+                            ? `relative flex items-center ${sizeConfig.gapClass} rounded-[999px] ${sizeConfig.formPaddingClass} shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
                             : isSidecarMode
                                 ? "relative flex flex-col gap-2.5 rounded-[12px] border border-gray-200 bg-white px-3.5 py-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.07)] dark:border-zinc-700 dark:bg-zinc-950"
                                 : "relative flex items-center gap-2"}
@@ -402,32 +425,7 @@ export function ChatInput({
                         )}
 
                         {/* Ambient: Left-side Icon (Optional) */}
-                        {isAmbientMode && settings.showAmbientIcon !== false && (
-                            <div className={`ml-2 flex-shrink-0 flex items-center justify-center rounded-full overflow-hidden transition-all ${sizeConfig.iconSize} bg-transparent`}>
-                                {settings.ambientIconType === "custom" && (settings.ambientIconUrl || settings.launcherIconUrl) ? (
-                                    <img
-                                        src={settings.ambientIconUrl || settings.launcherIconUrl}
-                                        alt="Widget Icon"
-                                        className="w-full h-full object-contain p-[2px]"
-                                    />
-                                ) : (
-                                    (() => {
-                                        // Dynamically resolve library icon or fallback
-                                        const LucideIcons = require('lucide-react');
-                                        const IconComponent = (settings.ambientIconType === "library" && settings.ambientLibraryIcon)
-                                            ? LucideIcons[settings.ambientLibraryIcon] || LucideIcons.MessageCircle
-                                            : LucideIcons.MessageCircle;
-
-                                        return (
-                                            <IconComponent
-                                                className="w-5 h-5"
-                                                color={settings.ambientIconColor || settings.brandColor || '#3b82f6'}
-                                            />
-                                        );
-                                    })()
-                                )}
-                            </div>
-                        )}
+                        {renderAmbientLeadingIcon()}
 
                         {showConversationModeSwitch && isAmbientMode && onConversationModeChange && (
                             <ConversationModeSwitch
@@ -436,11 +434,11 @@ export function ChatInput({
                                 textLabel={textModeLabel}
                                 voiceLabel={voiceModeLabel}
                                 compact
-                                className="ml-1 mr-1"
+                                className="mx-0.5"
                             />
                         )}
 
-                        <div className={`relative flex-1 ${isAmbientMode ? '-ml-3' : isSidecarMode ? '' : 'group'}`}>
+                        <div className={`relative min-w-0 flex-1 ${isSidecarMode ? '' : 'group'}`}>
                             {isSidecarMode ? (
                                 <textarea
                                     ref={(node) => {
@@ -484,7 +482,7 @@ export function ChatInput({
                                         ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
                                         : (isAmbientMode ? (settings.ambientPlaceholderText || ambientPlaceholder) : t('messagePlaceholder'))}
                                     className={isAmbientMode
-                                        ? `w-full ${sizeConfig.textSize} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPl} ${sizeConfig.inputPr} ${sizeConfig.inputPy} focus:outline-none placeholder:text-gray-400 dark:placeholder:text-zinc-500`
+                                        ? `w-full ${sizeConfig.textSizeClass} leading-tight bg-transparent border-0 rounded-full ${sizeConfig.inputPaddingLeftClass} ${sizeConfig.inputPaddingRightClass} ${sizeConfig.inputPaddingYClass} focus:outline-none placeholder:text-gray-400 dark:placeholder:text-zinc-500`
                                         : "w-full text-base bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-full pl-4 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-opacity-20 focus:bg-white dark:focus:bg-zinc-900 transition-all shadow-sm group-hover:bg-white dark:group-hover:bg-zinc-800/80 group-hover:shadow-md group-hover:border-gray-300 dark:group-hover:border-zinc-700 text-gray-800 dark:text-zinc-100"}
                                     style={isAmbientMode
                                         ? {
@@ -536,22 +534,11 @@ export function ChatInput({
                         {isAmbientMode && showUtilityActions && !ambientInputOnly && (
                             <button
                                 type="button"
-                                onClick={onClearChat}
-                                className={ambientActionButtonClass}
-                                title={language === 'tr' ? 'Yazışmayı yenile' : 'Refresh chat'}
-                            >
-                                <RefreshCw className={sizeConfig.iconSize} />
-                            </button>
-                        )}
-
-                        {isAmbientMode && showUtilityActions && !ambientInputOnly && (
-                            <button
-                                type="button"
                                 onClick={onCloseWidget}
                                 className={ambientActionButtonClass}
                                 title={language === 'tr' ? 'Sohbeti küçült' : 'Collapse chat'}
                             >
-                                <ChevronDown className={sizeConfig.iconSize} />
+                                <ChevronDown className={sizeConfig.iconSizeClass} />
                             </button>
                         )}
 
@@ -562,7 +549,7 @@ export function ChatInput({
                                 className={ambientActionButtonClass}
                                 title={language === 'tr' ? 'Sohbeti aç' : 'Expand chat'}
                             >
-                                <ChevronUp className={sizeConfig.iconSize} />
+                                <ChevronUp className={sizeConfig.iconSizeClass} />
                             </button>
                         )}
 
@@ -574,7 +561,7 @@ export function ChatInput({
                                 className={`${ambientActionButtonClass} ${selectedImage ? '!bg-emerald-50 !text-emerald-700 !border-emerald-200 dark:!bg-emerald-950/60 dark:!text-emerald-300 dark:!border-emerald-800/70' : ''} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                             >
-                                <ImageIcon className={sizeConfig.iconSize} />
+                                <ImageIcon className={sizeConfig.iconSizeClass} />
                             </button>
                         )}
 
@@ -587,7 +574,7 @@ export function ChatInput({
                                     : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
                                 style={isAmbientMode ? { backgroundColor: settings.ambientIconColor || settings.brandColor || '#1f2937' } : { backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                             >
-                                <Send className={isAmbientMode ? sizeConfig.iconSize : "w-5 h-5"} />
+                                <Send className={isAmbientMode ? sizeConfig.iconSizeClass : "w-5 h-5"} />
                             </button>
                         )}
                     </form>

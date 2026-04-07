@@ -168,6 +168,7 @@ export interface ChatbotSettings {
     sidecarMaxWidth?: number;
     sidecarGutter?: number;
     sidecarDesktopOnly?: boolean;
+    sidecarAlwaysOpen?: boolean;
     enableClassicEntryOnboarding?: boolean;
     position?: "bottom-right" | "bottom-left" | "bottom-center";
     ambientMaxHeight?: number;
