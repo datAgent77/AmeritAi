@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/site-header"
 import { AuthGuard } from "@/components/auth-guard"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AgencySidebar } from "@/components/agency-sidebar"
+import { ThemeProvider } from "next-themes"
 
 function AgencyLayoutContent({ children }: { children: React.ReactNode }) {
     const { user, role, loading } = useAuth()
@@ -43,17 +44,19 @@ function AgencyLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full bg-[#f4f6f8]">
-                <AgencySidebar />
-                <div className="flex min-w-0 flex-1 flex-col">
-                    <SiteHeader showProductLauncher={false} showNotifications forcePartnerBranding />
-                    <main className="flex-1 min-w-0 px-6 py-8 lg:px-8">
-                        {children}
-                    </main>
+        <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
+            <SidebarProvider>
+                <div className="flex min-h-screen w-full bg-[#f4f6f8]">
+                    <AgencySidebar />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                        <SiteHeader showProductLauncher={false} showNotifications forcePartnerBranding />
+                        <main className="flex-1 min-w-0 px-6 py-8 lg:px-8">
+                            {children}
+                        </main>
+                    </div>
                 </div>
-            </div>
-        </SidebarProvider>
+            </SidebarProvider>
+        </ThemeProvider>
     )
 }
 
