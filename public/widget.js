@@ -83,12 +83,129 @@
     launcherFullImageUrl: '',
     launcherLottieUrl: '',
     launcherHoverEffect: 'scale',
-    enableContextAwareness: false
+    enableContextAwareness: false,
+    dynamicContextMode: 'nocode',
+    dynamicSiteContextCapturePII: false
   };
   let baseDeviceAwareSettings = null;
 
   // Global Context Data
   let dynamicContextData = {};
+  let trustedRuntimeContext = {
+    source: 'none',
+    publicContext: {},
+    privateContextSummary: {},
+    updatedAt: null
+  };
+
+  const TRUSTED_CONTEXT_SENSITIVE_KEY_RE = /(email|mail|phone|gsm|mobile|telephone|tc|kimlik|identity|national|passport|birth|dogum|address|adres|token|password|secret|cookie|iban|salary|maas|health|medical|diagnos|document|attachment|leave_reason|izin_nedeni)/i;
+
+  function getDynamicContextMode() {
+    return settings.dynamicContextMode === 'enterprise_adapter' ? 'enterprise_adapter' : 'nocode';
+  }
+
+  function isEnterpriseContextMode() {
+    return getDynamicContextMode() === 'enterprise_adapter';
+  }
+
+  function isSensitiveTrustedContextPath(path) {
+    return TRUSTED_CONTEXT_SENSITIVE_KEY_RE.test(String(path || ''));
+  }
+
+  function sanitizeTrustedContextScalar(value) {
+    if (typeof value === 'string') {
+      return truncateText(value, 240);
+    }
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined;
+    }
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (value === null) {
+      return null;
+    }
+    return undefined;
+  }
+
+  function sanitizeTrustedContextValue(value, path, depth) {
+    if (depth > 4) return undefined;
+    const scalar = sanitizeTrustedContextScalar(value);
+    if (scalar !== undefined) return scalar;
+
+    if (Array.isArray(value)) {
+      const next = [];
+      value.slice(0, 8).forEach((item, index) => {
+        const sanitized = sanitizeTrustedContextValue(item, `${path}[${index}]`, depth + 1);
+        if (sanitized !== undefined) {
+          next.push(sanitized);
+        }
+      });
+      return next;
+    }
+
+    if (!value || typeof value !== 'object') {
+      return undefined;
+    }
+
+    const next = {};
+    Object.entries(value).slice(0, 20).forEach(([key, child]) => {
+      const childPath = path ? `${path}.${key}` : key;
+      if (isSensitiveTrustedContextPath(childPath)) return;
+      const sanitized = sanitizeTrustedContextValue(child, childPath, depth + 1);
+      if (sanitized !== undefined) {
+        next[key] = sanitized;
+      }
+    });
+    return next;
+  }
+
+  function sanitizeTrustedContextSection(section) {
+    const sanitized = sanitizeTrustedContextValue(section, '', 0);
+    if (!sanitized || typeof sanitized !== 'object' || Array.isArray(sanitized)) {
+      return {};
+    }
+    return sanitized;
+  }
+
+  function sanitizeTrustedContextPayload(payload) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return null;
+    }
+
+    const source = truncateText(payload.source || 'host_app', 32) || 'host_app';
+    const publicContext = sanitizeTrustedContextSection(payload.publicContext || payload.public || payload.context);
+    const privateContextSummary = sanitizeTrustedContextSection(payload.privateContextSummary || payload.privateSummary);
+    if (!Object.keys(publicContext).length && !Object.keys(privateContextSummary).length) {
+      return null;
+    }
+    return {
+      source,
+      publicContext,
+      privateContextSummary,
+      updatedAt: nowIso()
+    };
+  }
+
+  function refreshTrustedRuntimeContext() {
+    let snapshot = null;
+    try {
+      if (window.VionContextBridge && typeof window.VionContextBridge.getSnapshot === 'function') {
+        snapshot = window.VionContextBridge.getSnapshot();
+      } else if (window.UserexWidget && window.UserexWidget.contextData) {
+        snapshot = window.UserexWidget.contextData;
+      }
+    } catch (error) {
+      console.warn('Userex Widget: Failed to read trusted runtime context', error);
+    }
+
+    const sanitized = sanitizeTrustedContextPayload(snapshot);
+    if (sanitized) {
+      trustedRuntimeContext = sanitized;
+    }
+
+    return trustedRuntimeContext;
+  }
 
   // ============================================
   // SITE-WIDE DYNAMIC CONTEXT (BETA)
@@ -1071,13 +1188,13 @@
       maxRoutes: 30,
       maxDurationSec: 90,
       hydrationWaitMs: 4000,
-      capturePII: true
+      capturePII: false
     };
     const runtimePreset = settings.dynamicSiteContextRuntimePreset && typeof settings.dynamicSiteContextRuntimePreset === 'object'
       ? settings.dynamicSiteContextRuntimePreset
       : fallbackPreset;
     return {
-      enabled: settings.enableDynamicSiteContext === true,
+      enabled: !isEnterpriseContextMode() && settings.enableDynamicSiteContext === true,
       collectionMode: settings.dynamicSiteContextCollectionMode || defaults.collectionMode,
       crawlTrigger: settings.dynamicSiteContextCrawlTrigger || defaults.crawlTrigger,
       routeScope: settings.dynamicSiteContextRouteScope || defaults.routeScope,
@@ -1085,7 +1202,7 @@
       maxRoutes: Number(settings.dynamicSiteContextMaxRoutes || defaults.maxRoutes),
       maxDurationSec: Number(settings.dynamicSiteContextMaxDurationSec || defaults.maxDurationSec),
       hydrationWaitMs: Number(settings.dynamicSiteContextHydrationWaitMs || defaults.hydrationWaitMs),
-      capturePII: settings.dynamicSiteContextCapturePII !== false,
+      capturePII: settings.dynamicSiteContextCapturePII === true,
       presetMode: settings.dynamicSiteContextPresetMode || 'none',
       presetId: settings.dynamicSiteContextResolvedPresetId || settings.dynamicSiteContextPresetId || runtimePreset.presetId || 'generic-web-app',
       suggestedPresetId: settings.dynamicSiteContextSuggestedPresetId || 'generic-web-app',
@@ -3955,6 +4072,13 @@
     iframe.style.background = 'transparent';
     iframe.setAttribute('allowTransparency', 'true');
     iframe.allow = 'microphone; camera; autoplay';
+    iframe.addEventListener('load', () => {
+      setTimeout(() => {
+        try {
+          sendContextUpdate();
+        } catch (e) { }
+      }, 80);
+    });
 
     iframeContainer.appendChild(iframe);
 
@@ -4315,7 +4439,7 @@
     }
 
     // Initialize No-Code Dynamic Context
-    if (settings.enableDynamicContext && settings.dynamicContextSelectors) {
+    if (!isEnterpriseContextMode() && settings.enableDynamicContext && settings.dynamicContextSelectors) {
       try {
         // Ensure it's an array
         const validSelectors = Array.isArray(settings.dynamicContextSelectors) ? settings.dynamicContextSelectors : [];
@@ -4331,7 +4455,7 @@
     // Optional site-wide dynamic context crawl (beta)
     try {
       const siteContextOptions = getDynamicSiteContextOptions();
-      if (siteContextOptions.enabled && (siteContextOptions.crawlTrigger === 'auto' || siteContextOptions.crawlTrigger === 'hybrid')) {
+      if (!isEnterpriseContextMode() && siteContextOptions.enabled && (siteContextOptions.crawlTrigger === 'auto' || siteContextOptions.crawlTrigger === 'hybrid')) {
         setTimeout(() => {
           startSiteContextCrawl({
             trigger: siteContextOptions.crawlTrigger,
@@ -4491,9 +4615,7 @@
   // Helper: Get user login status from various sources
   function getUserData() {
     const userData = {
-      isLoggedIn: false,
-      name: null,
-      email: null
+      isLoggedIn: false
     };
 
     // Method 1: Check script data attributes
@@ -4501,8 +4623,6 @@
       const loggedIn = currentScript.getAttribute('data-user-logged-in');
       if (loggedIn === 'true') {
         userData.isLoggedIn = true;
-        userData.name = currentScript.getAttribute('data-user-name') || null;
-        userData.email = currentScript.getAttribute('data-user-email') || null;
       }
     }
 
@@ -4511,8 +4631,6 @@
       const apiData = window.UserexWidget.userData;
       if (apiData.isLoggedIn) {
         userData.isLoggedIn = true;
-        userData.name = apiData.name || userData.name;
-        userData.email = apiData.email || userData.email;
       }
     }
 
@@ -4523,7 +4641,7 @@
   function getPageContext() {
     let pageText = '';
     // Optional: Only scrape heavy text if context awareness is enabled AND Dynamic Module is active
-    if (settings && settings.enableDynamicContext && settings.enableContextAwareness) {
+    if (settings && settings.enableDynamicContext && settings.enableContextAwareness && !isEnterpriseContextMode()) {
       try {
         const mainElement = document.querySelector('main') || document.body;
         if (mainElement) {
@@ -4535,7 +4653,14 @@
       }
     }
 
-    const siteContextForAI = getSiteSessionContextForAI();
+    const trustedContext = refreshTrustedRuntimeContext();
+    const siteContextForAI = isEnterpriseContextMode() ? null : getSiteSessionContextForAI();
+    const publicContext = trustedContext && trustedContext.publicContext && Object.keys(trustedContext.publicContext).length
+      ? trustedContext.publicContext
+      : undefined;
+    const privateContextSummary = trustedContext && trustedContext.privateContextSummary && Object.keys(trustedContext.privateContextSummary).length
+      ? trustedContext.privateContextSummary
+      : undefined;
 
     return {
       url: window.location.href,
@@ -4550,8 +4675,11 @@
       pageType: detectPageType(),
       // NEW: User login status
       user: getUserData(),
+      publicContext: publicContext,
+      privateContextSummary: privateContextSummary,
+      assistantContextSource: trustedContext.source || (isEnterpriseContextMode() ? 'enterprise_bridge' : 'nocode_scrape'),
       // NEW: Dynamic Data
-      dynamicData: dynamicContextData,
+      dynamicData: !isEnterpriseContextMode() && Object.keys(dynamicContextData || {}).length > 0 ? dynamicContextData : undefined,
       siteSessionContext: siteContextForAI,
       crawlStatus: siteContextForAI ? siteContextForAI.crawl : undefined
     };
@@ -4564,9 +4692,19 @@
     sendContextUpdate(); // Immediately notify chatbot of user change
   };
 
-  // setContext code integration is intentionally disabled.
-  window.UserexWidget.setContext = function () {
-    console.warn('UserexWidget.setContext is disabled. Use Dynamic Context Selector Mode from dashboard.');
+  window.UserexWidget.setContext = function (payload) {
+    const sanitized = sanitizeTrustedContextPayload(payload);
+    if (!sanitized) {
+      console.warn('UserexWidget.setContext rejected invalid payload.');
+      return false;
+    }
+    window.UserexWidget.contextData = sanitized;
+    trustedRuntimeContext = sanitized;
+    sendContextUpdate();
+    return true;
+  };
+  window.UserexWidget.getContextSnapshot = function () {
+    return refreshTrustedRuntimeContext();
   };
 
   // Send context update to iframe

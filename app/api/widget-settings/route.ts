@@ -259,8 +259,10 @@ export async function GET(req: Request) {
                         digitalWaiter: mergedData.digitalWaiter || null,
                         // Web-only browser voice mode; no telephony/omni coupling here.
                         enableVoiceAssistant: isWebVoiceAssistantEnabled,
+                        enableAutoSpeak: mergedData.enableAutoSpeak === true,
                         voiceProvider: mergedData.voiceProvider || "klassifier",
                         elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
+                        preferredVoice: mergedData.preferredVoice || "",
                         enablePersonalShopper: mergedData.enablePersonalShopper || false,
                         enableVisualDiagnosis: mergedData.enableVisualDiagnosis || false,
                         enableIndustryGreeting: mergedData.enableIndustryGreeting || false,
@@ -268,7 +270,7 @@ export async function GET(req: Request) {
                         customPrompts: mergedData.customPrompts || "",
                         salesOptimizationConfig: mergedData.salesOptimizationConfig || null,
                         enableDynamicContext: mergedData.enableDynamicContext || false,
-                        dynamicContextMode: mergedData.dynamicContextMode || "nocode",
+                        dynamicContextMode: mergedData.dynamicContextMode === "enterprise_adapter" ? "enterprise_adapter" : "nocode",
                         dynamicContextSelectors: Array.isArray(mergedData.dynamicContextSelectors)
                             ? mergedData.dynamicContextSelectors
                             : [],
@@ -283,7 +285,7 @@ export async function GET(req: Request) {
                         dynamicSiteContextExcludeSelectorPrefixes: Array.isArray(mergedData.dynamicSiteContextExcludeSelectorPrefixes)
                             ? mergedData.dynamicSiteContextExcludeSelectorPrefixes
                             : ["#userex-", ".userex-", "#vion-", ".vion-"],
-                        dynamicSiteContextCapturePII: mergedData.dynamicSiteContextCapturePII !== false,
+                        dynamicSiteContextCapturePII: mergedData.dynamicSiteContextCapturePII === true,
                         dynamicSiteContextPresetMode: ["none", "suggested", "approved"].includes(mergedData.dynamicSiteContextPresetMode)
                             ? mergedData.dynamicSiteContextPresetMode
                             : "none",
@@ -401,8 +403,10 @@ export async function GET(req: Request) {
                 engagement: null,
                 digitalWaiter: null,
                 enableVoiceAssistant: false,
+                enableAutoSpeak: false,
                 voiceProvider: "klassifier",
                 elevenLabsVoiceId: "",
+                preferredVoice: "",
                 enablePersonalShopper: false,
                 enableIndustryGreeting: false,
                 industry: "technology",
@@ -419,7 +423,7 @@ export async function GET(req: Request) {
                 dynamicSiteContextMaxDurationSec: 90,
                 dynamicSiteContextHydrationWaitMs: 4000,
                 dynamicSiteContextExcludeSelectorPrefixes: ["#userex-", ".userex-", "#vion-", ".vion-"],
-                dynamicSiteContextCapturePII: true,
+                dynamicSiteContextCapturePII: false,
                 dynamicSiteContextPresetMode: "none",
                 dynamicSiteContextPresetId: "",
                 dynamicSiteContextPresetApprovedAt: "",
@@ -585,6 +589,11 @@ export async function GET(req: Request) {
             dynamicContextMode: "nocode",
             dynamicContextSelectors: [],
             enableProactiveMessaging: false,
+            enableVoiceAssistant: false,
+            enableAutoSpeak: false,
+            voiceProvider: "klassifier",
+            elevenLabsVoiceId: "",
+            preferredVoice: "",
             theme: "classic"
         }, {
             headers: {

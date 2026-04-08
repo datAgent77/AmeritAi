@@ -260,7 +260,8 @@ export function useChatCore({
         shouldSpeakResponse: boolean = false,
         visualAnalysisContext?: string,
         guidedEvent?: GuidedSkillClientEvent | null,
-        mediaPayload?: UserMessageMediaPayload | null
+        mediaPayload?: UserMessageMediaPayload | null,
+        isVoiceTurn: boolean = false
     ): Promise<string> => {
         if (!content.trim()) return ""
 
@@ -321,8 +322,8 @@ export function useChatCore({
                         sessionId: activeSessionId,
                         context: pageContext,
                         language,
-                        isVoice: shouldSpeakResponse,
-                        shouldStream: true,
+                        isVoice: isVoiceTurn,
+                        shouldStream: isVoiceTurn ? false : true,
                         userId: guestAuth.currentUser?.uid,
                         industry: settings.industry,
                         visualAnalysisContext, // Pass dynamic context
@@ -385,7 +386,7 @@ export function useChatCore({
                 setChatStatus('idle')
                 setListenerTrigger(prev => prev + 1)
 
-                if ((shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
+                if (!isVoiceTurn && (shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
                     speakText(assistantContent, resolvedAssistantId)
                 }
 
@@ -425,7 +426,7 @@ export function useChatCore({
                 return ""
             }
 
-            if ((shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
+            if (!isVoiceTurn && (shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
                 speakText(assistantContent, assistantMsgId)
             }
 

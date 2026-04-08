@@ -5,6 +5,7 @@ import { generateAIResponse, saveMessageToSession } from "@/lib/ai-service"
 import { upsertChatSessionRecord } from "@/lib/chat-sessions"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
 import { checkRateLimit } from "@/lib/rate-limiter"
+import { upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils"
 
 vi.mock("@/lib/firebase-admin", () => ({
     getAdminDb: vi.fn(),
@@ -27,6 +28,12 @@ vi.mock("@/lib/guided-skills/engine", () => ({
 vi.mock("@/lib/rate-limiter", () => ({
     checkRateLimit: vi.fn(),
     getRateLimitHeaders: vi.fn().mockReturnValue({}),
+}))
+
+vi.mock("@/lib/omni/server-utils", () => ({
+    normalizePhoneNumber: vi.fn((value: string) => value),
+    upsertContactGraph: vi.fn(),
+    upsertOmniSession: vi.fn(),
 }))
 
 function createAdminDb() {
@@ -241,5 +248,40 @@ describe("POST /api/chat", () => {
                 sessionId: payload.sessionId,
             })
         )
+    })
+
+    test("does not resolve or sync identity from runtime context unless explicitly allowed", async () => {
+        vi.mocked(resolveGuidedSkillTurn).mockResolvedValue({ handled: false } as any)
+        vi.mocked(generateAIResponse).mockResolvedValue({
+            content: "Safe response",
+            isStream: false,
+            context: "",
+            modelUsed: "test-model",
+        } as any)
+        vi.mocked(saveMessageToSession).mockResolvedValue(undefined as any)
+        vi.mocked(upsertChatSessionRecord).mockResolvedValue(undefined as any)
+
+        const response = await POST(new Request("https://example.com/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chatbotId: "tenant-1",
+                sessionId: "sess-1",
+                messages: [{ role: "user", content: "Bugun hangi gorevlerim acik?" }],
+                context: {
+                    url: "https://app.example.com/overview",
+                    title: "Ozet",
+                    desc: "Employee overview",
+                    privateContextSummary: {
+                        profile: { displayName: "Alperen", department: "Yazilim" },
+                        tasks: { openCount: 12 },
+                    },
+                },
+            }),
+        }))
+
+        expect(response.status).toBe(200)
+        expect(upsertContactGraph).not.toHaveBeenCalled()
+        expect(upsertOmniSession).not.toHaveBeenCalled()
     })
 })

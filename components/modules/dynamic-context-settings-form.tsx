@@ -62,6 +62,7 @@ export default function DynamicContextSettings() {
     const [isSaving, setIsSaving] = useState(false)
     const [isEnabled, setIsEnabled] = useState(false)
     const [isContextAwarenessEnabled, setIsContextAwarenessEnabled] = useState(false)
+    const [dynamicContextMode, setDynamicContextMode] = useState<"nocode" | "enterprise_adapter">("nocode")
     const [selectors, setSelectors] = useState<DynamicSelector[]>(DEFAULT_SELECTORS)
 
     // Auto-Discovery State
@@ -73,7 +74,7 @@ export default function DynamicContextSettings() {
     const [enableDynamicSiteContext, setEnableDynamicSiteContext] = useState(false)
     const [siteCollectionMode, setSiteCollectionMode] = useState<"dom" | "dom_network">("dom_network")
     const [siteRouteScope, setSiteRouteScope] = useState<"sidebar_safe" | "same_origin_all" | "allowlist">("sidebar_safe")
-    const [siteCapturePII, setSiteCapturePII] = useState(true)
+    const [siteCapturePII, setSiteCapturePII] = useState(false)
     const [siteMaxRoutes, setSiteMaxRoutes] = useState<number>(30)
     const [siteMaxDurationSec, setSiteMaxDurationSec] = useState<number>(90)
     const [siteHydrationWaitMs, setSiteHydrationWaitMs] = useState<number>(4000)
@@ -129,6 +130,67 @@ export default function DynamicContextSettings() {
         })
     }, [siteIndustry, sitePresetMode, sitePresetId, parsedPresetOverrides.value, siteNetworkAllowlistInput, siteGraphqlAllowlistInput])
 
+    const isEnterpriseMode = dynamicContextMode === "enterprise_adapter"
+
+    const enterpriseBridgeSnippet = useMemo(() => `window.VionContextBridge = {
+  getSnapshot() {
+    return {
+      source: "host_app",
+      publicContext: {
+        module: "project_dashboard",
+        page: "overview",
+        companyName: "NOVA OPERASYON TEKNOLOJILERI A.S.",
+        activeWorkspace: "Satis Operasyonlari",
+        openAnnouncements: 3
+      },
+      privateContextSummary: {
+        employee: {
+          displayName: "Deniz Kaya",
+          title: "Operasyon Uzmani",
+          department: "Kurumsal Cozumler"
+        },
+        projects: { active: 4, delayed: 1 },
+        approvals: { pending: 2 },
+        tasks: { today: 6, overdue: 1 },
+        leave: { annualLeaveRemainingDays: 12 }
+      }
+    }
+  }
+}`, [])
+
+    const enterpriseToolSnippet = useMemo(() => `window.VionContextBridge = {
+  async resolveTool(name, args) {
+    switch (name) {
+      case "project_overview":
+        return fetch("/api/assistant/project-overview", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(args || {})
+        }).then((r) => r.json())
+
+      case "approval_queue":
+        return fetch("/api/assistant/approval-queue", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(args || {})
+        }).then((r) => r.json())
+
+      case "leave_calendar":
+        return fetch("/api/assistant/leave-calendar", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(args || {})
+        }).then((r) => r.json())
+
+      default:
+        return { ok: false, error: "unknown_tool" }
+    }
+  }
+}`, [])
+
     useEffect(() => {
         const loadSettings = async () => {
             if (!targetUserId) return
@@ -141,6 +203,7 @@ export default function DynamicContextSettings() {
                     const data = docSnap.data()
                     setIsEnabled(Boolean(data.enableDynamicContext))
                     setIsContextAwarenessEnabled(Boolean(data.enableContextAwareness))
+                    setDynamicContextMode(data.dynamicContextMode === "enterprise_adapter" ? "enterprise_adapter" : "nocode")
                     setDomain(data.domain || data.website || "")
                     setSiteIndustry(data.industry || data.sector || data.sectorId || "other")
                     setEnableDynamicSiteContext(data.enableDynamicSiteContext === true)
@@ -152,7 +215,7 @@ export default function DynamicContextSettings() {
                                 ? "allowlist"
                                 : "sidebar_safe"
                     )
-                    setSiteCapturePII(data.dynamicSiteContextCapturePII !== false)
+                    setSiteCapturePII(data.dynamicSiteContextCapturePII === true)
                     setSiteMaxRoutes(typeof data.dynamicSiteContextMaxRoutes === "number" ? data.dynamicSiteContextMaxRoutes : 30)
                     setSiteMaxDurationSec(typeof data.dynamicSiteContextMaxDurationSec === "number" ? data.dynamicSiteContextMaxDurationSec : 90)
                     setSiteHydrationWaitMs(typeof data.dynamicSiteContextHydrationWaitMs === "number" ? data.dynamicSiteContextHydrationWaitMs : 4000)
@@ -224,7 +287,7 @@ export default function DynamicContextSettings() {
                     enableDynamicContext: isEnabled,
                     enableContextAwareness: isContextAwarenessEnabled,
                     dynamicContextSelectors: selectors,
-                    dynamicContextMode: "nocode",
+                    dynamicContextMode,
                     enableDynamicSiteContext,
                     dynamicSiteContextCollectionMode: siteCollectionMode,
                     dynamicSiteContextCrawlTrigger: "manual",
@@ -495,464 +558,635 @@ export default function DynamicContextSettings() {
                     <CardTitle>{language === "tr" ? "Nasıl Çalışır?" : "How it works?"}</CardTitle>
                     <CardDescription>
                         {language === "tr"
-                            ? "Element seçicileri tanımlayın, widget bu alanları otomatik izleyip bağlama eklesin."
-                            : "Define element selectors and widget will automatically track them for AI context."}
+                            ? "Dusuk riskli selector modu veya loginli sistemler icin Enterprise Bridge kullanin."
+                            : "Use low-risk selector mode or Enterprise Bridge for authenticated systems."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
                     <ul className="list-disc pl-4 space-y-1">
-                        <li>{language === "tr" ? "Her satır için bir değişken adı (key) yazın." : "Define a key for each row."}</li>
-                        <li>{language === "tr" ? "İlgili CSS seçiciyi girin (ör. #user-balance)." : "Enter the CSS selector (e.g. #user-balance)."}</li>
-                        <li>{language === "tr" ? "Ayarları kaydedin; değerler otomatik güncellenir." : "Save settings; values update automatically."}</li>
+                        <li>{language === "tr" ? "Selector modu sadece acik ve dusuk riskli veriler icin uygundur." : "Selector mode is only appropriate for open, low-risk values."}</li>
+                        <li>{language === "tr" ? "Enterprise Bridge loginli kullanici verisini host uygulamanin guvenli ozetiyle aktarir." : "Enterprise Bridge sends authenticated user context through safe host-provided summaries."}</li>
+                        <li>{language === "tr" ? "Ham kimlik, iletisim, izin nedeni veya saglik verisini prompta gondermeyin." : "Do not send raw identity, contact, leave-reason, or health data to the prompt."}</li>
                     </ul>
                 </CardContent>
             </Card>
 
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle>{language === "tr" ? "Sayfa İçeriği Okuma" : "Page Content Reading"}</CardTitle>
-                            <CardDescription className="max-w-2xl">
-                                {language === "tr"
-                                    ? "Sadece seçili alanları değil, ziyaretçinin gezdiği tüm sayfanın metinlerini (body) okuyarak bağlama ekler."
-                                    : "Adds context by reading all the text on the page the visitor is browsing, not just selected areas."}
-                            </CardDescription>
-                        </div>
-                        <Switch checked={isContextAwarenessEnabled} onCheckedChange={setIsContextAwarenessEnabled} />
-                    </div>
+                    <CardTitle>{language === "tr" ? "Calisma Modu" : "Operating Mode"}</CardTitle>
+                    <CardDescription>
+                        {language === "tr"
+                            ? "Loginli kurumsal portal senaryolarinda Enterprise Bridge kullanin."
+                            : "Use Enterprise Bridge for authenticated enterprise portal scenarios."}
+                    </CardDescription>
                 </CardHeader>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>{language === "tr" ? "CSS Seçiciler" : "CSS Selectors"}</CardTitle>
-                            <CardDescription>
-                                {language === "tr"
-                                    ? "Metin alanları ve form input değişimleri canlı izlenir. Manuel ekleyebilir veya sitenizi tarayabilirsiniz."
-                                    : "Text content and input value changes are tracked in real time. Add manually or scan your site."}
-                            </CardDescription>
-                        </div>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={startAutoDiscovery}
-                            disabled={isDiscovering}
-                            className="shrink-0 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                <CardContent className="space-y-3">
+                    <label className="text-xs space-y-1 block">
+                        <span className="text-muted-foreground">{language === "tr" ? "Mod" : "Mode"}</span>
+                        <select
+                            className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                            value={dynamicContextMode}
+                            onChange={(e) => setDynamicContextMode(e.target.value === "enterprise_adapter" ? "enterprise_adapter" : "nocode")}
                         >
-                            {isDiscovering ? (
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                                <Wand2 className="w-4 h-4 mr-2" />
-                            )}
-                            {scanMode === "site_wide"
-                                ? (language === "tr" ? "Site Genel Tara (Beta)" : "Scan Entire Site (Beta)")
-                                : (language === "tr" ? "Sitemi Otomatik Tara" : "Auto-Scan Website")}
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="rounded-lg border p-4 space-y-4">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                            <div>
-                                <div className="text-sm font-semibold">{language === "tr" ? "Tarama Modu" : "Scan Mode"}</div>
-                                <p className="text-xs text-muted-foreground">
-                                    {language === "tr"
-                                        ? "Tek sayfa selector keşfi veya site-geneli beta crawl."
-                                        : "Single-page selector discovery or site-wide beta crawl."}
-                                </p>
-                            </div>
-                            <div className="inline-flex rounded-lg border p-1 bg-muted/40">
-                                <Button type="button" size="sm" variant={scanMode === "single_page" ? "default" : "ghost"} onClick={() => setScanMode("single_page")} className="h-8">
-                                    {language === "tr" ? "Tek Sayfa" : "Single Page"}
-                                </Button>
-                                <Button type="button" size="sm" variant={scanMode === "site_wide" ? "default" : "ghost"} onClick={() => setScanMode("site_wide")} className="h-8">
-                                    {language === "tr" ? "Site Genel (Beta)" : "Site-wide (Beta)"}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {scanMode === "site_wide" && (
-                            <div className="space-y-4 rounded-lg border border-indigo-200/70 dark:border-indigo-900/40 p-4 bg-indigo-50/30 dark:bg-indigo-950/10">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <div className="text-sm font-semibold">{language === "tr" ? "Site-Geneli Dynamic Context" : "Site-wide Dynamic Context"}</div>
-                                        <p className="text-xs text-muted-foreground">
-                                            {language === "tr"
-                                                ? "Widget runtime, güvenli route’larda DOM + JSON özetlerini toplayarak chat bağlamını genişletir."
-                                                : "Widget runtime collects DOM + JSON summaries on safe routes to expand chat context."}
-                                        </p>
-                                    </div>
-                                    <Switch checked={enableDynamicSiteContext} onCheckedChange={setEnableDynamicSiteContext} />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <label className="text-xs space-y-1">
-                                        <span className="text-muted-foreground">{language === "tr" ? "Veri Kaynağı" : "Data Source"}</span>
-                                        <select
-                                            className="w-full h-9 rounded-md border bg-background px-3 text-sm"
-                                            value={siteCollectionMode}
-                                            onChange={(e) => setSiteCollectionMode(e.target.value === "dom" ? "dom" : "dom_network")}
-                                        >
-                                            <option value="dom">DOM</option>
-                                            <option value="dom_network">DOM + Network (JSON GET)</option>
-                                        </select>
-                                    </label>
-
-                                    <label className="text-xs space-y-1">
-                                        <span className="text-muted-foreground">{language === "tr" ? "Route Kapsamı" : "Route Scope"}</span>
-                                        <select
-                                            className="w-full h-9 rounded-md border bg-background px-3 text-sm"
-                                            value={siteRouteScope}
-                                            onChange={(e) => {
-                                                const v = e.target.value
-                                                setSiteRouteScope(v === "same_origin_all" ? "same_origin_all" : v === "allowlist" ? "allowlist" : "sidebar_safe")
-                                            }}
-                                        >
-                                            <option value="sidebar_safe">{language === "tr" ? "Sidebar + güvenli route" : "Sidebar + safe routes"}</option>
-                                            <option value="same_origin_all">{language === "tr" ? "Same-origin (geniş)" : "Same-origin (broader)"}</option>
-                                            <option value="allowlist">{language === "tr" ? "Allowlist (beta)" : "Allowlist (beta)"}</option>
-                                        </select>
-                                    </label>
-
-                                    <label className="text-xs space-y-1">
-                                        <span className="text-muted-foreground">{language === "tr" ? "Max Route" : "Max Routes"}</span>
-                                        <Input type="number" min={1} max={100} value={siteMaxRoutes} onChange={(e) => setSiteMaxRoutes(Number(e.target.value) || 30)} className="h-9" />
-                                    </label>
-
-                                    <label className="text-xs space-y-1">
-                                        <span className="text-muted-foreground">{language === "tr" ? "Max Süre (sn)" : "Max Duration (sec)"}</span>
-                                        <Input type="number" min={15} max={300} value={siteMaxDurationSec} onChange={(e) => setSiteMaxDurationSec(Number(e.target.value) || 90)} className="h-9" />
-                                    </label>
-
-                                    <label className="text-xs space-y-1">
-                                        <span className="text-muted-foreground">{language === "tr" ? "Hydration Bekleme (ms)" : "Hydration Wait (ms)"}</span>
-                                        <Input type="number" min={800} max={10000} step={100} value={siteHydrationWaitMs} onChange={(e) => setSiteHydrationWaitMs(Number(e.target.value) || 4000)} className="h-9" />
-                                    </label>
-
-                                    <div className="rounded-md border px-3 py-2 flex items-center justify-between gap-3">
-                                        <div className="text-xs">
-                                            <div className="font-medium">{language === "tr" ? "Tam Görünüm (PII maskesiz)" : "Full View (PII unmasked)"}</div>
-                                            <div className="text-muted-foreground">
-                                                {language === "tr"
-                                                    ? "Token/password gibi teknik alanlar yine filtrelenir."
-                                                    : "Technical secrets like tokens/passwords are still filtered."}
-                                            </div>
-                                        </div>
-                                        <Switch checked={siteCapturePII} onCheckedChange={setSiteCapturePII} />
-                                    </div>
-                                </div>
-
-                                <div className="rounded-md border bg-background/70 p-3 space-y-3">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                                        <div>
-                                            <div className="text-sm font-semibold">
-                                                {language === "tr" ? "Sektör Preseti (Öner + Onay)" : "Sector Preset (Suggest + Approve)"}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                {language === "tr"
-                                                    ? `Sektör: ${dynamicPresetSelection.normalizedSectorId}. Önerilen preset: ${dynamicPresetSelection.suggestedPreset.displayName.tr}.`
-                                                    : `Sector: ${dynamicPresetSelection.normalizedSectorId}. Suggested preset: ${dynamicPresetSelection.suggestedPreset.displayName.en}.`}
-                                            </p>
-                                        </div>
-                                        <span className="text-[11px] rounded-full border px-2 py-1 bg-muted">
-                                            {language === "tr" ? "Aktif" : "Active"}:{" "}
-                                            {language === "tr"
-                                                ? dynamicPresetSelection.activePreset.displayName.tr
-                                                : dynamicPresetSelection.activePreset.displayName.en}
-                                        </span>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <label className="text-xs space-y-1">
-                                            <span className="text-muted-foreground">{language === "tr" ? "Preset Modu" : "Preset Mode"}</span>
-                                            <select
-                                                className="w-full h-9 rounded-md border bg-background px-3 text-sm"
-                                                value={sitePresetMode}
-                                                onChange={(e) => {
-                                                    const nextMode = e.target.value === "approved" ? "approved" : e.target.value === "suggested" ? "suggested" : "none"
-                                                    setSitePresetMode(nextMode)
-                                                    if (nextMode !== "approved") setSitePresetApprovedAt("")
-                                                }}
-                                            >
-                                                <option value="none">{language === "tr" ? "Kapalı (Generic fallback)" : "Off (Generic fallback)"}</option>
-                                                <option value="suggested">{language === "tr" ? "Sadece Öneri" : "Suggested only"}</option>
-                                                <option value="approved">{language === "tr" ? "Onaylı Preset" : "Approved preset"}</option>
-                                            </select>
-                                        </label>
-
-                                        <label className="text-xs space-y-1">
-                                            <span className="text-muted-foreground">{language === "tr" ? "Preset Seçimi" : "Preset Selection"}</span>
-                                            <select
-                                                className="w-full h-9 rounded-md border bg-background px-3 text-sm"
-                                                value={sitePresetId || dynamicPresetSelection.suggestedPresetId}
-                                                onChange={(e) => setSitePresetId(e.target.value)}
-                                            >
-                                                {DYNAMIC_CONTEXT_PRESETS.map((preset) => (
-                                                    <option key={preset.presetId} value={preset.presetId}>
-                                                        {(language === "tr" ? preset.displayName.tr : preset.displayName.en)} ({preset.status})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </label>
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                                setSitePresetMode("approved")
-                                                setSitePresetId(dynamicPresetSelection.suggestedPresetId)
-                                                setSitePresetApprovedAt(new Date().toISOString())
-                                            }}
-                                        >
-                                            {language === "tr" ? "Önerileni Onayla" : "Approve Suggested"}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setSitePresetMode("none")
-                                                setSitePresetId("")
-                                                setSitePresetApprovedAt("")
-                                            }}
-                                        >
-                                            {language === "tr" ? "Preseti Kapat" : "Disable Preset"}
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => setSitePresetMode("suggested")}
-                                        >
-                                            {language === "tr" ? "Sadece Öneri Modu" : "Suggested Mode Only"}
-                                        </Button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <label className="text-xs space-y-1">
-                                            <span className="text-muted-foreground">{language === "tr" ? "POST Endpoint Allowlist (preset eklentisi)" : "POST Endpoint Allowlist (preset extension)"}</span>
-                                            <textarea
-                                                className="w-full min-h-[84px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
-                                                value={siteNetworkAllowlistInput}
-                                                onChange={(e) => setSiteNetworkAllowlistInput(e.target.value)}
-                                                placeholder="/graphql&#10;/api/orders"
-                                            />
-                                        </label>
-                                        <label className="text-xs space-y-1">
-                                            <span className="text-muted-foreground">{language === "tr" ? "GraphQL Operation Allowlist" : "GraphQL Operation Allowlist"}</span>
-                                            <textarea
-                                                className="w-full min-h-[84px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
-                                                value={siteGraphqlAllowlistInput}
-                                                onChange={(e) => setSiteGraphqlAllowlistInput(e.target.value)}
-                                                placeholder="GetOrders&#10;TrackShipment"
-                                            />
-                                        </label>
-                                    </div>
-
-                                    <label className="text-xs space-y-1 block">
-                                        <span className="text-muted-foreground">
-                                            {language === "tr" ? "Preset Override JSON (opsiyonel)" : "Preset Override JSON (optional)"}
-                                        </span>
-                                        <textarea
-                                            className="w-full min-h-[92px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
-                                            value={sitePresetOverridesJson}
-                                            onChange={(e) => setSitePresetOverridesJson(e.target.value)}
-                                        />
-                                        {parsedPresetOverrides.error ? (
-                                            <div className="text-[11px] text-red-600">{parsedPresetOverrides.error}</div>
-                                        ) : (
-                                            <div className="text-[11px] text-muted-foreground">
-                                                {language === "tr"
-                                                    ? `Entity hedefleri: ${dynamicPresetSelection.runtimePreset.entityTargets.join(", ")} | Preset: ${dynamicPresetSelection.runtimePreset.presetId}`
-                                                    : `Entity targets: ${dynamicPresetSelection.runtimePreset.entityTargets.join(", ")} | Preset: ${dynamicPresetSelection.runtimePreset.presetId}`}
-                                            </div>
-                                        )}
-                                    </label>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {scanMode === "site_wide" && (siteCrawlStatus !== "idle" || !!siteCrawlProgress || siteCrawlRoutes.length > 0 || siteCrawlErrors.length > 0) && (
-                        <div className="rounded-lg border p-4 space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <div className="text-sm font-semibold">{language === "tr" ? "Site Tarama Durumu" : "Site Crawl Status"}</div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {language === "tr"
-                                            ? "Popup taraması route bazlı çalışır. Hata alan route’lar aşağıda görünür."
-                                            : "Popup crawl runs route-by-route. Failed routes are listed below."}
-                                    </p>
-                                </div>
-                                <span className="px-2 py-1 rounded-full border text-xs font-semibold bg-muted">{siteCrawlStatus}</span>
-                            </div>
-
-                            {siteCrawlProgress && (
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-                                    <div className="rounded border p-2"><div className="text-muted-foreground">Total</div><div className="font-semibold">{siteCrawlProgress.total ?? 0}</div></div>
-                                    <div className="rounded border p-2"><div className="text-muted-foreground">Visited</div><div className="font-semibold">{siteCrawlProgress.visited ?? 0}</div></div>
-                                    <div className="rounded border p-2"><div className="text-muted-foreground">{language === "tr" ? "Başarılı" : "Success"}</div><div className="font-semibold text-green-600">{siteCrawlProgress.success ?? 0}</div></div>
-                                    <div className="rounded border p-2"><div className="text-muted-foreground">{language === "tr" ? "Hata" : "Failed"}</div><div className="font-semibold text-red-600">{siteCrawlProgress.failed ?? 0}</div></div>
-                                    <div className="rounded border p-2 col-span-2 md:col-span-1">
-                                        <div className="text-muted-foreground">{language === "tr" ? "Aktif Route" : "Current Route"}</div>
-                                        <div className="font-mono text-[11px] truncate">{siteCrawlProgress.currentRoute || "-"}</div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {siteCrawlErrors.length > 0 && (
-                                <div className="rounded-md border border-red-200 bg-red-50/60 dark:border-red-900/30 dark:bg-red-950/10 p-3">
-                                    <div className="text-xs font-semibold text-red-700 dark:text-red-300 mb-2">{language === "tr" ? "Route Hataları" : "Route Errors"}</div>
-                                    <div className="space-y-1 max-h-32 overflow-auto">
-                                        {siteCrawlErrors.slice(-10).map((err, idx) => (
-                                            <div key={`${err.route}-${idx}`} className="text-[11px]">
-                                                <span className="font-mono">{err.route || "-"}</span>
-                                                <span className="mx-1 text-muted-foreground">•</span>
-                                                <span className="font-medium">{err.code}</span>
-                                                {err.message ? <span className="text-muted-foreground"> — {err.message}</span> : null}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {siteCrawlRoutes.length > 0 && (
-                                <div className="rounded-md border p-3 space-y-2">
-                                    <div className="text-xs font-semibold">{language === "tr" ? "Taranan Route Özetleri" : "Scanned Route Summaries"}</div>
-                                    <div className="space-y-2 max-h-56 overflow-auto">
-                                        {siteCrawlRoutes.slice(0, 12).map((route) => (
-                                            <div key={route.route} className="rounded border p-2 text-xs">
-                                                <div className="font-mono truncate">{route.route}</div>
-                                                {route.title ? <div className="text-muted-foreground truncate">{route.title}</div> : null}
-                                                {(route.domSummary?.stats || []).length > 0 && (
-                                                    <div className="mt-1 flex flex-wrap gap-1">
-                                                        {(route.domSummary?.stats || []).slice(0, 4).map((s, i) => (
-                                                            <span key={`${route.route}-stat-${i}`} className="rounded-full border px-2 py-0.5 bg-muted/40">
-                                                                {s.label}: {s.value}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {siteCrawlEntityPreview && (
-                                <div className="rounded-md border p-3">
-                                    <div className="text-xs font-semibold mb-2">{language === "tr" ? "Entity Özet Önizleme" : "Entity Summary Preview"}</div>
-                                    <pre className="text-[11px] overflow-auto max-h-48 whitespace-pre-wrap break-words bg-muted/30 rounded p-2">
-                                        {JSON.stringify(siteCrawlEntityPreview, null, 2)}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {lastDiscoveryCount === 0 && !isDiscovering && (
-                        <div className="rounded-lg border border-amber-200 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-200">
-                            {language === "tr"
-                                ? "Tarama tamamlandı ama uygun veri alanı bulunamadı. Bu sayfada form/input alanı olmayabilir veya seçiciler çok dinamik olabilir. Manuel seçici ekleyebilir ya da form olan bir sayfayı tarayabilirsiniz."
-                                : "Scan completed but no suitable data fields were found. This page may not contain form/input fields, or selectors may be highly dynamic. You can add selectors manually or scan a page that contains a form."}
-                        </div>
-                    )}
-
-                    {discoveredSelectors.length > 0 && (
-                        <div className="bg-muted/50 rounded-lg p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Search className="w-4 h-4 text-indigo-500" />
-                                <h4 className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                                    {language === "tr" ? "Bulunan Potansiyel Veriler" : "Discovered Potential Data"}
-                                </h4>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {discoveredSelectors.map((item) => {
-                                    const isAdded = selectors.some((s) => s.selector === item.selector);
-                                    return (
-                                        <div key={item.id} className="flex items-center bg-white dark:bg-zinc-950 border rounded-full px-3 py-1 text-xs gap-2 shadow-sm">
-                                            <span className="font-mono text-muted-foreground">{item.selector}</span>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className={`h-5 px-2 text-[10px] rounded-full uppercase font-bold ${isAdded ? 'text-green-600 hover:text-green-700 bg-green-50 dark:bg-green-900/20' : 'text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40'}`}
-                                                disabled={isAdded}
-                                                onClick={() => {
-                                                    setSelectors(prev => [...prev, { id: Date.now().toString() + item.id, key: item.key, selector: item.selector }]);
-                                                }}
-                                            >
-                                                {isAdded ? (language === "tr" ? "Eklendi" : "Added") : (language === "tr" ? "Ekle" : "Add")}
-                                            </Button>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>{language === "tr" ? "Değişken Adı (Key)" : "Variable Key"}</TableHead>
-                                    <TableHead>{language === "tr" ? "CSS Seçici" : "CSS Selector"}</TableHead>
-                                    <TableHead className="w-[50px]" />
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {selectors.map((item) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>
-                                            <Input
-                                                value={item.key}
-                                                onChange={(e) => updateSelector(item.id, "key", e.target.value)}
-                                                placeholder="e.g. balance"
-                                                className="h-8"
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                value={item.selector}
-                                                onChange={(e) => updateSelector(item.id, "selector", e.target.value)}
-                                                placeholder="e.g. #user-balance"
-                                                className="h-8 font-mono text-xs"
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                                                onClick={() => removeSelector(item.id)}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {selectors.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground text-sm">
-                                            {language === "tr" ? "Henüz seçici eklenmedi." : "No selectors added yet."}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    <Button variant="outline" size="sm" className="w-full border-dashed" onClick={addSelector}>
-                        <Plus className="w-4 h-4 mr-2" />
-                        {language === "tr" ? "Yeni Seçici Ekle" : "Add New Selector"}
-                    </Button>
+                            <option value="nocode">{language === "tr" ? "No-code Selector" : "No-code Selector"}</option>
+                            <option value="enterprise_adapter">{language === "tr" ? "Enterprise Bridge" : "Enterprise Bridge"}</option>
+                        </select>
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                        {dynamicContextMode === "enterprise_adapter"
+                            ? (language === "tr"
+                                ? "Bu modda widget scrape yerine host uygulamanin verdigi public context ve private summary payloadlarini kullanir."
+                                : "In this mode the widget uses host-provided public context and private summary payloads instead of scraping.")
+                            : (language === "tr"
+                                ? "Bu mod loginli employee verisi icin onerilmez."
+                                : "This mode is not recommended for authenticated employee data." )}
+                    </p>
                 </CardContent>
             </Card>
+
+            {isEnterpriseMode ? (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{language === "tr" ? "Enterprise Bridge Kurulumu" : "Enterprise Bridge Setup"}</CardTitle>
+                            <CardDescription>
+                                {language === "tr"
+                                    ? "Bu modda selector, page text ve site crawl ayarlari gizlenir. Widget sadece host uygulamanin guvenli context ozetini okur."
+                                    : "In this mode selector, page-text, and site-crawl settings are hidden. The widget only reads the host app's trusted context summary."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <div className="rounded-lg border p-4">
+                                    <div className="text-sm font-semibold">{language === "tr" ? "Public Context" : "Public Context"}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {language === "tr"
+                                            ? "Modul adi, sayfa tipi, sayaclar, sirket bilgisi, aktif durum gibi dusuk riskli alanlar."
+                                            : "Low-risk fields such as module name, page type, counters, company info, and active state."}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border p-4">
+                                    <div className="text-sm font-semibold">{language === "tr" ? "Private Summary" : "Private Summary"}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {language === "tr"
+                                            ? "Gorev, proje, onay, masraf ve izin gibi loginli kullaniciya ait ozetler."
+                                            : "Authenticated-user summaries for tasks, projects, approvals, expenses, and leave."}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border p-4">
+                                    <div className="text-sm font-semibold">{language === "tr" ? "Asla Gonderme" : "Never Send"}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {language === "tr"
+                                            ? "TC kimlik, dogum tarihi, kisisel GSM, adres, saglik bilgisi, izin nedeni veya ham belgeler."
+                                            : "National ID, birth date, personal phone, address, health data, leave reason, or raw documents."}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+                                <div className="text-sm font-semibold">
+                                    {language === "tr" ? "Host Uygulamada Ornek Entegrasyon" : "Example Host App Integration"}
+                                </div>
+                                <pre className="overflow-x-auto rounded-md bg-background p-3 text-[11px] leading-5 border">
+                                    <code>{enterpriseBridgeSnippet}</code>
+                                </pre>
+                                <p className="text-xs text-muted-foreground">
+                                    {language === "tr"
+                                        ? "Bu payload her route degisiminde veya sayfa icindeki veri guncellendiginde yeniden uretilebilir."
+                                        : "This payload can be regenerated on every route change or when page-level data changes."}
+                                </p>
+                            </div>
+
+                            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+                                <div className="text-sm font-semibold">
+                                    {language === "tr" ? "Opsiyonel Tool Bridge Ornegi" : "Optional Tool Bridge Example"}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {language === "tr"
+                                        ? "Anlik ve loginli veriler icin host uygulama kendi first-party endpointlerini kullanmali. Ham personel verisini prompta gommeyin."
+                                        : "For live authenticated data, the host app should use first-party endpoints. Do not embed raw employee records into the prompt."}
+                                </p>
+                                <pre className="overflow-x-auto rounded-md bg-background p-3 text-[11px] leading-5 border">
+                                    <code>{enterpriseToolSnippet}</code>
+                                </pre>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{language === "tr" ? "Bu Modda Ne Degisti?" : "What Changes In This Mode?"}</CardTitle>
+                            <CardDescription>
+                                {language === "tr"
+                                    ? "Enterprise secildiginde alttaki selector ve crawl ayarlari bilerek devreden cikar."
+                                    : "When Enterprise is selected, the selector and crawl controls below are intentionally disabled."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm text-muted-foreground">
+                            <p>{language === "tr" ? "Page Content Reading kullanilmaz." : "Page Content Reading is not used."}</p>
+                            <p>{language === "tr" ? "CSS selector ve otomatik tarama kullanilmaz." : "CSS selectors and auto-scan are not used."}</p>
+                            <p>{language === "tr" ? "Kisisellestirme, host app tarafindan verilen public context ve private summary ile yapilir." : "Personalization is driven by host-provided public context and private summary."}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{language === "tr" ? "Tenant Icin Kurulum Adimlari" : "Tenant Setup Steps"}</CardTitle>
+                            <CardDescription>
+                                {language === "tr"
+                                    ? "Loginli bir kurumsal portal bunu su sira ile kurmali."
+                                    : "For an authenticated enterprise portal, follow this sequence."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ol className="list-decimal pl-5 space-y-3 text-sm text-muted-foreground">
+                                <li>
+                                    {language === "tr"
+                                        ? "Bu panelde Dynamic Context modunu Enterprise Bridge olarak secin ve kaydedin."
+                                        : "Set the Dynamic Context mode to Enterprise Bridge in this panel and save."}
+                                </li>
+                                <li>
+                                    {language === "tr"
+                                        ? "Host uygulamada widget scripti yuklenmeden once veya en gec yuklendikten hemen sonra window.VionContextBridge nesnesini tanimlayin."
+                                        : "Define window.VionContextBridge in the host app before the widget script loads, or immediately after it loads at the latest."}
+                                </li>
+                                <li>
+                                    {language === "tr"
+                                        ? "getSnapshot() icinde yalnizca guvenli publicContext ve minimize edilmis privateContextSummary dondurun."
+                                        : "Return only safe publicContext and minimized privateContextSummary inside getSnapshot()."}
+                                </li>
+                                <li>
+                                    {language === "tr"
+                                        ? "Kullaniciya ozel canli veriler gerekiyorsa resolveTool() uzerinden kendi same-origin endpointlerinizi cagin. Ornek: project_overview, approval_queue, leave_calendar."
+                                        : "If live user-specific data is required, call your own same-origin endpoints through resolveTool(), for example project_overview, approval_queue, and leave_calendar."}
+                                </li>
+                                <li>
+                                    {language === "tr"
+                                        ? "Route veya sayfa verisi degistiginde window.UserexWidget.setContext(window.VionContextBridge.getSnapshot()) cagirarak widget baglamini yenileyin."
+                                        : "When the route or page data changes, call window.UserexWidget.setContext(window.VionContextBridge.getSnapshot()) to refresh the widget context."}
+                                </li>
+                                <li>
+                                    {language === "tr"
+                                        ? "Asla TC kimlik, dogum tarihi, kisisel GSM, adres, izin nedeni, saglik verisi veya ham belgeleri bridge payloadina koymayin."
+                                        : "Never place national ID, birth date, personal phone, address, leave reason, health data, or raw documents into the bridge payload."}
+                                </li>
+                            </ol>
+                        </CardContent>
+                    </Card>
+                </>
+            ) : (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div className="space-y-1">
+                                    <CardTitle>{language === "tr" ? "Sayfa İçeriği Okuma" : "Page Content Reading"}</CardTitle>
+                                    <CardDescription className="max-w-2xl">
+                                        {language === "tr"
+                                            ? "Sadece seçili alanları değil, ziyaretçinin gezdiği tüm sayfanın metinlerini (body) okuyarak bağlama ekler."
+                                            : "Adds context by reading all the text on the page the visitor is browsing, not just selected areas."}
+                                    </CardDescription>
+                                </div>
+                                <Switch
+                                    checked={isContextAwarenessEnabled}
+                                    onCheckedChange={setIsContextAwarenessEnabled}
+                                    disabled={isEnterpriseMode}
+                                />
+                            </div>
+                        </CardHeader>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <div>
+                                    <CardTitle>{language === "tr" ? "CSS Seçiciler" : "CSS Selectors"}</CardTitle>
+                                    <CardDescription>
+                                        {language === "tr"
+                                            ? "Metin alanları ve form input değişimleri canlı izlenir. Manuel ekleyebilir veya sitenizi tarayabilirsiniz."
+                                            : "Text content and input value changes are tracked in real time. Add manually or scan your site."}
+                                    </CardDescription>
+                                </div>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={startAutoDiscovery}
+                                    disabled={isDiscovering || isEnterpriseMode}
+                                    className="shrink-0 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                                >
+                                    {isDiscovering ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Wand2 className="w-4 h-4 mr-2" />
+                                    )}
+                                    {scanMode === "site_wide"
+                                        ? (language === "tr" ? "Site Genel Tara (Beta)" : "Scan Entire Site (Beta)")
+                                        : (language === "tr" ? "Sitemi Otomatik Tara" : "Auto-Scan Website")}
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="rounded-lg border p-4 space-y-4">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm font-semibold">{language === "tr" ? "Tarama Modu" : "Scan Mode"}</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {language === "tr"
+                                                ? "Tek sayfa selector keşfi veya site-geneli beta crawl."
+                                                : "Single-page selector discovery or site-wide beta crawl."}
+                                        </p>
+                                    </div>
+                                    <div className="inline-flex rounded-lg border p-1 bg-muted/40">
+                                        <Button type="button" size="sm" variant={scanMode === "single_page" ? "default" : "ghost"} onClick={() => setScanMode("single_page")} className="h-8">
+                                            {language === "tr" ? "Tek Sayfa" : "Single Page"}
+                                        </Button>
+                                        <Button type="button" size="sm" variant={scanMode === "site_wide" ? "default" : "ghost"} onClick={() => setScanMode("site_wide")} className="h-8">
+                                            {language === "tr" ? "Site Genel (Beta)" : "Site-wide (Beta)"}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {scanMode === "site_wide" && (
+                                    <div className="space-y-4 rounded-lg border border-indigo-200/70 dark:border-indigo-900/40 p-4 bg-indigo-50/30 dark:bg-indigo-950/10">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div className="text-sm font-semibold">{language === "tr" ? "Site-Geneli Dynamic Context" : "Site-wide Dynamic Context"}</div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {language === "tr"
+                                                        ? "Widget runtime, güvenli route’larda DOM + JSON özetlerini toplayarak chat bağlamını genişletir."
+                                                        : "Widget runtime collects DOM + JSON summaries on safe routes to expand chat context."}
+                                                </p>
+                                            </div>
+                                            <Switch checked={enableDynamicSiteContext} onCheckedChange={setEnableDynamicSiteContext} />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <label className="text-xs space-y-1">
+                                                <span className="text-muted-foreground">{language === "tr" ? "Veri Kaynağı" : "Data Source"}</span>
+                                                <select
+                                                    className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                                                    value={siteCollectionMode}
+                                                    onChange={(e) => setSiteCollectionMode(e.target.value === "dom" ? "dom" : "dom_network")}
+                                                >
+                                                    <option value="dom">DOM</option>
+                                                    <option value="dom_network">DOM + Network (JSON GET)</option>
+                                                </select>
+                                            </label>
+
+                                            <label className="text-xs space-y-1">
+                                                <span className="text-muted-foreground">{language === "tr" ? "Route Kapsamı" : "Route Scope"}</span>
+                                                <select
+                                                    className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                                                    value={siteRouteScope}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value
+                                                        setSiteRouteScope(v === "same_origin_all" ? "same_origin_all" : v === "allowlist" ? "allowlist" : "sidebar_safe")
+                                                    }}
+                                                >
+                                                    <option value="sidebar_safe">{language === "tr" ? "Sidebar + güvenli route" : "Sidebar + safe routes"}</option>
+                                                    <option value="same_origin_all">{language === "tr" ? "Same-origin (geniş)" : "Same-origin (broader)"}</option>
+                                                    <option value="allowlist">{language === "tr" ? "Allowlist (beta)" : "Allowlist (beta)"}</option>
+                                                </select>
+                                            </label>
+
+                                            <label className="text-xs space-y-1">
+                                                <span className="text-muted-foreground">{language === "tr" ? "Max Route" : "Max Routes"}</span>
+                                                <Input type="number" min={1} max={100} value={siteMaxRoutes} onChange={(e) => setSiteMaxRoutes(Number(e.target.value) || 30)} className="h-9" />
+                                            </label>
+
+                                            <label className="text-xs space-y-1">
+                                                <span className="text-muted-foreground">{language === "tr" ? "Max Süre (sn)" : "Max Duration (sec)"}</span>
+                                                <Input type="number" min={15} max={300} value={siteMaxDurationSec} onChange={(e) => setSiteMaxDurationSec(Number(e.target.value) || 90)} className="h-9" />
+                                            </label>
+
+                                            <label className="text-xs space-y-1">
+                                                <span className="text-muted-foreground">{language === "tr" ? "Hydration Bekleme (ms)" : "Hydration Wait (ms)"}</span>
+                                                <Input type="number" min={800} max={10000} step={100} value={siteHydrationWaitMs} onChange={(e) => setSiteHydrationWaitMs(Number(e.target.value) || 4000)} className="h-9" />
+                                            </label>
+
+                                            <div className="rounded-md border px-3 py-2 flex items-center justify-between gap-3">
+                                                <div className="text-xs">
+                                                    <div className="font-medium">{language === "tr" ? "Tam Görünüm (PII maskesiz)" : "Full View (PII unmasked)"}</div>
+                                                    <div className="text-muted-foreground">
+                                                        {language === "tr"
+                                                            ? "Token/password gibi teknik alanlar yine filtrelenir."
+                                                            : "Technical secrets like tokens/passwords are still filtered."}
+                                                    </div>
+                                                </div>
+                                                <Switch checked={siteCapturePII} onCheckedChange={setSiteCapturePII} />
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-md border bg-background/70 p-3 space-y-3">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                                <div>
+                                                    <div className="text-sm font-semibold">
+                                                        {language === "tr" ? "Sektör Preseti (Öner + Onay)" : "Sector Preset (Suggest + Approve)"}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {language === "tr"
+                                                            ? `Sektör: ${dynamicPresetSelection.normalizedSectorId}. Önerilen preset: ${dynamicPresetSelection.suggestedPreset.displayName.tr}.`
+                                                            : `Sector: ${dynamicPresetSelection.normalizedSectorId}. Suggested preset: ${dynamicPresetSelection.suggestedPreset.displayName.en}.`}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[11px] rounded-full border px-2 py-1 bg-muted">
+                                                    {language === "tr" ? "Aktif" : "Active"}:{" "}
+                                                    {language === "tr"
+                                                        ? dynamicPresetSelection.activePreset.displayName.tr
+                                                        : dynamicPresetSelection.activePreset.displayName.en}
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <label className="text-xs space-y-1">
+                                                    <span className="text-muted-foreground">{language === "tr" ? "Preset Modu" : "Preset Mode"}</span>
+                                                    <select
+                                                        className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                                                        value={sitePresetMode}
+                                                        onChange={(e) => {
+                                                            const nextMode = e.target.value === "approved" ? "approved" : e.target.value === "suggested" ? "suggested" : "none"
+                                                            setSitePresetMode(nextMode)
+                                                            if (nextMode !== "approved") setSitePresetApprovedAt("")
+                                                        }}
+                                                    >
+                                                        <option value="none">{language === "tr" ? "Kapalı (Generic fallback)" : "Off (Generic fallback)"}</option>
+                                                        <option value="suggested">{language === "tr" ? "Sadece Öneri" : "Suggested only"}</option>
+                                                        <option value="approved">{language === "tr" ? "Onaylı Preset" : "Approved preset"}</option>
+                                                    </select>
+                                                </label>
+
+                                                <label className="text-xs space-y-1">
+                                                    <span className="text-muted-foreground">{language === "tr" ? "Preset Seçimi" : "Preset Selection"}</span>
+                                                    <select
+                                                        className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                                                        value={sitePresetId || dynamicPresetSelection.suggestedPresetId}
+                                                        onChange={(e) => setSitePresetId(e.target.value)}
+                                                    >
+                                                        {DYNAMIC_CONTEXT_PRESETS.map((preset) => (
+                                                            <option key={preset.presetId} value={preset.presetId}>
+                                                                {(language === "tr" ? preset.displayName.tr : preset.displayName.en)} ({preset.status})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setSitePresetMode("approved")
+                                                        setSitePresetId(dynamicPresetSelection.suggestedPresetId)
+                                                        setSitePresetApprovedAt(new Date().toISOString())
+                                                    }}
+                                                >
+                                                    {language === "tr" ? "Önerileni Onayla" : "Approve Suggested"}
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setSitePresetMode("none")
+                                                        setSitePresetId("")
+                                                        setSitePresetApprovedAt("")
+                                                    }}
+                                                >
+                                                    {language === "tr" ? "Preseti Kapat" : "Disable Preset"}
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => setSitePresetMode("suggested")}
+                                                >
+                                                    {language === "tr" ? "Sadece Öneri Modu" : "Suggested Mode Only"}
+                                                </Button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <label className="text-xs space-y-1">
+                                                    <span className="text-muted-foreground">{language === "tr" ? "POST Endpoint Allowlist (preset eklentisi)" : "POST Endpoint Allowlist (preset extension)"}</span>
+                                                    <textarea
+                                                        className="w-full min-h-[84px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
+                                                        value={siteNetworkAllowlistInput}
+                                                        onChange={(e) => setSiteNetworkAllowlistInput(e.target.value)}
+                                                        placeholder="/graphql&#10;/api/orders"
+                                                    />
+                                                </label>
+                                                <label className="text-xs space-y-1">
+                                                    <span className="text-muted-foreground">{language === "tr" ? "GraphQL Operation Allowlist" : "GraphQL Operation Allowlist"}</span>
+                                                    <textarea
+                                                        className="w-full min-h-[84px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
+                                                        value={siteGraphqlAllowlistInput}
+                                                        onChange={(e) => setSiteGraphqlAllowlistInput(e.target.value)}
+                                                        placeholder="GetOrders&#10;TrackShipment"
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            <label className="text-xs space-y-1 block">
+                                                <span className="text-muted-foreground">
+                                                    {language === "tr" ? "Preset Override JSON (opsiyonel)" : "Preset Override JSON (optional)"}
+                                                </span>
+                                                <textarea
+                                                    className="w-full min-h-[92px] rounded-md border bg-background px-3 py-2 text-xs font-mono"
+                                                    value={sitePresetOverridesJson}
+                                                    onChange={(e) => setSitePresetOverridesJson(e.target.value)}
+                                                />
+                                                {parsedPresetOverrides.error ? (
+                                                    <div className="text-[11px] text-red-600">{parsedPresetOverrides.error}</div>
+                                                ) : (
+                                                    <div className="text-[11px] text-muted-foreground">
+                                                        {language === "tr"
+                                                            ? `Entity hedefleri: ${dynamicPresetSelection.runtimePreset.entityTargets.join(", ")} | Preset: ${dynamicPresetSelection.runtimePreset.presetId}`
+                                                            : `Entity targets: ${dynamicPresetSelection.runtimePreset.entityTargets.join(", ")} | Preset: ${dynamicPresetSelection.runtimePreset.presetId}`}
+                                                    </div>
+                                                )}
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {scanMode === "site_wide" && (siteCrawlStatus !== "idle" || !!siteCrawlProgress || siteCrawlRoutes.length > 0 || siteCrawlErrors.length > 0) && (
+                                <div className="rounded-lg border p-4 space-y-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-sm font-semibold">{language === "tr" ? "Site Tarama Durumu" : "Site Crawl Status"}</div>
+                                            <p className="text-xs text-muted-foreground">
+                                                {language === "tr"
+                                                    ? "Popup taraması route bazlı çalışır. Hata alan route’lar aşağıda görünür."
+                                                    : "Popup crawl runs route-by-route. Failed routes are listed below."}
+                                            </p>
+                                        </div>
+                                        <span className="px-2 py-1 rounded-full border text-xs font-semibold bg-muted">{siteCrawlStatus}</span>
+                                    </div>
+
+                                    {siteCrawlProgress && (
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                                            <div className="rounded border p-2"><div className="text-muted-foreground">Total</div><div className="font-semibold">{siteCrawlProgress.total ?? 0}</div></div>
+                                            <div className="rounded border p-2"><div className="text-muted-foreground">Visited</div><div className="font-semibold">{siteCrawlProgress.visited ?? 0}</div></div>
+                                            <div className="rounded border p-2"><div className="text-muted-foreground">{language === "tr" ? "Başarılı" : "Success"}</div><div className="font-semibold text-green-600">{siteCrawlProgress.success ?? 0}</div></div>
+                                            <div className="rounded border p-2"><div className="text-muted-foreground">{language === "tr" ? "Hata" : "Failed"}</div><div className="font-semibold text-red-600">{siteCrawlProgress.failed ?? 0}</div></div>
+                                            <div className="rounded border p-2 col-span-2 md:col-span-1">
+                                                <div className="text-muted-foreground">{language === "tr" ? "Aktif Route" : "Current Route"}</div>
+                                                <div className="font-mono text-[11px] truncate">{siteCrawlProgress.currentRoute || "-"}</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {siteCrawlErrors.length > 0 && (
+                                        <div className="rounded-md border border-red-200 bg-red-50/60 dark:border-red-900/30 dark:bg-red-950/10 p-3">
+                                            <div className="text-xs font-semibold text-red-700 dark:text-red-300 mb-2">{language === "tr" ? "Route Hataları" : "Route Errors"}</div>
+                                            <div className="space-y-1 max-h-32 overflow-auto">
+                                                {siteCrawlErrors.slice(-10).map((err, idx) => (
+                                                    <div key={`${err.route}-${idx}`} className="text-[11px]">
+                                                        <span className="font-mono">{err.route || "-"}</span>
+                                                        <span className="mx-1 text-muted-foreground">•</span>
+                                                        <span className="font-medium">{err.code}</span>
+                                                        {err.message ? <span className="text-muted-foreground"> — {err.message}</span> : null}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {siteCrawlRoutes.length > 0 && (
+                                        <div className="rounded-md border p-3 space-y-2">
+                                            <div className="text-xs font-semibold">{language === "tr" ? "Taranan Route Özetleri" : "Scanned Route Summaries"}</div>
+                                            <div className="space-y-2 max-h-56 overflow-auto">
+                                                {siteCrawlRoutes.slice(0, 12).map((route) => (
+                                                    <div key={route.route} className="rounded border p-2 text-xs">
+                                                        <div className="font-mono truncate">{route.route}</div>
+                                                        {route.title ? <div className="text-muted-foreground truncate">{route.title}</div> : null}
+                                                        {(route.domSummary?.stats || []).length > 0 && (
+                                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                                {(route.domSummary?.stats || []).slice(0, 4).map((s, i) => (
+                                                                    <span key={`${route.route}-stat-${i}`} className="rounded-full border px-2 py-0.5 bg-muted/40">
+                                                                        {s.label}: {s.value}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {siteCrawlEntityPreview && (
+                                        <div className="rounded-md border p-3">
+                                            <div className="text-xs font-semibold mb-2">{language === "tr" ? "Entity Özet Önizleme" : "Entity Summary Preview"}</div>
+                                            <pre className="text-[11px] overflow-auto max-h-48 whitespace-pre-wrap break-words bg-muted/30 rounded p-2">
+                                                {JSON.stringify(siteCrawlEntityPreview, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {lastDiscoveryCount === 0 && !isDiscovering && (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-200">
+                                    {language === "tr"
+                                        ? "Tarama tamamlandı ama uygun veri alanı bulunamadı. Bu sayfada form/input alanı olmayabilir veya seçiciler çok dinamik olabilir. Manuel seçici ekleyebilir ya da form olan bir sayfayı tarayabilirsiniz."
+                                        : "Scan completed but no suitable data fields were found. This page may not contain form/input fields, or selectors may be highly dynamic. You can add selectors manually or scan a page that contains a form."}
+                                </div>
+                            )}
+
+                            {discoveredSelectors.length > 0 && (
+                                <div className="bg-muted/50 rounded-lg p-4 border border-dashed border-indigo-200 dark:border-indigo-900/50 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Search className="w-4 h-4 text-indigo-500" />
+                                        <h4 className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                                            {language === "tr" ? "Bulunan Potansiyel Veriler" : "Discovered Potential Data"}
+                                        </h4>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {discoveredSelectors.map((item) => {
+                                            const isAdded = selectors.some((s) => s.selector === item.selector);
+                                            return (
+                                                <div key={item.id} className="flex items-center bg-white dark:bg-zinc-950 border rounded-full px-3 py-1 text-xs gap-2 shadow-sm">
+                                                    <span className="font-mono text-muted-foreground">{item.selector}</span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={`h-5 px-2 text-[10px] rounded-full uppercase font-bold ${isAdded ? 'text-green-600 hover:text-green-700 bg-green-50 dark:bg-green-900/20' : 'text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40'}`}
+                                                        disabled={isAdded}
+                                                        onClick={() => {
+                                                            setSelectors(prev => [...prev, { id: Date.now().toString() + item.id, key: item.key, selector: item.selector }]);
+                                                        }}
+                                                    >
+                                                        {isAdded ? (language === "tr" ? "Eklendi" : "Added") : (language === "tr" ? "Ekle" : "Add")}
+                                                    </Button>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>{language === "tr" ? "Değişken Adı (Key)" : "Variable Key"}</TableHead>
+                                            <TableHead>{language === "tr" ? "CSS Seçici" : "CSS Selector"}</TableHead>
+                                            <TableHead className="w-[50px]" />
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {selectors.map((item) => (
+                                            <TableRow key={item.id}>
+                                                <TableCell>
+                                                    <Input
+                                                        value={item.key}
+                                                        onChange={(e) => updateSelector(item.id, "key", e.target.value)}
+                                                        placeholder="e.g. balance"
+                                                        className="h-8"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        value={item.selector}
+                                                        onChange={(e) => updateSelector(item.id, "selector", e.target.value)}
+                                                        placeholder="e.g. #user-balance"
+                                                        className="h-8 font-mono text-xs"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                                                        onClick={() => removeSelector(item.id)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {selectors.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="h-24 text-center text-muted-foreground text-sm">
+                                                    {language === "tr" ? "Henüz seçici eklenmedi." : "No selectors added yet."}
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+
+                            <Button variant="outline" size="sm" className="w-full border-dashed" onClick={addSelector}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                {language === "tr" ? "Yeni Seçici Ekle" : "Add New Selector"}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
 
             <div className="flex justify-end pt-6 border-t">
                 <Button size="lg" className="font-semibold shadow-lg shadow-indigo-500/20 w-full sm:w-auto" onClick={handleSave} disabled={isSaving}>

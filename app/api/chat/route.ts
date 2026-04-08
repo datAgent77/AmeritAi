@@ -46,8 +46,12 @@ type UserContextPayload = {
     description?: string;
     pageText?: string;
     dynamicData?: Record<string, any>;
+    publicContext?: Record<string, unknown>;
+    privateContextSummary?: Record<string, unknown>;
+    assistantContextSource?: string;
     siteSessionContext?: Record<string, any>;
     crawlStatus?: Record<string, any>;
+    allowIdentitySync?: boolean;
 };
 
 function isUserContextPayload(value: unknown): value is UserContextPayload {
@@ -75,6 +79,53 @@ const EXTERNAL_ID_KEYS = ["customerId", "customer_id", "accountId", "account_id"
 function asPlainObject(value: unknown): Record<string, unknown> | null {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     return value as Record<string, unknown>;
+}
+
+const ASSISTANT_CONTEXT_SENSITIVE_KEY_RE = /(email|mail|phone|gsm|mobile|telephone|tc|kimlik|identity|national|passport|birth|dogum|address|adres|token|password|secret|cookie|iban|salary|maas|health|medical|diagnos|document|attachment|leave_reason|izin_nedeni)/i;
+
+function sanitizeAssistantContextValue(value: unknown, path = "", depth = 0): unknown {
+    if (depth > 4) return undefined;
+
+    if (typeof value === "string") {
+        return value.replace(/\s+/g, " ").trim().slice(0, 240);
+    }
+
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined;
+    }
+
+    if (typeof value === "boolean" || value === null) {
+        return value;
+    }
+
+    if (Array.isArray(value)) {
+        return value
+            .slice(0, 8)
+            .map((item, index) => sanitizeAssistantContextValue(item, `${path}[${index}]`, depth + 1))
+            .filter((item) => item !== undefined);
+    }
+
+    const record = asPlainObject(value);
+    if (!record) return undefined;
+
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(record).slice(0, 20)) {
+        const nextPath = path ? `${path}.${key}` : key;
+        if (ASSISTANT_CONTEXT_SENSITIVE_KEY_RE.test(nextPath)) continue;
+        const nextValue = sanitizeAssistantContextValue(child, nextPath, depth + 1);
+        if (nextValue !== undefined) {
+            sanitized[key] = nextValue;
+        }
+    }
+    return sanitized;
+}
+
+function sanitizeAssistantContextObject(value: unknown): Record<string, unknown> | undefined {
+    const sanitized = sanitizeAssistantContextValue(value, "", 0);
+    if (!sanitized || typeof sanitized !== "object" || Array.isArray(sanitized)) {
+        return undefined;
+    }
+    return sanitized as Record<string, unknown>;
 }
 
 function findNestedString(value: unknown, keys: string[], depth = 0): string | null {
@@ -495,16 +546,32 @@ export async function POST(req: Request) {
             userText: latestUserText,
         });
         const safeContext = isUserContextPayload(context)
-            ? {
-                ...(context as UserContextPayload),
-                desc: typeof (context as any).desc === "string"
-                    ? (context as any).desc
-                    : (typeof (context as any).description === "string" ? (context as any).description : "")
-            }
+            ? (() => {
+                const rawContext = context as UserContextPayload;
+                const assistantContextSource = typeof rawContext.assistantContextSource === "string"
+                    ? rawContext.assistantContextSource.slice(0, 32)
+                    : undefined;
+                const usesTrustedBridge = assistantContextSource === "enterprise_bridge" || assistantContextSource === "host_app";
+
+                return {
+                    ...rawContext,
+                    desc: typeof rawContext.desc === "string"
+                        ? rawContext.desc
+                        : (typeof rawContext.description === "string" ? rawContext.description : ""),
+                    pageText: usesTrustedBridge ? undefined : rawContext.pageText,
+                    dynamicData: usesTrustedBridge ? undefined : rawContext.dynamicData,
+                    siteSessionContext: usesTrustedBridge ? undefined : rawContext.siteSessionContext,
+                    crawlStatus: usesTrustedBridge ? undefined : rawContext.crawlStatus,
+                    publicContext: sanitizeAssistantContextObject(rawContext.publicContext),
+                    privateContextSummary: sanitizeAssistantContextObject(rawContext.privateContextSummary),
+                    assistantContextSource,
+                    allowIdentitySync: rawContext.allowIdentitySync === true,
+                };
+            })()
             : undefined;
 
         const webIdentitySyncPromise =
-            safeContext
+            safeContext?.allowIdentitySync === true
                 ? syncWebSessionIdentity(adminDb, {
                     chatbotId,
                     sessionId: activeSessionId,

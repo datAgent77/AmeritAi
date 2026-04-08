@@ -169,6 +169,82 @@ function getUnknownResponse(language?: string, question?: string): string {
     return unknownResponses[resolvedLanguage] || unknownResponses.en;
 }
 
+function stripVoiceUiArtifacts(input: string): string {
+    return input
+        .replace(/\[SHOW_[A-Z_]+\]/g, " ")
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/[`*_#>-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function buildVoiceCollectionFallback(params: {
+    language?: string;
+    userText?: string;
+    rawContent?: string;
+}): string {
+    const resolvedLanguage = resolveConversationLanguage({
+        explicitLanguage: params.language,
+        userText: params.userText || params.rawContent,
+    });
+    const corpus = `${params.userText || ""} ${params.rawContent || ""}`.toLowerCase();
+    const isAppointment = /(appointment|book|booking|schedule|reserve|randevu|rezervasyon)/i.test(corpus);
+    const isContact = /(call me|callback|contact me|reach me|beni ar|geri don|geri dön|iletisim|iletişim|telefon)/i.test(corpus);
+
+    if (resolvedLanguage === "tr") {
+        if (isAppointment) {
+            return "Elbette, randevunuzu birlikte oluşturalım. Önce size uygun gün ve saati söyler misiniz?";
+        }
+        if (isContact) {
+            return "Tabii, bunu birlikte ayarlayabiliriz. Önce adınızı ve telefon numaranızı söyler misiniz?";
+        }
+        return "Tabii, bunu birlikte ilerletebiliriz. İlk gerekli bilgiyi bana kısaca söyler misiniz?";
+    }
+
+    if (isAppointment) {
+        return "Of course, let's set up your appointment together. First, what day and time work best for you?";
+    }
+    if (isContact) {
+        return "Sure, we can handle that together. First, may I have your name and phone number?";
+    }
+    return "Sure, we can continue this together. Please tell me the first detail you want me to note.";
+}
+
+function sanitizeVoiceAssistantContent(params: {
+    content: string;
+    language?: string;
+    userText?: string;
+}): string {
+    const raw = params.content || "";
+    if (!raw.trim()) return raw;
+
+    let sanitized = stripVoiceUiArtifacts(raw)
+        .replace(/\b(lütfen|lutfen)\s+(aşağıdaki|asagidaki)\s+formu\s+doldur(?:un)?\.?/gi, " ")
+        .replace(/\b(tabii|tabi|elbette|sure),?\s*(lütfen|lutfen)\s*(iletişim|iletisim)?\s*formunu\s*doldur(?:un)?\.?/gi, " ")
+        .replace(/\b(please|kindly)\s+fill\s+out\s+(the\s+)?(contact\s+)?form(\s+below|\s+on\s+the\s+screen)?\.?/gi, " ")
+        .replace(/\b(form|button|screen|chat)\b/gi, (match) => {
+            const lower = match.toLowerCase();
+            if (lower === "form" || lower === "button" || lower === "screen") return "";
+            return match;
+        })
+        .replace(/\b(aşağıda|asagida|below|yukarida|above|ekranda|on the screen)\b/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const hadUiMarker = /\[SHOW_[A-Z_]+\]/.test(raw)
+        || /(formu doldur|formunu doldur|fill out .*form|contact form|aşağıdaki form|asagidaki form)/i.test(raw);
+
+    if (hadUiMarker) {
+        return buildVoiceCollectionFallback({
+            language: params.language,
+            userText: params.userText,
+            rawContent: raw,
+        });
+    }
+
+    return sanitized;
+}
+
 async function getSystemConfig(adminDb: any) {
     try {
         const doc = await adminDb.collection("system_settings").doc("ai_config").get();
@@ -299,6 +375,9 @@ export async function generateAIResponse(
         desc: string,
         pageText?: string,
         dynamicData?: Record<string, any>,
+        publicContext?: Record<string, unknown>,
+        privateContextSummary?: Record<string, unknown>,
+        assistantContextSource?: string,
         siteSessionContext?: Record<string, any>,
         crawlStatus?: Record<string, any>
     },
@@ -556,6 +635,12 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         // Add User Context
         if (userContext) {
             systemPrompt += `\n# USER CONTEXT\nURL: ${userContext.url}\nTitle: ${userContext.title}`;
+            if (userContext.publicContext && Object.keys(userContext.publicContext).length > 0) {
+                systemPrompt += `\n\n# PUBLIC RUNTIME CONTEXT\nThis data comes from the host application and is safe for direct assistant use.\n${JSON.stringify(userContext.publicContext).slice(0, 6000)}\n`;
+            }
+            if (userContext.privateContextSummary && Object.keys(userContext.privateContextSummary).length > 0) {
+                systemPrompt += `\n\n# PRIVATE CONTEXT SUMMARY\nThis is a minimized first-party summary prepared by the host app for authenticated support flows.\nUse it for personalization, task/project/approval/expense/leave help, but do not ask for hidden raw identifiers unless absolutely necessary.\n${JSON.stringify(userContext.privateContextSummary).slice(0, 8000)}\n`;
+            }
             if (userContext.pageText) {
                 systemPrompt += `\n\n# PAGE CONTENT (Context Awareness)\nThe user is currently viewing the following page content. You can use this to provide highly accurate and contextual answers:\n${userContext.pageText}\n`;
             }
@@ -575,7 +660,19 @@ REMEMBER: Always think before responding. Quality > Speed.`;
 
         // Voice Mode
         if (isVoice) {
-            systemPrompt += `\n# VOICE MODE\nMake it short and conversational.`;
+            systemPrompt += `\n# VOICE MODE
+You are answering inside a live browser voice conversation.
+
+VOICE-SAFE RULES:
+1. Sound like a natural person speaking, not a written help article.
+2. Keep each reply to 1-3 short sentences unless the user explicitly asks for detail.
+3. Never mention "below", "above", "button", "form", "screen", or any UI placement language.
+4. Never output UI markers such as \`[SHOW_LEAD_FORM]\` in voice mode.
+5. If contact info or an appointment is needed, ask for only the next missing detail verbally, one step at a time.
+6. For appointments, guide the user conversationally: first preferred day/time, then name, then phone if needed, then confirm back clearly.
+7. Avoid bullet lists, markdown structure, and long disclaimers. Speak plainly.
+8. If the user asks about an action you can do, explain the next spoken step instead of referring to chat UI.
+9. When repeating dates, times, names, phone numbers, or codes, say them clearly and separately.`;
         }
 
         // Visual Analysis Context (from image diagnosis)
@@ -795,7 +892,19 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                 if (mod.id === 'dynamicContext') {
                     // This module relies on data passed from the client, not Firestore settings
                     const dynamicData = userContext?.dynamicData;
+                    const publicContext = userContext?.publicContext;
+                    const privateContextSummary = userContext?.privateContextSummary;
                     const siteSessionContext = userContext?.siteSessionContext;
+                    if (publicContext) {
+                        instruction += langKey === 'tr'
+                            ? `\n\n📘 GUVENLI PUBLIC CONTEXT:\nBu alanlar host uygulama tarafindan guvenli bicimde verildi. Sayfa/modul/sayac/urun/proje durumu gibi dusuk riskli alanlari once kullan.\n`
+                            : `\n\n📘 SAFE PUBLIC CONTEXT:\nThese fields were provided safely by the host application. Prefer them first for page/module/counter/product/project state answers.\n`;
+                    }
+                    if (privateContextSummary) {
+                        instruction += langKey === 'tr'
+                            ? `\n\n🧾 PRIVATE CONTEXT SUMMARY:\nLoginli kullaniciya ait ozet first-party sistem tarafindan uretildi. Gorevler, projeler, onaylar, masraflar ve izinler gibi kisisellestirilmis destek sorularinda once bu ozeti kullan. Ham kimlik/iletisim belgeleri varsayma veya uydurma.\n`
+                            : `\n\n🧾 PRIVATE CONTEXT SUMMARY:\nThis authenticated user summary was produced by the first-party system. Prefer it first for personalized support about tasks, projects, approvals, expenses, and leave. Never invent hidden identity/contact records.\n`;
+                    }
                     if (dynamicData) {
                         instruction += langKey === 'tr'
                             ? `\n\n📊 CANLI KULLANICI VERİLERİ (SİSTEMDEN):\n`
@@ -825,6 +934,12 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         if (activeModuleInstructions.length > 0) {
             systemPrompt += `\n\n# ACTIVE MODULE CAPABILITIES\n${activeModuleInstructions.join('\n')}`;
             console.log("AI Service: Active module instructions count:", activeModuleInstructions.length);
+        }
+
+        if (isVoice) {
+            systemPrompt += `\n\n# FINAL VOICE OVERRIDE
+This is a voice turn. If any previous instruction suggests opening a form, showing a button, or asking the user to fill something in on screen, OVERRIDE it.
+In voice mode you must continue the flow verbally and ask only the next missing piece of information.`;
         }
 
         // 4. Generate Response based on Provider
@@ -892,7 +1007,19 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                     }
 
                     const result = await chat.sendMessage(lastMsgContent);
-                    return { content: result.response.text(), isStream: false, context, modelUsed: attempt.model };
+                    const resultText = result.response.text();
+                    return {
+                        content: isVoice
+                            ? sanitizeVoiceAssistantContent({
+                                content: resultText,
+                                language: resolvedLanguage,
+                                userText: lastMsgContent,
+                            })
+                            : resultText,
+                        isStream: false,
+                        context,
+                        modelUsed: attempt.model,
+                    };
                 }
 
                 const openai = new OpenAI({ apiKey: attempt.apiKey });
@@ -910,7 +1037,14 @@ REMEMBER: Always think before responding. Quality > Speed.`;
                     stream: false,
                     messages: fullMessages as any,
                 });
-                const resultContent = response.choices[0].message.content || "";
+                const rawResultContent = response.choices[0].message.content || "";
+                const resultContent = isVoice
+                    ? sanitizeVoiceAssistantContent({
+                        content: rawResultContent,
+                        language: resolvedLanguage,
+                        userText: latestUserMessage?.content || lastMessage.content,
+                    })
+                    : rawResultContent;
 
                 if (sessionId) {
                     await saveMessageToSession(sessionId, chatbotId, { role: "assistant", content: resultContent });

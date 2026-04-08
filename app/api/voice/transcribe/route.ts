@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { normalizeConversationLanguage } from "@/lib/conversation-language";
 
 export const runtime = 'nodejs';
 
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
 
         const formData = await req.formData();
         const audioFile = formData.get('audio') as File | null;
-        const language = (formData.get('language') as string) || 'tr';
+        const requestedLanguage = normalizeConversationLanguage(formData.get('language') as string | null);
 
         if (!audioFile) {
             return NextResponse.json({ error: "No audio file provided" }, { status: 400 });
@@ -22,8 +23,9 @@ export async function POST(req: Request) {
 
         const transcription = await openai.audio.transcriptions.create({
             file: audioFile,
-            model: "whisper-1",
-            language: language === 'tr' ? 'tr' : 'en',
+            model: "gpt-4o-mini-transcribe",
+            ...(requestedLanguage ? { language: requestedLanguage } : {}),
+            chunking_strategy: "auto",
             response_format: "json",
         });
 

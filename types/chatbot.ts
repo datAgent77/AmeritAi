@@ -212,7 +212,7 @@ export interface ChatbotSettings {
     widgetLoaderStyle?: 'skeleton' | 'spinner' | 'pulsing-icon';
     enableContextAwareness?: boolean;
     enableDynamicContext?: boolean;
-    dynamicContextMode?: "nocode" | string;
+    dynamicContextMode?: "nocode" | "enterprise_adapter" | string;
     dynamicContextSelectors?: Array<{ id?: string; key?: string; selector?: string }>;
     enableDynamicSiteContext?: boolean;
     dynamicSiteContextCollectionMode?: "dom" | "dom_network";

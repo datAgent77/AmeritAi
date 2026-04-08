@@ -1,14 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { ChatbotSettings } from "@/types/chatbot"
+import {
+    pickSpeechSynthesisVoice,
+    resolveVoiceHintLanguage,
+    resolveVoiceTextLanguage,
+    toVoiceLocale,
+} from "@/lib/voice-runtime"
 
 export type VoiceStatus = "idle" | "listening" | "processing" | "speaking"
 
-const SILENCE_THRESHOLD_MULTIPLIER = 1.8
+const SILENCE_THRESHOLD_MULTIPLIER = 1.6
 const MIN_SILENCE_THRESHOLD = 15
-const SILENCE_DURATION = 2000
-const MAX_RECORDING_DURATION = 30000
-const CALIBRATION_DURATION = 500
-const VAD_CHECK_INTERVAL = 100
+const SILENCE_DURATION = 1200
+const MAX_RECORDING_DURATION = 18000
+const CALIBRATION_DURATION = 350
+const VAD_CHECK_INTERVAL = 80
 
 type PlaySpeechOptions = {
     speakingKey: string
@@ -21,7 +27,14 @@ export function useVoiceInput(
     language: string,
     settings: ChatbotSettings,
     setLocalInput: (val: string) => void,
-    sendMessage: (text: string, speakResponse?: boolean) => Promise<string>
+    sendMessage: (
+        text: string,
+        speakResponse?: boolean,
+        visualContext?: string,
+        guidedEvent?: null,
+        mediaPayload?: null,
+        isVoiceTurn?: boolean
+    ) => Promise<string>
 ) {
     const [isListening, setIsListening] = useState(false)
     const [isSpeaking, setIsSpeaking] = useState<string | null>(null)
@@ -38,6 +51,7 @@ export function useVoiceInput(
     const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const resumeListeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const synthesisRef = useRef<SpeechSynthesis | null>(null)
+    const availableVoicesRef = useRef<SpeechSynthesisVoice[]>([])
     const currentAudioRef = useRef<HTMLAudioElement | null>(null)
     const hasSpeechStartedRef = useRef(false)
     const silenceStartRef = useRef<number>(0)
@@ -48,10 +62,24 @@ export function useVoiceInput(
     const isSpeakingRef = useRef<string | null>(null)
     const isVoiceSessionActiveRef = useRef(false)
     const isMutedRef = useRef(false)
+    const startRecordingRef = useRef<(() => Promise<void>) | null>(null)
 
     useEffect(() => {
         if (typeof window !== "undefined" && window.speechSynthesis) {
-            synthesisRef.current = window.speechSynthesis
+            const synthesis = window.speechSynthesis
+            const syncVoices = () => {
+                availableVoicesRef.current = synthesis.getVoices()
+            }
+
+            synthesisRef.current = synthesis
+            syncVoices()
+            synthesis.onvoiceschanged = syncVoices
+
+            return () => {
+                if (synthesis.onvoiceschanged === syncVoices) {
+                    synthesis.onvoiceschanged = null
+                }
+            }
         }
     }, [])
 
@@ -120,6 +148,29 @@ export function useVoiceInput(
         }
     }, [setLocalInput])
 
+    const getBrowserLanguage = useCallback(() => {
+        if (typeof navigator === "undefined") return null
+        return navigator.language || null
+    }, [])
+
+    const resolveInputLanguageHint = useCallback(() => {
+        return resolveVoiceHintLanguage({
+            uiLanguage: language,
+            initialLanguage: settings.initialLanguage,
+            browserLanguage: getBrowserLanguage(),
+        })
+    }, [getBrowserLanguage, language, settings.initialLanguage])
+
+    const resolvePlaybackLanguage = useCallback((text?: string | null) => {
+        return resolveVoiceTextLanguage({
+            text,
+            explicitLanguage: language,
+            initialLanguage: settings.initialLanguage,
+            browserLanguage: getBrowserLanguage(),
+            fallback: "en",
+        })
+    }, [getBrowserLanguage, language, settings.initialLanguage])
+
     const transcribeAudio = useCallback(async (audioBlob: Blob): Promise<string> => {
         const formData = new FormData()
         const mimeType = audioBlob.type || "audio/webm"
@@ -130,7 +181,7 @@ export function useVoiceInput(
         else if (mimeType.includes("wav")) ext = "wav"
 
         formData.append("audio", audioBlob, `recording.${ext}`)
-        formData.append("language", language)
+        formData.append("language", resolveInputLanguageHint() || "auto")
 
         const response = await fetch("/api/voice/transcribe", {
             method: "POST",
@@ -144,7 +195,104 @@ export function useVoiceInput(
 
         const data = await response.json()
         return data.text || ""
-    }, [language])
+    }, [resolveInputLanguageHint])
+
+    const playSpeechText = useCallback(async (speechText: string, options: PlaySpeechOptions) => {
+        const scheduleResumeAfterPlayback = () => {
+            finishSpeaking(options)
+
+            if (options.resumeSessionAfterPlayback && isVoiceSessionActiveRef.current && !isMutedRef.current) {
+                clearResumeListeningTimer()
+                resumeListeningTimerRef.current = setTimeout(() => {
+                    if (isVoiceSessionActiveRef.current && !isMutedRef.current && !isListeningRef.current && !isSpeakingRef.current) {
+                        void startRecordingRef.current?.()
+                    }
+                }, 300)
+            }
+        }
+
+        const fallbackToBrowserTTS = () => {
+            if (typeof window === "undefined" || !window.speechSynthesis) {
+                scheduleResumeAfterPlayback()
+                return
+            }
+
+            const resolvedLanguage = resolvePlaybackLanguage(speechText)
+            const utterance = new SpeechSynthesisUtterance(speechText)
+            utterance.lang = toVoiceLocale(resolvedLanguage)
+
+            const preferredVoice = pickSpeechSynthesisVoice(availableVoicesRef.current, {
+                language: resolvedLanguage,
+                preferredVoice: settings.preferredVoice,
+            })
+
+            if (preferredVoice) {
+                utterance.voice = preferredVoice
+            }
+
+            utterance.rate = resolvedLanguage === "tr" ? 0.96 : 1
+            utterance.pitch = 1
+            utterance.onend = scheduleResumeAfterPlayback
+            utterance.onerror = scheduleResumeAfterPlayback
+
+            window.speechSynthesis.cancel()
+            window.speechSynthesis.speak(utterance)
+        }
+
+        setIsSpeaking(options.speakingKey)
+        setVoiceStatus("speaking")
+
+        try {
+            const response = await fetch("/api/voice/speak", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: speechText,
+                    chatbotId,
+                    provider: settings.voiceProvider,
+                    voiceId: settings.elevenLabsVoiceId,
+                    preferredVoice: settings.preferredVoice,
+                    language: resolvePlaybackLanguage(speechText),
+                }),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || `Speech synthesis failed: ${response.status}`)
+            }
+
+            const blob = await response.blob()
+            const url = URL.createObjectURL(blob)
+            const audio = new Audio(url)
+
+            currentAudioRef.current = audio
+
+            audio.onended = () => {
+                URL.revokeObjectURL(url)
+                scheduleResumeAfterPlayback()
+            }
+
+            audio.onerror = () => {
+                URL.revokeObjectURL(url)
+                currentAudioRef.current = null
+                fallbackToBrowserTTS()
+            }
+
+            await audio.play()
+        } catch (error) {
+            console.error("[Voice] Managed TTS error, falling back to browser TTS:", error)
+            currentAudioRef.current = null
+            fallbackToBrowserTTS()
+        }
+    }, [
+        chatbotId,
+        clearResumeListeningTimer,
+        finishSpeaking,
+        resolvePlaybackLanguage,
+        settings.elevenLabsVoiceId,
+        settings.preferredVoice,
+        settings.voiceProvider,
+    ])
 
     const getAudioLevel = useCallback((): number => {
         if (!analyserRef.current) return 0
@@ -259,84 +407,14 @@ export function useVoiceInput(
                     setLocalInput(text.trim())
                     setVoiceStatus("processing")
 
-                    const responseText = await sendMessage(text.trim(), false)
+                    const responseText = await sendMessage(text.trim(), false, undefined, null, null, true)
                     if (!responseText) {
                         setVoiceStatus("idle")
                         setLocalInput("")
                         return
                     }
 
-                    const playSpeech = async (speechText: string, options: PlaySpeechOptions) => {
-                        const scheduleResumeAfterPlayback = () => {
-                            finishSpeaking(options)
-
-                            if (options.resumeSessionAfterPlayback && isVoiceSessionActiveRef.current && !isMutedRef.current) {
-                                resumeListeningTimerRef.current = setTimeout(() => {
-                                    if (isVoiceSessionActiveRef.current && !isMutedRef.current && !isListeningRef.current && !isSpeakingRef.current) {
-                                        void startRecording()
-                                    }
-                                }, 300)
-                            }
-                        }
-
-                        const fallbackToBrowserTTS = () => {
-                            if (typeof window === "undefined" || !window.speechSynthesis) {
-                                scheduleResumeAfterPlayback()
-                                return
-                            }
-
-                            const utterance = new SpeechSynthesisUtterance(speechText)
-                            utterance.lang = language === "tr" ? "tr-TR" : "en-US"
-                            utterance.onend = scheduleResumeAfterPlayback
-                            utterance.onerror = scheduleResumeAfterPlayback
-                            window.speechSynthesis.cancel()
-                            window.speechSynthesis.speak(utterance)
-                        }
-
-                        setIsSpeaking(options.speakingKey)
-                        setVoiceStatus("speaking")
-
-                        try {
-                            const response = await fetch("/api/voice/elevenlabs", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    text: speechText,
-                                    voiceId: settings.elevenLabsVoiceId,
-                                    chatbotId,
-                                }),
-                            })
-
-                            if (!response.ok) {
-                                throw new Error("ElevenLabs TTS failed")
-                            }
-
-                            const blob = await response.blob()
-                            const url = URL.createObjectURL(blob)
-                            const audio = new Audio(url)
-
-                            currentAudioRef.current = audio
-
-                            audio.onended = () => {
-                                URL.revokeObjectURL(url)
-                                scheduleResumeAfterPlayback()
-                            }
-
-                            audio.onerror = () => {
-                                URL.revokeObjectURL(url)
-                                currentAudioRef.current = null
-                                fallbackToBrowserTTS()
-                            }
-
-                            await audio.play()
-                        } catch (error) {
-                            console.error("[Voice] ElevenLabs TTS error, falling back to browser TTS:", error)
-                            currentAudioRef.current = null
-                            fallbackToBrowserTTS()
-                        }
-                    }
-
-                    await playSpeech(responseText, {
+                    await playSpeechText(responseText, {
                         speakingKey: "voice-session",
                         resumeSessionAfterPlayback: true,
                         clearLocalInput: true,
@@ -407,7 +485,11 @@ export function useVoiceInput(
             setVoiceStatus("idle")
             setLocalInput(language === "tr" ? "Mikrofon erişimi sağlanamadı." : "Could not access microphone.")
         }
-    }, [chatbotId, clearRecordingTimers, clearResumeListeningTimer, finishSpeaking, getAudioLevel, language, sendMessage, setLocalInput, settings.elevenLabsVoiceId, teardownInputResources, transcribeAudio])
+    }, [clearRecordingTimers, clearResumeListeningTimer, getAudioLevel, language, playSpeechText, sendMessage, setLocalInput, teardownInputResources, transcribeAudio])
+
+    useEffect(() => {
+        startRecordingRef.current = startRecording
+    }, [startRecording])
 
     const discardCurrentRecording = useCallback(() => {
         clearRecordingTimers()
@@ -487,67 +569,12 @@ export function useVoiceInput(
 
     const speakText = useCallback(async (text: string, messageId: string | null = null) => {
         if (!text) return
-
-        const scheduleFinish = () => {
-            setIsSpeaking(null)
-            currentAudioRef.current = null
-        }
-
-        const fallbackToBrowserTTS = () => {
-            if (typeof window === "undefined" || !window.speechSynthesis) {
-                scheduleFinish()
-                return
-            }
-
-            const utterance = new SpeechSynthesisUtterance(text)
-            utterance.lang = language === "tr" ? "tr-TR" : "en-US"
-            utterance.onend = scheduleFinish
-            utterance.onerror = scheduleFinish
-            window.speechSynthesis.cancel()
-            window.speechSynthesis.speak(utterance)
-        }
-
-        setIsSpeaking(messageId || "auto")
-
-        try {
-            const response = await fetch("/api/voice/elevenlabs", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    text,
-                    chatbotId,
-                    voiceId: settings.elevenLabsVoiceId,
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error("ElevenLabs TTS failed")
-            }
-
-            const blob = await response.blob()
-            const url = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-
-            currentAudioRef.current = audio
-
-            audio.onended = () => {
-                URL.revokeObjectURL(url)
-                scheduleFinish()
-            }
-
-            audio.onerror = () => {
-                URL.revokeObjectURL(url)
-                currentAudioRef.current = null
-                fallbackToBrowserTTS()
-            }
-
-            await audio.play()
-        } catch (error) {
-            console.error("TTS Error:", error)
-            currentAudioRef.current = null
-            fallbackToBrowserTTS()
-        }
-    }, [chatbotId, language, settings.elevenLabsVoiceId])
+        await playSpeechText(text, {
+            speakingKey: messageId || "auto",
+            resumeSessionAfterPlayback: false,
+            clearLocalInput: false,
+        })
+    }, [playSpeechText])
 
     const handleSpeak = useCallback((text: string, messageId: string) => {
         if (isSpeaking === messageId) {
@@ -561,6 +588,7 @@ export function useVoiceInput(
             }
 
             setIsSpeaking(null)
+            setVoiceStatus("idle")
             return
         }
 

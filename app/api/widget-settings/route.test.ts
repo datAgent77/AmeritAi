@@ -175,4 +175,22 @@ describe("GET /api/widget-settings", () => {
         expect(payload.enableVoiceAssistant).toBe(true)
         expect(payload.elevenLabsVoiceId).toBe("voice-123")
     })
+
+    test("returns enterprise dynamic context mode and keeps pii crawl disabled by default", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            chatbotData: {
+                companyName: "Userex",
+                enableDynamicContext: true,
+                dynamicContextMode: "enterprise_adapter",
+                dynamicSiteContextCapturePII: false,
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.dynamicContextMode).toBe("enterprise_adapter")
+        expect(payload.dynamicSiteContextCapturePII).toBe(false)
+    })
 })

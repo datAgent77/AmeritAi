@@ -28,6 +28,21 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
     const [apiKey, setApiKey] = useState("")
     const [voiceId, setVoiceId] = useState("")
     const [enableElevenLabs, setEnableElevenLabs] = useState(false)
+    const [preferredVoice, setPreferredVoice] = useState("sage")
+
+    const openAiVoiceOptions = [
+        { value: "sage", label: "Sage" },
+        { value: "alloy", label: "Alloy" },
+        { value: "ash", label: "Ash" },
+        { value: "ballad", label: "Ballad" },
+        { value: "coral", label: "Coral" },
+        { value: "echo", label: "Echo" },
+        { value: "fable", label: "Fable" },
+        { value: "nova", label: "Nova" },
+        { value: "onyx", label: "Onyx" },
+        { value: "shimmer", label: "Shimmer" },
+        { value: "verse", label: "Verse" },
+    ]
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -46,6 +61,7 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
                 setApiKey(data.elevenLabsApiKey || "")
                 setVoiceId(data.elevenLabsVoiceId || "")
                 setEnableElevenLabs(data.enableElevenLabs ?? data.voiceProvider === 'elevenlabs')
+                setPreferredVoice(data.preferredVoice || "sage")
             } catch (error) {
                 console.error("Error fetching settings:", error)
             } finally {
@@ -74,12 +90,15 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
                         elevenLabsVoiceId: voiceId,
                         enableElevenLabs,
                         enableVoiceAssistant: enableElevenLabs,
-                        voiceProvider: 'elevenlabs'
+                        voiceProvider: 'elevenlabs',
+                        preferredVoice,
                     },
                     chatbotSettings: {
                         enableVoiceAssistant: enableElevenLabs,
                         voiceProvider: 'elevenlabs',
-                        enableElevenLabs
+                        enableElevenLabs,
+                        elevenLabsVoiceId: voiceId,
+                        preferredVoice,
                     }
                 })
             })
@@ -136,7 +155,7 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
                             <div>
                                 <CardTitle className="text-lg">{t('elevenLabsTitle')}</CardTitle>
                                 <CardDescription className="mt-1">
-                                    {t('elevenLabsDesc')}
+                                    {t('elevenLabsDesc')} Turkce web voice varsayilan olarak daha dusuk gecikmeli konusma preset&apos;i kullanir.
                                 </CardDescription>
                             </div>
                         </div>
@@ -174,6 +193,24 @@ export function VoiceSettingsForm({ targetUserId, isSuperAdmin = false }: VoiceS
                                 Örnek: Rachel (21m00Tcm4TlvDq8ikWAM)
                             </p>
                         )}
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="preferredVoice">{t('preferredVoice') || 'Preferred Voice'}</Label>
+                        <select
+                            id="preferredVoice"
+                            value={preferredVoice}
+                            onChange={(e) => setPreferredVoice(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                            {openAiVoiceOptions.map((voice) => (
+                                <option key={voice.value} value={voice.value}>
+                                    {voice.label}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-muted-foreground">
+                            ElevenLabs kullanilamazsa web voice bu sesi OpenAI ile uretir. Turkce konusmada once gercek zamanli ElevenLabs preset&apos;i kullanilir; OpenAI fallback icin en guvenli secenek yine `sage`.
+                        </p>
                     </div>
                 </CardContent>
                 {enableElevenLabs && (

@@ -48,6 +48,9 @@ export default function ChatbotContainer() {
         description?: string
         pageText?: string
         dynamicData?: Record<string, any>
+        publicContext?: Record<string, unknown>
+        privateContextSummary?: Record<string, unknown>
+        assistantContextSource?: string
         siteSessionContext?: Record<string, any>
         crawlStatus?: Record<string, any>
     } | null>(null)
@@ -197,11 +200,18 @@ export default function ChatbotContainer() {
 
     // 5. Circular Dependency Resolution (Voice <-> Chat)
     // We create a mutable ref for sendMessage so Voice hook can use it before Chat hook is fully initialized
-    const sendMessageRef = useRef<((text: string, speakResponse?: boolean, visualContext?: string) => Promise<string>) | null>(null)
+    const sendMessageRef = useRef<((text: string, speakResponse?: boolean, visualContext?: string, guidedEvent?: GuidedSkillClientEvent | null, mediaPayload?: UserMessageMediaPayload | null, isVoiceTurn?: boolean) => Promise<string>) | null>(null)
 
-    const proxySendMessage = async (text: string, speakResponse?: boolean, visualContext?: string) => {
+    const proxySendMessage = async (
+        text: string,
+        speakResponse?: boolean,
+        visualContext?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null,
+        isVoiceTurn?: boolean
+    ) => {
         if (sendMessageRef.current) {
-            return sendMessageRef.current(text, speakResponse, visualContext)
+            return sendMessageRef.current(text, speakResponse, visualContext, guidedEvent, mediaPayload, isVoiceTurn)
         }
         return ""
     }
