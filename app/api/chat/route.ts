@@ -926,6 +926,18 @@ export async function POST(req: Request) {
                 },
             });
         } else {
+            if (activeSessionId && result.content) {
+                await saveMessageToSession(
+                    activeSessionId,
+                    chatbotId,
+                    {
+                        role: "assistant",
+                        content: result.content,
+                        id: assistantMessageId || `assistant-nonstream-${Date.now()}`,
+                    },
+                    userId
+                );
+            }
             return new Response(result.content, { status: 200 });
         }
 

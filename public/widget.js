@@ -4677,7 +4677,9 @@
       user: getUserData(),
       publicContext: publicContext,
       privateContextSummary: privateContextSummary,
-      assistantContextSource: trustedContext.source || (isEnterpriseContextMode() ? 'enterprise_bridge' : 'nocode_scrape'),
+      assistantContextSource: trustedContext.source && trustedContext.source !== 'none'
+        ? trustedContext.source
+        : (isEnterpriseContextMode() ? 'enterprise_bridge' : 'nocode_scrape'),
       // NEW: Dynamic Data
       dynamicData: !isEnterpriseContextMode() && Object.keys(dynamicContextData || {}).length > 0 ? dynamicContextData : undefined,
       siteSessionContext: siteContextForAI,

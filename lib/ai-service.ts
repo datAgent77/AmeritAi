@@ -169,6 +169,99 @@ function getUnknownResponse(language?: string, question?: string): string {
     return unknownResponses[resolvedLanguage] || unknownResponses.en;
 }
 
+type EnterprisePrivateQueryType =
+    | "assignments"
+    | "tasks"
+    | "approvals"
+    | "expenses"
+    | "leave"
+    | "projects"
+    | "profile";
+
+function detectEnterprisePrivateQuery(question: string): EnterprisePrivateQueryType | null {
+    const q = (question || "").toLowerCase();
+
+    if (/(zimmet|demirbaş|demirbas|asset|assets|equipment|device|devices|inventory|envanter|laptop|badge|kartım|kartim)/.test(q)) {
+        return "assignments";
+    }
+    if (/(görev|gorev|task|tasks|to do|todo|işlerim|islerim|work item|work items)/.test(q)) {
+        return "tasks";
+    }
+    if (/(onay|approval|approvals|bekleyen onay|approval queue)/.test(q)) {
+        return "approvals";
+    }
+    if (/(masraf|expense|expenses|harcama|claim|beyan)/.test(q)) {
+        return "expenses";
+    }
+    if (/(izin|leave|vacation|holiday|annual leave|yıllık izin|yillik izin)/.test(q)) {
+        return "leave";
+    }
+    if (/(proje|project|projects|milestone|teslim|deadline)/.test(q)) {
+        return "projects";
+    }
+    if (/(sicil|ünvan|unvan|departman|department|manager|yönetici|yonetici|profil|profile|employee|çalışan|calisan)/.test(q)) {
+        return "profile";
+    }
+
+    return null;
+}
+
+function hasMatchingSummaryKeys(value: unknown, patterns: RegExp[], depth = 0): boolean {
+    if (!value || typeof value !== "object" || depth > 4) return false;
+    if (Array.isArray(value)) {
+        return value.some((item) => hasMatchingSummaryKeys(item, patterns, depth + 1));
+    }
+    return Object.entries(value as Record<string, unknown>).some(([key, child]) => {
+        if (patterns.some((pattern) => pattern.test(key))) return true;
+        return hasMatchingSummaryKeys(child, patterns, depth + 1);
+    });
+}
+
+function hasEnterpriseSummaryForQuery(summary: Record<string, unknown> | undefined, queryType: EnterprisePrivateQueryType): boolean {
+    if (!summary) return false;
+
+    const patternsByType: Record<EnterprisePrivateQueryType, RegExp[]> = {
+        assignments: [/assign/i, /asset/i, /equip/i, /device/i, /inventory/i, /zimmet/i, /demir/i],
+        tasks: [/task/i, /todo/i, /workitem/i, /gorev/i],
+        approvals: [/approval/i, /onay/i, /queue/i],
+        expenses: [/expense/i, /masraf/i, /claim/i, /harcama/i, /beyan/i],
+        leave: [/leave/i, /izin/i, /vacation/i, /holiday/i],
+        projects: [/project/i, /proje/i, /milestone/i, /deadline/i],
+        profile: [/employee/i, /profile/i, /person/i, /department/i, /manager/i, /title/i, /unvan/i, /departman/i, /yonetici/i, /sicil/i],
+    };
+
+    return hasMatchingSummaryKeys(summary, patternsByType[queryType]);
+}
+
+function getEnterpriseContextFallback(language: string | undefined, queryType: EnterprisePrivateQueryType): string {
+    const resolvedLanguage = resolveConversationLanguage({
+        explicitLanguage: language,
+        userText: "",
+    });
+
+    const tr: Record<EnterprisePrivateQueryType, string> = {
+        assignments: "Su anda canli zimmet bilginize erisemiyorum. Bu oturumda zimmet ozeti geldiginde uzerinizdeki kayitlari burada dogrudan listeleyebilirim.",
+        tasks: "Su anda canli gorev bilginize erisemiyorum. Bu oturumda gorev ozeti geldiginde acik ve geciken gorevlerinizi burada dogrudan soyleyebilirim.",
+        approvals: "Su anda canli onay bilginize erisemiyorum. Bu oturumda onay ozeti geldiginde bekleyen onaylarinizi burada dogrudan listeleyebilirim.",
+        expenses: "Su anda canli masraf bilginize erisemiyorum. Bu oturumda masraf ozeti geldiginde durumlari burada dogrudan paylasabilirim.",
+        leave: "Su anda canli izin bilginize erisemiyorum. Bu oturumda izin ozeti geldiginde kalan izin ve bekleyen talepleri burada dogrudan soyleyebilirim.",
+        projects: "Su anda canli proje bilginize erisemiyorum. Bu oturumda proje ozeti geldiginde aktif ve geciken projelerinizi burada dogrudan paylasabilirim.",
+        profile: "Su anda canli profil bilginize erisemiyorum. Bu oturumda personel ozeti geldiginde unvan, yonetici ve organizasyon bilgilerinizi burada dogrudan aktarabilirim.",
+    };
+
+    const en: Record<EnterprisePrivateQueryType, string> = {
+        assignments: "I can't access your live assignment data right now. Once this session receives an assignment summary, I can list your assigned assets directly here.",
+        tasks: "I can't access your live task data right now. Once this session receives a task summary, I can tell you your open and overdue tasks directly here.",
+        approvals: "I can't access your live approval data right now. Once this session receives an approval summary, I can list your pending approvals directly here.",
+        expenses: "I can't access your live expense data right now. Once this session receives an expense summary, I can share your current expense statuses directly here.",
+        leave: "I can't access your live leave data right now. Once this session receives a leave summary, I can tell you your remaining leave and pending requests directly here.",
+        projects: "I can't access your live project data right now. Once this session receives a project summary, I can share your active and delayed projects directly here.",
+        profile: "I can't access your live profile data right now. Once this session receives a profile summary, I can share your title, manager, and organization details directly here.",
+    };
+
+    return resolvedLanguage === "tr" ? tr[queryType] : en[queryType];
+}
+
 function stripVoiceUiArtifacts(input: string): string {
     return input
         .replace(/\[SHOW_[A-Z_]+\]/g, " ")
@@ -408,6 +501,23 @@ export async function generateAIResponse(
         const chatbotData = chatbotSnap.exists ? chatbotSnap.data() : null;
         const shopperConfig = chatbotData?.shopperConfig;
         const isShopperEnabled = chatbotData?.enablePersonalShopper === true;
+        const assistantContextSource = typeof userContext?.assistantContextSource === "string"
+            ? userContext.assistantContextSource
+            : "";
+        const isEnterpriseBridgeContext = assistantContextSource === "enterprise_bridge" || assistantContextSource === "host_app";
+        const enterprisePrivateQuery = detectEnterprisePrivateQuery(lastMessage.content || "");
+        const hasRelevantEnterpriseSummary = enterprisePrivateQuery
+            ? hasEnterpriseSummaryForQuery(userContext?.privateContextSummary, enterprisePrivateQuery)
+            : false;
+
+        if (isEnterpriseBridgeContext && enterprisePrivateQuery && !hasRelevantEnterpriseSummary) {
+            return {
+                content: getEnterpriseContextFallback(resolvedLanguage, enterprisePrivateQuery),
+                isStream: false,
+                context: "",
+                modelUsed: "enterprise-context-fallback",
+            };
+        }
 
         // 3. Determine AI Config: Tenant-specific or Global
         let provider: string;
@@ -905,6 +1015,11 @@ VOICE-SAFE RULES:
                             ? `\n\n🧾 PRIVATE CONTEXT SUMMARY:\nLoginli kullaniciya ait ozet first-party sistem tarafindan uretildi. Gorevler, projeler, onaylar, masraflar ve izinler gibi kisisellestirilmis destek sorularinda once bu ozeti kullan. Ham kimlik/iletisim belgeleri varsayma veya uydurma.\n`
                             : `\n\n🧾 PRIVATE CONTEXT SUMMARY:\nThis authenticated user summary was produced by the first-party system. Prefer it first for personalized support about tasks, projects, approvals, expenses, and leave. Never invent hidden identity/contact records.\n`;
                     }
+                    if (userContext?.assistantContextSource === "enterprise_bridge" || userContext?.assistantContextSource === "host_app") {
+                        instruction += langKey === "tr"
+                            ? `\n\n🏢 ENTERPRISE PORTAL KURALI:\nKullanici gorev, proje, onay, masraf, izin, zimmet veya profil gibi loginli calisan verisi soruyorsa yalnizca private summary'deki canli alanlari kullan. Private summary ilgili modulu icermiyorsa genel link, "buraya tiklayin", "giris yapin" veya sayfa uydurma yonlendirmesi verme. Bunun yerine ilgili canli modül ozetinin bu oturumda bagli olmadigini acikca soyle.\n`
+                            : `\n\n🏢 ENTERPRISE PORTAL RULE:\nIf the user asks about authenticated employee data such as tasks, projects, approvals, expenses, leave, assignments, or profile details, use only the live fields in private summary. If the relevant module is not present in private summary, do not invent generic links, login steps, or page navigation. Clearly state that the live module summary is not connected in this session.\n`;
+                    }
                     if (dynamicData) {
                         instruction += langKey === 'tr'
                             ? `\n\n📊 CANLI KULLANICI VERİLERİ (SİSTEMDEN):\n`
@@ -1045,10 +1160,6 @@ In voice mode you must continue the flow verbally and ask only the next missing 
                         userText: latestUserMessage?.content || lastMessage.content,
                     })
                     : rawResultContent;
-
-                if (sessionId) {
-                    await saveMessageToSession(sessionId, chatbotId, { role: "assistant", content: resultContent });
-                }
 
                 return { content: resultContent, isStream: false, context, modelUsed: attempt.model };
             } catch (providerError) {
