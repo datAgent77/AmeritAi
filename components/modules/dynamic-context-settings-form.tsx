@@ -191,6 +191,42 @@ export default function DynamicContextSettings() {
   }
 }`, [])
 
+    const enterpriseDeveloperBrief = useMemo(() => language === "tr"
+        ? `Developer brief
+
+Bu modda ilk fazda yapman gereken sey service yazmak degil, host app icinde guvenli context bridge'i baglamak.
+
+1. window.VionContextBridge.getSnapshot() implement et.
+2. Widget'a sadece publicContext ve privateContextSummary dondur.
+3. Route veya ekran verisi degistiginde:
+   window.UserexWidget?.setContext(window.VionContextBridge.getSnapshot())
+4. Ham personel verisi gonderme:
+   TC kimlik, dogum tarihi, kisisel GSM, adres, saglik verisi, izin nedeni, ham dokuman.
+5. /api/assistant/... endpoint ornekleri su an hazir Vion servisi degil.
+6. resolveTool ikinci faz; ilk fazda sadece getSnapshot yeterli.
+
+Minimum kontrat:
+- source: "host_app"
+- publicContext: modul, page, companyName, counters gibi dusuk riskli alanlar
+- privateContextSummary: employee, tasks, approvals, projects, expenses, leave gibi minimize edilmis ozetler`
+        : `Developer brief
+
+In phase one, do not start by building services. First wire the safe context bridge inside the host app.
+
+1. Implement window.VionContextBridge.getSnapshot().
+2. Return only publicContext and privateContextSummary to the widget.
+3. When the route or page data changes, call:
+   window.UserexWidget?.setContext(window.VionContextBridge.getSnapshot())
+4. Do not send raw employee data:
+   national ID, birth date, personal phone, address, health data, leave reason, raw documents.
+5. The /api/assistant/... endpoints shown here are examples only, not built-in Vion services.
+6. resolveTool is phase two; for phase one, getSnapshot alone is enough.
+
+Minimum contract:
+- source: "host_app"
+- publicContext: low-risk values like module, page, companyName, counters
+- privateContextSummary: minimized summaries such as employee, tasks, approvals, projects, expenses, leave`, [language])
+
     useEffect(() => {
         const loadSettings = async () => {
             if (!targetUserId) return
@@ -533,9 +569,13 @@ export default function DynamicContextSettings() {
                 <div>
                     <h1 className="text-2xl font-bold">{language === "tr" ? "Dinamik Veri Bağlamı" : "Dynamic Data Context"}</h1>
                     <p className="text-muted-foreground">
-                        {language === "tr"
-                            ? "Sadece Seçici Modu ile sayfadaki canlı verileri AI'a aktarın."
-                            : "Inject live page data into AI using Selector Mode only."}
+                        {dynamicContextMode === "enterprise_adapter"
+                            ? (language === "tr"
+                                ? "Asistanin loginli kurumsal portal verilerini host uygulamanin guvenli ozetleriyle anlik okuyup daha kisisellestirilmis yardim vermesi icin kullanilir."
+                                : "Use this to let the assistant read authenticated enterprise context through safe host-provided summaries and deliver more personalized help.")
+                            : (language === "tr"
+                                ? "Asistanin sayfadaki acik ve dusuk riskli canli verileri okuyup daha dogru yanit vermesi icin kullanilir."
+                                : "Use this to let the assistant read open, low-risk live page data and answer more accurately.")}
                     </p>
                 </div>
 
@@ -659,13 +699,18 @@ export default function DynamicContextSettings() {
 
                             <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
                                 <div className="text-sm font-semibold">
-                                    {language === "tr" ? "Opsiyonel Tool Bridge Ornegi" : "Optional Tool Bridge Example"}
+                                    {language === "tr" ? "Opsiyonel Tool Bridge Ornegi (Mimari Ornek)" : "Optional Tool Bridge Example (Architecture Example)"}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     {language === "tr"
                                         ? "Anlik ve loginli veriler icin host uygulama kendi first-party endpointlerini kullanmali. Ham personel verisini prompta gommeyin."
                                         : "For live authenticated data, the host app should use first-party endpoints. Do not embed raw employee records into the prompt."}
                                 </p>
+                                <div className="rounded-md border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-800">
+                                    {language === "tr"
+                                        ? "Not: Bu endpoint path'leri sadece ornek. Vion repo'sunda hazir gelmez ve widget su anda resolveTool() cagirmiyor. Canli kullanim icin tenant'in kendi backend servislerini yazmasi ve bu akisi ayrica baglamasi gerekir."
+                                        : "Note: These endpoint paths are examples only. They are not shipped by default in Vion, and the widget does not currently call resolveTool() automatically. For live usage, the tenant must implement their own backend services and wire this flow separately."}
+                                </div>
                                 <pre className="overflow-x-auto rounded-md bg-background p-3 text-[11px] leading-5 border">
                                     <code>{enterpriseToolSnippet}</code>
                                 </pre>
@@ -731,6 +776,22 @@ export default function DynamicContextSettings() {
                                         : "Never place national ID, birth date, personal phone, address, leave reason, health data, or raw documents into the bridge payload."}
                                 </li>
                             </ol>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{language === "tr" ? "Developer Yönergesi" : "Developer Brief"}</CardTitle>
+                            <CardDescription>
+                                {language === "tr"
+                                    ? "Asagidaki metin dogrudan tenant developer'ina gonderilecek kadar kisadir."
+                                    : "This text is short enough to forward directly to the tenant developer."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <pre className="whitespace-pre-wrap rounded-md border bg-muted/20 p-4 text-[12px] leading-6 text-muted-foreground">
+                                <code>{enterpriseDeveloperBrief}</code>
+                            </pre>
                         </CardContent>
                     </Card>
                 </>
