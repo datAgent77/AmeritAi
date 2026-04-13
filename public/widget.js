@@ -24,6 +24,8 @@
 
   const attrColor = currentScript.getAttribute('data-color');
   const chatbotId = currentScript.getAttribute('data-chatbot-id') || 'default';
+  const runtimeModeAttr = (currentScript.getAttribute('data-runtime-mode') || '').toLowerCase();
+  const widgetRuntimeMode = runtimeModeAttr || (window.location.pathname.startsWith('/widget-test') ? 'test' : 'public');
   const previewDraftKey = currentScript.getAttribute('data-preview-draft-key') || '';
   const previewAmbientDockState = currentScript.getAttribute('data-preview-ambient-dock-state') || '';
   const previewAmbientThinking = currentScript.getAttribute('data-preview-ambient-thinking') === 'true';
@@ -4605,7 +4607,7 @@
   let widgetOriginPrewarmed = false;
 
   function getSettingsCacheKey() {
-    return `userex_widget_settings_v1:${baseUrl}:${chatbotId}`;
+    return `userex_widget_settings_v2:${baseUrl}:${chatbotId}:${widgetRuntimeMode}`;
   }
 
   function readCachedSettings() {
@@ -4794,7 +4796,15 @@
     const previewDraftSettings = readPreviewDraftSettings();
 
     try {
-      const response = await fetch(`${baseUrl}/api/widget-settings?chatbotId=${chatbotId}&t=${Date.now()}`, {
+      const params = new URLSearchParams({
+        chatbotId,
+        t: String(Date.now())
+      });
+      if (widgetRuntimeMode === 'test') {
+        params.set('testMode', '1');
+      }
+
+      const response = await fetch(`${baseUrl}/api/widget-settings?${params.toString()}`, {
         cache: 'no-store'
       });
       if (!response.ok) throw new Error('Failed to fetch settings');

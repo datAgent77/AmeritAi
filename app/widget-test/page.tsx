@@ -50,6 +50,7 @@ function WidgetTestPageContent() {
         const script = document.createElement("script")
         script.src = `/widget.js?t=${Date.now()}`
         script.setAttribute("data-chatbot-id", id)
+        script.setAttribute("data-runtime-mode", "test")
         // We can optionally fetch the brand color here if we want to be precise, 
         // but the widget.js fetches settings from API anyway. 
         // We'll just set a default or let the widget handle it.
