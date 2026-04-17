@@ -51,7 +51,8 @@ const parseLineList = (value: string) =>
 
 export default function DynamicContextSettings() {
     const { t, language } = useLanguage()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
+    const isSysAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
     const { toast } = useToast()
     const searchParams = useSearchParams()
 
@@ -579,18 +580,20 @@ Minimum contract:
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-800">
-                    <span className={`text-sm font-medium ${isEnabled ? "text-green-600 dark:text-green-400" : "text-zinc-500"}`}>
-                        {isEnabled
-                            ? language === "tr"
-                                ? "Modül Aktif"
-                                : "Module Active"
-                            : language === "tr"
-                                ? "Modül Pasif"
-                                : "Module Inactive"}
-                    </span>
-                    <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
-                </div>
+                {isSysAdmin && (
+                    <div className="flex items-center gap-3 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-800">
+                        <span className={`text-sm font-medium ${isEnabled ? "text-green-600 dark:text-green-400" : "text-zinc-500"}`}>
+                            {isEnabled
+                                ? language === "tr"
+                                    ? "Modül Aktif"
+                                    : "Module Active"
+                                : language === "tr"
+                                    ? "Modül Pasif"
+                                    : "Module Inactive"}
+                        </span>
+                        <Switch checked={isEnabled} onCheckedChange={setIsEnabled} />
+                    </div>
+                )}
             </div>
 
             <Card>

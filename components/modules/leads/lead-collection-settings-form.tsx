@@ -28,7 +28,8 @@ interface LeadCollectionSettingsFormProps {
 }
 
 export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false }: LeadCollectionSettingsFormProps) {
-    const { user } = useAuth()
+    const { user, role } = useAuth()
+    const isSysAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
     const { t } = useLanguage()
     const { toast } = useToast()
 
@@ -246,43 +247,45 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
 
             <div className="grid gap-6 max-w-3xl">
                 {/* Lead Collection Toggles */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('moduleStatus') || "Modül Durumu"}</CardTitle>
-                        <CardDescription>
-                            {t('leadCollectionStatusDesc') || "Potansiyel müşteri toplama yöntemlerini ayrı ayrı yapılandırın."}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Initial Lead Collection */}
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">{t('enableInitialLeadCollection') || "Başlangıç Lead Toplama"}</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    {t('enableInitialLeadCollectionDesc') || "Sohbet başlamadan önce form göster."}
-                                </p>
+                {(isSuperAdmin || isSysAdmin) && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('moduleStatus') || "Modül Durumu"}</CardTitle>
+                            <CardDescription>
+                                {t('leadCollectionStatusDesc') || "Potansiyel müşteri toplama yöntemlerini ayrı ayrı yapılandırın."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Initial Lead Collection */}
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">{t('enableInitialLeadCollection') || "Başlangıç Lead Toplama"}</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('enableInitialLeadCollectionDesc') || "Sohbet başlamadan önce form göster."}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={enableInitialLead}
+                                    onCheckedChange={setEnableInitialLead}
+                                />
                             </div>
-                            <Switch
-                                checked={enableInitialLead}
-                                onCheckedChange={setEnableInitialLead}
-                            />
-                        </div>
 
-                        {/* In-Chat Lead Collection */}
-                        <div className="flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">{t('enableInChatLeadCollection') || "Konuşma İçi Lead Toplama"}</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    {t('enableInChatLeadCollectionDesc') || "Kullanıcı 2 mesaj gönderdikten sonra iletişim bilgisi iste."}
-                                </p>
+                            {/* In-Chat Lead Collection */}
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">{t('enableInChatLeadCollection') || "Konuşma İçi Lead Toplama"}</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {t('enableInChatLeadCollectionDesc') || "Kullanıcı 2 mesaj gönderdikten sonra iletişim bilgisi iste."}
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={enableInChatLead}
+                                    onCheckedChange={setEnableInChatLead}
+                                />
                             </div>
-                            <Switch
-                                checked={enableInChatLead}
-                                onCheckedChange={setEnableInChatLead}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Form Customization */}
                 {(enableInitialLead || enableInChatLead) && (

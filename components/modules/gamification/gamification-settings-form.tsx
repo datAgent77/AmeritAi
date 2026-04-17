@@ -46,7 +46,8 @@ interface GamificationSettingsFormProps {
 }
 
 export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }: GamificationSettingsFormProps) {
-    const { user } = useAuth()
+    const { user, role } = useAuth()
+    const isSysAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
     const { t } = useLanguage()
     const { toast } = useToast()
 
@@ -156,13 +157,15 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                         <CardDescription>{t('wheelConfig') || "Configure the spin-the-wheel popup"}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <Label>{t('enableGame') || "Enable Game"}</Label>
-                            <Switch
-                                checked={config.enabled}
-                                onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enabled: checked }))}
-                            />
-                        </div>
+                        {(isSuperAdmin || isSysAdmin) && (
+                            <div className="flex items-center justify-between">
+                                <Label>{t('enableGame') || "Enable Game"}</Label>
+                                <Switch
+                                    checked={config.enabled}
+                                    onCheckedChange={(checked) => setConfig(prev => ({ ...prev, enabled: checked }))}
+                                />
+                            </div>
+                        )}
 
                         <div className="space-y-4">
                             <Label>{t('prizesProb') || "Prizes (Probability)"}</Label>

@@ -52,7 +52,8 @@ const sectorTemplates: Record<string, BubbleMessage[]> = {
 }
 
 export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: EngagementSettingsFormProps) {
-    const { user } = useAuth()
+    const { user, role } = useAuth()
+    const isSysAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
     const { t } = useLanguage()
     const { toast } = useToast()
     const effectiveUserId = targetUserId
@@ -207,20 +208,22 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         const isDesktop = mode === "desktop"
         return (
             <div className={`flex flex-wrap items-center gap-3 ${isDesktop ? "" : "lg:hidden"}`}>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
-                    <Switch
-                        id={isDesktop ? "module-enabled-desktop" : "module-enabled"}
-                        className="scale-75"
-                        checked={settings.enabled}
-                        onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
-                    />
-                    <Label
-                        htmlFor={isDesktop ? "module-enabled-desktop" : "module-enabled"}
-                        className="text-xs font-medium cursor-pointer"
-                    >
-                        {settings.enabled ? 'Aktif' : 'Pasif'}
-                    </Label>
-                </div>
+                {(isSuperAdmin || isSysAdmin) && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
+                        <Switch
+                            id={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                            className="scale-75"
+                            checked={settings.enabled}
+                            onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
+                        />
+                        <Label
+                            htmlFor={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                            className="text-xs font-medium cursor-pointer"
+                        >
+                            {settings.enabled ? 'Aktif' : 'Pasif'}
+                        </Label>
+                    </div>
+                )}
                 <Button onClick={saveSettings} disabled={isSaving} size="sm" className="h-8 shadow-sm">
                     {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Save className="w-3 h-3 mr-2" />}
                     {t('save') || 'Kaydet'}
