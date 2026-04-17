@@ -74,6 +74,12 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
     enableLeadCollection: false,
     enableGuided: false,
+    kvkkConsent: {
+        enabled: false,
+        text: "",
+        versionHash: "",
+        rejectionContactText: "",
+    },
     enableInitialLeadCollection: false,
     enableInChatLeadCollection: false,
     leadFormConfig: null,
@@ -213,6 +219,19 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
                         enableGuided: data.enableGuided === true,
+                        kvkkConsent: typeof data.kvkkConsent === "object" && data.kvkkConsent
+                            ? {
+                                enabled: data.kvkkConsent.enabled === true,
+                                text: typeof data.kvkkConsent.text === "string" ? data.kvkkConsent.text : "",
+                                versionHash: typeof data.kvkkConsent.versionHash === "string" ? data.kvkkConsent.versionHash : "",
+                                rejectionContactText: typeof data.kvkkConsent.rejectionContactText === "string" ? data.kvkkConsent.rejectionContactText : "",
+                            }
+                            : {
+                                enabled: false,
+                                text: "",
+                                versionHash: "",
+                                rejectionContactText: "",
+                            },
                         enableInitialLeadCollection: (data.enableLeadCollection && data.enableInitialLeadCollection) ?? false,
                         enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
                         leadFormConfig: data.leadFormConfig || null,

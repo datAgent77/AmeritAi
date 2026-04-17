@@ -76,6 +76,12 @@ export interface ChatbotSettings {
     suggestedQuestions: string[];
     enableLeadCollection: boolean;
     enableGuided?: boolean;
+    kvkkConsent?: {
+        enabled: boolean;
+        text: string;
+        versionHash: string;
+        rejectionContactText?: string;
+    };
     enableInitialLeadCollection: boolean;
     enableInChatLeadCollection: boolean;
     leadFormConfig: {

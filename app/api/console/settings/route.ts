@@ -32,6 +32,16 @@ export async function POST(req: Request) {
         // Support legacy 'settings' param as chatbotSettings for backward compat if any,
         // but prefer explicit keys.
         const chatUpdates = chatbotSettings || settings;
+        const stripEnableFlags = (value: any) => {
+            if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+            const copy: Record<string, any> = { ...value };
+            for (const key of Object.keys(copy)) {
+                if (key.startsWith("enable") && key !== "enableHumanHandoff") {
+                    delete copy[key];
+                }
+            }
+            return copy;
+        };
         if (chatUpdates) {
             updates.push(adminDb.collection("chatbots").doc(chatbotId).set(chatUpdates, { merge: true }));
         }

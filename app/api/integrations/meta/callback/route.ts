@@ -108,10 +108,10 @@ export async function GET(req: Request) {
                 channelPayloads.instagram = {
                     enabled: false,
                     webhookStatus: "disconnected",
-                    setupStatus: "draft",
-                    setupStage: "draft",
+                    setupStatus: "error",
+                    setupStage: "go_live",
                     connectionMode,
-                    lastSetupError: discovery.errors.instagram || "Instagram icin uygun sayfa bulunamadi.",
+                    lastSetupError: discovery.errors.instagram || "Instagram için uygun sayfa bulunamadı.",
                 }
             }
         }
@@ -145,10 +145,10 @@ export async function GET(req: Request) {
                 channelPayloads.messenger = {
                     enabled: false,
                     webhookStatus: "disconnected",
-                    setupStatus: "draft",
-                    setupStage: "draft",
+                    setupStatus: "error",
+                    setupStage: "go_live",
                     connectionMode,
-                    lastSetupError: discovery.errors.messenger || "Messenger icin uygun sayfa bulunamadi.",
+                    lastSetupError: discovery.errors.messenger || "Messenger için uygun sayfa bulunamadı.",
                 }
             }
         }
@@ -180,10 +180,10 @@ export async function GET(req: Request) {
                 channelPayloads.whatsapp = {
                     enabled: false,
                     webhookStatus: "disconnected",
-                    setupStatus: "draft",
-                    setupStage: "draft",
+                    setupStatus: "error",
+                    setupStage: "go_live",
                     connectionMode,
-                    lastSetupError: discovery.errors.whatsapp || "WhatsApp icin uygun numara bulunamadi.",
+                    lastSetupError: discovery.errors.whatsapp || "WhatsApp için uygun numara bulunamadı.",
                 }
             }
         }
