@@ -18,6 +18,11 @@ function normalizeConfig(config: any): InstagramChannelConfig {
         webhookStatus: config?.webhookStatus || "disconnected",
         responseWindow: config?.responseWindow || "24h",
         defaultReplyMode: config?.defaultReplyMode || "assistant",
+        setupStatus: config?.setupStatus || "not_started",
+        setupStage: config?.setupStage || "prerequisites",
+        connectionMode: config?.connectionMode || "tenant_meta_app",
+        lastHealthCheckAt: config?.lastHealthCheckAt || null,
+        lastSetupError: config?.lastSetupError || null,
     }
 }
 
@@ -93,6 +98,11 @@ export async function POST(req: Request) {
             webhookStatus: body.webhookStatus || (body.enabled === false ? "disconnected" : existing.webhookStatus || "connected"),
             responseWindow: body.responseWindow ?? existing.responseWindow,
             defaultReplyMode: body.defaultReplyMode ?? existing.defaultReplyMode,
+            setupStatus: body.setupStatus ?? existing.setupStatus,
+            setupStage: body.setupStage ?? existing.setupStage,
+            connectionMode: body.connectionMode ?? existing.connectionMode,
+            lastHealthCheckAt: body.lastHealthCheckAt ?? existing.lastHealthCheckAt,
+            lastSetupError: body.lastSetupError ?? existing.lastSetupError,
             updatedAt: new Date(),
         },
     })

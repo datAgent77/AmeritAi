@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import { getPlan } from "@/lib/pricing-config"
 import { hasIntegrationAccess, getIntegrationMinPlan, INTEGRATION_ACCESS } from "@/lib/integration-access-config"
 import { PricingModal } from "@/components/pricing-modal"
+import { MetaChannelsSetupCard } from "@/components/meta-channels-setup-card"
 
 interface IntegrationPageProps {
     userId: string
@@ -38,6 +39,8 @@ const HIDDEN_INTEGRATION_IDS = new Set([
     "mailchimp",
     "sendgrid",
     "constant-contact",
+    "whatsapp",
+    "instagram",
 ])
 
 export default function IntegrationPage({ userId }: IntegrationPageProps) {
@@ -50,6 +53,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [settings, setSettings] = useState<any>(null)
     const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
+    const [metaSetupStatus, setMetaSetupStatus] = useState<any>(null)
     
     // Plan access state
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -156,6 +160,19 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
 
     // Only our actual integrations
     const integrations: Integration[] = [
+        {
+            id: "meta-channels",
+            name: "Meta Kanallari",
+            description: "Instagram DM, Facebook Messenger ve WhatsApp Business kurulumunu tek OAuth akista yonetin.",
+            icon: <MessageCircle className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
+            connected: Boolean(metaSetupStatus?.channels?.instagram?.connected || metaSetupStatus?.channels?.messenger?.connected || metaSetupStatus?.channels?.whatsapp?.connected),
+            features: [
+                "Meta ile Baglan ile otomatik asset kesfi",
+                "Instagram, Messenger ve WhatsApp icin tek kurulum",
+                "Advanced altinda manuel fallback",
+            ],
+        },
         {
             id: "website",
             name: t('websiteWidget'),
@@ -713,6 +730,16 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                         setConstantContactConnected(true)
                     }
                 }
+
+                const metaStatusRes = await fetch(`/api/integrations/meta/setup-status?chatbotId=${userId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+                if (metaStatusRes.ok) {
+                    const metaStatusData = await metaStatusRes.json()
+                    setMetaSetupStatus(metaStatusData)
+                }
             } catch (error) {
                 console.error("Error fetching settings:", error)
             }
@@ -760,6 +787,26 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     // Render Detail View
     const renderDetailView = () => {
         if (!currentIntegration) return null
+
+        if (currentIntegration.id === "meta-channels") {
+            return (
+                <div className="flex-1 p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setSelectedIntegration(null)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t('backToIntegrations')}
+                        </button>
+                    </div>
+
+                    <div className="w-full">
+                        <MetaChannelsSetupCard chatbotId={userId} />
+                    </div>
+                </div>
+            )
+        }
 
         return (
             <div className="flex-1 p-8">

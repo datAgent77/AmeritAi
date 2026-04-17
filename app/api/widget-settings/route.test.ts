@@ -126,6 +126,57 @@ describe("GET /api/widget-settings", () => {
         expect(payload.enableVoiceAssistant).toBe(false)
     })
 
+    test("keeps the widget test runtime enabled when the Omni web channel is turned off", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            omniConfig: {
+                web: {
+                    enabled: false,
+                },
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1&testMode=1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.isEnabled).toBe(true)
+        expect(payload.enableVoiceAssistant).toBe(true)
+    })
+
+    test("keeps the widget test runtime enabled when the chatbot module is turned off", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: false,
+                isActive: true,
+                elevenLabsApiKey: "sk-test",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1&testMode=1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.isEnabled).toBe(true)
+    })
+
+    test("still disables the widget test runtime when the tenant account itself is inactive", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: false,
+                elevenLabsApiKey: "sk-test",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1&testMode=1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.isEnabled).toBe(false)
+    })
+
     test("disables web voice when the tenant has not enabled the voice module", async () => {
         vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
             chatbotData: {

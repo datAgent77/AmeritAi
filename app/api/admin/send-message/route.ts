@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
-import { dispatchOmniInstagramMessage, dispatchOmniWhatsAppMessage } from "@/lib/omni/channel-dispatch"
+import { dispatchOmniInstagramMessage, dispatchOmniMessengerMessage, dispatchOmniWhatsAppMessage } from "@/lib/omni/channel-dispatch"
+import { FieldValue } from "firebase-admin/firestore"
 
 function detectChannel(sessionId: string, explicitChannel?: string | null) {
     if (explicitChannel) return explicitChannel
     if (sessionId.startsWith("telegram-")) return "telegram"
     if (sessionId.startsWith("whatsapp-")) return "whatsapp"
     if (sessionId.startsWith("instagram-")) return "instagram"
+    if (sessionId.startsWith("messenger-")) return "messenger"
     if (sessionId.startsWith("voice-")) return "voice"
     return "web"
 }
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
 
         const channel = detectChannel(sessionId, sessionData.channel || null)
         const omniConfigSnapshot =
-            channel === "whatsapp" || channel === "instagram"
+            channel === "whatsapp" || channel === "instagram" || channel === "messenger"
                 ? await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
                 : null
         const omniConfig = omniConfigSnapshot?.exists ? omniConfigSnapshot.data() || {} : {}
@@ -70,6 +72,10 @@ export async function POST(req: Request) {
 
         if (channel === "instagram" && omniConfig.instagram?.enabled === false) {
             return NextResponse.json({ error: "Instagram channel is disabled" }, { status: 400 })
+        }
+
+        if (channel === "messenger" && omniConfig.messenger?.enabled === false) {
+            return NextResponse.json({ error: "Messenger channel is disabled" }, { status: 400 })
         }
 
         if (channel === "telegram") {
@@ -99,13 +105,20 @@ export async function POST(req: Request) {
                     humanReply: true,
                 },
             })
+        } else if (channel === "messenger") {
+            await dispatchOmniMessengerMessage(adminDb, chatbotId, sessionData, content, {
+                source: "api/admin/send-message",
+                sessionId,
+                metadata: {
+                    humanReply: true,
+                },
+            })
         } else if (channel === "voice") {
             return NextResponse.json({ error: "Voice sessions cannot receive direct text replies. Use callback queue instead." }, { status: 400 })
         }
 
-        const currentMessages = Array.isArray(sessionData.messages) ? sessionData.messages : []
         const newMessage = {
-            id: Date.now().toString(),
+            id: `human-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             role: "assistant",
             content,
             createdAt: new Date().toISOString(),
@@ -113,11 +126,11 @@ export async function POST(req: Request) {
         }
 
         await sessionRef.update({
-            messages: [...currentMessages, newMessage],
-            updatedAt: new Date(),
+            messages: FieldValue.arrayUnion(newMessage),
+            updatedAt: new Date().toISOString(),
         })
 
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ success: true, message: newMessage })
     } catch (error) {
         console.error("Admin Message Error:", error)
         return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 })

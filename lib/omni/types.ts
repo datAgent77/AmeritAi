@@ -11,7 +11,7 @@ export const DEFAULT_PRODUCT_ENTITLEMENTS: ProductEntitlements = {
     leadFinder: false,
 }
 
-export type OmniChannel = "web" | "whatsapp" | "instagram" | "voice"
+export type OmniChannel = "web" | "whatsapp" | "instagram" | "messenger" | "voice"
 
 export type AssistantCapabilityId =
     | "generalChatbot"
@@ -436,7 +436,7 @@ export type OmniProvisioningTaskStatus = "todo" | "in_progress" | "blocked" | "d
 
 export interface OmniProvisioningTask {
     id: string
-    channel: Extract<OmniProviderChannel, "voice" | "whatsapp" | "instagram">
+    channel: Extract<OmniProviderChannel, "voice" | "whatsapp" | "instagram" | "messenger">
     label: string
     status: OmniProvisioningTaskStatus
     owner?: string | null
@@ -444,13 +444,13 @@ export interface OmniProvisioningTask {
     updatedAt?: string | null
 }
 
-export type OmniProviderChannel = "whatsapp" | "instagram" | "voice" | "telegram"
+export type OmniProviderChannel = "whatsapp" | "instagram" | "messenger" | "voice" | "telegram"
 export type OmniDeliveryStatus = "success" | "failed"
 export type OmniDeliveryDirection = "outbound" | "inbound"
 export type OmniDeliveryErrorClass = "config" | "auth" | "rate_limit" | "provider" | "network" | "unknown"
 export type OmniDeliveryRetryMode = "none" | "manual" | "auto"
 export type OmniDeliveryRetryState = "none" | "pending" | "processing" | "retried" | "exhausted"
-export type OmniSmokeRunChannel = Extract<OmniProviderChannel, "voice" | "whatsapp" | "instagram">
+export type OmniSmokeRunChannel = Extract<OmniProviderChannel, "voice" | "whatsapp" | "instagram" | "messenger">
 export type OmniSmokeRunAction = "health_check" | "test_message" | "test_call" | "test_call_status"
 export type OmniSmokeRunResult = "success" | "error" | "blocked"
 
@@ -551,9 +551,10 @@ export interface ContactAliasRecord {
     updatedAt?: string | null
 }
 
+export type CallbackTriggerSource = "user_request" | "assistant_trigger"
 export type CallbackPriority = "low" | "normal" | "high"
-export type CallbackRequestStatus = "pending" | "scheduled" | "in_progress" | "resolved"
-export type CallbackResolutionStatus = "open" | "waiting" | "completed"
+export type CallbackRequestStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "resolved"
+export type CallbackResolutionStatus = "open" | "waiting" | "completed" | "resolved" | "failed"
 
 export interface CallbackRequestRecord {
     id?: string
@@ -574,6 +575,10 @@ export interface CallbackRequestRecord {
     lastAttemptAt?: string | null
     createdAt?: string | null
     updatedAt?: string | null
+    triggerSource?: CallbackTriggerSource | null
+    notificationEmail?: string | null
+    emailNotifiedAt?: string | null
+    inAppNotifiedAt?: string | null
 }
 
 export type VoiceRoutingStatus = "draft" | "active" | "paused"
@@ -653,6 +658,27 @@ export interface InstagramChannelConfig {
     webhookStatus?: "connected" | "pending" | "disconnected"
     responseWindow?: string | null
     defaultReplyMode?: "assistant" | "human_review"
+    setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
+    setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    lastHealthCheckAt?: string | null
+    lastSetupError?: string | null
+}
+
+export interface MessengerChannelConfig {
+    enabled: boolean
+    pageId?: string | null
+    appId?: string | null
+    appSecretRef?: string | null
+    accessTokenRef?: string | null
+    verifyToken?: string | null
+    webhookStatus?: "connected" | "pending" | "disconnected"
+    defaultReplyMode?: "assistant" | "human_review"
+    setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
+    setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    lastHealthCheckAt?: string | null
+    lastSetupError?: string | null
 }
 
 export interface WhatsAppChannelConfig {
@@ -666,4 +692,9 @@ export interface WhatsAppChannelConfig {
     templateNamespace?: string | null
     webhookStatus?: "connected" | "pending" | "disconnected"
     defaultReplyMode?: "assistant" | "human_review"
+    setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
+    setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    lastHealthCheckAt?: string | null
+    lastSetupError?: string | null
 }

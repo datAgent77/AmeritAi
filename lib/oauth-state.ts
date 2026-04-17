@@ -9,6 +9,11 @@ export interface OAuthStatePayload {
     userId: string;
     apiKey?: string;
     apiSecret?: string;
+    verifyToken?: string;
+    appConfigSource?: "platform" | "tenant";
+    chatbotId?: string;
+    selectedChannels?: string[];
+    returnPath?: string;
 }
 
 interface OAuthStateRecord extends OAuthStatePayload {
@@ -24,8 +29,11 @@ export async function createOAuthState(payload: OAuthStatePayload, ttlSeconds = 
 
     const now = Date.now();
     const stateId = crypto.randomBytes(32).toString("hex");
+    const sanitizedPayload = Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined)
+    ) as OAuthStatePayload;
     const record: OAuthStateRecord = {
-        ...payload,
+        ...sanitizedPayload,
         createdAt: now,
         expiresAt: now + ttlSeconds * 1000
     };
@@ -65,6 +73,13 @@ export async function consumeOAuthState(stateId: string, expectedProvider: strin
         provider,
         userId,
         apiKey: data?.apiKey,
-        apiSecret: data?.apiSecret
+        apiSecret: data?.apiSecret,
+        verifyToken: typeof data?.verifyToken === "string" ? data.verifyToken : undefined,
+        appConfigSource: data?.appConfigSource === "platform" || data?.appConfigSource === "tenant" ? data.appConfigSource : undefined,
+        chatbotId: typeof data?.chatbotId === "string" ? data.chatbotId : undefined,
+        selectedChannels: Array.isArray(data?.selectedChannels)
+            ? data.selectedChannels.map((item) => String(item)).filter(Boolean)
+            : undefined,
+        returnPath: typeof data?.returnPath === "string" ? data.returnPath : undefined,
     };
 }

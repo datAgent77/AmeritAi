@@ -44,15 +44,25 @@ export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
     },
     
     // Growth+ - Messaging platforms
-    'telegram': { 
-        minSortOrder: 2, 
+    'telegram': {
+        minSortOrder: 2,
         minPlan: 'growth',
         displayName: { en: 'Telegram', tr: 'Telegram' }
     },
-    'whatsapp': { 
-        minSortOrder: 2, 
+    'meta-channels': {
+        minSortOrder: 2,
+        minPlan: 'growth',
+        displayName: { en: 'Meta Channels', tr: 'Meta Kanallari' }
+    },
+    'whatsapp': {
+        minSortOrder: 2,
         minPlan: 'growth',
         displayName: { en: 'WhatsApp Business', tr: 'WhatsApp Business' }
+    },
+    'instagram': {
+        minSortOrder: 2,
+        minPlan: 'growth',
+        displayName: { en: 'Instagram DM', tr: 'Instagram DM' }
     },
     'slack': { 
         minSortOrder: 2, 

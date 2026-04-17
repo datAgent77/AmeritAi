@@ -1,11 +1,18 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
+
 /** @type {import('next').NextConfig} */
 const isVercel = process.env.VERCEL === "1";
 
-const nextConfig = {
+export default function nextConfig(phase) {
+    const localDistDir =
+        process.env.NEXT_DIST_DIR ||
+        (phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next-build");
+
+    return {
     // Keep dev and production build artifacts isolated to avoid chunk corruption
     // when `next dev` and `next build` run in the same workspace.
     // Vercel expects artifacts under ".next" (routes-manifest.json lookup).
-    distDir: isVercel ? ".next" : (process.env.NEXT_DIST_DIR || ".next"),
+    distDir: isVercel ? ".next" : localDistDir,
     // Exclude chrome-extension from Next.js build
     webpack: (config, { isServer }) => {
         config.watchOptions = {
@@ -64,6 +71,5 @@ const nextConfig = {
             }
         ]
     }
-};
-
-export default nextConfig;
+    };
+}

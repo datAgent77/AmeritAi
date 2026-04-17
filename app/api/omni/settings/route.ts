@@ -18,12 +18,19 @@ function isPublicOrigin(origin: string) {
 function normalizeWhatsApp(config: any) {
     return {
         enabled: config?.enabled === true,
+        businessAccountId: config?.businessAccountId || null,
         phoneNumberId: config?.phoneNumberId || null,
+        displayNumber: config?.displayNumber || null,
         accessTokenRef: config?.accessTokenRef || null,
         appSecretRef: config?.appSecretRef || null,
         verifyToken: config?.verifyToken || null,
         webhookStatus: config?.webhookStatus || "disconnected",
         defaultReplyMode: config?.defaultReplyMode || "assistant",
+        setupStatus: config?.setupStatus || "not_started",
+        setupStage: config?.setupStage || "prerequisites",
+        connectionMode: config?.connectionMode || "tenant_meta_app",
+        lastHealthCheckAt: config?.lastHealthCheckAt || null,
+        lastSetupError: config?.lastSetupError || null,
     }
 }
 
@@ -32,11 +39,35 @@ function normalizeInstagram(config: any) {
         enabled: config?.enabled === true,
         accountId: config?.accountId || null,
         pageId: config?.pageId || null,
+        appId: config?.appId || null,
         accessTokenRef: config?.accessTokenRef || null,
         appSecretRef: config?.appSecretRef || null,
         verifyToken: config?.verifyToken || null,
         webhookStatus: config?.webhookStatus || "disconnected",
         defaultReplyMode: config?.defaultReplyMode || "assistant",
+        setupStatus: config?.setupStatus || "not_started",
+        setupStage: config?.setupStage || "prerequisites",
+        connectionMode: config?.connectionMode || "tenant_meta_app",
+        lastHealthCheckAt: config?.lastHealthCheckAt || null,
+        lastSetupError: config?.lastSetupError || null,
+    }
+}
+
+function normalizeMessenger(config: any) {
+    return {
+        enabled: config?.enabled === true,
+        pageId: config?.pageId || null,
+        appId: config?.appId || null,
+        accessTokenRef: config?.accessTokenRef || null,
+        appSecretRef: config?.appSecretRef || null,
+        verifyToken: config?.verifyToken || null,
+        webhookStatus: config?.webhookStatus || "disconnected",
+        defaultReplyMode: config?.defaultReplyMode || "assistant",
+        setupStatus: config?.setupStatus || "not_started",
+        setupStage: config?.setupStage || "prerequisites",
+        connectionMode: config?.connectionMode || "tenant_meta_app",
+        lastHealthCheckAt: config?.lastHealthCheckAt || null,
+        lastSetupError: config?.lastSetupError || null,
     }
 }
 
@@ -88,6 +119,7 @@ const DEFAULT_PROVISIONING_TASKS: OmniProvisioningTask[] = [
     { id: "voice_rendering", channel: "voice", label: "Voice rendering setup", status: "todo", owner: "", notes: "" },
     { id: "whatsapp_meta", channel: "whatsapp", label: "Meta WhatsApp app setup", status: "todo", owner: "", notes: "" },
     { id: "instagram_meta", channel: "instagram", label: "Instagram DM app setup", status: "todo", owner: "", notes: "" },
+    { id: "messenger_meta", channel: "messenger", label: "Facebook Messenger page setup", status: "todo", owner: "", notes: "" },
 ]
 
 function normalizeProvisioning(config: any): OmniProvisioningTask[] {
@@ -111,7 +143,10 @@ function normalizeProvisioning(config: any): OmniProvisioningTask[] {
         .map((task: any, index: number) => {
             const id = String(task?.id || `custom-task-${index + 1}`).trim()
             const label = String(task?.label || "").trim()
-            const channel = task?.channel === "voice" || task?.channel === "instagram" ? task.channel : "whatsapp"
+            const channel =
+                task?.channel === "voice" || task?.channel === "instagram" || task?.channel === "messenger"
+                    ? task.channel
+                    : "whatsapp"
             if (!id || !label) {
                 return null
             }
@@ -158,6 +193,7 @@ export async function GET(req: Request) {
     const voiceIntegration = normalizeVoiceIntegrationConfig(config.voiceIntegration)
     const whatsapp = normalizeWhatsApp(config.whatsapp)
     const instagram = normalizeInstagram(config.instagram)
+    const messenger = normalizeMessenger(config.messenger)
     const web = normalizeWeb(config.web)
     const operations = normalizeOperations(config.operations)
     const provisioning = normalizeProvisioning(config.provisioning)
@@ -187,6 +223,15 @@ export async function GET(req: Request) {
         instagram.accessTokenRef ? null : "Instagram access token eksik.",
         instagram.appSecretRef ? null : "Instagram app secret eksik.",
         instagram.verifyToken ? null : "Instagram verify token eksik.",
+    ].filter(Boolean)
+
+    const messengerBlockers = [
+        publicOrigin ? null : "Public URL yok. Meta webhook callback icin preview veya tunnel gerekiyor.",
+        messenger.enabled ? null : "Messenger channel disabled.",
+        messenger.pageId ? null : "Messenger pageId eksik.",
+        messenger.accessTokenRef ? null : "Messenger access token eksik.",
+        messenger.appSecretRef ? null : "Messenger app secret eksik.",
+        messenger.verifyToken ? null : "Messenger verify token eksik.",
     ].filter(Boolean)
 
     return NextResponse.json({
@@ -239,6 +284,18 @@ export async function GET(req: Request) {
                     inbound: `${origin}/api/omni/channels/instagram/webhook`,
                 },
             },
+            messenger: {
+                enabled: messenger.enabled,
+                ready: messengerBlockers.length === 0,
+                blockers: messengerBlockers,
+                webhookStatus: messenger.webhookStatus,
+                defaultReplyMode: messenger.defaultReplyMode,
+                pageId: messenger.pageId,
+                verifyTokenConfigured: Boolean(messenger.verifyToken),
+                webhooks: {
+                    inbound: `${origin}/api/omni/channels/messenger/webhook`,
+                },
+            },
             web: {
                 enabled: web.enabled,
                 ready: web.enabled,
@@ -252,7 +309,7 @@ export async function GET(req: Request) {
         suggestedNextSteps: publicOrigin
             ? [
                   "Voice icin carrier routing, Twilio call control ve rendering ayarlarini birlikte tamamlayin.",
-                  "WhatsApp ve Instagram icin Meta App webhook URL'lerini bu paneldeki endpoint'lerle esleyin.",
+                  "WhatsApp, Instagram ve Messenger icin Meta App webhook URL'lerini bu paneldeki endpoint'lerle esleyin.",
                   "Sonrasinda ilgili channel panelinden Health Check ve Test aksiyonlarini calistirin.",
               ]
             : [

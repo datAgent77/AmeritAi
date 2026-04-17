@@ -11,6 +11,10 @@ function normalizeWebChannelEnabled(config: any) {
     return config?.enabled !== false;
 }
 
+function isWidgetTestMode(searchParams: URLSearchParams) {
+    return searchParams.get("testMode") === "1" || searchParams.get("runtimeMode") === "test";
+}
+
 function hasConfiguredWebVoiceProvider(
     userData: Record<string, any> | null | undefined,
     mergedData: Record<string, any> | null | undefined
@@ -30,6 +34,7 @@ export async function GET(req: Request) {
 
         const { searchParams } = new URL(req.url);
         const chatbotId = searchParams.get("chatbotId");
+        const widgetTestMode = isWidgetTestMode(searchParams);
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Missing chatbotId" }, { status: 400 });
@@ -59,12 +64,9 @@ export async function GET(req: Request) {
                     });
                 }
 
-                const isChatbotEnabled = userData?.enableChatbot !== false;
-                const isAccountActive = userData?.isActive !== false;
-
                 const channelConfigSnap = await adminDb.collection("omni_channel_configs").doc(chatbotId).get();
                 const omniChannelConfig = channelConfigSnap.exists ? channelConfigSnap.data() || {} : {};
-                const isWebChannelEnabled = normalizeWebChannelEnabled(omniChannelConfig?.web);
+                const isWebChannelEnabled = widgetTestMode ? true : normalizeWebChannelEnabled(omniChannelConfig?.web);
 
                 const docSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
 
@@ -81,7 +83,7 @@ export async function GET(req: Request) {
                         enableChatbot: userData?.enableChatbot
                     } as any;
 
-                    const isChatbotEnabled = mergedData.enableChatbot !== false; // Default true
+                    const isChatbotEnabled = widgetTestMode ? true : mergedData.enableChatbot !== false; // Default true
                     const isAccountActive = mergedData.isActive !== false;
                     const shouldEnable = isChatbotEnabled && isAccountActive && isWebChannelEnabled;
                     const isProactiveModuleEnabled = mergedData.enableProactiveMessaging !== false;

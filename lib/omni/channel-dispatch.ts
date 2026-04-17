@@ -36,6 +36,16 @@ interface SendInstagramTextParams extends OmniDispatchOptions {
     metadata?: Record<string, unknown>
 }
 
+interface SendMessengerTextParams extends OmniDispatchOptions {
+    adminDb: any
+    chatbotId: string
+    recipientId: string | null
+    text: string
+    pageId?: string | null
+    accessToken?: string | null
+    metadata?: Record<string, unknown>
+}
+
 function trimProviderMessage(data: any, fallback: string) {
     return data?.error?.message || JSON.stringify(data) || fallback
 }
@@ -238,6 +248,107 @@ export async function sendOmniInstagramText(params: SendInstagramTextParams): Pr
     }
 }
 
+export async function sendOmniMessengerText(
+    params: SendMessengerTextParams
+): Promise<OmniTextDispatchResult & { recipientId: string; pageId: string | null }> {
+    const recipientId = params.recipientId || null
+    const pageId = params.pageId || null
+    const accessToken = params.accessToken || null
+
+    if (!recipientId || !pageId || !accessToken) {
+        const errorMessage = "Messenger configuration is incomplete"
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "messenger",
+            provider: "meta",
+            direction: "outbound",
+            source: params.source,
+            status: "failed",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipientId,
+            payloadText: params.text,
+            providerTargetId: pageId,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            errorClass: "config",
+            errorMessage,
+            metadata: params.metadata,
+        })
+        const error = new Error(errorMessage) as Error & { deliveryAttemptId?: string | null }
+        error.deliveryAttemptId = attempt.id || null
+        throw error
+    }
+
+    try {
+        const response = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${pageId}/messages`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                recipient: { id: recipientId },
+                messaging_type: "RESPONSE",
+                message: { text: params.text },
+            }),
+        })
+
+        const data = await response.json().catch(() => null)
+        if (!response.ok) {
+            throw new Error(`Messenger delivery failed: ${trimProviderMessage(data, "Messenger delivery failed")}`)
+        }
+
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "messenger",
+            provider: "meta",
+            direction: "outbound",
+            source: params.source,
+            status: "success",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipientId,
+            payloadText: params.text,
+            providerMessageId: data?.message_id || data?.recipient_id || null,
+            providerTargetId: pageId,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            metadata: params.metadata,
+        })
+
+        return {
+            messageId: data?.message_id || data?.recipient_id || null,
+            recipientId,
+            pageId,
+            deliveryAttemptId: attempt.id || null,
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Messenger delivery failed"
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "messenger",
+            provider: "meta",
+            direction: "outbound",
+            source: params.source,
+            status: "failed",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipientId,
+            payloadText: params.text,
+            providerTargetId: pageId,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            errorClass: classifyOmniDeliveryError(error),
+            errorMessage,
+            metadata: params.metadata,
+        })
+        const nextError = error instanceof Error ? error : new Error(errorMessage)
+        ;(nextError as Error & { deliveryAttemptId?: string | null }).deliveryAttemptId = attempt.id || null
+        throw nextError
+    }
+}
+
 export async function dispatchOmniWhatsAppMessage(
     adminDb: any,
     chatbotId: string,
@@ -290,6 +401,36 @@ export async function dispatchOmniInstagramMessage(
         text: content,
         endpointTarget: instagram.accountId || instagram.pageId || sessionData.channelMeta?.pageId || null,
         accessToken: instagram.accessTokenRef || null,
+        source: options.source,
+        sessionId: options.sessionId || null,
+        callbackId: options.callbackId || null,
+        retryOfAttemptId: options.retryOfAttemptId || null,
+        attemptNumber: options.attemptNumber,
+        metadata: {
+            channelMeta: sessionData.channelMeta || {},
+            ...(options.metadata || {}),
+        },
+    })
+}
+
+export async function dispatchOmniMessengerMessage(
+    adminDb: any,
+    chatbotId: string,
+    sessionData: any,
+    content: string,
+    options: OmniDispatchOptions
+) {
+    const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
+    const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
+    const messenger = omniConfig.messenger || {}
+
+    return sendOmniMessengerText({
+        adminDb,
+        chatbotId,
+        recipientId: sessionData.contactKey || sessionData.channelMeta?.senderId || null,
+        text: content,
+        pageId: messenger.pageId || sessionData.channelMeta?.pageId || null,
+        accessToken: messenger.accessTokenRef || null,
         source: options.source,
         sessionId: options.sessionId || null,
         callbackId: options.callbackId || null,
