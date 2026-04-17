@@ -1,1 +1,2 @@
-export { POST, runtime } from "../speak/route";
+export const runtime = "nodejs";
+export { POST } from "../speak/route";
