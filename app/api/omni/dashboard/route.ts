@@ -17,7 +17,7 @@ import type { OmniDeliveryAttemptRecord } from "@/lib/omni/types"
 
 export const dynamic = "force-dynamic"
 
-type DashboardChannel = "voice" | "whatsapp" | "instagram"
+type DashboardChannel = "voice" | "whatsapp" | "instagram" | "messenger"
 
 function isPublicOrigin(origin: string) {
     return !/localhost|127\.0\.0\.1/i.test(origin)
@@ -48,12 +48,23 @@ function normalizeInstagram(config: any) {
     }
 }
 
+function normalizeMessenger(config: any) {
+    return {
+        enabled: config?.enabled === true,
+        pageId: config?.pageId || null,
+        accessTokenRef: config?.accessTokenRef || null,
+        appSecretRef: config?.appSecretRef || null,
+        verifyToken: config?.verifyToken || null,
+    }
+}
+
 function buildChannelReadiness(params: {
     publicOrigin: boolean
     voice: any
     voiceNumbers: any[]
     whatsapp: any
     instagram: any
+    messenger: any
 }) {
     const voiceReadiness = buildVoiceReadiness({
         publicOrigin: params.publicOrigin,
@@ -102,6 +113,24 @@ function buildChannelReadiness(params: {
                 params.instagram.accessTokenRef ? null : "access token eksik",
                 params.instagram.appSecretRef ? null : "app secret eksik",
                 params.instagram.verifyToken ? null : "verify token eksik",
+            ]),
+        },
+        messenger: {
+            enabled: params.messenger.enabled,
+            ready:
+                params.publicOrigin &&
+                params.messenger.enabled &&
+                Boolean(params.messenger.pageId) &&
+                Boolean(params.messenger.accessTokenRef) &&
+                Boolean(params.messenger.appSecretRef) &&
+                Boolean(params.messenger.verifyToken),
+            blockers: compactStrings([
+                params.publicOrigin ? null : "Public URL gerekli",
+                params.messenger.enabled ? null : "Channel disabled",
+                params.messenger.pageId ? null : "pageId eksik",
+                params.messenger.accessTokenRef ? null : "access token eksik",
+                params.messenger.appSecretRef ? null : "app secret eksik",
+                params.messenger.verifyToken ? null : "verify token eksik",
             ]),
         },
     }
@@ -163,6 +192,7 @@ export async function GET(req: Request) {
     const voiceIntegration = normalizeVoiceIntegrationConfig(config.voiceIntegration)
     const whatsapp = normalizeWhatsApp(config.whatsapp)
     const instagram = normalizeInstagram(config.instagram)
+    const messenger = normalizeMessenger(config.messenger)
 
     const [voiceNumbersSnapshot, callbacksSnapshot, appointmentsSnapshot, leadsSnapshot, contactsSnapshot, auditLogs, deliveryAttempts] =
         await Promise.all([
@@ -182,6 +212,7 @@ export async function GET(req: Request) {
         voiceNumbers,
         whatsapp,
         instagram,
+        messenger,
     })
 
     const callbacks = callbacksSnapshot.docs
@@ -242,6 +273,7 @@ export async function GET(req: Request) {
     if (blockedChannels.includes("voice")) nextActions.push({ id: "voice_setup", href: "/omni/channels/voice-calls" })
     if (blockedChannels.includes("whatsapp")) nextActions.push({ id: "whatsapp_setup", href: "/omni/channels/whatsapp" })
     if (blockedChannels.includes("instagram")) nextActions.push({ id: "instagram_setup", href: "/omni/channels/instagram-dm" })
+    if (blockedChannels.includes("messenger")) nextActions.push({ id: "messenger_setup", href: "/console/chatbot/integration" })
     if (overdueCallbacks.length > 0) nextActions.push({ id: "callback_sla", href: "/omni/operations/callback-queue" })
     if (exhaustedRetries > 0) nextActions.push({ id: "delivery_retry_review", href: "/omni/operations/delivery-monitor" })
     if (manualMergeReview > 0) nextActions.push({ id: "contact_review", href: "/omni/operations/contacts" })

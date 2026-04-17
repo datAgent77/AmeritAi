@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { logOmniAuditEvent } from "@/lib/omni/audit-log"
-import { sendOmniInstagramText, sendOmniWhatsAppText } from "@/lib/omni/channel-dispatch"
+import { sendOmniInstagramText, sendOmniMessengerText, sendOmniWhatsAppText } from "@/lib/omni/channel-dispatch"
 import { getOmniDeliveryAttempt, updateOmniDeliveryAttemptRetryState } from "@/lib/omni/delivery-attempts"
 import { authorizeOmniRequest, authorizedForOmniPermission, getOmniChannelConfig, jsonError } from "@/lib/omni/server-utils"
 
@@ -149,6 +149,68 @@ export async function POST(req: Request) {
                 result: "success",
                 source: "api/omni/delivery-attempts/retry",
                 message: "Instagram delivery retried successfully",
+                metadata: {
+                    originalAttemptId: id,
+                    deliveryAttemptId: delivery.deliveryAttemptId || null,
+                    messageId: delivery.messageId || null,
+                },
+            })
+
+            await updateOmniDeliveryAttemptRetryState(authz.adminDb, id, {
+                retryState: "retried",
+                nextRetryAt: null,
+                lastRetryAt: new Date(),
+                metadata: {
+                    retriedFrom: "delivery-monitor",
+                    retriedDeliveryAttemptId: delivery.deliveryAttemptId || null,
+                },
+            })
+
+            return NextResponse.json({ ok: true, delivery })
+        }
+
+        if (attempt.channel === "messenger") {
+            const omniConfig = await getOmniChannelConfig(authz.adminDb, chatbotId)
+            const messenger = omniConfig.messenger || {}
+            if (messenger.enabled === false) {
+                await logOmniAuditEvent({
+                    chatbotId,
+                    channel: "messenger",
+                    eventType: "messenger.delivery_retry",
+                    result: "blocked",
+                    source: "api/omni/delivery-attempts/retry",
+                    message: "Messenger channel is disabled",
+                    metadata: {
+                        originalAttemptId: id,
+                    },
+                })
+                return jsonError("Messenger channel is disabled", 400)
+            }
+
+            const delivery = await sendOmniMessengerText({
+                adminDb: authz.adminDb,
+                chatbotId,
+                recipientId: attempt.destination,
+                text: attempt.payloadText,
+                pageId: attempt.providerTargetId || messenger.pageId || null,
+                accessToken: messenger.accessTokenRef || null,
+                source: "api/omni/delivery-attempts/retry",
+                sessionId: attempt.sessionId || null,
+                retryOfAttemptId: id,
+                attemptNumber: Number(attempt.attemptNumber || 1) + 1,
+                metadata: {
+                    originalSource: attempt.source || null,
+                    retryRequestedFrom: "delivery-monitor",
+                },
+            })
+
+            await logOmniAuditEvent({
+                chatbotId,
+                channel: "messenger",
+                eventType: "messenger.delivery_retry",
+                result: "success",
+                source: "api/omni/delivery-attempts/retry",
+                message: "Messenger delivery retried successfully",
                 metadata: {
                     originalAttemptId: id,
                     deliveryAttemptId: delivery.deliveryAttemptId || null,

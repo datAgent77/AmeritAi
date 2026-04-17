@@ -32,7 +32,6 @@ export function PricingModal({
     currentPlanId = 'starter',
     targetModuleId
 }: PricingModalProps) {
-    console.log("PricingModal Rendered. CurrentPlanId:", currentPlanId)
     const { t, language } = useLanguage()
     const router = useRouter()
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
@@ -267,6 +266,12 @@ export function PricingModal({
                                                         {plan.limits.knowledge.files === 'unlimited' ? '∞' : plan.limits.knowledge.files}
                                                     </span>
                                                     <span className="text-muted-foreground text-[10px]">{t('limitFilesLabel') || 'Dosya'}</span>
+                                                </div>
+                                                <div className="col-span-2 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
+                                                    <span className="font-semibold block">
+                                                        {plan.limits.knowledge.text === 'unlimited' ? '∞' : plan.limits.knowledge.text}
+                                                    </span>
+                                                    <span className="text-muted-foreground text-[10px]">{t('limitTextLabel') || 'Metin / Soru-Cevap'}</span>
                                                 </div>
                                             </div>
                                         </div>

@@ -6,7 +6,7 @@ import type { OmniChannel } from "@/lib/omni/types"
 interface AutoActionInput {
     adminDb: any
     chatbotId: string
-    channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram">
+    channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram" | "messenger">
     sessionId: string
     contactKey?: string | null
     displayName?: string | null

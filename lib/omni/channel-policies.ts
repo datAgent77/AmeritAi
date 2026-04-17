@@ -33,6 +33,17 @@ export const DEFAULT_CHANNEL_POLICIES: Record<OmniChannel, ChannelPolicy> = {
         transcriptSummary: true,
         identityRequiredForSensitiveData: true,
     },
+    messenger: {
+        channel: "messenger",
+        responseStyle: "Short Facebook Messenger replies with clear next actions and low-friction handoff.",
+        maxVerbosity: "short",
+        safeFormatting: ["plain_text", "emoji_light", "short_links"],
+        handoffMode: "callback_ticket",
+        followUpChannels: ["whatsapp", "voice"],
+        allowRichUi: false,
+        transcriptSummary: true,
+        identityRequiredForSensitiveData: true,
+    },
     voice: {
         channel: "voice",
         responseStyle: "Voice-safe, short, confirmation-driven phone conversations.",

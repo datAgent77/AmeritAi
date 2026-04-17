@@ -1,7 +1,7 @@
 import type { AssistantCapability, AssistantCapabilityId, OmniAssistantCoreSettings, OmniChannel } from "@/lib/omni/types"
 import { MODULES_REGISTRY, type ModuleId } from "@/lib/modules-registry"
 
-export const OMNI_CHANNELS: OmniChannel[] = ["web", "whatsapp", "instagram", "voice"]
+export const OMNI_CHANNELS: OmniChannel[] = ["web", "whatsapp", "instagram", "messenger", "voice"]
 
 export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
     {
@@ -31,7 +31,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         title: "Appointments",
         description: "Structured booking flows with explicit confirmation for date, time, and contact details.",
         supportedChannels: OMNI_CHANNELS,
-        defaultEnabledChannels: ["web", "whatsapp", "instagram", "voice"],
+        defaultEnabledChannels: ["web", "whatsapp", "instagram", "messenger", "voice"],
         allowedActions: ["create_appointment", "confirm_slot", "check_business_hours", "handoff_to_human"],
         channelBehaviorOverrides: {
             voice: {
@@ -46,7 +46,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         title: "Lead Collection",
         description: "Collects lead details and creates callback tickets when forms are not available.",
         supportedChannels: OMNI_CHANNELS,
-        defaultEnabledChannels: ["web", "whatsapp", "instagram", "voice"],
+        defaultEnabledChannels: ["web", "whatsapp", "instagram", "messenger", "voice"],
         allowedActions: ["create_lead", "create_callback_request"],
         channelBehaviorOverrides: {
             voice: {
@@ -63,7 +63,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         title: "Dynamic Context",
         description: "Reads CRM or runtime context when the customer identity is trusted.",
         supportedChannels: OMNI_CHANNELS,
-        defaultEnabledChannels: ["web", "whatsapp", "instagram"],
+        defaultEnabledChannels: ["web", "whatsapp", "instagram", "messenger"],
         requiresIdentity: true,
         allowedActions: ["read_customer_context"],
         channelBehaviorOverrides: {
@@ -78,7 +78,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         title: "Product Catalog / Personal Shopper",
         description: "Structured catalog retrieval with shortlist recommendations.",
         supportedChannels: OMNI_CHANNELS,
-        defaultEnabledChannels: ["web", "whatsapp", "instagram", "voice"],
+        defaultEnabledChannels: ["web", "whatsapp", "instagram", "messenger", "voice"],
         requiresRichUI: true,
         allowedActions: ["search_catalog", "recommend_product", "share_follow_up_link"],
         channelBehaviorOverrides: {
@@ -94,7 +94,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         title: "Sales Optimization",
         description: "Adaptive conversion prompts and next-best-action logic.",
         supportedChannels: OMNI_CHANNELS,
-        defaultEnabledChannels: ["web", "whatsapp", "instagram", "voice"],
+        defaultEnabledChannels: ["web", "whatsapp", "instagram", "messenger", "voice"],
         allowedActions: ["qualify_lead", "nudge_conversion", "create_callback_request"],
         channelBehaviorOverrides: {
             voice: {
@@ -121,7 +121,7 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
         id: "visualDiagnosis",
         title: "Visual Diagnosis",
         description: "Image-based analysis workflows.",
-        supportedChannels: ["web", "whatsapp", "instagram"],
+        supportedChannels: ["web", "whatsapp", "instagram", "messenger"],
         defaultEnabledChannels: ["web"],
         requiresRichUI: true,
         allowedActions: ["inspect_image", "ask_for_upload"],

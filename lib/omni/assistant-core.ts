@@ -44,7 +44,7 @@ export interface VoiceTurnGenerationResult {
 
 export interface TextTurnGenerationInput {
     chatbotId: string
-    channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram">
+    channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram" | "messenger">
     transcript: string
     contactKey?: string | null
     messages?: Array<{ role: string; content: string }>
@@ -77,6 +77,7 @@ const DEFAULT_ASSISTANT_PROFILES: OmniAssistantProfile[] = [
             voice: "Keep answers concise, natural, and confirm critical details out loud.",
             whatsapp: "Keep replies short, direct, and mobile-friendly.",
             instagram: "Keep replies concise, conversational, and informal without losing clarity.",
+            messenger: "Keep replies short, conversational, and friendly like Facebook Messenger support.",
             web: "Stay clear, helpful, and reusable across channels.",
         },
     },
@@ -86,6 +87,7 @@ const DEFAULT_CHANNEL_ASSISTANT_PROFILES: Record<OmniChannel, string> = {
     web: "omni-default",
     whatsapp: "omni-default",
     instagram: "omni-default",
+    messenger: "omni-default",
     voice: "omni-default",
 }
 
@@ -103,7 +105,7 @@ function normalizeMessageRole(role?: string): AIMessage["role"] {
 
 function stripMarkdown(value: string) {
     return value
-        .replace(/\[SHOW_LEAD_FORM\]/gi, "")
+        .replace(/\[SHOW_(?:LEAD|HANDOFF)_FORM\]/gi, "")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
         .replace(/[`*_>#~-]/g, "")
@@ -143,9 +145,9 @@ export function detectVoiceCallbackIntent(value: string) {
     return detectCallbackIntent(value)
 }
 
-function sanitizeTextResponse(value: string, channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram">) {
+function sanitizeTextResponse(value: string, channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram" | "messenger">) {
     const plainText = value
-        .replace(/\[SHOW_LEAD_FORM\]/gi, "")
+        .replace(/\[SHOW_(?:LEAD|HANDOFF)_FORM\]/gi, "")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, "$1: $2")
         .replace(/[`*_>#~]/g, "")
@@ -154,7 +156,7 @@ function sanitizeTextResponse(value: string, channel: Extract<OmniChannel, "web"
         .replace(/\n{3,}/g, "\n\n")
         .trim()
 
-    const maxSentences = channel === "instagram" ? 2 : channel === "whatsapp" ? 4 : 6
+    const maxSentences = channel === "instagram" || channel === "messenger" ? 2 : channel === "whatsapp" ? 4 : 6
     return truncateSentences(plainText.replace(/\n+/g, " "), maxSentences)
 }
 
@@ -400,6 +402,13 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
                   "- Use plain text only.",
                   "- Do not mention unsupported UI elements or forms.",
               ]
+            : input.channel === "messenger"
+              ? [
+                    "Messenger-specific rules:",
+                    "- Keep replies concise, human, and service-oriented.",
+                    "- Use plain text only.",
+                    "- Prefer one clear next step per message.",
+                ]
             : input.channel === "whatsapp"
               ? [
                     "WhatsApp-specific rules:",

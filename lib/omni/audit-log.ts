@@ -2,7 +2,7 @@ import { getAdminDb } from "@/lib/firebase-admin"
 import { toIsoOrNull, toMillis } from "@/lib/omni/server-utils"
 
 export type OmniAuditResult = "success" | "error" | "denied" | "blocked"
-export type OmniAuditChannel = "voice" | "whatsapp" | "instagram" | "web"
+export type OmniAuditChannel = "voice" | "whatsapp" | "instagram" | "messenger" | "web"
 
 export interface OmniAuditEventInput {
     chatbotId: string
