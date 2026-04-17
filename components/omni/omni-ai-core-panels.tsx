@@ -42,6 +42,7 @@ function createEmptyChannelSelections(): ChannelCapabilitySelections {
         web: [],
         whatsapp: [],
         instagram: [],
+        messenger: [],
         voice: [],
     }
 }
@@ -518,6 +519,7 @@ export function OmniBrandVoicePanel() {
                 web: "omni-default",
                 whatsapp: "omni-default",
                 instagram: "omni-default",
+                messenger: "omni-default",
                 voice: "omni-default",
             }
         )
@@ -536,7 +538,7 @@ export function OmniBrandVoicePanel() {
 
         const validProfileIds = new Set(cleanedProfiles.map((profile) => profile.id))
         const normalizedAssignments = Object.fromEntries(
-            (["web", "whatsapp", "instagram", "voice"] as OmniChannel[]).map((channel) => [
+            (["web", "whatsapp", "instagram", "messenger", "voice"] as OmniChannel[]).map((channel) => [
                 channel,
                 channelAssignments[channel] && validProfileIds.has(channelAssignments[channel] as string)
                     ? channelAssignments[channel]
@@ -615,7 +617,7 @@ export function OmniBrandVoicePanel() {
                     <CardDescription>{t("omni.aiCore.brandVoice.mapping.description")}</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {(["web", "whatsapp", "instagram", "voice"] as OmniChannel[]).map((channel) => (
+                    {(["web", "whatsapp", "instagram", "messenger", "voice"] as OmniChannel[]).map((channel) => (
                         <div key={channel} className="space-y-2">
                             <Label htmlFor={`channel-profile-${channel}`}>{getOmniChannelLabel(t, channel)}</Label>
                             <select
@@ -730,7 +732,7 @@ export function OmniBrandVoicePanel() {
                             />
                         </div>
                         <div className="grid gap-4 md:grid-cols-2">
-                            {(["web", "whatsapp", "instagram", "voice"] as OmniChannel[]).map((channel) => (
+                            {(["web", "whatsapp", "instagram", "messenger", "voice"] as OmniChannel[]).map((channel) => (
                                 <div key={`${profile.id}-${channel}`} className="space-y-2">
                                     <Label htmlFor={`profile-tone-${profile.id}-${channel}`}>
                                         {t("omni.aiCore.brandVoice.field.toneOverride").replace("{channel}", getOmniChannelLabel(t, channel))}
