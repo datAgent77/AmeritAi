@@ -66,6 +66,7 @@ const DEFAULT_CHANNEL_ASSIGNMENTS: Record<OmniChannel, string> = {
     web: "omni-default",
     whatsapp: "omni-default",
     instagram: "omni-default",
+    messenger: "omni-default",
     voice: "omni-default",
 }
 
