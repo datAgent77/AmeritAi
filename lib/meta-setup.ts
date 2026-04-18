@@ -1,7 +1,9 @@
 import crypto from "crypto"
 import type { InstagramChannelConfig, MessengerChannelConfig, WhatsAppChannelConfig } from "@/lib/omni/types"
 
-const META_API_VERSION = "v23.0"
+const META_API_VERSION = process.env.META_API_VERSION || "v23.0"
+const META_SUBSCRIBE_RETRY_MAX = 3
+const META_SUBSCRIBE_RETRY_BASE_MS = 500
 
 export type MetaChannelKey = "instagram" | "messenger" | "whatsapp"
 export type MetaWizardStage = "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
@@ -197,15 +199,17 @@ export function buildMetaOAuthScopes(selectedChannels?: MetaChannelKey[]) {
     const scopes = new Set<string>(["business_management", "pages_show_list"])
 
     if (normalizedChannels.includes("instagram")) {
-        scopes.add("pages_manage_metadata")
-        scopes.add("pages_messaging")
-        scopes.add("instagram_business_basic")
-        scopes.add("instagram_business_manage_messages")
+        scopes.add("instagram_basic");
+        scopes.add("instagram_manage_messages");
+        scopes.add("pages_manage_metadata");
+        scopes.add("pages_messaging");
+        scopes.add("pages_show_list");
     }
 
     if (normalizedChannels.includes("messenger")) {
-        scopes.add("pages_manage_metadata")
-        scopes.add("pages_messaging")
+        scopes.add("pages_manage_metadata");
+        scopes.add("pages_messaging");
+        scopes.add("pages_show_list");
     }
 
     if (normalizedChannels.includes("whatsapp")) {
@@ -603,12 +607,15 @@ export async function discoverMetaAssets(accessToken: string): Promise<MetaDisco
     const messengerPages = pages.filter((page) => page.messagingEligible !== false)
     const instagramPages = pages.filter((page) => Boolean(page.instagramAccount))
 
+    const messengerError = pageDiscovery.error || (messengerPages.length === 0 ? "Messenger için uygun, mesajlaşma yetkisi olan bir Facebook sayfası bulunamadı. Lütfen Facebook Login sırasında ilgili sayfayı seçtiğinizden emin olun." : null);
+    const instagramError = pageDiscovery.error || (instagramPages.length === 0 ? "Instagram Business hesabına bağlı bir Facebook sayfası bulunamadı. Hesabınızın 'Professional' olduğundan ve bir sayfaya bağlı olduğundan emin olun." : null);
+
     return {
         pages,
         whatsappBusinesses: whatsapp.businesses,
         errors: {
-            instagram: pageDiscovery.error || (instagramPages.length > 0 ? null : "Instagram ile bagli Facebook sayfasi bulunamadi."),
-            messenger: pageDiscovery.error || (messengerPages.length > 0 ? null : "Messenger icin uygun Facebook sayfasi bulunamadi."),
+            instagram: instagramError,
+            messenger: messengerError,
             whatsapp:
                 whatsapp.error ||
                 (whatsapp.businesses.some((business) => business.phoneNumbers.length > 0)
@@ -720,12 +727,18 @@ export async function runMetaHealthCheck(req: Request, channel: MetaChannelKey, 
     })
 
     const payload = await response.json().catch(() => null)
+    const errorMsg = payload?.message || payload?.error || (response.ok ? "OK" : `Meta API hatası (HTTP ${response.status})`);
+    
     return {
         ok: response.ok && payload?.ok !== false,
         status: response.status,
         payload,
-        message: payload?.message || payload?.error || (response.ok ? "OK" : "Channel health check failed"),
+        message: errorMsg,
     }
+}
+
+export function isMetaPlatformAppAvailable(): boolean {
+    return getMissingMetaPlatformEnvVars().length === 0
 }
 
 export function getMetaPlatformAppConfig(): MetaPlatformAppConfig {
@@ -796,42 +809,104 @@ export async function exchangeMetaCodeForAccessToken(params: {
     if (!response.ok || !payload?.access_token) {
         throw new Error(payload?.error?.message || "Meta OAuth token exchange basarisiz.")
     }
+    const shortLivedToken = String(payload.access_token)
+    const expiresIn = typeof payload.expires_in === "number" ? payload.expires_in : null
+
+    const longLived = await exchangeMetaShortLivedForLongLivedToken({
+        shortLivedToken,
+        appConfig: params.appConfig,
+    }).catch(() => null)
+
+    return {
+        accessToken: longLived?.accessToken || shortLivedToken,
+        expiresIn: longLived?.expiresIn ?? expiresIn,
+        tokenType: longLived ? "long_lived" : "short_lived",
+    }
+}
+
+export async function exchangeMetaShortLivedForLongLivedToken(params: {
+    shortLivedToken: string
+    appConfig?: MetaOAuthAppConfigOverrides
+}) {
+    const platform = resolveMetaOAuthAppConfig(params.appConfig)
+    const url = new URL(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`)
+    url.searchParams.set("grant_type", "fb_exchange_token")
+    url.searchParams.set("client_id", platform.appId)
+    url.searchParams.set("client_secret", platform.appSecret)
+    url.searchParams.set("fb_exchange_token", params.shortLivedToken)
+
+    const response = await fetch(url, { cache: "no-store" })
+    const payload = await response.json().catch(() => null)
+    if (!response.ok || !payload?.access_token) {
+        throw new Error(payload?.error?.message || "Meta long-lived token exchange basarisiz.")
+    }
     return {
         accessToken: String(payload.access_token),
+        expiresIn: typeof payload.expires_in === "number" ? payload.expires_in : null,
     }
+}
+
+async function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function retryableFetch(label: string, requestFn: () => Promise<Response>) {
+    let lastError: Error | null = null
+    for (let attempt = 0; attempt < META_SUBSCRIBE_RETRY_MAX; attempt++) {
+        try {
+            const response = await requestFn()
+            const payload = await response.json().catch(() => null)
+            if (response.ok && payload?.success !== false) {
+                return payload
+            }
+            const message = payload?.error?.message || `${label} basarisiz (HTTP ${response.status}).`
+            const code = payload?.error?.code
+            const isPermissionError = code === 10 || code === 200 || code === 190
+            if (isPermissionError) {
+                throw new Error(message)
+            }
+            lastError = new Error(message)
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error))
+            const permanent = /permission|invalid oauth|access token/i.test(lastError.message)
+            if (permanent) throw lastError
+        }
+        if (attempt < META_SUBSCRIBE_RETRY_MAX - 1) {
+            await sleep(META_SUBSCRIBE_RETRY_BASE_MS * Math.pow(2, attempt))
+        }
+    }
+    throw lastError || new Error(`${label} basarisiz.`)
 }
 
 export async function subscribeMetaAppToPage(pageId: string, accessToken: string) {
-    const response = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(pageId)}/subscribed_apps`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-    })
-    const payload = await response.json().catch(() => null)
-    if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error?.message || "Page subscribed_apps basarisiz.")
-    }
-}
-
-export async function subscribeMetaAppToWhatsAppBusiness(businessAccountId: string, accessToken: string) {
-    const response = await fetch(
-        `https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(businessAccountId)}/subscribed_apps`,
-        {
+    await retryableFetch("Page subscribed_apps", () =>
+        fetch(`https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(pageId)}/subscribed_apps`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({}),
-        }
+            body: JSON.stringify({
+                subscribed_fields: ["messages", "messaging_postbacks", "message_reads", "message_deliveries"],
+            }),
+        })
     )
-    const payload = await response.json().catch(() => null)
-    if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error?.message || "WhatsApp subscribed_apps basarisiz.")
-    }
+}
+
+export async function subscribeMetaAppToWhatsAppBusiness(businessAccountId: string, accessToken: string) {
+    await retryableFetch("WhatsApp subscribed_apps", () =>
+        fetch(
+            `https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(businessAccountId)}/subscribed_apps`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({}),
+            }
+        )
+    )
 }
 
 export function resolveReturnPath(input?: string | null) {
