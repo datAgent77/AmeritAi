@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils"
 import { getPlan } from "@/lib/pricing-config"
 import { hasIntegrationAccess, getIntegrationMinPlan, INTEGRATION_ACCESS } from "@/lib/integration-access-config"
 import { PricingModal } from "@/components/pricing-modal"
-import { MetaChannelsSetupCard } from "@/components/meta-channels-setup-card"
+import { InstagramDMWizard } from "@/components/integrations/instagram-dm/InstagramDMWizard"
+import { WhatsAppBizWizard } from "@/components/integrations/whatsapp-business/WhatsAppBizWizard"
 
 interface IntegrationPageProps {
     userId: string
@@ -39,8 +40,7 @@ const HIDDEN_INTEGRATION_IDS = new Set([
     "mailchimp",
     "sendgrid",
     "constant-contact",
-    "whatsapp",
-    "instagram",
+    "meta-channels",
 ])
 
 export default function IntegrationPage({ userId }: IntegrationPageProps) {
@@ -53,7 +53,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [settings, setSettings] = useState<any>(null)
     const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
-    const [metaSetupStatus, setMetaSetupStatus] = useState<any>(null)
+    const [metaWizardStatus, setMetaWizardStatus] = useState<any>(null)
     
     // Plan access state
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -162,15 +162,18 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const integrations: Integration[] = [
         {
             id: "meta-channels",
-            name: "Meta Kanallari",
-            description: "Instagram DM, Facebook Messenger ve WhatsApp Business kurulumunu tek OAuth akista yonetin.",
+            name: "Meta Kanalları",
+            description: "Instagram DM ve WhatsApp Business kanallarını ayrı kurulum sihirbazlarıyla yönetin.",
             icon: <MessageCircle className="h-6 w-6 text-gray-900" />,
             iconBg: "bg-gray-100",
-            connected: Boolean(metaSetupStatus?.channels?.instagram?.connected || metaSetupStatus?.channels?.messenger?.connected || metaSetupStatus?.channels?.whatsapp?.connected),
+            connected: Boolean(
+                metaWizardStatus?.instagramDM?.config?.state === "connected" ||
+                metaWizardStatus?.whatsappBusiness?.config?.state === "connected"
+            ),
             features: [
-                "Meta ile Baglan ile otomatik asset kesfi",
-                "Instagram, Messenger ve WhatsApp icin tek kurulum",
-                "Advanced altinda manuel fallback",
+                "Instagram DM için ayrı Türkçe adımlar",
+                "WhatsApp Business için ayrı popup akışı",
+                "Her kanal için bağımsız hata yönetimi",
             ],
         },
         {
@@ -231,13 +234,16 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         },
         {
             id: "whatsapp",
-            name: t('whatsappName') || "WhatsApp Business",
-            description: t('whatsappDescription'),
+            name: "WhatsApp Business",
+            description: "WhatsApp Business hesabınızı ayrı kurulum sihirbazıyla bağlayın ve mesaj akışını yönetin.",
             logo: "/integrations/whatsapp.svg",
             iconBg: "bg-gray-100",
-            connected: whatsAppConnected,
+            connected: metaWizardStatus?.whatsappBusiness?.config?.state === "connected",
+            connectedInfo: metaWizardStatus?.whatsappBusiness?.config?.displayNumber || undefined,
             features: [
-                t('whatsappInstructions')
+                "Embedded signup ile yönlendirmeli kurulum",
+                "Telefon numarası ve webhook durumu kontrolü",
+                "Test mesajı ve yeniden bağlanma akışı",
             ]
         },
         {
@@ -308,10 +314,19 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         {
             id: "instagram",
             name: "Instagram DM",
-            description: t('instagramDescription') || "Instagram Direct mesajlarını chatbot ile otomatik yanıtlayın",
+            description: "Instagram DM kanalını ayrı kurulum sihirbazıyla bağlayın ve mesaj durumunu takip edin.",
             logo: "/integrations/instagram.svg",
             iconBg: "bg-gray-100",
-            connected: instagramConnected,
+            connected: metaWizardStatus?.instagramDM?.config?.state === "connected",
+            connectedInfo:
+                metaWizardStatus?.instagramDM?.config?.instagramUsername ||
+                metaWizardStatus?.instagramDM?.config?.pageName ||
+                undefined,
+            features: [
+                "Ön kontrol ile eksik gereksinimleri görme",
+                "Facebook Sayfası ve Instagram hesabı seçimi",
+                "Test mesajı ve recovery banner desteği",
+            ],
         },
     ]
 
@@ -731,15 +746,27 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     }
                 }
 
-                const metaStatusRes = await fetch(`/api/integrations/meta/setup-status?chatbotId=${userId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-                if (metaStatusRes.ok) {
-                    const metaStatusData = await metaStatusRes.json()
-                    setMetaSetupStatus(metaStatusData)
+                const [instagramStatusRes, whatsappStatusRes] = await Promise.all([
+                    fetch(`/api/integrations/instagram-dm/status?chatbotId=${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }),
+                    fetch(`/api/integrations/whatsapp-business/status?chatbotId=${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    })
+                ])
+
+                const nextMetaWizardStatus: Record<string, unknown> = {}
+                if (instagramStatusRes.ok) {
+                    nextMetaWizardStatus.instagramDM = await instagramStatusRes.json()
                 }
+                if (whatsappStatusRes.ok) {
+                    nextMetaWizardStatus.whatsappBusiness = await whatsappStatusRes.json()
+                }
+                setMetaWizardStatus(nextMetaWizardStatus)
             } catch (error) {
                 console.error("Error fetching settings:", error)
             }
@@ -788,7 +815,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const renderDetailView = () => {
         if (!currentIntegration) return null
 
-        if (currentIntegration.id === "meta-channels") {
+        if (currentIntegration.id === "instagram") {
             return (
                 <div className="flex-1 p-8">
                     <div className="mb-6 flex items-center justify-between">
@@ -801,9 +828,25 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                         </button>
                     </div>
 
-                    <div className="w-full">
-                        <MetaChannelsSetupCard chatbotId={userId} />
+                    <InstagramDMWizard chatbotId={userId} />
+                </div>
+            )
+        }
+
+        if (currentIntegration.id === "whatsapp") {
+            return (
+                <div className="flex-1 p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setSelectedIntegration(null)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t('backToIntegrations')}
+                        </button>
                     </div>
+
+                    <WhatsAppBizWizard chatbotId={userId} />
                 </div>
             )
         }
@@ -991,6 +1034,14 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                     </Button>
                                 </CardFooter>
                             </Card>
+                        )}
+
+                        {/* WhatsApp Wizard */}
+                        {currentIntegration.id === "meta-channels" && (
+                            <div className="grid gap-6 xl:grid-cols-2">
+                                <InstagramDMWizard chatbotId={userId} />
+                                <WhatsAppBizWizard chatbotId={userId} />
+                            </div>
                         )}
 
                         {/* WhatsApp Wizard */}

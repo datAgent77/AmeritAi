@@ -766,7 +766,11 @@ export async function getOmniChannelConfig(adminDb: any, chatbotId: string) {
     return snapshot.exists ? snapshot.data() || {} : { chatbotId }
 }
 
-export async function mergeOmniChannelConfig(adminDb: any, chatbotId: string, payload: Record<string, unknown>) {
+export async function mergeOmniChannelConfig(
+    adminDb: any,
+    chatbotId: string,
+    payload: Record<string, unknown>
+) {
     const docRef = adminDb.collection("omni_channel_configs").doc(chatbotId)
     await docRef.set(
         sanitizeObject({

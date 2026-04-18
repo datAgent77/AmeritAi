@@ -15,11 +15,12 @@ import {
     Rocket,
     ShieldCheck,
     Smartphone,
+    ArrowRight
 } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -94,6 +95,7 @@ interface MetaSetupStatusPayload {
         messenger: MetaChannelStatusPayload
         whatsapp: MetaChannelStatusPayload
     }
+    platformAppAvailable?: boolean
 }
 
 interface MetaActionResult {
@@ -117,23 +119,25 @@ const CHANNEL_LABELS: Record<MetaChannelKey, string> = {
 }
 
 const STAGE_LABELS: Record<MetaWizardStage, string> = {
-    prerequisites: "Hazirlik",
+    prerequisites: "Hazırlık",
     token: "Token",
-    discovery: "Kesif",
+    discovery: "Keşif",
     draft: "Taslak",
     go_live: "Kontrol",
-    live: "Canli",
+    live: "Canlı",
 }
 
 const STATUS_LABELS: Record<MetaSetupState, string> = {
-    not_started: "Baslamadi",
-    draft: "Eksik Secim",
-    ready_for_live: "Hazir",
+    not_started: "Başlamadı",
+    draft: "Eksik Seçim",
+    ready_for_live: "Hazır",
     live: "Kuruldu",
     error: "Meta izni eksik",
 }
 
 export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange }: MetaChannelsSetupCardProps) {
+    // Deprecated: console integration page now renders dedicated Instagram DM and WhatsApp Business wizards.
+    // Keep this component for backward compatibility with the legacy combined Meta flow.
     const { toast } = useToast()
     const { user } = useAuth()
     const appIdInputRef = useRef<HTMLInputElement | null>(null)
@@ -192,7 +196,7 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
     }, [localStatus])
 
     const getAuthHeaders = async () => {
-        if (!user) throw new Error("Oturum bulunamadi.")
+        if (!user) throw new Error("Oturum bulunamadı.")
         const token = await user.getIdToken()
         return {
             "Content-Type": "application/json",
@@ -209,10 +213,10 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
                 cache: "no-store",
             })
             const payload = await response.json().catch(() => null)
-            if (!response.ok || !payload) throw new Error(payload?.error || "Meta durum bilgisi alinamadi.")
+            if (!response.ok || !payload) throw new Error(payload?.error || "Meta durum bilgisi alınamadı.")
             publishStatus(payload as MetaSetupStatusPayload)
         } catch (error) {
-            setLastError(error instanceof Error ? error.message : "Meta durum bilgisi alinamadi.")
+            setLastError(error instanceof Error ? error.message : "Meta durum bilgisi alınamadı.")
         } finally {
             setIsRefreshing(false)
         }
@@ -229,10 +233,16 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
     const selectedWhatsAppPhone = selectedWhatsAppBusiness?.phoneNumbers.find((item) => item.id === whatsappPhoneNumberId) || null
     const selectedChannelStatuses = selectedChannels.map((channel) => getChannelStatus(localStatus, channel))
     const fullyConnectedCount = selectedChannelStatuses.filter((channel) => channel.connected).length
+    const platformAppAvailable = Boolean(localStatus?.platformAppAvailable)
+    const isPlatformMode = platformAppAvailable && localStatus?.wizard.connectionMode !== "tenant_meta_app"
     const hasStoredTenantAppCredentials =
         Boolean(localStatus?.wizard.appId) && Boolean(localStatus?.wizard.hasStoredAppSecret) && localStatus?.wizard.connectionMode !== "platform_meta_app"
     const hasEnteredTenantAppCredentials = Boolean(appId.trim() && appSecret.trim())
-    const canConnect = selectedChannels.length > 0 && !isConnecting && !isRefreshing && (hasEnteredTenantAppCredentials || hasStoredTenantAppCredentials)
+    const canConnect =
+        selectedChannels.length > 0 &&
+        !isConnecting &&
+        !isRefreshing &&
+        (isPlatformMode || hasEnteredTenantAppCredentials || hasStoredTenantAppCredentials)
     const canDiscover = selectedChannels.length > 0 && accessToken.trim() && !isDiscovering && !isSavingDraft && !isVerifyingLive
     const canSaveDraft =
         selectedChannels.length > 0 &&
@@ -244,6 +254,7 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
         !isVerifyingLive
     const canVerifyLive = selectedChannels.length > 0 && !isVerifyingLive && !isSavingDraft && !isDiscovering
     const needsTenantAppCredentials =
+        !isPlatformMode &&
         !hasEnteredTenantAppCredentials &&
         !hasStoredTenantAppCredentials
 
@@ -265,8 +276,6 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
         if (selectedChannels.includes("instagram")) {
             permissions.add("pages_manage_metadata")
             permissions.add("pages_messaging")
-            permissions.add("instagram_business_basic")
-            permissions.add("instagram_business_manage_messages")
         }
         if (selectedChannels.includes("messenger")) {
             permissions.add("pages_manage_metadata")
@@ -293,8 +302,8 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
         setIsConnecting(true)
         setLastError(null)
         try {
-            if (!hasEnteredTenantAppCredentials && !hasStoredTenantAppCredentials) {
-                setLastError("Bu tenant icin Meta App ID ve Meta App Secret gerekli.")
+            if (!isPlatformMode && !hasEnteredTenantAppCredentials && !hasStoredTenantAppCredentials) {
+                setLastError("Bu tenant için Meta App ID ve Meta App Secret gerekli.")
                 appIdInputRef.current?.focus()
                 setIsConnecting(false)
                 return
@@ -311,16 +320,16 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
                 }),
             })
             const payload = await response.json().catch(() => null)
-            if (!response.ok || !payload?.authUrl) throw new Error(payload?.error || "Meta OAuth baslatilamadi.")
+            if (!response.ok || !payload?.authUrl) throw new Error(payload?.error || "Meta OAuth başlatılamadı.")
             window.location.href = payload.authUrl
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Meta OAuth baslatilamadi."
+            const message = error instanceof Error ? error.message : "Meta OAuth başlatılamadı."
             setLastError(message)
-            if (message.includes("Meta platform app ayarli degil")) {
+            if (message.includes("Meta platform app ayarlı değil")) {
                 setShowAdvanced(true)
             }
             toast({
-                title: "Meta baglantisi baslatilamadi",
+                title: "Meta bağlantısı başlatılamadı",
                 description: message,
                 variant: "destructive",
             })
@@ -346,18 +355,18 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
                 }),
             })
             const payload = await response.json().catch(() => null)
-            if (!response.ok || !payload) throw new Error(payload?.error || "Meta varliklari kesfedilemedi.")
+            if (!response.ok || !payload) throw new Error(payload?.error || "Meta varlıkları keşfedilemedi.")
             publishStatus(payload as MetaSetupStatusPayload)
             setAccessToken("")
             toast({
-                title: "Kesif tamamlandi",
-                description: "Advanced fallback icin Meta varliklari guncellendi.",
+                title: "Keşif tamamlandı",
+                description: "Advanced fallback için Meta varlıkları güncellendi.",
             })
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Meta varliklari kesfedilemedi."
+            const message = error instanceof Error ? error.message : "Meta varlıkları keşfedilemedi."
             setLastError(message)
             toast({
-                title: "Kesif basarisiz",
+                title: "Keşif başarısız",
                 description: message,
                 variant: "destructive",
             })
@@ -386,14 +395,14 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
                 }),
             })
             const payload = await response.json().catch(() => null)
-            if (!response.ok || !payload?.status) throw new Error(payload?.error || "Meta taslagi kaydedilemedi.")
+            if (!response.ok || !payload?.status) throw new Error(payload?.error || "Meta taslağı kaydedilemedi.")
             publishStatus(payload.status as MetaSetupStatusPayload)
             setActionResults(extractActionResults(payload.results))
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Meta taslagi kaydedilemedi."
+            const message = error instanceof Error ? error.message : "Meta taslağı kaydedilemedi."
             setLastError(message)
             toast({
-                title: "Taslak kaydedilemedi",
+                title: "Kayıt başarısız",
                 description: message,
                 variant: "destructive",
             })
@@ -411,24 +420,21 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
             const response = await fetch("/api/integrations/meta/verify-live", {
                 method: "POST",
                 headers: await getAuthHeaders(),
-                body: JSON.stringify({
-                    chatbotId,
-                    selectedChannels,
-                    confirmReady: true,
-                    appSecret: appSecret.trim() || undefined,
-                    appId: appId.trim() || undefined,
-                }),
+                body: JSON.stringify({ chatbotId, selectedChannels }),
             })
             const payload = await response.json().catch(() => null)
-            if (!response.ok || !payload?.status) throw new Error(payload?.error || "Meta canli kontrolu basarisiz.")
+            if (!response.ok || !payload?.status) throw new Error(payload?.error || "Meta kontrolü tamamlanamadı.")
             publishStatus(payload.status as MetaSetupStatusPayload)
             setActionResults(extractActionResults(payload.results))
-            setAppSecret("")
+            toast({
+                title: "Kontrol tamamlandı",
+                description: "Meta bağlantıları güncellendi.",
+            })
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Meta canli kontrolu basarisiz."
+            const message = error instanceof Error ? error.message : "Meta kontrolü tamamlanamadı."
             setLastError(message)
             toast({
-                title: "Canli kontrol basarisiz",
+                title: "Kontrol başarısız",
                 description: message,
                 variant: "destructive",
             })
@@ -438,484 +444,425 @@ export function MetaChannelsSetupCard({ chatbotId, status = null, onStatusChange
     }
 
     return (
-        <Card className="overflow-hidden border-0 bg-white/60 shadow-xl ring-1 ring-slate-200/60 backdrop-blur-xl dark:bg-slate-950/60 dark:ring-slate-800/60">
-            <CardContent className="p-0">
-                <div className="grid lg:grid-cols-5 xl:grid-cols-6">
-                    <div className="relative overflow-hidden bg-gradient-to-br from-[#1666c5] via-[#6c37db] to-[#0c8f61] p-8 text-white lg:col-span-2">
-                        <div className="space-y-6">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#1877F2]">
-                                    <Facebook className="h-5 w-5" />
+        <Card className="w-full">
+            <div className="grid lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-border">
+                {/* Left Panel - Minimal Summary */}
+                <div className="col-span-12 lg:col-span-4 bg-muted/30 p-6 flex flex-col gap-6">
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="flex items-center -space-x-2">
+                                <div className="h-8 w-8 rounded-full border-2 border-background bg-blue-100 flex items-center justify-center z-30">
+                                    <Facebook className="h-4 w-4 text-blue-600" />
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 text-white">
-                                    <Instagram className="h-5 w-5" />
+                                <div className="h-8 w-8 rounded-full border-2 border-background bg-fuchsia-100 flex items-center justify-center z-20">
+                                    <Instagram className="h-4 w-4 text-fuchsia-600" />
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#25D366] text-white">
-                                    <Smartphone className="h-5 w-5" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <h2 className="text-3xl font-bold tracking-tight">Meta ile baglan, kalanini sistem kursun.</h2>
-                                <p className="text-sm text-white/85">
-                                    Instagram, Messenger ve WhatsApp icin tek OAuth akisi kullanilir. Sistem varliklari kesfeder, uygun hesaplari secer ve calisan kisimlari otomatik kurar.
-                                </p>
-                            </div>
-
-                            <div className="rounded-2xl bg-black/20 p-5 backdrop-blur-sm">
-                                <div className="mb-3 flex items-center justify-between">
-                                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/75">Kurulum Asamasi</span>
-                                    <Badge className="border-white/20 bg-white/15 text-white hover:bg-white/15">
-                                        {localStatus ? STAGE_LABELS[localStatus.wizard.stage] : "Yukleniyor"}
-                                    </Badge>
-                                </div>
-                                <div className="space-y-3">
-                                    {summaryCards.map(({ channel, status }) => (
-                                        <div key={channel} className="rounded-xl border border-white/10 bg-black/15 p-3">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <span className="text-sm font-medium">{CHANNEL_LABELS[channel]}</span>
-                                                <Badge className={getStatusBadgeClass(status.setupStatus)}>{STATUS_LABELS[status.setupStatus]}</Badge>
-                                            </div>
-                                            <div className="mt-2 text-xs text-white/80">
-                                                {status.connected ? "Kurulum tamamlandi" : status.lastSetupError || status.webhookStatus}
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="h-8 w-8 rounded-full border-2 border-background bg-emerald-100 flex items-center justify-center z-10">
+                                    <Smartphone className="h-4 w-4 text-emerald-600" />
                                 </div>
                             </div>
                         </div>
+                        <h3 className="text-lg font-semibold tracking-tight">Meta Kanalları</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Instagram, Facebook ve WhatsApp Business kanallarınızı tek bir yerden bağlayın ve yönetin.
+                        </p>
                     </div>
 
-                    <div className="space-y-6 p-8 lg:col-span-3 xl:col-span-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                                <div className="mb-2 flex items-center gap-2">
-                                    <ShieldCheck className="h-5 w-5 text-slate-500" />
-                                    <Badge variant="outline">
-                                        {localStatus ? `${STAGE_LABELS[localStatus.wizard.stage]} • Tenant App` : "Tenant App"}
-                                    </Badge>
+                    <div className="space-y-3">
+                        <div className="text-sm font-medium">Bağlantı Durumu</div>
+                        <div className="grid gap-2">
+                            {summaryCards.map(({ channel, status }) => (
+                                <div 
+                                    key={channel} 
+                                    className="flex items-center justify-between rounded-lg border bg-background px-3 py-2.5"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        {channel === "instagram" ? (
+                                            <Instagram className="h-4 w-4 text-fuchsia-500" />
+                                        ) : channel === "messenger" ? (
+                                            <Facebook className="h-4 w-4 text-blue-500" />
+                                        ) : (
+                                            <Smartphone className="h-4 w-4 text-emerald-500" />
+                                        )}
+                                        <span className="text-sm font-medium">{CHANNEL_LABELS[channel]}</span>
+                                    </div>
+                                    {status.connected ? (
+                                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0 text-[10px]">
+                                            BAĞLI
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="secondary" className="text-[10px] text-muted-foreground border-0">
+                                            BEKLİYOR
+                                        </Badge>
+                                    )}
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Meta kurulumunu hizlandir</h3>
-                                <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                                    Her tenant kendi Meta uygulama bilgileriyle baglanir. Sistem OAuth sonrasi hesaplari kesfeder, uygun Page ve WABA secimini otomatik yapar.
-                                </p>
-                            </div>
-
-                            <Button variant="outline" className="gap-2" onClick={refreshStatus} disabled={isRefreshing || isConnecting || isDiscovering || isSavingDraft || isVerifyingLive}>
-                                {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                Durumu Yenile
-                            </Button>
+                            ))}
                         </div>
+                    </div>
+                </div>
 
-                        {lastError ? (
-                            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
-                                <div className="flex items-start gap-2">
-                                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                                    <span>{lastError}</span>
+                {/* Right Panel - Setup Flow */}
+                <div className="col-span-12 lg:col-span-8 p-6 lg:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <div>
+                            <h2 className="text-xl font-semibold tracking-tight">Kurulum Adımları</h2>
+                            <p className="text-sm text-muted-foreground">İstediğiniz kanalları seçip Meta hesabınızla giriş yapın.</p>
+                        </div>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={refreshStatus} disabled={isRefreshing || isConnecting || isDiscovering || isSavingDraft || isVerifyingLive}>
+                            {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            Durumu Yenile
+                        </Button>
+                    </div>
+
+                    {/* Error Display */}
+                    {lastError && (
+                        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive flex items-start gap-3">
+                            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                            <p>{lastError}</p>
+                        </div>
+                    )}
+
+                    {/* Persistent Discovery & Channel Errors */}
+                    {(() => {
+                        const discoveryErrors = (localStatus?.wizard.discovery.errors || {}) as Record<string, string | undefined>;
+                        const hasDiscoveryErrors = Object.values(discoveryErrors).some(Boolean);
+                        const channelErrors = CHANNEL_ORDER.map(channel => ({
+                            channel,
+                            error: getChannelStatus(localStatus, channel).lastSetupError
+                        })).filter(item => item.error);
+
+                        if (!hasDiscoveryErrors && channelErrors.length === 0 && !actionResults) return null;
+
+                        return (
+                            <div className="mb-8 rounded-lg border border-border bg-muted/50 p-4">
+                                <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+                                    <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                                    Detaylı Durum Bilgisi
                                 </div>
-                            </div>
-                        ) : null}
-
-                        {actionResults ? (
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-                                <div className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Son islem sonucu</div>
                                 <div className="space-y-2">
-                                    {CHANNEL_ORDER.filter((channel) => actionResults[channel]).map((channel) => {
-                                        const result = actionResults[channel]
-                                        if (!result) return null
+                                    {actionResults && CHANNEL_ORDER.filter((channel) => actionResults[channel]).map((channel) => {
+                                        const result = actionResults[channel];
+                                        if (!result) return null;
                                         return (
-                                            <div
-                                                key={channel}
-                                                className={cn(
-                                                    "rounded-xl border px-3 py-2 text-sm",
-                                                    result.ok
-                                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200"
-                                                        : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200"
-                                                )}
-                                            >
-                                                <span className="font-medium">{CHANNEL_LABELS[channel]}:</span> {result.message}
+                                            <div key={`action-${channel}`} className={cn("rounded-md border px-3 py-2 text-sm", result.ok ? "bg-emerald-50 text-emerald-900 border-emerald-200" : "bg-destructive/10 text-destructive border-destructive/20")}>
+                                                <span className="font-semibold">{CHANNEL_LABELS[channel]}:</span> {result.message}
                                             </div>
-                                        )
+                                        );
+                                    })}
+                                    {CHANNEL_ORDER.map(channel => {
+                                        const discError = discoveryErrors[channel];
+                                        const chanError = getChannelStatus(localStatus, channel).lastSetupError;
+                                        const displayError = discError || chanError;
+                                        if (!displayError || (actionResults && actionResults[channel])) return null;
+                                        return (
+                                            <div key={`persistent-${channel}`} className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                                                <span className="font-semibold">{CHANNEL_LABELS[channel]}:</span> {displayError}
+                                            </div>
+                                        );
                                     })}
                                 </div>
                             </div>
-                        ) : null}
+                        );
+                    })()}
 
-                        <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900/50">
-                            <div className="mb-5">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">1. Kurulacak kanallari secin</div>
-                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                    Sistem secili kanallar icin ilk uygun Page/WABA varliklarini otomatik secmeye calisir.
-                                </p>
-                            </div>
-
-                            <div className="grid gap-3 md:grid-cols-3">
-                                {CHANNEL_ORDER.map((channel) => {
-                                    const selected = selectedChannels.includes(channel)
-                                    const channelStatus = getChannelStatus(localStatus, channel)
-                                    return (
-                                        <label
-                                            key={channel}
-                                            className={cn(
-                                                "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors",
-                                                selected
-                                                    ? "border-slate-900 bg-white dark:border-slate-100 dark:bg-slate-950"
-                                                    : "border-slate-200 bg-white/70 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:bg-slate-950"
-                                            )}
-                                        >
-                                            <Checkbox checked={selected} onCheckedChange={(checked) => toggleChannel(channel, checked === true)} className="mt-0.5" />
-                                            <div className="min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    <span className="font-medium text-slate-900 dark:text-slate-100">{CHANNEL_LABELS[channel]}</span>
-                                                    <Badge className={getStatusBadgeClass(channelStatus.setupStatus)}>{STATUS_LABELS[channelStatus.setupStatus]}</Badge>
-                                                </div>
-                                                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                                                    {channel === "instagram"
-                                                        ? "Bagli Instagram Business hesabi olan Page"
-                                                        : channel === "messenger"
-                                                          ? "Messenger acik Facebook Page"
-                                                          : "Numarasi olan ilk WABA"}
-                                                </div>
-                                            </div>
-                                        </label>
-                                    )
-                                })}
-                            </div>
-
-                            <div className="mt-6">
-                                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">2. Bu tenantin Meta uygulama bilgilerini girin</div>
-                                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                    Bu bilgiler tenant bazlidir. Her tenant kendi Meta App ID ve App Secret bilgisiyle baglanir.
-                                </p>
-                            </div>
-
-                            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="meta-app-id-primary">Meta App ID</Label>
-                                        {hasStoredTenantAppCredentials ? (
-                                            <Badge variant="outline" className="text-[10px]">
-                                                Kayitli
-                                            </Badge>
-                                        ) : null}
-                                    </div>
-                                    <Input
-                                        id="meta-app-id-primary"
-                                        ref={appIdInputRef}
-                                        value={appId}
-                                        onChange={(event) => setAppId(event.target.value)}
-                                        placeholder={hasStoredTenantAppCredentials ? "Kayitli App ID" : "123456789012345"}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Label htmlFor="meta-app-secret-primary">Meta App Secret</Label>
-                                        {hasStoredTenantAppCredentials ? (
-                                            <Badge variant="outline" className="text-[10px]">
-                                                Kayitli
-                                            </Badge>
-                                        ) : null}
-                                    </div>
-                                    <Input
-                                        id="meta-app-secret-primary"
-                                        type="password"
-                                        value={appSecret}
-                                        onChange={(event) => setAppSecret(event.target.value)}
-                                        placeholder={hasStoredTenantAppCredentials ? "Kayitli App Secret korunuyor" : "App Secret"}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/50 dark:bg-sky-950/20 dark:text-sky-200">
-                                <div className="font-medium">Bu tenant app&apos;inde gerekli Meta izinleri hazir olmali.</div>
-                                <div className="mt-1">
-                                    {selectedChannels.includes("instagram")
-                                        ? "Instagram icin app dashboard tarafinda Instagram Business izinleri aktif olmali: instagram_business_basic ve instagram_business_manage_messages."
-                                        : "Messenger ve WhatsApp secimi icin app dashboard izinleri yeterli olmali."}
-                                </div>
-                                <div className="mt-1">
-                                    {selectedChannels.includes("messenger")
-                                        ? "Messenger icin Page izinleri gerekir: pages_show_list, pages_manage_metadata ve pages_messaging."
-                                        : "Messenger secili degilse bu izinler istenmez."}
-                                </div>
-                                {selectedChannels.includes("whatsapp") ? (
-                                    <div className="mt-1">WhatsApp icin whatsapp_business_management ve whatsapp_business_messaging izinleri gerekir.</div>
-                                ) : null}
-                            </div>
-
-                            <details className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
-                                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                        <BookOpen className="h-4 w-4 text-slate-500" />
-                                        Meta izin kurulum kilavuzu
-                                    </div>
-                                    <ChevronDown className="h-4 w-4 text-slate-500" />
-                                </summary>
-
-                                <div className="mt-4 space-y-4 text-sm text-slate-600 dark:text-slate-300">
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                                        <div className="font-medium text-slate-900 dark:text-slate-100">1. Meta app temel ayarlarini tamamlayin</div>
-                                        <div className="mt-1">`developers.facebook.com` icinde bu tenant icin kullandiginiz app&apos;i acin. App type olarak business kullanimina uygun bir app secin, `App ID` ve `App Secret` bilgisini buradan alin.</div>
-                                        <div className="mt-2">
-                                            <a
-                                                href="https://developers.facebook.com/docs/development/create-an-app"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sky-700 underline underline-offset-4 dark:text-sky-300"
-                                            >
-                                                Meta app olusturma dokumani
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                                        <div className="font-medium text-slate-900 dark:text-slate-100">2. Facebook Login redirect URI ekleyin</div>
-                                        <div className="mt-1">
-                                            Meta App Dashboard <code>Facebook Login &gt; Settings</code> altinda <code>Valid OAuth Redirect URIs</code> alanina su adresi eklenmeli:
-                                        </div>
-                                        <div className="mt-2 rounded-lg bg-slate-900 px-3 py-2 font-mono text-xs text-slate-50">
-                                            {typeof window !== "undefined"
-                                                ? `${window.location.origin}/api/integrations/meta/callback`
-                                                : "https://your-domain.com/api/integrations/meta/callback"}
-                                        </div>
-                                        <div className="mt-1">Local ve production ayri domain ise ikisini de ayni listeye ekleyin.</div>
-                                        <div className="mt-2">
-                                            <a
-                                                href="https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sky-700 underline underline-offset-4 dark:text-sky-300"
-                                            >
-                                                Facebook Login OAuth kilavuzu
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                                        <div className="font-medium text-slate-900 dark:text-slate-100">3. Secili kanallar icin izinleri acin</div>
-                                        <div className="mt-1">
-                                            <code>App Review &gt; Permissions and Features</code> ekraninda en az su izinler hazir olmali:
-                                        </div>
-                                        <div className="mt-2 flex flex-wrap gap-2">
-                                            {requiredPermissions.map((permission) => (
-                                                <Badge key={permission} variant="outline" className="font-mono text-[11px]">
-                                                    {permission}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                        <div className="mt-2">App development mode&apos;daysa OAuth ile giris yapacak kullaniciyi `Roles` altindan admin, developer veya tester olarak ekleyin.</div>
-                                        <div className="mt-2">
-                                            <a
-                                                href="https://developers.facebook.com/docs/facebook-login/permissions"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sky-700 underline underline-offset-4 dark:text-sky-300"
-                                            >
-                                                Facebook Login permission referansi
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                                        <div className="font-medium text-slate-900 dark:text-slate-100">4. Kanal baglantilarini Meta tarafinda hazir tutun</div>
-                                        <div className="mt-1">Instagram icin Professional Instagram hesabinin bir Facebook Page&apos;e bagli olmasi gerekir. Messenger icin ayni Page&apos;de mesajlasma acik olmali. WhatsApp icin app icinde `WhatsApp` product eklenmis ve bu tenant&apos;a ait WABA/telefon numarasi hazir olmalidir.</div>
-                                        <div className="mt-2 flex flex-wrap gap-3">
-                                            <a
-                                                href="https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sky-700 underline underline-offset-4 dark:text-sky-300"
-                                            >
-                                                Instagram API with Facebook Login
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                            </a>
-                                            <a
-                                                href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-sky-700 underline underline-offset-4 dark:text-sky-300"
-                                            >
-                                                WhatsApp Cloud API get started
-                                                <ExternalLink className="h-3.5 w-3.5" />
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-100">
-                                        Bu ekranda `Invalid Scopes` hatasi alirsaniz sorun genelde kodda degil, tenant&apos;in Meta app dashboard&apos;unda secili izinlerin henuz aktif olmamasidir.
-                                    </div>
-                                </div>
-                            </details>
-
-                            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                                <Button className="gap-2" onClick={handleConnect} disabled={!canConnect}>
-                                    {isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Facebook className="h-4 w-4" />}
-                                    Meta ile Baglan
-                                </Button>
-                                <Button variant="outline" className="gap-2" onClick={() => setShowAdvanced((current) => !current)}>
-                                    <ChevronDown className={cn("h-4 w-4 transition-transform", showAdvanced ? "rotate-180" : "")} />
-                                    Advanced
-                                </Button>
-                            </div>
-
-                            {needsTenantAppCredentials ? (
-                                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
-                                    Devam etmek icin bu tenanta ait Meta App ID ve Meta App Secret bilgisini girin. WhatsApp numarasi, Facebook Page ve Instagram hesabi OAuth sonrasinda otomatik kesfedilecektir.
-                                </div>
-                            ) : null}
+                    {/* STEP 1: Channel selection */}
+                    <div className="mb-8 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="flex h-6 w-6 items-center justify-center rounded-full p-0">1</Badge>
+                            <h4 className="text-sm font-medium">Kanalları Seçin</h4>
                         </div>
-
-                        <div className="grid gap-4 lg:grid-cols-3">
-                            {summaryCards
-                                .filter(({ channel }) => selectedChannels.includes(channel))
-                                .map(({ channel, status }) => (
-                                    <div key={channel} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div className="flex items-center gap-2">
-                                                {channel === "instagram" ? (
-                                                    <Instagram className="h-4 w-4 text-pink-500" />
-                                                ) : channel === "messenger" ? (
-                                                    <Facebook className="h-4 w-4 text-blue-500" />
-                                                ) : (
-                                                    <Smartphone className="h-4 w-4 text-emerald-500" />
+                        
+                        <div className="grid gap-3 sm:grid-cols-3 pl-8">
+                            {CHANNEL_ORDER.map((channel) => {
+                                const selected = selectedChannels.includes(channel)
+                                const channelStatus = getChannelStatus(localStatus, channel)
+                                return (
+                                    <label
+                                        key={channel}
+                                        className={cn(
+                                            "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                                            selected
+                                                ? "border-primary bg-primary/5"
+                                                : "bg-background hover:bg-muted/50"
+                                        )}
+                                    >
+                                        <Checkbox 
+                                            checked={selected} 
+                                            onCheckedChange={(checked) => toggleChannel(channel, checked === true)} 
+                                            className="mt-0.5" 
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex flex-col gap-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    {channel === "instagram" ? (
+                                                        <Instagram className="h-4 w-4 text-muted-foreground" />
+                                                    ) : channel === "messenger" ? (
+                                                        <Facebook className="h-4 w-4 text-muted-foreground" />
+                                                    ) : (
+                                                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                    <span className="text-sm font-medium leading-none">{CHANNEL_LABELS[channel]}</span>
+                                                </div>
+                                                {channelStatus.connected && (
+                                                    <span className="text-[10px] font-medium text-emerald-600 flex items-center gap-1">
+                                                        <CheckCircle2 className="h-3 w-3" /> Aktif
+                                                    </span>
                                                 )}
-                                                <span className="font-medium text-slate-900 dark:text-slate-100">{CHANNEL_LABELS[channel]}</span>
                                             </div>
-                                            <Badge className={getStatusBadgeClass(status.setupStatus)}>{STATUS_LABELS[status.setupStatus]}</Badge>
                                         </div>
-                                        <div className="mt-3 space-y-1 text-sm text-slate-500 dark:text-slate-400">
-                                            {channel === "whatsapp" ? (
-                                                <>
-                                                    <div>WABA: {status.businessAccountId || "-"}</div>
-                                                    <div>Numara: {status.displayNumber || status.phoneNumberId || "-"}</div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div>Page: {status.pageId || "-"}</div>
-                                                    <div>{channel === "instagram" ? "IG Account" : "Webhook"}: {channel === "instagram" ? status.accountId || "-" : status.webhookStatus}</div>
-                                                </>
-                                            )}
-                                            <div>{status.connected ? "Kurulum tamamlandi" : status.lastSetupError || "Sistem secimini bekliyor"}</div>
-                                        </div>
-                                    </div>
-                                ))}
+                                    </label>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* STEP 2: Connect */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="flex h-6 w-6 items-center justify-center rounded-full p-0">2</Badge>
+                            <h4 className="text-sm font-medium">Bağlantıyı Tamamlayın</h4>
                         </div>
 
-                        {showAdvanced ? (
-                            <div className="rounded-3xl border border-slate-200 p-6 dark:border-slate-800">
-                                <div className="mb-5">
-                                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Advanced fallback</div>
-                                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                        OAuth otomatik kurulumunun tamamlayamadigi durumda token ile kesif yapabilir, sayfa ve numara secimini elle degistirebilirsiniz.
-                                    </p>
-                                </div>
+                        <div className="pl-8">
+                            <Card className="border-border shadow-none">
+                                <CardContent className="p-4 sm:p-6 space-y-4">
+                                    {isPlatformMode ? (
+                                        <div className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                                            Otomatik kurulum aktif. Meta ile giriş yapmanız yeterlidir.
+                                        </div>
+                                    ) : (
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <Label htmlFor="meta-app-id-primary" className="text-xs">Meta App ID</Label>
+                                                    {hasStoredTenantAppCredentials && <Badge variant="secondary" className="text-[9px]">Kayıtlı</Badge>}
+                                                </div>
+                                                <Input
+                                                    id="meta-app-id-primary"
+                                                    ref={appIdInputRef}
+                                                    value={appId}
+                                                    onChange={(event) => setAppId(event.target.value)}
+                                                    placeholder="123456789012345"
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <Label htmlFor="meta-app-secret-primary" className="text-xs">Meta App Secret</Label>
+                                                    {hasStoredTenantAppCredentials && <Badge variant="secondary" className="text-[9px]">Kayıtlı</Badge>}
+                                                </div>
+                                                <Input
+                                                    id="meta-app-secret-primary"
+                                                    type="password"
+                                                    value={appSecret}
+                                                    onChange={(event) => setAppSecret(event.target.value)}
+                                                    placeholder="App Secret"
+                                                    className="h-9"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
 
-                                <div className="mt-4 space-y-2">
-                                    <Label htmlFor="meta-access-token">Meta Access Token</Label>
-                                    <Input id="meta-access-token" type="password" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="EAAB..." />
-                                </div>
-
-                                <div className="mt-5">
-                                    <Button className="gap-2" onClick={handleDiscover} disabled={!canDiscover}>
-                                        {isDiscovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                                        Varliklari Kesfet
+                                    <Button 
+                                        className="w-full sm:w-auto" 
+                                        onClick={handleConnect} 
+                                        disabled={!canConnect}
+                                    >
+                                        {isConnecting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Facebook className="h-4 w-4 mr-2" />}
+                                        Meta ile Bağlan
                                     </Button>
+
+                                    {needsTenantAppCredentials && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Devam etmek için Meta App ID ve App Secret bilgisini girin.
+                                        </p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Connected channel details */}
+                    {fullyConnectedCount > 0 && (
+                        <div className="mt-8 pt-8 border-t">
+                            <h4 className="text-sm font-medium mb-4">Aktif Bağlantılar</h4>
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {summaryCards
+                                    .filter(({ channel }) => selectedChannels.includes(channel))
+                                    .map(({ channel, status }) => (
+                                        <Card key={channel} className="shadow-none border-border">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                                        {channel === "instagram" ? (
+                                                            <Instagram className="h-4 w-4 text-muted-foreground" />
+                                                        ) : channel === "messenger" ? (
+                                                            <Facebook className="h-4 w-4 text-muted-foreground" />
+                                                        ) : (
+                                                            <Smartphone className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                        {CHANNEL_LABELS[channel]}
+                                                    </div>
+                                                    <Badge variant="outline" className={cn("text-[10px]", getStatusBadgeClass(status.setupStatus))}>
+                                                        {STATUS_LABELS[status.setupStatus]}
+                                                    </Badge>
+                                                </div>
+                                                <div className="space-y-1.5 text-xs text-muted-foreground">
+                                                    {channel === "whatsapp" ? (
+                                                        <div className="flex justify-between">
+                                                            <span>No:</span>
+                                                            <span className="font-medium text-foreground">{status.displayNumber || status.phoneNumberId || "-"}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-between">
+                                                            <span>ID:</span>
+                                                            <span className="font-medium text-foreground">{channel === "instagram" ? status.accountId || "-" : status.pageId || "-"}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Advanced Settings */}
+                    <div className="mt-8 pt-8 border-t">
+                        <details className="group [&_summary::-webkit-details-marker]:hidden">
+                            <summary className="flex cursor-pointer items-center justify-between py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4" />
+                                    Gelişmiş Ayarlar ve Manuel Kurulum
+                                </div>
+                                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                            </summary>
+
+                            <div className="mt-4 space-y-6 rounded-lg border bg-muted/30 p-4 sm:p-6">
+                                {/* Manual token discovery */}
+                                <div>
+                                    <h5 className="text-sm font-medium mb-1">Manuel Token ile Keşif</h5>
+                                    <p className="text-xs text-muted-foreground mb-4">
+                                        OAuth otomatik kurulumunun tamamlayamadığı durumda token ile keşif yapabilir, sayfa ve numara seçimini elle değiştirebilirsiniz.
+                                    </p>
+                                    
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="flex-1 space-y-1.5">
+                                            <Label htmlFor="meta-access-token" className="text-xs">Meta Access Token</Label>
+                                            <Input id="meta-access-token" type="password" value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="EAAB..." className="h-9 bg-background" />
+                                        </div>
+                                        <Button size="sm" className="sm:self-end h-9" onClick={handleDiscover} disabled={!canDiscover}>
+                                            {isDiscovering ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
+                                            Keşfet
+                                        </Button>
+                                    </div>
                                 </div>
 
-                                <div className="mt-6 grid gap-6 lg:grid-cols-2">
+                                <div className="grid gap-6 md:grid-cols-2">
                                     <div className="space-y-4">
-                                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Page secimi</div>
+                                        <div className="text-sm font-medium">Page Seçimi</div>
                                         {pages.length > 0 ? (
-                                            <div className="grid gap-3">
+                                            <div className="grid gap-2 max-h-[250px] overflow-y-auto pr-1">
                                                 {pages.map((page) => (
-                                                    <button
+                                                    <div
                                                         key={page.id}
-                                                        type="button"
                                                         onClick={() => {
                                                             if (page.instagramAccount) setInstagramPageId(page.id)
                                                             if (page.messagingEligible !== false) setMessengerPageId(page.id)
                                                         }}
-                                                        className="rounded-2xl border border-slate-200 p-4 text-left transition-colors hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900/70"
+                                                        className="cursor-pointer rounded-md border bg-background p-3 text-left text-sm transition-colors hover:bg-muted"
                                                     >
-                                                        <div className="font-medium text-slate-900 dark:text-slate-100">{page.name}</div>
-                                                        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                                                            {page.instagramAccount?.username ? `@${page.instagramAccount.username}` : "Instagram bagli degil"} • {page.messagingEligible !== false ? "Messenger uygun" : "Messenger uygun degil"}
+                                                        <div className="font-medium">{page.name}</div>
+                                                        <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-muted-foreground">
+                                                            <Badge variant="secondary" className="px-1.5 py-0">IG: {page.instagramAccount?.username || "Yok"}</Badge>
+                                                            <Badge variant="secondary" className="px-1.5 py-0">MS: {page.messagingEligible !== false ? "Uygun" : "Uygun Değil"}</Badge>
                                                         </div>
-                                                    </button>
+                                                    </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                                                Henuz Meta Page kesfi yok.
+                                            <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+                                                Page bulunamadı.
                                             </div>
                                         )}
 
-                                        <div className="grid gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="instagram-page-id">Instagram Page ID</Label>
-                                                <Input id="instagram-page-id" value={instagramPageId} onChange={(event) => setInstagramPageId(event.target.value)} placeholder="page-id" />
+                                        <div className="grid gap-3">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="instagram-page-id" className="text-xs">Instagram Page ID</Label>
+                                                <Input id="instagram-page-id" value={instagramPageId} onChange={(event) => setInstagramPageId(event.target.value)} className="h-8 text-xs bg-background" />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="messenger-page-id">Messenger Page ID</Label>
-                                                <Input id="messenger-page-id" value={messengerPageId} onChange={(event) => setMessengerPageId(event.target.value)} placeholder="page-id" />
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="messenger-page-id" className="text-xs">Messenger Page ID</Label>
+                                                <Input id="messenger-page-id" value={messengerPageId} onChange={(event) => setMessengerPageId(event.target.value)} className="h-8 text-xs bg-background" />
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4">
-                                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">WhatsApp secimi</div>
-                                        <div className="grid gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="whatsapp-business-id">Business Account ID</Label>
-                                                <Input id="whatsapp-business-id" value={whatsappBusinessAccountId} onChange={(event) => setWhatsappBusinessAccountId(event.target.value)} placeholder="waba-id" />
+                                        <div className="text-sm font-medium">WhatsApp Seçimi</div>
+                                        <div className="grid gap-3">
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="whatsapp-business-id" className="text-xs">Business Account ID</Label>
+                                                <Input id="whatsapp-business-id" value={whatsappBusinessAccountId} onChange={(event) => setWhatsappBusinessAccountId(event.target.value)} className="h-8 text-xs bg-background" />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="whatsapp-phone-id">Phone Number ID</Label>
-                                                <Input id="whatsapp-phone-id" value={whatsappPhoneNumberId} onChange={(event) => setWhatsappPhoneNumberId(event.target.value)} placeholder="phone-id" />
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="whatsapp-phone-id" className="text-xs">Phone Number ID</Label>
+                                                <Input id="whatsapp-phone-id" value={whatsappPhoneNumberId} onChange={(event) => setWhatsappPhoneNumberId(event.target.value)} className="h-8 text-xs bg-background" />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="whatsapp-display-number">Display Number</Label>
-                                                <Input id="whatsapp-display-number" value={whatsappDisplayNumber} onChange={(event) => setWhatsappDisplayNumber(event.target.value)} placeholder="+90 555 123 45 67" />
+                                            <div className="space-y-1.5">
+                                                <Label htmlFor="whatsapp-display-number" className="text-xs">Display Number</Label>
+                                                <Input id="whatsapp-display-number" value={whatsappDisplayNumber} onChange={(event) => setWhatsappDisplayNumber(event.target.value)} className="h-8 text-xs bg-background" />
                                             </div>
                                         </div>
 
-                                        {selectedWhatsAppPhone ? (
-                                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-200">
-                                                Secili numara: {selectedWhatsAppPhone.displayNumber || whatsappDisplayNumber || "-"}
-                                                {selectedWhatsAppPhone.verifiedName ? ` • ${selectedWhatsAppPhone.verifiedName}` : ""}
+                                        {selectedWhatsAppPhone && (
+                                            <div className="rounded-md border bg-background p-2.5 text-xs text-muted-foreground">
+                                                Seçili: <span className="font-medium text-foreground">{selectedWhatsAppPhone.displayNumber || whatsappDisplayNumber}</span>
                                             </div>
-                                        ) : null}
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                                    <Button className="gap-2" onClick={handleSaveDraft} disabled={!canSaveDraft}>
-                                        {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                                        Secimi Kaydet ve Test Et
+                                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                                    <Button size="sm" onClick={handleSaveDraft} disabled={!canSaveDraft}>
+                                        {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                        Kaydet & Test Et
                                     </Button>
-                                    <Button variant="outline" className="gap-2" onClick={handleVerifyLive} disabled={!canVerifyLive}>
-                                        {isVerifyingLive ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                                        Canli Kontrolu Calistir
+                                    <Button size="sm" variant="outline" className="bg-background" onClick={handleVerifyLive} disabled={!canVerifyLive}>
+                                        {isVerifyingLive ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Rocket className="h-4 w-4 mr-2" />}
+                                        Canlı Kontrol
                                     </Button>
                                 </div>
-                            </div>
-                        ) : null}
 
-                        <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
-                            <div className="font-medium text-slate-900 dark:text-slate-100">Hazirlik ozeti</div>
-                            <div className="mt-2 space-y-1">
-                                <div>Secili kanal sayisi: {selectedChannels.length}</div>
-                                <div>Kesfedilen Page sayisi: {pages.length}</div>
-                                <div>Kesfedilen WABA sayisi: {whatsappBusinesses.length}</div>
-                                <div>Kurulan kanal: {fullyConnectedCount}/{selectedChannels.length}</div>
+                                {/* Tenant App Guide */}
+                                {!isPlatformMode && (
+                                    <div className="mt-6 border-t pt-4">
+                                        <h5 className="text-xs font-medium mb-3 flex items-center gap-2"><BookOpen className="h-3 w-3" /> Kurulum Kılavuzu</h5>
+                                        <div className="space-y-3 text-xs text-muted-foreground">
+                                            <div>
+                                                <strong className="text-foreground">1.</strong> developers.facebook.com&apos;da uygulamanızı oluşturun.{" "}
+                                                <a href="https://developers.facebook.com/docs/development/create-an-app" target="_blank" rel="noreferrer" className="text-primary hover:underline">Doküman</a>
+                                            </div>
+                                            <div>
+                                                <strong className="text-foreground">2.</strong> Redirect URI olarak şunu ekleyin:<br/>
+                                                <code className="mt-1 block rounded bg-background p-1.5 border">
+                                                    {typeof window !== "undefined" ? `${window.location.origin}/api/integrations/meta/callback` : "..."}
+                                                </code>
+                                            </div>
+                                            <div>
+                                                <strong className="text-foreground">3.</strong> Gerekli izinler:<br/>
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {requiredPermissions.map(p => <Badge key={p} variant="secondary" className="px-1 py-0 font-mono text-[9px]">{p}</Badge>)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </div>
+                        </details>
                     </div>
                 </div>
-            </CardContent>
+            </div>
         </Card>
     )
 }
@@ -950,11 +897,11 @@ function getChannelStatus(status: MetaSetupStatusPayload | null, channel: MetaCh
 }
 
 function getStatusBadgeClass(status: MetaSetupState) {
-    if (status === "live") return "border-transparent bg-emerald-600 text-white hover:bg-emerald-600"
-    if (status === "ready_for_live") return "border-transparent bg-amber-500 text-white hover:bg-amber-500"
-    if (status === "error") return "border-transparent bg-rose-600 text-white hover:bg-rose-600"
-    if (status === "draft") return "border-transparent bg-slate-800 text-white hover:bg-slate-800"
-    return "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    if (status === "live") return "border-emerald-200 bg-emerald-100 text-emerald-700"
+    if (status === "ready_for_live") return "border-amber-200 bg-amber-100 text-amber-700"
+    if (status === "error") return "border-destructive/20 bg-destructive/10 text-destructive"
+    if (status === "draft") return "border-muted-foreground/20 bg-muted text-muted-foreground"
+    return "border-border bg-muted text-muted-foreground"
 }
 
 function extractActionResults(value: unknown): Partial<Record<MetaChannelKey, MetaActionResult>> {

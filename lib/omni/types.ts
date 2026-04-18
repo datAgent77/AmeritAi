@@ -647,6 +647,68 @@ export interface WebChannelConfig {
     enabled: boolean
 }
 
+export type MetaConsoleChannelState =
+    | "not_started"
+    | "checking"
+    | "needs_user_action"
+    | "pending_verification"
+    | "connected"
+    | "degraded"
+    | "reauth_required"
+    | "failed"
+
+export interface InstagramDMPreflightResult {
+    checkedAt: string | null
+    hasFacebookPage: boolean | null
+    instagramLinkedToPage: boolean | null
+    instagramIsProfessional: boolean | null
+    messageAccessEnabled: boolean | null
+    tokenPresent: boolean | null
+    webhookActive: boolean | null
+    overallOk: boolean
+    failureReason: string | null
+}
+
+export interface InstagramDMChannelConfig {
+    state: MetaConsoleChannelState
+    preflightResult: InstagramDMPreflightResult | null
+    pageId: string | null
+    pageName: string | null
+    instagramAccountId: string | null
+    instagramUsername: string | null
+    accessTokenRef: string | null
+    tokenExpiresAt: string | null
+    webhookStatus: "connected" | "pending" | "disconnected"
+    lastConnectedAt: string | null
+    lastTestedAt: string | null
+    wizardStep: number
+}
+
+export interface WhatsAppBizPreflightResult {
+    checkedAt: string | null
+    embeddedSignupCompleted: boolean | null
+    wabaPresent: boolean | null
+    phoneNumberVerified: boolean | null
+    tokenPresent: boolean | null
+    webhookActive: boolean | null
+    overallOk: boolean
+    failureReason: string | null
+}
+
+export interface WhatsAppBizChannelConfig {
+    state: MetaConsoleChannelState
+    preflightResult: WhatsAppBizPreflightResult | null
+    wabaId: string | null
+    phoneNumberId: string | null
+    displayNumber: string | null
+    accessTokenRef: string | null
+    tokenExpiresAt: string | null
+    webhookStatus: "connected" | "pending" | "disconnected"
+    lastConnectedAt: string | null
+    lastTestedAt: string | null
+    wizardStep: number
+}
+
 export interface InstagramChannelConfig {
     enabled: boolean
     accountId?: string | null
@@ -697,4 +759,19 @@ export interface WhatsAppChannelConfig {
     connectionMode?: "tenant_meta_app" | "platform_meta_app"
     lastHealthCheckAt?: string | null
     lastSetupError?: string | null
+}
+
+export interface OmniChannelConfigDocument {
+    chatbotId?: string
+    web?: WebChannelConfig
+    instagram?: InstagramChannelConfig
+    messenger?: MessengerChannelConfig
+    whatsapp?: WhatsAppChannelConfig
+    instagramDM?: InstagramDMChannelConfig
+    whatsappBusiness?: WhatsAppBizChannelConfig
+    voiceIntegration?: VoiceIntegrationConfig
+    assistantCore?: Partial<OmniAssistantCoreSettings> | Record<string, unknown>
+    metaSetup?: Record<string, unknown>
+    updatedAt?: string | Date | null
+    [key: string]: unknown
 }
