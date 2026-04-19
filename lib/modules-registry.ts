@@ -596,7 +596,7 @@ TEMEL KURALLAR:
         isCore: false,
         isPremium: true,
         price: 39,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: ['booking', 'healthcare', 'service', 'academic', 'real_estate'],
         defaultEnabledBySector: [],
         showOnLandingPage: false,
