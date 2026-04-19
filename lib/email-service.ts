@@ -11,6 +11,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import { generateICalContent, getGoogleCalendarLink, getOutlookCalendarLink } from './ical-generator';
 
 const parseBooleanEnv = (value?: string | null): boolean => {
     if (!value) return false;
@@ -304,11 +305,14 @@ export interface AppointmentEmailData {
     date: string;
     time: string;
     companyName?: string;
+    companyEmail?: string;
     notes?: string;
+    appointmentId?: string;
+    location?: string;
 }
 
 /**
- * Send appointment confirmation email to customer
+ * Send appointment confirmation email to customer (with .ics attachment + calendar links)
  */
 export async function sendAppointmentConfirmationEmail(data: AppointmentEmailData): Promise<boolean> {
     const transporter = createTransporter();
@@ -318,15 +322,29 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
         return false;
     }
 
-    const { customerEmail, customerName, date, time, companyName = 'Vion AI', notes } = data;
+    const { customerEmail, customerName, date, time, companyName = 'Vion AI', companyEmail, notes, appointmentId, location } = data;
 
-    // Format date for display
     const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
+
+    const icalData = {
+        appointmentId: appointmentId || `tmp-${Date.now()}`,
+        customerName,
+        customerEmail,
+        companyName,
+        companyEmail,
+        date,
+        time,
+        notes,
+        location,
+    };
+
+    const googleLink = getGoogleCalendarLink(icalData);
+    const outlookLink = getOutlookCalendarLink(icalData);
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -350,7 +368,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                             <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Randevunuz Onaylandı!</h1>
                         </td>
                     </tr>
-                    
+
                     <!-- Content -->
                     <tr>
                         <td style="padding: 40px;">
@@ -360,9 +378,9 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                             <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
                                 Randevunuz onaylanmıştır. Detaylar aşağıda yer almaktadır:
                             </p>
-                            
+
                             <!-- Appointment Details Card -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 30px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin-bottom: 24px;">
                                 <tr>
                                     <td>
                                         <table width="100%" cellpadding="0" cellspacing="0">
@@ -373,7 +391,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                                                <td style="padding: 10px 0; ${notes ? 'border-bottom: 1px solid #e9ecef;' : ''}">
                                                     <span style="color: #6c757d; font-size: 13px;">SAAT</span><br>
                                                     <span style="color: #212529; font-size: 16px; font-weight: 600;">⏰ ${time}</span>
                                                 </td>
@@ -390,13 +408,35 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                                     </td>
                                 </tr>
                             </table>
-                            
+
+                            <!-- Add to Calendar -->
+                            <p style="color: #555; font-size: 14px; font-weight: 600; margin: 0 0 12px;">Takvime Ekle</p>
+                            <table cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding-right: 8px;">
+                                        <a href="${googleLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #4285F4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                            📅 Google Calendar
+                                        </a>
+                                    </td>
+                                    <td style="padding-right: 8px;">
+                                        <a href="${outlookLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #0078D4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                            📅 Outlook
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span style="display: inline-block; padding: 10px 16px; background-color: #555; color: #ffffff; border-radius: 6px; font-size: 13px;">
+                                            📎 Apple Calendar (.ics ekte)
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+
                             <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 0;">
                                 Herhangi bir değişiklik veya iptal için lütfen bizimle iletişime geçin.
                             </p>
                         </td>
                     </tr>
-                    
+
                     <!-- Footer -->
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
@@ -411,32 +451,26 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
         </tr>
     </table>
 </body>
-</html>
-    `;
+</html>`;
 
-    const textContent = `
-Randevunuz Onaylandı!
+    const textContent = `Randevunuz Onaylandı!\n\nSayın ${customerName},\n\nRandevunuz onaylanmıştır.\n\n📅 Tarih: ${formattedDate}\n⏰ Saat: ${time}${notes ? `\n📝 Not: ${notes}` : ''}\n\nGoogle Calendar: ${googleLink}\nOutlook: ${outlookLink}\n\n${companyName}`;
 
-Sayın ${customerName},
-
-Randevunuz onaylanmıştır. Detaylar:
-
-📅 Tarih: ${formattedDate}
-⏰ Saat: ${time}
-${notes ? `📝 Not: ${notes}` : ''}
-
-Herhangi bir değişiklik veya iptal için lütfen bizimle iletişime geçin.
-
-${companyName}
-    `;
-
+    const icsContent = generateICalContent(icalData);
     const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+
     return sendEmailOrMock(transporter, {
         from: `"${companyName}" <${emailUser}>`,
         to: customerEmail,
         subject: `✅ Randevunuz Onaylandı - ${formattedDate}`,
         text: textContent,
         html: htmlContent,
+        attachments: [
+            {
+                filename: 'randevu.ics',
+                content: icsContent,
+                contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+            },
+        ],
     });
 }
 

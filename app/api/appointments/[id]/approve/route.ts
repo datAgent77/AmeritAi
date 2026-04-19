@@ -65,13 +65,17 @@ export async function POST(
         let emailSent = false;
         if (appointment?.customerEmail) {
             try {
+                const companyEmail: string | undefined = chatbotData?.leadNotificationEmail || chatbotData?.email || undefined;
                 emailSent = await sendAppointmentConfirmationEmail({
                     customerEmail: appointment.customerEmail,
                     customerName: appointment.customerName || "Değerli Müşterimiz",
                     date: appointment.date,
                     time: appointment.time,
                     companyName,
-                    notes: appointment.notes
+                    companyEmail,
+                    notes: appointment.notes,
+                    appointmentId: id,
+                    location: appointment.location,
                 });
             } catch (emailError) {
                 console.error("Approve API: Email send failed:", emailError);

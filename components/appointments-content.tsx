@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { CalendarDays, ExternalLink, AlertCircle, MessageSquare } from "lucide-react"
+import { getGoogleCalendarLink, getOutlookCalendarLink } from "@/lib/ical-generator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface Appointment {
@@ -406,7 +407,7 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                                                     <TableCell>{getSourceBadge(appt.source)}</TableCell>
                                                     <TableCell>{getStatusBadge(appt.status)}</TableCell>
                                                     <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
+                                                        <div className="flex justify-end gap-2 flex-wrap">
                                                             {appt.status === 'pending' && (
                                                                 <Button
                                                                     size="sm"
@@ -426,6 +427,37 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                                                                 >
                                                                     {t('apptComplete')}
                                                                 </Button>
+                                                            )}
+                                                            {(appt.status === 'confirmed' || appt.status === 'pending') && appt.date && appt.time && (
+                                                                <div className="relative group">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="text-gray-600 gap-1"
+                                                                        title="Takvime Ekle"
+                                                                    >
+                                                                        <Calendar className="w-3 h-3" />
+                                                                        <ExternalLink className="w-3 h-3" />
+                                                                    </Button>
+                                                                    <div className="absolute right-0 top-8 z-10 hidden group-hover:flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1 text-sm">
+                                                                        <a
+                                                                            href={getGoogleCalendarLink({ appointmentId: appt.id, customerName: appt.customerName || '', customerEmail: appt.customerEmail || '', companyName: '', date: appt.date, time: appt.time, notes: appt.notes })}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                                                        >
+                                                                            📅 Google Calendar
+                                                                        </a>
+                                                                        <a
+                                                                            href={getOutlookCalendarLink({ appointmentId: appt.id, customerName: appt.customerName || '', customerEmail: appt.customerEmail || '', companyName: '', date: appt.date, time: appt.time, notes: appt.notes })}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                                                        >
+                                                                            📅 Outlook
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                             {appt.status !== 'cancelled' && appt.status !== 'completed' && (
                                                                 <Button
