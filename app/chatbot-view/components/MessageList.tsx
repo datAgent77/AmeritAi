@@ -13,6 +13,7 @@ import { ProductCarousel } from "@/components/chatbot/product-carousel"
 import Image from "next/image"
 import { RefObject, WheelEvent } from "react"
 import { InlineLeadForm } from "./InlineLeadForm"
+import { InlineBookingForm } from "./InlineBookingForm"
 import { ThinkingIndicatorBubble } from "@/components/chatbot/thinking-indicator-bubble"
 
 interface MessageListProps {
@@ -31,6 +32,9 @@ interface MessageListProps {
     messagesEndRef: RefObject<HTMLDivElement | null>
     t: (key: string) => string
     onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
+    chatbotId?: string
+    sessionId?: string | null
+    onBookingSuccess?: (appointmentId: string) => void
     mode?: "classic" | "ambient"
     showClassicEntryOnboarding?: boolean
     onCloseWidget?: () => void
@@ -301,6 +305,9 @@ export function MessageList({
     messagesEndRef,
     t,
     onLeadSubmit,
+    chatbotId,
+    sessionId,
+    onBookingSuccess,
     mode = "classic",
     showClassicEntryOnboarding = false,
     onCloseWidget,
@@ -633,7 +640,7 @@ export function MessageList({
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
                                             }}
                                         >
-                                            {messageContent.replace('[SHOW_LEAD_FORM]', '')}
+                                            {messageContent.replace('[SHOW_LEAD_FORM]', '').replace('[SHOW_BOOKING_FORM]', '')}
                                         </ReactMarkdown>
 
                                         {/* Inline Lead Form */}
@@ -642,6 +649,17 @@ export function MessageList({
                                                 onSubmit={(data) => onLeadSubmit(data, { source: "inline" })}
                                                 settings={settings}
                                                 t={t}
+                                            />
+                                        )}
+
+                                        {/* Inline Booking Form */}
+                                        {messageContent.includes('[SHOW_BOOKING_FORM]') && chatbotId && (
+                                            <InlineBookingForm
+                                                chatbotId={chatbotId}
+                                                sessionId={sessionId}
+                                                settings={settings}
+                                                t={t}
+                                                onSuccess={onBookingSuccess}
                                             />
                                         )}
                                         {isGuidedStep ? (

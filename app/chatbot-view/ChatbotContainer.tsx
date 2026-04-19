@@ -507,12 +507,53 @@ export default function ChatbotContainer() {
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSubmittingBooking(true)
-        // ... (Booking Logic)
-        setTimeout(() => {
+        try {
+            let leadData: any = null
+            try {
+                const raw = typeof window !== "undefined" ? localStorage.getItem(`lead_${chatbotId}`) : null
+                if (raw) leadData = JSON.parse(raw)
+            } catch { /* ignore */ }
+
+            const res = await fetch("/api/appointments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId,
+                    sessionId,
+                    customerName: leadData?.name || "Misafir",
+                    customerEmail: leadData?.email || "",
+                    customerPhone: leadData?.phone || "",
+                    date: bookingData.date,
+                    time: bookingData.time,
+                    type: bookingData.type,
+                    notes: bookingData.notes,
+                }),
+            })
+
+            if (res.ok) {
+                setShowBooking(false)
+                const successMsg = settings.appointmentSuccessMessage || "Randevunuz oluşturuldu! En kısa sürede sizinle iletişime geçeceğiz."
+                setMessages((prev: any[]) => [
+                    ...prev,
+                    { id: `booking_confirm_${Date.now()}`, role: "assistant", content: successMsg, createdAt: new Date() }
+                ])
+            } else {
+                const json = await res.json()
+                alert(json.error || "Bir hata oluştu. Lütfen tekrar deneyin.")
+            }
+        } catch {
+            alert("Bağlantı hatası. Lütfen tekrar deneyin.")
+        } finally {
             setIsSubmittingBooking(false)
-            setShowBooking(false)
-            alert(settings.appointmentSuccessMessage || "Randevu oluşturuldu!")
-        }, 1000)
+        }
+    }
+
+    const handleBookingSuccess = (appointmentId: string) => {
+        const successMsg = settings.appointmentSuccessMessage || "Randevunuz oluşturuldu! En kısa sürede sizinle iletişime geçeceğiz."
+        setMessages((prev: any[]) => [
+            ...prev,
+            { id: `booking_confirm_${Date.now()}`, role: "assistant", content: successMsg, createdAt: new Date() }
+        ])
     }
 
     const urlTheme = searchParams?.get("theme")
@@ -736,6 +777,9 @@ export default function ChatbotContainer() {
                                         messagesEndRef={messagesEndRef}
                                         t={t}
                                         onLeadSubmit={handleLeadSubmit}
+                                        chatbotId={chatbotId}
+                                        sessionId={sessionId}
+                                        onBookingSuccess={handleBookingSuccess}
                                         showClassicEntryOnboarding={showClassicEntryOnboarding}
                                     />
                                 </div>
@@ -815,6 +859,9 @@ export default function ChatbotContainer() {
                         messagesEndRef={messagesEndRef}
                         t={t}
                         onLeadSubmit={handleLeadSubmit}
+                        chatbotId={chatbotId}
+                        sessionId={sessionId}
+                        onBookingSuccess={handleBookingSuccess}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
                     />
 
