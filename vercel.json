@@ -11,6 +11,10 @@
         {
             "path": "/api/admin/omni-voice-tts-cleanup-cron",
             "schedule": "0 4 * * *"
+        },
+        {
+            "path": "/api/admin/appointment-reminder-cron",
+            "schedule": "0 8 * * *"
         }
     ]
 }

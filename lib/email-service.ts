@@ -515,6 +515,199 @@ export async function sendAppointmentCancellationEmail(data: AppointmentEmailDat
     });
 }
 
+export interface AppointmentTenantAlertData {
+    tenantEmail: string;
+    companyName?: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    date: string;
+    time: string;
+    type?: string;
+    notes?: string;
+}
+
+/**
+ * Send new appointment alert email to tenant/business owner
+ */
+export async function sendAppointmentTenantAlertEmail(data: AppointmentTenantAlertData): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const { tenantEmail, companyName = 'Vion AI', customerName, customerEmail, customerPhone, date, time, type, notes } = data;
+
+    const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Yeni Randevu Bildirimi</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">🗓️ Yeni Randevu Talebi</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                                Chatbotunuz üzerinden yeni bir randevu talebi oluşturuldu. Detaylar aşağıda yer almaktadır:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                                <tr>
+                                    <td>
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr>
+                                                <td style="color: #6c757d; font-size: 13px; width: 140px;">MÜŞTERİ ADI</td>
+                                                <td style="color: #212529; font-size: 14px; font-weight: 600;">${customerName}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6c757d; font-size: 13px;">E-POSTA</td>
+                                                <td style="color: #212529; font-size: 14px;">${customerEmail}</td>
+                                            </tr>
+                                            ${customerPhone ? `<tr><td style="color: #6c757d; font-size: 13px;">TELEFON</td><td style="color: #212529; font-size: 14px;">${customerPhone}</td></tr>` : ''}
+                                            <tr>
+                                                <td style="color: #6c757d; font-size: 13px;">TARİH</td>
+                                                <td style="color: #212529; font-size: 14px; font-weight: 600;">📅 ${formattedDate}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #6c757d; font-size: 13px;">SAAT</td>
+                                                <td style="color: #212529; font-size: 14px; font-weight: 600;">⏰ ${time}</td>
+                                            </tr>
+                                            ${type ? `<tr><td style="color: #6c757d; font-size: 13px;">TİP</td><td style="color: #212529; font-size: 14px;">${type}</td></tr>` : ''}
+                                            ${notes ? `<tr><td style="color: #6c757d; font-size: 13px;">NOTLAR</td><td style="color: #212529; font-size: 14px;">${notes}</td></tr>` : ''}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #666; font-size: 13px; line-height: 1.6; margin: 0;">
+                                Randevuyu onaylamak veya iptal etmek için Vion AI yönetim panelinizi ziyaret edin.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 20px 40px; text-align: center;">
+                            <p style="color: #adb5bd; font-size: 12px; margin: 0;">Powered by Vion AI — ${companyName}</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"Vion AI" <${emailUser}>`,
+        to: tenantEmail,
+        subject: `🗓️ Yeni Randevu: ${customerName} — ${formattedDate} ${time}`,
+        text: `Yeni randevu talebi\nMüşteri: ${customerName} (${customerEmail})\nTarih: ${formattedDate}\nSaat: ${time}${notes ? `\nNot: ${notes}` : ''}`,
+        html: htmlContent,
+    });
+}
+
+// ============================================================================
+// APPOINTMENT REMINDER EMAIL
+// ============================================================================
+
+/**
+ * Send appointment reminder email to customer (1 day before)
+ */
+export async function sendAppointmentReminderEmail(data: AppointmentEmailData): Promise<boolean> {
+    const transporter = createTransporter();
+
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const { customerEmail, customerName, date, time, companyName = 'Vion AI', notes } = data;
+
+    const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Randevu Hatırlatması</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">⏰ Randevu Hatırlatması</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                                Sayın <strong>${customerName}</strong>,
+                            </p>
+                            <p style="color: #666; font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
+                                Yarınki randevunuzu hatırlatmak istedik:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3cd; border-radius: 8px; padding: 20px; margin-bottom: 24px; border-left: 4px solid #ffc107;">
+                                <tr>
+                                    <td>
+                                        <p style="margin: 0 0 8px; color: #212529; font-size: 16px; font-weight: 600;">📅 ${formattedDate}</p>
+                                        <p style="margin: 0; color: #212529; font-size: 16px; font-weight: 600;">⏰ ${time}</p>
+                                        ${notes ? `<p style="margin: 8px 0 0; color: #666; font-size: 14px;">Not: ${notes}</p>` : ''}
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="color: #666; font-size: 13px; line-height: 1.6; margin: 0;">
+                                Randevunuzu iptal etmek veya değiştirmek isterseniz lütfen bizimle iletişime geçin.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f9fa; padding: 20px 40px; text-align: center;">
+                            <p style="color: #6c757d; font-size: 13px; margin: 0;">${companyName}</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    return sendEmailOrMock(transporter, {
+        from: `"${companyName}" <${emailUser}>`,
+        to: customerEmail,
+        subject: `⏰ Hatırlatma: Yarın ${time} randevunuz var — ${companyName}`,
+        text: `Sayın ${customerName}, yarın ${formattedDate} saat ${time}'deki randevunuzu hatırlatmak istedik.`,
+        html: htmlContent,
+    });
+}
+
 // ============================================================================
 // BILLING REMINDER EMAILS
 // ============================================================================

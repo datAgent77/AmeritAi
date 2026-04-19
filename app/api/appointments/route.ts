@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
-import { getAdminDb } from "@/lib/firebase-admin"
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
+import { createNotification } from "@/lib/notification-service"
+import { sendAppointmentTenantAlertEmail } from "@/lib/email-service"
 
 interface RateLimitEntry {
     count: number
@@ -356,6 +358,56 @@ export async function POST(req: Request) {
         }
 
         const docRef = await adminDb.collection("appointments").add(appointmentData)
+
+        // Notify tenant: in-app notification + email
+        try {
+            const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI"
+
+            // Resolve tenant notification email
+            let tenantEmail: string | null =
+                typeof chatbotData?.leadNotificationEmail === "string" && chatbotData.leadNotificationEmail.trim()
+                    ? chatbotData.leadNotificationEmail.trim()
+                    : typeof userData?.email === "string" && userData.email.trim()
+                        ? userData.email.trim()
+                        : null
+
+            if (!tenantEmail) {
+                const adminAuth = getAdminAuth()
+                if (adminAuth) {
+                    const userRecord = await adminAuth.getUser(chatbotId).catch(() => null)
+                    if (userRecord?.email) tenantEmail = userRecord.email
+                }
+            }
+
+            // In-app notification
+            await createNotification({
+                userId: chatbotId,
+                type: "appointment_created",
+                title: "Yeni Randevu Talebi",
+                message: `${appointmentData.customerName} — ${appointmentData.date} ${appointmentData.time}`,
+                metadata: {
+                    customerEmail: appointmentData.customerEmail,
+                    source: "appointments",
+                }
+            })
+
+            // Tenant alert email
+            if (tenantEmail) {
+                await sendAppointmentTenantAlertEmail({
+                    tenantEmail,
+                    companyName,
+                    customerName: appointmentData.customerName,
+                    customerEmail: appointmentData.customerEmail,
+                    customerPhone: appointmentData.customerPhone || undefined,
+                    date: appointmentData.date,
+                    time: appointmentData.time,
+                    type: appointmentData.type || undefined,
+                    notes: appointmentData.notes || undefined,
+                })
+            }
+        } catch (notifyErr) {
+            console.error("Appointments POST: notification error:", notifyErr)
+        }
 
         return NextResponse.json({
             success: true,

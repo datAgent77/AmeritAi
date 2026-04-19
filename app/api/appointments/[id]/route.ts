@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
+import { sendAppointmentCancellationEmail } from "@/lib/email-service"
 
 export const runtime = 'nodejs'
 
@@ -45,10 +46,29 @@ export async function PATCH(
             return NextResponse.json({ error: "Invalid status" }, { status: 400 })
         }
 
+        const appointmentData = appointmentSnap.data()!
+
         await docRef.update({
             status: nextStatus,
             updatedAt: new Date().toISOString()
         })
+
+        if (nextStatus === "cancelled" && appointmentData.customerEmail) {
+            try {
+                const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
+                const companyName: string = chatbotSnap.data()?.companyName || chatbotSnap.data()?.businessName || chatbotSnap.data()?.name || "Vion AI"
+                await sendAppointmentCancellationEmail({
+                    customerEmail: appointmentData.customerEmail,
+                    customerName: appointmentData.customerName || "Değerli Müşterimiz",
+                    date: appointmentData.date,
+                    time: appointmentData.time,
+                    companyName,
+                    notes: appointmentData.notes,
+                })
+            } catch (emailErr) {
+                console.error("Appointment PATCH: cancellation email error:", emailErr)
+            }
+        }
 
         return NextResponse.json({ success: true })
     } catch (error) {

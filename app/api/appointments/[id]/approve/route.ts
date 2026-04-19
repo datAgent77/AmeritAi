@@ -56,6 +56,11 @@ export async function POST(
             confirmedAt: new Date().toISOString()
         });
 
+        // Resolve company name from chatbot settings
+        const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
+        const chatbotData = chatbotSnap.data();
+        const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI";
+
         // Send confirmation email if customer email exists
         let emailSent = false;
         if (appointment?.customerEmail) {
@@ -65,7 +70,7 @@ export async function POST(
                     customerName: appointment.customerName || "Değerli Müşterimiz",
                     date: appointment.date,
                     time: appointment.time,
-                    companyName: "Vion AI", // TODO: Get from chatbot settings
+                    companyName,
                     notes: appointment.notes
                 });
             } catch (emailError) {
