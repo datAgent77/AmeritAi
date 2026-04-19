@@ -1,68 +1,107 @@
 import { authorizeIntegrationAccess } from "@/lib/integration-plan-access"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { createOAuthState } from "@/lib/oauth-state"
-import { generateMetaVerifyToken, getMetaPlatformAppConfig, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
+import { generateMetaVerifyToken } from "@/lib/meta-setup"
 import { buildMetaOAuthUrl } from "@/lib/integrations/meta-shared/oauth"
 import { WhatsAppBizConnectSchema } from "@/lib/integrations/whatsapp-business/schemas"
+import { mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(req: Request) {
-    const parsed = WhatsAppBizConnectSchema.safeParse(await req.json().catch(() => null))
-    if (!parsed.success) {
-        return Response.json({ error: "Geçersiz istek." }, { status: 400 })
-    }
+    try {
+        const parsed = WhatsAppBizConnectSchema.safeParse(await req.json().catch(() => null))
+        if (!parsed.success) {
+            return Response.json({ error: "Geçersiz istek." }, { status: 400 })
+        }
 
-    const { chatbotId, returnPath } = parsed.data
-    const access = await authorizeIntegrationAccess(req, chatbotId, "meta-channels")
-    if (!access.ok) return access.response
+        const { chatbotId, returnPath } = parsed.data
+        const requestedAppId = typeof parsed.data.appId === "string" ? parsed.data.appId.trim() : ""
+        const requestedAppSecret = typeof parsed.data.appSecret === "string" ? parsed.data.appSecret.trim() : ""
+        const access = await authorizeIntegrationAccess(req, chatbotId, "meta-channels")
+        if (!access.ok) return access.response
 
-    const adminDb = getAdminDb()
-    if (!adminDb) {
-        return Response.json({ error: "Firebase Admin başlatılamadı." }, { status: 500 })
-    }
+        const adminDb = getAdminDb()
+        if (!adminDb) {
+            return Response.json({ error: "Firebase Admin başlatılamadı." }, { status: 500 })
+        }
 
-    const currentConfig = ((await adminDb.collection("omni_channel_configs").doc(chatbotId).get()).data() || {}) as Record<string, any>
-    const tenantAppId = currentConfig?.metaSetup?.secrets?.appId || currentConfig?.instagram?.appId || ""
-    const tenantAppSecret =
-        currentConfig?.metaSetup?.secrets?.appSecret || currentConfig?.whatsapp?.appSecretRef || currentConfig?.instagram?.appSecretRef || ""
-    const verifyToken = currentConfig?.whatsapp?.verifyToken || generateMetaVerifyToken()
+        if ((requestedAppId && !requestedAppSecret) || (!requestedAppId && requestedAppSecret)) {
+            return Response.json(
+                { error: "Özel Meta App için App ID ve App Secret birlikte girilmelidir." },
+                { status: 400 }
+            )
+        }
 
-    const hasTenantCredentials = Boolean(tenantAppId && tenantAppSecret)
-    const platformAvailable = isMetaPlatformAppAvailable()
+        let currentConfig = ((await adminDb.collection("omni_channel_configs").doc(chatbotId).get()).data() || {}) as Record<string, any>
 
-    if (!hasTenantCredentials && !platformAvailable) {
-        return Response.json({ error: "Meta uygulama bilgileri eksik. Lütfen destek ekibiyle görüşün." }, { status: 400 })
-    }
+        if (requestedAppId && requestedAppSecret) {
+            currentConfig = (await mergeOmniChannelConfig(adminDb, chatbotId, {
+                metaSetup: {
+                    ...(currentConfig?.metaSetup || {}),
+                    secrets: {
+                        ...(currentConfig?.metaSetup?.secrets || {}),
+                        appId: requestedAppId,
+                        appSecret: requestedAppSecret,
+                    },
+                },
+            })) as Record<string, any>
+        }
 
-    const state = await createOAuthState({
-        provider: "integration-meta-whatsapp-business",
-        userId: chatbotId,
-        chatbotId,
-        apiKey: hasTenantCredentials ? tenantAppId : undefined,
-        apiSecret: hasTenantCredentials ? tenantAppSecret : undefined,
-        verifyToken,
-        appConfigSource: hasTenantCredentials ? "tenant" : "platform",
-        selectedChannels: ["whatsapp"],
-        returnPath,
-    })
+        const tenantAppId = (requestedAppId || currentConfig?.metaSetup?.secrets?.appId || currentConfig?.instagram?.appId || "").trim()
+        const tenantAppSecret = (
+            requestedAppSecret ||
+            currentConfig?.metaSetup?.secrets?.appSecret ||
+            currentConfig?.whatsapp?.appSecretRef ||
+            currentConfig?.instagram?.appSecretRef ||
+            ""
+        ).trim()
+        const verifyToken = currentConfig?.whatsapp?.verifyToken || generateMetaVerifyToken()
 
-    const origin = new URL(req.url).origin
-    const platformApp = platformAvailable ? getMetaPlatformAppConfig() : null
+        const hasTenantCredentials = Boolean(tenantAppId && tenantAppSecret)
+        if (!hasTenantCredentials) {
+            return Response.json(
+                {
+                    error: "WhatsApp bağlantısı için bu chatbot'a ait Meta App ID ve App Secret zorunludur. Ortak platform uygulaması desteklenmiyor.",
+                },
+                { status: 400 }
+            )
+        }
 
-    return Response.json({
-        authUrl: buildMetaOAuthUrl({
-            origin,
-            state,
-            callbackPath: "/api/integrations/whatsapp-business/callback",
-            appConfig: hasTenantCredentials
-                ? {
-                      appId: tenantAppId,
-                      appSecret: tenantAppSecret,
-                      verifyToken,
-                  }
-                : platformApp || undefined,
+        const state = await createOAuthState({
+            provider: "integration-meta-whatsapp-business",
+            userId: chatbotId,
+            chatbotId,
+            apiKey: tenantAppId,
+            apiSecret: tenantAppSecret,
+            verifyToken,
+            appConfigSource: "tenant",
             selectedChannels: ["whatsapp"],
-        }),
-    })
+            returnPath,
+        })
+
+        const origin = new URL(req.url).origin
+
+        return Response.json({
+            authUrl: buildMetaOAuthUrl({
+                origin,
+                state,
+                callbackPath: "/api/integrations/whatsapp-business/callback",
+                appConfig: {
+                    appId: tenantAppId,
+                    appSecret: tenantAppSecret,
+                    verifyToken,
+                },
+                selectedChannels: ["whatsapp"],
+            }),
+        })
+    } catch (error) {
+        console.error("[WhatsAppBiz Embedded Signup Error]", error)
+        return Response.json(
+            {
+                error: error instanceof Error ? error.message : "WhatsApp bağlantısı başlatılırken beklenmedik bir hata oluştu.",
+            },
+            { status: 500 }
+        )
+    }
 }

@@ -17,25 +17,46 @@ export function WhatsAppBizPreflightStep(props: {
     const preflight = props.status.config.preflightResult
 
     return (
-        <Card className="border-border/70">
-            <CardHeader>
-                <CardTitle className="text-base">1. Ön kontrol</CardTitle>
-                <CardDescription>Önce WhatsApp Business hesabınızın mesaj almaya hazır olup olmadığını kontrol edin.</CardDescription>
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="bg-slate-50/50 pb-4 border-b border-border/40">
+                <CardTitle className="text-base flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold">1</span>
+                    Ön Kontrol & Bağlantı
+                </CardTitle>
+                <CardDescription className="text-xs">
+                    WhatsApp Business hesabınızın mesaj almaya hazır olup olmadığını kontrol edin ve yetkilendirmeyi başlatın.
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button type="button" onClick={props.onConnect} disabled={props.connecting}>
+            <CardContent className="space-y-5 pt-5">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button 
+                        type="button" 
+                        onClick={props.onConnect} 
+                        disabled={props.connecting}
+                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                    >
                         {props.connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        WhatsApp Business ile bağlan
+                        Meta ile Giriş Yap
                     </Button>
-                    <Button type="button" variant="outline" onClick={props.onPreflight} disabled={props.checking}>
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={props.onPreflight} 
+                        disabled={props.checking}
+                        className="w-full sm:w-auto"
+                    >
                         {props.checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                        Ön kontrolü çalıştır
+                        Sistemi Kontrol Et
                     </Button>
                 </div>
 
                 {preflight ? (
-                    <PreflightChecklist
+                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+                        <div className="bg-muted/50 px-4 py-3 border-b">
+                            <h4 className="text-sm font-medium">Sistem Gereksinimleri</h4>
+                        </div>
+                        <div className="p-4">
+                            <PreflightChecklist
                         items={[
                             {
                                 id: "embeddedSignupCompleted",
@@ -74,9 +95,17 @@ export function WhatsAppBizPreflightStep(props: {
                             },
                         ]}
                     />
+                        </div>
+                    </div>
                 ) : (
-                    <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-                        Henüz kontrol çalıştırılmadı. Önce hesabınızı bağlayın, ardından ön kontrolü başlatın.
+                    <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
+                            <RefreshCw className="h-6 w-6 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-semibold mb-1">Bağlantı Bekleniyor</h3>
+                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                            Meta ile giriş yaparak uygulamanızı yetkilendirin. Ardından sistemi kontrol edebilirsiniz.
+                        </p>
                     </div>
                 )}
 

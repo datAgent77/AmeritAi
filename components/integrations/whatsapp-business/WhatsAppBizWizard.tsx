@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { ChannelStatusBadge } from "@/components/integrations/shared/ChannelStatusBadge"
 import { SupportDiagnosticDrawer } from "@/components/integrations/shared/SupportDiagnosticDrawer"
 import { WhatsAppBizConnectedState } from "@/components/integrations/whatsapp-business/WhatsAppBizConnectedState"
@@ -30,6 +31,8 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
     const [selectedPhoneId, setSelectedPhoneId] = useState("")
     const [testPhone, setTestPhone] = useState("")
     const [message, setMessage] = useState("Merhaba, bu Vion kurulum test mesajıdır.")
+    const [customAppId, setCustomAppId] = useState("")
+    const [customAppSecret, setCustomAppSecret] = useState("")
 
     const selectedBusiness = useMemo(
         () => status?.availableBusinesses.find((business) => business.id === selectedBusinessId) || null,
@@ -132,6 +135,8 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                 body: JSON.stringify({
                     chatbotId,
                     returnPath: "/console/chatbot/integration",
+                    appId: customAppId.trim() || undefined,
+                    appSecret: customAppSecret.trim() || undefined,
                 }),
             })
             const payload = await response.json()
@@ -290,7 +295,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
     }
 
     return (
-        <Card className="overflow-hidden border-border/70 bg-white">
+        <Card className="overflow-hidden border-border/70 bg-white py-0">
             <CardHeader className="border-b bg-gradient-to-r from-emerald-50 via-white to-lime-50">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
@@ -303,7 +308,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                                 <CardDescription>WhatsApp mesajlarınızı ayrı bir kurulum akışıyla bağlayın.</CardDescription>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">{status.stateMessage}</p>
+                        <p className="text-sm text-muted-foreground pl-[57px]">{status.stateMessage}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <ChannelStatusBadge state={status.config.state} />
@@ -318,6 +323,42 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             </CardHeader>
             <CardContent className="space-y-5 p-6">
                 <WhatsAppBizRecoveryBanner status={status} />
+                <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                    <div className="mb-4">
+                        <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
+                        <p className="text-xs text-muted-foreground">
+                            Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
+                        </p>
+                    </div>
+                    <div className="grid gap-3">
+                        <div className="grid gap-1.5">
+                            <label htmlFor="wa-custom-app-id" className="text-xs font-medium text-muted-foreground">
+                                Meta App ID
+                            </label>
+                            <Input
+                                id="wa-custom-app-id"
+                                value={customAppId}
+                                onChange={(event) => setCustomAppId(event.target.value)}
+                                placeholder="Örn. 123456789012345"
+                            />
+                        </div>
+                        <div className="grid gap-1.5">
+                            <label htmlFor="wa-custom-app-secret" className="text-xs font-medium text-muted-foreground">
+                                Meta App Secret
+                            </label>
+                            <Input
+                                id="wa-custom-app-secret"
+                                type="password"
+                                value={customAppSecret}
+                                onChange={(event) => setCustomAppSecret(event.target.value)}
+                                placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
+                        </p>
+                    </div>
+                </div>
                 <WhatsAppBizPreflightStep status={status} connecting={connecting} checking={checking} onConnect={handleConnect} onPreflight={runPreflight} />
 
                 <WhatsAppEmbeddedSignupStep connecting={connecting} onConnect={handleConnect} />

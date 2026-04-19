@@ -1,6 +1,6 @@
 import { getAdminDb } from "@/lib/firebase-admin"
 import { consumeOAuthState } from "@/lib/oauth-state"
-import { discoverMetaPages, getMetaPlatformAppConfig } from "@/lib/meta-setup"
+import { discoverMetaPages } from "@/lib/meta-setup"
 import { exchangeMetaCode } from "@/lib/integrations/meta-shared/oauth"
 import { subscribeWebhook } from "@/lib/integrations/meta-shared/webhook"
 import { buildInstagramDMMergePayload, buildInstagramDMStatus } from "@/lib/integrations/instagram-dm/setup"
@@ -53,14 +53,19 @@ export async function GET(req: Request) {
     }
 
     try {
-        const appConfig =
-            stateData?.appConfigSource === "platform"
-                ? getMetaPlatformAppConfig()
-                : {
-                      appId: stateData?.apiKey || "",
-                      appSecret: stateData?.apiSecret || "",
-                      verifyToken: stateData?.verifyToken || "",
-                  }
+        if (stateData?.appConfigSource === "platform") {
+            throw new Error("Platform uygulama modu devre dışı. Lütfen chatbot'a ait Meta App bilgileri ile yeniden bağlanın.")
+        }
+
+        const appConfig = {
+            appId: stateData?.apiKey || "",
+            appSecret: stateData?.apiSecret || "",
+            verifyToken: stateData?.verifyToken || "tenant-instagram-verify-token",
+        }
+
+        if (!appConfig.appId || !appConfig.appSecret) {
+            throw new Error("Meta uygulama bilgileri (App ID / Secret) eksik veya geçersiz.")
+        }
 
         const { accessToken, expiresIn } = await exchangeMetaCode({
             origin,

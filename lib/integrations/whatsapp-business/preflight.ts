@@ -1,4 +1,4 @@
-import { discoverWhatsAppBusinesses, getMetaPlatformAppConfig } from "@/lib/meta-setup"
+import { discoverWhatsAppBusinesses } from "@/lib/meta-setup"
 import type { WhatsAppBizPreflightResult } from "@/lib/omni/types"
 
 const META_API_VERSION = process.env.META_API_VERSION || "v23.0"
@@ -15,7 +15,7 @@ async function graphFetch(path: string, accessToken: string) {
 }
 
 async function resolveWebhookStatus(accessToken: string, appId?: string | null) {
-    const resolvedAppId = appId || getMetaPlatformAppConfig().appId
+    const resolvedAppId = (appId || "").trim()
     if (!resolvedAppId) return null
     const { response, payload } = await graphFetch(`${encodeURIComponent(resolvedAppId)}/subscriptions`, accessToken)
     if (!response.ok) return null
@@ -59,7 +59,10 @@ export async function runWhatsAppBizPreflight(
     const phoneNumberVerified = currentPhone ? true : availableBusinesses.some((item) => item.phoneNumbers.length > 0)
     const tokenPresent = Boolean(current?.accessTokenRef || legacyWhatsApp?.accessTokenRef || accessToken)
     const webhookActive =
-        (await resolveWebhookStatus(accessToken, legacyWhatsApp?.appId || null)) ??
+        (await resolveWebhookStatus(
+            accessToken,
+            legacyWhatsApp?.appId || omniConfig?.metaSetup?.secrets?.appId || null
+        )) ??
         (current?.webhookStatus === "connected" || legacyWhatsApp?.webhookStatus === "connected")
 
     const result: WhatsAppBizPreflightResult = {

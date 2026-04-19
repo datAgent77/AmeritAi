@@ -3,6 +3,8 @@ import { z } from "zod"
 export const WhatsAppBizConnectSchema = z.object({
     chatbotId: z.string().min(1),
     returnPath: z.string().optional(),
+    appId: z.string().optional(),
+    appSecret: z.string().optional(),
 })
 
 export const WhatsAppBizSaveChannelSchema = z.object({

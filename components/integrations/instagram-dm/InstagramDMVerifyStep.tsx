@@ -12,7 +12,7 @@ export function InstagramDMVerifyStep(props: {
 }) {
     return (
         <TestMessageCard
-            title="3. Test mesajı gönderin"
+            title="Test mesajı gönderin"
             description="Instagram kullanıcı ID’si ile test mesajı göndererek kurulumun çalıştığını doğrulayın."
             recipientLabel="Alıcı Instagram kullanıcı ID"
             recipientPlaceholder="Örn. 17841400000000000"

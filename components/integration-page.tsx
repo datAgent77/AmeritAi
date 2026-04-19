@@ -70,25 +70,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [telegramBotName, setTelegramBotName] = useState("")
     const [isTelegramDialogOpen, setIsTelegramDialogOpen] = useState(false)
 
-    // WhatsApp State
-    const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false)
-    const [waPhoneNumberId, setWaPhoneNumberId] = useState("")
-    const [waAccessToken, setWaAccessToken] = useState("")
-    const [waVerifyToken, setWaVerifyToken] = useState(() =>
-        Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
-    )
-    const [isConnectingWhatsApp, setIsConnectingWhatsApp] = useState(false)
-    const [waStep, setWaStep] = useState(1)
-
-    // Instagram State
-    const [igPageId, setIgPageId] = useState("")
-    const [igAccessToken, setIgAccessToken] = useState("")
-    const [igVerifyToken, setIgVerifyToken] = useState(() =>
-        Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
-    )
-    const [isConnectingInstagram, setIsConnectingInstagram] = useState(false)
-    const [igStep, setIgStep] = useState(1)
-
     // Slack State
     const [isSlackOpen, setIsSlackOpen] = useState(false)
     const [slackBotToken, setSlackBotToken] = useState("")
@@ -329,61 +310,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             ],
         },
     ]
-
-    // Connection handlers
-    const handleConnectInstagram = async () => {
-        if (!igPageId || !igAccessToken || !igVerifyToken) {
-            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
-            return
-        }
-        setIsConnectingInstagram(true)
-        try {
-            const response = await fetch("/api/integrations/instagram/connect", {
-                method: "POST",
-                headers: await getAuthHeaders(),
-                body: JSON.stringify({ chatbotId: userId, pageId: igPageId, accessToken: igAccessToken, verifyToken: igVerifyToken })
-            })
-            const data = await response.json()
-            if (!response.ok) throw new Error(data.error || "Instagram bağlantısı kurulamadı")
-            toast({ title: t('success'), description: "Instagram DM entegrasyonu aktif!" })
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
-            if (res.ok) {
-                const d = await res.json()
-                setSettings(d)
-            }
-        } catch (error: any) {
-            toast({ title: t('error'), description: error.message, variant: "destructive" })
-        } finally {
-            setIsConnectingInstagram(false)
-        }
-    }
-    const handleConnectWhatsApp = async () => {
-        if (!waPhoneNumberId || !waAccessToken || !waVerifyToken) {
-            toast({ title: t('error'), description: t('fillAllFields'), variant: "destructive" })
-            return
-        }
-        setIsConnectingWhatsApp(true)
-        try {
-            const response = await fetch("/api/integrations/whatsapp/connect", {
-                method: "POST",
-                headers: await getAuthHeaders(),
-                body: JSON.stringify({ chatbotId: userId, phoneNumberId: waPhoneNumberId, accessToken: waAccessToken, verifyToken: waVerifyToken })
-            })
-            const data = await response.json()
-            if (!response.ok) throw new Error(data.error || t('failedToConnect') || "Failed to connect")
-            toast({ title: t('success'), description: t('whatsappConnected') })
-            setIsWhatsAppOpen(false)
-            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
-            if (res.ok) {
-                const data = await res.json()
-                setSettings(data)
-            }
-        } catch (error) {
-            toast({ title: t('error'), description: t('connectionFailed'), variant: "destructive" })
-        } finally {
-            setIsConnectingWhatsApp(false)
-        }
-    }
 
     const handleConnectSlack = async () => {
         if (!slackBotToken || !slackSigningSecret) {

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { ChannelStatusBadge } from "@/components/integrations/shared/ChannelStatusBadge"
 import { SupportDiagnosticDrawer } from "@/components/integrations/shared/SupportDiagnosticDrawer"
 import { InstagramDMConnectedState } from "@/components/integrations/instagram-dm/InstagramDMConnectedState"
@@ -28,6 +29,8 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
     const [selectedPageId, setSelectedPageId] = useState("")
     const [recipientId, setRecipientId] = useState("")
     const [message, setMessage] = useState("Merhaba, bu Vion kurulum test mesajıdır.")
+    const [customAppId, setCustomAppId] = useState("")
+    const [customAppSecret, setCustomAppSecret] = useState("")
 
     const selectedPage = useMemo(
         () => status?.availablePages.find((page) => page.id === selectedPageId) || null,
@@ -127,6 +130,8 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                 body: JSON.stringify({
                     chatbotId,
                     returnPath: "/console/chatbot/integration",
+                    appId: customAppId.trim() || undefined,
+                    appSecret: customAppSecret.trim() || undefined,
                 }),
             })
             const payload = await response.json()
@@ -313,6 +318,42 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             </CardHeader>
             <CardContent className="space-y-5 p-6">
                 <InstagramDMRecoveryBanner status={status} />
+                <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                    <div className="mb-4">
+                        <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
+                        <p className="text-xs text-muted-foreground">
+                            Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
+                        </p>
+                    </div>
+                    <div className="grid gap-3">
+                        <div className="grid gap-1.5">
+                            <label htmlFor="ig-custom-app-id" className="text-xs font-medium text-muted-foreground">
+                                Meta App ID
+                            </label>
+                            <Input
+                                id="ig-custom-app-id"
+                                value={customAppId}
+                                onChange={(event) => setCustomAppId(event.target.value)}
+                                placeholder="Örn. 123456789012345"
+                            />
+                        </div>
+                        <div className="grid gap-1.5">
+                            <label htmlFor="ig-custom-app-secret" className="text-xs font-medium text-muted-foreground">
+                                Meta App Secret
+                            </label>
+                            <Input
+                                id="ig-custom-app-secret"
+                                type="password"
+                                value={customAppSecret}
+                                onChange={(event) => setCustomAppSecret(event.target.value)}
+                                placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
+                        </p>
+                    </div>
+                </div>
                 <InstagramDMPreflightStep status={status} connecting={connecting} checking={checking} onConnect={handleConnect} onPreflight={runPreflight} />
 
                 {status.availablePages.length > 0 ? (

@@ -1,4 +1,4 @@
-import { discoverMetaPages, getMetaPlatformAppConfig } from "@/lib/meta-setup"
+import { discoverMetaPages } from "@/lib/meta-setup"
 import type { InstagramDMPreflightResult } from "@/lib/omni/types"
 import { CHANNEL_ERROR_MESSAGES } from "@/lib/integrations/instagram-dm/types"
 
@@ -16,7 +16,7 @@ async function graphFetch(path: string, accessToken: string) {
 }
 
 async function resolveWebhookStatus(accessToken: string, appId?: string | null) {
-    const resolvedAppId = appId || getMetaPlatformAppConfig().appId
+    const resolvedAppId = (appId || "").trim()
     if (!resolvedAppId) return null
     const { response, payload } = await graphFetch(`${encodeURIComponent(resolvedAppId)}/subscriptions`, accessToken)
     if (!response.ok) return null
@@ -81,7 +81,10 @@ export async function runInstagramDMPreflight(
 
     const tokenPresent = Boolean(current?.accessTokenRef || legacyInstagram?.accessTokenRef || accessToken)
     const webhookActive =
-        (await resolveWebhookStatus(accessToken, legacyInstagram?.appId || null)) ??
+        (await resolveWebhookStatus(
+            accessToken,
+            legacyInstagram?.appId || omniConfig?.metaSetup?.secrets?.appId || null
+        )) ??
         (current?.webhookStatus === "connected" || legacyInstagram?.webhookStatus === "connected")
 
     const result: InstagramDMPreflightResult = {

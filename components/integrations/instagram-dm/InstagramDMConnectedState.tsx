@@ -13,30 +13,51 @@ export function InstagramDMConnectedState(props: {
     onDisconnect: () => void
 }) {
     return (
-        <Card className="border-emerald-200 bg-emerald-50/60">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base text-emerald-900">
+        <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
+            <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-base text-emerald-900 font-semibold">
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    Instagram DM bağlandı
+                    Instagram DM Bağlantısı Aktif
                 </CardTitle>
-                <CardDescription className="text-emerald-800">
-                    {props.status.config.pageName || "Seçili sayfa"} için mesaj akışı aktif görünüyor.
+                <CardDescription className="text-emerald-800 text-xs">
+                    Vion AI, <strong className="font-semibold">{props.status.config.pageName || "seçili sayfa"}</strong> üzerinden gelen Instagram DM mesajlarını başarıyla yanıtlıyor.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid gap-2 text-sm text-emerald-900">
-                    <p>Sayfa: {props.status.config.pageName || "-"}</p>
-                    <p>Kullanıcı adı: {props.status.config.instagramUsername ? `@${props.status.config.instagramUsername}` : "-"}</p>
-                    <p>Son kontrol: {props.status.config.preflightResult?.checkedAt || "Henüz yok"}</p>
+            <CardContent className="space-y-5">
+                <div className="grid gap-3 sm:grid-cols-2 text-sm text-emerald-900 bg-white/60 p-4 rounded-lg border border-emerald-100">
+                    <div>
+                        <p className="text-emerald-600 text-xs font-medium mb-1">Bağlı Facebook Sayfası</p>
+                        <p className="font-semibold">{props.status.config.pageName || "-"}</p>
+                    </div>
+                    <div>
+                        <p className="text-emerald-600 text-xs font-medium mb-1">Instagram Kullanıcı Adı</p>
+                        <p className="font-semibold">{props.status.config.instagramUsername ? `@${props.status.config.instagramUsername}` : "-"}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <p className="text-emerald-600 text-xs font-medium mb-1">Son Sistem Kontrolü</p>
+                        <p className="font-medium text-xs">{props.status.config.preflightResult?.checkedAt ? new Date(props.status.config.preflightResult.checkedAt).toLocaleString('tr-TR') : "Henüz yok"}</p>
+                    </div>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button type="button" variant="outline" className="border-emerald-200 bg-white text-emerald-900" onClick={props.onRefresh} disabled={props.refreshing}>
+                <div className="flex flex-col gap-3 sm:flex-row pt-2">
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-50 hover:text-emerald-900 w-full sm:w-auto" 
+                        onClick={props.onRefresh} 
+                        disabled={props.refreshing}
+                    >
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Durumu yenile
+                        Sistemi Yenile
                     </Button>
-                    <Button type="button" variant="outline" className="border-rose-200 bg-white text-rose-700" onClick={props.onDisconnect} disabled={props.disconnecting}>
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="border-rose-200 bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800 w-full sm:w-auto" 
+                        onClick={props.onDisconnect} 
+                        disabled={props.disconnecting}
+                    >
                         <Unplug className="mr-2 h-4 w-4" />
-                        Bağlantıyı kaldır
+                        Bağlantıyı Kaldır
                     </Button>
                 </div>
             </CardContent>

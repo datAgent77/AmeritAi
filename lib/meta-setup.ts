@@ -771,6 +771,10 @@ export function resolveMetaOAuthAppConfig(overrides?: MetaOAuthAppConfigOverride
         }
     }
 
+    if (!isMetaPlatformAppAvailable()) {
+        throw new Error("Meta entegrasyonu için gerekli uygulama bilgileri (App ID / App Secret) bulunamadı. Lütfen Meta platform ayarlarını kontrol edin veya bu chatbot için kendi uygulama bilgilerinizi girin.")
+    }
+
     return getMetaPlatformAppConfig()
 }
 

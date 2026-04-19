@@ -20,29 +20,49 @@ export function TestMessageCard(props: {
     sending?: boolean
 }) {
     return (
-        <Card className="border-border/70">
-            <CardHeader className="pb-4">
-                <CardTitle className="text-base">{props.title}</CardTitle>
-                <CardDescription>{props.description}</CardDescription>
+        <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <CardHeader className="bg-slate-50/50 pb-4 border-b border-border/40">
+                <CardTitle className="text-base flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold">✓</span>
+                    Test Mesajı Gönder
+                </CardTitle>
+                <CardDescription className="text-xs">
+                    {props.description}
+                </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label>{props.recipientLabel}</Label>
-                    <Input value={props.recipientValue} onChange={(event) => props.onRecipientChange(event.target.value)} placeholder={props.recipientPlaceholder} />
+            <CardContent className="space-y-5 pt-5">
+                <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">{props.recipientLabel}</Label>
+                        <Input 
+                            value={props.recipientValue} 
+                            onChange={(event) => props.onRecipientChange(event.target.value)} 
+                            placeholder={props.recipientPlaceholder} 
+                            className="bg-muted/30"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium">Test mesajı</Label>
+                        <Textarea
+                            rows={3}
+                            value={props.messageValue}
+                            onChange={(event) => props.onMessageChange(event.target.value)}
+                            placeholder="Merhaba, bu Vion kurulum test mesajıdır."
+                            className="bg-muted/30 resize-none"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-2">
-                    <Label>Test mesajı</Label>
-                    <Textarea
-                        rows={3}
-                        value={props.messageValue}
-                        onChange={(event) => props.onMessageChange(event.target.value)}
-                        placeholder="Merhaba, bu Vion kurulum test mesajıdır."
-                    />
+                <div className="pt-2">
+                    <Button 
+                        type="button" 
+                        onClick={props.onSend} 
+                        disabled={props.sending || !props.recipientValue.trim()} 
+                        className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                    >
+                        {props.sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        Mesajı Gönder ve Doğrula
+                    </Button>
                 </div>
-                <Button type="button" onClick={props.onSend} disabled={props.sending || !props.recipientValue.trim()} className="w-full sm:w-auto">
-                    {props.sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Test mesajını gönder
-                </Button>
             </CardContent>
         </Card>
     )

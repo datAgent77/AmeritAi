@@ -12,7 +12,7 @@ export function WhatsAppBizVerifyStep(props: {
 }) {
     return (
         <TestMessageCard
-            title="4. Test mesajı gönderin"
+            title="Test mesajı gönderin"
             description="Kendi numaranıza test mesajı göndererek kurulumun çalıştığını doğrulayın."
             recipientLabel="Alıcı telefon numarası"
             recipientPlaceholder="Örn. +905551234567"
