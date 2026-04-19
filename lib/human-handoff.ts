@@ -40,6 +40,22 @@ const HUMAN_HANDOFF_PATTERNS = [
     /\binsan temsilci\b/i,
     /\byetkili ile gorus/i,
     /\bbeni arayin\b/i,
+    // "canlı biriyle / canlı ile" patterns — e.g. "canlı biriyle konuşmak istiyorum"
+    /\bcanli biri/i,
+    /\bcanliyla\b/i,
+    /\bcanli ile\b/i,
+    /\bcanli birine\b/i,
+    /\bcanli insanla\b/i,
+    // "insanla / gerçek biriyle" patterns
+    /\binsanla konus/i,
+    /\binsanla gorus/i,
+    /\bgercek biriyle\b/i,
+    /\bgercek bir insanla\b/i,
+    // "temsilciyle" patterns
+    /\btemsilciyle\b/i,
+    /\btemsilciye baglan/i,
+    /\btemsilci ile\b/i,
+    // English patterns
     /\bcustomer service\b/i,
     /\blive support\b/i,
     /\brepresentative\b/i,
@@ -47,6 +63,8 @@ const HUMAN_HANDOFF_PATTERNS = [
     /\bhuman agent\b/i,
     /\bsupport agent\b/i,
     /\btalk to (a )?human\b/i,
+    /\bspeak (to|with) (a )?human\b/i,
+    /\bconnect me (to|with) (a )?(human|person|agent)\b/i,
 ]
 
 export function resolveHumanHandoffSettings(mergedData?: Record<string, any> | null): HumanHandoffSettings {
