@@ -5,6 +5,10 @@ import { upsertChatSessionRecord } from "@/lib/chat-sessions";
 import { normalizeGuidedSkillState } from "@/lib/guided-skills";
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine";
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types";
+import { getPublishedContract } from "@/lib/contracts";
+import { getHumanHandoffAssistantMessage, isExplicitHumanHandoffRequest, resolveHumanHandoffNotificationEmail, resolveHumanHandoffSettings } from "@/lib/human-handoff";
+import { createAndNotifyHumanHandoff } from "@/lib/human-handoff-server";
+import { isKvkkConsentSatisfied, resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
 import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
@@ -33,6 +37,7 @@ type ChatRequestBody = {
     assistantMessageId?: string;
     industry?: string;
     guidedEvent?: GuidedSkillClientEvent | null;
+    kvkkConsentVersion?: string;
 };
 
 type NormalizedChatMessage = AIMessage & {
@@ -46,13 +51,21 @@ type UserContextPayload = {
     description?: string;
     pageText?: string;
     dynamicData?: Record<string, any>;
-    publicContext?: Record<string, unknown>;
-    privateContextSummary?: Record<string, unknown>;
-    assistantContextSource?: string;
     siteSessionContext?: Record<string, any>;
     crawlStatus?: Record<string, any>;
-    allowIdentitySync?: boolean;
 };
+
+async function updateSessionHandoffState(adminDb: any, sessionId: string, patch: Record<string, any>) {
+    if (!sessionId) return;
+    try {
+        await adminDb.collection("chat_sessions").doc(sessionId).set({
+            ...patch,
+            updatedAt: new Date().toISOString(),
+        }, { merge: true });
+    } catch (error) {
+        console.error("[CHAT API] Failed to update handoff state:", error);
+    }
+}
 
 function isUserContextPayload(value: unknown): value is UserContextPayload {
     if (!value || typeof value !== "object") return false;
@@ -79,53 +92,6 @@ const EXTERNAL_ID_KEYS = ["customerId", "customer_id", "accountId", "account_id"
 function asPlainObject(value: unknown): Record<string, unknown> | null {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     return value as Record<string, unknown>;
-}
-
-const ASSISTANT_CONTEXT_SENSITIVE_KEY_RE = /(email|mail|phone|gsm|mobile|telephone|tc|kimlik|identity|national|passport|birth|dogum|address|adres|token|password|secret|cookie|iban|salary|maas|health|medical|diagnos|document|attachment|leave_reason|izin_nedeni)/i;
-
-function sanitizeAssistantContextValue(value: unknown, path = "", depth = 0): unknown {
-    if (depth > 4) return undefined;
-
-    if (typeof value === "string") {
-        return value.replace(/\s+/g, " ").trim().slice(0, 240);
-    }
-
-    if (typeof value === "number") {
-        return Number.isFinite(value) ? Math.round(value * 100) / 100 : undefined;
-    }
-
-    if (typeof value === "boolean" || value === null) {
-        return value;
-    }
-
-    if (Array.isArray(value)) {
-        return value
-            .slice(0, 8)
-            .map((item, index) => sanitizeAssistantContextValue(item, `${path}[${index}]`, depth + 1))
-            .filter((item) => item !== undefined);
-    }
-
-    const record = asPlainObject(value);
-    if (!record) return undefined;
-
-    const sanitized: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(record).slice(0, 20)) {
-        const nextPath = path ? `${path}.${key}` : key;
-        if (ASSISTANT_CONTEXT_SENSITIVE_KEY_RE.test(nextPath)) continue;
-        const nextValue = sanitizeAssistantContextValue(child, nextPath, depth + 1);
-        if (nextValue !== undefined) {
-            sanitized[key] = nextValue;
-        }
-    }
-    return sanitized;
-}
-
-function sanitizeAssistantContextObject(value: unknown): Record<string, unknown> | undefined {
-    const sanitized = sanitizeAssistantContextValue(value, "", 0);
-    if (!sanitized || typeof sanitized !== "object" || Array.isArray(sanitized)) {
-        return undefined;
-    }
-    return sanitized as Record<string, unknown>;
 }
 
 function findNestedString(value: unknown, keys: string[], depth = 0): string | null {
@@ -505,7 +471,8 @@ export async function POST(req: Request) {
             shouldStream = true,
             userId,
             visualAnalysisContext,
-            assistantMessageId
+            assistantMessageId,
+            kvkkConsentVersion,
         } = body;
 
         if (!chatbotId || messages.length === 0) {
@@ -546,32 +513,16 @@ export async function POST(req: Request) {
             userText: latestUserText,
         });
         const safeContext = isUserContextPayload(context)
-            ? (() => {
-                const rawContext = context as UserContextPayload;
-                const assistantContextSource = typeof rawContext.assistantContextSource === "string"
-                    ? rawContext.assistantContextSource.slice(0, 32)
-                    : undefined;
-                const usesTrustedBridge = assistantContextSource === "enterprise_bridge" || assistantContextSource === "host_app";
-
-                return {
-                    ...rawContext,
-                    desc: typeof rawContext.desc === "string"
-                        ? rawContext.desc
-                        : (typeof rawContext.description === "string" ? rawContext.description : ""),
-                    pageText: usesTrustedBridge ? undefined : rawContext.pageText,
-                    dynamicData: usesTrustedBridge ? undefined : rawContext.dynamicData,
-                    siteSessionContext: usesTrustedBridge ? undefined : rawContext.siteSessionContext,
-                    crawlStatus: usesTrustedBridge ? undefined : rawContext.crawlStatus,
-                    publicContext: sanitizeAssistantContextObject(rawContext.publicContext),
-                    privateContextSummary: sanitizeAssistantContextObject(rawContext.privateContextSummary),
-                    assistantContextSource,
-                    allowIdentitySync: rawContext.allowIdentitySync === true,
-                };
-            })()
+            ? {
+                ...(context as UserContextPayload),
+                desc: typeof (context as any).desc === "string"
+                    ? (context as any).desc
+                    : (typeof (context as any).description === "string" ? (context as any).description : "")
+            }
             : undefined;
 
         const webIdentitySyncPromise =
-            safeContext?.allowIdentitySync === true
+            safeContext
                 ? syncWebSessionIdentity(adminDb, {
                     chatbotId,
                     sessionId: activeSessionId,
@@ -591,48 +542,52 @@ export async function POST(req: Request) {
             );
         }
 
+        const [tenantUserSnapshot, chatbotSnapshot, omniChannelConfigSnapshot] = await Promise.all([
+            adminDb.collection("users").doc(chatbotId).get(),
+            adminDb.collection("chatbots").doc(chatbotId).get(),
+            adminDb.collection("omni_channel_configs").doc(chatbotId).get().catch(() => null),
+        ])
+
+        const tenantUserData = tenantUserSnapshot.exists ? tenantUserSnapshot.data() || {} : {}
+        const chatbotData = chatbotSnapshot.exists ? chatbotSnapshot.data() || {} : {}
+        const mergedTenantData = {
+            ...tenantUserData,
+            ...chatbotData,
+        }
+        const omniChannelConfig = omniChannelConfigSnapshot && "exists" in omniChannelConfigSnapshot && omniChannelConfigSnapshot.exists
+            ? omniChannelConfigSnapshot.data() || {}
+            : {}
+
         // === TRIAL EXPIRATION CHECK ===
-        // Check if the tenant's trial has expired and block the widget
-        if (userId) {
-            try {
-                const userDoc = await adminDb.collection('users').doc(userId).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-
-                    // === ACCOUNT STATUS CHECK ===
-                    // Explicitly check for false, default to true if undefined to be safe
-                    if (userData?.isActive === false) {
-                        console.log(`[CHAT API] Account is inactive for user ${userId}, blocking widget`);
-                        return NextResponse.json({
-                            error: "account_inactive",
-                            message: "Bu sohbet botu şu anda aktif değil. Lütfen site yöneticisi ile iletişime geçin.",
-                            isInactive: true
-                        }, { status: 403 });
-                    }
-
-                    const subscriptionStatus = userData?.subscriptionStatus;
-                    const trialEndsAt = userData?.trialEndsAt;
-
-                    // If subscription is 'trial' and trial has expired, block the request
-                    if (subscriptionStatus === 'trial' && trialEndsAt) {
-                        const now = new Date();
-                        const endDate = new Date(trialEndsAt);
-                        const isExpired = endDate.getTime() < now.getTime();
-
-                        if (isExpired) {
-                            console.log(`[CHAT API] Trial expired for user ${userId}, blocking widget`);
-                            return NextResponse.json({
-                                error: "trial_expired",
-                                message: "Deneme süreniz sona erdi. Devam etmek için lütfen bir plan seçin.",
-                                shouldUpgrade: true
-                            }, { status: 402 }); // 402 Payment Required
-                        }
-                    }
-                }
-            } catch (trialCheckError) {
-                console.error('[CHAT API] Error checking trial status:', trialCheckError);
-                // Don't block on error, just log and continue
+        try {
+            if (tenantUserData?.isActive === false) {
+                console.log(`[CHAT API] Account is inactive for tenant ${chatbotId}, blocking widget`);
+                return NextResponse.json({
+                    error: "account_inactive",
+                    message: "Bu sohbet botu su anda aktif degil. Lutfen site yoneticisi ile iletisime gecin.",
+                    isInactive: true
+                }, { status: 403 });
             }
+
+            const subscriptionStatus = tenantUserData?.subscriptionStatus;
+            const trialEndsAt = tenantUserData?.trialEndsAt;
+
+            if (subscriptionStatus === 'trial' && trialEndsAt) {
+                const now = new Date();
+                const endDate = new Date(trialEndsAt);
+                const isExpired = endDate.getTime() < now.getTime();
+
+                if (isExpired) {
+                    console.log(`[CHAT API] Trial expired for tenant ${chatbotId}, blocking widget`);
+                    return NextResponse.json({
+                        error: "trial_expired",
+                        message: "Deneme sureniz sona erdi. Devam etmek icin lutfen bir plan secin.",
+                        shouldUpgrade: true
+                    }, { status: 402 });
+                }
+            }
+        } catch (trialCheckError) {
+            console.error('[CHAT API] Error checking trial status:', trialCheckError);
         }
         // === END TRIAL EXPIRATION CHECK ===
 
@@ -647,10 +602,26 @@ export async function POST(req: Request) {
             activeSessionId
                 ? await adminDb.collection("chat_sessions").doc(activeSessionId).get().catch(() => null)
                 : null;
-        const currentGuidedState = normalizeGuidedSkillState(sessionSnapshot?.data()?.guidedSkillState);
+        const sessionData = sessionSnapshot?.data?.() || {};
+        const hasPendingHumanHandoff = Boolean(sessionData.humanHandoffPending);
+        const isSessionPaused = Boolean(sessionData.isPaused);
+        const currentGuidedState = normalizeGuidedSkillState(sessionData.guidedSkillState);
+        const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null)
+        const kvkkConsent = resolveKvkkConsentPayload({
+            mergedData: mergedTenantData,
+            publishedKvkkContract,
+        })
+        const humanHandoffSettings = resolveHumanHandoffSettings(mergedTenantData)
+        if (kvkkConsent.enabled && !isKvkkConsentSatisfied(kvkkConsent.versionHash, kvkkConsentVersion)) {
+            return NextResponse.json({
+                error: "kvkk_consent_required",
+                message: "Sohbete devam etmek icin guncel KVKK metnini kabul etmeniz gerekir.",
+                expectedVersionHash: kvkkConsent.versionHash,
+            }, { status: 409 })
+        }
 
-        if (lastMessage.role === "user" && userContent) {
-            await saveMessageToSession(
+        const userMessageSavePromise = (lastMessage.role === "user" && userContent)
+            ? saveMessageToSession(
                 activeSessionId,
                 chatbotId,
                 {
@@ -661,11 +632,124 @@ export async function POST(req: Request) {
                     guidedEvent: body.guidedEvent || undefined,
                 },
                 userId
-            );
+            ).catch(err => console.error("[CHAT API] Failed to save user message:", err))
+            : Promise.resolve();
+
+        if (isSessionPaused) {
+            await userMessageSavePromise;
+            return new Response(null, {
+                status: 204,
+                headers: {
+                    "X-AI-Paused": "true",
+                },
+            })
         }
 
+        const syncedIdentity = await webIdentitySyncPromise;
+        await userMessageSavePromise;
+
         if (lastMessage.role === "user" && userContent) {
-            const syncedIdentity = await webIdentitySyncPromise;
+            if (
+                humanHandoffSettings.enabled &&
+                humanHandoffSettings.triggerOnUserRequest
+            ) {
+                const explicitHandoffRequest = isExplicitHumanHandoffRequest(userContent);
+                const shouldProcessHandoff = explicitHandoffRequest || hasPendingHumanHandoff;
+                const hasContactInfo = Boolean(syncedIdentity?.identity?.email || syncedIdentity?.identity?.phone);
+
+                if (shouldProcessHandoff && !hasContactInfo) {
+
+                    const notificationEmail = resolveHumanHandoffNotificationEmail({
+                        settings: humanHandoffSettings,
+                        mergedData: mergedTenantData,
+                        omniChannelConfig,
+                    });
+
+                    await createAndNotifyHumanHandoff({
+                        adminDb,
+                        chatbotId,
+                        sessionId: activeSessionId,
+                        sourceChannel: "web",
+                        contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                        canonicalContactId: syncedIdentity?.contact?.id || null,
+                        displayName: syncedIdentity?.identity?.name || null,
+                        triggerSource: "user_request",
+                        userText: userContent,
+                        companyName: mergedTenantData.companyName || "Vion AI",
+                        notificationEmail,
+                        settings: humanHandoffSettings,
+                    });
+
+                    await updateSessionHandoffState(adminDb, activeSessionId, {
+                        humanHandoffPending: true,
+                        humanHandoffPendingAt: new Date().toISOString(),
+                        humanHandoffPendingReason: "human_handoff_requested",
+                    });
+
+                    const assistantContent = getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage);
+
+                    const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-${Date.now()}`;
+                    await saveMessageToSession(activeSessionId, chatbotId, {
+                        id: handoffAssistantMessageId,
+                        role: "assistant",
+                        content: assistantContent,
+                    }, userId);
+
+                    return NextResponse.json({
+                        content: assistantContent,
+                        assistantMessageId: handoffAssistantMessageId,
+                        sessionId: activeSessionId,
+                        handoffRequested: true,
+                    });
+                }
+
+                if (shouldProcessHandoff && hasContactInfo) {
+                    const notificationEmail = resolveHumanHandoffNotificationEmail({
+                        settings: humanHandoffSettings,
+                        mergedData: mergedTenantData,
+                        omniChannelConfig,
+                    });
+                    const assistantContent = getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage);
+
+
+                    const callbackOutcome = await createAndNotifyHumanHandoff({
+                        adminDb,
+                        chatbotId,
+                        sessionId: activeSessionId,
+                        sourceChannel: "web",
+                        contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                        canonicalContactId: syncedIdentity?.contact?.id || null,
+                        displayName: syncedIdentity?.identity?.name || null,
+                        triggerSource: "user_request",
+                        userText: userContent,
+                        companyName: mergedTenantData.companyName || "Vion AI",
+                        notificationEmail,
+                        settings: humanHandoffSettings,
+                    });
+
+                    await updateSessionHandoffState(adminDb, activeSessionId, {
+                        humanHandoffPending: false,
+                        humanHandoffPendingAt: null,
+                        humanHandoffPendingReason: null,
+                        humanHandoffCompletedAt: new Date().toISOString(),
+                    });
+
+                    const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-${Date.now()}`;
+                    await saveMessageToSession(activeSessionId, chatbotId, {
+                        id: handoffAssistantMessageId,
+                        role: "assistant",
+                        content: assistantContent,
+                    }, userId);
+
+                    return NextResponse.json({
+                        content: assistantContent,
+                        assistantMessageId: handoffAssistantMessageId,
+                        sessionId: activeSessionId,
+                        handoffRequested: true,
+                        callbackId: callbackOutcome.callback.id || activeSessionId,
+                    });
+                }
+            }
 
             const guidedResult = await resolveGuidedSkillTurn({
                 adminDb,
@@ -680,30 +764,108 @@ export async function POST(req: Request) {
                 language: resolvedLanguage,
             });
 
-            if (guidedResult.handled) {
-                const guidedAssistantMessageId = assistantMessageId || `assistant-guided-${Date.now()}`
-                await upsertChatSessionRecord({
-                    sessionId: activeSessionId,
-                    chatbotId,
-                    userId,
-                    channel: "web",
-                    guidedSkillState: guidedResult.nextState ?? null,
-                    message: {
-                        id: guidedAssistantMessageId,
-                        role: "assistant",
-                        content: guidedResult.assistantContent || "",
-                        guidedUi: guidedResult.assistantGuidedUi || undefined,
-                    },
-                });
+                if (guidedResult.handled) {
+                        const guidedAssistantMessageId = assistantMessageId || `assistant-guided-${Date.now()}`
+                        const hasContactInfo = Boolean(syncedIdentity?.identity?.email || syncedIdentity?.identity?.phone)
+                        const assistantGuidedUi = guidedResult.assistantGuidedUi || undefined
+                        let assistantContent = guidedResult.assistantContent || ""
 
-                return NextResponse.json({
-                    content: guidedResult.assistantContent || "",
-                    guidedUi: guidedResult.assistantGuidedUi || null,
-                    assistantMessageId: guidedAssistantMessageId,
-                    guidedSkillState: guidedResult.nextState ?? null,
-                    sessionId: activeSessionId,
-                });
-            }
+                        if (
+                            guidedResult.handoffStatus === "callback_requested" &&
+                            humanHandoffSettings.enabled &&
+                            humanHandoffSettings.triggerOnAssistantHandoff &&
+                            !hasContactInfo
+                        ) {
+
+                            const notificationEmail = resolveHumanHandoffNotificationEmail({
+                                settings: humanHandoffSettings,
+                                mergedData: mergedTenantData,
+                                omniChannelConfig,
+                            })
+
+                            await createAndNotifyHumanHandoff({
+                                adminDb,
+                                chatbotId,
+                                sessionId: activeSessionId,
+                                sourceChannel: "web",
+                                contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                                canonicalContactId: syncedIdentity?.contact?.id || null,
+                                displayName: syncedIdentity?.identity?.name || null,
+                                triggerSource: "assistant_trigger",
+                                userText: userContent,
+                                companyName: mergedTenantData.companyName || "Vion AI",
+                                notificationEmail,
+                                settings: humanHandoffSettings,
+                            })
+
+                            await updateSessionHandoffState(adminDb, activeSessionId, {
+                                humanHandoffPending: true,
+                                humanHandoffPendingAt: new Date().toISOString(),
+                                humanHandoffPendingReason: "human_handoff_requested",
+                            })
+
+                            assistantContent = assistantContent || getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage)
+                        }
+
+                    await upsertChatSessionRecord({
+                        sessionId: activeSessionId,
+                        chatbotId,
+                        userId,
+                        channel: "web",
+                        guidedSkillState: guidedResult.nextState ?? null,
+                        message: {
+                            id: guidedAssistantMessageId,
+                            role: "assistant",
+                            content: assistantContent,
+                            guidedUi: assistantGuidedUi,
+                        },
+                    })
+
+                    if (
+                        guidedResult.handoffStatus === "callback_requested" &&
+                        humanHandoffSettings.enabled &&
+                        humanHandoffSettings.triggerOnAssistantHandoff &&
+                        hasContactInfo
+                    ) {
+                        const notificationEmail = resolveHumanHandoffNotificationEmail({
+                            settings: humanHandoffSettings,
+                            mergedData: mergedTenantData,
+                            omniChannelConfig,
+                        })
+
+                        await createAndNotifyHumanHandoff({
+                            adminDb,
+                            chatbotId,
+                            sessionId: activeSessionId,
+                            sourceChannel: "web",
+                            contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                            canonicalContactId: syncedIdentity?.contact?.id || null,
+                            displayName: syncedIdentity?.identity?.name || null,
+                            triggerSource: "assistant_trigger",
+                            userText: userContent,
+                            companyName: mergedTenantData.companyName || "Vion AI",
+                            notificationEmail,
+                            settings: humanHandoffSettings,
+                        })
+
+
+
+                        await updateSessionHandoffState(adminDb, activeSessionId, {
+                            humanHandoffPending: false,
+                            humanHandoffPendingAt: null,
+                            humanHandoffPendingReason: null,
+                            humanHandoffCompletedAt: new Date().toISOString(),
+                        })
+                    }
+
+                    return NextResponse.json({
+                        content: assistantContent,
+                        guidedUi: assistantGuidedUi || null,
+                        assistantMessageId: guidedAssistantMessageId,
+                        guidedSkillState: guidedResult.nextState ?? null,
+                        sessionId: activeSessionId,
+                    })
+                }
         }
 
         const result = await generateAIResponse(
@@ -927,18 +1089,6 @@ export async function POST(req: Request) {
                 },
             });
         } else {
-            if (activeSessionId && result.content) {
-                await saveMessageToSession(
-                    activeSessionId,
-                    chatbotId,
-                    {
-                        role: "assistant",
-                        content: result.content,
-                        id: assistantMessageId || `assistant-nonstream-${Date.now()}`,
-                    },
-                    userId
-                );
-            }
             return new Response(result.content, { status: 200 });
         }
 
