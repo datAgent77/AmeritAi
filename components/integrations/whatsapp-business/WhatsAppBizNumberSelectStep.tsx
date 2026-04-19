@@ -25,7 +25,7 @@ export function WhatsAppBizNumberSelectStep(props: {
                     WhatsApp İşletme Numaranızı Seçin
                 </CardTitle>
                 <CardDescription className="text-xs">
-                    Müşterilerinizle iletişim kuracağınız ve Vion AI'ın yanıt vereceği işletme hesabını ve telefon numarasını belirleyin.
+                    Müşterilerinizle iletişim kuracağınız ve Vion AI&apos;ın yanıt vereceği işletme hesabını ve telefon numarasını belirleyin.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-5">
