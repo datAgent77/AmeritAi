@@ -25,8 +25,11 @@ export interface Notification {
         currentPlan?: string;
         targetPlan?: string;
         requestId?: string;
+        callbackId?: string;
         source?: string;
         eventType?: string;
+        triggerSource?: string;
+        companyName?: string;
     };
 }
 

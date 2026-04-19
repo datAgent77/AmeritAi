@@ -813,6 +813,10 @@ export async function upsertCallbackRequest(
         voiceNumberId?: string | null
         activeCallSid?: string | null
         lastAttemptAt?: string | Date | null
+        triggerSource?: CallbackRequestRecord["triggerSource"]
+        notificationEmail?: string | null
+        emailNotifiedAt?: string | Date | null
+        inAppNotifiedAt?: string | Date | null
     }
 ): Promise<CallbackRequestRecord> {
     const docId = params.id || params.sourceSessionId || adminDb.collection("callback_requests").doc().id
@@ -835,6 +839,20 @@ export async function upsertCallbackRequest(
               ? new Date(params.lastAttemptAt)
               : null
 
+    const emailNotifiedAt =
+        params.emailNotifiedAt === undefined
+            ? existing.emailNotifiedAt || null
+            : params.emailNotifiedAt
+              ? new Date(params.emailNotifiedAt)
+              : null
+
+    const inAppNotifiedAt =
+        params.inAppNotifiedAt === undefined
+            ? existing.inAppNotifiedAt || null
+            : params.inAppNotifiedAt
+              ? new Date(params.inAppNotifiedAt)
+              : null
+
     const nextRecord = sanitizeObject({
         chatbotId: params.chatbotId,
         contactKey: params.contactKey ?? existing.contactKey ?? null,
@@ -851,6 +869,10 @@ export async function upsertCallbackRequest(
         voiceNumberId: params.voiceNumberId ?? existing.voiceNumberId ?? null,
         activeCallSid: params.activeCallSid ?? existing.activeCallSid ?? null,
         lastAttemptAt,
+        triggerSource: params.triggerSource ?? existing.triggerSource ?? null,
+        notificationEmail: params.notificationEmail ?? existing.notificationEmail ?? null,
+        emailNotifiedAt,
+        inAppNotifiedAt,
         createdAt: existing.createdAt || now,
         updatedAt: now,
     })
@@ -864,6 +886,8 @@ export async function upsertCallbackRequest(
         updatedAt: toIsoOrNull(nextRecord.updatedAt),
         dueAt: toIsoOrNull(nextRecord.dueAt),
         lastAttemptAt: toIsoOrNull(nextRecord.lastAttemptAt),
+        emailNotifiedAt: toIsoOrNull(nextRecord.emailNotifiedAt),
+        inAppNotifiedAt: toIsoOrNull(nextRecord.inAppNotifiedAt),
     }
 }
 

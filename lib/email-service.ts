@@ -1115,3 +1115,82 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
         html: htmlContent,
     });
 }
+
+export interface HumanHandoffNotificationEmailData {
+    recipientEmail: string
+    companyName?: string
+    callbackId: string
+    triggerSource: string
+    transcriptSnippet?: string
+}
+
+export async function sendHumanHandoffNotificationEmail(data: HumanHandoffNotificationEmailData): Promise<boolean> {
+    const transporter = createTransporter()
+    const companyName = data.companyName || "Vion AI"
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: companyName,
+        fallbackName: companyName,
+    })
+    const dashboardLink = `https://www.getvion.com/console/chatbot/chats?sessionId=${encodeURIComponent(data.callbackId)}`
+    const triggerLabel = data.triggerSource === "assistant_trigger" ? "Asistan yönlendirmesi" : "Kullanıcı talebi"
+    const transcriptSnippet = (data.transcriptSnippet || "-").trim() || "-"
+
+    const subject = `${companyName} | Yeni müşteri temsilcisi talebi`
+    const text = [
+        "Yeni müşteri temsilcisi talebi oluşturuldu.",
+        `Kaynak: ${triggerLabel}`,
+        `Callback ID: ${data.callbackId}`,
+        `Mesaj: ${transcriptSnippet}`,
+        `Panel: ${dashboardLink}`,
+    ].join("\n")
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fb;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="padding:28px 28px 20px;background:#111827;color:#ffffff;">
+              <h1 style="margin:0;font-size:20px;font-weight:700;">${companyName}</h1>
+              <p style="margin:8px 0 0;font-size:14px;opacity:0.92;">Yeni müşteri temsilcisi talebi</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#374151;">
+                Sohbet bir insan temsilciye yönlendirildi. Aşağıdaki detaylarla hızlıca inceleyebilirsiniz.
+              </p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:18px;">
+                <tr><td style="padding:6px 0;font-size:14px;"><strong>Kaynak:</strong> ${triggerLabel}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;"><strong>Callback ID:</strong> ${data.callbackId}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;"><strong>Mesaj:</strong> ${transcriptSnippet}</td></tr>
+              </table>
+              <div style="margin-top:24px;">
+                <a href="${dashboardLink}" style="display:inline-block;background:#111827;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 20px;border-radius:8px;">Konuşmayı aç</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `
+
+    return sendEmailOrMock(transporter, {
+        ...buildMailSenderOptions(senderIdentity),
+        to: data.recipientEmail,
+        subject,
+        text,
+        html,
+    })
+}

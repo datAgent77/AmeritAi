@@ -36,6 +36,38 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
         () => status?.availablePages.find((page) => page.id === selectedPageId) || null,
         [selectedPageId, status?.availablePages]
     )
+    const recoveryChecklist = useMemo(() => {
+        const preflight = status?.config.preflightResult
+        if (!preflight) return []
+
+        const items: string[] = []
+
+        if (preflight.hasFacebookPage === false) {
+            items.push("Instagram hesabınızın bağlı olduğu doğru Facebook Sayfasını oluşturun veya bu hesabın erişebildiği işletme altında görünür hale getirin.")
+        }
+
+        if (preflight.instagramLinkedToPage === false) {
+            items.push("Instagram hesabını doğru Facebook Sayfasına bağlayın. Hesap başka bir işletmeye bağlıysa sayfa listesi boş kalır ve kurulum ilerlemez.")
+        }
+
+        if (preflight.instagramIsProfessional === false) {
+            items.push("Instagram hesabını Profesyonel hesaba çevirin. Kişisel hesaplarla mesaj entegrasyonu tamamlanmaz.")
+        }
+
+        if (preflight.messageAccessEnabled === false) {
+            items.push("Instagram uygulamasında mesaj erişimini açın. Mesaj izinleri kapalıysa bağlantı tamamlanmış görünse bile DM akışı aktif olmaz.")
+        }
+
+        if ((preflight.hasFacebookPage === false || preflight.instagramLinkedToPage === false) && preflight.tokenPresent === true) {
+            items.push("Yanlış Facebook/Meta hesabıyla giriş yaptıysanız mevcut bağlantıyı sıfırlayıp doğru hesapla yeniden giriş yapın.")
+        }
+
+        if (items.length === 0 && preflight.failureReason) {
+            items.push(preflight.failureReason)
+        }
+
+        return items
+    }, [status])
 
     useEffect(() => {
         if (!status) return
@@ -289,6 +321,11 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
         )
     }
 
+    const shouldShowRecoveryPanel =
+        (status.config.state === "needs_user_action" || status.config.state === "failed") &&
+        (recoveryChecklist.length > 0 || Boolean(status.config.accessTokenRef || status.config.pageId || status.config.instagramAccountId))
+    const canResetConnection = Boolean(status.config.accessTokenRef || status.config.pageId || status.config.instagramAccountId)
+
     return (
         <Card className="overflow-hidden border-border/70 bg-white">
             <CardHeader className="border-b bg-gradient-to-r from-fuchsia-50 via-white to-pink-50">
@@ -355,6 +392,44 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                     </div>
                 </div>
                 <InstagramDMPreflightStep status={status} connecting={connecting} checking={checking} onConnect={handleConnect} onPreflight={runPreflight} />
+
+                {shouldShowRecoveryPanel ? (
+                    <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-base">Kurulum burada beklemesin</CardTitle>
+                            <CardDescription>
+                                Eksik Meta varlıklarını tamamladıktan sonra aynı ekrandan devam edebilirsiniz. Yanlış hesap bağlandıysa bağlantıyı sıfırlayın.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {recoveryChecklist.length > 0 ? (
+                                <div className="space-y-2">
+                                    {recoveryChecklist.map((item, index) => (
+                                        <div key={`${index}-${item}`} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-amber-950">
+                                            {item}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Button type="button" onClick={handleConnect} disabled={connecting}>
+                                    {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Meta ile yeniden giriş yap
+                                </Button>
+                                <Button type="button" variant="outline" onClick={runPreflight} disabled={checking}>
+                                    {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                    Kontrolü tekrar çalıştır
+                                </Button>
+                                {canResetConnection ? (
+                                    <Button type="button" variant="outline" onClick={handleDisconnect} disabled={disconnecting}>
+                                        {disconnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        Bağlantıyı sıfırla
+                                    </Button>
+                                ) : null}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : null}
 
                 {status.availablePages.length > 0 ? (
                     <InstagramDMPageSelectStep
