@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSidebar } from "@/components/ui/sidebar"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
-import { collection, query, where, orderBy, getDocs, limit, doc, updateDoc } from "firebase/firestore"
+import { collection, query, where, orderBy, getDocs, limit, doc, updateDoc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -277,20 +277,48 @@ export function NotificationBell() {
 
         setNotifications(results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()))
 
-        if (hasNewTotal && previousIdsRef.current.size > results.length) {
+        if (hasNewTotal) {
             playNotificationSound()
         }
     }, [user?.uid, isSuperAdmin, playNotificationSound])
 
-    // Polling effect
+    // Polling effect for chat/appointment/lead sections (still 30s)
     useEffect(() => {
         if (!user?.uid) return
 
         fetchAllNotifications()
-        const interval = setInterval(fetchAllNotifications, 30000) // 30 seconds polling
+        const interval = setInterval(fetchAllNotifications, 30000)
 
         return () => clearInterval(interval)
     }, [user?.uid, fetchAllNotifications])
+
+    // Real-time listener for stored system notifications (human_handoff_request etc.)
+    useEffect(() => {
+        if (!user?.uid) return
+
+        const notificationsQ = query(
+            collection(db, "notifications"),
+            where("userId", "==", user.uid)
+        )
+
+        const unsubscribe = onSnapshot(notificationsQ, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const data = change.doc.data() as any
+                    const notifId = `system_notification_${change.doc.id}`
+                    const isUnread = data.isRead !== true
+                    // Only play sound for genuinely new docs (not on initial load)
+                    if (isUnread && previousIdsRef.current.has(notifId) === false && previousIdsRef.current.size > 0) {
+                        playNotificationSound()
+                    }
+                    // Trigger a poll refresh so the bell list updates immediately
+                    fetchAllNotifications()
+                }
+            })
+        })
+
+        return () => unsubscribe()
+    }, [user?.uid, playNotificationSound, fetchAllNotifications])
 
 
     // Update unread count
