@@ -9,6 +9,7 @@ interface LeadCollectionOverlayProps {
     settings: ChatbotSettings
     t: (key: string) => string
     description?: string
+    variant?: string
 }
 
 export function LeadCollectionOverlay({
@@ -17,7 +18,8 @@ export function LeadCollectionOverlay({
     isSubmitting,
     settings,
     t,
-    description
+    description,
+    variant: _variant
 }: LeadCollectionOverlayProps) {
     const [formData, setFormData] = useState<{
         name: string

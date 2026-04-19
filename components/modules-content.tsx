@@ -128,7 +128,9 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     visualDiagnosis: 'enableVisualDiagnosis',
     digitalWaiter: 'enableDigitalWaiter',
     proactiveMessaging: 'enableProactiveMessaging',
-    dynamicContext: 'enableDynamicContext'
+    dynamicContext: 'enableDynamicContext',
+    kvkkConsent: 'enableKvkkConsent',
+    humanHandoff: 'enableHumanHandoff'
 }
 
 interface ModulesContentProps {

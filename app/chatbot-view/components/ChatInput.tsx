@@ -39,6 +39,7 @@ interface ChatInputProps {
     showConversationModeSwitch?: boolean
     conversationMode?: ConversationMode
     onConversationModeChange?: (mode: ConversationMode) => void
+    disabled?: boolean
 }
 
 export function ChatInput({
@@ -58,7 +59,8 @@ export function ChatInput({
     showUtilityActions = false,
     showConversationModeSwitch = false,
     conversationMode = "text",
-    onConversationModeChange
+    onConversationModeChange,
+    disabled = false
 }: ChatInputProps) {
     const {
         selectedImage,

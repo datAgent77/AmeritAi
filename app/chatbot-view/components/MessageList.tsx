@@ -19,6 +19,8 @@ interface MessageListProps {
     messages: any[]
     settings: ChatbotSettings
     isTyping: boolean
+    isSessionPaused?: boolean
+    pauseStateVersion?: number
     language: string
     imageMap: Record<string, any>
     scrollToBottom: (behavior?: ScrollBehavior) => void

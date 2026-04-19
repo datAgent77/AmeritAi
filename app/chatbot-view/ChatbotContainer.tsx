@@ -289,15 +289,14 @@ export default function ChatbotContainer() {
         speakResponse?: boolean,
         visualCtx?: string,
         guidedEvent?: GuidedSkillClientEvent | null,
-        mediaPayload?: UserMessageMediaPayload | null,
-        contextOverride?: Record<string, any>
+        mediaPayload?: UserMessageMediaPayload | null
     ) => {
         if (requiresKvkkConsent) {
             // KVKK consent logic is handled via inline message in MessageList
             return ""
         }
 
-        return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload, contextOverride)
+        return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
     }
 
     const guardedSendGuidedMessage = async (guidedEvent: GuidedSkillClientEvent) => {
@@ -437,8 +436,7 @@ export default function ChatbotContainer() {
                     false,
                     undefined,
                     undefined,
-                    { isHidden: true } as any,
-                    formData
+                    null
                 )
                 return
             }
@@ -471,7 +469,7 @@ export default function ChatbotContainer() {
 
                 if (submitSource === "inline") {
                     // Inline form submit finalizes a pending handoff on backend if one exists.
-                    guardedSendMessage("İletişim bilgilerimi doldurdum.", false, undefined, undefined, { isHidden: true } as any, formData)
+                    guardedSendMessage("İletişim bilgilerimi doldurdum.", false, undefined, undefined, null)
                 } else {
                     // Overlay formlar için mevcut statik teşekkür mesajı
                     const leadName = String(formData?.name || "").trim()
@@ -713,6 +711,7 @@ export default function ChatbotContainer() {
                                     handleToggleSize={() => {}}
                                     handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
                                     handleClearChat={handleClearChat}
+                                    t={t}
                                     showSizeToggle={false}
                                     showCloseButton={true}
                                     sticky={false}
@@ -795,6 +794,7 @@ export default function ChatbotContainer() {
                             handleToggleSize={handleToggleSize}
                             handleCloseWidget={handleCloseWidget}
                             handleClearChat={handleClearChat}
+                            t={t}
                         />
                     )}
 

@@ -18,6 +18,8 @@ export interface UseChatCoreProps {
     getImageFromCache: (msgId: string) => any
     findImageByContent: (content: string) => any
     onShowLeadForm?: () => void
+    kvkkConsentVersion?: string | null
+    onKvkkConsentRequired?: () => void
 }
 
 export interface UserMessageMediaPayload {
@@ -43,7 +45,9 @@ export function useChatCore({
     saveImageToCache,
     getImageFromCache,
     findImageByContent,
-    onShowLeadForm
+    onShowLeadForm,
+    kvkkConsentVersion: _kvkkConsentVersion,
+    onKvkkConsentRequired: _onKvkkConsentRequired
 }: UseChatCoreProps) {
     const [messages, setMessages] = useState<any[]>([])
     const [initialMessages, setInitialMessages] = useState<any[]>([])
@@ -568,6 +572,8 @@ export function useChatCore({
         chatStatus,
         isTyping,
         isChatLoading,
+        isSessionPaused: false as boolean,
+        pauseStateVersion: 0 as number,
         sessionId,
         guidedSkillState,
         hasProactiveTriggered, // Exposed if needed
