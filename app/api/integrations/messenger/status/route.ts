@@ -1,22 +1,17 @@
 import { authorizeIntegrationAccess } from "@/lib/integration-plan-access"
 import { getAdminDb } from "@/lib/firebase-admin"
-import { discoverWhatsAppBusinesses, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
-import { buildWhatsAppBizStatus, getWhatsAppUserAccessToken } from "@/lib/integrations/whatsapp-business/setup"
+import { discoverMetaPages, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
+import { buildMessengerDMStatus, getMessengerUserAccessToken } from "@/lib/integrations/messenger/setup"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
     const adminDb = getAdminDb()
-    if (!adminDb) {
-        return Response.json({ error: "Firebase Admin başlatılamadı." }, { status: 500 })
-    }
+    if (!adminDb) return Response.json({ error: "Firebase Admin başlatılamadı." }, { status: 500 })
 
     const { searchParams } = new URL(req.url)
     const chatbotId = searchParams.get("chatbotId") || ""
-
-    if (!chatbotId) {
-        return Response.json({ error: "chatbotId zorunlu." }, { status: 400 })
-    }
+    if (!chatbotId) return Response.json({ error: "chatbotId zorunlu." }, { status: 400 })
 
     const access = await authorizeIntegrationAccess(req, chatbotId, "meta-channels")
     if (!access.ok) return access.response
@@ -27,16 +22,20 @@ export async function GET(req: Request) {
         chatbotRef.get(),
     ])
     const omniConfig = (configSnapshot.data() || {}) as Record<string, any>
-    const accessToken = getWhatsAppUserAccessToken(omniConfig)
-    const availableBusinesses = accessToken ? (await discoverWhatsAppBusinesses(accessToken)).businesses : []
+    const accessToken = getMessengerUserAccessToken(omniConfig)
+    const availablePages = accessToken
+        ? (await discoverMetaPages(accessToken)).pages
+              .filter((page) => page.messagingEligible !== false)
+              .map((page) => ({ id: page.id, name: page.name }))
+        : []
 
     return Response.json({
-        ...(await buildWhatsAppBizStatus({
+        ...(await buildMessengerDMStatus({
             adminDb,
             chatbotId,
             origin: new URL(req.url).origin,
             omniConfig,
-            availableBusinesses,
+            availablePages,
             includeDiagnostics: access.isSuperAdmin || access.isAgencyAdmin,
             legacyIntegrations: chatbotSnapshot.data()?.integrations || {},
         })),

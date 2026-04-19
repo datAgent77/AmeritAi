@@ -1,7 +1,7 @@
 import { authorizeIntegrationAccess } from "@/lib/integration-plan-access"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { createOAuthState } from "@/lib/oauth-state"
-import { generateMetaVerifyToken } from "@/lib/meta-setup"
+import { generateMetaVerifyToken, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
 import { buildMetaOAuthUrl } from "@/lib/integrations/meta-shared/oauth"
 import { WhatsAppBizConnectSchema } from "@/lib/integrations/whatsapp-business/schemas"
 import { getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
@@ -59,23 +59,25 @@ export async function POST(req: Request) {
         const verifyToken = currentConfig?.whatsapp?.verifyToken || generateMetaVerifyToken()
 
         const hasTenantCredentials = Boolean(tenantAppId && tenantAppSecret)
-        if (!hasTenantCredentials) {
+        if (!hasTenantCredentials && !isMetaPlatformAppAvailable()) {
             return Response.json(
                 {
-                    error: "WhatsApp bağlantısı için bu chatbot'a ait Meta App ID ve App Secret zorunludur. Ortak platform uygulaması desteklenmiyor.",
+                    error: "WhatsApp bağlantısı için Meta App ID ve App Secret girilmeli ya da platform uygulaması yapılandırılmış olmalıdır.",
                 },
                 { status: 400 }
             )
         }
 
+        const appConfigSource = hasTenantCredentials ? "tenant" : "platform"
+
         const state = await createOAuthState({
             provider: "integration-meta-whatsapp-business",
             userId: chatbotId,
             chatbotId,
-            apiKey: tenantAppId,
-            apiSecret: tenantAppSecret,
+            apiKey: hasTenantCredentials ? tenantAppId : "",
+            apiSecret: hasTenantCredentials ? tenantAppSecret : "",
             verifyToken,
-            appConfigSource: "tenant",
+            appConfigSource,
             selectedChannels: ["whatsapp"],
             returnPath,
         })
@@ -87,11 +89,11 @@ export async function POST(req: Request) {
                 origin,
                 state,
                 callbackPath: "/api/integrations/whatsapp-business/callback",
-                appConfig: {
+                appConfig: hasTenantCredentials ? {
                     appId: tenantAppId,
                     appSecret: tenantAppSecret,
                     verifyToken,
-                },
+                } : undefined,
                 selectedChannels: ["whatsapp"],
             }),
         })

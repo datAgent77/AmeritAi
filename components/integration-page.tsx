@@ -17,6 +17,7 @@ import { hasIntegrationAccess, getIntegrationMinPlan, INTEGRATION_ACCESS } from 
 import { PricingModal } from "@/components/pricing-modal"
 import { InstagramDMWizard } from "@/components/integrations/instagram-dm/InstagramDMWizard"
 import { WhatsAppBizWizard } from "@/components/integrations/whatsapp-business/WhatsAppBizWizard"
+import { MessengerWizard } from "@/components/integrations/messenger/MessengerWizard"
 
 interface IntegrationPageProps {
     userId: string
@@ -144,16 +145,18 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         {
             id: "meta-channels",
             name: "Meta Kanalları",
-            description: "Instagram DM ve WhatsApp Business kanallarını ayrı kurulum sihirbazlarıyla yönetin.",
+            description: "Instagram DM, WhatsApp Business ve Facebook Messenger kanallarını ayrı kurulum sihirbazlarıyla yönetin.",
             icon: <MessageCircle className="h-6 w-6 text-gray-900" />,
             iconBg: "bg-gray-100",
             connected: Boolean(
                 metaWizardStatus?.instagramDM?.config?.state === "connected" ||
-                metaWizardStatus?.whatsappBusiness?.config?.state === "connected"
+                metaWizardStatus?.whatsappBusiness?.config?.state === "connected" ||
+                (metaWizardStatus as any)?.messengerDM?.config?.state === "connected"
             ),
             features: [
                 "Instagram DM için ayrı Türkçe adımlar",
                 "WhatsApp Business için ayrı popup akışı",
+                "Facebook Messenger DM entegrasyonu",
                 "Her kanal için bağımsız hata yönetimi",
             ],
         },
@@ -225,6 +228,20 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 "Embedded signup ile yönlendirmeli kurulum",
                 "Telefon numarası ve webhook durumu kontrolü",
                 "Test mesajı ve yeniden bağlanma akışı",
+            ]
+        },
+        {
+            id: "messenger",
+            name: "Facebook Messenger",
+            description: "Facebook sayfanıza gelen Messenger mesajlarını otomatik yanıtlayın.",
+            icon: <MessageCircle className="h-6 w-6 text-blue-600" />,
+            iconBg: "bg-blue-50",
+            connected: (metaWizardStatus as any)?.messengerDM?.config?.state === "connected",
+            connectedInfo: (metaWizardStatus as any)?.messengerDM?.config?.pageName || undefined,
+            features: [
+                "Facebook sayfanızdan Messenger DM akışı",
+                "OAuth ile güvenli yetkilendirme",
+                "Test mesajı ve webhook durumu kontrolü",
             ]
         },
         {
@@ -672,13 +689,18 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     }
                 }
 
-                const [instagramStatusRes, whatsappStatusRes] = await Promise.all([
+                const [instagramStatusRes, whatsappStatusRes, messengerStatusRes] = await Promise.all([
                     fetch(`/api/integrations/instagram-dm/status?chatbotId=${userId}`, {
                         headers: {
                             Authorization: `Bearer ${token}`
                         }
                     }),
                     fetch(`/api/integrations/whatsapp-business/status?chatbotId=${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }),
+                    fetch(`/api/integrations/messenger/status?chatbotId=${userId}`, {
                         headers: {
                             Authorization: `Bearer ${token}`
                         }
@@ -691,6 +713,9 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 }
                 if (whatsappStatusRes.ok) {
                     nextMetaWizardStatus.whatsappBusiness = await whatsappStatusRes.json()
+                }
+                if (messengerStatusRes.ok) {
+                    nextMetaWizardStatus.messengerDM = await messengerStatusRes.json()
                 }
                 setMetaWizardStatus(nextMetaWizardStatus)
             } catch (error) {
@@ -773,6 +798,24 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     </div>
 
                     <WhatsAppBizWizard chatbotId={userId} />
+                </div>
+            )
+        }
+
+        if (currentIntegration.id === "messenger") {
+            return (
+                <div className="flex-1 p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setSelectedIntegration(null)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t('backToIntegrations')}
+                        </button>
+                    </div>
+
+                    <MessengerWizard chatbotId={userId} />
                 </div>
             )
         }
@@ -962,11 +1005,12 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                             </Card>
                         )}
 
-                        {/* WhatsApp Wizard */}
+                        {/* Meta Channels Wizards */}
                         {currentIntegration.id === "meta-channels" && (
                             <div className="grid gap-6 xl:grid-cols-2">
                                 <InstagramDMWizard chatbotId={userId} />
                                 <WhatsAppBizWizard chatbotId={userId} />
+                                <MessengerWizard chatbotId={userId} />
                             </div>
                         )}
 

@@ -3,13 +3,13 @@ import { getAdminDb } from "@/lib/firebase-admin"
 import { createOAuthState } from "@/lib/oauth-state"
 import { generateMetaVerifyToken, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
 import { buildMetaOAuthUrl } from "@/lib/integrations/meta-shared/oauth"
-import { InstagramDMConnectSchema } from "@/lib/integrations/instagram-dm/schemas"
+import { MessengerDMConnectSchema } from "@/lib/integrations/messenger/schemas"
 import { getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(req: Request) {
-    const parsed = InstagramDMConnectSchema.safeParse(await req.json().catch(() => null))
+    const parsed = MessengerDMConnectSchema.safeParse(await req.json().catch(() => null))
     if (!parsed.success) {
         return Response.json({ error: "Geçersiz istek." }, { status: 400 })
     }
@@ -47,27 +47,14 @@ export async function POST(req: Request) {
         })) as Record<string, any>
     }
 
-    const tenantAppId = (
-        requestedAppId ||
-        currentConfig?.metaSetup?.secrets?.appId ||
-        currentConfig?.instagram?.appId ||
-        currentConfig?.messenger?.appId ||
-        ""
-    ).trim()
-    const tenantAppSecret =
-        (
-            requestedAppSecret ||
-            currentConfig?.metaSetup?.secrets?.appSecret ||
-            currentConfig?.instagram?.appSecretRef ||
-            currentConfig?.messenger?.appSecretRef ||
-            ""
-        ).trim()
-    const verifyToken = currentConfig?.instagram?.verifyToken || generateMetaVerifyToken()
+    const tenantAppId = (requestedAppId || currentConfig?.metaSetup?.secrets?.appId || currentConfig?.messenger?.appId || "").trim()
+    const tenantAppSecret = (requestedAppId ? requestedAppSecret : currentConfig?.metaSetup?.secrets?.appSecret || currentConfig?.messenger?.appSecretRef || "").trim()
+    const verifyToken = currentConfig?.messenger?.verifyToken || generateMetaVerifyToken()
 
     const hasTenantCredentials = Boolean(tenantAppId && tenantAppSecret)
     if (!hasTenantCredentials && !isMetaPlatformAppAvailable()) {
         return Response.json(
-            { error: "Instagram bağlantısı için Meta App ID ve App Secret girilmeli ya da platform uygulaması yapılandırılmış olmalıdır." },
+            { error: "Messenger bağlantısı için Meta App ID ve App Secret girilmeli ya da platform uygulaması yapılandırılmış olmalıdır." },
             { status: 400 }
         )
     }
@@ -75,14 +62,14 @@ export async function POST(req: Request) {
     const appConfigSource = hasTenantCredentials ? "tenant" : "platform"
 
     const state = await createOAuthState({
-        provider: "integration-meta-instagram-dm",
+        provider: "integration-meta-messenger-dm",
         userId: chatbotId,
         chatbotId,
         apiKey: hasTenantCredentials ? tenantAppId : "",
         apiSecret: hasTenantCredentials ? tenantAppSecret : "",
         verifyToken,
         appConfigSource,
-        selectedChannels: ["instagram"],
+        selectedChannels: ["messenger"],
         returnPath,
     })
 
@@ -92,13 +79,13 @@ export async function POST(req: Request) {
         authUrl: buildMetaOAuthUrl({
             origin,
             state,
-            callbackPath: "/api/integrations/instagram-dm/callback",
+            callbackPath: "/api/integrations/messenger/callback",
             appConfig: hasTenantCredentials ? {
                 appId: tenantAppId,
                 appSecret: tenantAppSecret,
                 verifyToken,
             } : undefined,
-            selectedChannels: ["instagram"],
+            selectedChannels: ["messenger"],
         }),
     })
 }

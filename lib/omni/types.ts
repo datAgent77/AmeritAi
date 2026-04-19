@@ -709,6 +709,29 @@ export interface WhatsAppBizChannelConfig {
     wizardStep: number
 }
 
+export interface MessengerDMPreflightResult {
+    checkedAt: string | null
+    hasFacebookPage: boolean | null
+    pageIsMessagingEligible: boolean | null
+    tokenPresent: boolean | null
+    webhookActive: boolean | null
+    overallOk: boolean
+    failureReason: string | null
+}
+
+export interface MessengerDMChannelConfig {
+    state: MetaConsoleChannelState
+    preflightResult: MessengerDMPreflightResult | null
+    pageId: string | null
+    pageName: string | null
+    accessTokenRef: string | null
+    tokenExpiresAt: string | null
+    webhookStatus: "connected" | "pending" | "disconnected"
+    lastConnectedAt: string | null
+    lastTestedAt: string | null
+    wizardStep: number
+}
+
 export interface InstagramChannelConfig {
     enabled: boolean
     accountId?: string | null
@@ -769,6 +792,7 @@ export interface OmniChannelConfigDocument {
     whatsapp?: WhatsAppChannelConfig
     instagramDM?: InstagramDMChannelConfig
     whatsappBusiness?: WhatsAppBizChannelConfig
+    messengerDM?: MessengerDMChannelConfig
     voiceIntegration?: VoiceIntegrationConfig
     assistantCore?: Partial<OmniAssistantCoreSettings> | Record<string, unknown>
     metaSetup?: Record<string, unknown>

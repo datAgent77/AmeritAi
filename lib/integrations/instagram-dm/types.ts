@@ -19,6 +19,7 @@ export interface InstagramDMStatusPayload {
     stateMessage: string
     webhookUrl: string
     availablePages: InstagramDMPageOption[]
+    platformAppAvailable?: boolean
     diagnostics?: {
         rawConfig: Record<string, unknown>
         rawLegacyConfig: Record<string, unknown>

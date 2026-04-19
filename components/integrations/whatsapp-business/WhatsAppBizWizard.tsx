@@ -323,42 +323,44 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             </CardHeader>
             <CardContent className="space-y-5 p-6">
                 <WhatsAppBizRecoveryBanner status={status} />
-                <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
-                    <div className="mb-4">
-                        <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
-                        <p className="text-xs text-muted-foreground">
-                            Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
-                        </p>
-                    </div>
-                    <div className="grid gap-3">
-                        <div className="grid gap-1.5">
-                            <label htmlFor="wa-custom-app-id" className="text-xs font-medium text-muted-foreground">
-                                Meta App ID
-                            </label>
-                            <Input
-                                id="wa-custom-app-id"
-                                value={customAppId}
-                                onChange={(event) => setCustomAppId(event.target.value)}
-                                placeholder="Örn. 123456789012345"
-                            />
+                {!status.platformAppAvailable ? (
+                    <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                        <div className="mb-4">
+                            <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
+                            <p className="text-xs text-muted-foreground">
+                                Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
+                            </p>
                         </div>
-                        <div className="grid gap-1.5">
-                            <label htmlFor="wa-custom-app-secret" className="text-xs font-medium text-muted-foreground">
-                                Meta App Secret
-                            </label>
-                            <Input
-                                id="wa-custom-app-secret"
-                                type="password"
-                                value={customAppSecret}
-                                onChange={(event) => setCustomAppSecret(event.target.value)}
-                                placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
-                            />
+                        <div className="grid gap-3">
+                            <div className="grid gap-1.5">
+                                <label htmlFor="wa-custom-app-id" className="text-xs font-medium text-muted-foreground">
+                                    Meta App ID
+                                </label>
+                                <Input
+                                    id="wa-custom-app-id"
+                                    value={customAppId}
+                                    onChange={(event) => setCustomAppId(event.target.value)}
+                                    placeholder="Örn. 123456789012345"
+                                />
+                            </div>
+                            <div className="grid gap-1.5">
+                                <label htmlFor="wa-custom-app-secret" className="text-xs font-medium text-muted-foreground">
+                                    Meta App Secret
+                                </label>
+                                <Input
+                                    id="wa-custom-app-secret"
+                                    type="password"
+                                    value={customAppSecret}
+                                    onChange={(event) => setCustomAppSecret(event.target.value)}
+                                    placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
+                            </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
-                        </p>
                     </div>
-                </div>
+                ) : null}
                 <WhatsAppBizPreflightStep status={status} connecting={connecting} checking={checking} onConnect={handleConnect} onPreflight={runPreflight} />
 
                 <WhatsAppEmbeddedSignupStep connecting={connecting} onConnect={handleConnect} />

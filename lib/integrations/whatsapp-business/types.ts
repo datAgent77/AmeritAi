@@ -24,6 +24,7 @@ export interface WhatsAppBizStatusPayload {
     stateMessage: string
     webhookUrl: string
     availableBusinesses: WhatsAppBusinessOption[]
+    platformAppAvailable?: boolean
     diagnostics?: {
         rawConfig: Record<string, unknown>
         rawLegacyConfig: Record<string, unknown>

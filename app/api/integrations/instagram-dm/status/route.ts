@@ -1,6 +1,6 @@
 import { authorizeIntegrationAccess } from "@/lib/integration-plan-access"
 import { getAdminDb } from "@/lib/firebase-admin"
-import { discoverMetaPages } from "@/lib/meta-setup"
+import { discoverMetaPages, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
 import { buildInstagramDMStatus, getInstagramUserAccessToken } from "@/lib/integrations/instagram-dm/setup"
 
 export const dynamic = "force-dynamic"
@@ -39,8 +39,8 @@ export async function GET(req: Request) {
               }))
         : []
 
-    return Response.json(
-        await buildInstagramDMStatus({
+    return Response.json({
+        ...(await buildInstagramDMStatus({
             adminDb,
             chatbotId,
             origin: new URL(req.url).origin,
@@ -48,6 +48,7 @@ export async function GET(req: Request) {
             availablePages,
             includeDiagnostics: access.isSuperAdmin || access.isAgencyAdmin,
             legacyIntegrations: chatbotSnapshot.data()?.integrations || {},
-        })
-    )
+        })),
+        platformAppAvailable: isMetaPlatformAppAvailable(),
+    })
 }

@@ -1,10 +1,10 @@
 import { getAdminDb } from "@/lib/firebase-admin"
 import { consumeOAuthState } from "@/lib/oauth-state"
-import { discoverWhatsAppBusinesses, getMetaPlatformAppConfig, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
+import { discoverMetaPages, getMetaPlatformAppConfig, isMetaPlatformAppAvailable } from "@/lib/meta-setup"
 import { exchangeMetaCode } from "@/lib/integrations/meta-shared/oauth"
 import { subscribeWebhook } from "@/lib/integrations/meta-shared/webhook"
-import { runWhatsAppBizPreflight } from "@/lib/integrations/whatsapp-business/preflight"
-import { buildWhatsAppBizMergePayload, buildWhatsAppBizStatus } from "@/lib/integrations/whatsapp-business/setup"
+import { buildMessengerDMMergePayload, buildMessengerDMStatus } from "@/lib/integrations/messenger/setup"
+import { runMessengerDMPreflight } from "@/lib/integrations/messenger/preflight"
 import { getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
@@ -14,18 +14,12 @@ function buildPopupResponse(origin: string, payload: Record<string, unknown>) {
 window.opener && window.opener.postMessage(${JSON.stringify(payload)}, ${JSON.stringify(origin)});
 window.close();
 </script></body></html>`
-    return new Response(body, {
-        headers: {
-            "Content-Type": "text/html; charset=utf-8",
-        },
-    })
+    return new Response(body, { headers: { "Content-Type": "text/html; charset=utf-8" } })
 }
 
 export async function GET(req: Request) {
     const adminDb = getAdminDb()
-    if (!adminDb) {
-        return new Response("Firebase Admin başlatılamadı.", { status: 500 })
-    }
+    if (!adminDb) return new Response("Firebase Admin başlatılamadı.", { status: 500 })
 
     const origin = getPublicAppOrigin(req)
     const { searchParams } = new URL(req.url)
@@ -35,21 +29,17 @@ export async function GET(req: Request) {
 
     if (!code || !state) {
         return buildPopupResponse(origin, {
-            type: "vion-whatsapp-business-oauth",
+            type: "vion-messenger-dm-oauth",
             ok: false,
             error: providerError || "Meta doğrulaması tamamlanamadı.",
         })
     }
 
-    const stateData = await consumeOAuthState(state, "integration-meta-whatsapp-business")
+    const stateData = await consumeOAuthState(state, "integration-meta-messenger-dm")
     const chatbotId = stateData?.chatbotId || stateData?.userId || ""
 
     if (!chatbotId) {
-        return buildPopupResponse(origin, {
-            type: "vion-whatsapp-business-oauth",
-            ok: false,
-            error: "Geçersiz oturum durumu.",
-        })
+        return buildPopupResponse(origin, { type: "vion-messenger-dm-oauth", ok: false, error: "Geçersiz oturum durumu." })
     }
 
     try {
@@ -63,7 +53,7 @@ export async function GET(req: Request) {
             appConfig = {
                 appId: stateData?.apiKey || "",
                 appSecret: stateData?.apiSecret || "",
-                verifyToken: stateData?.verifyToken || "tenant-whatsapp-verify-token",
+                verifyToken: stateData?.verifyToken || "tenant-messenger-verify-token",
             }
             if (!appConfig.appId || !appConfig.appSecret) {
                 throw new Error("Meta uygulama bilgileri (App ID / Secret) eksik veya geçersiz.")
@@ -72,58 +62,52 @@ export async function GET(req: Request) {
 
         const { accessToken, expiresIn } = await exchangeMetaCode({
             origin,
-            callbackPath: "/api/integrations/whatsapp-business/callback",
+            callbackPath: "/api/integrations/messenger/callback",
             code,
             appConfig,
         })
 
         const expiresAt = typeof expiresIn === "number" ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
         const currentConfig = ((await adminDb.collection("omni_channel_configs").doc(chatbotId).get()).data() || {}) as Record<string, any>
-        const discovery = await discoverWhatsAppBusinesses(accessToken)
-        const firstBusiness = discovery.businesses.find((business) => business.phoneNumbers.length > 0) || discovery.businesses[0] || null
-        const firstPhone = firstBusiness?.phoneNumbers[0] || null
-        const preflight = await runWhatsAppBizPreflight(accessToken, chatbotId, adminDb)
+        const discovery = await discoverMetaPages(accessToken)
+        const firstPage = discovery.pages.find((page) => page.messagingEligible !== false) || null
+        const pageAccessToken = firstPage?.pageAccessToken || accessToken
+        const preflight = await runMessengerDMPreflight(accessToken, chatbotId, adminDb)
 
         let nextConfig = await mergeOmniChannelConfig(
             adminDb,
             chatbotId,
-            buildWhatsAppBizMergePayload({
+            buildMessengerDMMergePayload({
                 omniConfig: currentConfig,
                 accessToken,
-                wabaId: firstBusiness?.id || null,
-                phoneNumberId: firstPhone?.id || null,
-                displayNumber: firstPhone?.displayNumber || null,
+                pageId: firstPage?.id || null,
+                pageName: firstPage?.name || null,
+                pageAccessToken,
                 tokenExpiresAt: expiresAt,
                 preflightResult: preflight.result,
-                webhookStatus: firstBusiness ? "pending" : "disconnected",
-                lastConnectedAt: firstBusiness ? new Date().toISOString() : null,
+                webhookStatus: firstPage ? "pending" : "disconnected",
+                lastConnectedAt: firstPage ? new Date().toISOString() : null,
             })
         )
 
-        if (firstBusiness) {
+        if (firstPage) {
             try {
-                await subscribeWebhook({
-                    channel: "whatsapp",
-                    businessAccountId: firstBusiness.id,
-                    accessToken,
-                })
-                const refreshed = await runWhatsAppBizPreflight(accessToken, chatbotId, adminDb)
+                await subscribeWebhook({ channel: "messenger", pageId: firstPage.id, accessToken: pageAccessToken })
+                const refreshed = await runMessengerDMPreflight(accessToken, chatbotId, adminDb)
                 nextConfig = await mergeOmniChannelConfig(
                     adminDb,
                     chatbotId,
-                    buildWhatsAppBizMergePayload({
+                    buildMessengerDMMergePayload({
                         omniConfig: nextConfig,
-                        wabaId: firstBusiness.id,
-                        phoneNumberId: firstPhone?.id || null,
-                        displayNumber: firstPhone?.displayNumber || null,
+                        pageId: firstPage.id,
+                        pageName: firstPage.name,
+                        pageAccessToken,
                         tokenExpiresAt: expiresAt,
                         preflightResult: {
                             ...refreshed.result,
                             webhookActive: true,
-                            failureReason:
-                                refreshed.result.failureReason === "Mesaj akışı şu anda aktif görünmüyor."
-                                    ? null
-                                    : refreshed.result.failureReason,
+                            overallOk: refreshed.result.hasFacebookPage === true && refreshed.result.pageIsMessagingEligible !== false && refreshed.result.tokenPresent === true,
+                            failureReason: refreshed.result.failureReason === "Mesaj akışı şu anda aktif görünmüyor." ? null : refreshed.result.failureReason,
                         },
                         webhookStatus: "connected",
                         lastConnectedAt: new Date().toISOString(),
@@ -133,11 +117,11 @@ export async function GET(req: Request) {
                 nextConfig = await mergeOmniChannelConfig(
                     adminDb,
                     chatbotId,
-                    buildWhatsAppBizMergePayload({
+                    buildMessengerDMMergePayload({
                         omniConfig: nextConfig,
-                        wabaId: firstBusiness.id,
-                        phoneNumberId: firstPhone?.id || null,
-                        displayNumber: firstPhone?.displayNumber || null,
+                        pageId: firstPage.id,
+                        pageName: firstPage.name,
+                        pageAccessToken,
                         tokenExpiresAt: expiresAt,
                         preflightResult: preflight.result,
                         webhookStatus: "pending",
@@ -150,40 +134,36 @@ export async function GET(req: Request) {
         await chatbotRef.set(
             {
                 integrations: {
-                    whatsapp: {
-                        connected: Boolean(firstBusiness && firstPhone),
-                        businessAccountId: firstBusiness?.id || null,
-                        phoneNumberId: firstPhone?.id || null,
-                        displayNumber: firstPhone?.displayNumber || null,
-                        accessToken,
-                        verifyToken: nextConfig?.whatsapp?.verifyToken || appConfig.verifyToken,
+                    messenger: {
+                        connected: Boolean(firstPage),
+                        pageId: firstPage?.id || null,
+                        accessToken: pageAccessToken,
+                        verifyToken: nextConfig?.messenger?.verifyToken || appConfig.verifyToken,
                         appSecret: appConfig.appSecret,
-                        connectedAt: firstBusiness ? new Date().toISOString() : null,
+                        appId: appConfig.appId,
+                        connectedAt: firstPage ? new Date().toISOString() : null,
                     },
                 },
             },
             { merge: true }
         )
 
-        const status = await buildWhatsAppBizStatus({
+        const chatbotSnapshot = await chatbotRef.get()
+        const status = await buildMessengerDMStatus({
             adminDb,
             chatbotId,
             origin,
             omniConfig: nextConfig,
-            availableBusinesses: preflight.availableBusinesses,
-            legacyIntegrations: ((await chatbotRef.get()).data() || {}).integrations || {},
+            availablePages: preflight.availablePages,
+            legacyIntegrations: chatbotSnapshot.data()?.integrations || {},
         })
 
-        return buildPopupResponse(origin, {
-            type: "vion-whatsapp-business-oauth",
-            ok: true,
-            status,
-        })
+        return buildPopupResponse(origin, { type: "vion-messenger-dm-oauth", ok: true, status })
     } catch (error) {
         return buildPopupResponse(origin, {
-            type: "vion-whatsapp-business-oauth",
+            type: "vion-messenger-dm-oauth",
             ok: false,
-            error: error instanceof Error ? error.message : "WhatsApp Business bağlantısı tamamlanamadı.",
+            error: error instanceof Error ? error.message : "Messenger bağlantısı tamamlanamadı.",
         })
     }
 }
