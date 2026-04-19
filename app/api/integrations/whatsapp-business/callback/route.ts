@@ -5,7 +5,7 @@ import { exchangeMetaCode } from "@/lib/integrations/meta-shared/oauth"
 import { subscribeWebhook } from "@/lib/integrations/meta-shared/webhook"
 import { runWhatsAppBizPreflight } from "@/lib/integrations/whatsapp-business/preflight"
 import { buildWhatsAppBizMergePayload, buildWhatsAppBizStatus } from "@/lib/integrations/whatsapp-business/setup"
-import { mergeOmniChannelConfig } from "@/lib/omni/server-utils"
+import { getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
         return new Response("Firebase Admin başlatılamadı.", { status: 500 })
     }
 
-    const origin = new URL(req.url).origin
+    const origin = getPublicAppOrigin(req)
     const { searchParams } = new URL(req.url)
     const code = searchParams.get("code")
     const state = searchParams.get("state")

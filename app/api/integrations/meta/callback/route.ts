@@ -13,7 +13,7 @@ import {
     subscribeMetaAppToWhatsAppBusiness,
 } from "@/lib/meta-setup"
 import { consumeOAuthState } from "@/lib/oauth-state"
-import { getOmniChannelConfig, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
+import { getOmniChannelConfig, getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
     }
 
     try {
-        const origin = new URL(req.url).origin
+        const origin = getPublicAppOrigin(req)
         const { accessToken } = await exchangeMetaCodeForAccessToken({ origin, code, appConfig: tenantAppConfig || undefined })
         const discovery = await discoverMetaAssets(accessToken)
         const currentConfig = await getOmniChannelConfig(adminDb, chatbotId)

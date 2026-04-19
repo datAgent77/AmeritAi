@@ -548,6 +548,15 @@ export function getRequestOrigin(req: Request) {
     return new URL(req.url).origin
 }
 
+export function getPublicAppOrigin(req: Request) {
+    const configured = process.env.NEXT_PUBLIC_APP_URL?.trim()
+    if (configured) {
+        return configured.replace(/\/+$/, "")
+    }
+
+    return getRequestOrigin(req)
+}
+
 export function getPublicRequestUrl(req: Request) {
     const url = new URL(req.url)
     return `${getRequestOrigin(req)}${url.pathname}${url.search}`

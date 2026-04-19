@@ -4,7 +4,7 @@ import { createOAuthState } from "@/lib/oauth-state"
 import { generateMetaVerifyToken } from "@/lib/meta-setup"
 import { buildMetaOAuthUrl } from "@/lib/integrations/meta-shared/oauth"
 import { InstagramDMConnectSchema } from "@/lib/integrations/instagram-dm/schemas"
-import { mergeOmniChannelConfig } from "@/lib/omni/server-utils"
+import { getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         returnPath,
     })
 
-    const origin = new URL(req.url).origin
+    const origin = getPublicAppOrigin(req)
 
     return Response.json({
         authUrl: buildMetaOAuthUrl({

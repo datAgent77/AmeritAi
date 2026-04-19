@@ -1,7 +1,7 @@
 import { authorizeIntegrationAccess } from "@/lib/integration-plan-access"
 import { createOAuthState } from "@/lib/oauth-state"
 import { getAdminDb } from "@/lib/firebase-admin"
-import { getOmniChannelConfig, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
+import { getOmniChannelConfig, getPublicAppOrigin, mergeOmniChannelConfig } from "@/lib/omni/server-utils"
 import { buildMetaOAuthUrl, buildMetaSetupMergePayload, generateMetaVerifyToken, resolveReturnPath, sanitizeMetaSetupDraft, sanitizeSelectedChannels } from "@/lib/meta-setup"
 
 export const dynamic = "force-dynamic"
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
             })
         )
 
-        const origin = new URL(req.url).origin
+        const origin = getPublicAppOrigin(req)
         const state = await createOAuthState({
             provider: "integration-meta",
             userId: chatbotId,
