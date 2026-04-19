@@ -33,7 +33,9 @@ export type ModuleId =
     | 'visualDiagnosis'
     | 'digitalWaiter'
     | 'proactiveMessaging'
-    | 'dynamicContext';
+    | 'dynamicContext'
+    | 'kvkkConsent'
+    | 'humanHandoff';
 
 export type SectorId =
     | 'ecommerce'
@@ -250,6 +252,115 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         ]
     },
 
+    kvkkConsent: {
+        id: 'kvkkConsent',
+        name: {
+            en: 'Data Privacy & KVKK',
+            tr: 'KVKK ve Veri Gizliliği'
+        },
+        description: {
+            en: 'Require data privacy consent before starting a chat',
+            tr: 'Sohbet başlamadan önce KVKK ve veri gizliliği onayı isteyin'
+        },
+        icon: 'ShieldCheck',
+        isCore: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
+        supportedSectors: [],
+        defaultEnabledBySector: [
+            'ecommerce', 'booking', 'real_estate', 'saas', 'service',
+            'healthcare', 'education', 'academic', 'finance', 'restaurant', 'maritime', 'other'
+        ],
+        legacyFirestoreField: 'enableKvkkConsent',
+        longDescription: {
+            en: 'Ensure your chat widget complies with data protection regulations. The KVKK module prompts users to review and accept your privacy policy before they can send their first message. You can customize the consent text or use the global default.',
+            tr: 'Sohbet widget\'ınızın veri koruma düzenlemelerine uygun olduğundan emin olun. KVKK modülü, kullanıcıların ilk mesajlarını göndermeden önce gizlilik politikanızı incelemesini ve kabul etmesini sağlar. Onay metnini özelleştirebilir veya global varsayılanı kullanabilirsiniz.'
+        },
+        features: [
+            {
+                title: { en: 'Customizable Text', tr: 'Özelleştirilebilir Metin' },
+                description: { en: 'Write your own privacy policy or use our default template.', tr: 'Kendi gizlilik politikanızı yazın veya varsayılan şablonumuzu kullanın.' },
+                icon: 'Edit3'
+            },
+            {
+                title: { en: 'Pre-Chat Consent', tr: 'Sohbet Öncesi Onay' },
+                description: { en: 'Blocks interaction until the user explicitly accepts.', tr: 'Kullanıcı açıkça kabul edene kadar etkileşimi engeller.' },
+                icon: 'Lock'
+            }
+        ],
+        benefits: [
+            { en: 'Stay legally compliant with GDPR/KVKK', tr: 'Tüm veri koruma yasalarına tam uyumlu kalın' },
+            { en: 'Build trust with your customers', tr: 'Müşterilerinizle daha ilk adımda güven inşa edin' }
+        ]
+    },
+
+    humanHandoff: {
+        id: 'humanHandoff',
+        name: {
+            en: 'Human Handoff',
+            tr: 'Musteri Temsilcisine Aktarma'
+        },
+        description: {
+            en: 'Escalate conversations to your team with callback and notifications',
+            tr: 'Sohbetleri callback ve bildirimlerle ekibinize aktarın'
+        },
+        icon: 'Users',
+        isCore: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
+        supportedSectors: [],
+        defaultEnabledBySector: [],
+        showOnLandingPage: false,
+        legacyFirestoreField: 'enableHumanHandoff',
+        longDescription: {
+            en: 'Turn human escalation into a configurable tenant module. When enabled, explicit visitor requests or assistant-led escalation can open a callback record and notify your team by email or in-app notification.',
+            tr: 'Insana aktarmayi tenant bazinda yonetilebilir bir modul haline getirin. Modul aktifken ziyaretcinin acik temsilci talebi veya assistant tarafli escalation akisi callback kaydi acabilir ve ekibinize e-posta ya da uygulama ici bildirim gonderebilir.'
+        },
+        features: [
+            {
+                title: { en: 'Configurable Trigger Rules', tr: 'Yonetilebilir Tetik Kurallari' },
+                description: { en: 'Decide whether user requests, assistant escalation, or both should create a handoff.', tr: 'Kullanici talebi, assistant escalation veya her ikisinin de handoff uretip uretmeyecegini belirleyin.' },
+                icon: 'Settings'
+            },
+            {
+                title: { en: 'Callback Queue Integration', tr: 'Callback Kuyrugu Entegrasyonu' },
+                description: { en: 'Every escalation opens or updates a callback record tied to the active session.', tr: 'Her escalation aktif oturuma bagli bir callback kaydi acar veya gunceller.' },
+                icon: 'PhoneCall'
+            },
+            {
+                title: { en: 'Team Notifications', tr: 'Ekip Bildirimleri' },
+                description: { en: 'Notify operators via email and in-app alerts without leaving the tenant workflow.', tr: 'Tenant akisindan cikmadan operatorleri e-posta ve uygulama ici bildirimlerle haberdar edin.' },
+                icon: 'Bell'
+            }
+        ],
+        benefits: [
+            { en: 'Keep complex requests from getting lost in chat', tr: 'Karmasik taleplerin sohbet icinde kaybolmasini engelleyin' },
+            { en: 'Give each tenant control over when human escalation is available', tr: 'Her tenantin insana aktarimi ne zaman acacagini kontrol etmesini saglayin' }
+        ],
+        aiSystemInstruction: {
+            en: `HUMAN HANDOFF MODULE ACTIVE.
+RULES:
+1. If the user explicitly asks for a human representative, live agent, support agent, or callback from the team:
+   - This also includes customer service requests like "müşteri hizmetleri", "canlı destek", or "canlı desteğe bağlan".
+   - Do not use the lead form for support handoff requests.
+   - Respond with a short acknowledgement that the request is being routed to a live representative.
+   - Do not ask for contact details or emit a handoff form marker.
+2. If the user is asking for general contact capture or lead follow-up, let the lead collection module handle it.
+3. Keep the handoff acknowledgement concise and human-oriented.`,
+            tr: `INSAN TEMSILCISI AKTARIM MODULU AKTIF.
+KURALLAR:
+1. Kullanici acikca bir temsilci, canli destek, destek ekibi veya callback isterse:
+   - Bu, "müşteri hizmetleri" ve "canlı desteğe bağlan" taleplerini de kapsar.
+   - Destek aktarimi taleplerinde lead formunu kullanma.
+   - Talebin canlı temsilciye yönlendirildiğini kısa bir yanıtla belirt.
+   - İletişim bilgisi isteme ve handoff etiketi üretme.
+2. Kullanici genel iletişim bilgisi birakmak veya lead takip etmek istiyorsa, bunu lead toplama modulu yönetsin.
+3. Handoff yanıtini kisa ve insan odakli tut.`
+        }
+    },
+
     guided: {
         id: 'guided',
         name: {
@@ -395,18 +506,20 @@ KRİTİK: Sadece kullanıcının mesajı ürünler, alışveriş veya satın alm
         aiSystemInstruction: {
             en: `LEAD COLLECTION MODULE ACTIVE.
 RULES:
-1. If the user wants to be contacted, or you need to collect their details (Name, Email, Phone):
+1. If the user wants to leave contact details for lead follow-up, register, request a quote, or you need to collect their details (Name, Email, Phone):
    - You MUST output specifically: \`[SHOW_LEAD_FORM]\`
    - Example response: "Sure, please fill out this form. [SHOW_LEAD_FORM]"
-2. DO NOT ask for details one by one in the chat.
-3. DO NOT ask user to type their phone/email. ALWAYS use the form.`,
+2. If the user explicitly asks for a human representative, live agent, support agent, or callback from the team, use the human handoff flow instead.
+3. DO NOT ask for details one by one in the chat.
+4. DO NOT ask user to type their phone/email. ALWAYS use the form.`,
             tr: `LEAD TOPLAMA MODÜLÜ AKTİF.
 KURALLAR:
-1. Kullanıcı aranmak isterse veya iletişim bilgilerini alman gerekirse (Ad, E-posta, Telefon):
+1. Kullanıcı lead takibi için iletişim bilgilerini bırakmak, kayıt olmak, teklif almak veya bilgilerini toplaman gerekirse (Ad, E-posta, Telefon):
    - MUTLAKA şu özel komutu kullan: \`[SHOW_LEAD_FORM]\`
    - Örnek Yanıt: "Tabii, lütfen iletişim formunu doldurun. [SHOW_LEAD_FORM]"
-2. Sohbet içinde bilgileri tek tek sorma.
-3. Kullanıcıdan numarasını yazmasını isteme. HER ZAMAN formu aç.`
+2. Kullanıcı açıkça temsilci, canlı destek veya callback isterse human handoff akışını kullan.
+3. Sohbet içinde bilgileri tek tek sorma.
+4. Kullanıcıdan numarasını yazmasını isteme. HER ZAMAN formu aç.`
         }
     },
 
@@ -424,7 +537,7 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'ready', // ENABLED
+        status: 'coming_soon', // TEMPORARILY DISABLED - re-enable when production-ready
         supportedSectors: [],
         defaultEnabledBySector: [], // Cleared - no sector gets this by default
         showOnLandingPage: false, // Hidden from landing page
@@ -956,6 +1069,8 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     // --- 1. READY MODULES ---
     MODULES_REGISTRY.generalChatbot,    // Core
     MODULES_REGISTRY.knowledgeBase,     // Core
+    MODULES_REGISTRY.kvkkConsent,       // KVKK Consent
+    MODULES_REGISTRY.humanHandoff,      // Human handoff
     MODULES_REGISTRY.guided,            // Guided flows
     MODULES_REGISTRY.productCatalog,    // Personal Shopper
     MODULES_REGISTRY.leadCollection,    // Lead Collection

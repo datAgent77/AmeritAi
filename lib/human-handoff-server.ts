@@ -77,7 +77,7 @@ export async function dispatchHumanHandoffNotifications(input: {
     if (input.settings.notifyInApp) {
         const notificationId = await createNotification({
             userId: input.chatbotId,
-            type: "general",
+            type: "human_handoff_request",
             title: "Musteri temsilcisi talebi",
             message: input.triggerSource === "assistant_trigger"
                 ? "Assistant bir gorusmeyi insan temsilciye aktardi."

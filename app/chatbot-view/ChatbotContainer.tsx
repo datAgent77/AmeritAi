@@ -21,13 +21,15 @@ import { BookingOverlay } from "./components/BookingOverlay"
 import { ConfirmationModal } from "./components/ConfirmationModal"
 import { VoiceOverlay } from "./components/VoiceOverlay"
 import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
+import { KvkkConsentModal } from "./components/KvkkConsentModal"
+import { KvkkConsentOverlay } from "./components/KvkkConsentOverlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
-import { resolveAmbientSurfaceLayout } from "@/lib/ambient-layout"
 
 type LeadSubmitOptions = {
     source?: "inline" | "overlay"
+    flow?: "lead" | "handoff"
 }
 
 export default function ChatbotContainer() {
@@ -48,9 +50,6 @@ export default function ChatbotContainer() {
         description?: string
         pageText?: string
         dynamicData?: Record<string, any>
-        publicContext?: Record<string, unknown>
-        privateContextSummary?: Record<string, unknown>
-        assistantContextSource?: string
         siteSessionContext?: Record<string, any>
         crawlStatus?: Record<string, any>
     } | null>(null)
@@ -70,6 +69,8 @@ export default function ChatbotContainer() {
     // Lead Collection State
     const [showLeadCollection, setShowLeadCollection] = useState(false)
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
+    const [isKvkkAccepted, setIsKvkkAccepted] = useState(false)
+    const [isKvkkModalOpen, setIsKvkkModalOpen] = useState(false)
 
 
 
@@ -173,6 +174,22 @@ export default function ChatbotContainer() {
     }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
 
     useEffect(() => {
+        if (!isClient) return
+
+        const kvkkConfig = settings.kvkkConsent
+        if (!kvkkConfig?.enabled || !kvkkConfig.versionHash) {
+            setIsKvkkAccepted(true)
+            setIsKvkkModalOpen(false)
+            return
+        }
+
+        const storageKey = `vion_kvkk_${chatbotId}_${kvkkConfig.versionHash}`
+        const accepted = window.localStorage.getItem(storageKey) === "accepted"
+        setIsKvkkAccepted(accepted)
+        setIsKvkkModalOpen(false)
+    }, [chatbotId, isClient, settings.kvkkConsent?.enabled, settings.kvkkConsent?.versionHash])
+
+    useEffect(() => {
         const url = searchParams?.get("url")
         const title = searchParams?.get("title")
         const desc = searchParams?.get("desc")
@@ -200,18 +217,11 @@ export default function ChatbotContainer() {
 
     // 5. Circular Dependency Resolution (Voice <-> Chat)
     // We create a mutable ref for sendMessage so Voice hook can use it before Chat hook is fully initialized
-    const sendMessageRef = useRef<((text: string, speakResponse?: boolean, visualContext?: string, guidedEvent?: GuidedSkillClientEvent | null, mediaPayload?: UserMessageMediaPayload | null, isVoiceTurn?: boolean) => Promise<string>) | null>(null)
+    const sendMessageRef = useRef<((text: string, speakResponse?: boolean, visualContext?: string) => Promise<string>) | null>(null)
 
-    const proxySendMessage = async (
-        text: string,
-        speakResponse?: boolean,
-        visualContext?: string,
-        guidedEvent?: GuidedSkillClientEvent | null,
-        mediaPayload?: UserMessageMediaPayload | null,
-        isVoiceTurn?: boolean
-    ) => {
+    const proxySendMessage = async (text: string, speakResponse?: boolean, visualContext?: string) => {
         if (sendMessageRef.current) {
-            return sendMessageRef.current(text, speakResponse, visualContext, guidedEvent, mediaPayload, isVoiceTurn)
+            return sendMessageRef.current(text, speakResponse, visualContext)
         }
         return ""
     }
@@ -235,6 +245,8 @@ export default function ChatbotContainer() {
         chatStatus,
         isTyping,
         isChatLoading,
+        isSessionPaused,
+        pauseStateVersion,
         sessionId,
         guidedSkillState,
         resetSession
@@ -244,17 +256,63 @@ export default function ChatbotContainer() {
         settings,
         pageContext,
         isGuestReady,
+        kvkkConsentVersion: isKvkkAccepted ? settings.kvkkConsent?.versionHash || null : null,
         speakText: (text, id) => speakText(text, id), // Wrap to match signature
         saveImageToCache: visualContext.saveImageToCache,
         getImageFromCache: visualContext.getImageFromCache,
         findImageByContent: visualContext.findImageByContent,
-        onShowLeadForm: () => setShowLeadCollection(true)
+        onShowLeadForm: () => setShowLeadCollection(true),
+        onKvkkConsentRequired: () => setIsKvkkModalOpen(true),
     })
+    const [isKvkkRejected, setIsKvkkRejected] = useState(false)
+    const requiresKvkkConsent = settings.kvkkConsent?.enabled === true && !isKvkkAccepted
+
+    const acceptKvkkConsent = () => {
+        const versionHash = settings.kvkkConsent?.versionHash
+        if (versionHash && typeof window !== "undefined") {
+            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${versionHash}`, "accepted")
+        }
+        setIsKvkkAccepted(true)
+        setIsKvkkModalOpen(false)
+    }
+
+    const rejectKvkkConsent = () => {
+        setIsKvkkRejected(true)
+    }
+
+    const guiltyOpenKvkkModal = () => {
+        setIsKvkkModalOpen(true)
+    }
+
+    const guardedSendMessage = async (
+        text: string,
+        speakResponse?: boolean,
+        visualCtx?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null,
+        contextOverride?: Record<string, any>
+    ) => {
+        if (requiresKvkkConsent) {
+            // KVKK consent logic is handled via inline message in MessageList
+            return ""
+        }
+
+        return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload, contextOverride)
+    }
+
+    const guardedSendGuidedMessage = async (guidedEvent: GuidedSkillClientEvent) => {
+        if (requiresKvkkConsent) {
+            setIsKvkkModalOpen(true)
+            return ""
+        }
+
+        return sendGuidedMessage(guidedEvent)
+    }
 
     // Assign real sendMessage to ref
     useEffect(() => {
-        sendMessageRef.current = sendMessage
-    }, [sendMessage])
+        sendMessageRef.current = (text, speakResponse, visualCtx) => guardedSendMessage(text, speakResponse, visualCtx)
+    }, [guardedSendMessage])
 
     useEffect(() => {
         if (settings.enableVoiceAssistant) return
@@ -264,6 +322,11 @@ export default function ChatbotContainer() {
     }, [endVoiceSession, settings.enableVoiceAssistant])
 
     const handleConversationModeChange = (nextMode: "text" | "voice") => {
+        if (nextMode === "voice" && requiresKvkkConsent) {
+            setIsKvkkModalOpen(true)
+            return
+        }
+
         if (nextMode === "voice") {
             setConversationMode("voice")
             startVoiceSession()
@@ -362,12 +425,31 @@ export default function ChatbotContainer() {
     const handleLeadSubmit = async (formData: any, options?: LeadSubmitOptions) => {
         setIsSubmittingLead(true)
         try {
+            const flow = options?.flow || "lead"
             const submitSource = options?.source === "inline" ? "inline" : "overlay"
+
+            if (flow === "handoff") {
+                setShowLeadCollection(false)
+                await guardedSendMessage(
+                    language === "tr"
+                        ? "Temsilci talebi için iletişim bilgilerimi paylaştım."
+                        : "I shared my contact details for a human handoff.",
+                    false,
+                    undefined,
+                    undefined,
+                    { isHidden: true } as any,
+                    formData
+                )
+                return
+            }
+
             const response = await fetch('/api/leads', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chatbotId,
+                    sessionId,
+                    sourceChannel: "web",
                     ...formData,
                     source: submitSource === "inline" ? 'In-Chat Lead Form' : 'Initial Lead Form'
                 })
@@ -387,9 +469,11 @@ export default function ChatbotContainer() {
                 localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
                 setShowLeadCollection(false)
 
-                // Inline lead form already renders an in-bubble success state.
-                // Avoid appending an extra assistant message to prevent duplicate acknowledgements.
-                if (submitSource !== "inline") {
+                if (submitSource === "inline") {
+                    // Inline form submit finalizes a pending handoff on backend if one exists.
+                    guardedSendMessage("İletişim bilgilerimi doldurdum.", false, undefined, undefined, { isHidden: true } as any, formData)
+                } else {
+                    // Overlay formlar için mevcut statik teşekkür mesajı
                     const leadName = String(formData?.name || "").trim()
                     const translatedTemplate = t('leadThankYou')
                     const fallbackText = leadName
@@ -435,18 +519,18 @@ export default function ChatbotContainer() {
 
     const urlTheme = searchParams?.get("theme")
     const inheritedTheme = urlTheme === "dark" || urlTheme === "light" ? urlTheme : null
-    const previewAmbientDockState = searchParams?.get("previewAmbientDockState")
-    const previewAmbientThinking = searchParams?.get("previewAmbientThinking") === "1"
     const isAmbientMode = settings.chatDisplayMode === "ambient" || searchParams?.get("chatDisplayMode") === "ambient"
     const runtimeDevice = (isClient && typeof window !== "undefined" && window.innerWidth < 768) ? "mobile" : "desktop"
     const resolvedClassicTheme = settings.theme === "dark" || settings.theme === "light"
         ? settings.theme
         : "light"
-    const resolvedAmbientTheme = settings.ambientTheme === "dark" || settings.ambientTheme === "light"
-        ? settings.ambientTheme
-        : settings.ambientTheme === "auto"
-            ? inheritedTheme || "light"
-            : "light"
+    const resolvedAmbientTheme: "light" | "dark" =
+        // URL param (passed by widget.js from saved ambientTheme) takes priority
+        inheritedTheme
+            ? inheritedTheme
+            : settings.ambientTheme === "dark" || settings.ambientTheme === "light"
+                ? settings.ambientTheme
+                : "light"
     
     const effectiveAmbientSettings = {
         ...settings,
@@ -459,8 +543,6 @@ export default function ChatbotContainer() {
         theme: resolvedClassicTheme
     }
     const effectiveSettings = isAmbientMode ? effectiveAmbientSettings : effectiveClassicSettings
-    const isPersistentSidecar = effectiveSettings.chatDisplayMode === "sidecar" && effectiveSettings.sidecarAlwaysOpen === true
-    const canCloseClassicWidget = !isPersistentSidecar
 
     // Open ambient feed automatically when there's an active interaction (typing)
     useEffect(() => {
@@ -468,19 +550,6 @@ export default function ChatbotContainer() {
             setAmbientFeedManuallyClosed(false)
         }
     }, [isTyping, isAmbientMode])
-
-    useEffect(() => {
-        if (!isAmbientMode) return
-
-        if (previewAmbientThinking || previewAmbientDockState?.startsWith("open")) {
-            setAmbientFeedManuallyClosed(false)
-            return
-        }
-
-        if (previewAmbientDockState?.startsWith("collapsed")) {
-            setAmbientFeedManuallyClosed(true)
-        }
-    }, [isAmbientMode, previewAmbientDockState, previewAmbientThinking])
 
     // Sync dark class to <html> so CSS custom properties (--background etc.) resolve correctly in ambient mode
     useEffect(() => {
@@ -506,7 +575,7 @@ export default function ChatbotContainer() {
         enableClassicEntryOnboarding: settings.enableClassicEntryOnboarding,
         hasUserMessage,
     })
-    const showAmbientFeed = !ambientFeedManuallyClosed
+    const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping || showClassicEntryOnboarding)
 
     // Scroll to bottom when the widget expands or ambient feed manually opens
     useEffect(() => {
@@ -544,23 +613,18 @@ export default function ChatbotContainer() {
     const ambientWidthValue = typeof effectiveSettings.ambientWidth === "number"
         ? effectiveSettings.ambientWidth
         : Number(effectiveSettings.ambientWidth)
-    const ambientLayout = resolveAmbientSurfaceLayout(
-        {
-            ...effectiveSettings,
-            ambientWidth: ambientWidthValue,
-            ambientBottomMargin: ambientBottomMarginFromUrl,
-        },
-        runtimeDevice,
-    )
-    const ambientShellStyle = {
-        width: '100%',
+    const ambientMaxWidthStyle = Number.isFinite(ambientWidthValue)
+        ? (ambientWidthValue > 0 ? `${ambientWidthValue}px` : '100%')
+        : '1080px'
+
+    const ambientAlignmentStyle = {
+        maxWidth: ambientMaxWidthStyle,
         marginLeft: 'auto',
         marginRight: 'auto',
-        paddingLeft: `${ambientLayout.shellSidePaddingPx}px`,
-        paddingRight: `${ambientLayout.shellSidePaddingPx}px`,
+        paddingLeft: `${effectiveSettings.ambientSideMargin || 0}px`,
+        paddingRight: `${effectiveSettings.ambientSideMargin || 0}px`,
         boxSizing: 'border-box' as const,
     }
-    const ambientFeedHeight = ambientRailHeight + ambientLayout.feedTopInsetPx
 
     useEffect(() => {
         if (!isAmbientMode) return
@@ -624,86 +688,71 @@ export default function ChatbotContainer() {
                     <div
                         className="relative z-10 flex h-full flex-col justify-end w-full"
                         style={{
-                            ...ambientShellStyle,
-                            paddingBottom: `${ambientLayout.bottomMarginPx || 4}px`
+                            ...ambientAlignmentStyle,
+                            paddingBottom: `${ambientBottomMarginFromUrl || 4}px`
                         }}
                     >
                         <div
                             ref={ambientFeedAreaRef}
                             className={`w-full transition-[height,opacity,margin,padding] duration-300 ease-in-out ${showAmbientFeed ? 'mb-4 opacity-100 flex flex-col' : 'mb-0 opacity-0 pointer-events-none'}`}
                             style={{ 
-                                height: showAmbientFeed ? `${ambientFeedHeight}px` : '0px',
-                                paddingTop: showAmbientFeed ? `${ambientLayout.feedTopInsetPx}px` : '0px'
+                                height: showAmbientFeed ? `${ambientRailHeight}px` : '0px',
+                                paddingLeft: runtimeDevice === 'mobile' ? '16px' : '0',
+                                paddingRight: runtimeDevice === 'mobile' ? '16px' : '0',
+                                paddingTop: runtimeDevice === 'mobile' ? '16px' : '0'
                             }}
                         >
                             <div
-                                className="mx-auto flex h-full w-full"
-                                style={{
-                                    maxWidth: ambientLayout.railMaxWidth,
-                                    paddingLeft: `${ambientLayout.feedViewportInsetPx}px`,
-                                    paddingRight: `${ambientLayout.feedViewportInsetPx}px`,
-                                }}
+                                className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
+                                style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
                             >
-                                <div
-                                    className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
-                                    style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
-                                >
-                                    {/* Ambient Card Header — same as Classic mode */}
-                                    <ChatHeader
+                                {/* Ambient Card Header — same as Classic mode */}
+                                <ChatHeader
+                                    settings={effectiveSettings}
+                                    isExpanded={false}
+                                    handleToggleSize={() => {}}
+                                    handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
+                                    handleClearChat={handleClearChat}
+                                    showSizeToggle={false}
+                                    showCloseButton={true}
+                                    sticky={false}
+                                    showShadow={false}
+                                    compact={true}
+                                />
+                                <div className="flex-1 overflow-hidden relative">
+                                    <MessageList
+                                        mode="ambient"
+                                        messages={messages}
                                         settings={effectiveSettings}
-                                        isExpanded={false}
-                                        handleToggleSize={() => {}}
-                                        handleCloseWidget={() => setAmbientFeedManuallyClosed(true)}
-                                        handleClearChat={handleClearChat}
+                                        isTyping={isTyping}
+                                        isSessionPaused={isSessionPaused}
+                                        pauseStateVersion={pauseStateVersion}
+                                        language={language}
+                                        imageMap={visualContext.imageMap}
+                                        scrollToBottom={scrollToBottom}
+                                        sendMessage={(text) => guardedSendMessage(text)}
+                                        sendGuidedMessage={guardedSendGuidedMessage}
+                                        guidedSkillState={guidedSkillState}
+                                        messagesContainerRef={messagesContainerRef}
+                                        messagesEndRef={messagesEndRef}
                                         t={t}
-                                        showSizeToggle={false}
-                                        showCloseButton={true}
-                                        sticky={false}
-                                        showShadow={false}
-                                        compact={true}
+                                        onLeadSubmit={handleLeadSubmit}
+                                        showClassicEntryOnboarding={showClassicEntryOnboarding}
                                     />
-                                    <div className="flex-1 overflow-hidden relative">
-                                        <MessageList
-                                            mode="ambient"
-                                            messages={messages}
-                                            settings={effectiveSettings}
-                                            isTyping={isTyping}
-                                            language={language}
-                                            imageMap={visualContext.imageMap}
-                                            scrollToBottom={scrollToBottom}
-                                            sendMessage={(text) => sendMessage(text)}
-                                            sendGuidedMessage={sendGuidedMessage}
-                                            guidedSkillState={guidedSkillState}
-                                            messagesContainerRef={messagesContainerRef}
-                                            messagesEndRef={messagesEndRef}
-                                            t={t}
-                                            onLeadSubmit={handleLeadSubmit}
-                                            showClassicEntryOnboarding={showClassicEntryOnboarding}
-                                            onCloseWidget={() => setAmbientFeedManuallyClosed(true)}
-                                        />
-                                    </div>
-                                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
-                                        <p className="text-[10px] text-gray-400 text-center text-balance">
-                                            {t('aiDisclaimer')}
-                                        </p>
-                                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                            <span className="text-[10px] text-gray-400">Powered by</span>
-                                            <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
-                                        </a>
-                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
+                                    <p className="text-[10px] text-gray-400 text-center text-balance">
+                                        {t('aiDisclaimer')}
+                                    </p>
+                                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <span className="text-[10px] text-gray-400">Powered by</span>
+                                        <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
+                                    </a>
                                 </div>
                             </div>
                         </div>
 
-                        <div
-                            ref={ambientDockAreaRef}
-                            className="mx-auto w-full"
-                            style={{
-                                maxWidth: ambientLayout.dockMaxWidth,
-                                paddingLeft: `${ambientLayout.feedViewportInsetPx}px`,
-                                paddingRight: `${ambientLayout.feedViewportInsetPx}px`,
-                            }}
-                        >
+                        <div ref={ambientDockAreaRef}>
                             <ChatInput
                                 mode="ambient"
                                 settings={effectiveSettings}
@@ -717,7 +766,7 @@ export default function ChatbotContainer() {
                                     mediaPayload?: UserMessageMediaPayload | null
                                 ) => {
                                     setAmbientFeedManuallyClosed(false)
-                                    return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
+                                    return guardedSendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
                                 }}
                                 isChatLoading={isChatLoading}
                                 visualContext={visualContext}
@@ -732,6 +781,7 @@ export default function ChatbotContainer() {
                                 showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
                                 conversationMode={conversationMode}
                                 onConversationModeChange={handleConversationModeChange}
+                                disabled={requiresKvkkConsent}
                             />
                         </div>
                     </div>
@@ -745,8 +795,6 @@ export default function ChatbotContainer() {
                             handleToggleSize={handleToggleSize}
                             handleCloseWidget={handleCloseWidget}
                             handleClearChat={handleClearChat}
-                            t={t}
-                            showCloseButton={canCloseClassicWidget}
                         />
                     )}
 
@@ -755,18 +803,19 @@ export default function ChatbotContainer() {
                         messages={messages}
                         settings={effectiveSettings}
                         isTyping={isTyping}
+                        isSessionPaused={isSessionPaused}
+                        pauseStateVersion={pauseStateVersion}
                         language={language}
                         imageMap={visualContext.imageMap}
                         scrollToBottom={scrollToBottom}
-                        sendMessage={(text) => sendMessage(text)}
-                        sendGuidedMessage={sendGuidedMessage}
+                        sendMessage={(text) => guardedSendMessage(text)}
+                        sendGuidedMessage={guardedSendGuidedMessage}
                         guidedSkillState={guidedSkillState}
                         messagesContainerRef={messagesContainerRef}
                         messagesEndRef={messagesEndRef}
                         t={t}
                         onLeadSubmit={handleLeadSubmit}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
-                        onCloseWidget={canCloseClassicWidget ? handleCloseWidget : undefined}
                     />
 
                     <ChatInput
@@ -774,7 +823,7 @@ export default function ChatbotContainer() {
                         settings={effectiveSettings}
                         localInput={localInput}
                         setLocalInput={setLocalInput}
-                        sendMessage={sendMessage}
+                        sendMessage={guardedSendMessage}
                         isChatLoading={isChatLoading}
                         visualContext={visualContext}
                         language={language}
@@ -783,18 +832,31 @@ export default function ChatbotContainer() {
                         showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
                         conversationMode={conversationMode}
                         onConversationModeChange={handleConversationModeChange}
+                        disabled={requiresKvkkConsent}
                     />
                 </div>
             )}
 
             {/* Overlays */}
+            <KvkkConsentOverlay
+                show={requiresKvkkConsent}
+                isRejected={isKvkkRejected}
+                rejectionContactText={settings.kvkkConsent?.rejectionContactText || "Hizmeti kullanabilmek için KVKK metnini onaylamanız gerekmektedir. Alternatif olarak bizimle iletişime geçebilirsiniz."}
+                onAccept={acceptKvkkConsent}
+                onReject={rejectKvkkConsent}
+                onReadFull={guiltyOpenKvkkModal}
+                t={t}
+                theme={effectiveSettings.theme}
+            />
+
             <LeadCollectionOverlay
                 show={showLeadCollection}
                 onSubmit={handleLeadSubmit}
                 isSubmitting={isSubmittingLead}
                 settings={effectiveSettings}
                 t={t}
-                description={settings.leadFormConfig?.title}
+                description={settings.leadFormConfig?.subtitle}
+                variant="lead"
             />
 
             <BookingOverlay
@@ -826,6 +888,13 @@ export default function ChatbotContainer() {
                 onToggleMute={toggleMute}
                 onEndCall={() => handleConversationModeChange("text")}
                 t={t}
+            />
+
+            <KvkkConsentModal
+                isOpen={isKvkkModalOpen}
+                text={settings.kvkkConsent?.text || ""}
+                onClose={() => setIsKvkkModalOpen(false)}
+                theme={effectiveSettings.theme}
             />
         </div>
     )
