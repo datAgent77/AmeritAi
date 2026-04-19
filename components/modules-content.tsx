@@ -197,17 +197,15 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         guided: data.enableGuided ?? false,
                         leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
                         appointments: data.enableAppointments ?? false,
-
-
                         salesOptimization: data.enableSalesOptimization ?? false,
-
                         campaignManager: data.enableCampaignManager ?? false,
-
                         gamification: data.enableGamification ?? false,
                         visualDiagnosis: data.enableVisualDiagnosis ?? false,
                         digitalWaiter: data.enableDigitalWaiter ?? false,
                         proactiveMessaging: data.enableProactiveMessaging ?? false,
                         dynamicContext: data.enableDynamicContext ?? false,
+                        kvkkConsent: data.enableKvkkConsent ?? false,
+                        humanHandoff: data.enableHumanHandoff ?? false,
                     })
                 } else {
                     console.error("Failed to load settings via API")
@@ -220,17 +218,15 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         guided: false,
                         leadCollection: false,
                         appointments: false,
-
-
                         salesOptimization: false,
-
                         campaignManager: false,
-
                         gamification: false,
                         visualDiagnosis: false,
                         digitalWaiter: false,
                         proactiveMessaging: false,
                         dynamicContext: false,
+                        kvkkConsent: false,
+                        humanHandoff: false,
                     })
                 }
 
@@ -462,12 +458,25 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         return !checkModuleIncluded(moduleId)
     }
 
+    // Admin view: super admin viewing a tenant's modules, or super admin on own console
+    const isAdminView = isSuperAdminViewingTenant || role === 'SUPER_ADMIN'
+
     // Filter Logic
     const filteredModules = useMemo(() => {
         const lang = language as 'en' | 'tr'
         return ORDERED_MODULES.filter(module => {
             // Exclude core modules (they are always included, no need to show as separate modules)
             if (module.isCore) {
+                return false
+            }
+
+            // Tenant view: hide coming_soon modules entirely
+            if (!isAdminView && module.status === 'coming_soon') {
+                return false
+            }
+
+            // Tenant view: only show modules explicitly granted by admin
+            if (!isAdminView && !moduleStates[module.id]) {
                 return false
             }
 
@@ -495,7 +504,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, language, checkModuleIncluded])
+    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
