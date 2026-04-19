@@ -31,42 +31,68 @@ export async function POST(req: Request) {
         return Response.json({ error: "Instagram bağlantısı test mesajı için hazır değil." }, { status: 400 })
     }
 
-    const delivery = await sendOmniInstagramText({
-        adminDb,
-        chatbotId,
-        recipientId,
-        text: text || "Merhaba, bu Vion kurulum test mesajıdır.",
-        endpointTarget,
-        accessToken,
-        source: "api/integrations/instagram-dm/test-message",
-        metadata: {
-            testMessage: true,
-        },
-    })
-
-    await logOmniAuditEvent({
-        chatbotId,
-        channel: "instagram",
-        eventType: "instagram.test_message",
-        result: "success",
-        source: "api/integrations/instagram-dm/test-message",
-        message: "Instagram DM test mesajı gönderildi",
-        metadata: {
+    try {
+        const delivery = await sendOmniInstagramText({
+            adminDb,
+            chatbotId,
             recipientId,
+            text: text || "Merhaba, bu Vion kurulum test mesajıdır.",
+            endpointTarget,
+            accessToken,
+            source: "api/integrations/instagram-dm/test-message",
+            metadata: {
+                testMessage: true,
+            },
+        })
+
+        await logOmniAuditEvent({
+            chatbotId,
+            channel: "instagram",
+            eventType: "instagram.test_message",
+            result: "success",
+            source: "api/integrations/instagram-dm/test-message",
+            message: "Instagram DM test mesajı gönderildi",
+            metadata: {
+                recipientId,
+                messageId: delivery.messageId,
+                deliveryAttemptId: delivery.deliveryAttemptId,
+            },
+        })
+
+        await mergeOmniChannelConfig(adminDb, chatbotId, {
+            instagramDM: {
+                ...(omniConfig?.instagramDM || {}),
+                lastTestedAt: new Date().toISOString(),
+            },
+        })
+
+        return Response.json({
+            ok: true,
             messageId: delivery.messageId,
-        },
-    })
+            deliveryAttemptId: delivery.deliveryAttemptId,
+        })
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Instagram test mesajı gönderilemedi."
 
-    await mergeOmniChannelConfig(adminDb, chatbotId, {
-        instagramDM: {
-            ...(omniConfig?.instagramDM || {}),
-            lastTestedAt: new Date().toISOString(),
-        },
-    })
+        await logOmniAuditEvent({
+            chatbotId,
+            channel: "instagram",
+            eventType: "instagram.test_message",
+            result: "error",
+            source: "api/integrations/instagram-dm/test-message",
+            message,
+            metadata: {
+                recipientId,
+                deliveryAttemptId:
+                    error instanceof Error ? (error as Error & { deliveryAttemptId?: string | null }).deliveryAttemptId || null : null,
+            },
+        })
 
-    return Response.json({
-        ok: true,
-        messageId: delivery.messageId,
-        deliveryAttemptId: delivery.deliveryAttemptId,
-    })
+        return Response.json(
+            {
+                error: message,
+            },
+            { status: 400 }
+        )
+    }
 }

@@ -13,9 +13,9 @@ export function InstagramDMVerifyStep(props: {
     return (
         <TestMessageCard
             title="Test mesajı gönderin"
-            description="Instagram kullanıcı ID’si ile test mesajı göndererek kurulumun çalıştığını doğrulayın."
-            recipientLabel="Alıcı Instagram kullanıcı ID"
-            recipientPlaceholder="Örn. 17841400000000000"
+            description="İşletme hesabınızın ID’sini değil, daha önce bu hesaba DM göndermiş kullanıcının Instagram scoped sender ID değerini girerek test edin."
+            recipientLabel="Alıcı Instagram scoped sender ID"
+            recipientPlaceholder="Webhook sender.id değeri, örn. 17841400000000000"
             recipientValue={props.recipientId}
             onRecipientChange={props.onRecipientIdChange}
             messageValue={props.message}

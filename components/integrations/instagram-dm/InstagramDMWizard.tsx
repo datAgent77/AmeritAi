@@ -266,9 +266,18 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                     text: message,
                 }),
             })
-            const payload = await response.json()
+            const rawPayload = await response.text()
+            const payload = rawPayload
+                ? (() => {
+                      try {
+                          return JSON.parse(rawPayload)
+                      } catch {
+                          return null
+                      }
+                  })()
+                : null
             if (!response.ok) {
-                throw new Error(payload?.error || "Test mesajı gönderilemedi.")
+                throw new Error(payload?.error || rawPayload || "Test mesajı gönderilemedi.")
             }
             toast({
                 title: "Test mesajı gönderildi",
