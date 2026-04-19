@@ -16,8 +16,7 @@ export default function ChatsPage() {
                     Manage conversations from Web and Telegram in one place.
                 </p>
             </div>
-            <UnifiedInbox userId={user.uid} />
+            <UnifiedInbox userId={user.uid} showOmniFeatures={false} />
         </div>
     )
 }
-

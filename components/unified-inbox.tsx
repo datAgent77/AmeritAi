@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { format, isValid } from "date-fns"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { CalendarDays, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ import { useToast } from "@/hooks/use-toast"
 import { formatOmniDateTime, getOmniChannelLabel } from "@/lib/omni/i18n"
 import { OmniStateShell } from "@/components/omni/omni-ui"
 import { cn } from "@/lib/utils"
+import { db } from "@/lib/firebase"
+import { collection, onSnapshot, query, where } from "firebase/firestore"
 
 interface ChatSession {
     id: string
@@ -38,6 +40,66 @@ interface ChatSession {
 
 interface UnifiedInboxProps {
     userId: string
+    showOmniFeatures?: boolean
+}
+
+function toMillis(value: any): number {
+    if (!value) return 0
+    if (typeof value === "string" || typeof value === "number" || value instanceof Date) {
+        const ms = new Date(value).getTime()
+        return Number.isFinite(ms) ? ms : 0
+    }
+    if (typeof value?.toDate === "function") {
+        const ms = value.toDate().getTime()
+        return Number.isFinite(ms) ? ms : 0
+    }
+    if (typeof value?._seconds === "number") {
+        return value._seconds * 1000 + Math.floor((value._nanoseconds || 0) / 1_000_000)
+    }
+    if (typeof value?.seconds === "number") {
+        return value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1_000_000)
+    }
+    return 0
+}
+
+function toIsoOrNull(value: any): string | null {
+    const ms = toMillis(value)
+    if (!ms) return null
+    return new Date(ms).toISOString()
+}
+
+function normalizeSessionMessage(message: any) {
+    return {
+        ...message,
+        createdAt: toIsoOrNull(message?.createdAt) || message?.createdAt || null,
+    }
+}
+
+function normalizeSessionRecord(id: string, data: Record<string, any>): ChatSession {
+    const rawMessages = Array.isArray(data.messages) ? data.messages : []
+    const messages = rawMessages.map(normalizeSessionMessage)
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null
+    const createdAtIso = toIsoOrNull(data.createdAt) || data.createdAt || null
+    const lastMessageTimeIso = toIsoOrNull(lastMessage?.createdAt) || createdAtIso
+
+    return {
+        id,
+        chatbotId: data.chatbotId,
+        createdAt: createdAtIso,
+        messages,
+        lastMessage: lastMessage?.content || "",
+        lastMessageTime: lastMessageTimeIso,
+        isPaused: data.isPaused || false,
+        visitorEmail: data.visitorEmail || null,
+        visitorName: data.visitorName || null,
+        channel: data.channel || "web",
+        contactKey: data.contactKey || null,
+        canonicalContactId: data.canonicalContactId || null,
+        channelMeta: data.channelMeta || null,
+        transcriptSummary: data.transcriptSummary || null,
+        lastDisposition: data.lastDisposition || null,
+        assistantProfileId: data.assistantProfileId || null,
+    }
 }
 
 function formatPhoneLike(value?: string | null) {
@@ -51,11 +113,13 @@ function fallbackSessionKey(sessionId: string) {
     return parts.slice(2).join("-") || parts.slice(1).join("-")
 }
 
-export function UnifiedInbox({ userId }: UnifiedInboxProps) {
+export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxProps) {
     const { language, t } = useLanguage()
     const { user, hasOmniPermission } = useAuth()
     const { toast } = useToast()
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const urlSessionId = searchParams?.get("sessionId")
     const [sessions, setSessions] = useState<ChatSession[]>([])
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -63,7 +127,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const [replyText, setReplyText] = useState("")
     const [isSending, setIsSending] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
-    const [channelFilter, setChannelFilter] = useState<string>("all")
+    const [channelFilter, setChannelFilter] = useState<string>(showOmniFeatures ? "all" : "web")
     const [isTogglingPause, setIsTogglingPause] = useState(false)
     const [isCreatingCallback, setIsCreatingCallback] = useState(false)
     const [isCreatingLead, setIsCreatingLead] = useState(false)
@@ -107,12 +171,13 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     }
 
     const resolveSessionChannel = (session: ChatSession) => {
-        if (session.channel === "voice" || session.channel === "instagram" || session.channel === "whatsapp") {
+        if (session.channel === "voice" || session.channel === "instagram" || session.channel === "messenger" || session.channel === "whatsapp") {
             return session.channel
         }
         if (session.id.startsWith("telegram-")) return "telegram"
         if (session.id.startsWith("whatsapp-")) return "whatsapp"
         if (session.id.startsWith("instagram-")) return "instagram"
+        if (session.id.startsWith("messenger-")) return "messenger"
         if (session.id.startsWith("voice-")) return "voice"
         return "web"
     }
@@ -122,6 +187,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
         if (channel === "telegram") return <Send className="h-4 w-4 text-sky-500" />
         if (channel === "whatsapp") return <MessageCircle className="h-4 w-4 text-green-500" />
         if (channel === "instagram") return <Instagram className="h-4 w-4 text-pink-500" />
+        if (channel === "messenger") return <MessageSquare className="h-4 w-4 text-blue-500" />
         if (channel === "voice") return <PhoneCall className="h-4 w-4 text-violet-500" />
         return <Monitor className="h-4 w-4 text-gray-500" />
     }
@@ -135,6 +201,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
         if (channel === "telegram") return session.visitorName || t("omni.inbox.user.telegram")
         if (channel === "whatsapp") return session.visitorName || formatPhoneLike(session.contactKey) || formatPhoneLike(fallbackSessionKey(session.id)) || t("omni.inbox.user.whatsapp")
         if (channel === "instagram") return session.visitorName || session.channelMeta?.instagramHandle || session.contactKey || t("omni.inbox.user.instagram")
+        if (channel === "messenger") return session.visitorName || session.channelMeta?.pageName || session.contactKey || "Messenger User"
         if (channel === "voice") return session.visitorName || formatPhoneLike(session.contactKey) || t("omni.inbox.user.voice")
         return session.visitorName || session.visitorEmail || t("omni.inbox.user.web")
     }
@@ -174,12 +241,32 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     }
 
     useEffect(() => {
-        fetchSessions(false)
-        const interval = setInterval(() => {
-            fetchSessions(true)
-        }, 15000)
+        if (!userId || !user) return
 
-        return () => clearInterval(interval)
+        setIsLoading(true)
+        const sessionsQuery = query(
+            collection(db, "chat_sessions"),
+            where("chatbotId", "==", userId)
+        )
+
+        const unsubscribe = onSnapshot(
+            sessionsQuery,
+            (snapshot) => {
+                const realtimeSessions = snapshot.docs
+                    .map((doc) => normalizeSessionRecord(doc.id, doc.data() as Record<string, any>))
+                    .sort((a, b) => toMillis(b.lastMessageTime) - toMillis(a.lastMessageTime))
+
+                setSessions(realtimeSessions)
+                setIsLoading(false)
+                setIsRefreshing(false)
+            },
+            async (error) => {
+                console.error("Realtime chat session listener failed:", error)
+                await fetchSessions(false)
+            }
+        )
+
+        return () => unsubscribe()
     }, [userId, user])
 
     useEffect(() => {
@@ -192,7 +279,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const selectedChannel = selectedSession ? resolveSessionChannel(selectedSession) : null
     const canReply = selectedChannel !== "voice"
     const canManualReply = canReply && Boolean(selectedSession?.isPaused)
-    const canOpenOmniOperations = hasOmniPermission("operations.view")
+    const canOpenOmniOperations = showOmniFeatures && hasOmniPermission("operations.view")
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -216,11 +303,6 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
             }
 
             setReplyText("")
-            await fetchSessions(true)
-            toast({
-                title: t("omni.inbox.toast.replySent.title"),
-                description: t("omni.inbox.toast.replySent.description").replace("{channel}", getChannelName(selectedSession!)),
-            })
         } catch (error) {
             console.error("Error sending message:", error)
             toast({
@@ -427,7 +509,9 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
     const filteredSessions = useMemo(() => {
         return sessions.filter((session) => {
             const channel = resolveSessionChannel(session)
-            const matchesChannel = channelFilter === "all" ? true : channel === channelFilter
+            const matchesChannel = showOmniFeatures
+                ? (channelFilter === "all" ? true : channel === channelFilter)
+                : channel === "web"
             const haystack = [
                 session.id,
                 session.lastMessage,
@@ -450,10 +534,24 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
             return
         }
 
+        if (urlSessionId && filteredSessions.some((session) => session.id === urlSessionId)) {
+            if (selectedSessionId !== urlSessionId) {
+                setSelectedSessionId(urlSessionId)
+            }
+            return
+        }
+
         if (!selectedSessionId || !filteredSessions.some((session) => session.id === selectedSessionId)) {
             setSelectedSessionId(filteredSessions[0].id)
         }
-    }, [filteredSessions, selectedSessionId])
+    }, [filteredSessions, selectedSessionId, urlSessionId])
+
+    const handleSessionSelect = (id: string) => {
+        setSelectedSessionId(id)
+        const currentUrl = new URL(window.location.href)
+        currentUrl.searchParams.set("sessionId", id)
+        window.history.replaceState({}, "", currentUrl.toString())
+    }
 
     if (isLoading) {
         return <OmniStateShell title={t("omni.common.loading")} description={t("omni.inbox.toast.loadFailed.description")} />
@@ -476,7 +574,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                         <div className="min-w-0 space-y-1">
                             <div className="text-sm font-semibold text-foreground">{t("omni.inbox.sidebar.sessions")}</div>
                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? (language === "tr" ? "tüm kanallar" : "all channels") : getOmniChannelLabel(t, channelFilter)}
+                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {showOmniFeatures ? (channelFilter === "all" ? (language === "tr" ? "tüm kanallar" : "all channels") : getOmniChannelLabel(t, channelFilter)) : getOmniChannelLabel(t, "web")}
                             </div>
                         </div>
                         <Badge variant="outline" className="h-6 rounded-full bg-white/80 px-2.5 text-[11px]">
@@ -493,19 +591,25 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <select
-                            aria-label={t("omni.inbox.filter.allChannels")}
-                            className="flex h-9 min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm"
-                            value={channelFilter}
-                            onChange={(e) => setChannelFilter(e.target.value)}
-                        >
-                            <option value="all">{t("omni.inbox.filter.allChannels")}</option>
-                            <option value="web">{getOmniChannelLabel(t, "web")}</option>
-                            <option value="telegram">{getOmniChannelLabel(t, "telegram")}</option>
-                            <option value="whatsapp">{getOmniChannelLabel(t, "whatsapp")}</option>
-                            <option value="instagram">{getOmniChannelLabel(t, "instagram")}</option>
-                            <option value="voice">{getOmniChannelLabel(t, "voice")}</option>
-                        </select>
+                        {showOmniFeatures ? (
+                            <select
+                                aria-label={t("omni.inbox.filter.allChannels")}
+                                className="flex h-9 min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                                value={channelFilter}
+                                onChange={(e) => setChannelFilter(e.target.value)}
+                            >
+                                <option value="all">{t("omni.inbox.filter.allChannels")}</option>
+                                <option value="web">{getOmniChannelLabel(t, "web")}</option>
+                                <option value="telegram">{getOmniChannelLabel(t, "telegram")}</option>
+                                <option value="whatsapp">{getOmniChannelLabel(t, "whatsapp")}</option>
+                                <option value="instagram">{getOmniChannelLabel(t, "instagram")}</option>
+                                <option value="voice">{getOmniChannelLabel(t, "voice")}</option>
+                            </select>
+                        ) : (
+                            <div className="flex h-9 min-w-0 items-center rounded-md border border-input bg-white px-3 py-2 text-sm text-muted-foreground">
+                                {getOmniChannelLabel(t, "web")}
+                            </div>
+                        )}
                         <Button
                             variant="outline"
                             size="icon"
@@ -543,7 +647,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         key={session.id}
                                         type="button"
                                         aria-pressed={isSelected}
-                                        onClick={() => setSelectedSessionId(session.id)}
+                                        onClick={() => handleSessionSelect(session.id)}
                                         className={cn(
                                             "flex w-full min-w-0 items-start gap-3 overflow-hidden rounded-md border border-transparent px-3 py-2.5 text-left transition-all",
                                             isSelected
@@ -622,24 +726,22 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                         </div>
                                     </div>
                                 </div>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <Button
+                                        variant={selectedSession.isPaused ? "default" : "outline"}
+                                        size="sm"
+                                        className={cn("rounded-lg", selectedSession.isPaused ? "bg-green-600 hover:bg-green-700" : "bg-white/80")}
+                                        onClick={handleTogglePause}
+                                        disabled={isTogglingPause}
+                                    >
+                                        {isTogglingPause ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                        {selectedSession.isPaused ? t("resumeAi") : t("pauseAi")}
+                                    </Button>
+
+                                </div>
                             </div>
 
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                                        {t("omni.inbox.section.quickActions")}
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 rounded-full bg-white/80 px-3 text-xs"
-                                        onClick={() => setIsSessionDetailsOpen(true)}
-                                        type="button"
-                                    >
-                                        <Info className="mr-1.5 h-3.5 w-3.5" />
-                                        {t("omni.pageInfo.button")}
-                                    </Button>
-                                </div>
                                 <div className="flex flex-wrap gap-2">
                                     {canOpenOmniOperations ? (
                                         <>
@@ -660,16 +762,18 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                                             </Button>
                                         </>
                                     ) : null}
-                                    <Button
-                                        variant={selectedSession.isPaused ? "default" : "outline"}
-                                        size="sm"
-                                        className={cn("rounded-lg", selectedSession.isPaused ? "bg-green-600 hover:bg-green-700" : "bg-white/80")}
-                                        onClick={handleTogglePause}
-                                        disabled={isTogglingPause}
-                                    >
-                                        {isTogglingPause ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        {selectedSession.isPaused ? t("resumeAi") : t("pauseAi")}
-                                    </Button>
+                                    {showOmniFeatures ? (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 rounded-full bg-white/80 px-3 text-xs"
+                                            onClick={() => setIsSessionDetailsOpen(true)}
+                                            type="button"
+                                        >
+                                            <Info className="mr-1.5 h-3.5 w-3.5" />
+                                            {t("omni.pageInfo.button")}
+                                        </Button>
+                                    ) : null}
                                 </div>
                             </div>
                         </div>
@@ -746,7 +850,7 @@ export function UnifiedInbox({ userId }: UnifiedInboxProps) {
                 )}
             </div>
         </div>
-        {selectedSession ? (
+        {selectedSession && showOmniFeatures ? (
             <Dialog open={isSessionDetailsOpen} onOpenChange={setIsSessionDetailsOpen}>
                 <DialogContent className="max-w-3xl overflow-hidden p-0 sm:rounded-xl">
                     <DialogHeader className="border-b border-border/70 bg-white/90 px-5 py-4 text-left">

@@ -121,7 +121,7 @@ export default function ChatsPage() {
                     <p className="text-muted-foreground">{t('chatsDescription')}</p>
                 </div>
                 <div className="flex-1 min-h-0">
-                    <UnifiedInbox userId={user.uid} />
+                    <UnifiedInbox userId={user.uid} showOmniFeatures={false} />
                 </div>
             </div>
 
