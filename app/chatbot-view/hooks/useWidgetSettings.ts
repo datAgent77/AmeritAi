@@ -345,6 +345,9 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         dynamicSiteContextResolvedPresetId: typeof data.dynamicSiteContextResolvedPresetId === "string" ? data.dynamicSiteContextResolvedPresetId : "generic-web-app",
                         dynamicSiteContextRuntimePreset: typeof data.dynamicSiteContextRuntimePreset === "object" && data.dynamicSiteContextRuntimePreset ? data.dynamicSiteContextRuntimePreset : null,
                         guidedSkills: Array.isArray(data.guidedSkills) ? data.guidedSkills : [],
+                        quickActions: (data.quickActions && typeof data.quickActions === "object" && Array.isArray(data.quickActions.buttons))
+                            ? data.quickActions
+                            : undefined,
                     }
 
                     if (!isMounted) return
