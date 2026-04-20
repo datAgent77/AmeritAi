@@ -125,6 +125,7 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     campaignManager: 'enableCampaignManager',
 
     gamification: 'enableGamification',
+    smartShopper: 'enableSmartShopper',
     visualDiagnosis: 'enableVisualDiagnosis',
     digitalWaiter: 'enableDigitalWaiter',
     proactiveMessaging: 'enableProactiveMessaging',
@@ -200,6 +201,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         salesOptimization: data.enableSalesOptimization ?? false,
                         campaignManager: data.enableCampaignManager ?? false,
                         gamification: data.enableGamification ?? false,
+                        smartShopper: data.enableSmartShopper ?? false,
                         visualDiagnosis: data.enableVisualDiagnosis ?? false,
                         digitalWaiter: data.enableDigitalWaiter ?? false,
                         proactiveMessaging: data.enableProactiveMessaging ?? false,
@@ -221,6 +223,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         salesOptimization: false,
                         campaignManager: false,
                         gamification: false,
+                        smartShopper: false,
                         visualDiagnosis: false,
                         digitalWaiter: false,
                         proactiveMessaging: false,
@@ -371,6 +374,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'salesOptimization':
                     router.push(`${basePath}/modules/sales-optimization`)
                     break
+                case 'smartShopper':
+                    router.push(`${basePath}/modules/smart-shopper`)
+                    break
                 case 'dynamicContext':
                     router.push(`${basePath}/modules/dynamic-context`)
                     break
@@ -412,6 +418,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'salesOptimization':
                 router.push(`/console/modules/sales-optimization${queryParams}`)
+                break
+            case 'smartShopper':
+                router.push(`/console/modules/smart-shopper${queryParams}`)
                 break
             case 'appointments':
                 router.push(`${basePath}/chatbot/appointments`)

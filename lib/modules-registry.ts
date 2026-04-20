@@ -30,6 +30,7 @@ export type ModuleId =
     | 'campaignManager'
 
     | 'gamification'
+    | 'smartShopper'
     | 'visualDiagnosis'
     | 'digitalWaiter'
     | 'proactiveMessaging'
@@ -643,6 +644,64 @@ KURALLAR:
 
 
 
+    smartShopper: {
+        id: 'smartShopper',
+        name: {
+            en: 'Smart Shopping Assistant',
+            tr: 'Akıllı Alışveriş Asistanı'
+        },
+        description: {
+            en: 'Wishlist, price/stock alerts, personalized recommendations based on visitor behavior',
+            tr: 'İstek listesi, fiyat/stok bildirimleri, ziyaretçi davranışına göre kişiselleştirilmiş öneriler'
+        },
+        icon: 'Sparkles',
+        isCore: false,
+        isPremium: true,
+        price: 39,
+        status: 'ready',
+        supportedSectors: ['ecommerce'],
+        defaultEnabledBySector: [],
+        showOnLandingPage: true,
+        legacyFirestoreField: 'enableSmartShopper',
+        aiSystemInstruction: {
+            en: `SMART SHOPPING ASSISTANT ACTIVE.
+1. Help users save products to their wishlist if they express interest without buying.
+2. Offer price/stock alerts for out-of-stock or high-price products: "I can notify you when it's back in stock or when the price drops."
+3. Use visitor history to personalize recommendations: refer to previously viewed products.
+4. Keep suggestions conversational and non-intrusive.`,
+            tr: `AKILLI ALIŞVERİŞ ASISTANI AKTİF.
+1. Kullanıcı satın almadan ilgi gösterirse ürünü istek listesine eklemeyi teklif et.
+2. Stok dışı veya pahalı ürünler için fiyat/stok bildirimi öner: "Stoka girdiğinde veya fiyatı düştüğünde sizi haberdar edebilirim."
+3. Ziyaretçi geçmişini kullanarak önerileri kişiselleştir: önceki ürünlere atıfta bulun.
+4. Önerileri doğal ve rahatsız edici olmayan bir dille sun.`
+        },
+        longDescription: {
+            en: 'Transform casual browsers into loyal buyers. The AI remembers what visitors viewed, lets them save wishlists, and sends automatic notifications when prices drop or items come back in stock.',
+            tr: 'Gezip giden ziyaretçileri sadık alıcılara dönüştürün. AI, görüntülenen ürünleri hatırlar, istek listesi kaydetmeyi sağlar ve fiyatlar düştüğünde ya da ürünler tekrar stoğa girdiğinde otomatik bildirim gönderir.'
+        },
+        features: [
+            {
+                title: { en: 'Wishlist', tr: 'İstek Listesi' },
+                description: { en: 'Save products for later with one tap.', tr: 'Ürünleri sonra için tek tıkla kaydedin.' },
+                icon: 'Heart'
+            },
+            {
+                title: { en: 'Price & Stock Alerts', tr: 'Fiyat ve Stok Bildirimleri' },
+                description: { en: 'Notified automatically when price drops or item restocks.', tr: 'Fiyat düştüğünde veya stok geldiğinde otomatik bildirim.' },
+                icon: 'Bell'
+            },
+            {
+                title: { en: 'Visitor Profiling', tr: 'Ziyaretçi Profili' },
+                description: { en: 'Personalized recommendations based on browsing history.', tr: 'Gezinme geçmişine göre kişisel öneriler.' },
+                icon: 'User'
+            }
+        ],
+        benefits: [
+            { en: 'Reduce cart abandonment with timely reminders', tr: 'Zamanında hatırlatmalarla sepet terkini azaltın' },
+            { en: 'Increase return visits and repeat purchases', tr: 'Geri dönüş ziyaretleri ve tekrar satışları artırın' }
+        ]
+    },
+
     salesOptimization: {
         id: 'salesOptimization',
         name: {
@@ -1094,6 +1153,7 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.leadCollection,    // Lead Collection
     MODULES_REGISTRY.visualDiagnosis,   // Visual Analysis (Ready)
     MODULES_REGISTRY.salesOptimization, // Sales Optimization (Ready)
+    MODULES_REGISTRY.smartShopper,       // Smart Shopping Assistant (Ready)
     MODULES_REGISTRY.proactiveMessaging, // Proactive Engagement (Ready)
     MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
     MODULES_REGISTRY.dynamicContext,    // Dynamic Data Context (Ready)
