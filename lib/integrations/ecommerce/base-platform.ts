@@ -92,7 +92,7 @@ export abstract class BaseEcommercePlatform {
 
     // ── Firestore yazma ─────────────────────────────────────────────────────
 
-    protected async upsertProduct(chatbotId: string, product: EcomProduct, db: any): Promise<void> {
+    async upsertProduct(chatbotId: string, product: EcomProduct, db: any): Promise<void> {
         const snap = await db
             .collection("products")
             .where("chatbotId", "==", chatbotId)
@@ -131,7 +131,7 @@ export abstract class BaseEcommercePlatform {
         }
     }
 
-    protected async upsertOrder(chatbotId: string, order: EcomOrder, db: any): Promise<void> {
+    async upsertOrder(chatbotId: string, order: EcomOrder, db: any): Promise<void> {
         const snap = await db
             .collection("ecommerce_orders")
             .where("chatbotId", "==", chatbotId)

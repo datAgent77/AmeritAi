@@ -158,8 +158,55 @@ export class ShopifyAdapter extends BaseEcommercePlatform {
     async getOrder(platformOrderId: string): Promise<EcomOrder | null> {
         try {
             const data = await this.request<{ order: any }>(`/orders/${platformOrderId}.json`)
-            const orders = await this.getOrders()
-            return orders.find(o => o.platformId === platformOrderId) || null
+            const o = data.order
+            if (!o) return null
+            return {
+                platformId: String(o.id),
+                orderNumber: o.name,
+                status: mapStatus(o.financial_status, o.fulfillment_status),
+                items: (o.line_items || []).map((li: any) => ({
+                    productId: String(li.product_id),
+                    sku: li.sku,
+                    name: li.name,
+                    quantity: li.quantity,
+                    price: parseFloat(li.price || "0"),
+                    currency: o.currency,
+                    variantTitle: li.variant_title,
+                })),
+                customer: {
+                    platformId: o.customer ? String(o.customer.id) : undefined,
+                    name: o.billing_address
+                        ? `${o.billing_address.first_name || ""} ${o.billing_address.last_name || ""}`.trim()
+                        : o.customer
+                        ? `${o.customer.first_name || ""} ${o.customer.last_name || ""}`.trim()
+                        : "Bilinmiyor",
+                    email: o.email,
+                    phone: o.phone || o.billing_address?.phone,
+                },
+                shippingAddress: o.shipping_address
+                    ? {
+                        name: `${o.shipping_address.first_name} ${o.shipping_address.last_name}`.trim(),
+                        line1: o.shipping_address.address1,
+                        line2: o.shipping_address.address2,
+                        city: o.shipping_address.city,
+                        province: o.shipping_address.province,
+                        postalCode: o.shipping_address.zip,
+                        country: o.shipping_address.country,
+                        phone: o.shipping_address.phone,
+                      }
+                    : undefined,
+                subtotal: parseFloat(o.subtotal_price || "0"),
+                shippingCost: parseFloat(o.shipping_lines?.[0]?.price || "0"),
+                discount: parseFloat(o.total_discounts || "0"),
+                total: parseFloat(o.total_price || "0"),
+                currency: o.currency,
+                trackingNumber: o.fulfillments?.[0]?.tracking_number,
+                trackingUrl: o.fulfillments?.[0]?.tracking_url,
+                cargoCompany: o.fulfillments?.[0]?.tracking_company,
+                notes: o.note || "",
+                createdAt: o.created_at,
+                updatedAt: o.updated_at,
+            }
         } catch {
             return null
         }

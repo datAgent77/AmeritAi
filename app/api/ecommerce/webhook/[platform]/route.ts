@@ -110,7 +110,7 @@ export async function POST(req: Request, { params }: { params: { platform: strin
                     const products = await adapter.getProducts({ limit: 1 })
                     const product = products.find(p => p.platformId === platformProductId)
                     if (product) {
-                        await (adapter as any).upsertProduct(chatbotId, product, adminDb)
+                        await adapter.upsertProduct(chatbotId, product, adminDb)
                     }
                 }
             } else if (normalizedEvent.startsWith("order.")) {
@@ -118,7 +118,7 @@ export async function POST(req: Request, { params }: { params: { platform: strin
                 if (platformOrderId) {
                     const order = await adapter.getOrder(platformOrderId)
                     if (order) {
-                        await (adapter as any).upsertOrder(chatbotId, order, adminDb)
+                        await adapter.upsertOrder(chatbotId, order, adminDb)
                     }
                 }
             }

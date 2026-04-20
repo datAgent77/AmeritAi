@@ -21,6 +21,10 @@ export async function POST(req: Request) {
         if (!chatbotId) return NextResponse.json({ error: "chatbotId zorunlu" }, { status: 400 })
 
         const dedupKey = visitorId || sessionId
+        if (!dedupKey) {
+            return NextResponse.json({ error: "visitorId veya sessionId zorunlu" }, { status: 400 })
+        }
+
         if (dedupKey) {
             const existing = await adminDb
                 .collection("gamification_spins")

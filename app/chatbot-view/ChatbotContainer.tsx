@@ -190,11 +190,16 @@ export default function ChatbotContainer() {
             .catch(() => {})
     }, [isLoading, chatbotId, spinWheelShownThisSession])
 
-    // Exit intent trigger for spin wheel
+    // Exit intent trigger for spin wheel — listener registered once per chatbotId
+    // spinWheelPrizes and spinWheelShownThisSession read from closure via current ref
+    const spinWheelPrizesRef = useRef(spinWheelPrizes)
+    spinWheelPrizesRef.current = spinWheelPrizes
+    const spinWheelShownRef = useRef(spinWheelShownThisSession)
+    spinWheelShownRef.current = spinWheelShownThisSession
+
     useEffect(() => {
-        if (!spinWheelPrizes.length || spinWheelShownThisSession) return
         const handleMouseLeave = (e: MouseEvent) => {
-            if (e.clientY <= 0) {
+            if (e.clientY <= 0 && spinWheelPrizesRef.current.length > 0 && !spinWheelShownRef.current) {
                 const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
                 if (!alreadySpun) {
                     setShowSpinWheel(true)
@@ -204,7 +209,7 @@ export default function ChatbotContainer() {
         }
         document.addEventListener("mouseleave", handleMouseLeave)
         return () => document.removeEventListener("mouseleave", handleMouseLeave)
-    }, [spinWheelPrizes, chatbotId, spinWheelShownThisSession])
+    }, [chatbotId])
 
     // INITIAL LEAD COLLECTION CHECK
     useEffect(() => {

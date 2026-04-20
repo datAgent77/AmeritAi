@@ -52,7 +52,7 @@ export async function POST(req: Request) {
                 const products = await adapter.getProducts({ limit: 250 })
                 for (const product of products) {
                     try {
-                        await (adapter as any).upsertProduct(chatbotId, product, adminDb)
+                        await adapter.upsertProduct(chatbotId, product, adminDb)
                         syncedProducts++
                     } catch (e: any) {
                         errors.push(`Product ${product.platformId}: ${e.message}`)
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
                 const orders = await adapter.getOrders({ limit: 250 })
                 for (const order of orders) {
                     try {
-                        await (adapter as any).upsertOrder(chatbotId, order, adminDb)
+                        await adapter.upsertOrder(chatbotId, order, adminDb)
                         syncedOrders++
                     } catch (e: any) {
                         errors.push(`Order ${order.platformId}: ${e.message}`)
