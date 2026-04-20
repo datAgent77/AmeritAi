@@ -15,6 +15,10 @@
         {
             "path": "/api/admin/appointment-reminder-cron",
             "schedule": "0 8 * * *"
+        },
+        {
+            "path": "/api/admin/product-alerts-cron",
+            "schedule": "0 9 * * *"
         }
     ]
 }

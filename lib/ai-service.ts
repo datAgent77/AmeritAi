@@ -8,6 +8,7 @@ import type { ChatSessionMessageRecord } from "@/lib/chat-session-messages";
 import { INDUSTRY_CONFIG } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
 import { resolveConversationLanguage } from "@/lib/conversation-language";
+import { evaluateCampaigns, buildCampaignSystemPromptBlock, fetchWeatherByCity } from "@/lib/campaigns/campaign-engine";
 
 const pineconeApiKey = process.env.PINECONE_API_KEY?.trim();
 const pc = pineconeApiKey
@@ -679,6 +680,35 @@ IMPORTANT RULES:
 - When the user IS interested in products, be proactive and helpful with recommendations.`;
         }
 
+        // Sales Optimization — cross-sell + stock awareness
+        const salesOpt = chatbotData?.salesOptimization
+        if (salesOpt?.stockAlerts) {
+            const threshold = salesOpt.stockAlertConfig?.lowStockThreshold ?? 5
+            const showExact = salesOpt.stockAlertConfig?.showExactCount !== false
+            systemPrompt += `\n\n# STOK DURUMU FARKINDALIĞI (Sales Optimization)
+Ürünlerin stok bilgisi bilgi tabanında mevcutsa kullan:
+- Stok ${threshold} veya altındaysa "${showExact ? "Son X adet kaldı" : "Sınırlı stok"}" uyarısı ver.
+- Stok 0 ise "Şu anda tükendi, stok takibi başlatmamı ister misiniz?" de.
+- Bunu doğal bir şekilde söyle, korku pazarlaması yapma.`
+        }
+        if (salesOpt?.discountCodes && salesOpt.discountCodeConfig?.codes?.length) {
+            const autoOffer = salesOpt.discountCodeConfig.autoOffer
+            const codes = salesOpt.discountCodeConfig.codes.slice(0, 3).map((c: any) => `${c.code} (${c.description || c.code})`).join(", ")
+            if (autoOffer) {
+                systemPrompt += `\n\n# İNDİRİM KODLARI (Sales Optimization)
+Kullanıcı ürün sorusu sorduktan sonra uygun bir anda şu indirim kodlarını öner: ${codes}
+Doğal ve samimi bir şekilde paylaş, her mesajda tekrar etme.`
+            }
+        }
+        if (salesOpt?.cartRecovery) {
+            const triggerSecs = salesOpt.cartRecoveryConfig?.triggerAfterSeconds ?? 60
+            const offerDiscount = salesOpt.cartRecoveryConfig?.offerDiscount
+            const discountPct = salesOpt.cartRecoveryConfig?.discountPercent ?? 10
+            systemPrompt += `\n\n# SEPET KURTARMA (Sales Optimization)
+Kullanıcı bir ürün hakkında bilgi aldıktan sonra konuşma duraksarsa, satın alma adımına teşvik et.
+${offerDiscount ? `Satın alma gerçekleşmezse %${discountPct} indirim teklif edebilirsin.` : ""}`
+        }
+
         // Language Mirroring: AI responds in whatever language the user writes
         systemPrompt += `\n# LANGUAGE - CRITICAL
 Detect the language and script the user is writing in. ALWAYS respond in that SAME language.
@@ -740,6 +770,23 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         if (chatbotData?.customPrompts) {
             systemPrompt += `\n\n# SPECIAL INSTRUCTIONS (FROM ADMIN)\n${chatbotData.customPrompts}`;
             console.log("AI Service: Injected custom prompts length:", chatbotData.customPrompts.length);
+        }
+
+        // Campaign Sihirbazı — inject active campaigns
+        if (chatbotData?.campaigns) {
+            try {
+                const campaignConfig = chatbotData.campaigns;
+                const needsWeather = campaignConfig.rainyDay?.enabled;
+                let weather;
+                if (needsWeather && chatbotData?.city) {
+                    weather = await fetchWeatherByCity(chatbotData.city);
+                }
+                const activeCampaigns = evaluateCampaigns(campaignConfig, weather);
+                const campaignBlock = buildCampaignSystemPromptBlock(activeCampaigns);
+                if (campaignBlock) systemPrompt += campaignBlock;
+            } catch {
+                // non-blocking
+            }
         }
 
         // Add User Context

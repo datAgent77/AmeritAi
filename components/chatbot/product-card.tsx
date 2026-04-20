@@ -9,6 +9,9 @@ interface Product {
     imageUrl?: string;
     url?: string;
     description?: string;
+    stockQuantity?: number;
+    inStock?: boolean;
+    lowStockThreshold?: number;
 }
 
 interface ProductCardProps {
@@ -91,6 +94,16 @@ export function ProductCard({ product, brandColor = '#000000', language }: Produ
                 {product.price && (
                     <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded-md">
                         {formatPrice(product.price, product.currency)}
+                    </div>
+                )}
+                {product.inStock === false && (
+                    <div className="absolute top-2 left-2 bg-zinc-800/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Tükendi
+                    </div>
+                )}
+                {product.inStock !== false && product.stockQuantity != null && product.stockQuantity <= (product.lowStockThreshold ?? 5) && product.stockQuantity > 0 && (
+                    <div className="absolute top-2 left-2 bg-amber-500/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        Son {product.stockQuantity} adet
                     </div>
                 )}
             </div>

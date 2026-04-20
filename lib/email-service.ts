@@ -1421,3 +1421,21 @@ export async function sendHumanHandoffNotificationEmail(data: HumanHandoffNotifi
         html,
     })
 }
+
+// Minimal transactional email for internal use (alerts, notifications)
+export async function sendTransactionalEmail(data: {
+    to: string
+    subject: string
+    html: string
+    text: string
+}): Promise<boolean> {
+    const t = createTransporter()
+    const senderIdentity = resolveSenderIdentity()
+    return sendEmailOrMock(t, {
+        ...buildMailSenderOptions(senderIdentity),
+        to: data.to,
+        subject: data.subject,
+        html: data.html,
+        text: data.text,
+    })
+}

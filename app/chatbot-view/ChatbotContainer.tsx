@@ -23,6 +23,7 @@ import { VoiceOverlay } from "./components/VoiceOverlay"
 import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 import { KvkkConsentModal } from "./components/KvkkConsentModal"
 import { KvkkConsentOverlay } from "./components/KvkkConsentOverlay"
+import { SpinWheelOverlay } from "./components/SpinWheelOverlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
@@ -65,6 +66,11 @@ export default function ChatbotContainer() {
 
     // Ambient mode: manual override to collapse feed
     const [ambientFeedManuallyClosed, setAmbientFeedManuallyClosed] = useState(true)
+
+    // Gamification spin wheel state
+    const [showSpinWheel, setShowSpinWheel] = useState(false)
+    const [spinWheelPrizes, setSpinWheelPrizes] = useState<any[]>([])
+    const [spinWheelShownThisSession, setSpinWheelShownThisSession] = useState(false)
 
     // Lead Collection State
     const [showLeadCollection, setShowLeadCollection] = useState(false)
@@ -161,6 +167,44 @@ export default function ChatbotContainer() {
             .then(() => setIsGuestReady(true))
             .catch((error) => console.error("Guest login failed:", error))
     }, [])
+
+    // GAMIFICATION — load config and register triggers
+    useEffect(() => {
+        if (isLoading || spinWheelShownThisSession) return
+        fetch(`/api/gamification/config?chatbotId=${chatbotId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data?.enabled || !data.prizes?.length) return
+                setSpinWheelPrizes(data.prizes)
+                const { triggers } = data
+                // onEntry with delay
+                if (triggers?.onEntry) {
+                    const delay = (triggers.entryDelay ?? 5) * 1000
+                    const t = setTimeout(() => {
+                        const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
+                        if (!alreadySpun) setShowSpinWheel(true)
+                    }, delay)
+                    return () => clearTimeout(t)
+                }
+            })
+            .catch(() => {})
+    }, [isLoading, chatbotId, spinWheelShownThisSession])
+
+    // Exit intent trigger for spin wheel
+    useEffect(() => {
+        if (!spinWheelPrizes.length || spinWheelShownThisSession) return
+        const handleMouseLeave = (e: MouseEvent) => {
+            if (e.clientY <= 0) {
+                const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
+                if (!alreadySpun) {
+                    setShowSpinWheel(true)
+                    setSpinWheelShownThisSession(true)
+                }
+            }
+        }
+        document.addEventListener("mouseleave", handleMouseLeave)
+        return () => document.removeEventListener("mouseleave", handleMouseLeave)
+    }, [spinWheelPrizes, chatbotId, spinWheelShownThisSession])
 
     // INITIAL LEAD COLLECTION CHECK
     useEffect(() => {
@@ -905,6 +949,22 @@ export default function ChatbotContainer() {
                 description={settings.leadFormConfig?.subtitle}
                 variant="lead"
             />
+
+            {showSpinWheel && spinWheelPrizes.length > 0 && (
+                <SpinWheelOverlay
+                    chatbotId={chatbotId}
+                    sessionId={sessionId}
+                    prizes={spinWheelPrizes}
+                    onClose={() => {
+                        setShowSpinWheel(false)
+                        setSpinWheelShownThisSession(true)
+                    }}
+                    onPrize={(prize, code) => {
+                        localStorage.setItem(`spun_${chatbotId}`, "1")
+                        setSpinWheelShownThisSession(true)
+                    }}
+                />
+            )}
 
             <BookingOverlay
                 showBooking={showBooking}
