@@ -66,6 +66,13 @@ export function useChatCore({
     const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
     const proactiveTimerRef = useRef<NodeJS.Timeout | null>(null)
     
+    const kvkkConsentVersionRef = useRef(_kvkkConsentVersion)
+    const onKvkkConsentRequiredRef = useRef(_onKvkkConsentRequired)
+    useEffect(() => {
+        kvkkConsentVersionRef.current = _kvkkConsentVersion
+        onKvkkConsentRequiredRef.current = _onKvkkConsentRequired
+    })
+
     // Store callback refs to prevent infinite loops from recreated functions
     const saveImageToCacheRef = useRef(saveImageToCache)
     const getImageFromCacheRef = useRef(getImageFromCache)
@@ -333,6 +340,7 @@ export function useChatCore({
                         visualAnalysisContext, // Pass dynamic context
                         assistantMessageId: assistantMsgId, // <--- PASS THIS ID
                         guidedEvent: guidedEvent || undefined,
+                        kvkkConsentVersion: kvkkConsentVersionRef.current ?? null,
                     }),
                     signal: controller.signal
                 })
@@ -340,8 +348,10 @@ export function useChatCore({
             clearTimeout(timeoutId)
             if (!response.ok) {
                 let serverMessage = `Chat API error (${response.status})`
+                let errorCode: string | undefined
                 try {
                     const payload = await response.json()
+                    errorCode = typeof payload?.error === 'string' ? payload.error : undefined
                     if (typeof payload?.message === 'string' && payload.message.trim()) {
                         serverMessage = payload.message
                     } else if (typeof payload?.details === 'string' && payload.details.trim()) {
@@ -351,6 +361,13 @@ export function useChatCore({
                     }
                 } catch {
                     // Keep generic message when body isn't JSON
+                }
+                if (errorCode === 'kvkk_consent_required') {
+                    setIsTyping(false)
+                    setChatStatus('idle')
+                    setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
+                    onKvkkConsentRequiredRef.current?.()
+                    return ""
                 }
                 throw new Error(serverMessage)
             }

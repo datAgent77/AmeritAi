@@ -43,7 +43,7 @@ export function resolveKvkkConsentPayload(input: {
                 : "Hizmeti kullanabilmek için KVKK metnini onaylamanız gerekmektedir. Alternatif olarak bizimle iletişime geçebilirsiniz."))
 
     return {
-        enabled: mergedData.enableKvkkConsent !== false,
+        enabled: mergedData.enableKvkkConsent === true,
         text,
         versionHash: computeContractVersionHash(`kvkk:${sourceVersion}:${text}`),
         rejectionContactText,
