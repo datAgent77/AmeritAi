@@ -7,6 +7,21 @@ import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-pres
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
 
+function buildDefaultQuickActions(data: Record<string, any>) {
+    const buttons: any[] = []
+    let order = 0
+    if (data.enableAppointments) {
+        buttons.push({ id: 'appointments', label: 'Randevu Al', moduleId: 'appointments', triggerMessage: 'randevu almak istiyorum', visible: true, order: order++ })
+    }
+    if (data.enableHumanHandoff) {
+        buttons.push({ id: 'humanHandoff', label: 'Temsilci İste', moduleId: 'humanHandoff', triggerMessage: 'bir temsilciyle görüşmek istiyorum', visible: true, order: order++ })
+    }
+    if (data.enableLeadCollection) {
+        buttons.push({ id: 'leadCollection', label: 'İletişim Bırak', moduleId: 'leadCollection', triggerMessage: 'iletişim bilgilerimi bırakmak istiyorum', visible: true, order: order++ })
+    }
+    return { enabled: false, buttons }
+}
+
 function normalizeWebChannelEnabled(config: any) {
     return config?.enabled !== false;
 }
@@ -156,6 +171,7 @@ export async function GET(req: Request) {
                         enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
                         leadFormConfig: mergedData.leadFormConfig || null,
                         leadCustomFields: mergedData.leadCustomFields || [],
+                        quickActions: mergedData.quickActions ?? buildDefaultQuickActions(mergedData),
                         position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
                         viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
                         modalSize: mergedData.modalSize || "half", // 'half' | 'full'

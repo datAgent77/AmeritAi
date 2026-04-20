@@ -1,8 +1,8 @@
 import React from "react"
-import { ChatbotSettings } from "@/types/chatbot"
+import { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
 import * as LucideIcons from "lucide-react"
-import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
+import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle, Calendar, Users, FileText } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
@@ -40,6 +40,7 @@ interface ChatInputProps {
     conversationMode?: ConversationMode
     onConversationModeChange?: (mode: ConversationMode) => void
     disabled?: boolean
+    quickActions?: { enabled: boolean; buttons: QuickActionButton[] }
 }
 
 export function ChatInput({
@@ -60,7 +61,8 @@ export function ChatInput({
     showConversationModeSwitch = false,
     conversationMode = "text",
     onConversationModeChange,
-    disabled = false
+    disabled = false,
+    quickActions,
 }: ChatInputProps) {
     const {
         selectedImage,
@@ -355,6 +357,37 @@ export function ChatInput({
                 className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "max-w-3xl"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
+                {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                        {quickActions.buttons
+                            .filter(b => b.visible)
+                            .sort((a, b) => a.order - b.order)
+                            .map(btn => {
+                                const Icon = btn.moduleId === 'appointments' ? Calendar
+                                    : btn.moduleId === 'humanHandoff' ? Users
+                                    : FileText
+                                return (
+                                    <button
+                                        key={btn.id}
+                                        type="button"
+                                        onClick={() => sendMessage(btn.triggerMessage)}
+                                        disabled={isChatLoading || disabled}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-all hover:shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        style={{
+                                            borderColor: settings.brandColor,
+                                            color: settings.brandColor,
+                                            backgroundColor: `${settings.brandColor}12`,
+                                        }}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {btn.label}
+                                    </button>
+                                )
+                            })
+                        }
+                    </div>
+                )}
+
                 {showConversationModeSwitch && !isAmbientMode && onConversationModeChange && (
                     <div className="mb-3 flex justify-center">
                         <ConversationModeSwitch

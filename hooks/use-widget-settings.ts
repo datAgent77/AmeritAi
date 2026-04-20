@@ -118,6 +118,18 @@ export interface WidgetSettings {
     openOnExitIntent: boolean
     openOnScroll: number
     enableContextAwareness: boolean
+    // Quick Actions
+    quickActions: {
+        enabled: boolean
+        buttons: Array<{
+            id: string
+            label: string
+            moduleId: string
+            triggerMessage: string
+            visible: boolean
+            order: number
+        }>
+    }
 }
 
 const defaultSettings: WidgetSettings = {
@@ -227,6 +239,7 @@ const defaultSettings: WidgetSettings = {
     autoOpenDelay: 0,
     openOnExitIntent: false,
     openOnScroll: 0,
+    quickActions: { enabled: false, buttons: [] },
 }
 
 export function useWidgetSettings(userId?: string) {

@@ -240,4 +240,17 @@ export interface ChatbotSettings {
     dynamicSiteContextResolvedPresetId?: string;
     dynamicSiteContextRuntimePreset?: Record<string, unknown> | null;
     guidedSkills?: GuidedSkillShortcut[];
+    quickActions?: {
+        enabled: boolean;
+        buttons: QuickActionButton[];
+    };
+}
+
+export interface QuickActionButton {
+    id: string;
+    label: string;
+    moduleId: 'appointments' | 'humanHandoff' | 'leadCollection';
+    triggerMessage: string;
+    visible: boolean;
+    order: number;
 }

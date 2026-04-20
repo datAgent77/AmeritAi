@@ -929,6 +929,7 @@ export default function ChatbotContainer() {
                         conversationMode={conversationMode}
                         onConversationModeChange={handleConversationModeChange}
                         disabled={requiresKvkkConsent}
+                        quickActions={effectiveSettings.quickActions}
                     />
                 </div>
             )}

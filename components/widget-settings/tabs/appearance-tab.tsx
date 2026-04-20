@@ -704,6 +704,77 @@ export function AppearanceTab({
                 </Accordion>
             </div>
 
+            {/* Quick Action Buttons */}
+            <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                    {language === 'tr' ? 'Hızlı Aksiyon Butonları' : 'Quick Action Buttons'}
+                </h3>
+                <div className="border rounded-lg p-4 bg-card space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <Label className="text-sm font-medium">
+                                {language === 'tr' ? 'Hızlı Aksiyon Butonları' : 'Quick Action Buttons'}
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {language === 'tr'
+                                    ? 'Sohbet inputunun üstünde modül akışlarını tetikleyen butonlar göster.'
+                                    : 'Show shortcut buttons above the chat input to trigger module flows.'}
+                            </p>
+                        </div>
+                        <Switch
+                            checked={settings.quickActions?.enabled ?? false}
+                            onCheckedChange={(checked) =>
+                                setSettings(prev => ({
+                                    ...prev,
+                                    quickActions: { ...(prev.quickActions ?? { buttons: [] }), enabled: checked }
+                                }))
+                            }
+                        />
+                    </div>
+
+                    {settings.quickActions?.enabled && (
+                        <div className="space-y-2 pt-2 border-t">
+                            {(settings.quickActions.buttons.length === 0) && (
+                                <p className="text-xs text-muted-foreground">
+                                    {language === 'tr'
+                                        ? 'Aktif modülleriniz burada otomatik görünür. Henüz aktif modül yok.'
+                                        : 'Active modules appear here automatically. No active modules yet.'}
+                                </p>
+                            )}
+                            {settings.quickActions.buttons.map((btn, i) => (
+                                <div key={btn.id} className="flex items-center gap-3">
+                                    <Switch
+                                        checked={btn.visible}
+                                        onCheckedChange={(checked) => {
+                                            const updated = [...settings.quickActions!.buttons]
+                                            updated[i] = { ...updated[i], visible: checked }
+                                            setSettings(prev => ({
+                                                ...prev,
+                                                quickActions: { ...prev.quickActions!, buttons: updated }
+                                            }))
+                                        }}
+                                    />
+                                    <Input
+                                        value={btn.label}
+                                        onChange={(e) => {
+                                            const updated = [...settings.quickActions!.buttons]
+                                            updated[i] = { ...updated[i], label: e.target.value }
+                                            setSettings(prev => ({
+                                                ...prev,
+                                                quickActions: { ...prev.quickActions!, buttons: updated }
+                                            }))
+                                        }}
+                                        className="h-8 text-sm flex-1"
+                                        placeholder={language === 'tr' ? 'Buton etiketi' : 'Button label'}
+                                    />
+                                    <span className="text-xs text-muted-foreground w-24 shrink-0">{btn.moduleId}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Mode-Specific Settings */}
             <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
