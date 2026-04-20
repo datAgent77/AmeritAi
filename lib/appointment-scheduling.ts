@@ -185,7 +185,7 @@ export function listAvailableTimeSlots(params: {
                 end,
             }
         })
-        .filter((record): record is { id?: string; start: Date; end: Date } => Boolean(record))
+        .filter((record): record is { id: string | undefined; start: Date; end: Date } => Boolean(record))
 
     const now = params.now || new Date()
     const slots: string[] = []
