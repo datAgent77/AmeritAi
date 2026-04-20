@@ -406,7 +406,9 @@ export function useWidgetSettings(userId?: string) {
                         autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
                         openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
                         openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
-                        quickActions: data.quickActions ?? buildDefaultQuickActionsFromData(data),
+                        quickActions: (data.quickActions && Array.isArray(data.quickActions.buttons) && data.quickActions.buttons.length > 0)
+                            ? data.quickActions
+                            : buildDefaultQuickActionsFromData(data),
                     }))
                 } else {
                     console.log("No chatbot settings found, using defaults")

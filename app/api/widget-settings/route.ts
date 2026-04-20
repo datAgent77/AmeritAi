@@ -171,7 +171,9 @@ export async function GET(req: Request) {
                         enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
                         leadFormConfig: mergedData.leadFormConfig || null,
                         leadCustomFields: mergedData.leadCustomFields || [],
-                        quickActions: mergedData.quickActions ?? buildDefaultQuickActions(mergedData),
+                        quickActions: (mergedData.quickActions && Array.isArray(mergedData.quickActions.buttons) && mergedData.quickActions.buttons.length > 0)
+                            ? mergedData.quickActions
+                            : buildDefaultQuickActions(mergedData),
                         position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
                         viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
                         modalSize: mergedData.modalSize || "half", // 'half' | 'full'
