@@ -154,6 +154,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [isLoading, setIsLoading] = useState<ModuleId | null>(null)
     const [isPageLoading, setIsPageLoading] = useState(true)
     const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({})
+    const [adminGrantedModules, setAdminGrantedModules] = useState<Record<string, boolean> | null>(null)
     const [selectedModuleId, setSelectedModuleId] = useState<ModuleId | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -209,6 +210,11 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         kvkkConsent: data.enableKvkkConsent ?? false,
                         humanHandoff: data.enableHumanHandoff ?? false,
                     })
+                    setAdminGrantedModules(
+                        data.adminGrantedModules && typeof data.adminGrantedModules === "object"
+                            ? data.adminGrantedModules
+                            : null
+                    )
                 } else {
                     console.error("Failed to load settings via API")
                     // Fallback to defaults
@@ -287,7 +293,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             // Get ID token for security check
             const idToken = await user?.getIdToken()
 
-            // Use API to update settings (handles permissions via admin-sdk)
+            const userSettingsUpdate: Record<string, any> = { [fieldName]: checked }
+            if (isSuperAdminViewingTenant) {
+                userSettingsUpdate.adminGrantedModules = {
+                    ...(adminGrantedModules || {}),
+                    [moduleId]: checked,
+                }
+            }
+
             const response = await fetch("/api/console/settings", {
                 method: "POST",
                 headers: {
@@ -296,7 +309,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 },
                 body: JSON.stringify({
                     chatbotId: effectiveUserId,
-                    userSettings: { [fieldName]: checked },
+                    userSettings: userSettingsUpdate,
                     chatbotSettings: { [fieldName]: checked }
                 })
             })
@@ -304,6 +317,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             if (!response.ok) throw new Error("Failed to update module settings")
 
             setModuleStates(prev => ({ ...prev, [moduleId]: checked }))
+            if (isSuperAdminViewingTenant) {
+                setAdminGrantedModules(prev => ({
+                    ...(prev || {}),
+                    [moduleId]: checked,
+                }))
+            }
 
             // If skill was just ENABLED (off → on), auto-redirect to settings page
             if (checked && targetModule && !targetModule.isCore && targetModule.status !== 'coming_soon') {
@@ -355,7 +374,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`${basePath}/modules/guided`)
                     break
                 case 'appointments':
-                    router.push(`${basePath}/chatbot/appointments`)
+                    router.push(`${basePath}/appointments`)
                     break
                 case 'leadCollection':
                     router.push(`${basePath}/modules/lead-collection`)
@@ -382,6 +401,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     break
                 case 'voiceAssistant':
                     router.push(`${basePath}/modules/voice`)
+                    break
+                case 'kvkkConsent':
+                    router.push(`/console/modules/kvkk?userId=${targetUserId}`)
+                    break
+                case 'humanHandoff':
+                    router.push(`/console/modules/human-handoff?userId=${targetUserId}`)
                     break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
@@ -423,7 +448,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 router.push(`/console/modules/smart-shopper${queryParams}`)
                 break
             case 'appointments':
-                router.push(`${basePath}/chatbot/appointments`)
+                router.push(`${basePath}/appointments`)
                 break
             case 'campaignManager':
                 router.push(`/console/modules/campaigns${queryParams}`)
@@ -442,6 +467,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'dynamicContext':
                 router.push(`/console/modules/dynamic-context${queryParams}`)
+                break
+            case 'kvkkConsent':
+                router.push(`/console/modules/kvkk${queryParams}`)
+                break
+            case 'humanHandoff':
+                router.push(`/console/modules/human-handoff${queryParams}`)
                 break
             default:
                 toast({
@@ -479,14 +510,24 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 return false
             }
 
-            // Tenant view: hide coming_soon modules entirely
-            if (!isAdminView && module.status === 'coming_soon') {
+            // Tenant view: only show ready modules (hide beta + coming_soon)
+            if (!isAdminView && module.status !== 'ready') {
                 return false
             }
 
-            // Tenant view: only show modules explicitly granted by admin
-            if (!isAdminView && !moduleStates[module.id]) {
-                return false
+            // Tenant view: show only modules that super admin / partner has explicitly
+            // granted via `adminGrantedModules`. Modules granted stay visible even when
+            // the tenant toggles them off (passive state, re-enableable). If a tenant
+            // has no `adminGrantedModules` record yet (legacy), fall back to currently
+            // enabled modules so we don't wipe their UI before migration.
+            if (!isAdminView) {
+                if (adminGrantedModules) {
+                    if (adminGrantedModules[module.id] !== true) {
+                        return false
+                    }
+                } else if (!moduleStates[module.id]) {
+                    return false
+                }
             }
 
             const name = module.name[lang] || module.name.en
@@ -513,7 +554,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates])
+    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates, adminGrantedModules])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {

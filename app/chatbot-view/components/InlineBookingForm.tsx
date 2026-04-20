@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Calendar, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { CheckCircle, AlertCircle } from "lucide-react"
 import { ChatbotSettings } from "@/types/chatbot"
+import { AppointmentSlotPicker } from "@/components/appointments/appointment-slot-picker"
+
 
 interface InlineBookingFormProps {
     chatbotId: string
@@ -24,8 +26,6 @@ interface BookingFormData {
 }
 
 export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess }: InlineBookingFormProps) {
-    const todayStr = new Date().toISOString().split("T")[0]
-
     // Try to get pre-collected lead data from localStorage
     const getLeadData = () => {
         if (typeof window === "undefined") return null
@@ -40,6 +40,12 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
     const leadData = getLeadData()
     const hasContactInfo = Boolean(leadData?.email)
 
+    const [appointmentTypes, setAppointmentTypes] = useState<string[]>(
+        settings.appointmentTypes && settings.appointmentTypes.length > 0
+            ? settings.appointmentTypes
+            : []
+    )
+
     const [form, setForm] = useState<BookingFormData>({
         type: settings.appointmentTypes?.[0] || "",
         date: "",
@@ -52,7 +58,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
 
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
-    const [appointmentId, setAppointmentId] = useState("")
+    const [, setAppointmentId] = useState("")
 
     const set = (key: keyof BookingFormData, value: string) =>
         setForm((prev) => ({ ...prev, [key]: value }))
@@ -61,6 +67,12 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
         e.preventDefault()
         setStatus("submitting")
         setErrorMsg("")
+
+        if (!form.date || !form.time) {
+            setErrorMsg("Lutfen tarih ve saat secin.")
+            setStatus("error")
+            return
+        }
 
         try {
             const res = await fetch("/api/appointments", {
@@ -114,11 +126,13 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
 
     const inputClass =
         "w-full px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-400 bg-white"
+    const pickerButtonClass =
+        "w-full justify-start px-3 text-sm text-gray-900 hover:bg-white focus-visible:ring-1 focus-visible:ring-indigo-400 border-gray-200 bg-white"
 
     return (
         <form onSubmit={handleSubmit} className="mt-3 space-y-2.5 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
             {/* Appointment Type */}
-            {settings.appointmentTypes && settings.appointmentTypes.length > 0 && (
+            {appointmentTypes.length > 0 && (
                 <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">
                         {t("appointmentType") === "appointmentType" ? "Randevu Tipi" : t("appointmentType")}
@@ -130,7 +144,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                         className={inputClass}
                     >
                         <option value="">Seçiniz...</option>
-                        {settings.appointmentTypes.map((tp) => (
+                        {appointmentTypes.map((tp) => (
                             <option key={tp} value={tp}>{tp}</option>
                         ))}
                     </select>
@@ -138,35 +152,22 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             )}
 
             {/* Date + Time */}
-            <div className="grid grid-cols-2 gap-2">
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {t("date") === "date" ? "Tarih" : t("date")}
-                    </label>
-                    <input
-                        type="date"
-                        required
-                        min={todayStr}
-                        value={form.date}
-                        onChange={(e) => set("date", e.target.value)}
-                        className={inputClass}
-                    />
-                </div>
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {t("time") === "time" ? "Saat" : t("time")}
-                    </label>
-                    <input
-                        type="time"
-                        required
-                        value={form.time}
-                        onChange={(e) => set("time", e.target.value)}
-                        className={inputClass}
-                    />
-                </div>
-            </div>
+            <AppointmentSlotPicker
+                chatbotId={chatbotId}
+                date={form.date}
+                time={form.time}
+                onDateChange={(value) => set("date", value)}
+                onTimeChange={(value) => set("time", value)}
+                onSettingsLoaded={(types) => {
+                    if (types.length > 0) {
+                        setAppointmentTypes(types)
+                        setForm((prev) => ({ ...prev, type: prev.type || types[0] }))
+                    }
+                }}
+                dateLabel={t("date") === "date" ? "Tarih" : t("date")}
+                timeLabel={t("time") === "time" ? "Saat" : t("time")}
+                buttonClassName={pickerButtonClass}
+            />
 
             {/* Contact fields — only if no pre-collected lead */}
             {!hasContactInfo && (

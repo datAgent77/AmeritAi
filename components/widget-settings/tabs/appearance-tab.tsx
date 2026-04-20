@@ -27,6 +27,7 @@ import {
 import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 import { getAmbientDeviceSettingsKeys, resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { getClassicDeviceSettingsKeys, resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
+import { getQuickActionDefinition, isQuickActionModuleId } from "@/lib/quick-actions"
 
 interface AppearanceTabProps {
     settings: WidgetSettings
@@ -767,7 +768,41 @@ export function AppearanceTab({
                                         className="h-8 text-sm flex-1"
                                         placeholder={language === 'tr' ? 'Buton etiketi' : 'Button label'}
                                     />
-                                    <span className="text-xs text-muted-foreground w-24 shrink-0">{btn.moduleId}</span>
+                                    <Select
+                                        value={btn.moduleId}
+                                        onValueChange={(val) => {
+                                            if (!isQuickActionModuleId(val)) return
+
+                                            const updated = [...settings.quickActions!.buttons]
+                                            const current = updated[i]
+                                            const previousModuleId = isQuickActionModuleId(current.moduleId) ? current.moduleId : null
+                                            const nextDefinition = getQuickActionDefinition(val)
+                                            const previousDefinition = previousModuleId ? getQuickActionDefinition(previousModuleId) : null
+                                            const currentLabel = typeof current.label === "string" ? current.label.trim() : ""
+                                            const shouldResetLabel = !currentLabel || (previousDefinition !== null && currentLabel === previousDefinition.label)
+
+                                            updated[i] = {
+                                                ...current,
+                                                id: nextDefinition.id,
+                                                moduleId: val,
+                                                triggerMessage: nextDefinition.triggerMessage,
+                                                label: shouldResetLabel ? nextDefinition.label : current.label,
+                                            }
+                                            setSettings(prev => ({
+                                                ...prev,
+                                                quickActions: { ...prev.quickActions!, buttons: updated }
+                                            }))
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-8 text-xs w-36 shrink-0">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="appointments">{language === 'tr' ? 'Randevu' : 'Appointments'}</SelectItem>
+                                            <SelectItem value="humanHandoff">{language === 'tr' ? 'Temsilci' : 'Human Handoff'}</SelectItem>
+                                            <SelectItem value="leadCollection">{language === 'tr' ? 'İletişim Formu' : 'Lead Collection'}</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             ))}
                         </div>

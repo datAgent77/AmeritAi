@@ -678,7 +678,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                                 </div>
                                                 <span className="shrink-0 whitespace-nowrap pt-0.5 text-[10px] text-muted-foreground">{formatDateSafe(session.lastMessageTime, "HH:mm")}</span>
                                             </div>
-                                            <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{session.lastMessage || t("noMessages")}</p>
+                                            <p className="mt-1.5 line-clamp-2 break-words text-[13px] leading-5 text-muted-foreground">{session.lastMessage || t("noMessages")}</p>
                                         </div>
                                     </button>
                                 )

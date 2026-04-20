@@ -424,7 +424,7 @@ export function OmniAppointmentsPanel() {
                     </CardHeader>
                     <CardContent className="text-sm text-muted-foreground">
                         <Button asChild variant="outline" className="w-full">
-                            <Link href="/console/chatbot/appointments">{t("omni.appointments.openLegacy")}</Link>
+                            <Link href="/console/appointments">{t("omni.appointments.openLegacy")}</Link>
                         </Button>
                     </CardContent>
                 </Card>

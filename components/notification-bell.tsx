@@ -348,7 +348,7 @@ export function NotificationBell() {
                 router.push('/console/chatbot/chats')
                 break
             case 'appointment':
-                router.push('/console/chatbot/appointments')
+                router.push('/console/appointments')
                 break
             case 'lead':
                 router.push('/console/chatbot/leads')

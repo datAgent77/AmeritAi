@@ -26,6 +26,7 @@ import {
     Check,
     Building2,
     Inbox,
+    Calendar,
     Activity,
     Utensils,
     FileText,
@@ -196,6 +197,12 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     icon: Inbox,
                     href: "/console/chatbot/chats",
                     active: isActive("/console/chatbot/chats")
+                },
+                {
+                    title: t('appointments') || "Appointments",
+                    icon: Calendar,
+                    href: "/console/appointments",
+                    active: isActive("/console/appointments")
                 },
                 {
                     title: t('leads') || "Shopper Intelligence",

@@ -31,7 +31,7 @@ interface MessageListProps {
     messagesContainerRef: RefObject<HTMLDivElement | null>
     messagesEndRef: RefObject<HTMLDivElement | null>
     t: (key: string) => string
-    onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
+    onLeadSubmit: (data: any, options?: { source?: "inline" | "overlay"; flow?: "lead" | "handoff" }) => Promise<void>
     chatbotId?: string
     sessionId?: string | null
     onBookingSuccess?: (appointmentId: string) => void
@@ -640,15 +640,26 @@ export function MessageList({
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
                                             }}
                                         >
-                                            {messageContent.replace('[SHOW_LEAD_FORM]', '').replace('[SHOW_BOOKING_FORM]', '')}
+                                            {messageContent.replace('[SHOW_LEAD_FORM]', '').replace('[SHOW_BOOKING_FORM]', '').replace('[SHOW_HANDOFF_FORM]', '')}
                                         </ReactMarkdown>
 
                                         {/* Inline Lead Form */}
                                         {messageContent.includes('[SHOW_LEAD_FORM]') && (
                                             <InlineLeadForm
-                                                onSubmit={(data) => onLeadSubmit(data, { source: "inline" })}
+                                                onSubmit={(data, opts) => onLeadSubmit(data, { ...opts, source: "inline", flow: "lead" })}
                                                 settings={settings}
                                                 t={t}
+                                                variant="lead"
+                                            />
+                                        )}
+
+                                        {/* Inline Handoff Form */}
+                                        {messageContent.includes('[SHOW_HANDOFF_FORM]') && (
+                                            <InlineLeadForm
+                                                onSubmit={(data, opts) => onLeadSubmit(data, { ...opts, source: "inline", flow: "handoff" })}
+                                                settings={settings}
+                                                t={t}
+                                                variant="handoff"
                                             />
                                         )}
 

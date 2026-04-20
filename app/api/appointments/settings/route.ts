@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
+import { DEFAULT_APPOINTMENT_SCHEDULING_SETTINGS } from "@/lib/appointment-scheduling"
 
 export const runtime = 'nodejs'
 
@@ -33,10 +34,7 @@ export async function GET(req: Request) {
             // Return default settings
             return NextResponse.json({
                 settings: {
-                    workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-                    workingHoursStart: '09:00',
-                    workingHoursEnd: '18:00',
-                    appointmentDuration: 30,
+                    ...DEFAULT_APPOINTMENT_SCHEDULING_SETTINGS,
                     googleCalendarConnected: false,
                     outlookCalendarConnected: false
                 }

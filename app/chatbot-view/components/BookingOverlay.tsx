@@ -1,7 +1,9 @@
 import { ChatbotSettings } from "@/types/chatbot"
 import { Calendar } from "lucide-react"
+import { AppointmentSlotPicker } from "@/components/appointments/appointment-slot-picker"
 
 interface BookingOverlayProps {
+    chatbotId: string
     showBooking: boolean
     setShowBooking: (val: boolean) => void
     bookingData: any
@@ -13,6 +15,7 @@ interface BookingOverlayProps {
 }
 
 export function BookingOverlay({
+    chatbotId,
     showBooking,
     setShowBooking,
     bookingData,
@@ -55,28 +58,18 @@ export function BookingOverlay({
                         </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('date') || "Date"}</label>
-                            <input
-                                type="date"
-                                required
-                                min={new Date().toISOString().split('T')[0]}
-                                value={bookingData.date}
-                                onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('time') || "Time"}</label>
-                            <input
-                                type="time"
-                                required
-                                value={bookingData.time}
-                                onChange={(e) => setBookingData({ ...bookingData, time: e.target.value })}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none"
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <AppointmentSlotPicker
+                            chatbotId={chatbotId}
+                            date={bookingData.date}
+                            time={bookingData.time}
+                            onDateChange={(value) => setBookingData({ ...bookingData, date: value })}
+                            onTimeChange={(value) => setBookingData({ ...bookingData, time: value })}
+                            dateLabel={t('date') || "Date"}
+                            timeLabel={t('time') || "Time"}
+                            buttonClassName="w-full justify-start px-4 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                            contentClassName="dark:border-zinc-700 dark:bg-zinc-900"
+                        />
                     </div>
 
                     <div className="space-y-2">

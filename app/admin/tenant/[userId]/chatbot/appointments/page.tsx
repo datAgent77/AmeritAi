@@ -1,7 +1,10 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { AppointmentsContent } from "@/components/appointments-content"
-
-export default function AdminTenantAppointmentsPage({ params }: { params: { userId: string } }) {
-    return <AppointmentsContent targetUserId={params.userId} />
+export default async function LegacyAdminTenantAppointmentsPage({
+    params,
+}: {
+    params: Promise<{ userId: string }>
+}) {
+    const { userId } = await params
+    redirect(`/admin/tenant/${userId}/appointments`)
 }

@@ -41,7 +41,7 @@ interface ChatInputProps {
     onConversationModeChange?: (mode: ConversationMode) => void
     disabled?: boolean
     quickActions?: { enabled: boolean; buttons: QuickActionButton[] }
-    onTriggerAction?: (moduleId: QuickActionButton['moduleId']) => void
+    onTriggerAction?: (button: QuickActionButton) => void
 }
 
 export function ChatInput({
@@ -352,11 +352,11 @@ export function ChatInput({
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : isSidecarMode
                     ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"
-                    : "p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
+                    : "px-8 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
-                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "max-w-3xl"}`}
+                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "w-full max-w-none"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
@@ -372,7 +372,7 @@ export function ChatInput({
                                     <button
                                         key={btn.id}
                                         type="button"
-                                        onClick={() => onTriggerAction ? onTriggerAction(btn.moduleId) : sendMessage(btn.triggerMessage)}
+                                        onClick={() => onTriggerAction ? onTriggerAction(btn) : sendMessage(btn.triggerMessage)}
                                         disabled={isChatLoading || disabled}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-all hover:shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{

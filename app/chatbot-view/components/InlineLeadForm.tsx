@@ -4,12 +4,14 @@ import { useState } from "react"
 import React from 'react';
 
 interface InlineLeadFormProps {
-    onSubmit: (data: any, options?: { source?: "inline" | "overlay" }) => Promise<void>
+    onSubmit: (data: any, options?: { source?: "inline" | "overlay"; flow?: "lead" | "handoff" }) => Promise<void>
     settings: ChatbotSettings
     t: (key: string) => string
+    variant?: "lead" | "handoff"
 }
 
-export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
+export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: InlineLeadFormProps) {
+    const isHandoff = variant === "handoff"
     const config = settings.leadFormConfig || {}
     const customFields = settings.leadCustomFields || []
 
@@ -56,7 +58,7 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
         }
         
         try {
-            await onSubmit(formData)
+            await onSubmit(formData, { source: "inline", flow: variant })
             setStatus('success')
         } catch (_error) {
             setStatus('idle')
@@ -64,14 +66,19 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
     }
 
     if (status === 'success') {
+        const successText = isHandoff
+            ? (t('handoffReceived') === 'handoffReceived'
+                ? "Thank you! Our agent will reach out shortly."
+                : t('handoffReceived'))
+            : (t('infoReceived') === 'infoReceived'
+                ? "Your information has been received. Thank you!"
+                : t('infoReceived'))
         return (
             <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex items-center justify-center gap-2 mt-2">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                     <Send className="w-4 h-4 text-green-600" />
                 </div>
-                <p className="text-sm font-medium text-green-700">
-                    {t('infoReceived') === 'infoReceived' ? "Your information has been received. Thank you!" : t('infoReceived')}
-                </p>
+                <p className="text-sm font-medium text-green-700">{successText}</p>
             </div>
         )
     }
@@ -167,9 +174,11 @@ export function InlineLeadForm({ onSubmit, settings, t }: InlineLeadFormProps) {
                 className="w-full py-2 text-sm font-medium text-white rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: settings.brandColor }}
             >
-                {status === 'submitting' 
-                    ? (t('sending') === 'sending' ? "Sending..." : t('sending')) 
-                    : (t('sendInfo') === 'sendInfo' ? "Send Info" : t('sendInfo'))
+                {status === 'submitting'
+                    ? (t('sending') === 'sending' ? "Sending..." : t('sending'))
+                    : isHandoff
+                        ? (t('requestAgent') === 'requestAgent' ? "Request Agent" : t('requestAgent'))
+                        : (t('sendInfo') === 'sendInfo' ? "Send Info" : t('sendInfo'))
                 }
             </button>
         </form>

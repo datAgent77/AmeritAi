@@ -214,9 +214,6 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
     const showOnboardingSoftBanner = userContext?.onboardingStatus === 'completed_soft'
     const showUpgradeBanner = uiAction?.type === 'show-upgrade-banner'
 
-    // DEBUG: Log subscription status for trial banner debugging (moved outside hooks)
-    console.log('ConsoleLayout DEBUG:', { subscriptionStatus, isTrial: subscriptionStatus === 'trial', trialDaysLeft, planId })
-
     return (
         <ThemeProvider forcedTheme="light" attribute="class" storageKey="console-theme" enableSystem={false} disableTransitionOnChange>
             <SidebarProvider>
@@ -250,9 +247,6 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                         {/* Main content */}
                         {/* Trial Expiration Guard */}
                         {(() => {
-                            // Debug log for trial guard
-                            console.log('Trial Guard Debug:', { isTrialExpired, isPaidPlan, subscriptionStatus, planId })
-                            
                             // Show overlay if trial is expired AND subscription is not 'active' (paid)
                             // subscriptionStatus should be 'trial' or 'expired' for trial users
                             const shouldShowOverlay = isTrialExpired && subscriptionStatus !== 'active'

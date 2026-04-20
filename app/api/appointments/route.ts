@@ -3,6 +3,13 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
 import { createNotification } from "@/lib/notification-service"
 import { sendAppointmentTenantAlertEmail } from "@/lib/email-service"
+import {
+    buildAppointmentDateTime,
+    getDayCode,
+    isAppointmentSlotAvailable,
+    normalizeAppointmentSchedulingSettings,
+    parseTimeToMinutes,
+} from "@/lib/appointment-scheduling"
 
 interface RateLimitEntry {
     count: number
@@ -159,27 +166,6 @@ function getRateLimitHeaders(result: { remaining: number; resetInMs: number }) {
     }
 }
 
-function parseTimeToMinutes(value: string): number | null {
-    if (!/^\d{2}:\d{2}$/.test(value)) {
-        return null
-    }
-
-    const [hourStr, minuteStr] = value.split(":")
-    const hour = Number(hourStr)
-    const minute = Number(minuteStr)
-
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-        return null
-    }
-
-    return hour * 60 + minute
-}
-
-function getDayCode(date: Date): string {
-    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-    return days[date.getDay()]
-}
-
 // POST: Create a new appointment
 export async function POST(req: Request) {
     try {
@@ -198,17 +184,36 @@ export async function POST(req: Request) {
             time,
             type,
             notes,
-            sessionId
+            sessionId,
+            source,
+            status,
         } = body
 
-        if (!chatbotId || !customerEmail || !date || !time) {
+        if (!chatbotId || !date || !time) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
         }
 
-        const normalizedEmail = String(customerEmail).trim().toLowerCase()
+        const normalizedEmail = String(customerEmail || "").trim().toLowerCase()
         const normalizedPhone = String(customerPhone || "").trim()
+        const authorizationHeader = req.headers.get("authorization")?.trim()
+        const isAuthorizedRequest = Boolean(authorizationHeader)
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        if (isAuthorizedRequest) {
+            const authz = await authorizeTargetAccess(req, chatbotId)
+            if (!authz.ok) {
+                return authz.response
+            }
+        }
+
+        if (!normalizedEmail && !isAuthorizedRequest) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+        }
+
+        if (isAuthorizedRequest && !normalizedEmail && !normalizedPhone) {
+            return NextResponse.json({ error: "Email or phone is required" }, { status: 400 })
+        }
+
+        if (normalizedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
             return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
         }
 
@@ -220,8 +225,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid date or time format" }, { status: 400 })
         }
 
-        const appointmentDateTime = new Date(`${date}T${time}:00`)
-        if (Number.isNaN(appointmentDateTime.getTime())) {
+        const appointmentDateTime = buildAppointmentDateTime(String(date), String(time))
+        if (!appointmentDateTime) {
             return NextResponse.json({ error: "Invalid appointment date or time" }, { status: 400 })
         }
 
@@ -234,34 +239,40 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Appointment date is too far in the future" }, { status: 400 })
         }
 
-        const ip = getRequesterIp(req)
-        const ipRate = await consumeRateLimit(
-            appointmentIpRateLimits,
-            `${chatbotId}:${ip}`,
-            APPOINTMENT_IP_LIMIT,
-            APPOINTMENT_IP_WINDOW_MS,
-            "ip"
-        )
-        if (!ipRate.allowed) {
-            return NextResponse.json(
-                { error: "Too many appointment requests. Please try again later." },
-                { status: 429, headers: getRateLimitHeaders(ipRate) }
-            )
-        }
+        let identityRateHeaders: Record<string, string> | undefined
 
-        const identityKey = `${chatbotId}:${normalizedEmail || normalizedPhone || "unknown"}`
-        const identityRate = await consumeRateLimit(
-            appointmentIdentityRateLimits,
-            identityKey,
-            APPOINTMENT_IDENTITY_LIMIT,
-            APPOINTMENT_IDENTITY_WINDOW_MS,
-            "identity"
-        )
-        if (!identityRate.allowed) {
-            return NextResponse.json(
-                { error: "Too many booking attempts for this contact. Please try again later." },
-                { status: 429, headers: getRateLimitHeaders(identityRate) }
+        if (!isAuthorizedRequest) {
+            const ip = getRequesterIp(req)
+            const ipRate = await consumeRateLimit(
+                appointmentIpRateLimits,
+                `${chatbotId}:${ip}`,
+                APPOINTMENT_IP_LIMIT,
+                APPOINTMENT_IP_WINDOW_MS,
+                "ip"
             )
+            if (!ipRate.allowed) {
+                return NextResponse.json(
+                    { error: "Too many appointment requests. Please try again later." },
+                    { status: 429, headers: getRateLimitHeaders(ipRate) }
+                )
+            }
+
+            const identityKey = `${chatbotId}:${normalizedEmail || normalizedPhone || "unknown"}`
+            const identityRate = await consumeRateLimit(
+                appointmentIdentityRateLimits,
+                identityKey,
+                APPOINTMENT_IDENTITY_LIMIT,
+                APPOINTMENT_IDENTITY_WINDOW_MS,
+                "identity"
+            )
+            if (!identityRate.allowed) {
+                return NextResponse.json(
+                    { error: "Too many booking attempts for this contact. Please try again later." },
+                    { status: 429, headers: getRateLimitHeaders(identityRate) }
+                )
+            }
+
+            identityRateHeaders = getRateLimitHeaders(identityRate)
         }
 
         const chatbotRef = adminDb.collection("chatbots").doc(chatbotId)
@@ -292,26 +303,21 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Appointments are disabled for this chatbot" }, { status: 403 })
         }
 
-        const settings = settingsSnap.exists ? settingsSnap.data() : null
-        const workingDays = Array.isArray(settings?.workingDays) && settings?.workingDays.length > 0
-            ? settings.workingDays
-            : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-        const workingHoursStart = typeof settings?.workingHoursStart === "string" ? settings.workingHoursStart : "09:00"
-        const workingHoursEnd = typeof settings?.workingHoursEnd === "string" ? settings.workingHoursEnd : "18:00"
+        const settings = normalizeAppointmentSchedulingSettings(settingsSnap.exists ? settingsSnap.data() : null)
 
-        if (!workingDays.includes(getDayCode(appointmentDateTime))) {
+        if (!settings.workingDays.includes(getDayCode(appointmentDateTime))) {
             return NextResponse.json({ error: "Selected day is outside working days" }, { status: 400 })
         }
 
         const appointmentMinutes = parseTimeToMinutes(String(time))
-        const startMinutes = parseTimeToMinutes(workingHoursStart)
-        const endMinutes = parseTimeToMinutes(workingHoursEnd)
+        const startMinutes = parseTimeToMinutes(settings.workingHoursStart)
+        const endMinutes = parseTimeToMinutes(settings.workingHoursEnd)
         if (
             appointmentMinutes === null ||
             startMinutes === null ||
             endMinutes === null ||
             appointmentMinutes < startMinutes ||
-            appointmentMinutes > endMinutes
+            appointmentMinutes + settings.appointmentDuration > endMinutes
         ) {
             return NextResponse.json({ error: "Selected time is outside working hours" }, { status: 400 })
         }
@@ -329,18 +335,36 @@ export async function POST(req: Request) {
             .limit(200)
             .get()
 
-        const hasDuplicate = existingSameDay.docs.some((doc) => {
-            const data = doc.data()
-            return (
-                String(data.time || "") === String(time) &&
-                String(data.customerEmail || "").toLowerCase() === normalizedEmail &&
-                data.status !== "cancelled"
-            )
+        const existingAppointments = existingSameDay.docs.map((doc) => {
+            const data = doc.data() || {}
+            return {
+                id: doc.id,
+                date: String(data.date || ""),
+                time: String(data.time || ""),
+                status: typeof data.status === "string" ? data.status : null,
+            }
         })
 
-        if (hasDuplicate) {
-            return NextResponse.json({ error: "An appointment already exists for this date and time" }, { status: 409 })
+        if (!isAppointmentSlotAvailable({
+            date: String(date),
+            time: String(time),
+            settings,
+            appointments: existingAppointments,
+            now: new Date(),
+        })) {
+            return NextResponse.json({ error: "Selected time is not available" }, { status: 409 })
         }
+
+        const allowedAuthorizedStatuses = new Set(["pending", "confirmed"])
+        const appointmentStatus =
+            isAuthorizedRequest && typeof status === "string" && allowedAuthorizedStatuses.has(status)
+                ? status
+                : "pending"
+        const appointmentSource =
+            isAuthorizedRequest && source === "manual"
+                ? "manual"
+                : "chatbot"
+        const createdAt = new Date().toISOString()
 
         const appointmentData = {
             chatbotId,
@@ -352,67 +376,72 @@ export async function POST(req: Request) {
             type: String(type || "Consultation").trim().slice(0, 120),
             notes: String(notes || "").trim().slice(0, 1000),
             sessionId: String(sessionId || ""),
-            status: "pending",
-            source: "chatbot",
-            createdAt: new Date().toISOString()
+            status: appointmentStatus,
+            source: appointmentSource,
+            createdAt,
+            updatedAt: createdAt,
+            confirmedAt: appointmentStatus === "confirmed" ? createdAt : null,
         }
 
         const docRef = await adminDb.collection("appointments").add(appointmentData)
 
         // Notify tenant: in-app notification + email
-        try {
-            const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI"
+        if (!isAuthorizedRequest) {
+            try {
+                const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI"
 
-            // Resolve tenant notification email
-            let tenantEmail: string | null =
-                typeof chatbotData?.leadNotificationEmail === "string" && chatbotData.leadNotificationEmail.trim()
-                    ? chatbotData.leadNotificationEmail.trim()
-                    : typeof userData?.email === "string" && userData.email.trim()
-                        ? userData.email.trim()
-                        : null
+                // Resolve tenant notification email
+                let tenantEmail: string | null =
+                    typeof chatbotData?.leadNotificationEmail === "string" && chatbotData.leadNotificationEmail.trim()
+                        ? chatbotData.leadNotificationEmail.trim()
+                        : typeof userData?.email === "string" && userData.email.trim()
+                            ? userData.email.trim()
+                            : null
 
-            if (!tenantEmail) {
-                const adminAuth = getAdminAuth()
-                if (adminAuth) {
-                    const userRecord = await adminAuth.getUser(chatbotId).catch(() => null)
-                    if (userRecord?.email) tenantEmail = userRecord.email
+                if (!tenantEmail) {
+                    const adminAuth = getAdminAuth()
+                    if (adminAuth) {
+                        const userRecord = await adminAuth.getUser(chatbotId).catch(() => null)
+                        if (userRecord?.email) tenantEmail = userRecord.email
+                    }
                 }
-            }
 
-            // In-app notification
-            await createNotification({
-                userId: chatbotId,
-                type: "appointment_created",
-                title: "Yeni Randevu Talebi",
-                message: `${appointmentData.customerName} — ${appointmentData.date} ${appointmentData.time}`,
-                metadata: {
-                    customerEmail: appointmentData.customerEmail,
-                    source: "appointments",
-                }
-            })
-
-            // Tenant alert email
-            if (tenantEmail) {
-                await sendAppointmentTenantAlertEmail({
-                    tenantEmail,
-                    companyName,
-                    customerName: appointmentData.customerName,
-                    customerEmail: appointmentData.customerEmail,
-                    customerPhone: appointmentData.customerPhone || undefined,
-                    date: appointmentData.date,
-                    time: appointmentData.time,
-                    type: appointmentData.type || undefined,
-                    notes: appointmentData.notes || undefined,
+                // In-app notification
+                await createNotification({
+                    userId: chatbotId,
+                    type: "appointment_created",
+                    title: "Yeni Randevu Talebi",
+                    message: `${appointmentData.customerName} — ${appointmentData.date} ${appointmentData.time}`,
+                    metadata: {
+                        customerEmail: appointmentData.customerEmail,
+                        source: "appointments",
+                    }
                 })
+
+                // Tenant alert email
+                if (tenantEmail) {
+                    await sendAppointmentTenantAlertEmail({
+                        tenantEmail,
+                        companyName,
+                        customerName: appointmentData.customerName,
+                        customerEmail: appointmentData.customerEmail,
+                        customerPhone: appointmentData.customerPhone || undefined,
+                        date: appointmentData.date,
+                        time: appointmentData.time,
+                        type: appointmentData.type || undefined,
+                        notes: appointmentData.notes || undefined,
+                    })
+                }
+            } catch (notifyErr) {
+                console.error("Appointments POST: notification error:", notifyErr)
             }
-        } catch (notifyErr) {
-            console.error("Appointments POST: notification error:", notifyErr)
         }
 
         return NextResponse.json({
             success: true,
-            appointmentId: docRef.id
-        }, { status: 201, headers: getRateLimitHeaders(identityRate) })
+            appointmentId: docRef.id,
+            status: appointmentStatus,
+        }, identityRateHeaders ? { status: 201, headers: identityRateHeaders } : { status: 201 })
 
     } catch (error: any) {
         console.error("Error creating appointment:", error)

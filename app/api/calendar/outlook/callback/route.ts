@@ -19,21 +19,21 @@ export async function GET(req: Request) {
         const error = searchParams.get('error')
 
         if (error) {
-            return NextResponse.redirect(new URL(`/console/chatbot/appointments?error=${error}`, req.url))
+            return NextResponse.redirect(new URL(`/console/appointments?error=${error}`, req.url))
         }
 
         if (!code || !state) {
-            return NextResponse.redirect(new URL('/console/chatbot/appointments?error=missing_params', req.url))
+            return NextResponse.redirect(new URL('/console/appointments?error=missing_params', req.url))
         }
 
         const stateData = await consumeOAuthState(state, 'calendar-outlook');
         const chatbotId = stateData?.userId;
         if (!chatbotId) {
-            return NextResponse.redirect(new URL('/console/chatbot/appointments?error=invalid_state', req.url))
+            return NextResponse.redirect(new URL('/console/appointments?error=invalid_state', req.url))
         }
 
         if (!OUTLOOK_CLIENT_ID || !OUTLOOK_CLIENT_SECRET) {
-            return NextResponse.redirect(new URL('/console/chatbot/appointments?error=not_configured', req.url))
+            return NextResponse.redirect(new URL('/console/appointments?error=not_configured', req.url))
         }
 
         // Exchange code for tokens
@@ -53,13 +53,13 @@ export async function GET(req: Request) {
 
         if (tokens.error) {
             console.error('Outlook Token Error:', tokens)
-            return NextResponse.redirect(new URL(`/console/chatbot/appointments?error=${tokens.error}`, req.url))
+            return NextResponse.redirect(new URL(`/console/appointments?error=${tokens.error}`, req.url))
         }
 
         // Save tokens to Firestore
         const adminDb = getAdminDb()
         if (!adminDb) {
-            return NextResponse.redirect(new URL('/console/chatbot/appointments?error=db_error', req.url))
+            return NextResponse.redirect(new URL('/console/appointments?error=db_error', req.url))
         }
 
         await adminDb.collection('calendar_tokens').doc(chatbotId).set({
@@ -79,10 +79,10 @@ export async function GET(req: Request) {
         console.log('Outlook Calendar connected for chatbot:', chatbotId)
 
         // Redirect back to appointments page with success
-        return NextResponse.redirect(new URL('/console/chatbot/appointments?tab=integrations&success=outlook', req.url))
+        return NextResponse.redirect(new URL('/console/appointments?tab=integrations&success=outlook', req.url))
 
     } catch (error: any) {
         console.error('Outlook Callback Error:', error)
-        return NextResponse.redirect(new URL(`/console/chatbot/appointments?error=${error.message}`, req.url))
+        return NextResponse.redirect(new URL(`/console/appointments?error=${error.message}`, req.url))
     }
 }

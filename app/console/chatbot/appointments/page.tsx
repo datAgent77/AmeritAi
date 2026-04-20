@@ -1,7 +1,5 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { AppointmentsContent } from "@/components/appointments-content"
-
-export default function TenantAppointmentsPage() {
-    return <AppointmentsContent />
+export default function LegacyConsoleAppointmentsPage() {
+    redirect("/console/appointments")
 }

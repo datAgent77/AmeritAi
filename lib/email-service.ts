@@ -345,6 +345,31 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
 
     const googleLink = getGoogleCalendarLink(icalData);
     const outlookLink = getOutlookCalendarLink(icalData);
+    const calendarLinkButtons = [
+        googleLink ? `
+                                    <td style="padding-right: 8px;">
+                                        <a href="${googleLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #4285F4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                            📅 Google Calendar
+                                        </a>
+                                    </td>` : "",
+        outlookLink ? `
+                                    <td style="padding-right: 8px;">
+                                        <a href="${outlookLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #0078D4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
+                                            📅 Outlook
+                                        </a>
+                                    </td>` : "",
+        `
+                                    <td>
+                                        <span style="display: inline-block; padding: 10px 16px; background-color: #555; color: #ffffff; border-radius: 6px; font-size: 13px;">
+                                            📎 Apple Calendar (.ics ekte)
+                                        </span>
+                                    </td>`
+    ].join("");
+    const calendarLinksText = [
+        googleLink ? `Google Calendar: ${googleLink}` : null,
+        outlookLink ? `Outlook: ${outlookLink}` : null,
+        "Apple Calendar: .ics ekte"
+    ].filter(Boolean).join("\n");
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -413,21 +438,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                             <p style="color: #555; font-size: 14px; font-weight: 600; margin: 0 0 12px;">Takvime Ekle</p>
                             <table cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
                                 <tr>
-                                    <td style="padding-right: 8px;">
-                                        <a href="${googleLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #4285F4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
-                                            📅 Google Calendar
-                                        </a>
-                                    </td>
-                                    <td style="padding-right: 8px;">
-                                        <a href="${outlookLink}" target="_blank" style="display: inline-block; padding: 10px 16px; background-color: #0078D4; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500;">
-                                            📅 Outlook
-                                        </a>
-                                    </td>
-                                    <td>
-                                        <span style="display: inline-block; padding: 10px 16px; background-color: #555; color: #ffffff; border-radius: 6px; font-size: 13px;">
-                                            📎 Apple Calendar (.ics ekte)
-                                        </span>
-                                    </td>
+                                    ${calendarLinkButtons}
                                 </tr>
                             </table>
 
@@ -453,7 +464,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
 </body>
 </html>`;
 
-    const textContent = `Randevunuz Onaylandı!\n\nSayın ${customerName},\n\nRandevunuz onaylanmıştır.\n\n📅 Tarih: ${formattedDate}\n⏰ Saat: ${time}${notes ? `\n📝 Not: ${notes}` : ''}\n\nGoogle Calendar: ${googleLink}\nOutlook: ${outlookLink}\n\n${companyName}`;
+    const textContent = `Randevunuz Onaylandı!\n\nSayın ${customerName},\n\nRandevunuz onaylanmıştır.\n\n📅 Tarih: ${formattedDate}\n⏰ Saat: ${time}${notes ? `\n📝 Not: ${notes}` : ''}\n\n${calendarLinksText}\n\n${companyName}`;
 
     const icsContent = generateICalContent(icalData);
     const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';

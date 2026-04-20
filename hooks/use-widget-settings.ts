@@ -3,16 +3,8 @@ import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
+import { resolveQuickActionsConfig } from "@/lib/quick-actions"
 import type { AmbientDeviceAppearanceSettings, ClassicDeviceAppearanceSettings } from "@/types/chatbot"
-
-function buildDefaultQuickActionsFromData(data: Record<string, any>) {
-    const buttons: any[] = []
-    let order = 0
-    if (data.enableAppointments) buttons.push({ id: 'appointments', label: 'Randevu Al', moduleId: 'appointments', triggerMessage: 'randevu almak istiyorum', visible: true, order: order++ })
-    if (data.enableHumanHandoff) buttons.push({ id: 'humanHandoff', label: 'Temsilci İste', moduleId: 'humanHandoff', triggerMessage: 'bir temsilciyle görüşmek istiyorum', visible: true, order: order++ })
-    if (data.enableLeadCollection) buttons.push({ id: 'leadCollection', label: 'İletişim Bırak', moduleId: 'leadCollection', triggerMessage: 'iletişim bilgilerimi bırakmak istiyorum', visible: true, order: order++ })
-    return { enabled: buttons.length > 0, buttons }
-}
 
 export interface WidgetSettings {
     // Branding settings
@@ -406,9 +398,7 @@ export function useWidgetSettings(userId?: string) {
                         autoOpenDelay: data.autoOpenDelay !== undefined ? data.autoOpenDelay : prev.autoOpenDelay,
                         openOnExitIntent: data.openOnExitIntent !== undefined ? data.openOnExitIntent : prev.openOnExitIntent,
                         openOnScroll: data.openOnScroll !== undefined ? data.openOnScroll : prev.openOnScroll,
-                        quickActions: (data.quickActions && Array.isArray(data.quickActions.buttons) && data.quickActions.buttons.length > 0)
-                            ? data.quickActions
-                            : buildDefaultQuickActionsFromData(data),
+                        quickActions: resolveQuickActionsConfig(data),
                     }))
                 } else {
                     console.log("No chatbot settings found, using defaults")

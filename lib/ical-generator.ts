@@ -11,23 +11,90 @@ export interface ICalEventData {
     location?: string
 }
 
-function toICalDate(date: string, time: string): string {
-    // Returns "YYYYMMDDTHHmmss" (local, no Z — avoids TZ issues for attendee)
-    const [y, m, d] = date.split("-")
-    const [hh, mm] = time.split(":")
-    return `${y}${m}${d}T${hh}${mm}00`
+const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
+const TIME_PATTERN = /^(\d{2}):(\d{2})$/
+
+function padDatePart(value: number): string {
+    return String(value).padStart(2, "0")
 }
 
-function addMinutes(iCalDate: string, minutes: number): string {
-    const y = parseInt(iCalDate.slice(0, 4))
-    const mo = parseInt(iCalDate.slice(4, 6)) - 1
-    const d = parseInt(iCalDate.slice(6, 8))
-    const h = parseInt(iCalDate.slice(9, 11))
-    const m = parseInt(iCalDate.slice(11, 13))
-    const dt = new Date(y, mo, d, h, m)
-    dt.setMinutes(dt.getMinutes() + minutes)
-    const pad = (n: number) => String(n).padStart(2, "0")
-    return `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`
+function formatICalDate(date: Date): string {
+    return `${date.getFullYear()}${padDatePart(date.getMonth() + 1)}${padDatePart(date.getDate())}T${padDatePart(date.getHours())}${padDatePart(date.getMinutes())}00`
+}
+
+function formatLocalDateTime(date: Date): string {
+    return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}T${padDatePart(date.getHours())}:${padDatePart(date.getMinutes())}:00`
+}
+
+function resolveCalendarEvent(
+    date: string,
+    time: string,
+    durationMinutes: number
+): {
+    start: Date
+    end: Date
+    startICal: string
+    endICal: string
+    startLocalIso: string
+    endLocalIso: string
+} | null {
+    const dateMatch = DATE_PATTERN.exec(date)
+    const timeMatch = TIME_PATTERN.exec(time)
+
+    if (!dateMatch || !timeMatch) {
+        return null
+    }
+
+    const [, yearValue, monthValue, dayValue] = dateMatch
+    const [, hourValue, minuteValue] = timeMatch
+
+    const year = Number(yearValue)
+    const month = Number(monthValue)
+    const day = Number(dayValue)
+    const hour = Number(hourValue)
+    const minute = Number(minuteValue)
+
+    if (
+        !Number.isInteger(year) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(day) ||
+        month < 1 ||
+        month > 12 ||
+        day < 1 ||
+        day > 31 ||
+        hour < 0 ||
+        hour > 23 ||
+        minute < 0 ||
+        minute > 59
+    ) {
+        return null
+    }
+
+    const start = new Date(year, month - 1, day, hour, minute, 0, 0)
+    if (
+        start.getFullYear() !== year ||
+        start.getMonth() !== month - 1 ||
+        start.getDate() !== day ||
+        start.getHours() !== hour ||
+        start.getMinutes() !== minute
+    ) {
+        return null
+    }
+
+    const safeDuration = Number.isFinite(durationMinutes) && durationMinutes > 0
+        ? durationMinutes
+        : 60
+    const end = new Date(start)
+    end.setMinutes(end.getMinutes() + safeDuration)
+
+    return {
+        start,
+        end,
+        startICal: formatICalDate(start),
+        endICal: formatICalDate(end),
+        startLocalIso: formatLocalDateTime(start),
+        endLocalIso: formatLocalDateTime(end),
+    }
 }
 
 function escapeICalText(text: string): string {
@@ -52,11 +119,15 @@ export function generateICalContent(data: ICalEventData): string {
         location = "",
     } = data
 
-    const dtStart = toICalDate(date, time)
-    const dtEnd = addMinutes(dtStart, durationMinutes)
+    const event = resolveCalendarEvent(date, time, durationMinutes)
+    if (!event) {
+        throw new Error("Invalid appointment date or time")
+    }
+
+    const dtStart = event.startICal
+    const dtEnd = event.endICal
     const now = new Date()
-    const pad = (n: number) => String(n).padStart(2, "0")
-    const dtstamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}Z`
+    const dtstamp = `${now.getUTCFullYear()}${padDatePart(now.getUTCMonth() + 1)}${padDatePart(now.getUTCDate())}T${padDatePart(now.getUTCHours())}${padDatePart(now.getUTCMinutes())}${padDatePart(now.getUTCSeconds())}Z`
 
     const summary = escapeICalText(`Randevu — ${companyName}`)
     const description = escapeICalText(notes || `${companyName} ile randevu`)
@@ -91,16 +162,18 @@ export function generateICalContent(data: ICalEventData): string {
         .join("\r\n")
 }
 
-export function getGoogleCalendarLink(data: ICalEventData): string {
+export function getGoogleCalendarLink(data: ICalEventData): string | null {
     const { companyName, date, time, durationMinutes = 60, notes = "", location = "" } = data
 
-    const dtStart = toICalDate(date, time)
-    const dtEnd = addMinutes(dtStart, durationMinutes)
+    const event = resolveCalendarEvent(date, time, durationMinutes)
+    if (!event) {
+        return null
+    }
 
     const params = new URLSearchParams({
         action: "TEMPLATE",
         text: `Randevu — ${companyName}`,
-        dates: `${dtStart}/${dtEnd}`,
+        dates: `${event.startICal}/${event.endICal}`,
         details: notes || `${companyName} ile randevu`,
         location: location,
     })
@@ -108,19 +181,18 @@ export function getGoogleCalendarLink(data: ICalEventData): string {
     return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
 
-export function getOutlookCalendarLink(data: ICalEventData): string {
+export function getOutlookCalendarLink(data: ICalEventData): string | null {
     const { companyName, date, time, durationMinutes = 60, notes = "" } = data
 
-    // Outlook expects ISO8601 local time: "2024-03-15T10:00:00"
-    const startDt = `${date}T${time}:00`
-    const endDate = new Date(`${date}T${time}:00`)
-    endDate.setMinutes(endDate.getMinutes() + durationMinutes)
-    const endDt = endDate.toISOString().slice(0, 19)
+    const event = resolveCalendarEvent(date, time, durationMinutes)
+    if (!event) {
+        return null
+    }
 
     const params = new URLSearchParams({
         subject: `Randevu — ${companyName}`,
-        startdt: startDt,
-        enddt: endDt,
+        startdt: event.startLocalIso,
+        enddt: event.endLocalIso,
         body: notes || `${companyName} ile randevu`,
     })
 

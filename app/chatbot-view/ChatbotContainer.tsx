@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, type PointerEvent as ReactPointerEvent } from "react"
+import { useState, useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent } from "react"
 import { useSearchParams } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { signInAsGuest } from "@/lib/firebase-guest"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
+import type { QuickActionButton } from "@/types/chatbot"
 import { event as trackEvent } from "@/lib/gtag"
 
 // Hooks
@@ -74,6 +75,7 @@ export default function ChatbotContainer() {
 
     // Lead Collection State
     const [showLeadCollection, setShowLeadCollection] = useState(false)
+    const [leadCollectionFlow, setLeadCollectionFlow] = useState<"lead" | "handoff">("lead")
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
     const [isKvkkAccepted, setIsKvkkAccepted] = useState(false)
     const [isKvkkModalOpen, setIsKvkkModalOpen] = useState(false)
@@ -211,32 +213,35 @@ export default function ChatbotContainer() {
         return () => document.removeEventListener("mouseleave", handleMouseLeave)
     }, [chatbotId])
 
-    // INITIAL LEAD COLLECTION CHECK
+    // INITIAL LEAD COLLECTION CHECK — gated on KVKK acceptance
     useEffect(() => {
-        if (!isLoading && settings.enableInitialLeadCollection) {
-            // Check if user already submitted lead (via localStorage)
-            const hasSubmitted = localStorage.getItem(`vion_lead_submitted_${chatbotId}`)
-            if (!hasSubmitted) {
-                setShowLeadCollection(true)
-            }
+        if (isLoading) return
+        if (!settings.enableInitialLeadCollection) return
+        if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) return
+
+        const hasSubmitted = localStorage.getItem(`vion_lead_submitted_${chatbotId}`)
+        if (!hasSubmitted) {
+            setShowLeadCollection(true)
         }
-    }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
+    }, [isLoading, settings.enableInitialLeadCollection, settings.kvkkConsent?.enabled, isKvkkAccepted, chatbotId])
+
+    const kvkkEnabled = settings.kvkkConsent?.enabled === true
+    const kvkkVersionHash = settings.kvkkConsent?.versionHash || ""
 
     useEffect(() => {
         if (!isClient) return
 
-        const kvkkConfig = settings.kvkkConsent
-        if (!kvkkConfig?.enabled || !kvkkConfig.versionHash) {
+        if (!kvkkEnabled || !kvkkVersionHash) {
             setIsKvkkAccepted(true)
             setIsKvkkModalOpen(false)
             return
         }
 
-        const storageKey = `vion_kvkk_${chatbotId}_${kvkkConfig.versionHash}`
+        const storageKey = `vion_kvkk_${chatbotId}_${kvkkVersionHash}`
         const accepted = window.localStorage.getItem(storageKey) === "accepted"
         setIsKvkkAccepted(accepted)
         setIsKvkkModalOpen(false)
-    }, [chatbotId, isClient, settings.kvkkConsent?.enabled, settings.kvkkConsent?.versionHash])
+    }, [chatbotId, isClient, kvkkEnabled, kvkkVersionHash])
 
     useEffect(() => {
         const url = searchParams?.get("url")
@@ -310,17 +315,37 @@ export default function ChatbotContainer() {
         saveImageToCache: visualContext.saveImageToCache,
         getImageFromCache: visualContext.getImageFromCache,
         findImageByContent: visualContext.findImageByContent,
-        onShowLeadForm: () => setShowLeadCollection(true),
+        onShowLeadForm: () => {
+            if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) {
+                setIsKvkkModalOpen(true)
+                return
+            }
+
+            setLeadCollectionFlow("lead")
+            setShowLeadCollection(true)
+        },
         onKvkkConsentRequired: () => setIsKvkkModalOpen(true),
     })
     const [isKvkkRejected, setIsKvkkRejected] = useState(false)
     const requiresKvkkConsent = settings.kvkkConsent?.enabled === true && !isKvkkAccepted
 
+    useEffect(() => {
+        setIsKvkkRejected(false)
+    }, [chatbotId, kvkkEnabled, kvkkVersionHash])
+
+    useEffect(() => {
+        if (!requiresKvkkConsent) return
+
+        setShowLeadCollection(false)
+        setShowBooking(false)
+        setLeadCollectionFlow("lead")
+    }, [requiresKvkkConsent])
+
     const acceptKvkkConsent = () => {
-        const versionHash = settings.kvkkConsent?.versionHash
-        if (versionHash && typeof window !== "undefined") {
-            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${versionHash}`, "accepted")
+        if (kvkkVersionHash && typeof window !== "undefined") {
+            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${kvkkVersionHash}`, "accepted")
         }
+        setIsKvkkRejected(false)
         setIsKvkkAccepted(true)
         setIsKvkkModalOpen(false)
     }
@@ -333,7 +358,7 @@ export default function ChatbotContainer() {
         setIsKvkkModalOpen(true)
     }
 
-    const guardedSendMessage = async (
+    const guardedSendMessage = useCallback(async (
         text: string,
         speakResponse?: boolean,
         visualCtx?: string,
@@ -346,16 +371,16 @@ export default function ChatbotContainer() {
         }
 
         return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
-    }
+    }, [requiresKvkkConsent, sendMessage])
 
-    const guardedSendGuidedMessage = async (guidedEvent: GuidedSkillClientEvent) => {
+    const guardedSendGuidedMessage = useCallback(async (guidedEvent: GuidedSkillClientEvent) => {
         if (requiresKvkkConsent) {
             setIsKvkkModalOpen(true)
             return ""
         }
 
         return sendGuidedMessage(guidedEvent)
-    }
+    }, [requiresKvkkConsent, sendGuidedMessage])
 
     // Assign real sendMessage to ref
     useEffect(() => {
@@ -462,11 +487,53 @@ export default function ChatbotContainer() {
         window.parent.postMessage({ type: 'USEREX_CLOSE_WIDGET' }, '*')
     }
 
-    const handleTriggerAction = (moduleId: 'appointments' | 'humanHandoff' | 'leadCollection') => {
+    const handleTriggerAction = (button: QuickActionButton) => {
+        const { moduleId } = button
+
+        if (requiresKvkkConsent) {
+            return
+        }
+
+        if (moduleId === 'humanHandoff') {
+            setLeadCollectionFlow("handoff")
+            const promptText = language === "tr"
+                ? "Temsilci ile görüşmek için iletişim bilgilerinizi paylaşın, ekibimiz size ulaşsın."
+                : "Share your contact info so our agent can reach out to you."
+            setMessages((prev: any[]) => [...prev, {
+                id: `handoff_inline_${Date.now()}`,
+                role: "assistant",
+                content: `${promptText}\n[SHOW_HANDOFF_FORM]`,
+                createdAt: new Date(),
+            }])
+            return
+        }
+
+        if (moduleId === 'leadCollection') {
+            setLeadCollectionFlow("lead")
+            const promptText = settings.leadFormConfig?.subtitle
+                || (language === "tr"
+                    ? "İletişim bilgilerinizi paylaşır mısınız? Ekibimiz en kısa sürede sizinle iletişime geçecektir."
+                    : "Could you share your contact details? Our team will reach out shortly.")
+            setMessages((prev: any[]) => [...prev, {
+                id: `lead_inline_${Date.now()}`,
+                role: "assistant",
+                content: `${promptText}\n[SHOW_LEAD_FORM]`,
+                createdAt: new Date(),
+            }])
+            return
+        }
+
         if (moduleId === 'appointments') {
-            setShowBooking(true)
-        } else if (moduleId === 'leadCollection' || moduleId === 'humanHandoff') {
-            setShowLeadCollection(true)
+            const promptText = language === "tr"
+                ? "Tabii ki! Lütfen aşağıdaki randevu formunu doldurun."
+                : "Of course! Please fill out the booking form below."
+            setMessages((prev: any[]) => [...prev, {
+                id: `booking_inline_${Date.now()}`,
+                role: "assistant",
+                content: `${promptText}\n[SHOW_BOOKING_FORM]`,
+                createdAt: new Date(),
+            }])
+            return
         }
     }
 
@@ -563,6 +630,12 @@ export default function ChatbotContainer() {
 
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        if (!bookingData.date || !bookingData.time) {
+            alert("Lutfen tarih ve saat secin.")
+            return
+        }
+
         setIsSubmittingBooking(true)
         try {
             let leadData: any = null
@@ -957,12 +1030,12 @@ export default function ChatbotContainer() {
 
             <LeadCollectionOverlay
                 show={showLeadCollection}
-                onSubmit={handleLeadSubmit}
+                onSubmit={(data, opts) => handleLeadSubmit(data, { ...opts, flow: leadCollectionFlow })}
                 isSubmitting={isSubmittingLead}
                 settings={effectiveSettings}
                 t={t}
                 description={settings.leadFormConfig?.subtitle}
-                variant="lead"
+                variant={leadCollectionFlow}
             />
 
             {showSpinWheel && spinWheelPrizes.length > 0 && (
@@ -982,6 +1055,7 @@ export default function ChatbotContainer() {
             )}
 
             <BookingOverlay
+                chatbotId={chatbotId}
                 showBooking={showBooking}
                 setShowBooking={setShowBooking}
                 bookingData={bookingData}

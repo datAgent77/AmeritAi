@@ -1,6 +1,7 @@
 import { ChatbotSettings } from "@/types/chatbot"
-import { UserPlus, Mail, Phone, User, Building2, ListOrdered, MessageSquare } from "lucide-react"
+import { UserPlus, Users, Mail, Phone, User, Building2, ListOrdered, MessageSquare } from "lucide-react"
 import { useState } from "react"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface LeadCollectionOverlayProps {
     show: boolean
@@ -19,8 +20,10 @@ export function LeadCollectionOverlay({
     settings,
     t,
     description,
-    variant: _variant
+    variant
 }: LeadCollectionOverlayProps) {
+    const { language } = useLanguage()
+    const isHandoff = variant === "handoff"
     const [formData, setFormData] = useState<{
         name: string
         email: string
@@ -109,6 +112,25 @@ export function LeadCollectionOverlay({
         await onSubmit(formData)
     }
 
+    const HeaderIcon = isHandoff ? Users : UserPlus
+    const defaultTitle = isHandoff
+        ? (language === "tr" ? "Temsilci ile Görüş" : "Talk to an Agent")
+        : t('getStarted')
+    const defaultSubtitle = isHandoff
+        ? (language === "tr"
+            ? "İletişim bilgilerinizi paylaşın, temsilcimiz en kısa sürede size ulaşsın."
+            : "Share your contact info and our agent will reach out shortly.")
+        : (t('leadFormSubtitle') !== 'leadFormSubtitle'
+            ? t('leadFormSubtitle')
+            : "Please fill in your details to start chatting.")
+    const defaultSubmitText = isHandoff
+        ? (language === "tr" ? "Temsilci Talep Et" : "Request Agent")
+        : (t('startChat') !== 'startChat' ? t('startChat') : "Sohbete Başla")
+
+    const title = isHandoff ? defaultTitle : (settings.leadFormConfig?.title || defaultTitle)
+    const subtitle = description || (isHandoff ? defaultSubtitle : (settings.leadFormConfig?.subtitle || defaultSubtitle))
+    const submitText = isHandoff ? defaultSubmitText : (settings.leadFormConfig?.submitButtonText || defaultSubmitText)
+
     return (
         <div className="absolute inset-0 z-50 bg-white/95 dark:bg-zinc-950/98 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
         <div className="w-full max-w-sm space-y-6 overflow-y-auto max-h-full p-4">
@@ -117,10 +139,10 @@ export function LeadCollectionOverlay({
                         className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mx-auto"
                         style={{ backgroundColor: settings.brandColor }}
                     >
-                        <UserPlus className="w-8 h-8" />
+                        <HeaderIcon className="w-8 h-8" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">{settings.leadFormConfig?.title || t('getStarted')}</h2>
-                    <p className="text-sm text-gray-500 dark:text-zinc-400">{settings.leadFormConfig?.subtitle || t('leadFormSubtitle') || "Please fill in your details to start chatting."}</p>
+                    <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">{title}</h2>
+                    <p className="text-sm text-gray-500 dark:text-zinc-400">{subtitle}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -311,7 +333,7 @@ export function LeadCollectionOverlay({
                                 {t('processing') || "İşleniyor..."}
                             </span>
                         ) : (
-                            formConfig.submitButtonText || t('startChat') || "Sohbete Başla"
+                            submitText
                         )}
                     </button>
                     

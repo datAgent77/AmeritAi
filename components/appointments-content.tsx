@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import {
@@ -14,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Calendar, Clock, Mail, Phone, CheckCircle2, XCircle, Clock3, RefreshCw } from "lucide-react"
+import { Calendar, Clock, Mail, Phone, CheckCircle2, XCircle, Clock3, RefreshCw, CalendarPlus, X, Plus } from "lucide-react"
 import { format } from "date-fns"
 import { tr, enUS } from 'date-fns/locale'
 import { useToast } from "@/hooks/use-toast"
@@ -25,6 +26,8 @@ import { Input } from "@/components/ui/input"
 import { CalendarDays, ExternalLink, AlertCircle, MessageSquare } from "lucide-react"
 import { getGoogleCalendarLink, getOutlookCalendarLink } from "@/lib/ical-generator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ManualAppointmentForm } from "@/components/appointments/manual-appointment-form"
 
 interface Appointment {
     id: string
@@ -53,7 +56,33 @@ interface AppointmentsContentProps {
     targetUserId?: string
 }
 
+type AppointmentTab = "overview" | "settings" | "integrations"
+
+function parseAppointmentDate(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+    if (!match) {
+        return null
+    }
+
+    const [, yearValue, monthValue, dayValue] = match
+    const year = Number(yearValue)
+    const month = Number(monthValue)
+    const day = Number(dayValue)
+    const date = new Date(year, month - 1, day)
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+    ) {
+        return null
+    }
+
+    return date
+}
+
 export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) {
+    const searchParams = useSearchParams()
     const { user } = useAuth()
     const { t, language } = useLanguage()
     const { toast } = useToast()
@@ -67,8 +96,23 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
         googleCalendarConnected: false,
         outlookCalendarConnected: false
     })
+    const [activeTab, setActiveTab] = useState<AppointmentTab>("overview")
+    const [showAddModal, setShowAddModal] = useState(false)
+    const [appointmentTypes, setAppointmentTypes] = useState<string[]>(["Consultation"])
+    const [newTypeName, setNewTypeName] = useState("")
 
     const effectiveUserId = targetUserId || user?.uid
+
+    const showTabs = Boolean(searchParams?.get("tab"))
+
+    useEffect(() => {
+        const requestedTab = searchParams?.get("tab")
+        if (requestedTab === "overview" || requestedTab === "settings" || requestedTab === "integrations") {
+            setActiveTab(requestedTab)
+        } else {
+            setActiveTab("overview")
+        }
+    }, [searchParams])
 
     const getAuthHeaders = useCallback(async (withContentType: boolean = false): Promise<Record<string, string>> => {
         if (!user) {
@@ -107,6 +151,9 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                 const settingsData = await settingsRes.json()
                 if (settingsData.settings) {
                     setSettings(prev => ({ ...prev, ...settingsData.settings }))
+                    if (Array.isArray(settingsData.settings.appointmentTypes)) {
+                        setAppointmentTypes(settingsData.settings.appointmentTypes)
+                    }
                 }
             }
         } catch (error) {
@@ -183,7 +230,7 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
             const res = await fetch('/api/appointments/settings', {
                 method: 'POST',
                 headers: await getAuthHeaders(true),
-                body: JSON.stringify({ chatbotId: effectiveUserId, ...settings })
+                body: JSON.stringify({ chatbotId: effectiveUserId, ...settings, appointmentTypes })
             })
 
             if (res.ok) {
@@ -315,18 +362,28 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                     <h2 className="text-3xl font-bold tracking-tight">{t('appointments')}</h2>
                     <p className="text-muted-foreground">{t('manageAppointmentsDesc')}</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    {t('refresh') || 'Refresh'}
-                </Button>
+                <div className="flex gap-2">
+                    {effectiveUserId && (
+                        <Button size="sm" onClick={() => setShowAddModal(true)}>
+                            <CalendarPlus className="w-4 h-4 mr-2" />
+                            {language === 'tr' ? 'Manuel Randevu Ekle' : 'Add Appointment'}
+                        </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
+                        <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        {t('refresh') || 'Refresh'}
+                    </Button>
+                </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
-                    <TabsTrigger value="settings">{t('availabilitySettings')}</TabsTrigger>
-                    <TabsTrigger value="integrations">{t('integrations')}</TabsTrigger>
-                </TabsList>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AppointmentTab)} className="space-y-4">
+                {showTabs && (
+                    <TabsList>
+                        <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
+                        <TabsTrigger value="settings">{t('availabilitySettings')}</TabsTrigger>
+                        <TabsTrigger value="integrations">{t('integrations')}</TabsTrigger>
+                    </TabsList>
+                )}
 
                 <TabsContent value="overview" className="space-y-4">
                     <Alert className="flex items-start gap-3">
@@ -371,108 +428,139 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {appointments.map((appt) => (
-                                                <TableRow key={appt.id}>
-                                                    <TableCell>
-                                                        <div>
-                                                            <div className="font-medium">{appt.customerName}</div>
-                                                            {appt.customerEmail && (
-                                                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                                                    <Mail className="w-3 h-3" />{appt.customerEmail}
-                                                                </div>
-                                                            )}
-                                                            {appt.customerPhone && (
-                                                                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                                                    <Phone className="w-3 h-3" />{appt.customerPhone}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <Calendar className="w-4 h-4 text-muted-foreground" />
-                                                            {appt.date && (() => {
-                                                                const dateObj = new Date(appt.date);
-                                                                return !isNaN(dateObj.getTime())
-                                                                    ? format(dateObj, 'dd MMMM yyyy', { locale: language === 'tr' ? tr : enUS })
-                                                                    : appt.date;
-                                                            })()}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                            <Clock className="w-3 h-3" />
-                                                            {appt.time}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>{appt.type}</TableCell>
-                                                    <TableCell>{getSourceBadge(appt.source)}</TableCell>
-                                                    <TableCell>{getStatusBadge(appt.status)}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2 flex-wrap">
-                                                            {appt.status === 'pending' && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                                    onClick={() => updateStatus(appt.id, 'confirmed')}
-                                                                >
-                                                                    {t('apptConfirm')}
-                                                                </Button>
-                                                            )}
-                                                            {appt.status === 'confirmed' && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                                    onClick={() => updateStatus(appt.id, 'completed')}
-                                                                >
-                                                                    {t('apptComplete')}
-                                                                </Button>
-                                                            )}
-                                                            {(appt.status === 'confirmed' || appt.status === 'pending') && appt.date && appt.time && (
-                                                                <div className="relative group">
+                                            {appointments.map((appt) => {
+                                                const googleCalendarLink = appt.date && appt.time
+                                                    ? getGoogleCalendarLink({
+                                                        appointmentId: appt.id,
+                                                        customerName: appt.customerName || "",
+                                                        customerEmail: appt.customerEmail || "",
+                                                        companyName: "",
+                                                        date: appt.date,
+                                                        time: appt.time,
+                                                        notes: appt.notes,
+                                                    })
+                                                    : null
+                                                const outlookCalendarLink = appt.date && appt.time
+                                                    ? getOutlookCalendarLink({
+                                                        appointmentId: appt.id,
+                                                        customerName: appt.customerName || "",
+                                                        customerEmail: appt.customerEmail || "",
+                                                        companyName: "",
+                                                        date: appt.date,
+                                                        time: appt.time,
+                                                        notes: appt.notes,
+                                                    })
+                                                    : null
+                                                const hasCalendarLink = Boolean(googleCalendarLink || outlookCalendarLink)
+
+                                                const appointmentDate = appt.date
+                                                    ? parseAppointmentDate(appt.date)
+                                                    : null
+
+                                                return (
+                                                    <TableRow key={appt.id}>
+                                                        <TableCell>
+                                                            <div>
+                                                                <div className="font-medium">{appt.customerName}</div>
+                                                                {appt.customerEmail && (
+                                                                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                                        <Mail className="w-3 h-3" />{appt.customerEmail}
+                                                                    </div>
+                                                                )}
+                                                                {appt.customerPhone && (
+                                                                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                                                                        <Phone className="w-3 h-3" />{appt.customerPhone}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                                {appointmentDate
+                                                                    ? format(appointmentDate, 'dd MMMM yyyy', { locale: language === 'tr' ? tr : enUS })
+                                                                    : appt.date}
+                                                            </div>
+                                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                                <Clock className="w-3 h-3" />
+                                                                {appt.time}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{appt.type}</TableCell>
+                                                        <TableCell>{getSourceBadge(appt.source)}</TableCell>
+                                                        <TableCell>{getStatusBadge(appt.status)}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2 flex-wrap">
+                                                                {appt.status === 'pending' && (
                                                                     <Button
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        className="text-gray-600 gap-1"
-                                                                        title="Takvime Ekle"
+                                                                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                        onClick={() => updateStatus(appt.id, 'confirmed')}
                                                                     >
-                                                                        <Calendar className="w-3 h-3" />
-                                                                        <ExternalLink className="w-3 h-3" />
+                                                                        {t('apptConfirm')}
                                                                     </Button>
-                                                                    <div className="absolute right-0 top-8 z-10 hidden group-hover:flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1 text-sm">
-                                                                        <a
-                                                                            href={getGoogleCalendarLink({ appointmentId: appt.id, customerName: appt.customerName || '', customerEmail: appt.customerEmail || '', companyName: '', date: appt.date, time: appt.time, notes: appt.notes })}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                                                )}
+                                                                {appt.status === 'confirmed' && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                                        onClick={() => updateStatus(appt.id, 'completed')}
+                                                                    >
+                                                                        {t('apptComplete')}
+                                                                    </Button>
+                                                                )}
+                                                                {(appt.status === 'confirmed' || appt.status === 'pending') && hasCalendarLink && (
+                                                                    <div className="relative group">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="text-gray-600 gap-1"
+                                                                            title="Takvime Ekle"
                                                                         >
-                                                                            📅 Google Calendar
-                                                                        </a>
-                                                                        <a
-                                                                            href={getOutlookCalendarLink({ appointmentId: appt.id, customerName: appt.customerName || '', customerEmail: appt.customerEmail || '', companyName: '', date: appt.date, time: appt.time, notes: appt.notes })}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
-                                                                        >
-                                                                            📅 Outlook
-                                                                        </a>
+                                                                            <Calendar className="w-3 h-3" />
+                                                                            <ExternalLink className="w-3 h-3" />
+                                                                        </Button>
+                                                                        <div className="absolute right-0 top-8 z-10 hidden group-hover:flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px] py-1 text-sm">
+                                                                            {googleCalendarLink && (
+                                                                                <a
+                                                                                    href={googleCalendarLink}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                                                                >
+                                                                                    📅 Google Calendar
+                                                                                </a>
+                                                                            )}
+                                                                            {outlookCalendarLink && (
+                                                                                <a
+                                                                                    href={outlookCalendarLink}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="px-4 py-2 hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                                                                                >
+                                                                                    📅 Outlook
+                                                                                </a>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                            {appt.status !== 'cancelled' && appt.status !== 'completed' && (
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                    onClick={() => updateStatus(appt.id, 'cancelled')}
-                                                                >
-                                                                    {t('apptCancel')}
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
+                                                                )}
+                                                                {appt.status !== 'cancelled' && appt.status !== 'completed' && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                        onClick={() => updateStatus(appt.id, 'cancelled')}
+                                                                    >
+                                                                        {t('apptCancel')}
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
                                         </TableBody>
                                     </Table>
                                 </div>
@@ -535,6 +623,67 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                                     value={settings.appointmentDuration}
                                     onChange={(e) => setSettings({ ...settings, appointmentDuration: parseInt(e.target.value) })}
                                 />
+                            </div>
+
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-medium">
+                                    {language === 'tr' ? 'Randevu Türleri' : 'Appointment Types'}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                    {language === 'tr'
+                                        ? 'Müşterilerin chatbot üzerinden seçebileceği randevu türleri.'
+                                        : 'Appointment types customers can choose when booking via chatbot.'}
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                    {appointmentTypes.map((type) => (
+                                        <div
+                                            key={type}
+                                            className="flex items-center gap-1 px-2.5 py-1 rounded-full border text-sm bg-background"
+                                        >
+                                            <span>{type}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setAppointmentTypes(prev => prev.filter(t => t !== type))}
+                                                className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        value={newTypeName}
+                                        onChange={(e) => setNewTypeName(e.target.value)}
+                                        placeholder={language === 'tr' ? 'Yeni tür adı...' : 'New type name...'}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                const trimmed = newTypeName.trim()
+                                                if (trimmed && !appointmentTypes.includes(trimmed)) {
+                                                    setAppointmentTypes(prev => [...prev, trimmed])
+                                                    setNewTypeName("")
+                                                }
+                                            }
+                                        }}
+                                        className="max-w-xs"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const trimmed = newTypeName.trim()
+                                            if (trimmed && !appointmentTypes.includes(trimmed)) {
+                                                setAppointmentTypes(prev => [...prev, trimmed])
+                                                setNewTypeName("")
+                                            }
+                                        }}
+                                    >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        {language === 'tr' ? 'Ekle' : 'Add'}
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="pt-4">
@@ -643,6 +792,27 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                     </div>
                 </TabsContent>
             </Tabs>
+
+            {effectiveUserId && (
+                <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <CalendarPlus className="h-5 w-5" />
+                                {language === 'tr' ? 'Manuel Randevu Ekle' : 'Add Appointment'}
+                            </DialogTitle>
+                        </DialogHeader>
+                        <ManualAppointmentForm
+                            chatbotId={effectiveUserId}
+                            getAuthHeaders={getAuthHeaders}
+                            onCreated={async () => {
+                                setShowAddModal(false)
+                                await fetchData()
+                            }}
+                        />
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     )
 }

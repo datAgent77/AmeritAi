@@ -3,24 +3,12 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { buildGuidedSkillShortcut, listEnabledGuidedSkills } from "@/lib/guided-skills";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
 import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
+import { resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
+import { resolveQuickActionsConfig } from "@/lib/quick-actions";
+import { getPublishedContract } from "@/lib/contracts";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
-
-function buildDefaultQuickActions(data: Record<string, any>) {
-    const buttons: any[] = []
-    let order = 0
-    if (data.enableAppointments) {
-        buttons.push({ id: 'appointments', label: 'Randevu Al', moduleId: 'appointments', triggerMessage: 'randevu almak istiyorum', visible: true, order: order++ })
-    }
-    if (data.enableHumanHandoff) {
-        buttons.push({ id: 'humanHandoff', label: 'Temsilci İste', moduleId: 'humanHandoff', triggerMessage: 'bir temsilciyle görüşmek istiyorum', visible: true, order: order++ })
-    }
-    if (data.enableLeadCollection) {
-        buttons.push({ id: 'leadCollection', label: 'İletişim Bırak', moduleId: 'leadCollection', triggerMessage: 'iletişim bilgilerimi bırakmak istiyorum', visible: true, order: order++ })
-    }
-    return { enabled: buttons.length > 0, buttons }
-}
 
 function normalizeWebChannelEnabled(config: any) {
     return config?.enabled !== false;
@@ -146,6 +134,9 @@ export async function GET(req: Request) {
                         graphqlOperationAllowlist: Array.isArray(mergedData?.dynamicSiteContextGraphqlOperationAllowlist) ? mergedData.dynamicSiteContextGraphqlOperationAllowlist : [],
                     });
 
+                    const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null);
+                    const kvkkConsent = resolveKvkkConsentPayload({ mergedData, publishedKvkkContract });
+
                     // Return only public settings
                     return NextResponse.json({
                         isEnabled: shouldEnable,
@@ -161,6 +152,9 @@ export async function GET(req: Request) {
                         headerTextColor: mergedData.headerTextColor || "#FFFFFF",
                         suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: mergedData.enableLeadCollection || false,
+                        enableHumanHandoff: mergedData.enableHumanHandoff || false,
+                        enableAppointments: mergedData.enableAppointments || false,
+                        enableKvkkConsent: mergedData.enableKvkkConsent === true,
                         enableGuided: isGuidedEnabled,
                         enableBusinessHours: mergedData.enableBusinessHours || false,
                         timezone: mergedData.timezone || "UTC",
@@ -171,9 +165,7 @@ export async function GET(req: Request) {
                         enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
                         leadFormConfig: mergedData.leadFormConfig || null,
                         leadCustomFields: mergedData.leadCustomFields || [],
-                        quickActions: (mergedData.quickActions && Array.isArray(mergedData.quickActions.buttons) && mergedData.quickActions.buttons.length > 0)
-                            ? mergedData.quickActions
-                            : buildDefaultQuickActions(mergedData),
+                        quickActions: resolveQuickActionsConfig(mergedData),
                         position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
                         viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
                         modalSize: mergedData.modalSize || "half", // 'half' | 'full'
@@ -321,6 +313,7 @@ export async function GET(req: Request) {
                         dynamicSiteContextRuntimePreset: dynamicContextPresetSelection.runtimePreset,
                         guidedSkills,
                         theme: mergedData.theme || "classic",
+                        kvkkConsent,
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
