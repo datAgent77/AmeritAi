@@ -19,7 +19,7 @@ function buildDefaultQuickActions(data: Record<string, any>) {
     if (data.enableLeadCollection) {
         buttons.push({ id: 'leadCollection', label: 'İletişim Bırak', moduleId: 'leadCollection', triggerMessage: 'iletişim bilgilerimi bırakmak istiyorum', visible: true, order: order++ })
     }
-    return { enabled: false, buttons }
+    return { enabled: buttons.length > 0, buttons }
 }
 
 function normalizeWebChannelEnabled(config: any) {

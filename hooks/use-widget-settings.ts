@@ -11,7 +11,7 @@ function buildDefaultQuickActionsFromData(data: Record<string, any>) {
     if (data.enableAppointments) buttons.push({ id: 'appointments', label: 'Randevu Al', moduleId: 'appointments', triggerMessage: 'randevu almak istiyorum', visible: true, order: order++ })
     if (data.enableHumanHandoff) buttons.push({ id: 'humanHandoff', label: 'Temsilci İste', moduleId: 'humanHandoff', triggerMessage: 'bir temsilciyle görüşmek istiyorum', visible: true, order: order++ })
     if (data.enableLeadCollection) buttons.push({ id: 'leadCollection', label: 'İletişim Bırak', moduleId: 'leadCollection', triggerMessage: 'iletişim bilgilerimi bırakmak istiyorum', visible: true, order: order++ })
-    return { enabled: false, buttons }
+    return { enabled: buttons.length > 0, buttons }
 }
 
 export interface WidgetSettings {
