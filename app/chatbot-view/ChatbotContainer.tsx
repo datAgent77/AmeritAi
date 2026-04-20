@@ -462,6 +462,14 @@ export default function ChatbotContainer() {
         window.parent.postMessage({ type: 'USEREX_CLOSE_WIDGET' }, '*')
     }
 
+    const handleTriggerAction = (moduleId: 'appointments' | 'humanHandoff' | 'leadCollection') => {
+        if (moduleId === 'appointments') {
+            setShowBooking(true)
+        } else if (moduleId === 'leadCollection' || moduleId === 'humanHandoff') {
+            setShowLeadCollection(true)
+        }
+    }
+
     const handleClearChat = () => setIsConfirmingClear(true)
 
     const confirmClear = () => {
@@ -930,6 +938,7 @@ export default function ChatbotContainer() {
                         onConversationModeChange={handleConversationModeChange}
                         disabled={requiresKvkkConsent}
                         quickActions={effectiveSettings.quickActions}
+                        onTriggerAction={handleTriggerAction}
                     />
                 </div>
             )}

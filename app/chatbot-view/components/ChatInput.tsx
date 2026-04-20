@@ -41,6 +41,7 @@ interface ChatInputProps {
     onConversationModeChange?: (mode: ConversationMode) => void
     disabled?: boolean
     quickActions?: { enabled: boolean; buttons: QuickActionButton[] }
+    onTriggerAction?: (moduleId: QuickActionButton['moduleId']) => void
 }
 
 export function ChatInput({
@@ -63,6 +64,7 @@ export function ChatInput({
     onConversationModeChange,
     disabled = false,
     quickActions,
+    onTriggerAction,
 }: ChatInputProps) {
     const {
         selectedImage,
@@ -370,7 +372,7 @@ export function ChatInput({
                                     <button
                                         key={btn.id}
                                         type="button"
-                                        onClick={() => sendMessage(btn.triggerMessage)}
+                                        onClick={() => onTriggerAction ? onTriggerAction(btn.moduleId) : sendMessage(btn.triggerMessage)}
                                         disabled={isChatLoading || disabled}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-all hover:shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                                         style={{

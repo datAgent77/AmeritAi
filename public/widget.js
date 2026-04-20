@@ -4248,6 +4248,8 @@
               borderRadius: '0',
               transform: 'none'
             });
+            // Hide launcher in fullscreen — widget header has its own close button
+            launcherContainer.style.display = 'none';
           } else {
             // Revert to Half/Wide
             Object.assign(iframeContainer.style, {
@@ -4260,6 +4262,8 @@
               maxHeight: '90vh', // Increased from 80vh
               borderRadius: '24px'
             });
+            // Restore launcher visibility when exiting fullscreen
+            applyOpenLauncherPosition();
           }
         }
       }
