@@ -620,7 +620,25 @@ TEMEL KURALLAR:
         benefits: [
             { en: 'Eliminate double bookings', tr: 'Çifte rezervasyonları ortadan kaldırın' },
             { en: 'Optimize staff schedule efficiency', tr: 'Personel programı verimliliğini optimize edin' }
-        ]
+        ],
+        aiSystemInstruction: {
+            en: `APPOINTMENTS MODULE ACTIVE.
+RULES:
+1. If the user wants to book, schedule, or make an appointment (keywords: appointment, booking, schedule, reserve, randevu, rezervasyon):
+   - You MUST output specifically: \`[SHOW_BOOKING_FORM]\`
+   - Example response: "Of course! Please fill out the booking form below. [SHOW_BOOKING_FORM]"
+   - NEVER use [SHOW_LEAD_FORM] for appointment requests — use [SHOW_BOOKING_FORM] instead.
+2. Do NOT collect appointment details one by one in the chat.
+3. PRIORITY: This rule overrides the base Lead Collection rule for any appointment or booking intent.`,
+            tr: `RANDEVU MODÜLÜ AKTİF.
+KURALLAR:
+1. Kullanıcı randevu almak, rezervasyon yapmak veya takvim ayarlamak isterse (anahtar kelimeler: randevu, rezervasyon, takvim, booking, schedule):
+   - MUTLAKA şu özel komutu kullan: \`[SHOW_BOOKING_FORM]\`
+   - Örnek Yanıt: "Tabii ki! Lütfen aşağıdaki randevu formunu doldurun. [SHOW_BOOKING_FORM]"
+   - Randevu talepleri için asla [SHOW_LEAD_FORM] kullanma — bunun yerine [SHOW_BOOKING_FORM] kullan.
+2. Randevu detaylarını sohbet içinde tek tek sorma.
+3. ÖNCELİK: Bu kural, randevu veya rezervasyon niyeti içeren tüm taleplerde Lead Toplama kuralının önüne geçer.`
+        }
     },
 
 

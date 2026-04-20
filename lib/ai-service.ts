@@ -661,6 +661,7 @@ The information provided in the KNOWLEDGE BASE CONTEXT is the **absolute truth**
 
 6. **LEAD COLLECTION**:
    - If the user wants to be contacted, asks for a callback, or if you need to capture their generic contact details (Name, Email, Phone):
+   - **EXCEPTION**: If the user is specifically requesting an appointment or booking, use \`[SHOW_BOOKING_FORM]\` instead (if the Appointments module is active).
    - **DO NOT** ask for them in the chat one by one.
    - **DO NOT** ask them to type it in the chat.
    - **MUST** output specifically: \`[SHOW_LEAD_FORM]\`
@@ -1096,6 +1097,28 @@ VOICE-SAFE RULES:
         if (activeModuleInstructions.length > 0) {
             systemPrompt += `\n\n# ACTIVE MODULE CAPABILITIES\n${activeModuleInstructions.join('\n')}`;
             console.log("AI Service: Active module instructions count:", activeModuleInstructions.length);
+        }
+
+        // Inject conflict resolution when overlapping action modules are both active
+        const appointmentsActive = chatbotData?.enableAppointments === true;
+        const leadCollectionActive = chatbotData?.enableLeadCollection === true;
+        const handoffActive = chatbotData?.enableHumanHandoff === true;
+        const conflictingCount = [appointmentsActive, leadCollectionActive, handoffActive].filter(Boolean).length;
+        if (conflictingCount > 1) {
+            const langKey = resolvedLanguage === 'tr' ? 'tr' : 'en';
+            systemPrompt += langKey === 'tr'
+                ? `\n\n# MODÜL ÖNCELİK KURALLARI (çakışma çözümü)
+Birden fazla aksiyon modülü aktif. Kullanıcı niyetine göre SADECE BİR modül tetikle:
+- Kullanıcı randevu / rezervasyon / takvim istiyorsa → \`[SHOW_BOOKING_FORM]\` (Randevular modülü)
+- Kullanıcı açıkça temsilci / canlı destek / callback istiyorsa → Handoff akışı (Temsilci Aktarma modülü)
+- Kullanıcı genel iletişim bilgisi bırakmak / lead kayıt / teklif istiyorsa → \`[SHOW_LEAD_FORM]\` (Lead Toplama modülü)
+Niyetler çakışırsa öncelik sırası: Randevular > Temsilci Aktarma > Lead Toplama`
+                : `\n\n# MODULE PRIORITY RULES (conflict resolution)
+Multiple action modules are active. Trigger ONLY ONE module based on user intent:
+- User wants an appointment / booking / scheduling → \`[SHOW_BOOKING_FORM]\` (Appointments module)
+- User explicitly requests a human agent / live support / callback → Handoff flow (Human Handoff module)
+- User wants generic contact capture / lead registration / quote → \`[SHOW_LEAD_FORM]\` (Lead Collection module)
+When intents overlap, priority order: Appointments > Human Handoff > Lead Collection`;
         }
 
         if (isVoice) {
