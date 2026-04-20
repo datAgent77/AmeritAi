@@ -143,6 +143,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     }
 
     return (
+        <>
         <div className="p-8 space-y-8">
             <div className="flex justify-between items-center">
                 <div>
@@ -300,5 +301,6 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     )
 }
