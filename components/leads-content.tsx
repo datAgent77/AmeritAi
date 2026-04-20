@@ -5,8 +5,9 @@ import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Download, User, Mail, Phone, Calendar, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, Download, User, Mail, Phone, ChevronDown, ChevronUp, MessageSquare, X, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import * as XLSX from 'xlsx';
 
 interface Lead {
@@ -16,7 +17,14 @@ interface Lead {
     phone: string
     source: string
     createdAt: string
+    sessionId?: string | null
     customFields?: Record<string, string>
+}
+
+interface ChatMessage {
+    role: 'user' | 'assistant'
+    content: string
+    createdAt?: string | null
 }
 
 interface LeadsContentProps {
@@ -30,6 +38,9 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     const [isLoading, setIsLoading] = useState(true)
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
     const [fieldLabels, setFieldLabels] = useState<Record<string, string>>({})
+    const [conversationLead, setConversationLead] = useState<Lead | null>(null)
+    const [conversationMessages, setConversationMessages] = useState<ChatMessage[]>([])
+    const [isLoadingConversation, setIsLoadingConversation] = useState(false)
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
@@ -77,6 +88,24 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
             }
             return newSet
         })
+    }
+
+    const openConversation = async (lead: Lead) => {
+        if (!lead.sessionId) return
+        setConversationLead(lead)
+        setConversationMessages([])
+        setIsLoadingConversation(true)
+        try {
+            const res = await fetch(`/api/chat-sessions?chatbotId=${effectiveUserId}&sessionId=${lead.sessionId}`)
+            if (res.ok) {
+                const data = await res.json()
+                setConversationMessages(data.messages || [])
+            }
+        } catch (_) {
+            // ignore
+        } finally {
+            setIsLoadingConversation(false)
+        }
     }
 
     const exportToExcel = () => {
@@ -150,6 +179,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                     <TableHead>{t('phone')}</TableHead>
                                     <TableHead>{t('source')}</TableHead>
                                     <TableHead className="text-right">{t('date')}</TableHead>
+                                    <TableHead className="w-10"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -187,6 +217,17 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                             <TableCell className="text-right text-muted-foreground text-xs">
                                                 {new Date(lead.createdAt).toLocaleString()}
                                             </TableCell>
+                                            <TableCell onClick={(e) => e.stopPropagation()}>
+                                                {lead.sessionId && (
+                                                    <button
+                                                        onClick={() => openConversation(lead)}
+                                                        className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                                                        title="Konuşmayı Görüntüle"
+                                                    >
+                                                        <MessageSquare className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                                    </button>
+                                                )}
+                                            </TableCell>
                                         </TableRow>
                                         {expandedRows.has(lead.id) && lead.customFields && Object.keys(lead.customFields).length > 0 && (
                                             <TableRow className="bg-muted/30">
@@ -212,5 +253,52 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                 </CardContent>
             </Card>
         </div>
+
+        <Dialog open={!!conversationLead} onOpenChange={(open) => !open && setConversationLead(null)}>
+            <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        {conversationLead?.name} — Sohbet Geçmişi
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                    {isLoadingConversation ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : conversationMessages.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-8">Mesaj bulunamadı.</p>
+                    ) : (
+                        conversationMessages.map((msg, i) => (
+                            <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {msg.role === 'assistant' && (
+                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                                        <Bot className="h-3 w-3 text-primary" />
+                                    </div>
+                                )}
+                                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
+                                    msg.role === 'user'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-foreground'
+                                }`}>
+                                    {msg.content}
+                                    {msg.createdAt && (
+                                        <div className="text-[10px] opacity-60 mt-1">
+                                            {new Date(msg.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    )}
+                                </div>
+                                {msg.role === 'user' && (
+                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+                                        <User className="h-3 w-3 text-muted-foreground" />
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }

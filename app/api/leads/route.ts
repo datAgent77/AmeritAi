@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { chatbotId, name, email, phone, source, customFields } = body;
+        const { chatbotId, name, email, phone, source, customFields, sessionId } = body;
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
@@ -28,6 +28,7 @@ export async function POST(req: Request) {
             phone: phone || "",
             source: source || "Pre-chat Form",
             customFields: customFields || {},
+            sessionId: sessionId || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 

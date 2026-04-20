@@ -47,12 +47,26 @@ export async function GET(req: Request) {
 
         const { searchParams } = new URL(req.url);
         const chatbotId = searchParams.get("chatbotId");
+        const sessionId = searchParams.get("sessionId");
         const limitParam = searchParams.get("limit");
         const parsedLimit = limitParam ? parseInt(limitParam, 10) : 50;
         const sessionLimit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 200) : 50;
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
+        }
+
+        // Single session fetch (for lead conversation view)
+        if (sessionId) {
+            const authz = await authorizeTargetAccess(req, chatbotId);
+            if (!authz.ok) return authz.response;
+            const snap = await adminDb.collection("chat_sessions").doc(sessionId).get();
+            if (!snap.exists || snap.data()?.chatbotId !== chatbotId) {
+                return NextResponse.json({ error: "Session not found" }, { status: 404 });
+            }
+            const data = snap.data()!;
+            const messages = (Array.isArray(data.messages) ? data.messages : []).map(normalizeMessage);
+            return NextResponse.json({ messages });
         }
 
         const authz = await authorizeTargetAccess(req, chatbotId);
