@@ -73,6 +73,8 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     headerTextColor: "",
     suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
     enableLeadCollection: false,
+    enableHumanHandoff: false,
+    enableKvkkConsent: false,
     enableGuided: false,
     kvkkConsent: {
         enabled: false,
@@ -96,6 +98,7 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
             messages: []
         }
     },
+    enableProactiveMessaging: false,
     enableAppointments: false,
     appointmentTypes: [],
     appointmentSuccessMessage: "",
@@ -104,6 +107,8 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     preferredVoice: "",
     enablePersonalShopper: false,
     enableVisualDiagnosis: false,
+    enableDigitalWaiter: false,
+    digitalWaiter: null,
     leadCustomFields: [],
     salesOptimizationConfig: {
         enabled: false,
@@ -218,6 +223,8 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
+                        enableHumanHandoff: data.enableHumanHandoff === true,
+                        enableKvkkConsent: data.enableKvkkConsent === true,
                         enableGuided: data.enableGuided === true,
                         kvkkConsent: typeof data.kvkkConsent === "object" && data.kvkkConsent
                             ? {
@@ -243,6 +250,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         enableIndustryGreeting: data.enableIndustryGreeting !== undefined ? data.enableIndustryGreeting : false,
                         initialLanguage: data.initialLanguage || "auto",
                         engagement: data.engagement || { enabled: false, bubble: { messages: [] } },
+                        enableProactiveMessaging: data.enableProactiveMessaging === true,
                         enableAppointments: data.enableAppointments || false,
                         appointmentTypes: data.appointmentTypes || ["Consultation", "Support", "Demo"],
                         appointmentSuccessMessage: data.appointmentSuccessMessage || "Randevunuz başarıyla oluşturuldu! Sizinle en kısa sürede iletişime geçeceğiz.",
@@ -251,6 +259,8 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         preferredVoice: typeof data.preferredVoice === "string" ? data.preferredVoice : "",
                         enablePersonalShopper: data.enablePersonalShopper || false,
                         enableVisualDiagnosis: data.enableVisualDiagnosis || false,
+                        enableDigitalWaiter: data.enableDigitalWaiter === true || data.digitalWaiter != null,
+                        digitalWaiter: data.digitalWaiter || null,
                         leadCustomFields: data.leadCustomFields || [],
                         salesOptimizationConfig: data.salesOptimizationConfig || {},
                         launcherIcon: data.launcherIcon || "library",

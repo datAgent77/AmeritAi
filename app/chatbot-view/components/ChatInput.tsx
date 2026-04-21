@@ -1,8 +1,9 @@
 import React from "react"
 import { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
+import { getQuickActionDefinition } from "@/lib/quick-actions"
 import * as LucideIcons from "lucide-react"
-import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle, Calendar, Users, FileText } from "lucide-react"
+import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
@@ -13,6 +14,8 @@ import { ConversationModeSwitch, type ConversationMode } from "./ConversationMod
 
 type AmbientIconComponent = React.ComponentType<{ className?: string; color?: string }>
 const ambientIconRegistry = LucideIcons as unknown as Record<string, AmbientIconComponent>
+type QuickActionIconComponent = React.ComponentType<{ className?: string }>
+const quickActionIconRegistry = LucideIcons as unknown as Record<string, QuickActionIconComponent>
 
 interface ChatInputProps {
     settings: ChatbotSettings
@@ -365,9 +368,8 @@ export function ChatInput({
                             .filter(b => b.visible)
                             .sort((a, b) => a.order - b.order)
                             .map(btn => {
-                                const Icon = btn.moduleId === 'appointments' ? Calendar
-                                    : btn.moduleId === 'humanHandoff' ? Users
-                                    : FileText
+                                const iconName = getQuickActionDefinition(btn.moduleId).iconName
+                                const Icon = quickActionIconRegistry[iconName] || MessageCircle
                                 return (
                                     <button
                                         key={btn.id}

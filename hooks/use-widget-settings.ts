@@ -3,7 +3,7 @@ import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
-import { resolveQuickActionsConfig } from "@/lib/quick-actions"
+import { areQuickActionsEqual, resolveQuickActionsConfig } from "@/lib/quick-actions"
 import type { AmbientDeviceAppearanceSettings, ClassicDeviceAppearanceSettings } from "@/types/chatbot"
 
 export interface WidgetSettings {
@@ -20,6 +20,13 @@ export interface WidgetSettings {
     headerTextColor: string
     suggestedQuestions: string[]
     enableLeadCollection: boolean
+    enableHumanHandoff: boolean
+    enableKvkkConsent: boolean
+    enableAppointments: boolean
+    enableVisualDiagnosis: boolean
+    enableProactiveMessaging: boolean
+    enableDigitalWaiter: boolean
+    digitalWaiter: Record<string, any> | null
     enableBusinessHours: boolean
     timezone: string
     businessHoursStart: string
@@ -146,6 +153,13 @@ const defaultSettings: WidgetSettings = {
     headerTextColor: "#FFFFFF",
     suggestedQuestions: ["Fiyatlandırma planlarınız neler?", "Nasıl başlayabilirim?", "Destek ile iletişime geç"],
     enableLeadCollection: false,
+    enableHumanHandoff: false,
+    enableKvkkConsent: false,
+    enableAppointments: false,
+    enableVisualDiagnosis: false,
+    enableProactiveMessaging: false,
+    enableDigitalWaiter: false,
+    digitalWaiter: null,
     enableBusinessHours: false,
     timezone: "UTC",
     businessHoursStart: "09:00",
@@ -276,6 +290,13 @@ export function useWidgetSettings(userId?: string) {
                         headerTextColor: data.headerTextColor || prev.headerTextColor,
                         suggestedQuestions: data.suggestedQuestions || prev.suggestedQuestions,
                         enableLeadCollection: data.enableLeadCollection !== undefined ? data.enableLeadCollection : prev.enableLeadCollection,
+                        enableHumanHandoff: data.enableHumanHandoff !== undefined ? data.enableHumanHandoff : prev.enableHumanHandoff,
+                        enableKvkkConsent: data.enableKvkkConsent !== undefined ? data.enableKvkkConsent : prev.enableKvkkConsent,
+                        enableAppointments: data.enableAppointments !== undefined ? data.enableAppointments : prev.enableAppointments,
+                        enableVisualDiagnosis: data.enableVisualDiagnosis !== undefined ? data.enableVisualDiagnosis : prev.enableVisualDiagnosis,
+                        enableProactiveMessaging: data.enableProactiveMessaging !== undefined ? data.enableProactiveMessaging : prev.enableProactiveMessaging,
+                        enableDigitalWaiter: data.enableDigitalWaiter === true || data.digitalWaiter != null,
+                        digitalWaiter: data.digitalWaiter ?? prev.digitalWaiter,
                         enableBusinessHours: data.enableBusinessHours !== undefined ? data.enableBusinessHours : prev.enableBusinessHours,
                         timezone: data.timezone || prev.timezone,
                         businessHoursStart: data.businessHoursStart || prev.businessHoursStart,
@@ -413,6 +434,30 @@ export function useWidgetSettings(userId?: string) {
         fetchSettings()
     }, [effectiveUserId])
 
+
+    useEffect(() => {
+        setSettings((prev) => {
+            const nextQuickActions = resolveQuickActionsConfig(prev as unknown as Record<string, any>)
+            if (areQuickActionsEqual(prev.quickActions, nextQuickActions)) {
+                return prev
+            }
+
+            return {
+                ...prev,
+                quickActions: nextQuickActions,
+            }
+        })
+    }, [
+        settings.enableAppointments,
+        settings.enableHumanHandoff,
+        settings.enableLeadCollection,
+        settings.enableVisualDiagnosis,
+        settings.enableKvkkConsent,
+        settings.enableProactiveMessaging,
+        settings.enableDigitalWaiter,
+        settings.digitalWaiter,
+        settings.quickActions,
+    ])
 
     const saveSettings = async () => {
         if (!effectiveUserId || !user) return
