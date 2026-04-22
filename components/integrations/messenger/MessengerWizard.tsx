@@ -318,6 +318,8 @@ export function MessengerWizard({ chatbotId }: { chatbotId: string }) {
         (status.config.state === "needs_user_action" || status.config.state === "failed") &&
         (recoveryChecklist.length > 0 || Boolean(status.config.accessTokenRef || status.config.pageId))
     const canResetConnection = Boolean(status.config.accessTokenRef || status.config.pageId)
+    const messengerOAuthRedirectUri =
+        typeof window !== "undefined" ? `${window.location.origin}/api/integrations/messenger/callback` : "/api/integrations/messenger/callback"
 
     return (
         <Card className="overflow-hidden border-border/70 bg-white">
@@ -383,6 +385,17 @@ export function MessengerWizard({ chatbotId }: { chatbotId: string }) {
                             <p className="text-xs text-muted-foreground">
                                 Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
                             </p>
+                            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-950">
+                                <p className="font-medium">OAuth yönlendirme notu</p>
+                                <p className="mt-1 text-amber-900">
+                                    Kendi Meta App bilginizi kullanıyorsanız `Facebook Login &gt; Settings &gt; Valid OAuth Redirect URIs`
+                                    alanına aşağıdaki adresi birebir ekleyin. Messenger kurulumu bu özel callback adresini kullanır;
+                                    `/api/integrations/meta/callback` bu akış için geçerli değildir.
+                                </p>
+                                <code className="mt-2 block rounded border border-amber-200 bg-white px-2 py-1.5 font-mono text-[11px] text-amber-950">
+                                    {messengerOAuthRedirectUri}
+                                </code>
+                            </div>
                         </div>
                     </div>
                 ) : null}
