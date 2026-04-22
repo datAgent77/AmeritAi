@@ -6,7 +6,16 @@ import { normalizeGuidedSkillState } from "@/lib/guided-skills";
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine";
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types";
 import { getPublishedContract } from "@/lib/contracts";
-import { getHumanHandoffAssistantMessage, isExplicitHumanHandoffRequest, resolveHumanHandoffNotificationEmail, resolveHumanHandoffSettings } from "@/lib/human-handoff";
+import {
+    getHumanHandoffAssistantMessage,
+    getHumanHandoffContactPromptMessage,
+    getHumanHandoffOutsideBusinessHoursMessage,
+    getHumanHandoffUnavailableMessage,
+    isExplicitHumanHandoffRequest,
+    isHumanHandoffWithinBusinessHours,
+    resolveHumanHandoffNotificationEmail,
+    resolveHumanHandoffSettings,
+} from "@/lib/human-handoff";
 import { createAndNotifyHumanHandoff } from "@/lib/human-handoff-server";
 import { isKvkkConsentSatisfied, resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
 import { trackAiUsage } from "@/lib/usage-tracker";
@@ -649,46 +658,66 @@ export async function POST(req: Request) {
         await userMessageSavePromise;
 
         if (lastMessage.role === "user" && userContent) {
-            if (
-                humanHandoffSettings.enabled &&
-                humanHandoffSettings.triggerOnUserRequest
-            ) {
-                const explicitHandoffRequest = isExplicitHumanHandoffRequest(userContent);
-                const shouldProcessHandoff = explicitHandoffRequest || hasPendingHumanHandoff;
-                const hasContactInfo = Boolean(syncedIdentity?.identity?.email || syncedIdentity?.identity?.phone);
+            const explicitHandoffRequest = isExplicitHumanHandoffRequest(userContent);
+            const shouldProcessHandoff = explicitHandoffRequest || hasPendingHumanHandoff;
+            const canStartExplicitHandoff = humanHandoffSettings.enabled && humanHandoffSettings.triggerOnUserRequest;
 
-                if (shouldProcessHandoff && !hasContactInfo) {
+            if (explicitHandoffRequest && !hasPendingHumanHandoff && !canStartExplicitHandoff) {
+                const assistantContent = getHumanHandoffUnavailableMessage(resolvedLanguage);
+                const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-unavailable-${Date.now()}`;
 
-                    const notificationEmail = resolveHumanHandoffNotificationEmail({
-                        settings: humanHandoffSettings,
-                        mergedData: mergedTenantData,
-                        omniChannelConfig,
-                    });
+                await saveMessageToSession(activeSessionId, chatbotId, {
+                    id: handoffAssistantMessageId,
+                    role: "assistant",
+                    content: assistantContent,
+                }, userId);
 
-                    await createAndNotifyHumanHandoff({
-                        adminDb,
+                return NextResponse.json({
+                    content: assistantContent,
+                    assistantMessageId: handoffAssistantMessageId,
+                    sessionId: activeSessionId,
+                    handoffRequested: false,
+                });
+            }
+
+            if (shouldProcessHandoff) {
+                const extractedLeadData = extractLeadData(normalizedMessages);
+                const resolvedEmail = extractedLeadData.email || syncedIdentity?.identity?.email || "";
+                const resolvedPhone = extractedLeadData.phone || syncedIdentity?.identity?.phone || "";
+                const resolvedName = extractedLeadData.name || syncedIdentity?.identity?.name || null;
+                let canonicalContactId = syncedIdentity?.contact?.id || null;
+                let contactKey = syncedIdentity?.contact?.contactKey || resolvedPhone || resolvedEmail || activeSessionId;
+
+                if ((resolvedEmail || resolvedPhone) && adminDb) {
+                    const contact = await upsertContactGraph(adminDb, {
                         chatbotId,
-                        sessionId: activeSessionId,
-                        sourceChannel: "web",
-                        contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                        canonicalContactId: syncedIdentity?.contact?.id || null,
-                        displayName: syncedIdentity?.identity?.name || null,
-                        triggerSource: "user_request",
-                        userText: userContent,
-                        companyName: mergedTenantData.companyName || "Vion AI",
-                        notificationEmail,
-                        settings: humanHandoffSettings,
+                        channel: "web",
+                        canonicalContactId,
+                        contactKey,
+                        displayName: resolvedName,
+                        verifiedPhone: resolvedPhone || null,
+                        email: resolvedEmail || null,
+                        aliases: syncedIdentity?.identity?.aliases || [],
+                        notes: "Updated during web human handoff capture.",
                     });
 
+                    canonicalContactId = contact.id || canonicalContactId;
+                    contactKey = contact.contactKey || contactKey;
+                }
+
+                const hasContactInfo = Boolean(resolvedEmail || resolvedPhone);
+                const withinBusinessHours = isHumanHandoffWithinBusinessHours(humanHandoffSettings);
+
+                if (!hasContactInfo) {
                     await updateSessionHandoffState(adminDb, activeSessionId, {
                         humanHandoffPending: true,
                         humanHandoffPendingAt: new Date().toISOString(),
                         humanHandoffPendingReason: "human_handoff_requested",
                     });
 
-                    const assistantContent = getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage);
+                    const assistantContent = getHumanHandoffContactPromptMessage(resolvedLanguage, humanHandoffSettings);
+                    const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-form-${Date.now()}`;
 
-                    const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-${Date.now()}`;
                     await saveMessageToSession(activeSessionId, chatbotId, {
                         id: handoffAssistantMessageId,
                         role: "assistant",
@@ -699,56 +728,55 @@ export async function POST(req: Request) {
                         content: assistantContent,
                         assistantMessageId: handoffAssistantMessageId,
                         sessionId: activeSessionId,
-                        handoffRequested: true,
+                        handoffRequested: false,
                     });
                 }
 
-                if (shouldProcessHandoff && hasContactInfo) {
-                    const notificationEmail = resolveHumanHandoffNotificationEmail({
-                        settings: humanHandoffSettings,
-                        mergedData: mergedTenantData,
-                        omniChannelConfig,
-                    });
-                    const assistantContent = getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage);
+                const notificationEmail = resolveHumanHandoffNotificationEmail({
+                    settings: humanHandoffSettings,
+                    mergedData: mergedTenantData,
+                    omniChannelConfig,
+                });
+                const assistantContent = withinBusinessHours
+                    ? getHumanHandoffAssistantMessage(resolvedLanguage, humanHandoffSettings.customWaitMessage)
+                    : getHumanHandoffOutsideBusinessHoursMessage(resolvedLanguage, humanHandoffSettings);
 
+                const callbackOutcome = await createAndNotifyHumanHandoff({
+                    adminDb,
+                    chatbotId,
+                    sessionId: activeSessionId,
+                    sourceChannel: "web",
+                    contactKey,
+                    canonicalContactId,
+                    displayName: resolvedName,
+                    triggerSource: "user_request",
+                    userText: userContent,
+                    companyName: mergedTenantData.companyName || "Vion AI",
+                    notificationEmail,
+                    settings: humanHandoffSettings,
+                });
 
-                    const callbackOutcome = await createAndNotifyHumanHandoff({
-                        adminDb,
-                        chatbotId,
-                        sessionId: activeSessionId,
-                        sourceChannel: "web",
-                        contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                        canonicalContactId: syncedIdentity?.contact?.id || null,
-                        displayName: syncedIdentity?.identity?.name || null,
-                        triggerSource: "user_request",
-                        userText: userContent,
-                        companyName: mergedTenantData.companyName || "Vion AI",
-                        notificationEmail,
-                        settings: humanHandoffSettings,
-                    });
+                await updateSessionHandoffState(adminDb, activeSessionId, {
+                    humanHandoffPending: false,
+                    humanHandoffPendingAt: null,
+                    humanHandoffPendingReason: null,
+                    humanHandoffCompletedAt: new Date().toISOString(),
+                });
 
-                    await updateSessionHandoffState(adminDb, activeSessionId, {
-                        humanHandoffPending: false,
-                        humanHandoffPendingAt: null,
-                        humanHandoffPendingReason: null,
-                        humanHandoffCompletedAt: new Date().toISOString(),
-                    });
+                const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-${Date.now()}`;
+                await saveMessageToSession(activeSessionId, chatbotId, {
+                    id: handoffAssistantMessageId,
+                    role: "assistant",
+                    content: assistantContent,
+                }, userId);
 
-                    const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-${Date.now()}`;
-                    await saveMessageToSession(activeSessionId, chatbotId, {
-                        id: handoffAssistantMessageId,
-                        role: "assistant",
-                        content: assistantContent,
-                    }, userId);
-
-                    return NextResponse.json({
-                        content: assistantContent,
-                        assistantMessageId: handoffAssistantMessageId,
-                        sessionId: activeSessionId,
-                        handoffRequested: true,
-                        callbackId: callbackOutcome.callback.id || activeSessionId,
-                    });
-                }
+                return NextResponse.json({
+                    content: assistantContent,
+                    assistantMessageId: handoffAssistantMessageId,
+                    sessionId: activeSessionId,
+                    handoffRequested: true,
+                    callbackId: callbackOutcome.callback.id || activeSessionId,
+                });
             }
 
             const guidedResult = await resolveGuidedSkillTurn({

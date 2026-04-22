@@ -28,6 +28,7 @@ import { SpinWheelOverlay } from "./components/SpinWheelOverlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
+import { getHumanHandoffContactPromptMessage, getHumanHandoffUnavailableMessage } from "@/lib/human-handoff"
 import { resolveQuickActionRuntimeAction } from "@/lib/quick-action-runtime"
 
 type LeadSubmitOptions = {
@@ -504,6 +505,47 @@ export default function ChatbotContainer() {
 
         if (action.type === "open-kvkk-modal") {
             setIsKvkkModalOpen(true)
+            return
+        }
+
+        if (button.moduleId === "humanHandoff") {
+            const canRequestHumanHandoff = settings.enableHumanHandoff
+                && settings.humanHandoffSettings?.triggerOnUserRequest !== false
+
+            if (!canRequestHumanHandoff) {
+                setMessages((prev: any[]) => [...prev, {
+                    id: `quick_action_handoff_disabled_${Date.now()}`,
+                    role: "assistant",
+                    content: getHumanHandoffUnavailableMessage(language),
+                    createdAt: new Date(),
+                }])
+                return
+            }
+
+            setLeadCollectionFlow("handoff")
+            setMessages((prev: any[]) => [...prev, {
+                id: `quick_action_handoff_${Date.now()}`,
+                role: "assistant",
+                content: getHumanHandoffContactPromptMessage(language, {
+                    enabled: settings.enableHumanHandoff === true,
+                    notificationEmail: "",
+                    notifyEmail: false,
+                    notifyInApp: false,
+                    triggerOnUserRequest: settings.humanHandoffSettings?.triggerOnUserRequest !== false,
+                    triggerOnAssistantHandoff: true,
+                    customWaitMessage: "",
+                    notifyWhatsApp: false,
+                    whatsappNumber: "",
+                    notifyInstagram: false,
+                    instagramAccountId: "",
+                    businessHoursEnabled: settings.humanHandoffSettings?.businessHoursEnabled === true,
+                    businessHoursStart: settings.humanHandoffSettings?.businessHoursStart || "09:00",
+                    businessHoursEnd: settings.humanHandoffSettings?.businessHoursEnd || "18:00",
+                    businessHoursTimezone: settings.humanHandoffSettings?.businessHoursTimezone || settings.timezone || "UTC",
+                    businessDays: settings.humanHandoffSettings?.businessDays || ["Mon", "Tue", "Wed", "Thu", "Fri"],
+                }),
+                createdAt: new Date(),
+            }])
             return
         }
 

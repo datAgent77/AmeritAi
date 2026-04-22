@@ -28,6 +28,7 @@ import { getGoogleCalendarLink, getOutlookCalendarLink } from "@/lib/ical-genera
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ManualAppointmentForm } from "@/components/appointments/manual-appointment-form"
+import { cn } from "@/lib/utils"
 
 interface Appointment {
     id: string
@@ -104,15 +105,18 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
     const effectiveUserId = targetUserId || user?.uid
 
     const showTabs = Boolean(searchParams?.get("tab"))
+    const highlightedAppointmentId = searchParams?.get("appointmentId")
 
     useEffect(() => {
         const requestedTab = searchParams?.get("tab")
-        if (requestedTab === "overview" || requestedTab === "settings" || requestedTab === "integrations") {
+        if (highlightedAppointmentId) {
+            setActiveTab("overview")
+        } else if (requestedTab === "overview" || requestedTab === "settings" || requestedTab === "integrations") {
             setActiveTab(requestedTab)
         } else {
             setActiveTab("overview")
         }
-    }, [searchParams])
+    }, [highlightedAppointmentId, searchParams])
 
     const getAuthHeaders = useCallback(async (withContentType: boolean = false): Promise<Record<string, string>> => {
         if (!user) {
@@ -171,6 +175,15 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    useEffect(() => {
+        if (!highlightedAppointmentId || isLoading) return
+
+        const row = document.getElementById(`appointment-row-${highlightedAppointmentId}`)
+        if (row) {
+            row.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+    }, [appointments.length, highlightedAppointmentId, isLoading])
 
     const updateStatus = async (id: string, newStatus: Appointment['status']) => {
         if (!user) return
@@ -458,7 +471,11 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
                                                     : null
 
                                                 return (
-                                                    <TableRow key={appt.id}>
+                                                    <TableRow
+                                                        key={appt.id}
+                                                        id={`appointment-row-${appt.id}`}
+                                                        className={cn(highlightedAppointmentId === appt.id && "bg-primary/5")}
+                                                    >
                                                         <TableCell>
                                                             <div>
                                                                 <div className="font-medium">{appt.customerName}</div>

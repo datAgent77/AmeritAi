@@ -2,6 +2,7 @@ import { ChatbotSettings } from "@/types/chatbot"
 import { User, Mail, Phone, Send, FileText, AlignLeft, Hash, List, Building2, Link2 } from "lucide-react"
 import { useState } from "react"
 import React from 'react';
+import { useLanguage } from "@/context/LanguageContext"
 
 interface InlineLeadFormProps {
     onSubmit: (data: any, options?: { source?: "inline" | "overlay"; flow?: "lead" | "handoff" }) => Promise<void>
@@ -11,9 +12,22 @@ interface InlineLeadFormProps {
 }
 
 export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: InlineLeadFormProps) {
+    const { language } = useLanguage()
     const isHandoff = variant === "handoff"
-    const config = settings.leadFormConfig || {}
-    const customFields = settings.leadCustomFields || []
+    const defaultHandoffConfig = {
+        nameEnabled: true,
+        emailEnabled: true,
+        phoneEnabled: true,
+        nameRequired: true,
+        emailRequired: false,
+        phoneRequired: false,
+        namePlaceholder: language === "tr" ? "Ad Soyad" : "Full Name",
+        emailPlaceholder: language === "tr" ? "E-posta" : "Email",
+        phonePlaceholder: language === "tr" ? "Telefon" : "Phone",
+    }
+    const config = isHandoff ? defaultHandoffConfig : (settings.leadFormConfig || {})
+    const customFields = isHandoff ? [] : (settings.leadCustomFields || [])
+    const [errorMessage, setErrorMessage] = useState("")
 
     const [formData, setFormData] = useState<Record<string, string>>(() => {
         // Initialize state including custom fields
@@ -48,12 +62,52 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setStatus('submitting')
+        setErrorMessage("")
+
+        const name = String(formData.name || "").trim()
+        const email = String(formData.email || "").trim()
+        const phone = String(formData.phone || "").trim()
+        const phoneDigits = phone.replace(/\D/g, '')
+
+        if (isHandoff) {
+            if (!name) {
+                setErrorMessage(language === "tr" ? "Ad soyad gerekli." : "Full name is required.")
+                setStatus('idle')
+                return
+            }
+
+            if (!email && !phone) {
+                setErrorMessage(t('contactRequired') === 'contactRequired'
+                    ? (language === "tr" ? "E-posta veya telefon bilgisinden en az birini paylaşın." : "Please provide either an email or phone number.")
+                    : t('contactRequired'))
+                setStatus('idle')
+                return
+            }
+
+            if (email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                if (!emailRegex.test(email)) {
+                    setErrorMessage(t('invalidEmail') === 'invalidEmail' ? "Invalid email address" : t('invalidEmail'))
+                    setStatus('idle')
+                    return
+                }
+            }
+
+            if (phone) {
+                const isValidChars = /^[\d\s\+\-\(\)]+$/.test(phone)
+                if (!isValidChars || phoneDigits.length < 7) {
+                    setErrorMessage(t('invalidPhone') === 'invalidPhone' ? "Invalid phone number" : t('invalidPhone'))
+                    setStatus('idle')
+                    return
+                }
+            }
+        }
         
         // Basic validation for enabled required fields
-        if (config.nameEnabled !== false && config.nameRequired !== false && !formData.name) {
+        if (config.nameEnabled !== false && config.nameRequired !== false && !name) {
              setStatus('idle'); return
         }
-        if (config.emailEnabled !== false && config.emailRequired !== false && !formData.email) {
+        if (config.emailEnabled !== false && config.emailRequired !== false && !email) {
              setStatus('idle'); return
         }
         
@@ -85,6 +139,19 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
 
     return (
         <form onSubmit={handleSubmit} className="mt-3 space-y-2.5 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+            {isHandoff ? (
+                <div className="space-y-1 rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-2">
+                    <p className="text-sm font-medium text-violet-900">
+                        {language === "tr" ? "Temsilci baglanti formu" : "Agent contact form"}
+                    </p>
+                    <p className="text-xs leading-relaxed text-violet-700">
+                        {language === "tr"
+                            ? "Adinizi ve en az bir iletisim bilginizi paylasin. Uygunsa temsilci talebinizi dogrudan olusturalim."
+                            : "Share your name and at least one contact method so we can create your agent request directly."}
+                    </p>
+                </div>
+            ) : null}
+
             {/* Standard Fields */}
             {config.nameEnabled !== false && (
                 <div className="relative">
@@ -167,6 +234,10 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
                     </div>
                 );
             })}
+
+            {errorMessage ? (
+                <p className="text-xs font-medium text-red-500">{errorMessage}</p>
+            ) : null}
             
             <button
                 type="submit"

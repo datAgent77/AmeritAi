@@ -1,4 +1,5 @@
 import type { GuidedSkillShortcut } from "@/lib/guided-skills/types"
+import type { HumanHandoffBusinessDayCode } from "@/lib/human-handoff"
 
 export interface AmbientDeviceAppearanceSettings {
     ambientMaxHeight?: number;
@@ -251,6 +252,14 @@ export interface ChatbotSettings {
     dynamicSiteContextResolvedPresetId?: string;
     dynamicSiteContextRuntimePreset?: Record<string, unknown> | null;
     guidedSkills?: GuidedSkillShortcut[];
+    humanHandoffSettings?: {
+        triggerOnUserRequest?: boolean;
+        businessHoursEnabled?: boolean;
+        businessHoursStart?: string;
+        businessHoursEnd?: string;
+        businessHoursTimezone?: string;
+        businessDays?: HumanHandoffBusinessDayCode[];
+    };
     quickActions?: {
         enabled: boolean;
         buttons: QuickActionButton[];

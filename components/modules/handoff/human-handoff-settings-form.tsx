@@ -6,10 +6,12 @@ import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS, type HumanHandoffBusinessDayCode } from "@/lib/human-handoff"
 
 interface HumanHandoffSettingsFormProps {
     targetUserId: string
@@ -27,7 +29,22 @@ type HandoffState = {
     whatsappNumber: string
     notifyInstagram: boolean
     instagramAccountId: string
+    businessHoursEnabled: boolean
+    businessHoursStart: string
+    businessHoursEnd: string
+    businessHoursTimezone: string
+    businessDays: HumanHandoffBusinessDayCode[]
 }
+
+const DAY_OPTIONS: Array<{ code: HumanHandoffBusinessDayCode; label: string }> = [
+    { code: "Mon", label: "Pazartesi" },
+    { code: "Tue", label: "Salı" },
+    { code: "Wed", label: "Çarşamba" },
+    { code: "Thu", label: "Perşembe" },
+    { code: "Fri", label: "Cuma" },
+    { code: "Sat", label: "Cumartesi" },
+    { code: "Sun", label: "Pazar" },
+]
 
 const DEFAULT_STATE: HandoffState = {
     enabled: false,
@@ -41,6 +58,11 @@ const DEFAULT_STATE: HandoffState = {
     whatsappNumber: "",
     notifyInstagram: false,
     instagramAccountId: "",
+    businessHoursEnabled: false,
+    businessHoursStart: "09:00",
+    businessHoursEnd: "18:00",
+    businessHoursTimezone: "UTC",
+    businessDays: DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS,
 }
 
 export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsFormProps) {
@@ -74,6 +96,19 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                     whatsappNumber: typeof data.humanHandoffSettings?.whatsappNumber === "string" ? data.humanHandoffSettings.whatsappNumber : "",
                     notifyInstagram: data.humanHandoffSettings?.notifyInstagram === true,
                     instagramAccountId: typeof data.humanHandoffSettings?.instagramAccountId === "string" ? data.humanHandoffSettings.instagramAccountId : "",
+                    businessHoursEnabled: data.humanHandoffSettings?.businessHoursEnabled === true || data.enableBusinessHours === true,
+                    businessHoursStart: typeof data.humanHandoffSettings?.businessHoursStart === "string" && data.humanHandoffSettings.businessHoursStart
+                        ? data.humanHandoffSettings.businessHoursStart
+                        : (typeof data.businessHoursStart === "string" && data.businessHoursStart ? data.businessHoursStart : "09:00"),
+                    businessHoursEnd: typeof data.humanHandoffSettings?.businessHoursEnd === "string" && data.humanHandoffSettings.businessHoursEnd
+                        ? data.humanHandoffSettings.businessHoursEnd
+                        : (typeof data.businessHoursEnd === "string" && data.businessHoursEnd ? data.businessHoursEnd : "18:00"),
+                    businessHoursTimezone: typeof data.humanHandoffSettings?.businessHoursTimezone === "string" && data.humanHandoffSettings.businessHoursTimezone
+                        ? data.humanHandoffSettings.businessHoursTimezone
+                        : (typeof data.timezone === "string" && data.timezone ? data.timezone : "UTC"),
+                    businessDays: Array.isArray(data.humanHandoffSettings?.businessDays) && data.humanHandoffSettings.businessDays.length > 0
+                        ? data.humanHandoffSettings.businessDays.filter((value: unknown): value is HumanHandoffBusinessDayCode => DAY_OPTIONS.some((day) => day.code === value))
+                        : DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS,
                 })
             } catch (error) {
                 console.error("Failed to load handoff settings:", error)
@@ -116,6 +151,11 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                             whatsappNumber: state.whatsappNumber,
                             notifyInstagram: state.notifyInstagram,
                             instagramAccountId: state.instagramAccountId,
+                            businessHoursEnabled: state.businessHoursEnabled,
+                            businessHoursStart: state.businessHoursStart,
+                            businessHoursEnd: state.businessHoursEnd,
+                            businessHoursTimezone: state.businessHoursTimezone,
+                            businessDays: state.businessDays,
                         },
                     },
                     chatbotSettings: {
@@ -131,6 +171,11 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                             whatsappNumber: state.whatsappNumber,
                             notifyInstagram: state.notifyInstagram,
                             instagramAccountId: state.instagramAccountId,
+                            businessHoursEnabled: state.businessHoursEnabled,
+                            businessHoursStart: state.businessHoursStart,
+                            businessHoursEnd: state.businessHoursEnd,
+                            businessHoursTimezone: state.businessHoursTimezone,
+                            businessDays: state.businessDays,
                         },
                     },
                 }),
@@ -213,6 +258,89 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                             className="min-h-[100px]"
                         />
                         <p className="text-sm text-muted-foreground">Boş bırakılırsa sistemin varsayılan standart mesajı gösterilir.</p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Mesai Saatleri</CardTitle>
+                    <CardDescription>
+                        Temsilciye aktarma talebi geldiğinde mesai saati dışında olup olmadığını kontrol et.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                    <div className="flex items-center justify-between rounded-xl border p-4">
+                        <div>
+                            <Label htmlFor="handoff-business-hours" className="text-base font-medium">Mesai saati kontrolü</Label>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Aktif olduğunda widget, temsilci taleplerinde mesai dışı bilgisini kullanıcıya söyler.
+                            </p>
+                        </div>
+                        <Switch
+                            id="handoff-business-hours"
+                            checked={state.businessHoursEnabled}
+                            onCheckedChange={(checked) => setState((prev) => ({ ...prev, businessHoursEnabled: checked }))}
+                        />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <div className="space-y-2">
+                            <Label htmlFor="handoff-business-start">Başlangıç</Label>
+                            <Input
+                                id="handoff-business-start"
+                                type="time"
+                                value={state.businessHoursStart}
+                                onChange={(event) => setState((prev) => ({ ...prev, businessHoursStart: event.target.value }))}
+                                disabled={!state.businessHoursEnabled}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="handoff-business-end">Bitiş</Label>
+                            <Input
+                                id="handoff-business-end"
+                                type="time"
+                                value={state.businessHoursEnd}
+                                onChange={(event) => setState((prev) => ({ ...prev, businessHoursEnd: event.target.value }))}
+                                disabled={!state.businessHoursEnabled}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="handoff-business-timezone">Saat Dilimi</Label>
+                            <Input
+                                id="handoff-business-timezone"
+                                value={state.businessHoursTimezone}
+                                onChange={(event) => setState((prev) => ({ ...prev, businessHoursTimezone: event.target.value }))}
+                                placeholder="Europe/Istanbul"
+                                disabled={!state.businessHoursEnabled}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Label>Aktif Günler</Label>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {DAY_OPTIONS.map((day) => {
+                                const checked = state.businessDays.includes(day.code)
+                                return (
+                                    <label key={day.code} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${state.businessHoursEnabled ? "cursor-pointer" : "opacity-60"}`}>
+                                        <Checkbox
+                                            checked={checked}
+                                            disabled={!state.businessHoursEnabled}
+                                            onCheckedChange={(nextChecked) => {
+                                                setState((prev) => ({
+                                                    ...prev,
+                                                    businessDays: nextChecked
+                                                        ? [...prev.businessDays, day.code]
+                                                        : prev.businessDays.filter((value) => value !== day.code),
+                                                }))
+                                            }}
+                                        />
+                                        <span className="text-sm">{day.label}</span>
+                                    </label>
+                                )
+                            })}
+                        </div>
                     </div>
                 </CardContent>
             </Card>

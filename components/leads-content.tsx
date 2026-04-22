@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +10,7 @@ import { Loader2, Download, User, Mail, Phone, ChevronDown, ChevronUp, MessageSq
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import * as XLSX from 'xlsx';
+import { cn } from "@/lib/utils"
 
 interface Lead {
     id: string
@@ -32,6 +34,7 @@ interface LeadsContentProps {
 }
 
 export function LeadsContent({ targetUserId }: LeadsContentProps) {
+    const searchParams = useSearchParams()
     const { user } = useAuth()
     const { t } = useLanguage()
     const [leads, setLeads] = useState<Lead[]>([])
@@ -41,9 +44,12 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     const [conversationLead, setConversationLead] = useState<Lead | null>(null)
     const [conversationMessages, setConversationMessages] = useState<ChatMessage[]>([])
     const [isLoadingConversation, setIsLoadingConversation] = useState(false)
+    const autoOpenedLeadRef = useRef<string | null>(null)
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
+    const highlightedLeadId = searchParams?.get("leadId")
+    const highlightedSessionId = searchParams?.get("sessionId")
 
     useEffect(() => {
         const fetchData = async () => {
@@ -90,7 +96,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
         })
     }
 
-    const openConversation = async (lead: Lead) => {
+    const openConversation = useCallback(async (lead: Lead) => {
         if (!lead.sessionId) return
         setConversationLead(lead)
         setConversationMessages([])
@@ -106,7 +112,35 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
         } finally {
             setIsLoadingConversation(false)
         }
-    }
+    }, [effectiveUserId])
+
+    useEffect(() => {
+        const matchedLead =
+            leads.find((lead) => lead.id === highlightedLeadId) ||
+            leads.find((lead) => highlightedSessionId && lead.sessionId === highlightedSessionId) ||
+            null
+
+        if (!matchedLead) return
+
+        const row = document.getElementById(`lead-row-${matchedLead.id}`)
+        if (row) {
+            row.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+
+        if (matchedLead.customFields && Object.keys(matchedLead.customFields).length > 0) {
+            setExpandedRows((previous) => {
+                if (previous.has(matchedLead.id)) return previous
+                const next = new Set(previous)
+                next.add(matchedLead.id)
+                return next
+            })
+        }
+
+        if (matchedLead.sessionId && autoOpenedLeadRef.current !== matchedLead.id) {
+            autoOpenedLeadRef.current = matchedLead.id
+            void openConversation(matchedLead)
+        }
+    }, [highlightedLeadId, highlightedSessionId, leads, openConversation])
 
     const exportToExcel = () => {
         const worksheet = XLSX.utils.json_to_sheet(leads.map(l => {
@@ -186,7 +220,14 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                             <TableBody>
                                 {leads.map((lead) => (
                                     <React.Fragment key={lead.id}>
-                                        <TableRow className="cursor-pointer hover:bg-muted/50" onClick={() => lead.customFields && Object.keys(lead.customFields).length > 0 && toggleRowExpansion(lead.id)}>
+                                        <TableRow
+                                            id={`lead-row-${lead.id}`}
+                                            className={cn(
+                                                "cursor-pointer hover:bg-muted/50",
+                                                (highlightedLeadId === lead.id || (highlightedSessionId && lead.sessionId === highlightedSessionId)) && "bg-primary/5"
+                                            )}
+                                            onClick={() => lead.customFields && Object.keys(lead.customFields).length > 0 && toggleRowExpansion(lead.id)}
+                                        >
                                             <TableCell>
                                                 {lead.customFields && Object.keys(lead.customFields).length > 0 && (
                                                     expandedRows.has(lead.id) ?

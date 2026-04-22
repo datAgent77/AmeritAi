@@ -40,7 +40,19 @@ export function LeadCollectionOverlay({
     if (!show) return null
 
     // Get form config from settings
-    const formConfig = settings.leadFormConfig || {}
+    const handoffFormConfig = {
+        nameEnabled: true,
+        emailEnabled: true,
+        phoneEnabled: true,
+        nameRequired: true,
+        emailRequired: false,
+        phoneRequired: false,
+        namePlaceholder: language === "tr" ? "Ad Soyad" : "Full Name",
+        emailPlaceholder: language === "tr" ? "E-posta" : "Email",
+        phonePlaceholder: language === "tr" ? "Telefon" : "Phone",
+    }
+    const formConfig = isHandoff ? handoffFormConfig : (settings.leadFormConfig || {})
+    const customFields = isHandoff ? [] : (settings.leadCustomFields || [])
     const nameEnabled = formConfig.nameEnabled !== false
     const emailEnabled = formConfig.emailEnabled !== false
     const phoneEnabled = formConfig.phoneEnabled !== false
@@ -96,7 +108,7 @@ export function LeadCollectionOverlay({
 
         // Custom Fields Validation
         if (settings.leadCustomFields) {
-            settings.leadCustomFields.forEach((field: any) => {
+            customFields.forEach((field: any) => {
                 if (field.required && !formData.customFields?.[field.id]) {
                     newErrors[field.id] = t('fieldRequired') || "This field is required"
                 }
@@ -128,7 +140,7 @@ export function LeadCollectionOverlay({
         : (t('startChat') !== 'startChat' ? t('startChat') : "Sohbete Başla")
 
     const title = isHandoff ? defaultTitle : (settings.leadFormConfig?.title || defaultTitle)
-    const subtitle = description || (isHandoff ? defaultSubtitle : (settings.leadFormConfig?.subtitle || defaultSubtitle))
+    const subtitle = isHandoff ? defaultSubtitle : (description || settings.leadFormConfig?.subtitle || defaultSubtitle)
     const submitText = isHandoff ? defaultSubmitText : (settings.leadFormConfig?.submitButtonText || defaultSubmitText)
 
     return (
@@ -219,9 +231,9 @@ export function LeadCollectionOverlay({
                     )}
 
                     {/* Custom Fields */}
-                    {settings.leadCustomFields && settings.leadCustomFields.length > 0 && (
+                    {customFields.length > 0 && (
                         <>
-                            {settings.leadCustomFields.map((field: any) => {
+                            {customFields.map((field: any) => {
                                 // Choose icon based on field type
                                 const FieldIcon = field.type === 'email' ? Mail 
                                     : field.type === 'phone' ? Phone 

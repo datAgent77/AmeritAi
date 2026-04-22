@@ -4,6 +4,7 @@ import { buildGuidedSkillShortcut, listEnabledGuidedSkills } from "@/lib/guided-
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
 import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
 import { resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
+import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS, resolveHumanHandoffSettings } from "@/lib/human-handoff";
 import { resolveQuickActionsConfig } from "@/lib/quick-actions";
 import { getPublishedContract } from "@/lib/contracts";
 
@@ -136,6 +137,7 @@ export async function GET(req: Request) {
 
                     const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null);
                     const kvkkConsent = resolveKvkkConsentPayload({ mergedData, publishedKvkkContract });
+                    const humanHandoffSettings = resolveHumanHandoffSettings(mergedData);
 
                     // Return only public settings
                     return NextResponse.json({
@@ -153,6 +155,14 @@ export async function GET(req: Request) {
                         suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: mergedData.enableLeadCollection || false,
                         enableHumanHandoff: mergedData.enableHumanHandoff || false,
+                        humanHandoffSettings: {
+                            triggerOnUserRequest: humanHandoffSettings.triggerOnUserRequest,
+                            businessHoursEnabled: humanHandoffSettings.businessHoursEnabled,
+                            businessHoursStart: humanHandoffSettings.businessHoursStart,
+                            businessHoursEnd: humanHandoffSettings.businessHoursEnd,
+                            businessHoursTimezone: humanHandoffSettings.businessHoursTimezone,
+                            businessDays: humanHandoffSettings.businessDays,
+                        },
                         enableAppointments: mergedData.enableAppointments || false,
                         enableKvkkConsent: mergedData.enableKvkkConsent === true,
                         enableGuided: isGuidedEnabled,
@@ -337,6 +347,15 @@ export async function GET(req: Request) {
                 headerTextColor: "#FFFFFF",
                 suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
                 enableLeadCollection: false,
+                enableHumanHandoff: false,
+                humanHandoffSettings: {
+                    triggerOnUserRequest: true,
+                    businessHoursEnabled: false,
+                    businessHoursStart: "09:00",
+                    businessHoursEnd: "18:00",
+                    businessHoursTimezone: "UTC",
+                    businessDays: DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS,
+                },
                 enableGuided: false,
                 enableBusinessHours: false,
                 timezone: "UTC",
@@ -564,6 +583,15 @@ export async function GET(req: Request) {
             welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
             brandColor: "#000000",
             suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
+            enableHumanHandoff: false,
+            humanHandoffSettings: {
+                triggerOnUserRequest: true,
+                businessHoursEnabled: false,
+                businessHoursStart: "09:00",
+                businessHoursEnd: "18:00",
+                businessHoursTimezone: "UTC",
+                businessDays: DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS,
+            },
             enableGuided: false,
             enableBusinessHours: false,
             timezone: "UTC",

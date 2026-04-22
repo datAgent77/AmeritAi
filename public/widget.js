@@ -3845,6 +3845,13 @@
       }
     }
 
+    const isDarkWidgetSurface = settings.theme === 'dark'
+      || (isAmbientWidgetMode && settings.ambientTheme === 'dark');
+    const loadingSurfaceBackground = isDarkWidgetSurface
+      ? 'linear-gradient(180deg, rgba(9,9,11,0.98) 0%, rgba(24,24,27,0.98) 100%)'
+      : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)';
+    const loadingSurfaceColor = isDarkWidgetSurface ? '#e5e7eb' : '#475569';
+
     // Create Iframe Container
     const iframeContainer = document.createElement('div');
     iframeContainer.id = 'userex-chatbot-container';
@@ -3857,12 +3864,54 @@
       overflow: 'hidden',
       zIndex: '9999',
       display: usesLauncher ? 'none' : 'block',
-      backgroundColor: 'transparent',
-      color: 'rgba(250, 250, 250, 0)',
+      background: isAmbientWidgetMode ? 'transparent' : loadingSurfaceBackground,
+      backgroundColor: isAmbientWidgetMode ? 'transparent' : (isDarkWidgetSurface ? '#09090b' : '#ffffff'),
+      color: isAmbientWidgetMode ? 'rgba(250, 250, 250, 0)' : loadingSurfaceColor,
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
     let applyAmbientContainerSize = null;
     let ambientFeedVisible = false;
+
+    const iframeLoadingShell = document.createElement('div');
+    iframeLoadingShell.id = 'userex-chatbot-loading-shell';
+    Object.assign(iframeLoadingShell.style, {
+      position: 'absolute',
+      inset: '0',
+      zIndex: '0',
+      display: isAmbientWidgetMode ? 'none' : 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none',
+      background: isAmbientWidgetMode ? 'transparent' : loadingSurfaceBackground,
+      backgroundColor: isAmbientWidgetMode ? 'transparent' : (isDarkWidgetSurface ? '#09090b' : '#ffffff'),
+      transition: 'opacity 0.18s ease',
+      opacity: '1'
+    });
+
+    if (!isAmbientWidgetMode) {
+      iframeLoadingShell.innerHTML = `
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
+          <div style="display:flex; gap:8px; align-items:center; justify-content:center;">
+            <span style="width:10px; height:10px; border-radius:999px; background:${settings.brandColor || settings.primaryColor || '#000000'}; opacity:0.95;"></span>
+            <span style="width:10px; height:10px; border-radius:999px; background:${settings.brandColor || settings.primaryColor || '#000000'}; opacity:0.7;"></span>
+            <span style="width:10px; height:10px; border-radius:999px; background:${settings.brandColor || settings.primaryColor || '#000000'}; opacity:0.45;"></span>
+          </div>
+          <div style="font: 500 13px/1.4 system-ui, -apple-system, sans-serif; color:${loadingSurfaceColor}; letter-spacing:0.01em;">
+            Loading assistant...
+          </div>
+        </div>
+      `;
+    }
+
+    const hideIframeLoadingShell = () => {
+      if (!iframeLoadingShell.parentNode) return;
+      iframeLoadingShell.style.opacity = '0';
+      setTimeout(() => {
+        if (iframeLoadingShell.parentNode) {
+          iframeLoadingShell.parentNode.removeChild(iframeLoadingShell);
+        }
+      }, 180);
+    };
 
     // Apply View Mode Styles
     const isAmbientMode = isAmbientWidgetMode;
@@ -4071,10 +4120,13 @@
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
+    iframe.style.position = 'relative';
+    iframe.style.zIndex = '1';
     iframe.style.background = 'transparent';
     iframe.setAttribute('allowTransparency', 'true');
     iframe.allow = 'microphone; camera; autoplay';
     iframe.addEventListener('load', () => {
+      hideIframeLoadingShell();
       setTimeout(() => {
         try {
           sendContextUpdate();
@@ -4082,6 +4134,9 @@
       }, 80);
     });
 
+    if (!isAmbientMode) {
+      iframeContainer.appendChild(iframeLoadingShell);
+    }
     iframeContainer.appendChild(iframe);
 
     // Toggle Logic

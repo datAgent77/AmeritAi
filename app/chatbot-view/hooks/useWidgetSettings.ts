@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { ChatbotSettings } from "@/types/chatbot"
+import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS } from "@/lib/human-handoff"
 
 const SETTINGS_CACHE_TTL_MS = 15 * 60 * 1000
 
@@ -74,6 +75,14 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
     enableLeadCollection: false,
     enableHumanHandoff: false,
+    humanHandoffSettings: {
+        triggerOnUserRequest: true,
+        businessHoursEnabled: false,
+        businessHoursStart: "09:00",
+        businessHoursEnd: "18:00",
+        businessHoursTimezone: "UTC",
+        businessDays: DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS,
+    },
     enableKvkkConsent: false,
     enableGuided: false,
     kvkkConsent: {
