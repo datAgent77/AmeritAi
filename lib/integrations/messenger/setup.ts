@@ -6,6 +6,16 @@ import { getMessengerDMWizardStep, MESSENGER_DM_STATE_MESSAGES, resolveMessenger
 import type { MessengerDMStatusPayload } from "@/lib/integrations/messenger/types"
 import type { MessengerDMChannelConfig, MessengerDMPreflightResult } from "@/lib/omni/types"
 
+type MetaSetupSecrets = {
+    accessToken?: string | null
+    appId?: string | null
+    appSecret?: string | null
+}
+
+function getMetaSetupSecrets(omniConfig: OmniChannelConfigDocument): MetaSetupSecrets {
+    return ((omniConfig?.metaSetup as { secrets?: MetaSetupSecrets } | undefined)?.secrets || {}) as MetaSetupSecrets
+}
+
 export function buildDefaultMessengerDMConfig(): MessengerDMChannelConfig {
     return {
         state: "not_started",
@@ -45,7 +55,7 @@ export function normalizeMessengerDMConfig(config: any): MessengerDMChannelConfi
 }
 
 export function getMessengerUserAccessToken(omniConfig: OmniChannelConfigDocument) {
-    const metaAccessToken = (omniConfig?.metaSetup as any)?.secrets?.accessToken
+    const metaAccessToken = getMetaSetupSecrets(omniConfig).accessToken
     return decryptToken(metaAccessToken) || metaAccessToken || decryptToken(omniConfig?.messengerDM?.accessTokenRef) || null
 }
 
@@ -65,9 +75,10 @@ export function buildMessengerDMMergePayload(input: {
     state?: MessengerDMChannelConfig["state"]
 }) {
     const current = normalizeMessengerDMConfig(input.omniConfig?.messengerDM)
-    const resolvedAppId = input.appId ?? input.omniConfig?.metaSetup?.secrets?.appId ?? input.omniConfig?.messenger?.appId ?? null
+    const metaSetupSecrets = getMetaSetupSecrets(input.omniConfig)
+    const resolvedAppId = input.appId ?? metaSetupSecrets.appId ?? input.omniConfig?.messenger?.appId ?? null
     const resolvedAppSecret =
-        input.appSecret ?? input.omniConfig?.metaSetup?.secrets?.appSecret ?? input.omniConfig?.messenger?.appSecretRef ?? null
+        input.appSecret ?? metaSetupSecrets.appSecret ?? input.omniConfig?.messenger?.appSecretRef ?? null
     const accessTokenRef = input.pageAccessToken
         ? encryptToken(input.pageAccessToken)
         : input.accessToken
