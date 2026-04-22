@@ -59,6 +59,18 @@ export function getMessengerUserAccessToken(omniConfig: OmniChannelConfigDocumen
     return decryptToken(metaAccessToken) || metaAccessToken || decryptToken(omniConfig?.messengerDM?.accessTokenRef) || null
 }
 
+export function getMessengerPageAccessToken(omniConfig: OmniChannelConfigDocument) {
+    return (
+        decryptToken(omniConfig?.messengerDM?.accessTokenRef) ||
+        decryptToken(omniConfig?.messenger?.accessTokenRef) ||
+        getMessengerUserAccessToken(omniConfig)
+    )
+}
+
+export function getMessengerPageId(omniConfig: OmniChannelConfigDocument) {
+    return omniConfig?.messengerDM?.pageId || omniConfig?.messenger?.pageId || null
+}
+
 export function buildMessengerDMMergePayload(input: {
     omniConfig: OmniChannelConfigDocument
     accessToken?: string | null

@@ -1,4 +1,5 @@
 import { classifyOmniDeliveryError, recordOmniDeliveryAttempt } from "@/lib/omni/delivery-attempts"
+import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
 
 const META_API_VERSION = "v23.0"
 
@@ -422,15 +423,16 @@ export async function dispatchOmniMessengerMessage(
 ) {
     const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
     const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
-    const messenger = omniConfig.messenger || {}
+    const pageId = getMessengerPageId(omniConfig) || sessionData.channelMeta?.pageId || null
+    const accessToken = getMessengerPageAccessToken(omniConfig)
 
     return sendOmniMessengerText({
         adminDb,
         chatbotId,
         recipientId: sessionData.contactKey || sessionData.channelMeta?.senderId || null,
         text: content,
-        pageId: messenger.pageId || sessionData.channelMeta?.pageId || null,
-        accessToken: messenger.accessTokenRef || null,
+        pageId,
+        accessToken,
         source: options.source,
         sessionId: options.sessionId || null,
         callbackId: options.callbackId || null,

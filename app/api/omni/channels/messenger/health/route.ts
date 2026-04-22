@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
 import { logOmniAuditEvent } from "@/lib/omni/audit-log"
 import { recordOmniSmokeRun } from "@/lib/omni/smoke-runs"
 import { authorizeOmniRequest, authorizedForOmniPermission, getOmniChannelConfig, jsonError } from "@/lib/omni/server-utils"
@@ -16,6 +17,8 @@ export async function POST(req: Request) {
 
     const config = await getOmniChannelConfig(authz.adminDb, chatbotId)
     const messenger = config.messenger || {}
+    const pageId = getMessengerPageId(config)
+    const accessToken = getMessengerPageAccessToken(config)
 
     if (messenger.enabled === false) {
         await recordOmniSmokeRun(authz.adminDb, {
@@ -45,7 +48,7 @@ export async function POST(req: Request) {
         })
     }
 
-    if (!messenger.accessTokenRef || !messenger.pageId) {
+    if (!accessToken || !pageId) {
         await recordOmniSmokeRun(authz.adminDb, {
             chatbotId,
             channel: "messenger",
@@ -66,10 +69,10 @@ export async function POST(req: Request) {
         return jsonError("Messenger access token and page ID are required", 400)
     }
 
-    const endpoint = `https://graph.facebook.com/v23.0/${encodeURIComponent(messenger.pageId)}?fields=id,name`
+    const endpoint = `https://graph.facebook.com/v23.0/${encodeURIComponent(pageId)}?fields=id,name`
     const response = await fetch(endpoint, {
         headers: {
-            Authorization: `Bearer ${messenger.accessTokenRef}`,
+            Authorization: `Bearer ${accessToken}`,
         },
     })
     const data = await response.json().catch(() => null)
@@ -84,7 +87,7 @@ export async function POST(req: Request) {
             message: data?.error?.message || "Messenger health check failed",
             metadata: {
                 status: response.status,
-                pageId: messenger.pageId,
+                pageId,
             },
         })
         await logOmniAuditEvent({
@@ -96,7 +99,7 @@ export async function POST(req: Request) {
             message: data?.error?.message || "Messenger health check failed",
             metadata: {
                 status: response.status,
-                pageId: messenger.pageId,
+                pageId,
             },
         })
         return NextResponse.json(
@@ -119,7 +122,7 @@ export async function POST(req: Request) {
         source: "api/omni/channels/messenger/health",
         message: "Messenger connection verified",
         metadata: {
-            pageId: data?.id || messenger.pageId,
+            pageId: data?.id || pageId,
         },
     })
     await logOmniAuditEvent({
@@ -130,14 +133,14 @@ export async function POST(req: Request) {
         source: "api/omni/channels/messenger/health",
         message: "Messenger connection verified",
         metadata: {
-            pageId: data?.id || messenger.pageId,
+            pageId: data?.id || pageId,
         },
     })
 
     return NextResponse.json({
         ok: true,
         provider: "messenger",
-        pageId: data?.id || messenger.pageId,
+        pageId: data?.id || pageId,
         name: data?.name || null,
         checkedAt: new Date().toISOString(),
     })

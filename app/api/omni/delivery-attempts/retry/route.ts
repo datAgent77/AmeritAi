@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
 import { logOmniAuditEvent } from "@/lib/omni/audit-log"
 import { sendOmniInstagramText, sendOmniMessengerText, sendOmniWhatsAppText } from "@/lib/omni/channel-dispatch"
 import { getOmniDeliveryAttempt, updateOmniDeliveryAttemptRetryState } from "@/lib/omni/delivery-attempts"
@@ -172,6 +173,8 @@ export async function POST(req: Request) {
         if (attempt.channel === "messenger") {
             const omniConfig = await getOmniChannelConfig(authz.adminDb, chatbotId)
             const messenger = omniConfig.messenger || {}
+            const pageId = getMessengerPageId(omniConfig)
+            const accessToken = getMessengerPageAccessToken(omniConfig)
             if (messenger.enabled === false) {
                 await logOmniAuditEvent({
                     chatbotId,
@@ -192,8 +195,8 @@ export async function POST(req: Request) {
                 chatbotId,
                 recipientId: attempt.destination,
                 text: attempt.payloadText,
-                pageId: attempt.providerTargetId || messenger.pageId || null,
-                accessToken: messenger.accessTokenRef || null,
+                pageId: attempt.providerTargetId || pageId || null,
+                accessToken,
                 source: "api/omni/delivery-attempts/retry",
                 sessionId: attempt.sessionId || null,
                 retryOfAttemptId: id,
