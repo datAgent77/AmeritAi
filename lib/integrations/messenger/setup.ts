@@ -52,6 +52,8 @@ export function getMessengerUserAccessToken(omniConfig: OmniChannelConfigDocumen
 export function buildMessengerDMMergePayload(input: {
     omniConfig: OmniChannelConfigDocument
     accessToken?: string | null
+    appId?: string | null
+    appSecret?: string | null
     pageId?: string | null
     pageName?: string | null
     pageAccessToken?: string | null
@@ -63,6 +65,9 @@ export function buildMessengerDMMergePayload(input: {
     state?: MessengerDMChannelConfig["state"]
 }) {
     const current = normalizeMessengerDMConfig(input.omniConfig?.messengerDM)
+    const resolvedAppId = input.appId ?? input.omniConfig?.metaSetup?.secrets?.appId ?? input.omniConfig?.messenger?.appId ?? null
+    const resolvedAppSecret =
+        input.appSecret ?? input.omniConfig?.metaSetup?.secrets?.appSecret ?? input.omniConfig?.messenger?.appSecretRef ?? null
     const accessTokenRef = input.pageAccessToken
         ? encryptToken(input.pageAccessToken)
         : input.accessToken
@@ -95,6 +100,8 @@ export function buildMessengerDMMergePayload(input: {
                 messenger: {
                     enabled: Boolean(next.pageId && next.accessTokenRef),
                     pageId: next.pageId,
+                    appId: resolvedAppId,
+                    appSecretRef: resolvedAppSecret,
                     accessTokenRef: next.accessTokenRef,
                     verifyToken: input.omniConfig?.messenger?.verifyToken || generateMetaVerifyToken(),
                     webhookStatus: next.webhookStatus,
@@ -107,8 +114,15 @@ export function buildMessengerDMMergePayload(input: {
             secrets: input.accessToken
                 ? {
                       accessToken: encryptToken(input.accessToken),
+                      appId: input.appId ?? undefined,
+                      appSecret: input.appSecret ?? undefined,
                   }
-                : undefined,
+                : input.appId || input.appSecret
+                  ? {
+                        appId: input.appId ?? undefined,
+                        appSecret: input.appSecret ?? undefined,
+                    }
+                  : undefined,
         }),
         messengerDM: next,
     }

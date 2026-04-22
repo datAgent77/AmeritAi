@@ -80,6 +80,8 @@ export async function GET(req: Request) {
             buildMessengerDMMergePayload({
                 omniConfig: currentConfig,
                 accessToken,
+                appId: appConfig.appId,
+                appSecret: appConfig.appSecret,
                 pageId: firstPage?.id || null,
                 pageName: firstPage?.name || null,
                 pageAccessToken,
@@ -99,6 +101,8 @@ export async function GET(req: Request) {
                     chatbotId,
                     buildMessengerDMMergePayload({
                         omniConfig: nextConfig,
+                        appId: appConfig.appId,
+                        appSecret: appConfig.appSecret,
                         pageId: firstPage.id,
                         pageName: firstPage.name,
                         pageAccessToken,
@@ -119,6 +123,8 @@ export async function GET(req: Request) {
                     chatbotId,
                     buildMessengerDMMergePayload({
                         omniConfig: nextConfig,
+                        appId: appConfig.appId,
+                        appSecret: appConfig.appSecret,
                         pageId: firstPage.id,
                         pageName: firstPage.name,
                         pageAccessToken,

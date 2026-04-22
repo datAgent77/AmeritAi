@@ -68,10 +68,21 @@ export async function POST(req: Request) {
 
         const configDoc = configSnapshot.docs[0]
         const config = configDoc.data() || {}
-        const appSecret = config?.messenger?.appSecretRef || process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET || ""
+        const appSecretCandidates = Array.from(
+            new Set(
+                [
+                    config?.messenger?.appSecretRef,
+                    config?.metaSetup?.secrets?.appSecret,
+                    process.env.META_APP_SECRET,
+                    process.env.INSTAGRAM_APP_SECRET,
+                ]
+                    .map((value) => (typeof value === "string" ? value.trim() : ""))
+                    .filter(Boolean)
+            )
+        )
         const signatureHeader = req.headers.get("x-hub-signature-256")
 
-        if (!appSecret) {
+        if (appSecretCandidates.length === 0) {
             await logOmniAuditEvent({
                 chatbotId: config.chatbotId || configDoc.id,
                 channel: "messenger",
@@ -84,7 +95,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Messenger app secret is not configured" }, { status: 401 })
         }
 
-        if (!verifyMetaWebhookSignature(rawBody, signatureHeader, appSecret)) {
+        const signatureValid = appSecretCandidates.some((appSecret) =>
+            verifyMetaWebhookSignature(rawBody, signatureHeader, appSecret)
+        )
+
+        if (!signatureValid) {
             await logOmniAuditEvent({
                 chatbotId: config.chatbotId || configDoc.id,
                 channel: "messenger",
@@ -92,7 +107,10 @@ export async function POST(req: Request) {
                 result: "denied",
                 source: "api/omni/channels/messenger/webhook",
                 message: "Invalid Meta webhook signature",
-                metadata: { pageId: firstPageId },
+                metadata: {
+                    pageId: firstPageId,
+                    candidateCount: appSecretCandidates.length,
+                },
             })
             return NextResponse.json({ error: "Invalid webhook signature" }, { status: 403 })
         }
