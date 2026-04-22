@@ -13,7 +13,7 @@ export default function ChatsPage() {
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">Unified Inbox</h2>
                 <p className="text-muted-foreground">
-                    Manage conversations from Web and Telegram in one place.
+                    Manage conversations from all connected channels in one place.
                 </p>
             </div>
             <UnifiedInbox userId={user.uid} showOmniFeatures={false} />

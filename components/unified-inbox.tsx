@@ -127,7 +127,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     const [replyText, setReplyText] = useState("")
     const [isSending, setIsSending] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
-    const [channelFilter, setChannelFilter] = useState<string>(showOmniFeatures ? "all" : "web")
+    const [channelFilter, setChannelFilter] = useState<string>("all")
     const [isTogglingPause, setIsTogglingPause] = useState(false)
     const [isCreatingCallback, setIsCreatingCallback] = useState(false)
     const [isCreatingLead, setIsCreatingLead] = useState(false)
@@ -509,9 +509,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     const filteredSessions = useMemo(() => {
         return sessions.filter((session) => {
             const channel = resolveSessionChannel(session)
-            const matchesChannel = showOmniFeatures
-                ? (channelFilter === "all" ? true : channel === channelFilter)
-                : channel === "web"
+            const matchesChannel = channelFilter === "all" ? true : channel === channelFilter
             const haystack = [
                 session.id,
                 session.lastMessage,
@@ -574,7 +572,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                         <div className="min-w-0 space-y-1">
                             <div className="text-sm font-semibold text-foreground">{t("omni.inbox.sidebar.sessions")}</div>
                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {showOmniFeatures ? (channelFilter === "all" ? (language === "tr" ? "tüm kanallar" : "all channels") : getOmniChannelLabel(t, channelFilter)) : getOmniChannelLabel(t, "web")}
+                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? t("omni.inbox.filter.allChannels") : getOmniChannelLabel(t, channelFilter)}
                             </div>
                         </div>
                         <Badge variant="outline" className="h-6 rounded-full bg-white/80 px-2.5 text-[11px]">
@@ -607,7 +605,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                             </select>
                         ) : (
                             <div className="flex h-9 min-w-0 items-center rounded-md border border-input bg-white px-3 py-2 text-sm text-muted-foreground">
-                                {getOmniChannelLabel(t, "web")}
+                                {t("omni.inbox.filter.allChannels")}
                             </div>
                         )}
                         <Button
