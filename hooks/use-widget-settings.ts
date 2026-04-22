@@ -4,7 +4,11 @@ import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
 import { areQuickActionsEqual, resolveQuickActionsConfig } from "@/lib/quick-actions"
-import type { AmbientDeviceAppearanceSettings, ClassicDeviceAppearanceSettings } from "@/types/chatbot"
+import type {
+    AmbientDeviceAppearanceSettings,
+    ClassicDeviceAppearanceSettings,
+    QuickActionButton,
+} from "@/types/chatbot"
 
 export interface WidgetSettings {
     // Branding settings
@@ -129,14 +133,7 @@ export interface WidgetSettings {
     // Quick Actions
     quickActions: {
         enabled: boolean
-        buttons: Array<{
-            id: string
-            label: string
-            moduleId: string
-            triggerMessage: string
-            visible: boolean
-            order: number
-        }>
+        buttons: QuickActionButton[]
     }
 }
 
