@@ -75,6 +75,8 @@ export interface ChatbotSettings {
     headerTextColor: string;
     suggestedQuestions: string[];
     enableLeadCollection: boolean;
+    enableHumanHandoff?: boolean;
+    enableKvkkConsent?: boolean;
     enableGuided?: boolean;
     kvkkConsent?: {
         enabled: boolean;
@@ -118,6 +120,7 @@ export interface ChatbotSettings {
             messages: any[];
         };
     };
+    enableProactiveMessaging?: boolean;
     enableAppointments: boolean;
     appointmentTypes: string[];
     appointmentSuccessMessage: string;
@@ -126,6 +129,14 @@ export interface ChatbotSettings {
     preferredVoice: string;
     enablePersonalShopper: boolean;
     enableVisualDiagnosis: boolean;
+    enableDigitalWaiter?: boolean;
+    digitalWaiter?: {
+        serviceMode?: "table_service" | "counter_service";
+        menuUrl?: string;
+        menuPdfUrl?: string;
+        signatureDishes?: string[];
+        aiSuggestionsEnabled?: boolean;
+    } | null;
     leadCustomFields: {
         id: string;
         label: string;
@@ -246,10 +257,19 @@ export interface ChatbotSettings {
     };
 }
 
+export type QuickActionModuleId =
+    | "appointments"
+    | "humanHandoff"
+    | "leadCollection"
+    | "visualDiagnosis"
+    | "kvkkConsent"
+    | "proactiveMessaging"
+    | "digitalWaiter";
+
 export interface QuickActionButton {
     id: string;
     label: string;
-    moduleId: 'appointments' | 'humanHandoff' | 'leadCollection';
+    moduleId: QuickActionModuleId;
     triggerMessage: string;
     visible: boolean;
     order: number;

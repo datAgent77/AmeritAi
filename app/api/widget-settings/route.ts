@@ -268,6 +268,7 @@ export async function GET(req: Request) {
                         enableProactiveMessaging: isProactiveModuleEnabled,
                         engagement: resolvedEngagement,
                         // Digital Waiter (Restaurant)
+                        enableDigitalWaiter: mergedData.enableDigitalWaiter === true || mergedData.digitalWaiter != null,
                         digitalWaiter: mergedData.digitalWaiter || null,
                         // Web-only browser voice mode; no telephony/omni coupling here.
                         enableVoiceAssistant: isWebVoiceAssistantEnabled,
@@ -414,6 +415,7 @@ export async function GET(req: Request) {
                 initialLanguage: "tr",
                 enableProactiveMessaging: false,
                 engagement: null,
+                enableDigitalWaiter: false,
                 digitalWaiter: null,
                 enableVoiceAssistant: false,
                 enableAutoSpeak: false,
@@ -542,6 +544,7 @@ export async function GET(req: Request) {
                 dynamicContextMode: "nocode",
                 dynamicContextSelectors: [],
                 enableProactiveMessaging: false,
+                enableDigitalWaiter: false,
                 theme: "classic"
             }, {
                 headers: {
@@ -602,6 +605,7 @@ export async function GET(req: Request) {
             dynamicContextMode: "nocode",
             dynamicContextSelectors: [],
             enableProactiveMessaging: false,
+            enableDigitalWaiter: false,
             enableVoiceAssistant: false,
             enableAutoSpeak: false,
             voiceProvider: "klassifier",

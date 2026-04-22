@@ -1,27 +1,14 @@
-import type { QuickActionButton } from "@/types/chatbot"
+import type { QuickActionButton, QuickActionModuleId } from "@/types/chatbot"
 
-export const QUICK_ACTION_DEFINITIONS = {
-    appointments: {
-        id: "appointments",
-        label: "Randevu Al",
-        moduleId: "appointments",
-        triggerMessage: "randevu almak istiyorum",
-    },
-    humanHandoff: {
-        id: "humanHandoff",
-        label: "Temsilci İste",
-        moduleId: "humanHandoff",
-        triggerMessage: "bir temsilciyle görüşmek istiyorum",
-    },
-    leadCollection: {
-        id: "leadCollection",
-        label: "İletişim Bırak",
-        moduleId: "leadCollection",
-        triggerMessage: "iletişim bilgilerimi bırakmak istiyorum",
-    },
-} as const satisfies Record<QuickActionButton["moduleId"], Omit<QuickActionButton, "visible" | "order">>
-
-export type QuickActionModuleId = keyof typeof QUICK_ACTION_DEFINITIONS
+type QuickActionDefinition = Omit<QuickActionButton, "visible" | "order"> & {
+    iconName: string
+    title: {
+        tr: string
+        en: string
+    }
+    inferenceTexts: string[]
+    enabledWhen: (data: Record<string, any>) => boolean
+}
 
 type QuickActionsConfig = {
     enabled: boolean
@@ -32,6 +19,158 @@ function normalizeText(value: unknown) {
     return String(value || "").trim().toLocaleLowerCase("tr-TR")
 }
 
+const QUICK_ACTION_DEFINITIONS = {
+    appointments: {
+        id: "appointments",
+        label: "Randevu Al",
+        moduleId: "appointments",
+        triggerMessage: "randevu almak istiyorum",
+        iconName: "Calendar",
+        title: {
+            tr: "Randevu",
+            en: "Appointments",
+        },
+        inferenceTexts: [
+            "Randevu Al",
+            "Randevu",
+            "Book Appointment",
+            "Appointments",
+            "randevu almak istiyorum",
+            "book an appointment",
+        ],
+        enabledWhen: (data) => data.enableAppointments === true,
+    },
+    humanHandoff: {
+        id: "humanHandoff",
+        label: "Temsilci İste",
+        moduleId: "humanHandoff",
+        triggerMessage: "bir temsilciyle görüşmek istiyorum",
+        iconName: "Users",
+        title: {
+            tr: "Temsilci",
+            en: "Human Handoff",
+        },
+        inferenceTexts: [
+            "Temsilci İste",
+            "Temsilci",
+            "Human Handoff",
+            "Talk to Human",
+            "bir temsilciyle görüşmek istiyorum",
+            "i want to talk to a human agent",
+        ],
+        enabledWhen: (data) => data.enableHumanHandoff === true,
+    },
+    leadCollection: {
+        id: "leadCollection",
+        label: "İletişim Bırak",
+        moduleId: "leadCollection",
+        triggerMessage: "iletişim bilgilerimi bırakmak istiyorum",
+        iconName: "FileText",
+        title: {
+            tr: "İletişim Formu",
+            en: "Lead Collection",
+        },
+        inferenceTexts: [
+            "İletişim Bırak",
+            "İletişim Formu",
+            "Lead Collection",
+            "Leave Contact",
+            "iletişim bilgilerimi bırakmak istiyorum",
+            "i want to leave my contact information",
+        ],
+        enabledWhen: (data) => data.enableLeadCollection === true,
+    },
+    visualDiagnosis: {
+        id: "visualDiagnosis",
+        label: "Görsel Analiz",
+        moduleId: "visualDiagnosis",
+        triggerMessage: "görsel analizi başlatmak istiyorum",
+        iconName: "ImageIcon",
+        title: {
+            tr: "Görsel Tanı",
+            en: "Visual Diagnosis",
+        },
+        inferenceTexts: [
+            "Görsel Analiz",
+            "Görsel Tanı",
+            "Visual Diagnosis",
+            "Image Analysis",
+            "görsel analizi başlatmak istiyorum",
+            "i want to start visual diagnosis",
+        ],
+        enabledWhen: (data) => data.enableVisualDiagnosis === true,
+    },
+    kvkkConsent: {
+        id: "kvkkConsent",
+        label: "KVKK Onayı",
+        moduleId: "kvkkConsent",
+        triggerMessage: "kvkk onay metnini görmek istiyorum",
+        iconName: "ShieldCheck",
+        title: {
+            tr: "KVKK",
+            en: "KVKK & Privacy",
+        },
+        inferenceTexts: [
+            "KVKK Onayı",
+            "KVKK",
+            "Privacy Consent",
+            "KVKK & Privacy",
+            "kvkk onay metnini görmek istiyorum",
+            "i want to review the privacy consent",
+        ],
+        enabledWhen: (data) => data.enableKvkkConsent === true || data.kvkkConsent?.enabled === true,
+    },
+    proactiveMessaging: {
+        id: "proactiveMessaging",
+        label: "Bana Yol Göster",
+        moduleId: "proactiveMessaging",
+        triggerMessage: "ihtiyacıma göre bana birkaç soru sorarak yardımcı ol",
+        iconName: "Sparkles",
+        title: {
+            tr: "Proaktif Etkileşim",
+            en: "Proactive Messaging",
+        },
+        inferenceTexts: [
+            "Bana Yol Göster",
+            "Proaktif Etkileşim",
+            "Proactive Messaging",
+            "Guide Me",
+            "ihtiyacıma göre bana birkaç soru sorarak yardımcı ol",
+            "guide me proactively based on my needs",
+        ],
+        enabledWhen: (data) => data.enableProactiveMessaging === true,
+    },
+    digitalWaiter: {
+        id: "digitalWaiter",
+        label: "Menüden Öner",
+        moduleId: "digitalWaiter",
+        triggerMessage: "menüden bana öneri yap ve sipariş konusunda yardımcı ol",
+        iconName: "UtensilsCrossed",
+        title: {
+            tr: "Restoran ve Kafe AI",
+            en: "Restaurant & Cafe AI",
+        },
+        inferenceTexts: [
+            "Menüden Öner",
+            "Restoran ve Kafe AI",
+            "Digital Waiter",
+            "Restaurant & Cafe AI",
+            "menüden bana öneri yap ve sipariş konusunda yardımcı ol",
+            "help me choose from the menu",
+        ],
+        enabledWhen: (data) => data.enableDigitalWaiter === true || data.digitalWaiter != null,
+    },
+} as const satisfies Record<QuickActionModuleId, QuickActionDefinition>
+
+export type QuickActionDefinitionMap = typeof QUICK_ACTION_DEFINITIONS
+export type QuickActionDefinitionEntry = QuickActionDefinitionMap[QuickActionModuleId]
+export type QuickActionsModuleOption = {
+    moduleId: QuickActionModuleId
+    label: string
+}
+
+export const QUICK_ACTION_MODULE_IDS = Object.keys(QUICK_ACTION_DEFINITIONS) as QuickActionModuleId[]
+
 export function isQuickActionModuleId(value: unknown): value is QuickActionModuleId {
     return typeof value === "string" && value in QUICK_ACTION_DEFINITIONS
 }
@@ -40,35 +179,55 @@ export function getQuickActionDefinition(moduleId: QuickActionModuleId) {
     return QUICK_ACTION_DEFINITIONS[moduleId]
 }
 
+export function getQuickActionModuleOptions(language: "tr" | "en" = "tr"): QuickActionsModuleOption[] {
+    return QUICK_ACTION_MODULE_IDS.map((moduleId) => ({
+        moduleId,
+        label: QUICK_ACTION_DEFINITIONS[moduleId].title[language],
+    }))
+}
+
 function getEnabledQuickActionModules(data: Record<string, any>) {
-    const enabled: QuickActionModuleId[] = []
-
-    if (data.enableAppointments === true) enabled.push("appointments")
-    if (data.enableHumanHandoff === true) enabled.push("humanHandoff")
-    if (data.enableLeadCollection === true) enabled.push("leadCollection")
-
-    return enabled
+    return QUICK_ACTION_MODULE_IDS.filter((moduleId) => QUICK_ACTION_DEFINITIONS[moduleId].enabledWhen(data))
 }
 
 function inferQuickActionModuleId(button: Partial<QuickActionButton>) {
     const normalizedTrigger = normalizeText(button.triggerMessage)
+    if (normalizedTrigger) {
+        const inferredByTrigger = QUICK_ACTION_MODULE_IDS.find((moduleId) => {
+            const definition = QUICK_ACTION_DEFINITIONS[moduleId]
+            const knownTriggers = [
+                normalizeText(definition.triggerMessage),
+                ...definition.inferenceTexts.map((value) => normalizeText(value)),
+            ]
+            return knownTriggers.includes(normalizedTrigger)
+        })
+
+        if (inferredByTrigger) return inferredByTrigger
+    }
+
     const normalizedLabel = normalizeText(button.label)
+    if (normalizedLabel) {
+        const inferredByLabel = QUICK_ACTION_MODULE_IDS.find((moduleId) => {
+            const definition = QUICK_ACTION_DEFINITIONS[moduleId]
+            const knownLabels = [
+                normalizeText(definition.label),
+                normalizeText(definition.title.tr),
+                normalizeText(definition.title.en),
+                ...definition.inferenceTexts.map((value) => normalizeText(value)),
+            ]
+            return knownLabels.includes(normalizedLabel)
+        })
 
-    const inferredByTrigger = (Object.keys(QUICK_ACTION_DEFINITIONS) as QuickActionModuleId[]).find((moduleId) =>
-        normalizeText(QUICK_ACTION_DEFINITIONS[moduleId].triggerMessage) === normalizedTrigger
-    )
+        if (inferredByLabel) return inferredByLabel
+    }
 
-    if (inferredByTrigger) return inferredByTrigger
+    const normalizedId = normalizeText(button.id)
+    if (normalizedId) {
+        const inferredById = QUICK_ACTION_MODULE_IDS.find((moduleId) => normalizeText(QUICK_ACTION_DEFINITIONS[moduleId].id) === normalizedId)
+        if (inferredById) return inferredById
+    }
 
-    const inferredByLabel = (Object.keys(QUICK_ACTION_DEFINITIONS) as QuickActionModuleId[]).find((moduleId) =>
-        normalizeText(QUICK_ACTION_DEFINITIONS[moduleId].label) === normalizedLabel
-    )
-
-    if (inferredByLabel) return inferredByLabel
-
-    if (isQuickActionModuleId(button.moduleId)) return button.moduleId
-
-    return null
+    return isQuickActionModuleId(button.moduleId) ? button.moduleId : null
 }
 
 function buildDefaultQuickActionsFromModules(enabledModules: QuickActionModuleId[]): QuickActionsConfig {
@@ -105,7 +264,7 @@ export function normalizeQuickActionButton(
     const rawLabel = typeof button.label === "string" ? button.label.trim() : ""
     const normalizedLabel = normalizeText(rawLabel)
     const labelLooksStale = rawLabel !== ""
-        && (Object.keys(QUICK_ACTION_DEFINITIONS) as QuickActionModuleId[]).some((moduleId) =>
+        && QUICK_ACTION_MODULE_IDS.some((moduleId) =>
             moduleId !== inferredModuleId
             && normalizeText(QUICK_ACTION_DEFINITIONS[moduleId].label) === normalizedLabel
         )
@@ -123,6 +282,24 @@ export function normalizeQuickActionButton(
     }
 }
 
+export function areQuickActionsEqual(left: QuickActionsConfig | undefined, right: QuickActionsConfig | undefined) {
+    if (!left && !right) return true
+    if (!left || !right) return false
+    if (left.enabled !== right.enabled) return false
+    if (left.buttons.length !== right.buttons.length) return false
+
+    return left.buttons.every((button, index) => {
+        const other = right.buttons[index]
+        return Boolean(other)
+            && button.id === other.id
+            && button.label === other.label
+            && button.moduleId === other.moduleId
+            && button.triggerMessage === other.triggerMessage
+            && button.visible === other.visible
+            && button.order === other.order
+    })
+}
+
 export function resolveQuickActionsConfig(data: Record<string, any>): QuickActionsConfig {
     const enabledModules = getEnabledQuickActionModules(data)
     const allowedModules = new Set(enabledModules)
@@ -133,11 +310,17 @@ export function resolveQuickActionsConfig(data: Record<string, any>): QuickActio
         return fallback
     }
 
-    const normalizedButtons = savedQuickActions.buttons
-        .map((button: Partial<QuickActionButton>, index: number) => normalizeQuickActionButton(button, index, { allowedModules }))
-        .filter((button: QuickActionButton | null): button is QuickActionButton => button !== null)
+    const dedupedByModule = new Map<QuickActionModuleId, QuickActionButton>()
+    for (const [index, rawButton] of savedQuickActions.buttons.entries()) {
+        const normalizedButton = normalizeQuickActionButton(rawButton as Partial<QuickActionButton>, index, { allowedModules })
+        if (!normalizedButton) continue
+        if (dedupedByModule.has(normalizedButton.moduleId)) continue
+        dedupedByModule.set(normalizedButton.moduleId, normalizedButton)
+    }
 
-    const existingModuleIds = new Set(normalizedButtons.map((button: QuickActionButton) => button.moduleId))
+    const normalizedButtons = Array.from(dedupedByModule.values())
+    const existingModuleIds = new Set(normalizedButtons.map((button) => button.moduleId))
+
     for (const moduleId of enabledModules) {
         if (!existingModuleIds.has(moduleId)) {
             const definition = getQuickActionDefinition(moduleId)
@@ -150,8 +333,8 @@ export function resolveQuickActionsConfig(data: Record<string, any>): QuickActio
     }
 
     const buttons = normalizedButtons
-        .sort((left: QuickActionButton, right: QuickActionButton) => left.order - right.order)
-        .map((button: QuickActionButton, index: number) => ({ ...button, order: index }))
+        .sort((left, right) => left.order - right.order)
+        .map((button, index) => ({ ...button, order: index }))
 
     if (buttons.length === 0) {
         return {

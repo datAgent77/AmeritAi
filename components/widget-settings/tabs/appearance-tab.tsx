@@ -27,7 +27,7 @@ import {
 import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 import { getAmbientDeviceSettingsKeys, resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { getClassicDeviceSettingsKeys, resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
-import { getQuickActionDefinition, isQuickActionModuleId } from "@/lib/quick-actions"
+import { getQuickActionDefinition, getQuickActionModuleOptions, isQuickActionModuleId } from "@/lib/quick-actions"
 
 interface AppearanceTabProps {
     settings: WidgetSettings
@@ -70,6 +70,7 @@ export function AppearanceTab({
     const ambientDeviceKeys = new Set(getAmbientDeviceSettingsKeys())
     const classicDeviceKeys = new Set(getClassicDeviceSettingsKeys())
     const deviceScopedKeys = isAmbientMode ? ambientDeviceKeys : classicDeviceKeys
+    const quickActionModuleOptions = getQuickActionModuleOptions(language === "tr" ? "tr" : "en")
     const effectiveDeviceOverrides = isAmbientMode
         ? resolveAmbientDeviceSettings(rootSettings, editorDevice)
         : resolveClassicDeviceSettings(rootSettings, editorDevice)
@@ -743,7 +744,7 @@ export function AppearanceTab({
                                 </p>
                             )}
                             {settings.quickActions.buttons.map((btn, i) => (
-                                <div key={btn.id} className="flex items-center gap-3">
+                                <div key={`${btn.id}-${i}`} className="flex items-center gap-3">
                                     <Switch
                                         checked={btn.visible}
                                         onCheckedChange={(checked) => {
@@ -798,9 +799,11 @@ export function AppearanceTab({
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="appointments">{language === 'tr' ? 'Randevu' : 'Appointments'}</SelectItem>
-                                            <SelectItem value="humanHandoff">{language === 'tr' ? 'Temsilci' : 'Human Handoff'}</SelectItem>
-                                            <SelectItem value="leadCollection">{language === 'tr' ? 'İletişim Formu' : 'Lead Collection'}</SelectItem>
+                                            {quickActionModuleOptions.map((option) => (
+                                                <SelectItem key={option.moduleId} value={option.moduleId}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

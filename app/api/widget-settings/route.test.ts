@@ -23,6 +23,14 @@ vi.mock("@/lib/dynamic-context-presets", () => ({
     }),
 }))
 
+vi.mock("@/lib/contracts", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("@/lib/contracts")>()
+    return {
+        ...actual,
+        getPublishedContract: vi.fn().mockResolvedValue(null),
+    }
+})
+
 function createDoc(data: Record<string, unknown> | null) {
     return {
         exists: Boolean(data),
@@ -243,5 +251,59 @@ describe("GET /api/widget-settings", () => {
         const payload = await response.json()
         expect(payload.dynamicContextMode).toBe("enterprise_adapter")
         expect(payload.dynamicSiteContextCapturePII).toBe(false)
+    })
+
+    test("returns normalized quick actions for all supported active modules", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            chatbotData: {
+                companyName: "Userex",
+                enableAppointments: true,
+                enableHumanHandoff: true,
+                enableVisualDiagnosis: true,
+                enableKvkkConsent: true,
+                enableProactiveMessaging: true,
+                enableDigitalWaiter: true,
+                digitalWaiter: {
+                    menuUrl: "https://example.com/menu",
+                },
+                quickActions: {
+                    enabled: true,
+                    buttons: [
+                        {
+                            id: "humanHandoff",
+                            label: "KVKK",
+                            moduleId: "humanHandoff",
+                            triggerMessage: "kvkk onay metnini görmek istiyorum",
+                            visible: true,
+                            order: 0,
+                        },
+                        {
+                            id: "leadCollection",
+                            label: "Iletisim Birak",
+                            moduleId: "leadCollection",
+                            triggerMessage: "iletisim bilgilerimi birakmak istiyorum",
+                            visible: true,
+                            order: 1,
+                        },
+                    ],
+                },
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableProactiveMessaging).toBe(true)
+        expect(payload.enableDigitalWaiter).toBe(true)
+        expect(payload.quickActions.enabled).toBe(true)
+        expect(payload.quickActions.buttons.map((button: any) => button.moduleId)).toEqual([
+            "kvkkConsent",
+            "appointments",
+            "humanHandoff",
+            "visualDiagnosis",
+            "proactiveMessaging",
+            "digitalWaiter",
+        ])
     })
 })

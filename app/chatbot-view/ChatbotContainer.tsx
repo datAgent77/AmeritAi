@@ -28,6 +28,7 @@ import { SpinWheelOverlay } from "./components/SpinWheelOverlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
+import { resolveQuickActionRuntimeAction } from "@/lib/quick-action-runtime"
 
 type LeadSubmitOptions = {
     source?: "inline" | "overlay"
@@ -488,51 +489,52 @@ export default function ChatbotContainer() {
     }
 
     const handleTriggerAction = (button: QuickActionButton) => {
-        const { moduleId } = button
+        const action = resolveQuickActionRuntimeAction({
+            button,
+            language,
+            settings,
+            requiresKvkkConsent,
+            isKvkkAccepted,
+        })
 
-        if (requiresKvkkConsent) {
+        if (action.type === "blocked") {
+            setIsKvkkModalOpen(true)
             return
         }
 
-        if (moduleId === 'humanHandoff') {
-            setLeadCollectionFlow("handoff")
-            const promptText = language === "tr"
-                ? "Temsilci ile görüşmek için iletişim bilgilerinizi paylaşın, ekibimiz size ulaşsın."
-                : "Share your contact info so our agent can reach out to you."
+        if (action.type === "open-kvkk-modal") {
+            setIsKvkkModalOpen(true)
+            return
+        }
+
+        if (action.type === "append-form-message") {
+            if (action.form === "handoff") {
+                setLeadCollectionFlow("handoff")
+            } else if (action.form === "lead") {
+                setLeadCollectionFlow("lead")
+            }
+
             setMessages((prev: any[]) => [...prev, {
-                id: `handoff_inline_${Date.now()}`,
+                id: `quick_action_${action.form}_${Date.now()}`,
                 role: "assistant",
-                content: `${promptText}\n[SHOW_HANDOFF_FORM]`,
+                content: action.content,
                 createdAt: new Date(),
             }])
             return
         }
 
-        if (moduleId === 'leadCollection') {
-            setLeadCollectionFlow("lead")
-            const promptText = settings.leadFormConfig?.subtitle
-                || (language === "tr"
-                    ? "İletişim bilgilerinizi paylaşır mısınız? Ekibimiz en kısa sürede sizinle iletişime geçecektir."
-                    : "Could you share your contact details? Our team will reach out shortly.")
+        if (action.type === "append-message") {
             setMessages((prev: any[]) => [...prev, {
-                id: `lead_inline_${Date.now()}`,
+                id: `quick_action_message_${Date.now()}`,
                 role: "assistant",
-                content: `${promptText}\n[SHOW_LEAD_FORM]`,
+                content: action.content,
                 createdAt: new Date(),
             }])
             return
         }
 
-        if (moduleId === 'appointments') {
-            const promptText = language === "tr"
-                ? "Tabii ki! Lütfen aşağıdaki randevu formunu doldurun."
-                : "Of course! Please fill out the booking form below."
-            setMessages((prev: any[]) => [...prev, {
-                id: `booking_inline_${Date.now()}`,
-                role: "assistant",
-                content: `${promptText}\n[SHOW_BOOKING_FORM]`,
-                createdAt: new Date(),
-            }])
+        if (action.type === "send-message") {
+            void guardedSendMessage(action.message, false, undefined, undefined, null)
             return
         }
     }
@@ -552,11 +554,40 @@ export default function ChatbotContainer() {
             const submitSource = options?.source === "inline" ? "inline" : "overlay"
 
             if (flow === "handoff") {
+                const leadName = String(formData?.name || "").trim()
+                const leadEmail = String(formData?.email || "").trim()
+                const leadPhone = String(formData?.phone || "").trim()
+                const customFields = formData?.customFields && typeof formData.customFields === "object"
+                    ? Object.entries(formData.customFields)
+                        .map(([key, value]) => [String(key).trim(), String(value || "").trim()] as const)
+                        .filter(([, value]) => value)
+                    : []
+
+                try {
+                    localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
+                } catch {
+                    // Ignore storage errors during handoff capture.
+                }
+
+                const structuredDetails = [
+                    leadName ? (language === "tr" ? `Adım ${leadName}.` : `My name is ${leadName}.`) : "",
+                    leadEmail ? (language === "tr" ? `E-posta adresim ${leadEmail}.` : `My email is ${leadEmail}.`) : "",
+                    leadPhone ? (language === "tr" ? `Telefon numaram ${leadPhone}.` : `My phone number is ${leadPhone}.`) : "",
+                    ...customFields.map(([key, value]) =>
+                        language === "tr"
+                            ? `${key}: ${value}.`
+                            : `${key}: ${value}.`
+                    ),
+                ].filter(Boolean)
+
                 setShowLeadCollection(false)
                 await guardedSendMessage(
-                    language === "tr"
-                        ? "Temsilci talebi için iletişim bilgilerimi paylaştım."
-                        : "I shared my contact details for a human handoff.",
+                    [
+                        language === "tr"
+                            ? "Temsilci talebim için iletişim bilgilerimi paylaşıyorum."
+                            : "I am sharing my contact details for the human handoff request.",
+                        ...structuredDetails,
+                    ].join(" "),
                     false,
                     undefined,
                     undefined,
