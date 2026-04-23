@@ -70,6 +70,27 @@ export function WidgetLivePreview({
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(previewShouldStartOpen)
 
+    const desktopPreviewShell = useMemo(() => {
+        if (settings.viewMode === "wide") {
+            if (settings.modalSize === "medium") {
+                return {
+                    maxWidth: "760px",
+                    height: "620px",
+                }
+            }
+
+            return {
+                maxWidth: "1000px",
+                height: "680px",
+            }
+        }
+
+        return {
+            maxWidth: "620px",
+            height: "600px",
+        }
+    }, [settings.modalSize, settings.viewMode])
+
     useEffect(() => {
         if (settings.chatDisplayMode === "sidecar" && settings.sidecarAlwaysOpen === true) {
             setIsPreviewOpen(isSidecarPreviewActive)
@@ -136,49 +157,58 @@ export function WidgetLivePreview({
     )
 
     return (
-        <div className="flex h-full min-h-[600px] flex-1 flex-col items-center overflow-y-auto rounded-xl border border-dashed border-border/50 bg-muted/30 p-6">
-            <div className="mb-4 flex gap-2">
+        <div className="flex h-full w-full flex-col items-center pt-8">
+            <div className="mb-6 flex gap-2 rounded-full border bg-background/50 p-1 backdrop-blur shadow-sm">
                 <Button
-                    variant={previewMode === "mobile" ? "default" : "outline"}
+                    variant={previewMode === "mobile" ? "default" : "ghost"}
                     size="sm"
+                    className="rounded-full px-6"
                     onClick={() => setPreviewMode("mobile")}
                 >
                     {t("mobile") || "Mobile"}
                 </Button>
                 <Button
-                    variant={previewMode === "desktop" ? "default" : "outline"}
+                    variant={previewMode === "desktop" ? "default" : "ghost"}
                     size="sm"
+                    className="rounded-full px-6"
                     onClick={() => setPreviewMode("desktop")}
                 >
                     {t("desktop") || "Desktop"}
                 </Button>
             </div>
 
-            <div className="sticky top-8 flex w-full max-w-[700px] justify-center">
+            <div className="flex w-full justify-center">
                 {previewMode === "mobile" ? (
-                    <div className="relative mx-auto h-[740px] w-[360px] shrink-0 rounded-[2.8rem] border-[14px] border-gray-800 bg-gray-800 shadow-xl">
-                        <div className="absolute left-1/2 top-0 z-50 h-[22px] w-[178px] -translate-x-1/2 rounded-b-[1.1rem] bg-gray-800"></div>
-                        <div className="absolute -start-[17px] top-[88px] h-[36px] w-[3px] rounded-s-lg bg-gray-800"></div>
-                        <div className="absolute -start-[17px] top-[146px] h-[52px] w-[3px] rounded-s-lg bg-gray-800"></div>
-                        <div className="absolute -start-[17px] top-[206px] h-[52px] w-[3px] rounded-s-lg bg-gray-800"></div>
-                        <div className="absolute -end-[17px] top-[164px] h-[72px] w-[3px] rounded-e-lg bg-gray-800"></div>
+                    <div className="relative mx-auto h-[740px] w-[360px] shrink-0 rounded-[2.8rem] border-[14px] border-slate-900 bg-gray-800 shadow-2xl ring-1 ring-border/10">
+                        <div className="absolute left-1/2 top-0 z-50 h-[22px] w-[178px] -translate-x-1/2 rounded-b-[1.1rem] bg-slate-900"></div>
+                        <div className="absolute -start-[17px] top-[88px] h-[36px] w-[3px] rounded-s-lg bg-slate-900"></div>
+                        <div className="absolute -start-[17px] top-[146px] h-[52px] w-[3px] rounded-s-lg bg-slate-900"></div>
+                        <div className="absolute -start-[17px] top-[206px] h-[52px] w-[3px] rounded-s-lg bg-slate-900"></div>
+                        <div className="absolute -end-[17px] top-[164px] h-[72px] w-[3px] rounded-e-lg bg-slate-900"></div>
                         <div className="h-full w-full overflow-hidden rounded-[2rem] border-0 bg-white">
                             {previewCanvas}
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full max-w-[600px] shrink-0 overflow-hidden rounded-lg border bg-white shadow-2xl">
-                        <div className="flex items-center gap-2 border-b bg-gray-100 p-3 dark:bg-gray-800">
+                    <div
+                        className="w-full shrink-0 overflow-hidden rounded-xl border border-border/50 bg-white shadow-2xl ring-1 ring-border/10 transition-[max-width] duration-300"
+                        style={{ maxWidth: desktopPreviewShell.maxWidth }}
+                    >
+                        <div className="flex items-center gap-2 border-b bg-muted/40 p-3">
                             <div className="flex gap-1.5">
-                                <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                                <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                                <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                                <div className="h-3 w-3 rounded-full bg-rose-400"></div>
+                                <div className="h-3 w-3 rounded-full bg-amber-400"></div>
+                                <div className="h-3 w-3 rounded-full bg-emerald-400"></div>
                             </div>
-                            <div className="flex-1 rounded bg-white px-3 py-1 text-center text-xs text-gray-500 dark:bg-gray-700">
-                                yourwebsite.com
+                            <div className="mx-auto flex h-6 w-full max-w-[400px] items-center justify-center rounded bg-background px-3 text-xs text-muted-foreground shadow-sm ring-1 ring-border/50">
+                                example.com
                             </div>
+                            <div className="w-12" /> {/* Spacer to center the URL bar */}
                         </div>
-                        <div className="h-[500px] w-full border-0 bg-white">
+                        <div
+                            className="w-full border-0 bg-white transition-[height] duration-300"
+                            style={{ height: desktopPreviewShell.height }}
+                        >
                             {previewCanvas}
                         </div>
                     </div>

@@ -9,5 +9,9 @@ export default function WidgetPage() {
 
     if (!user) return null
 
-    return <WidgetSettings userId={user.uid} />
+    return (
+        <div className="h-[calc(100dvh-4rem)] min-h-0">
+            <WidgetSettings userId={user.uid} />
+        </div>
+    )
 }

@@ -205,8 +205,8 @@ export async function POST(req: Request) {
             }
         }
 
-        if (!normalizedEmail && !isAuthorizedRequest) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+        if (!normalizedEmail && !normalizedPhone && !isAuthorizedRequest) {
+            return NextResponse.json({ error: "Email or phone is required" }, { status: 400 })
         }
 
         if (isAuthorizedRequest && !normalizedEmail && !normalizedPhone) {

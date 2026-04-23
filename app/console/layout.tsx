@@ -266,7 +266,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                             return <TrialExpiredOverlay />
                         })()}
                         
-                        <main className="flex-1 overflow-y-auto bg-[#f4f6f8] relative">
+                        <main className="flex-1 overflow-y-auto bg-background relative">
                             {children}
                         </main>
                     </div>

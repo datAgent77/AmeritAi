@@ -36,6 +36,27 @@ type LeadSubmitOptions = {
     flow?: "lead" | "handoff"
 }
 
+type BookingFormData = {
+    type: string
+    date: string
+    time: string
+    notes: string
+    name: string
+    email: string
+    phone: string
+}
+
+function readStoredLeadData(chatbotId: string) {
+    if (typeof window === "undefined") return null
+
+    try {
+        const raw = localStorage.getItem(`lead_${chatbotId}`)
+        return raw ? JSON.parse(raw) : null
+    } catch {
+        return null
+    }
+}
+
 export default function ChatbotContainer() {
     // 1. Contexts & Params
     const searchParams = useSearchParams()
@@ -64,7 +85,18 @@ export default function ChatbotContainer() {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isConfirmingClear, setIsConfirmingClear] = useState(false)
     const [showBooking, setShowBooking] = useState(false)
-    const [bookingData, setBookingData] = useState({ type: "", date: "", time: "", notes: "" })
+    const [bookingData, setBookingData] = useState<BookingFormData>(() => {
+        const storedLead = readStoredLeadData(chatbotId)
+        return {
+            type: "",
+            date: "",
+            time: "",
+            notes: "",
+            name: storedLead?.name || "",
+            email: storedLead?.email || "",
+            phone: storedLead?.phone || "",
+        }
+    })
     const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
 
     // Ambient mode: manual override to collapse feed
@@ -86,6 +118,20 @@ export default function ChatbotContainer() {
 
     // Mobile Keyboard Fix: Visual Viewport
     const [viewportStyle, setViewportStyle] = useState({ height: '100%', top: 0 });
+
+    useEffect(() => {
+        if (!showBooking) return
+
+        const storedLead = readStoredLeadData(chatbotId)
+        if (!storedLead) return
+
+        setBookingData((current) => ({
+            ...current,
+            name: current.name || storedLead.name || "",
+            email: current.email || storedLead.email || "",
+            phone: current.phone || storedLead.phone || "",
+        }))
+    }, [chatbotId, showBooking])
 
     useEffect(() => {
         if (typeof window !== 'undefined' && window.visualViewport) {
@@ -704,17 +750,48 @@ export default function ChatbotContainer() {
     const handleBookingSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        const trimmedName = String(bookingData.name || "").trim()
+        const trimmedEmail = String(bookingData.email || "").trim()
+        const trimmedPhone = String(bookingData.phone || "").trim()
+        const phoneDigits = trimmedPhone.replace(/\D/g, "")
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const phoneRegex = /^[\d\s+\-()]+$/
+
         if (!bookingData.date || !bookingData.time) {
             alert("Lutfen tarih ve saat secin.")
             return
         }
 
+        if (!trimmedName) {
+            alert(t("nameRequired") === "nameRequired" ? "Ad Soyad gereklidir" : t("nameRequired"))
+            return
+        }
+
+        if (!trimmedEmail && !trimmedPhone) {
+            alert(t("contactRequired") === "contactRequired" ? "E-posta veya telefon gereklidir" : t("contactRequired"))
+            return
+        }
+
+        if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
+            alert(t("invalidEmail") === "invalidEmail" ? "Geçersiz e-posta adresi" : t("invalidEmail"))
+            return
+        }
+
+        if (trimmedPhone && (!phoneRegex.test(trimmedPhone) || phoneDigits.length < 7)) {
+            alert(t("invalidPhone") === "invalidPhone" ? "Geçersiz telefon numarası" : t("invalidPhone"))
+            return
+        }
+
         setIsSubmittingBooking(true)
         try {
-            let leadData: any = null
             try {
-                const raw = typeof window !== "undefined" ? localStorage.getItem(`lead_${chatbotId}`) : null
-                if (raw) leadData = JSON.parse(raw)
+                const storedLead = readStoredLeadData(chatbotId) || {}
+                localStorage.setItem(`lead_${chatbotId}`, JSON.stringify({
+                    ...storedLead,
+                    name: trimmedName,
+                    email: trimmedEmail,
+                    phone: trimmedPhone,
+                }))
             } catch { /* ignore */ }
 
             const res = await fetch("/api/appointments", {
@@ -723,9 +800,9 @@ export default function ChatbotContainer() {
                 body: JSON.stringify({
                     chatbotId,
                     sessionId,
-                    customerName: leadData?.name || "Misafir",
-                    customerEmail: leadData?.email || "",
-                    customerPhone: leadData?.phone || "",
+                    customerName: trimmedName,
+                    customerEmail: trimmedEmail,
+                    customerPhone: trimmedPhone,
                     date: bookingData.date,
                     time: bookingData.time,
                     type: bookingData.type,

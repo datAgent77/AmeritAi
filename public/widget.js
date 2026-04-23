@@ -58,6 +58,7 @@
     primaryColor: attrColor || '#000000',
     position: 'bottom-right',
     viewMode: 'classic',
+    modalSize: 'half',
     interactionMode: 'launcher',
     chatDisplayMode: 'classic',
     sidecarWidth: 420,
@@ -3916,6 +3917,23 @@
     // Apply View Mode Styles
     const isAmbientMode = isAmbientWidgetMode;
 
+    const applyWideModalStyles = (sizeMode = settings.modalSize) => {
+      const isMedium = sizeMode === 'medium';
+
+      Object.assign(iframeContainer.style, {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: isMedium ? '760px' : '1000px',
+        maxWidth: isMedium ? '92%' : '95%',
+        height: isMedium ? '640px' : '700px',
+        maxHeight: isMedium ? '88vh' : '90vh',
+        bottom: 'auto',
+        right: 'auto',
+        borderRadius: '24px'
+      });
+    };
+
     if (isSidecarMode) {
       const sidecarWidth = getSidecarWidth();
       Object.assign(iframeContainer.style, {
@@ -4010,18 +4028,8 @@
           right: 'auto'
         });
       } else {
-        // Half/Wide Modal Styles (Default)
-        Object.assign(iframeContainer.style, {
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '1000px', // Increased
-          maxWidth: '95%',
-          height: '700px', // Increased
-          maxHeight: '90vh',
-          bottom: 'auto',
-          right: 'auto'
-        });
+        // Centered modal styles for medium and wide sizes
+        applyWideModalStyles(settings.modalSize);
       }
     } else {
       // Classic Styles
@@ -4306,17 +4314,8 @@
             // Hide launcher in fullscreen — widget header has its own close button
             launcherContainer.style.display = 'none';
           } else {
-            // Revert to Half/Wide
-            Object.assign(iframeContainer.style, {
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '1000px', // Increased from 800px
-              maxWidth: '95%', // Increased from 90%
-              height: '700px', // Increased from 600px
-              maxHeight: '90vh', // Increased from 80vh
-              borderRadius: '24px'
-            });
+            // Revert to the configured centered modal size
+            applyWideModalStyles(settings.modalSize);
             // Restore launcher visibility when exiting fullscreen
             applyOpenLauncherPosition();
           }

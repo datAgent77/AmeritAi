@@ -19,7 +19,7 @@ interface BookingFormData {
     date: string
     time: string
     notes: string
-    // Contact fields — shown only if no lead data
+    // Contact fields are always shown and prefilled from collected lead data when available.
     name: string
     email: string
     phone: string
@@ -38,7 +38,6 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
     }
 
     const leadData = getLeadData()
-    const hasContactInfo = Boolean(leadData?.email)
 
     const [appointmentTypes, setAppointmentTypes] = useState<string[]>(
         settings.appointmentTypes && settings.appointmentTypes.length > 0
@@ -63,16 +62,65 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
     const set = (key: keyof BookingFormData, value: string) =>
         setForm((prev) => ({ ...prev, [key]: value }))
 
+    const persistContactDraft = (name: string, email: string, phone: string) => {
+        if (typeof window === "undefined") return
+
+        try {
+            const storedLead = getLeadData() || {}
+            localStorage.setItem(`lead_${chatbotId}`, JSON.stringify({
+                ...storedLead,
+                name,
+                email,
+                phone,
+            }))
+        } catch {
+            // Ignore draft persistence failures in the widget form.
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setStatus("submitting")
-        setErrorMsg("")
+
+        const trimmedName = form.name.trim()
+        const trimmedEmail = form.email.trim()
+        const trimmedPhone = form.phone.trim()
+        const phoneDigits = trimmedPhone.replace(/\D/g, "")
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const phoneRegex = /^[\d\s+\-()]+$/
 
         if (!form.date || !form.time) {
             setErrorMsg("Lutfen tarih ve saat secin.")
             setStatus("error")
             return
         }
+
+        if (!trimmedName) {
+            setErrorMsg(t("nameRequired") === "nameRequired" ? "Ad Soyad gereklidir" : t("nameRequired"))
+            setStatus("error")
+            return
+        }
+
+        if (!trimmedEmail && !trimmedPhone) {
+            setErrorMsg(t("contactRequired") === "contactRequired" ? "E-posta veya telefon gereklidir" : t("contactRequired"))
+            setStatus("error")
+            return
+        }
+
+        if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
+            setErrorMsg(t("invalidEmail") === "invalidEmail" ? "Geçersiz e-posta adresi" : t("invalidEmail"))
+            setStatus("error")
+            return
+        }
+
+        if (trimmedPhone && (!phoneRegex.test(trimmedPhone) || phoneDigits.length < 7)) {
+            setErrorMsg(t("invalidPhone") === "invalidPhone" ? "Geçersiz telefon numarası" : t("invalidPhone"))
+            setStatus("error")
+            return
+        }
+
+        persistContactDraft(trimmedName, trimmedEmail, trimmedPhone)
+        setStatus("submitting")
+        setErrorMsg("")
 
         try {
             const res = await fetch("/api/appointments", {
@@ -81,9 +129,9 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 body: JSON.stringify({
                     chatbotId,
                     sessionId: sessionId || undefined,
-                    customerName: form.name || leadData?.name || "Misafir",
-                    customerEmail: form.email || leadData?.email,
-                    customerPhone: form.phone || leadData?.phone || "",
+                    customerName: trimmedName,
+                    customerEmail: trimmedEmail,
+                    customerPhone: trimmedPhone,
                     date: form.date,
                     time: form.time,
                     type: form.type,
@@ -169,34 +217,39 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 buttonClassName={pickerButtonClass}
             />
 
-            {/* Contact fields — only if no pre-collected lead */}
-            {!hasContactInfo && (
-                <>
-                    <input
-                        type="text"
-                        placeholder="Adınız"
-                        required
-                        value={form.name}
-                        onChange={(e) => set("name", e.target.value)}
-                        className={inputClass}
-                    />
-                    <input
-                        type="email"
-                        placeholder="E-posta adresiniz"
-                        required
-                        value={form.email}
-                        onChange={(e) => set("email", e.target.value)}
-                        className={inputClass}
-                    />
-                    <input
-                        type="tel"
-                        placeholder="Telefon (opsiyonel)"
-                        value={form.phone}
-                        onChange={(e) => set("phone", e.target.value)}
-                        className={inputClass}
-                    />
-                </>
-            )}
+            {/* Contact fields */}
+            <div className="space-y-2">
+                <input
+                    type="text"
+                    placeholder={t("fullName") === "fullName" ? "Ad Soyad" : t("fullName")}
+                    required
+                    autoComplete="name"
+                    value={form.name}
+                    onChange={(e) => set("name", e.target.value)}
+                    className={inputClass}
+                />
+                <input
+                    type="email"
+                    placeholder={t("email") === "email" ? "E-posta" : t("email")}
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={(e) => set("email", e.target.value)}
+                    className={inputClass}
+                />
+                <input
+                    type="tel"
+                    placeholder={t("phone") === "phone" ? "Telefon" : t("phone")}
+                    autoComplete="tel"
+                    value={form.phone}
+                    onChange={(e) => set("phone", e.target.value)}
+                    className={inputClass}
+                />
+                <p className="text-[11px] text-gray-500">
+                    {t("contactRequired") === "contactRequired"
+                        ? "En az bir iletişim bilgisi paylaşın."
+                        : t("contactRequired")}
+                </p>
+            </div>
 
             {/* Notes */}
             <textarea

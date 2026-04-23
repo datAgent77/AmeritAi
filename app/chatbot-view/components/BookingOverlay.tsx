@@ -42,6 +42,49 @@ export function BookingOverlay({
                 </div>
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
+                    <div className="grid gap-3">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('name') || "Name"}</label>
+                            <input
+                                type="text"
+                                required
+                                autoComplete="name"
+                                value={bookingData.name || ""}
+                                onChange={(e) => setBookingData({ ...bookingData, name: e.target.value })}
+                                className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none"
+                                placeholder={t('fullName') || "Full Name"}
+                            />
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('email') || "Email"}</label>
+                                <input
+                                    type="email"
+                                    autoComplete="email"
+                                    value={bookingData.email || ""}
+                                    onChange={(e) => setBookingData({ ...bookingData, email: e.target.value })}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none"
+                                    placeholder={t('email') || "Email"}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('phone') || "Phone"}</label>
+                                <input
+                                    type="tel"
+                                    autoComplete="tel"
+                                    value={bookingData.phone || ""}
+                                    onChange={(e) => setBookingData({ ...bookingData, phone: e.target.value })}
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 focus:outline-none"
+                                    placeholder={t('phone') || "Phone"}
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-zinc-400">
+                            {t('contactRequired') || "Email or Phone is required"}
+                        </p>
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('appointmentType') || "Type"}</label>
                         <select

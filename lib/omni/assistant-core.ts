@@ -1,4 +1,5 @@
 import { generateAIResponse, type AIMessage } from "@/lib/ai-service"
+import { resolveConversationLanguage, toCopyLanguage } from "@/lib/conversation-language"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { getConfiguredCapabilitiesForChannel } from "@/lib/omni/assistant-capabilities"
 import { getChannelPolicy } from "@/lib/omni/channel-policies"
@@ -98,6 +99,42 @@ export interface TextTurnGenerationResult {
     assistantProfileId?: string | null
 }
 
+type RichUiIntent = "booking" | "lead" | "handoff"
+
+const RICH_UI_MARKERS: Array<{ intent: RichUiIntent; pattern: RegExp }> = [
+    { intent: "booking", pattern: /\[SHOW_BOOKING_FORM\]/i },
+    { intent: "lead", pattern: /\[SHOW_LEAD_FORM\]/i },
+    { intent: "handoff", pattern: /\[SHOW_HANDOFF_FORM\]/i },
+]
+
+const PLAIN_CHANNEL_FALLBACKS = {
+    tr: {
+        booking: "Randevu olusturabilmem icin tercih ettiginiz tarih ve saat ile ad soyad ve telefon ya da e-posta bilginizi buradan tek mesajda yazin.",
+        lead: "Size donus yapabilmemiz icin adinizi ve telefon ya da e-posta bilginizi buradan tek mesajda paylasin.",
+        handoff: "Sizi temsilcimize yonlendirebilmem icin adinizi ve telefon ya da e-posta bilginizi buradan paylasin.",
+    },
+    en: {
+        booking: "To book your appointment, send your preferred date and time plus your full name and phone or email in one message here.",
+        lead: "To help our team follow up, send your name and phone or email in one message here.",
+        handoff: "To connect you with our team, send your name and phone or email here in one message.",
+    },
+    de: {
+        booking: "Damit ich den Termin anlegen kann, senden Sie bitte Ihren gewunschten Tag und Ihre Uhrzeit sowie Ihren Namen und Ihre Telefon- oder E-Mail-Adresse in einer Nachricht.",
+        lead: "Damit unser Team Sie erreichen kann, senden Sie bitte Ihren Namen und Ihre Telefon- oder E-Mail-Adresse in einer Nachricht.",
+        handoff: "Damit ich Sie an unser Team weiterleiten kann, senden Sie bitte Ihren Namen und Ihre Telefon- oder E-Mail-Adresse in einer Nachricht.",
+    },
+    fr: {
+        booking: "Pour reserver votre rendez-vous, envoyez ici en un seul message la date et l'heure souhaitees ainsi que votre nom et votre telephone ou e-mail.",
+        lead: "Pour que notre equipe puisse vous recontacter, envoyez ici votre nom et votre telephone ou e-mail en un seul message.",
+        handoff: "Pour vous mettre en relation avec notre equipe, envoyez ici votre nom et votre telephone ou e-mail en un seul message.",
+    },
+    es: {
+        booking: "Para reservar su cita, envie aqui en un solo mensaje la fecha y hora preferidas junto con su nombre y su telefono o correo.",
+        lead: "Para que nuestro equipo pueda contactarle, envie aqui su nombre y su telefono o correo en un solo mensaje.",
+        handoff: "Para derivarle a nuestro equipo, envie aqui su nombre y su telefono o correo en un solo mensaje.",
+    },
+} as const
+
 function normalizeMessageRole(role?: string): AIMessage["role"] {
     if (role === "assistant" || role === "system") return role
     return "user"
@@ -105,7 +142,7 @@ function normalizeMessageRole(role?: string): AIMessage["role"] {
 
 function stripMarkdown(value: string) {
     return value
-        .replace(/\[SHOW_(?:LEAD|HANDOFF)_FORM\]/gi, "")
+        .replace(/\[SHOW_(?:LEAD|HANDOFF|BOOKING)_FORM\]/gi, "")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
         .replace(/[`*_>#~-]/g, "")
@@ -145,9 +182,37 @@ export function detectVoiceCallbackIntent(value: string) {
     return detectCallbackIntent(value)
 }
 
-function sanitizeTextResponse(value: string, channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram" | "messenger">) {
+function detectRichUiIntent(value: string): RichUiIntent | null {
+    for (const entry of RICH_UI_MARKERS) {
+        if (entry.pattern.test(value)) {
+            return entry.intent
+        }
+    }
+    return null
+}
+
+function buildPlainChannelFallback(intent: RichUiIntent, language?: string | null) {
+    const resolvedLanguage = resolveConversationLanguage({
+        explicitLanguage: language,
+        userText: language,
+        fallback: "en",
+    })
+    const copy = PLAIN_CHANNEL_FALLBACKS[toCopyLanguage(resolvedLanguage)]
+    return copy[intent]
+}
+
+export function sanitizeTextResponse(
+    value: string,
+    channel: Extract<OmniChannel, "web" | "whatsapp" | "instagram" | "messenger">,
+    language?: string | null
+) {
+    const richUiIntent = detectRichUiIntent(value)
+    if (channel !== "web" && richUiIntent) {
+        return buildPlainChannelFallback(richUiIntent, language)
+    }
+
     const plainText = value
-        .replace(/\[SHOW_(?:LEAD|HANDOFF)_FORM\]/gi, "")
+        .replace(/\[SHOW_(?:LEAD|HANDOFF|BOOKING)_FORM\]/gi, "")
         .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
         .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, "$1: $2")
         .replace(/[`*_>#~]/g, "")
@@ -393,6 +458,12 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
             role: normalizeMessageRole(message.role),
             content: message.content,
         }))
+    const plainChannelFlowRules = [
+        "- If a web flow would normally open [SHOW_BOOKING_FORM], [SHOW_LEAD_FORM], or [SHOW_HANDOFF_FORM], never output those markers here.",
+        "- Messaging channels do not support inline forms, so collect the required details directly in chat.",
+        "- For appointments, ask for the preferred day and time first, then the name, then the phone or email, and confirm the summary clearly.",
+        "- For lead or human handoff requests, ask for the name and phone or email directly in chat and confirm the follow-up step.",
+    ]
 
     const channelSpecificRules =
         input.channel === "instagram"
@@ -401,6 +472,7 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
                   "- Keep replies concise and conversational.",
                   "- Use plain text only.",
                   "- Do not mention unsupported UI elements or forms.",
+                  ...plainChannelFlowRules,
               ]
             : input.channel === "messenger"
               ? [
@@ -408,6 +480,7 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
                     "- Keep replies concise, human, and service-oriented.",
                     "- Use plain text only.",
                     "- Prefer one clear next step per message.",
+                    ...plainChannelFlowRules,
                 ]
             : input.channel === "whatsapp"
               ? [
@@ -415,6 +488,7 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
                     "- Keep replies short and mobile-friendly.",
                     "- Use plain text only.",
                     "- Prefer one clear next step over long explanations.",
+                    ...plainChannelFlowRules,
                 ]
               : [
                     "Web-specific rules:",
@@ -452,7 +526,7 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
     )
 
     const rawResponse = typeof result.content === "string" ? result.content : ""
-    const replyText = sanitizeTextResponse(rawResponse, input.channel)
+    const replyText = sanitizeTextResponse(rawResponse, input.channel, input.language || input.transcript)
     const shouldOfferCallback = detectCallbackIntent(input.transcript) || detectCallbackIntent(rawResponse)
 
     return {

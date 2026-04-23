@@ -480,14 +480,15 @@ export function AppearanceTab({
 
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {/* Chat Mode Selection */}
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
-                <div className="mb-4">
-                    <Label className="text-base font-semibold block">{language === 'tr' ? 'Görünüm Modu' : 'Display Mode'}</Label>
-                    <p className="text-sm text-muted-foreground">{language === 'tr' ? 'Chatbotun web sitenizde nasıl görüneceğini seçin.' : 'Choose how the chatbot will appear on your website.'}</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="space-y-3">
+                <div className="border rounded-lg px-4 pt-4 pb-6 bg-card shadow-sm">
+                    <div className="mb-4">
+                        <h3 className="text-base font-semibold block">{language === 'tr' ? 'Görünüm Modu' : 'Display Mode'}</h3>
+                        <p className="text-sm text-muted-foreground">{language === 'tr' ? 'Chatbotun web sitenizde nasıl görüneceğini seçin.' : 'Choose how the chatbot will appear on your website.'}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <button onClick={() => applyDisplayPreset("classic_launcher")} className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all text-left ${!isAmbientMode && !isSidecarMode && !isAlwaysOpenMode ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/30 bg-background'}`}>
                         <span className="font-semibold text-sm mb-1">{language === 'tr' ? 'Klasik + Başlatıcı' : 'Classic + Launcher'}</span>
                         <span className="text-xs text-muted-foreground text-center">{language === 'tr' ? 'Standart ikon ile açılır pencere.' : 'Standard popup window with an icon.'}</span>
@@ -607,13 +608,19 @@ export function AppearanceTab({
                         </div>
                     </div>
                 )}
+                </div>
             </div>
 
+            <Accordion type="multiple" className="w-full space-y-4">
             {/* Common Settings */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">{language === 'tr' ? 'Ortak Ayarlar' : 'Common Settings'}</h3>
-                <Accordion type="multiple" defaultValue={["brand-settings"]} className="w-full space-y-2">
-                    <AccordionItem value="brand-settings" className="border rounded-lg px-4">
+            <AccordionItem value="common-settings" className="border-none">
+                <div className="space-y-3">
+                    <AccordionTrigger className="hover:no-underline border rounded-lg px-4 bg-card shadow-sm [&[data-state=open]]:rounded-b-none">
+                        <span className="text-sm font-medium">{language === 'tr' ? 'Ortak Ayarlar' : 'Common Settings'}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="border border-t-0 rounded-b-lg px-4 pt-4 pb-6 bg-card shadow-sm !mt-0">
+                        <Accordion type="multiple" className="w-full space-y-2">
+                            <AccordionItem value="brand-settings" className="border rounded-lg px-4 bg-card">
                         <AccordionTrigger className="hover:no-underline">
                             <span className="text-sm font-medium">{t('branding') || 'Marka Ayarları'}</span>
                         </AccordionTrigger>
@@ -704,14 +711,18 @@ export function AppearanceTab({
                     </AccordionItem>
 
                 </Accordion>
-            </div>
+                    </AccordionContent>
+                </div>
+            </AccordionItem>
 
             {/* Quick Action Buttons */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                    {language === 'tr' ? 'Hızlı Aksiyon Butonları' : 'Quick Action Buttons'}
-                </h3>
-                <div className="border rounded-lg p-4 bg-card space-y-4">
+            <AccordionItem value="quick-actions" className="border-none">
+                <div className="space-y-3">
+                    <AccordionTrigger className="hover:no-underline border rounded-lg px-4 bg-card shadow-sm [&[data-state=open]]:rounded-b-none">
+                        <span className="text-sm font-medium">{language === 'tr' ? 'Hızlı Aksiyon Butonları' : 'Quick Action Buttons'}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="border border-t-0 rounded-b-lg px-4 pt-4 pb-6 bg-card shadow-sm !mt-0">
+                        <div className="border rounded-lg p-4 bg-card space-y-4">
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <Label className="text-sm font-medium">
@@ -808,18 +819,21 @@ export function AppearanceTab({
                                     </Select>
                                 </div>
                             ))}
-                        </div>
-                    )}
+                            </div>
+                        )}
+                    </div>
+                </AccordionContent>
                 </div>
-            </div>
+            </AccordionItem>
 
             {/* Mode-Specific Settings */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                    {isAmbientMode ? (language === 'tr' ? 'Ambient Ayarları' : 'Ambient Settings') : (language === 'tr' ? 'Klasik Ayarlar' : 'Classic Settings')}
-                </h3>
-
-                {isAmbientMode ? (
+            <AccordionItem value="mode-specific" className="border-none">
+                <div className="space-y-3">
+                    <AccordionTrigger className="hover:no-underline border rounded-lg px-4 bg-card shadow-sm [&[data-state=open]]:rounded-b-none">
+                        <span className="text-sm font-medium">{isAmbientMode ? (language === 'tr' ? 'Ambient Ayarları' : 'Ambient Settings') : (language === 'tr' ? 'Klasik Ayarlar' : 'Classic Settings')}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="border border-t-0 rounded-b-lg px-4 pt-4 pb-6 bg-card shadow-sm !mt-0">
+                        {isAmbientMode ? (
                     <div className="space-y-2">
                         <div className="border rounded-lg p-4 bg-card">
                             <div className="flex items-start justify-between gap-4">
@@ -856,7 +870,7 @@ export function AppearanceTab({
                             )}
                         </div>
 
-                        <Accordion type="single" collapsible defaultValue="ambient-position" className="w-full space-y-2">
+                        <Accordion type="single" collapsible className="w-full space-y-2">
                         <AccordionItem value="ambient-position" className="border rounded-lg px-4 bg-card">
                             <AccordionTrigger className="hover:no-underline">
                                 <span className="text-sm font-medium">{t('positionLayout') || 'Pozisyon & Efektler'}</span>
@@ -1389,7 +1403,7 @@ export function AppearanceTab({
                             )}
                         </div>
 
-                        <Accordion type="single" collapsible defaultValue="widget-position" className="w-full space-y-2">
+                        <Accordion type="single" collapsible className="w-full space-y-2">
                         <AccordionItem value="widget-position" className="border rounded-lg px-4">
                             <AccordionTrigger className="hover:no-underline">
                                 <span className="text-sm font-medium">{t('positionLayout') || 'Widget Pozisyonu'}</span>
@@ -1417,19 +1431,25 @@ export function AppearanceTab({
 
                                         {settings.theme === 'classic' && (
                                             <div className="grid gap-2">
-                                                <Label>{t('viewMode')}</Label>
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <Label>{t('viewMode') || 'Sohbet Genişliği'}</Label>
+                                                <div className="grid grid-cols-3 gap-2">
                                                     <Button
                                                         variant={settings.viewMode === "classic" ? "secondary" : "outline"}
-                                                        onClick={() => setSettings(prev => ({ ...prev, viewMode: "classic" }))}
+                                                        onClick={() => setSettings(prev => ({ ...prev, viewMode: "classic", modalSize: "half" }))}
                                                     >
-                                                        {t('classicSmall')}
+                                                        {t('classicSmall') || 'Küçük'}
                                                     </Button>
                                                     <Button
-                                                        variant={settings.viewMode === "wide" ? "secondary" : "outline"}
-                                                        onClick={() => setSettings(prev => ({ ...prev, viewMode: "wide" }))}
+                                                        variant={settings.viewMode === "wide" && settings.modalSize === "medium" ? "secondary" : "outline"}
+                                                        onClick={() => setSettings(prev => ({ ...prev, viewMode: "wide", modalSize: "medium" }))}
                                                     >
-                                                        {t('wideModal')}
+                                                        {language === 'tr' ? 'Orta' : 'Medium'}
+                                                    </Button>
+                                                    <Button
+                                                        variant={settings.viewMode === "wide" && settings.modalSize !== "medium" ? "secondary" : "outline"}
+                                                        onClick={() => setSettings(prev => ({ ...prev, viewMode: "wide", modalSize: "half" }))}
+                                                    >
+                                                        {t('wideModal') || 'Büyük'}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -1788,6 +1808,7 @@ export function AppearanceTab({
                                                                                 return (
                                                                                     <button
                                                                                         key={iconName}
+                                                                                        type="button"
                                                                                         onClick={() => setSettings(prev => ({ ...prev, launcherIcon: "library", launcherLibraryIcon: iconName }))}
                                                                                         className={`p-2 rounded hover:bg-muted flex items-center justify-center ${settings.launcherLibraryIcon === iconName ? 'bg-primary/10 text-primary' : ''}`}
                                                                                         title={iconName}
@@ -1834,12 +1855,14 @@ export function AppearanceTab({
                                         {/* Device Toggle */}
                                         <div className="flex p-1 bg-muted rounded-lg w-full mb-4">
                                             <button
+                                                type="button"
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'desktop' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                                 onClick={() => setActiveDevice('desktop')}
                                             >
                                                 {t('desktop') || 'Desktop'}
                                             </button>
                                             <button
+                                                type="button"
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${activeDevice === 'mobile' ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                                 onClick={() => setActiveDevice('mobile')}
                                             >
@@ -1929,16 +1952,17 @@ export function AppearanceTab({
                                                             : (activeDevice === 'desktop' ? settings.launcherAnimation : (settings.mobileLauncherAnimation ?? 'none'));
                                                         return (
                                                             <button
-                                                                key={anim}
-                                                                onClick={() => {
-                                                                    if (classicDeviceModeEnabled || activeDevice === 'desktop') {
-                                                                        setSettings(prev => ({ ...prev, launcherAnimation: anim }))
-                                                                    } else {
-                                                                        setSettings(prev => ({ ...prev, mobileLauncherAnimation: anim }))
-                                                                    }
-                                                                }}
-                                                                className={`p-2 rounded-md border text-xs transition-all ${currentAnim === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
-                                                            >
+                                                                    key={anim}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (classicDeviceModeEnabled || activeDevice === 'desktop') {
+                                                                            setSettings(prev => ({ ...prev, launcherAnimation: anim }))
+                                                                        } else {
+                                                                            setSettings(prev => ({ ...prev, mobileLauncherAnimation: anim }))
+                                                                        }
+                                                                    }}
+                                                                    className={`p-2 rounded-md border text-xs transition-all ${currentAnim === anim ? 'border-primary bg-primary/5 font-medium' : 'border-muted hover:bg-muted'}`}
+                                                                >
                                                                 {label}
                                                             </button>
                                                         )
@@ -1953,7 +1977,10 @@ export function AppearanceTab({
                     </Accordion>
                     </div>
                 )}
-            </div>
+                </AccordionContent>
+                </div>
+            </AccordionItem>
+            </Accordion>
         </div>
     )
 }

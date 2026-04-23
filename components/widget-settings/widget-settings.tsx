@@ -100,54 +100,57 @@ export default function WidgetSettings({ userId: propUserId }: WidgetSettingsPro
     }
 
     return (
-        <div className="flex h-full bg-white">
+        <div className="flex h-full bg-muted/10 overflow-hidden rounded-tl-xl border-l border-t shadow-sm">
             {/* Main Content */}
-            <div className="flex flex-1 flex-col lg:flex-row gap-6 py-6 px-6 bg-white overflow-auto">
+            <div className="flex flex-1 flex-col lg:flex-row h-full">
                 {/* Settings Panel */}
-                <div className="flex-1 space-y-6">
-                    <div className="flex items-center justify-between">
+                <div className="w-full lg:w-[450px] xl:w-[500px] flex flex-col bg-background border-r shadow-sm z-10">
+                    <div className="flex items-center justify-between p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-20">
                         <div>
                             <h3 className="text-lg font-semibold tracking-tight">{headerTitle}</h3>
                             <p className="text-sm text-muted-foreground">{headerDesc}</p>
                         </div>
-                        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                            {t('save')}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" onClick={() => window.open(`/widget-test?id=${userId}`, '_blank')} title={t('testWidget')}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button onClick={handleSave} disabled={isSaving} className="gap-2 shadow-sm">
+                                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                <span className="hidden sm:inline">{t('save')}</span>
+                            </Button>
+                        </div>
                     </div>
 
-                    <AppearanceTab
-                        settings={settings}
-                        setSettings={setSettings}
-                        userId={userId || ''}
-                        isUploading={isUploading}
-                        setIsUploading={setIsUploading}
-                        ambientPreviewDockState={ambientPreviewDockState}
-                        setAmbientPreviewDockState={setAmbientPreviewDockState}
-                        ambientPreviewThinking={ambientPreviewThinking}
-                        setAmbientPreviewThinking={setAmbientPreviewThinking}
-                    />
-
-                    <div className="flex items-center gap-3 pt-4">
-                        <Button onClick={handleSave} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            <Save className="mr-2 h-4 w-4" />
-                            {t('save')}
-                        </Button>
-                        <Button variant="outline" onClick={() => window.open(`/widget-test?id=${userId}`, '_blank')}>
-                            {t('testWidget')}
-                        </Button>
+                    <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+                        <AppearanceTab
+                            settings={settings}
+                            setSettings={setSettings}
+                            userId={userId || ''}
+                            isUploading={isUploading}
+                            setIsUploading={setIsUploading}
+                            ambientPreviewDockState={ambientPreviewDockState}
+                            setAmbientPreviewDockState={setAmbientPreviewDockState}
+                            ambientPreviewThinking={ambientPreviewThinking}
+                            setAmbientPreviewThinking={setAmbientPreviewThinking}
+                        />
                     </div>
                 </div>
 
                 {/* Right Panel: Live Preview */}
-                <WidgetLivePreview
-                    userId={userId || ''}
-                    settings={settings}
-                    t={t}
-                    ambientPreviewDockState={ambientPreviewDockState}
-                    ambientPreviewThinking={ambientPreviewThinking}
-                />
+                <div className="flex-1 bg-muted/30 relative overflow-y-auto flex flex-col scrollbar-thin">
+                    <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-50" />
+                    <div className="relative z-10 flex-1 p-6 flex justify-center min-h-max">
+                        <div className="sticky top-0 w-full h-fit flex justify-center pb-6">
+                            <WidgetLivePreview
+                                userId={userId || ''}
+                                settings={settings}
+                                t={t}
+                                ambientPreviewDockState={ambientPreviewDockState}
+                                ambientPreviewThinking={ambientPreviewThinking}
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     )
