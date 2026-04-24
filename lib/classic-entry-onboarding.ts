@@ -4,16 +4,18 @@ interface ClassicEntryOnboardingVisibilityInput {
     chatDisplayMode?: DisplayMode
     enableClassicEntryOnboarding?: boolean
     hasUserMessage: boolean
+    hasMessages?: boolean
 }
 
 export function shouldShowClassicEntryOnboarding({
     chatDisplayMode,
     enableClassicEntryOnboarding,
     hasUserMessage,
+    hasMessages,
 }: ClassicEntryOnboardingVisibilityInput): boolean {
     if (chatDisplayMode === "ambient") return false
     if (enableClassicEntryOnboarding === false) return false
-    return !hasUserMessage
+    return !hasUserMessage && !hasMessages
 }
 
 export function filterSuggestedQuestions(questions: string[] | undefined, query: string): string[] {

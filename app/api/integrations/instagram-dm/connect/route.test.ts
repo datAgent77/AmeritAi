@@ -25,9 +25,11 @@ vi.mock("@/lib/integrations/meta-shared/oauth", () => ({
 
 vi.mock("@/lib/meta-setup", () => ({
     generateMetaVerifyToken: vi.fn(() => "verify-token"),
+    isMetaPlatformAppAvailable: vi.fn(() => false),
 }))
 
 vi.mock("@/lib/omni/server-utils", () => ({
+    getPublicAppOrigin: vi.fn(() => "http://localhost"),
     mergeOmniChannelConfig: vi.fn(),
 }))
 
@@ -141,7 +143,7 @@ describe("POST /api/integrations/instagram-dm/connect", () => {
 
         expect(response.status).toBe(400)
         const payload = await response.json()
-        expect(payload.error).toContain("zorunludur")
+        expect(payload.error).toContain("platform uygulaması")
         expect(createOAuthState).not.toHaveBeenCalled()
         expect(buildMetaOAuthUrl).not.toHaveBeenCalled()
     })

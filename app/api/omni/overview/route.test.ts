@@ -61,8 +61,8 @@ function attachCollections(adminDb: any) {
                                   createDoc("session-1", {
                                       chatbotId: "tenant-1",
                                       channel: "web",
-                                      createdAt: "2026-04-01T10:00:00.000Z",
-                                      updatedAt: "2026-04-01T10:05:00.000Z",
+                                      createdAt: new Date().toISOString(),
+                                      updatedAt: new Date().toISOString(),
                                   }),
                               ]
                             : [],

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import * as XLSX from 'xlsx';
 import { cn } from "@/lib/utils"
 
-interface Lead {
+export interface Lead {
     id: string
     name: string
     email: string
@@ -20,6 +20,8 @@ interface Lead {
     source: string
     createdAt: string
     sessionId?: string | null
+    sourceSessionId?: string | null
+    contactKey?: string | null
     customFields?: Record<string, string>
 }
 
@@ -31,6 +33,19 @@ interface ChatMessage {
 
 interface LeadsContentProps {
     targetUserId?: string
+}
+
+export function buildLeadChatHref(sessionId?: string | null) {
+    return sessionId ? `/console/chatbot/chats?sessionId=${encodeURIComponent(sessionId)}` : null
+}
+
+export function leadHasExpandableDetails(lead: Lead) {
+    return Boolean(
+        (lead.customFields && Object.keys(lead.customFields).length > 0) ||
+        lead.sessionId ||
+        lead.sourceSessionId ||
+        lead.contactKey
+    )
 }
 
 export function LeadsContent({ targetUserId }: LeadsContentProps) {

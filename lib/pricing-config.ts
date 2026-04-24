@@ -377,7 +377,9 @@ const SCENARIO_D: PlanConfig[] = [
                 'knowledgeBase',
                 'leadCollection',
                 'guided',
-                'proactiveMessaging'
+                'proactiveMessaging',
+                'kvkkConsent',
+                'humanHandoff'
                 // 'liveChat' implied as core feature
             ],
             defaultEnabled: ['generalChatbot', 'leadCollection'],
@@ -392,8 +394,7 @@ const SCENARIO_D: PlanConfig[] = [
             'featureGeneralAssistant',
             'featureLiveSupport',
             'featureLeadCollection',
-            'featureKnowledgeBase',
-            'featureCustomizableWidget'
+            'featureKnowledgeBase'
         ],
         trialDays: 14
     },
@@ -414,7 +415,7 @@ const SCENARIO_D: PlanConfig[] = [
         modules: {
             included: [
                 'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
-                'productCatalog', 'digitalWaiter'
+                'productCatalog', 'digitalWaiter', 'kvkkConsent', 'humanHandoff'
             ],
             defaultEnabled: ['generalChatbot', 'productCatalog'],
             premiumEligible: []
@@ -428,7 +429,6 @@ const SCENARIO_D: PlanConfig[] = [
             'featureEverythingInStarter',
             'featureProductCatalog',
             'featureDigitalWaiter',
-            'featureMultiChannel',
             'featureKnowledgeBase',
             'featureAdvancedReporting',
             'featureCustomizableWidget'
@@ -455,7 +455,7 @@ const SCENARIO_D: PlanConfig[] = [
         modules: {
             included: [
                 'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
-                'productCatalog', 'digitalWaiter',
+                'productCatalog', 'digitalWaiter', 'kvkkConsent', 'humanHandoff',
                 'salesOptimization', 'visualDiagnosis',
                 'dynamicContext'
             ],
@@ -472,6 +472,7 @@ const SCENARIO_D: PlanConfig[] = [
             'featureEverythingInGrowth',
             'featureSalesOptimization',
             'featureVisualDiagnosis',
+            'featureMultiChannel',
             'featurePrioritySupport',
             'featureKnowledgeBase',
             'featureAdvancedReporting',

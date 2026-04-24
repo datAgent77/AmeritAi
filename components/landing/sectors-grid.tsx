@@ -46,10 +46,10 @@ export function SectorsGrid() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 overflow-visible md:grid-cols-4 lg:grid-cols-6">
                     {sectors.map((sector, i) => (
-                        <Link key={i} href={sector.href} className="group">
-                            <div className="bg-card border border-border hover:border-foreground/20 rounded-xl p-6 text-center transition-all hover:-translate-y-1 hover:bg-accent hover:shadow-md">
+                        <Link key={i} href={sector.href} className="group min-w-0">
+                            <div className="bg-card border border-border hover:border-foreground/20 rounded-xl p-6 text-center transition-[background-color,border-color,box-shadow] hover:bg-accent hover:shadow-md">
                                 <div className="mb-4 flex items-center justify-center text-foreground group-hover:scale-110 transition-transform duration-300">
                                     <sector.icon className="w-8 h-8" />
                                 </div>

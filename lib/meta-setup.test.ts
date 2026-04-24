@@ -185,10 +185,10 @@ describe("meta setup helpers", () => {
         expect(buildMetaOAuthScopes(["instagram"])).toEqual([
             "business_management",
             "pages_show_list",
+            "instagram_basic",
+            "instagram_manage_messages",
             "pages_manage_metadata",
             "pages_messaging",
-            "instagram_business_basic",
-            "instagram_business_manage_messages",
         ])
     })
 

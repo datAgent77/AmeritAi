@@ -3,7 +3,7 @@ import type { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 type QuickActionRuntimeInput = {
     button: Pick<QuickActionButton, "moduleId" | "triggerMessage">
     language: string
-    settings: Pick<ChatbotSettings, "leadFormConfig" | "digitalWaiter" | "kvkkConsent">
+    settings: Pick<ChatbotSettings, "leadFormConfig" | "digitalWaiter" | "kvkkConsent" | "surveyWidgetConfig">
     requiresKvkkConsent: boolean
     isKvkkAccepted: boolean
 }
@@ -11,6 +11,7 @@ type QuickActionRuntimeInput = {
 export type QuickActionRuntimeResult =
     | { type: "blocked" }
     | { type: "open-kvkk-modal" }
+    | { type: "open-survey" }
     | { type: "append-message"; content: string }
     | { type: "append-form-message"; form: "lead" | "handoff" | "booking"; content: string }
     | { type: "send-message"; message: string }
@@ -117,6 +118,19 @@ export function resolveQuickActionRuntimeAction(input: QuickActionRuntimeInput):
             message: tr
                 ? "Menuye gore bana uygun urunler oner ve siparis konusunda yardimci ol."
                 : "Recommend suitable items from the menu and help me with my order.",
+        }
+    }
+
+    if (moduleId === "surveyManager") {
+        if (input.settings.surveyWidgetConfig?.activeSurvey) {
+            return { type: "open-survey" }
+        }
+
+        return {
+            type: "append-message",
+            content: tr
+                ? "Aktif bir anket bulunamadi. Lutfen daha sonra tekrar deneyin."
+                : "There is no active survey right now. Please try again later.",
         }
     }
 

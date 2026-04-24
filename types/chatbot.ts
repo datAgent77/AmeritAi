@@ -1,5 +1,6 @@
 import type { GuidedSkillShortcut } from "@/lib/guided-skills/types"
 import type { HumanHandoffBusinessDayCode } from "@/lib/human-handoff"
+import type { PublicSurveyDefinition, SurveyModuleConfig, SurveyWidgetConfig } from "@/lib/surveys/types"
 
 export interface AmbientDeviceAppearanceSettings {
     ambientMaxHeight?: number;
@@ -76,6 +77,7 @@ export interface ChatbotSettings {
     headerTextColor: string;
     suggestedQuestions: string[];
     enableLeadCollection: boolean;
+    enableSurveyManager?: boolean;
     enableHumanHandoff?: boolean;
     enableKvkkConsent?: boolean;
     enableGuided?: boolean;
@@ -260,6 +262,10 @@ export interface ChatbotSettings {
         businessHoursTimezone?: string;
         businessDays?: HumanHandoffBusinessDayCode[];
     };
+    surveyModuleConfig?: SurveyModuleConfig | null;
+    surveyWidgetConfig?: (SurveyWidgetConfig & {
+        activeSurvey?: PublicSurveyDefinition | null;
+    }) | null;
     quickActions?: {
         enabled: boolean;
         buttons: QuickActionButton[];
@@ -273,7 +279,8 @@ export type QuickActionModuleId =
     | "visualDiagnosis"
     | "kvkkConsent"
     | "proactiveMessaging"
-    | "digitalWaiter";
+    | "digitalWaiter"
+    | "surveyManager";
 
 export interface QuickActionButton {
     id: string;

@@ -31,12 +31,12 @@ export function VoiceOverlay({
     if (!isOpen) return null
 
     const accentColor = settings.headerBackgroundColor || settings.brandColor || "#111827"
-    const textLabel = language === "tr" ? "Yazi" : "Text"
+    const textLabel = language === "tr" ? "Yazı" : "Text"
     const voiceLabel = language === "tr" ? "Ses" : "Voice"
     const muteLabel = isMuted
-        ? (language === "tr" ? "Mikrofonu Ac" : "Unmute")
-        : "Mute"
-    const endCallLabel = language === "tr" ? "Cagriyi Bitir" : "End Call"
+        ? (language === "tr" ? "Mikrofonu Aç" : "Unmute")
+        : (language === "tr" ? "Sessize Al" : "Mute")
+    const endCallLabel = language === "tr" ? "Çağrıyı Bitir" : "End Call"
 
     const statusTitle = (() => {
         if (isMuted) return language === "tr" ? "Mikrofon susturuldu" : "Microphone muted"
@@ -49,13 +49,13 @@ export function VoiceOverlay({
     const statusDescription = (() => {
         if (isMuted) {
             return language === "tr"
-                ? "Mikrofon kapali. Devam etmek icin sesi acin."
+                ? "Mikrofon kapalı. Devam etmek için sesi açın."
                 : "Microphone is muted. Unmute to continue the call."
         }
         if (voiceStatus === "listening") return t("askQuestion")
         if (voiceStatus === "processing") return t("processingDesc")
         if (voiceStatus === "speaking") return t("speakingAnswer")
-        return language === "tr" ? "Tarayiciniz uzerinden canli sesli gorusme hazir." : "Your browser voice call is ready."
+        return language === "tr" ? "Tarayıcınız üzerinden canlı sesli görüşme hazır." : "Your browser voice call is ready."
     })()
 
     const shouldShowTranscript = localInput

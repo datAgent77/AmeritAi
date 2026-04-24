@@ -16,4 +16,15 @@ describe("modules registry", () => {
     test("renders human handoff in the ordered module list", () => {
         expect(ORDERED_MODULES.map((module) => module.id)).toContain("humanHandoff")
     })
+
+    test("registers survey manager as an explicit opt-in module", () => {
+        expect(getModule("surveyManager")).toMatchObject({
+            id: "surveyManager",
+            legacyFirestoreField: "enableSurveyManager",
+            isCore: false,
+            isPremium: false,
+            status: "ready",
+            defaultEnabledBySector: [],
+        })
+    })
 })

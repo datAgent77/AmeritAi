@@ -35,10 +35,10 @@ export function KvkkConsentOverlay({
                         <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${isDark ? 'bg-zinc-800/80 text-zinc-300' : 'bg-gray-100 text-gray-700'}`}>
                             <ShieldAlert className="h-6 w-6" />
                         </div>
-                        <h2 className="mb-2 text-xl font-bold tracking-tight">Onay Gerekli</h2>
+                        <h2 className="mb-2 text-xl font-bold tracking-tight">{t("kvkkConsentRequiredTitle")}</h2>
                         <div className={`mb-6 text-[13px] leading-relaxed ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
                             <p className="mb-5 text-balance">
-                                Sohbete başlayabilmek için KVKK Aydınlatma Metni&apos;ni okuyup onaylamanız gerekmektedir.
+                                {t("kvkkConsentDescription")}
                             </p>
                             <div className="flex flex-col items-center">
                                 <p className={`whitespace-pre-wrap leading-relaxed text-center ${isDark ? 'text-zinc-300' : 'text-gray-900'}`}>
@@ -51,13 +51,13 @@ export function KvkkConsentOverlay({
                                 onClick={onAccept}
                                 className={`w-full rounded-xl px-4 py-3 text-[13px] font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] ${isDark ? 'bg-zinc-100 text-zinc-900 hover:bg-white' : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'}`}
                             >
-                                Fikrimi Değiştirdim, Onaylıyorum
+                                {t("kvkkChangedMindAccept")}
                             </button>
                             <button
                                 onClick={onReadFull}
                                 className={`w-full rounded-xl px-4 py-3 text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'}`}
                             >
-                                Aydınlatma Metnini İncele
+                                {t("kvkkReadFull")}
                             </button>
                         </div>
                     </>
@@ -66,29 +66,29 @@ export function KvkkConsentOverlay({
                         <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${isDark ? 'bg-zinc-800/80 text-zinc-300' : 'bg-gray-100 text-gray-700'}`}>
                             <ShieldCheck className="h-6 w-6" />
                         </div>
-                        <h2 className="mb-2 text-xl font-bold tracking-tight">KVKK Onayı</h2>
+                        <h2 className="mb-2 text-xl font-bold tracking-tight">{t("kvkkConsentTitle")}</h2>
                         <p className={`mb-6 text-[13px] leading-relaxed text-balance ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-                            Sohbete başlayabilmek için KVKK Aydınlatma Metni&apos;ni okuyup onaylamanız gerekmektedir.
+                            {t("kvkkConsentDescription")}
                         </p>
                         <div className="flex flex-col gap-2.5">
                             <button
                                 onClick={onAccept}
                                 className={`w-full rounded-xl px-4 py-3 text-[13px] font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] ${isDark ? 'bg-zinc-100 text-zinc-900 hover:bg-white' : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'}`}
                             >
-                                Okudum, Onaylıyorum
+                                {t("kvkkAccept")}
                             </button>
                             <div className="grid grid-cols-2 gap-2.5">
                                 <button
                                     onClick={onReadFull}
                                     className={`w-full rounded-xl px-4 py-3 text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${isDark ? 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'}`}
                                 >
-                                    Tümünü Oku
+                                    {t("kvkkReadAll")}
                                 </button>
                                 <button
                                     onClick={onReject}
                                     className={`w-full rounded-xl px-4 py-3 text-[13px] font-medium transition-all duration-200 active:scale-[0.98] ${isDark ? 'text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'}`}
                                 >
-                                    Reddet
+                                    {t("kvkkReject")}
                                 </button>
                             </div>
                         </div>

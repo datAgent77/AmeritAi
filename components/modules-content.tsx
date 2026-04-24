@@ -131,7 +131,8 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     proactiveMessaging: 'enableProactiveMessaging',
     dynamicContext: 'enableDynamicContext',
     kvkkConsent: 'enableKvkkConsent',
-    humanHandoff: 'enableHumanHandoff'
+    humanHandoff: 'enableHumanHandoff',
+    surveyManager: 'enableSurveyManager'
 }
 
 interface ModulesContentProps {
@@ -209,6 +210,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         dynamicContext: data.enableDynamicContext ?? false,
                         kvkkConsent: data.enableKvkkConsent ?? false,
                         humanHandoff: data.enableHumanHandoff ?? false,
+                        surveyManager: data.enableSurveyManager ?? false,
                     })
                     setAdminGrantedModules(
                         data.adminGrantedModules && typeof data.adminGrantedModules === "object"
@@ -236,6 +238,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         dynamicContext: false,
                         kvkkConsent: false,
                         humanHandoff: false,
+                        surveyManager: false,
                     })
                 }
 
@@ -373,6 +376,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'guided':
                     router.push(`${basePath}/modules/guided`)
                     break
+                case 'surveyManager':
+                    router.push(`${basePath}/modules/surveys`)
+                    break
                 case 'appointments':
                     router.push(`${basePath}/appointments`)
                     break
@@ -437,6 +443,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 break
             case 'guided':
                 router.push(`/console/modules/guided${queryParams}`)
+                break
+            case 'surveyManager':
+                router.push(`/console/modules/surveys${queryParams}`)
                 break
             case 'leadCollection':
                 router.push(`/console/modules/leads/settings${queryParams}`)
@@ -655,17 +664,20 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
                     {filteredModules.map((module) => {
                         // Get module access info - single source of truth
-                        const access = getModuleAccess(
+                        const baseAccess = getModuleAccess(
                             userPlanId,
                             module.id,
                             userIndustry,
                             moduleStates[module.id] || false,
                             language as 'en' | 'tr'
                         )
-                        
+                        const isAdminGranted = adminGrantedModules?.[module.id] === true
+                        const access = isAdminGranted
+                            ? { ...baseAccess, badge: 'included' as const, canToggle: true, upgradeMessage: null }
+                            : baseAccess
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
-                        const isAccessGranted = isSuperAdmin || access.status === 'included' || access.status === 'core' || isActive
+                        const isAccessGranted = isSuperAdmin || isAdminGranted || access.status === 'included' || access.status === 'core' || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
 
                         return (
@@ -715,7 +727,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                 <Switch
                                                     checked={isActive}
                                                     onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                    disabled={isLoading === module.id || access.isCore || (!isSuperAdmin && !access.canToggle)}
+                                                    disabled={isLoading === module.id || access.isCore || (!isSuperAdmin && !access.canToggle && !isAdminGranted)}
                                                     className={isLoading === module.id ? 'opacity-50' : ''}
                                                 />
                                             ) : (
@@ -805,17 +817,20 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 <div className="flex flex-col gap-4 pt-2">
                     {filteredModules.map((module) => {
                         // Get module access info - single source of truth
-                        const access = getModuleAccess(
+                        const baseAccess = getModuleAccess(
                             userPlanId,
                             module.id,
                             userIndustry,
                             moduleStates[module.id] || false,
                             language as 'en' | 'tr'
                         )
-                        
+                        const isAdminGranted = adminGrantedModules?.[module.id] === true
+                        const access = isAdminGranted
+                            ? { ...baseAccess, badge: 'included' as const, canToggle: true, upgradeMessage: null }
+                            : baseAccess
                         const isActive = module.isCore ? true : (moduleStates[module.id] || false)
                         const isSuperAdmin = role === 'SUPER_ADMIN'
-                        const isAccessGranted = isSuperAdmin || access.status === 'included' || access.status === 'core' || isActive
+                        const isAccessGranted = isSuperAdmin || isAdminGranted || access.status === 'included' || access.status === 'core' || isActive
                         const IconComponent = ICON_MAP[module.icon as keyof typeof ICON_MAP] || MessageSquare
 
                         return (
@@ -889,7 +904,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                             <Switch
                                                 checked={isActive}
                                                 onCheckedChange={(checked) => handleToggle(module.id, checked)}
-                                                disabled={isLoading === module.id || !access.canToggle}
+                                                disabled={isLoading === module.id || (!access.canToggle && !isAdminGranted)}
                                             />
                                         ) : (
                                             <Lock className="w-5 h-5 text-muted-foreground" />

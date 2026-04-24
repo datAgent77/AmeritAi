@@ -105,7 +105,7 @@ export function ChatHeader({
                     <button
                         onClick={handleToggleSize}
                         className={`${controlButtonClass} hidden sm:block`}
-                        title={isExpanded ? "Minimize" : "Maximize"}
+                        title={isExpanded ? t("minimizeWidget") : t("maximizeWidget")}
                     >
                         {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
@@ -113,7 +113,7 @@ export function ChatHeader({
                 <button
                     onClick={handleClearChat}
                     className={controlButtonClass}
-                    title="Refresh Chat"
+                    title={t("refreshChat")}
                 >
                     <RefreshCw className="w-4 h-4" />
                 </button>
@@ -121,7 +121,7 @@ export function ChatHeader({
                     <button
                         onClick={handleCloseWidget}
                         className={controlButtonClass}
-                        title="Close Widget"
+                        title={t("closeWidget")}
                     >
                         <X className="w-4 h-4" />
                     </button>

@@ -50,6 +50,17 @@ describe("shouldShowClassicEntryOnboarding", () => {
             }),
         ).toBe(false)
     })
+
+    test("hides onboarding after an assistant-only quick action message", () => {
+        expect(
+            shouldShowClassicEntryOnboarding({
+                chatDisplayMode: "classic",
+                enableClassicEntryOnboarding: true,
+                hasUserMessage: false,
+                hasMessages: true,
+            }),
+        ).toBe(false)
+    })
 })
 
 describe("filterSuggestedQuestions", () => {

@@ -8,6 +8,8 @@ interface KvkkConsentModalProps {
     text: string
     onClose: () => void
     title?: string
+    t: (key: string) => string
+    language: string
     theme?: string
 }
 
@@ -15,12 +17,15 @@ export function KvkkConsentModal({
     isOpen,
     text,
     onClose,
-    title = "KVKK Aydınlatma Metni",
+    title,
+    t,
+    language,
     theme,
 }: KvkkConsentModalProps) {
     if (!isOpen) return null
 
     const isDark = theme === "dark"
+    const resolvedTitle = title || (language === "tr" ? "KVKK Aydınlatma Metni" : "Privacy Notice")
 
     return (
         <div className={`fixed inset-0 z-[120] flex flex-col animate-in slide-in-from-bottom-4 duration-300 ${isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-white text-gray-900'}`}>
@@ -30,9 +35,9 @@ export function KvkkConsentModal({
                         <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div>
-                        <h2 className="text-base font-semibold">{title}</h2>
+                        <h2 className="text-base font-semibold">{resolvedTitle}</h2>
                         <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>
-                            Aydınlatma Metni Detayları
+                            {t("kvkkDetailsTitle")}
                         </p>
                     </div>
                 </div>
@@ -55,7 +60,7 @@ export function KvkkConsentModal({
                     onClick={onClose}
                     className={`w-full rounded-xl px-4 py-3.5 text-sm font-semibold shadow-sm transition-colors ${isDark ? 'bg-zinc-100 text-zinc-900 hover:bg-white' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
                 >
-                    Geri Dön
+                    {t("back")}
                 </button>
             </div>
         </div>

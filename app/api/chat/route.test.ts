@@ -39,20 +39,31 @@ vi.mock("@/lib/omni/server-utils", () => ({
 function createAdminDb() {
     return {
         collection: vi.fn().mockImplementation((name: string) => {
-            if (name !== "chat_sessions") {
-                throw new Error(`Unexpected collection: ${name}`)
-            }
-
-            return {
-                doc: vi.fn().mockReturnValue({
-                    get: vi.fn().mockResolvedValue({
-                        exists: true,
-                        data: () => ({
-                            guidedSkillState: null,
+            if (name === "chat_sessions") {
+                return {
+                    doc: vi.fn().mockReturnValue({
+                        get: vi.fn().mockResolvedValue({
+                            exists: true,
+                            data: () => ({
+                                guidedSkillState: null,
+                            }),
                         }),
                     }),
-                }),
+                }
             }
+
+            if (name === "users" || name === "chatbots" || name === "omni_channel_configs") {
+                return {
+                    doc: vi.fn().mockReturnValue({
+                        get: vi.fn().mockResolvedValue({
+                            exists: false,
+                            data: () => ({}),
+                        }),
+                    }),
+                }
+            }
+
+            throw new Error(`Unexpected collection: ${name}`)
         }),
     }
 }
@@ -66,6 +77,8 @@ beforeEach(() => {
         remaining: 10,
         resetAt: Date.now() + 60_000,
     } as any)
+    vi.mocked(saveMessageToSession).mockResolvedValue(undefined as any)
+    vi.mocked(upsertChatSessionRecord).mockResolvedValue(undefined as any)
 })
 
 describe("POST /api/chat", () => {

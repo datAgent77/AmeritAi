@@ -42,6 +42,7 @@ type AdminDbOptions = {
     userData?: Record<string, unknown> | null
     chatbotData?: Record<string, unknown> | null
     omniConfig?: Record<string, unknown> | null
+    surveyData?: Record<string, unknown> | null
 }
 
 function createAdminDb(options: AdminDbOptions = {}) {
@@ -62,6 +63,7 @@ function createAdminDb(options: AdminDbOptions = {}) {
                 enabled: true,
             },
         },
+        surveyData = null,
     } = options
 
     return {
@@ -93,6 +95,16 @@ function createAdminDb(options: AdminDbOptions = {}) {
                             createDoc(chatbotData)
                         ),
                     }),
+                }
+            }
+
+            if (name === "surveys") {
+                return {
+                    doc: vi.fn().mockImplementation((id: string) => ({
+                        get: vi.fn().mockResolvedValue(
+                            createDoc(id === (surveyData?.id || "survey-1") ? surveyData : null)
+                        ),
+                    })),
                 }
             }
 
@@ -263,8 +275,16 @@ describe("GET /api/widget-settings", () => {
                 enableKvkkConsent: true,
                 enableProactiveMessaging: true,
                 enableDigitalWaiter: true,
+                enableSurveyManager: true,
                 digitalWaiter: {
                     menuUrl: "https://example.com/menu",
+                },
+                surveyModuleConfig: {
+                    showCta: true,
+                    widgetActiveSurveyId: "survey-1",
+                    defaultConsentTitle: "Consent",
+                    defaultConsentText: "Consent text",
+                    defaultConsentCheckboxLabel: "I agree",
                 },
                 quickActions: {
                     enabled: true,
@@ -288,6 +308,42 @@ describe("GET /api/widget-settings", () => {
                     ],
                 },
             },
+            surveyData: {
+                id: "survey-1",
+                chatbotId: "tenant-1",
+                title: "Survey",
+                description: "Desc",
+                slug: "survey",
+                templateType: "blank",
+                channels: ["widget"],
+                introTitle: "Intro",
+                introText: "Intro text",
+                thankYouTitle: "Thanks",
+                thankYouText: "Thanks text",
+                consent: {
+                    title: "Consent",
+                    body: "Consent text",
+                    checkboxLabel: "I agree",
+                    required: true,
+                },
+                contactCapture: {
+                    enabled: false,
+                    nameEnabled: false,
+                    emailEnabled: false,
+                    phoneEnabled: false,
+                    nameRequired: false,
+                    emailRequired: false,
+                    phoneRequired: false,
+                },
+                questions: [],
+                status: "published",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                publishedAt: new Date().toISOString(),
+                closedAt: null,
+                responseCount: 0,
+                lastResponseAt: null,
+            },
         }) as any)
 
         const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
@@ -304,6 +360,8 @@ describe("GET /api/widget-settings", () => {
             "visualDiagnosis",
             "proactiveMessaging",
             "digitalWaiter",
+            "surveyManager",
         ])
+        expect(payload.surveyWidgetConfig.activeSurvey.slug).toBe("survey")
     })
 })

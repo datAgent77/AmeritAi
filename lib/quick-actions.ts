@@ -6,6 +6,16 @@ type QuickActionDefinition = Omit<QuickActionButton, "visible" | "order"> & {
         tr: string
         en: string
     }
+    localized: {
+        tr: {
+            label: string
+            triggerMessage: string
+        }
+        en: {
+            label: string
+            triggerMessage: string
+        }
+    }
     inferenceTexts: string[]
     enabledWhen: (data: Record<string, any>) => boolean
 }
@@ -30,6 +40,16 @@ const QUICK_ACTION_DEFINITIONS = {
             tr: "Randevu",
             en: "Appointments",
         },
+        localized: {
+            tr: {
+                label: "Randevu Al",
+                triggerMessage: "randevu almak istiyorum",
+            },
+            en: {
+                label: "Book Appointment",
+                triggerMessage: "I want to book an appointment",
+            },
+        },
         inferenceTexts: [
             "Randevu Al",
             "Randevu",
@@ -49,6 +69,16 @@ const QUICK_ACTION_DEFINITIONS = {
         title: {
             tr: "Temsilci",
             en: "Human Handoff",
+        },
+        localized: {
+            tr: {
+                label: "Temsilci İste",
+                triggerMessage: "bir temsilciyle görüşmek istiyorum",
+            },
+            en: {
+                label: "Talk to an Agent",
+                triggerMessage: "I want to talk to a human agent",
+            },
         },
         inferenceTexts: [
             "Temsilci İste",
@@ -70,6 +100,16 @@ const QUICK_ACTION_DEFINITIONS = {
             tr: "İletişim Formu",
             en: "Lead Collection",
         },
+        localized: {
+            tr: {
+                label: "İletişim Bırak",
+                triggerMessage: "iletişim bilgilerimi bırakmak istiyorum",
+            },
+            en: {
+                label: "Leave Contact",
+                triggerMessage: "I want to leave my contact information",
+            },
+        },
         inferenceTexts: [
             "İletişim Bırak",
             "İletişim Formu",
@@ -89,6 +129,16 @@ const QUICK_ACTION_DEFINITIONS = {
         title: {
             tr: "Görsel Tanı",
             en: "Visual Diagnosis",
+        },
+        localized: {
+            tr: {
+                label: "Görsel Analiz",
+                triggerMessage: "görsel analizi başlatmak istiyorum",
+            },
+            en: {
+                label: "Image Analysis",
+                triggerMessage: "I want to start visual diagnosis",
+            },
         },
         inferenceTexts: [
             "Görsel Analiz",
@@ -110,6 +160,16 @@ const QUICK_ACTION_DEFINITIONS = {
             tr: "KVKK",
             en: "KVKK & Privacy",
         },
+        localized: {
+            tr: {
+                label: "KVKK Onayı",
+                triggerMessage: "kvkk onay metnini görmek istiyorum",
+            },
+            en: {
+                label: "Privacy Consent",
+                triggerMessage: "I want to review the privacy consent",
+            },
+        },
         inferenceTexts: [
             "KVKK Onayı",
             "KVKK",
@@ -129,6 +189,16 @@ const QUICK_ACTION_DEFINITIONS = {
         title: {
             tr: "Proaktif Etkileşim",
             en: "Proactive Messaging",
+        },
+        localized: {
+            tr: {
+                label: "Bana Yol Göster",
+                triggerMessage: "ihtiyacıma göre bana birkaç soru sorarak yardımcı ol",
+            },
+            en: {
+                label: "Guide Me",
+                triggerMessage: "Guide me proactively based on my needs",
+            },
         },
         inferenceTexts: [
             "Bana Yol Göster",
@@ -150,6 +220,16 @@ const QUICK_ACTION_DEFINITIONS = {
             tr: "Restoran ve Kafe AI",
             en: "Restaurant & Cafe AI",
         },
+        localized: {
+            tr: {
+                label: "Menüden Öner",
+                triggerMessage: "menüden bana öneri yap ve sipariş konusunda yardımcı ol",
+            },
+            en: {
+                label: "Suggest from Menu",
+                triggerMessage: "Help me choose from the menu",
+            },
+        },
         inferenceTexts: [
             "Menüden Öner",
             "Restoran ve Kafe AI",
@@ -159,6 +239,40 @@ const QUICK_ACTION_DEFINITIONS = {
             "help me choose from the menu",
         ],
         enabledWhen: (data) => data.enableDigitalWaiter === true || data.digitalWaiter != null,
+    },
+    surveyManager: {
+        id: "surveyManager",
+        label: "Ankete Katil",
+        moduleId: "surveyManager",
+        triggerMessage: "ankete katilmak istiyorum",
+        iconName: "BarChart3",
+        title: {
+            tr: "Anket ve Oylama",
+            en: "Survey & Polling",
+        },
+        localized: {
+            tr: {
+                label: "Ankete Katıl",
+                triggerMessage: "ankete katılmak istiyorum",
+            },
+            en: {
+                label: "Take Survey",
+                triggerMessage: "I want to take the survey",
+            },
+        },
+        inferenceTexts: [
+            "Ankete Katil",
+            "Ankete Katıl",
+            "Anket ve Oylama",
+            "Survey & Polling",
+            "Take Survey",
+            "ankete katilmak istiyorum",
+            "ankete katılmak istiyorum",
+            "i want to take the survey",
+        ],
+        enabledWhen: (data) => data.enableSurveyManager === true
+            && data.surveyWidgetConfig?.showCta !== false
+            && data.surveyWidgetConfig?.activeSurvey != null,
     },
 } as const satisfies Record<QuickActionModuleId, QuickActionDefinition>
 
@@ -177,6 +291,51 @@ export function isQuickActionModuleId(value: unknown): value is QuickActionModul
 
 export function getQuickActionDefinition(moduleId: QuickActionModuleId) {
     return QUICK_ACTION_DEFINITIONS[moduleId]
+}
+
+function resolveQuickActionLocale(language: string | undefined): "tr" | "en" {
+    return language === "tr" ? "tr" : "en"
+}
+
+function isKnownQuickActionCopy(value: string, definition: QuickActionDefinition) {
+    const normalized = normalizeText(value)
+    if (!normalized) return false
+
+    const knownValues = [
+        definition.label,
+        definition.triggerMessage,
+        definition.title.tr,
+        definition.title.en,
+        definition.localized.tr.label,
+        definition.localized.tr.triggerMessage,
+        definition.localized.en.label,
+        definition.localized.en.triggerMessage,
+        ...definition.inferenceTexts,
+    ]
+
+    return knownValues.some((knownValue) => normalizeText(knownValue) === normalized)
+}
+
+export function getQuickActionDisplayLabel(button: Pick<QuickActionButton, "label" | "moduleId">, language: string) {
+    const definition = getQuickActionDefinition(button.moduleId)
+    const rawLabel = typeof button.label === "string" ? button.label.trim() : ""
+
+    if (!rawLabel || isKnownQuickActionCopy(rawLabel, definition)) {
+        return definition.localized[resolveQuickActionLocale(language)].label
+    }
+
+    return rawLabel
+}
+
+export function getQuickActionTriggerMessage(button: Pick<QuickActionButton, "triggerMessage" | "moduleId">, language: string) {
+    const definition = getQuickActionDefinition(button.moduleId)
+    const rawTriggerMessage = typeof button.triggerMessage === "string" ? button.triggerMessage.trim() : ""
+
+    if (!rawTriggerMessage || isKnownQuickActionCopy(rawTriggerMessage, definition)) {
+        return definition.localized[resolveQuickActionLocale(language)].triggerMessage
+    }
+
+    return rawTriggerMessage
 }
 
 export function getQuickActionModuleOptions(language: "tr" | "en" = "tr"): QuickActionsModuleOption[] {

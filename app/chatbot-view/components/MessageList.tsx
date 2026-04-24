@@ -10,6 +10,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
 import { ProductCarousel } from "@/components/chatbot/product-carousel"
+import { INDUSTRY_CONFIG, type IndustryType } from "@/lib/industry-config"
 import Image from "next/image"
 import { RefObject, WheelEvent } from "react"
 import { InlineLeadForm } from "./InlineLeadForm"
@@ -134,6 +135,40 @@ function isGuidedUiInteractive(guidedUi: GuidedSkillMessageUi | undefined, guide
         && guidedSkillState.skillId === guidedUi.skillId
         && guidedSkillState.stepId === guidedUi.stepId
     )
+}
+
+const DEFAULT_SUGGESTED_QUESTIONS = {
+    en: ["What are your pricing plans?", "How do I get started?", "Contact support"],
+    tr: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
+}
+
+function localizeSuggestedQuestion(question: string, settings: ChatbotSettings, language: string) {
+    const locale = language === "tr" ? "tr" : "en"
+    const rawQuestion = question.trim()
+    const industryConfig = INDUSTRY_CONFIG[settings.industry as IndustryType]
+    const industryQuestions = industryConfig?.suggestedQuestions as Record<"en" | "tr", readonly string[]> | undefined
+
+    if (industryQuestions) {
+        const sourceLocale = (["en", "tr"] as const).find((candidateLocale) =>
+            industryQuestions[candidateLocale]?.includes(rawQuestion)
+        )
+        const questionIndex = sourceLocale ? industryQuestions[sourceLocale].indexOf(rawQuestion) : -1
+
+        if (questionIndex >= 0 && industryQuestions[locale]?.[questionIndex]) {
+            return industryQuestions[locale][questionIndex]
+        }
+    }
+
+    const defaultSourceLocale = (["en", "tr"] as const).find((candidateLocale) =>
+        DEFAULT_SUGGESTED_QUESTIONS[candidateLocale].includes(rawQuestion)
+    )
+    const defaultQuestionIndex = defaultSourceLocale ? DEFAULT_SUGGESTED_QUESTIONS[defaultSourceLocale].indexOf(rawQuestion) : -1
+
+    if (defaultQuestionIndex >= 0 && DEFAULT_SUGGESTED_QUESTIONS[locale][defaultQuestionIndex]) {
+        return DEFAULT_SUGGESTED_QUESTIONS[locale][defaultQuestionIndex]
+    }
+
+    return rawQuestion
 }
 
 function GuidedShortcutButtons({
@@ -314,7 +349,9 @@ export function MessageList({
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
     const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
-    const suggestedQuestions = settings.suggestedQuestions.filter((question) => question.trim() !== "")
+    const suggestedQuestions = settings.suggestedQuestions
+        .map((question) => localizeSuggestedQuestion(question, settings, language))
+        .filter((question) => question.trim() !== "")
     const guidedShortcuts = settings.guidedSkills || []
     const guidedCopy = getGuidedCopy(language)
     const handleGuidedShortcut = (shortcut: GuidedSkillShortcut) => {
@@ -373,7 +410,7 @@ export function MessageList({
                                 type="button"
                                 onClick={onCloseWidget}
                                 className="md:hidden absolute right-2 top-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
-                                aria-label="Close Widget"
+                                aria-label={t("closeWidget")}
                             >
                                 <X className="h-5 w-5" />
                             </button>

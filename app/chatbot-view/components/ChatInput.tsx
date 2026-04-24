@@ -1,7 +1,7 @@
 import React from "react"
 import { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
-import { getQuickActionDefinition } from "@/lib/quick-actions"
+import { getQuickActionDefinition, getQuickActionDisplayLabel, getQuickActionTriggerMessage } from "@/lib/quick-actions"
 import * as LucideIcons from "lucide-react"
 import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
@@ -16,6 +16,28 @@ type AmbientIconComponent = React.ComponentType<{ className?: string; color?: st
 const ambientIconRegistry = LucideIcons as unknown as Record<string, AmbientIconComponent>
 type QuickActionIconComponent = React.ComponentType<{ className?: string }>
 const quickActionIconRegistry = LucideIcons as unknown as Record<string, QuickActionIconComponent>
+
+function colorWithAlpha(color: string | undefined, alpha: number) {
+    const value = (color || "#7c3aed").trim()
+    const clampedAlpha = Math.max(0, Math.min(1, alpha))
+
+    const shortHex = value.match(/^#([0-9a-f]{3})$/i)
+    if (shortHex) {
+        const [r, g, b] = shortHex[1].split("").map((part) => parseInt(part + part, 16))
+        return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`
+    }
+
+    const fullHex = value.match(/^#([0-9a-f]{6})$/i)
+    if (fullHex) {
+        const hex = fullHex[1]
+        const r = parseInt(hex.slice(0, 2), 16)
+        const g = parseInt(hex.slice(2, 4), 16)
+        const b = parseInt(hex.slice(4, 6), 16)
+        return `rgba(${r}, ${g}, ${b}, ${clampedAlpha})`
+    }
+
+    return `color-mix(in srgb, ${value} ${Math.round(clampedAlpha * 100)}%, transparent)`
+}
 
 interface ChatInputProps {
     settings: ChatbotSettings
@@ -87,7 +109,8 @@ export function ChatInput({
     const isAmbientMode = mode === "ambient"
     const isSidecarMode = mode === "sidecar"
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
-    const ambientPlaceholder = language === "tr" ? "Ai Asistanına Sor" : "Ask to Ai Assistant"
+    const ambientPlaceholder = settings.ambientPlaceholderText?.trim()
+        || (language === "tr" ? "AI Asistanına Sor" : "Ask the AI assistant")
 
     const sizeConfig = resolveAmbientInputSizeConfig(settings.ambientInputSize)
 
@@ -95,8 +118,13 @@ export function ChatInput({
     const ambientSendButtonClass = `${sizeConfig.buttonSizeClass} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
     const sidecarActionButtonClass = "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
     const sidecarSendButtonClass = "flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-    const textModeLabel = language === "tr" ? "Yazi" : "Text"
+    const textModeLabel = language === "tr" ? "Yazı" : "Text"
     const voiceModeLabel = language === "tr" ? "Ses" : "Voice"
+    const quickActionColor = settings.brandColor || "#7c3aed"
+    const quickActionSurface = colorWithAlpha(quickActionColor, 0.08)
+    const quickActionSurfaceStrong = colorWithAlpha(quickActionColor, 0.14)
+    const quickActionBorder = colorWithAlpha(quickActionColor, 0.2)
+    const quickActionIconSurface = colorWithAlpha(quickActionColor, 0.12)
 
     const [isInputFocused, setIsInputFocused] = React.useState(false)
     const [isMobileViewport, setIsMobileViewport] = React.useState(false)
@@ -363,32 +391,43 @@ export function ChatInput({
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-3">
+                    <div className="-mx-2 mb-3 overflow-x-auto px-2 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        <div className="flex w-max min-w-full gap-2 sm:w-full sm:flex-wrap">
                         {quickActions.buttons
                             .filter(b => b.visible)
                             .sort((a, b) => a.order - b.order)
                             .map(btn => {
                                 const iconName = getQuickActionDefinition(btn.moduleId).iconName
                                 const Icon = quickActionIconRegistry[iconName] || MessageCircle
+                                const displayLabel = getQuickActionDisplayLabel(btn, language)
+                                const triggerMessage = getQuickActionTriggerMessage(btn, language)
                                 return (
                                     <button
                                         key={btn.id}
                                         type="button"
-                                        onClick={() => onTriggerAction ? onTriggerAction(btn) : sendMessage(btn.triggerMessage)}
+                                        onClick={() => onTriggerAction ? onTriggerAction({ ...btn, label: displayLabel, triggerMessage }) : sendMessage(triggerMessage)}
                                         disabled={isChatLoading || disabled}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-all hover:shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        className="group inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-[0_8px_18px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:text-gray-950 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none dark:text-zinc-100 dark:hover:text-white"
                                         style={{
-                                            borderColor: settings.brandColor,
-                                            color: settings.brandColor,
-                                            backgroundColor: `${settings.brandColor}12`,
+                                            borderColor: quickActionBorder,
+                                            background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
                                         }}
                                     >
-                                        <Icon className="w-3.5 h-3.5" />
-                                        {btn.label}
+                                        <span
+                                            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-200 group-hover:text-white"
+                                            style={{
+                                                color: quickActionColor,
+                                                backgroundColor: quickActionIconSurface,
+                                            }}
+                                        >
+                                            <Icon className="h-3.5 w-3.5" />
+                                        </span>
+                                        <span className="whitespace-nowrap leading-none">{displayLabel}</span>
                                     </button>
                                 )
                             })
                         }
+                        </div>
                     </div>
                 )}
 
@@ -630,7 +669,7 @@ export function ChatInput({
                             {t('aiDisclaimer')}
                         </p>
                         <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                            <span className="text-[10px] text-gray-400">Powered by</span>
+                            <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
                             <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
                         </a>
                     </div>

@@ -74,6 +74,7 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     headerTextColor: "",
     suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
     enableLeadCollection: false,
+    enableSurveyManager: false,
     enableHumanHandoff: false,
     humanHandoffSettings: {
         triggerOnUserRequest: true,
@@ -94,6 +95,8 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     enableInitialLeadCollection: false,
     enableInChatLeadCollection: false,
     leadFormConfig: null,
+    surveyModuleConfig: null,
+    surveyWidgetConfig: null,
     industry: "ecommerce",
     enableVoiceAssistant: false,
     voiceProvider: "klassifier",
@@ -232,6 +235,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         headerTextColor: data.headerTextColor || "#FFFFFF",
                         suggestedQuestions: data.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: data.enableLeadCollection || false,
+                        enableSurveyManager: data.enableSurveyManager === true,
                         enableHumanHandoff: data.enableHumanHandoff === true,
                         enableKvkkConsent: data.enableKvkkConsent === true,
                         enableGuided: data.enableGuided === true,
@@ -251,6 +255,14 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         enableInitialLeadCollection: (data.enableLeadCollection && data.enableInitialLeadCollection) ?? false,
                         enableInChatLeadCollection: data.enableInChatLeadCollection ?? false,
                         leadFormConfig: data.leadFormConfig || null,
+                        surveyModuleConfig:
+                            typeof data.surveyModuleConfig === "object" && data.surveyModuleConfig
+                                ? data.surveyModuleConfig
+                                : null,
+                        surveyWidgetConfig:
+                            typeof data.surveyWidgetConfig === "object" && data.surveyWidgetConfig
+                                ? data.surveyWidgetConfig
+                                : null,
                         industry: data.industry || "ecommerce",
                         enableVoiceAssistant: data.enableVoiceAssistant || false,
                         voiceProvider: data.voiceProvider || "klassifier",

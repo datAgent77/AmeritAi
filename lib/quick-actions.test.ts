@@ -79,7 +79,38 @@ test("auto-adds buttons for newly enabled modules not present in saved config", 
         enableKvkkConsent: true,
         enableProactiveMessaging: true,
         enableDigitalWaiter: true,
+        enableSurveyManager: true,
         digitalWaiter: { menuUrl: "https://example.com/menu" },
+        surveyWidgetConfig: {
+            showCta: true,
+            activeSurvey: {
+                id: "survey-1",
+                chatbotId: "tenant-1",
+                title: "Survey",
+                description: "",
+                slug: "survey",
+                introTitle: "",
+                introText: "",
+                thankYouTitle: "",
+                thankYouText: "",
+                consent: {
+                    title: "",
+                    body: "",
+                    checkboxLabel: "",
+                    required: true,
+                },
+                contactCapture: {
+                    enabled: false,
+                    nameEnabled: false,
+                    emailEnabled: false,
+                    phoneEnabled: false,
+                    nameRequired: false,
+                    emailRequired: false,
+                    phoneRequired: false,
+                },
+                questions: [],
+            },
+        },
         quickActions: {
             enabled: true,
             buttons: [
@@ -103,7 +134,7 @@ test("auto-adds buttons for newly enabled modules not present in saved config", 
         },
     })
 
-    expect(config.buttons).toHaveLength(7)
+    expect(config.buttons).toHaveLength(8)
     expect(config.buttons.map((button) => button.moduleId)).toEqual([
         "humanHandoff",
         "leadCollection",
@@ -112,6 +143,7 @@ test("auto-adds buttons for newly enabled modules not present in saved config", 
         "kvkkConsent",
         "proactiveMessaging",
         "digitalWaiter",
+        "surveyManager",
     ])
     expect(config.buttons.find((button) => button.moduleId === "leadCollection")?.label).toBe("Beni arayin")
     expect(config.buttons.find((button) => button.moduleId === "leadCollection")?.visible).toBe(false)
@@ -167,5 +199,52 @@ test("compares quick action configs deeply", () => {
     })
 
     expect(areQuickActionsEqual(left, right)).toBe(true)
-    expect(getQuickActionModuleOptions("en").map((option) => option.moduleId)).toHaveLength(7)
+    expect(getQuickActionModuleOptions("en").map((option) => option.moduleId)).toHaveLength(8)
+})
+
+test("enables survey quick action only when widget survey CTA has an active survey", () => {
+    const disabled = resolveQuickActionsConfig({
+        enableSurveyManager: true,
+        surveyWidgetConfig: {
+            showCta: true,
+            activeSurvey: null,
+        },
+    })
+
+    const enabled = resolveQuickActionsConfig({
+        enableSurveyManager: true,
+        surveyWidgetConfig: {
+            showCta: true,
+            activeSurvey: {
+                id: "survey-1",
+                chatbotId: "tenant-1",
+                title: "Survey",
+                description: "",
+                slug: "survey",
+                introTitle: "",
+                introText: "",
+                thankYouTitle: "",
+                thankYouText: "",
+                consent: {
+                    title: "",
+                    body: "",
+                    checkboxLabel: "",
+                    required: true,
+                },
+                contactCapture: {
+                    enabled: false,
+                    nameEnabled: false,
+                    emailEnabled: false,
+                    phoneEnabled: false,
+                    nameRequired: false,
+                    emailRequired: false,
+                    phoneRequired: false,
+                },
+                questions: [],
+            },
+        },
+    })
+
+    expect(disabled.buttons.map((button) => button.moduleId)).not.toContain("surveyManager")
+    expect(enabled.buttons.map((button) => button.moduleId)).toContain("surveyManager")
 })

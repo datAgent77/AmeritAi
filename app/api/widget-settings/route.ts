@@ -7,6 +7,7 @@ import { resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
 import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS, resolveHumanHandoffSettings } from "@/lib/human-handoff";
 import { resolveQuickActionsConfig } from "@/lib/quick-actions";
 import { getPublishedContract } from "@/lib/contracts";
+import { buildDefaultSurveyWidgetConfig, buildPublicSurvey, buildSurveyModuleConfig, fetchSurveyById } from "@/lib/surveys/service";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
@@ -138,6 +139,24 @@ export async function GET(req: Request) {
                     const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null);
                     const kvkkConsent = resolveKvkkConsentPayload({ mergedData, publishedKvkkContract });
                     const humanHandoffSettings = resolveHumanHandoffSettings(mergedData);
+                    const baseSurveyWidgetConfig = buildDefaultSurveyWidgetConfig(mergedData.surveyModuleConfig);
+                    const activeWidgetSurvey = mergedData.enableSurveyManager === true && baseSurveyWidgetConfig.widgetActiveSurveyId
+                        ? await fetchSurveyById(adminDb, baseSurveyWidgetConfig.widgetActiveSurveyId).catch(() => null)
+                        : null;
+                    const surveyWidgetConfig = {
+                        ...baseSurveyWidgetConfig,
+                        activeSurvey:
+                            activeWidgetSurvey
+                                && activeWidgetSurvey.status === "published"
+                                && activeWidgetSurvey.channels.includes("widget")
+                                ? buildPublicSurvey(activeWidgetSurvey)
+                                : null,
+                    };
+                    const quickActions = resolveQuickActionsConfig({
+                        ...mergedData,
+                        enableSurveyManager: mergedData.enableSurveyManager === true,
+                        surveyWidgetConfig,
+                    });
 
                     // Return only public settings
                     return NextResponse.json({
@@ -154,6 +173,7 @@ export async function GET(req: Request) {
                         headerTextColor: mergedData.headerTextColor || "#FFFFFF",
                         suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
                         enableLeadCollection: mergedData.enableLeadCollection || false,
+                        enableSurveyManager: mergedData.enableSurveyManager === true,
                         enableHumanHandoff: mergedData.enableHumanHandoff || false,
                         humanHandoffSettings: {
                             triggerOnUserRequest: humanHandoffSettings.triggerOnUserRequest,
@@ -174,8 +194,10 @@ export async function GET(req: Request) {
                         enableInitialLeadCollection: mergedData.enableInitialLeadCollection ?? mergedData.enableLeadCollection ?? false,
                         enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
                         leadFormConfig: mergedData.leadFormConfig || null,
+                        surveyModuleConfig: buildSurveyModuleConfig(baseSurveyWidgetConfig),
+                        surveyWidgetConfig,
                         leadCustomFields: mergedData.leadCustomFields || [],
-                        quickActions: resolveQuickActionsConfig(mergedData),
+                        quickActions,
                         position: mergedData.position || "bottom-right", // 'bottom-right' | 'bottom-left'
                         viewMode: mergedData.viewMode || "classic", // 'classic' | 'wide'
                         modalSize: mergedData.modalSize || "half", // 'half' | 'full'

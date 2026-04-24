@@ -12,6 +12,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: true,
                     text: "",
@@ -35,6 +36,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: true,
                     text: "",
@@ -58,6 +60,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: true,
                     text: "",
@@ -84,6 +87,7 @@ describe("resolveQuickActionRuntimeAction", () => {
                     subtitle: "Ozel form metni",
                 },
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -103,6 +107,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -122,6 +127,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -148,6 +154,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -172,6 +179,7 @@ describe("resolveQuickActionRuntimeAction", () => {
             settings: {
                 leadFormConfig: null,
                 digitalWaiter: null,
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -193,6 +201,7 @@ describe("resolveQuickActionRuntimeAction", () => {
                 digitalWaiter: {
                     menuUrl: "https://example.com/menu",
                 },
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -221,6 +230,7 @@ describe("resolveQuickActionRuntimeAction", () => {
                     menuPdfUrl: "",
                     signatureDishes: [],
                 },
+                surveyWidgetConfig: null,
                 kvkkConsent: {
                     enabled: false,
                     text: "",
@@ -233,5 +243,62 @@ describe("resolveQuickActionRuntimeAction", () => {
 
         expect(result.type).toBe("append-message")
         expect(result.type === "append-message" ? result.content : "").toContain("Menu verisi")
+    })
+
+    test("opens survey overlay when survey quick action has an active widget survey", () => {
+        const result = resolveQuickActionRuntimeAction({
+            button: {
+                moduleId: "surveyManager",
+                triggerMessage: "ankete katilmak istiyorum",
+            },
+            language: "tr",
+            settings: {
+                leadFormConfig: null,
+                digitalWaiter: null,
+                surveyWidgetConfig: {
+                    showCta: true,
+                    widgetActiveSurveyId: "survey-1",
+                    defaultConsentTitle: "",
+                    defaultConsentText: "",
+                    defaultConsentCheckboxLabel: "",
+                    activeSurvey: {
+                        id: "survey-1",
+                        chatbotId: "tenant-1",
+                        title: "Survey",
+                        description: "",
+                        slug: "survey",
+                        introTitle: "",
+                        introText: "",
+                        thankYouTitle: "",
+                        thankYouText: "",
+                        consent: {
+                            title: "",
+                            body: "",
+                            checkboxLabel: "",
+                            required: true,
+                        },
+                        contactCapture: {
+                            enabled: false,
+                            nameEnabled: false,
+                            emailEnabled: false,
+                            phoneEnabled: false,
+                            nameRequired: false,
+                            emailRequired: false,
+                            phoneRequired: false,
+                        },
+                        questions: [],
+                    },
+                },
+                kvkkConsent: {
+                    enabled: false,
+                    text: "",
+                    versionHash: "",
+                },
+            },
+            requiresKvkkConsent: false,
+            isKvkkAccepted: true,
+        })
+
+        expect(result).toEqual({ type: "open-survey" })
     })
 })

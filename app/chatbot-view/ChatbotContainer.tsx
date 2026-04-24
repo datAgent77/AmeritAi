@@ -25,6 +25,7 @@ import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 import { KvkkConsentModal } from "./components/KvkkConsentModal"
 import { KvkkConsentOverlay } from "./components/KvkkConsentOverlay"
 import { SpinWheelOverlay } from "./components/SpinWheelOverlay"
+import { SurveyWidgetOverlay } from "@/components/surveys/survey-widget-overlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { shouldShowClassicEntryOnboarding } from "@/lib/classic-entry-onboarding"
@@ -111,6 +112,7 @@ export default function ChatbotContainer() {
     const [showLeadCollection, setShowLeadCollection] = useState(false)
     const [leadCollectionFlow, setLeadCollectionFlow] = useState<"lead" | "handoff">("lead")
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
+    const [showSurvey, setShowSurvey] = useState(false)
     const [isKvkkAccepted, setIsKvkkAccepted] = useState(false)
     const [isKvkkModalOpen, setIsKvkkModalOpen] = useState(false)
 
@@ -554,6 +556,11 @@ export default function ChatbotContainer() {
             return
         }
 
+        if (action.type === "open-survey") {
+            setShowSurvey(true)
+            return
+        }
+
         if (button.moduleId === "humanHandoff") {
             const canRequestHumanHandoff = settings.enableHumanHandoff
                 && settings.humanHandoffSettings?.triggerOnUserRequest !== false
@@ -625,6 +632,48 @@ export default function ChatbotContainer() {
             void guardedSendMessage(action.message, false, undefined, undefined, null)
             return
         }
+    }
+
+    const handleSurveySubmit = async (payload: {
+        consentAccepted: boolean
+        answers: Record<string, { value: string | string[] | number | null; otherText?: string }>
+        contact: {
+            name?: string
+            email?: string
+            phone?: string
+        }
+    }) => {
+        const activeSurvey = settings.surveyWidgetConfig?.activeSurvey
+        if (!activeSurvey) {
+            throw new Error(language === "tr" ? "Aktif bir anket bulunamadı." : "No active survey was found.")
+        }
+
+        const response = await fetch(`/api/public/surveys/${activeSurvey.slug}/responses`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                ...payload,
+                source: "widget",
+            }),
+        })
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}))
+            throw new Error(typeof data?.error === "string" ? data.error : (language === "tr" ? "Anket gönderilemedi." : "Survey could not be submitted."))
+        }
+
+        setShowSurvey(false)
+        setMessages((prev: any[]) => [
+            ...prev,
+            {
+                id: `survey_thank_you_${Date.now()}`,
+                role: "assistant",
+                content: `${activeSurvey.thankYouTitle}\n${activeSurvey.thankYouText}`.trim(),
+                createdAt: new Date(),
+            },
+        ])
     }
 
     const handleClearChat = () => setIsConfirmingClear(true)
@@ -893,6 +942,7 @@ export default function ChatbotContainer() {
         chatDisplayMode: settings.chatDisplayMode,
         enableClassicEntryOnboarding: settings.enableClassicEntryOnboarding,
         hasUserMessage,
+        hasMessages: messages.length > 0,
     })
     const showAmbientFeed = ambientFeedManuallyClosed ? false : (hasUserMessage || isTyping || showClassicEntryOnboarding)
 
@@ -1068,7 +1118,7 @@ export default function ChatbotContainer() {
                                         {t('aiDisclaimer')}
                                     </p>
                                     <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                        <span className="text-[10px] text-gray-400">Powered by</span>
+                                        <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
                                         <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
                                     </a>
                                 </div>
@@ -1170,7 +1220,7 @@ export default function ChatbotContainer() {
             <KvkkConsentOverlay
                 show={requiresKvkkConsent}
                 isRejected={isKvkkRejected}
-                rejectionContactText={settings.kvkkConsent?.rejectionContactText || "Hizmeti kullanabilmek için KVKK metnini onaylamanız gerekmektedir. Alternatif olarak bizimle iletişime geçebilirsiniz."}
+                rejectionContactText={settings.kvkkConsent?.rejectionContactText || t("kvkkDefaultRejectionContact")}
                 onAccept={acceptKvkkConsent}
                 onReject={rejectKvkkConsent}
                 onReadFull={guiltyOpenKvkkModal}
@@ -1186,6 +1236,15 @@ export default function ChatbotContainer() {
                 t={t}
                 description={settings.leadFormConfig?.subtitle}
                 variant={leadCollectionFlow}
+            />
+
+            <SurveyWidgetOverlay
+                show={showSurvey}
+                survey={settings.surveyWidgetConfig?.activeSurvey}
+                brandColor={settings.brandColor}
+                language={language}
+                onClose={() => setShowSurvey(false)}
+                onSubmit={handleSurveySubmit}
             />
 
             {showSpinWheel && spinWheelPrizes.length > 0 && (
@@ -1240,6 +1299,8 @@ export default function ChatbotContainer() {
                 isOpen={isKvkkModalOpen}
                 text={settings.kvkkConsent?.text || ""}
                 onClose={() => setIsKvkkModalOpen(false)}
+                t={t}
+                language={language}
                 theme={effectiveSettings.theme}
             />
         </div>

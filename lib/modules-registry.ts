@@ -36,7 +36,8 @@ export type ModuleId =
     | 'proactiveMessaging'
     | 'dynamicContext'
     | 'kvkkConsent'
-    | 'humanHandoff';
+    | 'humanHandoff'
+    | 'surveyManager';
 
 export type SectorId =
     | 'ecommerce'
@@ -360,6 +361,52 @@ KURALLAR:
 2. Kullanici genel iletişim bilgisi birakmak veya lead takip etmek istiyorsa, bunu lead toplama modulu yönetsin.
 3. Handoff yanıtini kisa ve insan odakli tut.`
         }
+    },
+
+    surveyManager: {
+        id: 'surveyManager',
+        name: {
+            en: 'Survey & Polling',
+            tr: 'Anket ve Oylama'
+        },
+        description: {
+            en: 'Create shareable surveys and collect structured responses from widget and public pages',
+            tr: 'Widget ve public sayfalarda paylasilabilir anketler olusturun ve yapilandirilmis cevaplar toplayin'
+        },
+        icon: 'BarChart',
+        isCore: false,
+        isPremium: false,
+        price: 0,
+        status: 'ready',
+        supportedSectors: [],
+        defaultEnabledBySector: [],
+        showOnLandingPage: false,
+        legacyFirestoreField: 'enableSurveyManager',
+        longDescription: {
+            en: 'Launch branded surveys, political polls, satisfaction forms, and market research from a single tenant module. Publish them as public pages or directly inside the widget, then review analytics and export raw responses.',
+            tr: 'Markali anketleri, siyasi yoklamalari, memnuniyet formlarini ve pazar arastirmalarini tek bir tenant modulu uzerinden yayinlayin. Public sayfa veya widget icinde calistirin, sonra analytics ve ham yanit exportlarini inceleyin.'
+        },
+        features: [
+            {
+                title: { en: 'Public + Widget Runtime', tr: 'Public + Widget Calisma Modu' },
+                description: { en: 'Use the same survey on a shareable page and inside the chat widget.', tr: 'Ayni anketi hem paylasilabilir sayfada hem sohbet widgeti icinde kullanin.' },
+                icon: 'Globe'
+            },
+            {
+                title: { en: 'Structured Builder', tr: 'Yapilandirilmis Builder' },
+                description: { en: 'Manage questions, consent text, contact capture, and templates per tenant.', tr: 'Sorulari, onay metnini, iletisim alanlarini ve sablonlari tenant bazinda yonetin.' },
+                icon: 'ListChecks'
+            },
+            {
+                title: { en: 'Analytics & Export', tr: 'Analytics ve Export' },
+                description: { en: 'Track answer distributions and export raw responses as CSV or XLSX.', tr: 'Yanit dagilimlarini izleyin ve ham cevaplari CSV veya XLSX olarak disa aktarın.' },
+                icon: 'Download'
+            }
+        ],
+        benefits: [
+            { en: 'Run structured audience research without custom builds', tr: 'Ozel gelistirme yapmadan yapilandirilmis hedef kitle arastirmasi yurutun' },
+            { en: 'Collect high-signal feedback directly from owned channels', tr: 'Yuksek sinyalli geri bildirimi dogrudan sahip olunan kanallardan toplayin' }
+        ]
     },
 
     guided: {
@@ -1148,6 +1195,7 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.knowledgeBase,     // Core
     MODULES_REGISTRY.kvkkConsent,       // KVKK Consent
     MODULES_REGISTRY.humanHandoff,      // Human handoff
+    MODULES_REGISTRY.surveyManager,     // Surveys & Polling
     MODULES_REGISTRY.guided,            // Guided flows
     MODULES_REGISTRY.productCatalog,    // Personal Shopper
     MODULES_REGISTRY.leadCollection,    // Lead Collection
