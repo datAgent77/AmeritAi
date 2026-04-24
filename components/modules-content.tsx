@@ -524,17 +524,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 return false
             }
 
-            // Tenant view: show only modules that super admin / partner has explicitly
-            // granted via `adminGrantedModules`. Modules granted stay visible even when
-            // the tenant toggles them off (passive state, re-enableable). If a tenant
-            // has no `adminGrantedModules` record yet (legacy), fall back to currently
-            // enabled modules so we don't wipe their UI before migration.
+            // Tenant view: hide closed modules entirely. Admins retain full module
+            // visibility so they can grant, revoke, or configure modules for tenants.
             if (!isAdminView) {
-                if (adminGrantedModules) {
-                    if (adminGrantedModules[module.id] !== true) {
-                        return false
-                    }
-                } else if (!moduleStates[module.id]) {
+                if (moduleStates[module.id] !== true) {
                     return false
                 }
             }
@@ -563,7 +556,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates, adminGrantedModules])
+    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
