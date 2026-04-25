@@ -57,30 +57,34 @@ export function resolvePartnerBranding(input: {
 
     if (
         input.viewerRole === "AGENCY_ADMIN" &&
-        input.viewerPartnerLevel === "strategic_partner" &&
-        typeof input.viewerPartnerLogoUrl === "string" &&
-        input.viewerPartnerLogoUrl.trim()
+        input.viewerPartnerLevel === "strategic_partner"
     ) {
+        const logoUrl =
+            typeof input.viewerPartnerLogoUrl === "string" && input.viewerPartnerLogoUrl.trim()
+                ? input.viewerPartnerLogoUrl.trim()
+                : undefined
         return {
             show: true,
             partnerId: input.viewerPartnerId || undefined,
             partnerName: input.viewerPartnerName || undefined,
-            logoUrl: input.viewerPartnerLogoUrl.trim(),
+            logoUrl,
             placement,
         }
     }
 
     if (
         input.viewerRole !== "SUPER_ADMIN" &&
-        input.linkedPartnerLevel === "strategic_partner" &&
-        typeof input.linkedPartnerLogoUrl === "string" &&
-        input.linkedPartnerLogoUrl.trim()
+        input.linkedPartnerLevel === "strategic_partner"
     ) {
+        const logoUrl =
+            typeof input.linkedPartnerLogoUrl === "string" && input.linkedPartnerLogoUrl.trim()
+                ? input.linkedPartnerLogoUrl.trim()
+                : undefined
         return {
             show: true,
             partnerId: input.linkedPartnerId || undefined,
             partnerName: input.linkedPartnerName || undefined,
-            logoUrl: input.linkedPartnerLogoUrl.trim(),
+            logoUrl,
             placement,
         }
     }

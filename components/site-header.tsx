@@ -59,11 +59,11 @@ export function SiteHeader({
                 const data = await response.json()
                 if (cancelled) return
                 const resolvedBranding = data?.resolvedPartnerBranding || null
-                const forcedBranding = forcePartnerBranding && data?.partner?.partnerLogoUrl
+                const forcedBranding = forcePartnerBranding && data?.partner
                     ? {
                         show: true,
                         partnerName: data?.partner?.partnerName || data?.partner?.agencyName || data?.partner?.email || "Partner",
-                        logoUrl: data?.partner?.partnerLogoUrl,
+                        logoUrl: data?.partner?.partnerLogoUrl || undefined,
                         placement: "header-right" as const,
                     }
                     : null
@@ -112,16 +112,22 @@ export function SiteHeader({
                         {t('widgetTest') || "Widget Test"}
                     </Button>
                 ) : null}
-                {partnerBranding?.show && partnerBranding.logoUrl ? (
+                {partnerBranding?.show ? (
                     <div className="flex h-9 shrink-0 items-center rounded-md border bg-white px-2 shadow-sm">
-                        <Image
-                            src={partnerBranding.logoUrl}
-                            alt={partnerBranding.partnerName || "Partner"}
-                            width={120}
-                            height={36}
-                            className="h-5 w-auto max-w-[132px] object-contain"
-                            unoptimized
-                        />
+                        {partnerBranding.logoUrl ? (
+                            <Image
+                                src={partnerBranding.logoUrl}
+                                alt={partnerBranding.partnerName || "Partner"}
+                                width={120}
+                                height={36}
+                                className="h-5 w-auto max-w-[132px] object-contain"
+                                unoptimized
+                            />
+                        ) : (
+                            <span className="max-w-[132px] truncate text-xs font-medium text-foreground">
+                                {partnerBranding.partnerName || "Partner"}
+                            </span>
+                        )}
                     </div>
                 ) : null}
             </div>
