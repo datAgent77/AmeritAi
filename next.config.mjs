@@ -6,7 +6,7 @@ const isVercel = process.env.VERCEL === "1";
 export default function nextConfig(phase) {
     const localDistDir =
         process.env.NEXT_DIST_DIR ||
-        (phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next-build");
+        (phase === PHASE_DEVELOPMENT_SERVER ? ".next" : ".next-build");
 
     return {
     // Keep dev and production build artifacts isolated to avoid chunk corruption

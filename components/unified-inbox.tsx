@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { format, isValid } from "date-fns"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CalendarDays, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
+import { Bot, CalendarDays, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import { OmniStateShell } from "@/components/omni/omni-ui"
 import { cn } from "@/lib/utils"
 import { db } from "@/lib/firebase"
 import { collection, onSnapshot, query, where } from "firebase/firestore"
+import { AssistantTrainingCorrectionDialog } from "@/components/knowledge/assistant-training-correction-dialog"
 
 interface ChatSession {
     id: string
@@ -132,6 +133,12 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     const [isCreatingCallback, setIsCreatingCallback] = useState(false)
     const [isCreatingLead, setIsCreatingLead] = useState(false)
     const [isSessionDetailsOpen, setIsSessionDetailsOpen] = useState(false)
+    const [trainingDraft, setTrainingDraft] = useState<{
+        question: string
+        wrongAnswer: string
+        sourceSessionId?: string
+        sourceMessageId?: string
+    } | null>(null)
 
     const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -148,6 +155,15 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
             headers["Content-Type"] = "application/json"
         }
         return headers
+    }
+
+    const getPreviousUserQuestion = (messages: any[], index: number) => {
+        for (let i = index - 1; i >= 0; i--) {
+            if (messages[i]?.role === "user" && typeof messages[i]?.content === "string") {
+                return messages[i].content
+            }
+        }
+        return ""
     }
 
     const formatDateSafe = (dateVal: any, formatStr: string) => {
@@ -790,6 +806,25 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                     <div className="space-y-1">
                                         <div className={`rounded-lg p-3 text-sm shadow-sm ${msg.role === "assistant" || msg.role === "agent" ? "rounded-tr-md bg-primary text-primary-foreground" : "rounded-tl-md border border-border/60 bg-white text-gray-800"}`}>
                                             {msg.content}
+                                            {msg.role === "assistant" ? (
+                                                <div className="mt-2 flex justify-end">
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="h-7 gap-1 bg-white/90 px-2 text-xs text-gray-900 hover:bg-white"
+                                                        onClick={() => setTrainingDraft({
+                                                            question: getPreviousUserQuestion(selectedSession.messages || [], index),
+                                                            wrongAnswer: msg.content || "",
+                                                            sourceSessionId: selectedSession.id,
+                                                            sourceMessageId: msg.id,
+                                                        })}
+                                                    >
+                                                        <Bot className="h-3.5 w-3.5" />
+                                                        {t("assistantTrainAnswer") || "Cevabı Eğit"}
+                                                    </Button>
+                                                </div>
+                                            ) : null}
                                         </div>
                                         <div className={`text-[10px] text-muted-foreground ${msg.role === "assistant" || msg.role === "agent" ? "text-right" : "text-left"}`}>
                                             {formatDateSafe(msg.createdAt, "HH:mm")}
@@ -890,6 +925,15 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                 </DialogContent>
             </Dialog>
         ) : null}
+        <AssistantTrainingCorrectionDialog
+            open={!!trainingDraft}
+            onOpenChange={(open) => !open && setTrainingDraft(null)}
+            userId={userId}
+            question={trainingDraft?.question || ""}
+            wrongAnswer={trainingDraft?.wrongAnswer || ""}
+            sourceSessionId={trainingDraft?.sourceSessionId}
+            sourceMessageId={trainingDraft?.sourceMessageId}
+        />
         </>
     )
 }

@@ -1,5 +1,5 @@
 import React from "react"
-import { Type, Globe, FileText, MessageSquare, Settings2, LayoutDashboard } from "lucide-react"
+import { Type, Globe, FileText, MessageSquare, Settings2, LayoutDashboard, Bot } from "lucide-react"
 
 export interface KnowledgeMenuItem {
     id: string
@@ -45,6 +45,12 @@ export function getKnowledgeMenuItems(
             label: t('knowledgeQa') || "Soru-Cevap",
             href: `${normalizedBasePath}/qa`,
             icon: <MessageSquare className="w-4 h-4" />
+        },
+        {
+            id: "assistant-training",
+            label: t('assistantResponseTraining') || "Cevap Eğitimi",
+            href: `${normalizedBasePath}/assistant-training`,
+            icon: <Bot className="w-4 h-4" />
         },
         {
             id: "behavior",

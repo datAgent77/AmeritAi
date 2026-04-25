@@ -1148,6 +1148,7 @@ export const translations = {
         knowledgeUrl: "URL",
         knowledgeFile: "File",
         knowledgeQa: "Q&A",
+        assistantResponseTraining: "Response Training",
         knowledgeTitle: "Title",
         knowledgeContent: "Content",
         websiteUrl: "Website URL",
@@ -1356,6 +1357,7 @@ export const translations = {
         // Chats
         chatHistory: "Chat History",
         chatHistoryDescription: "Review past conversations with your chatbot.",
+        assistantTrainAnswer: "Train Answer",
         noChatHistory: "No chat history found. Start a conversation to see it here.",
         sessionId: "Session ID",
         messages: "Messages",
@@ -2882,6 +2884,7 @@ export const translations = {
         knowledgeUrl: "URL",
         knowledgeFile: "Dosya",
         knowledgeQa: "Soru-Cevap",
+        assistantResponseTraining: "Cevap Eğitimi",
         knowledgeTitle: "Başlık",
         knowledgeContent: "İçerik",
         websiteUrl: "Web Sitesi URL'si",
@@ -3094,6 +3097,7 @@ export const translations = {
         // Chats
         chatHistory: "Sohbet Geçmişi",
         chatHistoryDescription: "Chatbotunuzla yapılan geçmiş konuşmaları inceleyin.",
+        assistantTrainAnswer: "Cevabı Eğit",
         noChatHistory: "Sohbet geçmişi bulunamadı. Görmek için bir konuşma başlatın.",
         sessionId: "Oturum Kimliği",
         messages: "Mesajlar",

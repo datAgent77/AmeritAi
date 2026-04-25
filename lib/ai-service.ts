@@ -9,6 +9,7 @@ import { INDUSTRY_CONFIG } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
 import { resolveConversationLanguage } from "@/lib/conversation-language";
 import { evaluateCampaigns, buildCampaignSystemPromptBlock, fetchWeatherByCity } from "@/lib/campaigns/campaign-engine";
+import { buildTenantTrainingPromptFromDb } from "@/lib/assistant-training";
 
 const pineconeApiKey = process.env.PINECONE_API_KEY?.trim();
 const pc = pineconeApiKey
@@ -771,6 +772,23 @@ REMEMBER: Always think before responding. Quality > Speed.`;
         if (chatbotData?.customPrompts) {
             systemPrompt += `\n\n# SPECIAL INSTRUCTIONS (FROM ADMIN)\n${chatbotData.customPrompts}`;
             console.log("AI Service: Injected custom prompts length:", chatbotData.customPrompts.length);
+        }
+
+        try {
+            const trainingPrompt = await buildTenantTrainingPromptFromDb(adminDb, {
+                chatbotId,
+                userText: lastMessage.content || "",
+                language: resolvedLanguage,
+            });
+            if (trainingPrompt.prompt) {
+                systemPrompt += `\n\n${trainingPrompt.prompt}`;
+                console.log("AI Service: Injected tenant response training", {
+                    rules: trainingPrompt.rules.length,
+                    matches: trainingPrompt.matches.length,
+                });
+            }
+        } catch (trainingError) {
+            console.error("AI Service: Failed to load tenant response training:", trainingError);
         }
 
         // Campaign Sihirbazı — inject active campaigns

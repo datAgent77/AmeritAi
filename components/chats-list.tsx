@@ -15,7 +15,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { format } from "date-fns"
-import { Loader2, Eye } from "lucide-react"
+import { Bot, Loader2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -24,6 +24,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { AssistantTrainingCorrectionDialog } from "@/components/knowledge/assistant-training-correction-dialog"
 
 interface ChatSession {
     id: string
@@ -44,6 +45,21 @@ export function ChatsList({ targetUserId, embedded = false }: ChatsListProps) {
     const [sessions, setSessions] = useState<ChatSession[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null)
+    const [trainingDraft, setTrainingDraft] = useState<{
+        question: string
+        wrongAnswer: string
+        sourceSessionId?: string
+        sourceMessageId?: string
+    } | null>(null)
+
+    const getPreviousUserQuestion = (messages: any[], index: number) => {
+        for (let i = index - 1; i >= 0; i--) {
+            if (messages[i]?.role === "user" && typeof messages[i]?.content === "string") {
+                return messages[i].content
+            }
+        }
+        return ""
+    }
 
     useEffect(() => {
         const fetchSessions = async () => {
@@ -223,12 +239,42 @@ export function ChatsList({ targetUserId, embedded = false }: ChatsListProps) {
                                         }`}
                                 >
                                     {msg.content}
+                                    {msg.role === "assistant" ? (
+                                        <div className="mt-2 flex justify-end">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 gap-1 bg-background/80 text-xs"
+                                                onClick={() => setTrainingDraft({
+                                                    question: getPreviousUserQuestion(selectedSession.messages || [], index),
+                                                    wrongAnswer: msg.content || "",
+                                                    sourceSessionId: selectedSession.id,
+                                                    sourceMessageId: msg.id,
+                                                })}
+                                            >
+                                                <Bot className="h-3.5 w-3.5" />
+                                                {t("assistantTrainAnswer") || "Cevabı Eğit"}
+                                            </Button>
+                                        </div>
+                                    ) : null}
                                 </div>
                             </div>
                         ))}
                     </div>
                 </DialogContent>
             </Dialog>
+            {userId ? (
+                <AssistantTrainingCorrectionDialog
+                    open={!!trainingDraft}
+                    onOpenChange={(open) => !open && setTrainingDraft(null)}
+                    userId={userId}
+                    question={trainingDraft?.question || ""}
+                    wrongAnswer={trainingDraft?.wrongAnswer || ""}
+                    sourceSessionId={trainingDraft?.sourceSessionId}
+                    sourceMessageId={trainingDraft?.sourceMessageId}
+                />
+            ) : null}
         </div>
     )
 }

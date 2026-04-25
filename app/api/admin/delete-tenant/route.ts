@@ -115,6 +115,12 @@ export async function POST(req: Request) {
         }
 
         try {
+            await deleteCollection("assistant_training_entries", "chatbotId");
+        } catch (e) {
+            console.error("Failed to delete assistant_training_entries:", e);
+        }
+
+        try {
             await deleteCollection("chat_sessions", "chatbotId");
         } catch (e) {
             console.error("Failed to delete chat_sessions:", e);
