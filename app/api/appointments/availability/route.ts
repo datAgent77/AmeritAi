@@ -81,25 +81,29 @@ export async function GET(req: Request) {
             }
         })
 
-        const availability = buildAvailabilityWindow({
+        const availabilityWindow = buildAvailabilityWindow({
             startDate,
             days,
             settings,
             appointments,
             now: new Date(),
-        }).filter((day) => day.slots.length > 0)
+        })
 
         const allSlotsByDate: Record<string, string[]> = {}
-        for (const day of availability) {
+        for (const day of availabilityWindow) {
             allSlotsByDate[day.date] = listAllTimeSlots({ date: day.date, settings, now: new Date() })
         }
+        const availability = availabilityWindow.filter((day) => day.slots.length > 0)
+        const selectableDates = availabilityWindow
+            .filter((day) => (allSlotsByDate[day.date] || []).length > 0)
+            .map((day) => day.date)
 
         return NextResponse.json({
             settings: { ...settings, ...(appointmentTypes ? { appointmentTypes } : {}) },
             intervalMinutes: 30,
             availability,
-            availableDates: availability.map((day) => day.date),
-            slotsByDate: Object.fromEntries(availability.map((day) => [day.date, day.slots])),
+            availableDates: selectableDates,
+            slotsByDate: Object.fromEntries(availabilityWindow.map((day) => [day.date, day.slots])),
             allSlotsByDate,
         })
     } catch (error: any) {

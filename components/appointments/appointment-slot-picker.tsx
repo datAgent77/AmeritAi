@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { format } from "date-fns"
 import { enUS, tr } from "date-fns/locale"
 import { CalendarDays, Clock } from "lucide-react"
@@ -81,6 +81,11 @@ export function AppointmentSlotPicker({
         slotsByDate: {},
         allSlotsByDate: {},
     })
+    const onSettingsLoadedRef = useRef(onSettingsLoaded)
+
+    useEffect(() => {
+        onSettingsLoadedRef.current = onSettingsLoaded
+    }, [onSettingsLoaded])
 
     useEffect(() => {
         let cancelled = false
@@ -110,8 +115,8 @@ export function AppointmentSlotPicker({
                     allSlotsByDate: payload.allSlotsByDate && typeof payload.allSlotsByDate === "object" ? payload.allSlotsByDate : {},
                 })
 
-                if (onSettingsLoaded && Array.isArray(payload.settings?.appointmentTypes)) {
-                    onSettingsLoaded(payload.settings.appointmentTypes)
+                if (onSettingsLoadedRef.current && Array.isArray(payload.settings?.appointmentTypes)) {
+                    onSettingsLoadedRef.current(payload.settings.appointmentTypes)
                 }
             } catch (fetchError: any) {
                 if (!cancelled) {

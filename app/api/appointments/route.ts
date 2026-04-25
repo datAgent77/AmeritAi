@@ -322,9 +322,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Selected time is outside working hours" }, { status: 400 })
         }
 
+        let normalizedSessionId = ""
         if (sessionId) {
             const sessionSnap = await adminDb.collection("chat_sessions").doc(String(sessionId)).get()
-            if (!sessionSnap.exists || sessionSnap.data()?.chatbotId !== chatbotId) {
+            const isValidSession = sessionSnap.exists && sessionSnap.data()?.chatbotId === chatbotId
+            if (isValidSession) {
+                normalizedSessionId = String(sessionId)
+            } else if (isAuthorizedRequest) {
                 return NextResponse.json({ error: "Invalid session for chatbot" }, { status: 403 })
             }
         }
@@ -375,7 +379,7 @@ export async function POST(req: Request) {
             time,
             type: String(type || "Consultation").trim().slice(0, 120),
             notes: String(notes || "").trim().slice(0, 1000),
-            sessionId: String(sessionId || ""),
+            sessionId: normalizedSessionId,
             status: appointmentStatus,
             source: appointmentSource,
             createdAt,

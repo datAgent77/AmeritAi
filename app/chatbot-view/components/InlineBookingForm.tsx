@@ -4,6 +4,7 @@ import { useState } from "react"
 import { CheckCircle, AlertCircle } from "lucide-react"
 import { ChatbotSettings } from "@/types/chatbot"
 import { AppointmentSlotPicker } from "@/components/appointments/appointment-slot-picker"
+import { useLanguage } from "@/context/LanguageContext"
 
 
 interface InlineBookingFormProps {
@@ -26,6 +27,55 @@ interface BookingFormData {
 }
 
 export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess }: InlineBookingFormProps) {
+    const { language } = useLanguage()
+    const isTr = language === "tr"
+    const copy = {
+        selectDateTime: isTr ? "Lutfen tarih ve saat secin." : "Please select a date and time.",
+        nameRequired: isTr ? "Ad Soyad gereklidir" : "Full name is required",
+        contactRequired: isTr ? "E-posta veya telefon gereklidir" : "Email or phone is required",
+        contactHelper: isTr ? "En az bir iletisim bilgisi paylasin." : "Share at least one contact detail.",
+        invalidEmail: isTr ? "Gecersiz e-posta adresi" : "Invalid email address",
+        invalidPhone: isTr ? "Gecersiz telefon numarasi" : "Invalid phone number",
+        genericError: isTr ? "Bir hata olustu. Lutfen tekrar deneyin." : "Something went wrong. Please try again.",
+        networkError: isTr ? "Baglanti hatasi. Lutfen tekrar deneyin." : "Connection error. Please try again.",
+        submitting: isTr ? "Gonderiliyor..." : "Submitting...",
+        successTitle: isTr ? "Randevu basariyla olusturuldu" : "Booking Success",
+        appointmentType: isTr ? "Randevu Turu" : "Appointment Type",
+        select: isTr ? "Seciniz..." : "Select...",
+        fullName: isTr ? "Ad Soyad" : "Full Name",
+        email: isTr ? "E-posta" : "Email",
+        phone: isTr ? "Telefon" : "Phone",
+        notes: isTr ? "Notlar (opsiyonel)" : "Notes (optional)",
+        confirm: isTr ? "Randevuyu Onayla" : "Confirm Booking",
+    }
+
+    const localizeServerError = (message?: string) => {
+        const normalized = String(message || "").trim()
+        if (!normalized) return copy.genericError
+
+        const map: Record<string, string> = {
+            "Missing required fields": isTr ? "Eksik alanlar var." : "Missing required fields.",
+            "Email or phone is required": copy.contactRequired,
+            "Invalid email address": copy.invalidEmail,
+            "Invalid phone number": copy.invalidPhone,
+            "Invalid date or time format": isTr ? "Gecersiz tarih veya saat formati." : "Invalid date or time format.",
+            "Invalid appointment date or time": isTr ? "Gecersiz randevu tarihi veya saati." : "Invalid appointment date or time.",
+            "Appointment must be in the future": isTr ? "Randevu ileri bir tarih/saatte olmali." : "Appointment must be in the future.",
+            "Appointment date is too far in the future": isTr ? "Randevu tarihi cok ileri bir tarihte." : "Appointment date is too far in the future.",
+            "Too many appointment requests. Please try again later.": isTr ? "Cok fazla randevu talebi gonderildi. Lutfen daha sonra tekrar deneyin." : "Too many appointment requests. Please try again later.",
+            "Too many booking attempts for this contact. Please try again later.": isTr ? "Bu iletisim bilgisi icin cok fazla randevu denemesi yapildi. Lutfen daha sonra tekrar deneyin." : "Too many booking attempts for this contact. Please try again later.",
+            "Chatbot not found": isTr ? "Chatbot bulunamadi." : "Chatbot not found.",
+            "Account is inactive": isTr ? "Hesap aktif degil." : "Account is inactive.",
+            "Appointments are disabled for this chatbot": isTr ? "Bu chatbot icin randevu modulu kapali." : "Appointments are disabled for this chatbot.",
+            "Selected day is outside working days": isTr ? "Secilen gun calisma gunleri disinda." : "Selected day is outside working days.",
+            "Selected time is outside working hours": isTr ? "Secilen saat calisma saatleri disinda." : "Selected time is outside working hours.",
+            "Invalid session for chatbot": isTr ? "Oturum yenilenemedi. Lutfen tekrar deneyin." : "Session could not be verified. Please try again.",
+            "Selected time is not available": isTr ? "Secilen saat dolu. Lutfen farkli bir saat secin." : "Selected time is not available. Please choose another time.",
+        }
+
+        return map[normalized] || normalized
+    }
+
     // Try to get pre-collected lead data from localStorage
     const getLeadData = () => {
         if (typeof window === "undefined") return null
@@ -89,31 +139,31 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
         const phoneRegex = /^[\d\s+\-()]+$/
 
         if (!form.date || !form.time) {
-            setErrorMsg("Lutfen tarih ve saat secin.")
+            setErrorMsg(copy.selectDateTime)
             setStatus("error")
             return
         }
 
         if (!trimmedName) {
-            setErrorMsg(t("nameRequired") === "nameRequired" ? "Ad Soyad gereklidir" : t("nameRequired"))
+            setErrorMsg(t("nameRequired") === "nameRequired" ? copy.nameRequired : t("nameRequired"))
             setStatus("error")
             return
         }
 
         if (!trimmedEmail && !trimmedPhone) {
-            setErrorMsg(t("contactRequired") === "contactRequired" ? "E-posta veya telefon gereklidir" : t("contactRequired"))
+            setErrorMsg(t("contactRequired") === "contactRequired" ? copy.contactRequired : t("contactRequired"))
             setStatus("error")
             return
         }
 
         if (trimmedEmail && !emailRegex.test(trimmedEmail)) {
-            setErrorMsg(t("invalidEmail") === "invalidEmail" ? "Geçersiz e-posta adresi" : t("invalidEmail"))
+            setErrorMsg(t("invalidEmail") === "invalidEmail" ? copy.invalidEmail : t("invalidEmail"))
             setStatus("error")
             return
         }
 
         if (trimmedPhone && (!phoneRegex.test(trimmedPhone) || phoneDigits.length < 7)) {
-            setErrorMsg(t("invalidPhone") === "invalidPhone" ? "Geçersiz telefon numarası" : t("invalidPhone"))
+            setErrorMsg(t("invalidPhone") === "invalidPhone" ? copy.invalidPhone : t("invalidPhone"))
             setStatus("error")
             return
         }
@@ -142,7 +192,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             const json = await res.json()
 
             if (!res.ok) {
-                setErrorMsg(json.error || "Bir hata oluştu. Lütfen tekrar deneyin.")
+                setErrorMsg(localizeServerError(json.error))
                 setStatus("error")
                 return
             }
@@ -151,7 +201,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             setStatus("success")
             onSuccess?.(json.appointmentId)
         } catch {
-            setErrorMsg("Bağlantı hatası. Lütfen tekrar deneyin.")
+            setErrorMsg(copy.networkError)
             setStatus("error")
         }
     }
@@ -162,7 +212,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-green-800">
-                        {t("bookingSuccess") === "bookingSuccess" ? "Randevunuz oluşturuldu!" : t("bookingSuccess")}
+                        {t("bookingSuccess") === "bookingSuccess" ? copy.successTitle : t("bookingSuccess")}
                     </p>
                     <p className="text-xs text-green-600 mt-0.5">
                         {form.date} — {form.time}
@@ -183,7 +233,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             {appointmentTypes.length > 0 && (
                 <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">
-                        {t("appointmentType") === "appointmentType" ? "Randevu Tipi" : t("appointmentType")}
+                        {t("appointmentType") === "appointmentType" ? copy.appointmentType : t("appointmentType")}
                     </label>
                     <select
                         required
@@ -191,7 +241,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                         onChange={(e) => set("type", e.target.value)}
                         className={inputClass}
                     >
-                        <option value="">Seçiniz...</option>
+                        <option value="">{copy.select}</option>
                         {appointmentTypes.map((tp) => (
                             <option key={tp} value={tp}>{tp}</option>
                         ))}
@@ -212,8 +262,8 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                         setForm((prev) => ({ ...prev, type: prev.type || types[0] }))
                     }
                 }}
-                dateLabel={t("date") === "date" ? "Tarih" : t("date")}
-                timeLabel={t("time") === "time" ? "Saat" : t("time")}
+                dateLabel={t("date") === "date" ? (isTr ? "Tarih" : "Date") : t("date")}
+                timeLabel={t("time") === "time" ? (isTr ? "Saat" : "Time") : t("time")}
                 buttonClassName={pickerButtonClass}
             />
 
@@ -221,7 +271,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             <div className="space-y-2">
                 <input
                     type="text"
-                    placeholder={t("fullName") === "fullName" ? "Ad Soyad" : t("fullName")}
+                    placeholder={t("fullName") === "fullName" ? copy.fullName : t("fullName")}
                     required
                     autoComplete="name"
                     value={form.name}
@@ -230,7 +280,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 />
                 <input
                     type="email"
-                    placeholder={t("email") === "email" ? "E-posta" : t("email")}
+                    placeholder={t("email") === "email" ? copy.email : t("email")}
                     autoComplete="email"
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
@@ -238,7 +288,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 />
                 <input
                     type="tel"
-                    placeholder={t("phone") === "phone" ? "Telefon" : t("phone")}
+                    placeholder={t("phone") === "phone" ? copy.phone : t("phone")}
                     autoComplete="tel"
                     value={form.phone}
                     onChange={(e) => set("phone", e.target.value)}
@@ -246,14 +296,14 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 />
                 <p className="text-[11px] text-gray-500">
                     {t("contactRequired") === "contactRequired"
-                        ? "En az bir iletişim bilgisi paylaşın."
+                        ? copy.contactHelper
                         : t("contactRequired")}
                 </p>
             </div>
 
             {/* Notes */}
             <textarea
-                placeholder={t("notes") === "notes" ? "Notlar (opsiyonel)" : t("notes")}
+                placeholder={t("notes") === "notes" ? copy.notes : t("notes")}
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 rows={2}
@@ -275,8 +325,8 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 style={{ backgroundColor: settings.brandColor }}
             >
                 {status === "submitting"
-                    ? "Gönderiliyor..."
-                    : (t("confirmBooking") === "confirmBooking" ? "Randevu Oluştur" : t("confirmBooking"))}
+                    ? copy.submitting
+                    : (t("confirmBooking") === "confirmBooking" ? copy.confirm : t("confirmBooking"))}
             </button>
         </form>
     )
