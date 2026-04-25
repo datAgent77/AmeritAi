@@ -212,7 +212,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
                     <p className="text-sm font-semibold text-green-800">
-                        {t("bookingSuccess") === "bookingSuccess" ? copy.successTitle : t("bookingSuccess")}
+                        {copy.successTitle}
                     </p>
                     <p className="text-xs text-green-600 mt-0.5">
                         {form.date} — {form.time}

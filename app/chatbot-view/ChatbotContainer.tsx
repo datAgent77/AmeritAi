@@ -58,6 +58,12 @@ function readStoredLeadData(chatbotId: string) {
     }
 }
 
+function getAppointmentSuccessMessage(language: string) {
+    return language === "tr"
+        ? "Randevunuz başarıyla oluşturuldu! Sizinle en kısa sürede iletişime geçeceğiz."
+        : "Your appointment has been created successfully. We will contact you shortly."
+}
+
 export default function ChatbotContainer() {
     // 1. Contexts & Params
     const searchParams = useSearchParams()
@@ -526,6 +532,47 @@ export default function ChatbotContainer() {
         return () => cancelAnimationFrame(frameId)
     }, [messages.length, viewportStyle.height, viewportStyle.top])
 
+    useEffect(() => {
+        const findScrollableElement = (target: EventTarget | null): HTMLElement | null => {
+            let node = target instanceof HTMLElement ? target : null
+
+            while (node && node !== document.body && node !== document.documentElement) {
+                const style = window.getComputedStyle(node)
+                const canScrollY = /(auto|scroll)/.test(style.overflowY)
+                    && node.scrollHeight > node.clientHeight + 1
+
+                if (canScrollY) {
+                    return node
+                }
+
+                node = node.parentElement
+            }
+
+            return null
+        }
+
+        const handleWheelContain = (event: WheelEvent) => {
+            if (event.ctrlKey || event.metaKey) return
+
+            const scrollable = findScrollableElement(event.target)
+            if (!scrollable) {
+                event.preventDefault()
+                return
+            }
+
+            const { scrollTop, scrollHeight, clientHeight } = scrollable
+            const isAtTop = scrollTop <= 0
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1
+
+            if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
+                event.preventDefault()
+            }
+        }
+
+        document.addEventListener("wheel", handleWheelContain, { capture: true, passive: false })
+        return () => document.removeEventListener("wheel", handleWheelContain, { capture: true } as AddEventListenerOptions)
+    }, [])
+
     // 9. Handlers
     const handleToggleSize = () => {
         const newExpandedState = !isExpanded
@@ -861,7 +908,7 @@ export default function ChatbotContainer() {
 
             if (res.ok) {
                 setShowBooking(false)
-                const successMsg = settings.appointmentSuccessMessage || "Randevunuz oluşturuldu! En kısa sürede sizinle iletişime geçeceğiz."
+                const successMsg = getAppointmentSuccessMessage(language)
                 setMessages((prev: any[]) => [
                     ...prev,
                     { id: `booking_confirm_${Date.now()}`, role: "assistant", content: successMsg, createdAt: new Date() }
@@ -878,7 +925,7 @@ export default function ChatbotContainer() {
     }
 
     const handleBookingSuccess = (appointmentId: string) => {
-        const successMsg = settings.appointmentSuccessMessage || "Randevunuz oluşturuldu! En kısa sürede sizinle iletişime geçeceğiz."
+        const successMsg = getAppointmentSuccessMessage(language)
         setMessages((prev: any[]) => [
             ...prev,
             { id: `booking_confirm_${Date.now()}`, role: "assistant", content: successMsg, createdAt: new Date() }

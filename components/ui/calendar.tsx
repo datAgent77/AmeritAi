@@ -18,13 +18,14 @@ function Calendar({
     return (
         <DayPicker
             showOutsideDays={showOutsideDays}
-            className={cn("p-4", className)}
+            className={cn("relative p-4", className)}
             classNames={{
                 months: "flex flex-col gap-4",
                 month: "space-y-4",
-                caption: "relative flex items-center border-b border-border/60 pb-3 pt-1",
+                month_caption: "relative flex h-8 w-full items-center border-b border-border/60 pb-3 pt-1 pr-20",
+                caption: "relative flex items-center border-b border-border/60 pb-3 pt-1 pr-20",
                 caption_label: "pl-1 text-sm font-semibold tracking-tight",
-                nav: "absolute right-0 top-0 flex items-center gap-1",
+                nav: "absolute right-4 top-4 flex items-center gap-1",
                 nav_button: cn(
                     buttonVariants({ variant: "outline" }),
                     "h-8 w-8 rounded-md border-border/70 bg-background p-0 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground"
