@@ -104,7 +104,6 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
 
     const effectiveUserId = targetUserId || user?.uid
 
-    const showTabs = Boolean(searchParams?.get("tab"))
     const highlightedAppointmentId = searchParams?.get("appointmentId")
 
     useEffect(() => {
@@ -390,13 +389,11 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
             </div>
 
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AppointmentTab)} className="space-y-4">
-                {showTabs && (
-                    <TabsList>
-                        <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
-                        <TabsTrigger value="settings">{t('availabilitySettings')}</TabsTrigger>
-                        <TabsTrigger value="integrations">{t('integrations')}</TabsTrigger>
-                    </TabsList>
-                )}
+                <TabsList>
+                    <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
+                    <TabsTrigger value="settings">{t('availabilitySettings')}</TabsTrigger>
+                    <TabsTrigger value="integrations">{t('integrations')}</TabsTrigger>
+                </TabsList>
 
                 <TabsContent value="overview" className="space-y-4">
                     <Alert className="flex items-start gap-3">

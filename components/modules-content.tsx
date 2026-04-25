@@ -380,7 +380,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`${basePath}/modules/surveys`)
                     break
                 case 'appointments':
-                    router.push(`${basePath}/appointments`)
+                    router.push(`${basePath}/appointments?tab=settings`)
                     break
                 case 'leadCollection':
                     router.push(`${basePath}/modules/lead-collection`)
@@ -457,7 +457,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 router.push(`/console/modules/smart-shopper${queryParams}`)
                 break
             case 'appointments':
-                router.push(`${basePath}/appointments`)
+                router.push(`${basePath}/appointments?tab=settings`)
                 break
             case 'campaignManager':
                 router.push(`/console/modules/campaigns${queryParams}`)
