@@ -61,6 +61,7 @@ export async function POST(req: Request) {
                 question: match.entry.question,
                 answer: match.entry.answer,
                 wrongAnswer: match.entry.wrongAnswer,
+                rule: match.entry.rule,
                 priority: match.entry.priority,
                 score: match.score,
             })),

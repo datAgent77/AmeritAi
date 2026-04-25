@@ -50,6 +50,7 @@ type EvaluationMatch = {
     question?: string
     answer?: string
     wrongAnswer?: string
+    rule?: string
     priority?: number
     score: number
 }
