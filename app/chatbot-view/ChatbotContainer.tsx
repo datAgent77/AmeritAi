@@ -1207,7 +1207,7 @@ export default function ChatbotContainer() {
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full flex-col bg-white dark:bg-zinc-900">
+                <div className="flex h-full flex-col bg-white dark:bg-zinc-900 rounded-t-[20px] overflow-hidden">
                     {!showClassicEntryOnboarding && (
                         <ChatHeader
                             settings={effectiveSettings}

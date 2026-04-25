@@ -381,25 +381,16 @@ export function MessageList({
 
     return (
         <div
-            ref={messagesContainerRef}
-            onWheel={isAmbientMode && !showClassicEntryOnboarding ? handleWheelContain : undefined}
             className={isAmbientMode && !showClassicEntryOnboarding
-                ? "flex flex-col h-full overflow-y-auto overflow-x-hidden overscroll-contain px-2 py-2 sm:px-3 sm:py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                ? "flex flex-col h-full overflow-hidden"
                 : (showClassicEntryOnboarding
-                    ? `flex-1 overflow-y-auto overflow-x-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`
-                    : (isTransparentEmbed ? "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-transparent" : "flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 bg-gray-50 dark:bg-zinc-900"))}
-            style={isAmbientMode && !showClassicEntryOnboarding
-                ? {
-                    WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
-                    maskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
-                    overscrollBehaviorY: "contain",
-                }
-                : undefined}
+                    ? `flex flex-col h-full overflow-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`
+                    : (isTransparentEmbed ? "flex flex-col h-full overflow-hidden bg-transparent" : "flex flex-col h-full overflow-hidden bg-gray-50 dark:bg-zinc-900"))}
         >
             {showClassicEntryOnboarding ? (
                 <div className="flex h-full w-full flex-col">
                     <div
-                        className="relative px-6 pb-8 pt-5"
+                        className="relative px-6 pb-8 pt-5 shrink-0"
                         style={{
                             backgroundColor: settings.headerBackgroundColor || settings.brandColor || "#111827",
                             color: settings.headerTextColor || "#FFFFFF"
@@ -444,9 +435,13 @@ export function MessageList({
                                 {settings.welcomeMessage}
                             </p>
                         </div>
-                        </div>
+                    </div>
 
-                    <div className={`flex-1 px-5 py-4 ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`}>
+                    <div 
+                        ref={messagesContainerRef}
+                        onWheel={isAmbientMode && !showClassicEntryOnboarding ? handleWheelContain : undefined}
+                        className={`flex-1 px-5 py-4 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200/80 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-600 ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`}
+                    >
                         <div className="space-y-5">
                             <GuidedShortcutButtons
                                 shortcuts={guidedShortcuts}
@@ -486,9 +481,12 @@ export function MessageList({
                 isAmbientMode ? (
                     <div className="flex-1 min-h-0" />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards">
+                    <div 
+                        ref={messagesContainerRef}
+                        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards"
+                    >
                         <div
-                            className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden"
+                            className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden shrink-0"
                             style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                         >
                             <Sparkles className="w-8 h-8" />
@@ -528,8 +526,20 @@ export function MessageList({
                     </div>
                 )
             ) : (
-                <div className={isAmbientMode ? "mt-auto flex flex-col gap-3 w-full pb-1" : "w-full space-y-6"}>
-                    {messages.map((m: any) => {
+                <div 
+                    ref={messagesContainerRef}
+                    onWheel={isAmbientMode && !showClassicEntryOnboarding ? handleWheelContain : undefined}
+                    className={`flex-1 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200/80 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-600 ${isAmbientMode ? "flex flex-col h-full overscroll-contain px-2 py-2 sm:px-3 sm:py-3" : "p-4"}`}
+                    style={isAmbientMode && !showClassicEntryOnboarding
+                        ? {
+                            WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
+                            maskImage: "linear-gradient(to top, rgba(0,0,0,1) 94%, rgba(0,0,0,0.45) 98%, rgba(0,0,0,0) 100%)",
+                            overscrollBehaviorY: "contain",
+                        }
+                        : undefined}
+                >
+                    <div className={isAmbientMode ? "mt-auto flex flex-col gap-3 w-full pb-1" : "w-full space-y-6"}>
+                        {messages.map((m: any) => {
                         // Render-time image recovery
                         const cached = imageMap[m.id] || (m.role === 'user' && !m.image && m.content ? Object.values(imageMap).find((x: any) => x.content === m.content) : null)
                         const displayImage = m.image || cached?.image
@@ -748,6 +758,7 @@ export function MessageList({
                         </div>
                     )}
                     <div ref={messagesEndRef} />
+                </div>
                 </div>
             )}
         </div>

@@ -3220,7 +3220,7 @@
       style.id = 'userex-mobile-styles';
       const alwaysOpenWidth = isAmbientWidgetMode ? '100vw' : 'calc(100vw - 20px)';
       const alwaysOpenInset = isAmbientWidgetMode ? '0px' : '10px';
-      const alwaysOpenRadius = isAmbientWidgetMode ? '0' : '18px';
+      const alwaysOpenRadius = isAmbientWidgetMode ? '0' : '20px';
       style.innerHTML = isAlwaysOpenMode
         ? `
         @media (max-width: 768px) {
@@ -3865,8 +3865,8 @@
       overflow: 'hidden',
       zIndex: '9999',
       display: usesLauncher ? 'none' : 'block',
-      background: isAmbientWidgetMode ? 'transparent' : loadingSurfaceBackground,
-      backgroundColor: isAmbientWidgetMode ? 'transparent' : (isDarkWidgetSurface ? '#09090b' : '#ffffff'),
+      background: 'transparent',
+      backgroundColor: 'transparent',
       color: isAmbientWidgetMode ? 'rgba(250, 250, 250, 0)' : loadingSurfaceColor,
       transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
     });
