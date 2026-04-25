@@ -1,7 +1,9 @@
 import { expect, test } from "vitest"
 import {
     areQuickActionsEqual,
+    getQuickActionDisplayLabel,
     getQuickActionModuleOptions,
+    getQuickActionTriggerMessage,
     normalizeQuickActionButton,
     resolveQuickActionsConfig,
 } from "@/lib/quick-actions"
@@ -20,6 +22,22 @@ test("repairs stale module selection from trigger message", () => {
     expect(button?.moduleId).toBe("humanHandoff")
     expect(button?.id).toBe("humanHandoff")
     expect(button?.triggerMessage).toBe("bir temsilciyle görüşmek istiyorum")
+})
+
+test("localizes quick action text from module id regardless of saved panel text", () => {
+    const button = {
+        id: "appointments",
+        label: "Randevu Al",
+        moduleId: "appointments" as const,
+        triggerMessage: "randevu almak istiyorum",
+        visible: true,
+        order: 0,
+    }
+
+    expect(getQuickActionDisplayLabel(button, "en")).toBe("Book Appointment")
+    expect(getQuickActionDisplayLabel({ ...button, label: "Custom Turkish panel text" }, "tr")).toBe("Randevu Al")
+    expect(getQuickActionTriggerMessage(button, "en")).toBe("I want to book an appointment")
+    expect(getQuickActionTriggerMessage({ ...button, triggerMessage: "panelde ne yazarsa yazsin" }, "tr")).toBe("randevu almak istiyorum")
 })
 
 test("filters quick actions to enabled modules and normalizes extended module routing", () => {

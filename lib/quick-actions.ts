@@ -297,45 +297,14 @@ function resolveQuickActionLocale(language: string | undefined): "tr" | "en" {
     return language === "tr" ? "tr" : "en"
 }
 
-function isKnownQuickActionCopy(value: string, definition: QuickActionDefinition) {
-    const normalized = normalizeText(value)
-    if (!normalized) return false
-
-    const knownValues = [
-        definition.label,
-        definition.triggerMessage,
-        definition.title.tr,
-        definition.title.en,
-        definition.localized.tr.label,
-        definition.localized.tr.triggerMessage,
-        definition.localized.en.label,
-        definition.localized.en.triggerMessage,
-        ...definition.inferenceTexts,
-    ]
-
-    return knownValues.some((knownValue) => normalizeText(knownValue) === normalized)
-}
-
 export function getQuickActionDisplayLabel(button: Pick<QuickActionButton, "label" | "moduleId">, language: string) {
     const definition = getQuickActionDefinition(button.moduleId)
-    const rawLabel = typeof button.label === "string" ? button.label.trim() : ""
-
-    if (!rawLabel || isKnownQuickActionCopy(rawLabel, definition)) {
-        return definition.localized[resolveQuickActionLocale(language)].label
-    }
-
-    return rawLabel
+    return definition.localized[resolveQuickActionLocale(language)].label
 }
 
 export function getQuickActionTriggerMessage(button: Pick<QuickActionButton, "triggerMessage" | "moduleId">, language: string) {
     const definition = getQuickActionDefinition(button.moduleId)
-    const rawTriggerMessage = typeof button.triggerMessage === "string" ? button.triggerMessage.trim() : ""
-
-    if (!rawTriggerMessage || isKnownQuickActionCopy(rawTriggerMessage, definition)) {
-        return definition.localized[resolveQuickActionLocale(language)].triggerMessage
-    }
-
-    return rawTriggerMessage
+    return definition.localized[resolveQuickActionLocale(language)].triggerMessage
 }
 
 export function getQuickActionModuleOptions(language: "tr" | "en" = "tr"): QuickActionsModuleOption[] {
