@@ -22,16 +22,18 @@ function Calendar({
             classNames={{
                 months: "flex flex-col gap-4",
                 month: "space-y-4",
-                month_caption: "relative flex h-8 w-full items-center border-b border-border/60 pb-3 pt-1 pr-20",
-                caption: "relative flex items-center border-b border-border/60 pb-3 pt-1 pr-20",
+                month_caption: "pointer-events-none relative flex h-8 w-full items-center border-b border-border/60 pb-3 pt-1 pr-20",
+                caption: "pointer-events-none relative flex items-center border-b border-border/60 pb-3 pt-1 pr-20",
                 caption_label: "pl-1 text-sm font-semibold tracking-tight",
-                nav: "absolute right-4 top-4 flex items-center gap-1",
-                nav_button: cn(
+                nav: "pointer-events-auto absolute right-4 top-4 z-20 flex items-center gap-1",
+                button_previous: cn(
                     buttonVariants({ variant: "outline" }),
-                    "h-8 w-8 rounded-md border-border/70 bg-background p-0 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground"
+                    "pointer-events-auto h-8 w-8 shrink-0 rounded-md border-border/70 bg-background p-0 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                 ),
-                button_previous: "shrink-0",
-                button_next: "shrink-0",
+                button_next: cn(
+                    buttonVariants({ variant: "outline" }),
+                    "pointer-events-auto h-8 w-8 shrink-0 rounded-md border-border/70 bg-background p-0 text-muted-foreground shadow-sm transition hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                ),
                 table: "w-full border-collapse",
                 weekdays: "flex w-full",
                 weekday:
