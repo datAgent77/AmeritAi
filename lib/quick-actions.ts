@@ -297,13 +297,54 @@ function resolveQuickActionLocale(language: string | undefined): "tr" | "en" {
     return language === "tr" ? "tr" : "en"
 }
 
+function getSystemQuickActionLabelCandidates(definition: QuickActionDefinitionEntry) {
+    return [
+        definition.label,
+        definition.title.tr,
+        definition.title.en,
+        definition.localized.tr.label,
+        definition.localized.en.label,
+    ]
+}
+
+function getSystemQuickActionTriggerCandidates(definition: QuickActionDefinitionEntry) {
+    return [
+        definition.triggerMessage,
+        definition.localized.tr.triggerMessage,
+        definition.localized.en.triggerMessage,
+    ]
+}
+
+function isKnownQuickActionText(value: string, kind: "label" | "triggerMessage") {
+    const normalizedValue = normalizeText(value)
+    if (!normalizedValue) return false
+
+    return QUICK_ACTION_MODULE_IDS.some((moduleId) => {
+        const definition = QUICK_ACTION_DEFINITIONS[moduleId]
+        const candidates = kind === "label"
+            ? getSystemQuickActionLabelCandidates(definition)
+            : getSystemQuickActionTriggerCandidates(definition)
+        return candidates.some((candidate) => normalizeText(candidate) === normalizedValue)
+    })
+}
+
 export function getQuickActionDisplayLabel(button: Pick<QuickActionButton, "label" | "moduleId">, language: string) {
     const definition = getQuickActionDefinition(button.moduleId)
+    const rawLabel = typeof button.label === "string" ? button.label.trim() : ""
+    if (rawLabel && !isKnownQuickActionText(rawLabel, "label")) {
+        return rawLabel
+    }
+
     return definition.localized[resolveQuickActionLocale(language)].label
 }
 
 export function getQuickActionTriggerMessage(button: Pick<QuickActionButton, "triggerMessage" | "moduleId">, language: string) {
     const definition = getQuickActionDefinition(button.moduleId)
+    const rawTriggerMessage = typeof button.triggerMessage === "string" ? button.triggerMessage.trim() : ""
+    if (rawTriggerMessage && !isKnownQuickActionText(rawTriggerMessage, "triggerMessage")) {
+        return rawTriggerMessage
+    }
+
     return definition.localized[resolveQuickActionLocale(language)].triggerMessage
 }
 
