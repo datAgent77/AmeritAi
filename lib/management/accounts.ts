@@ -2,6 +2,7 @@ import { resolvePartnerBranding } from "@/lib/management/access"
 import { getPartnerDoc, getPartnersByIds } from "@/lib/management/partners"
 import type { ManagementAccountRecord, ResolvedPartnerBranding } from "@/lib/management/types"
 import { toIsoOrNull } from "@/lib/omni/server-utils"
+import type { UserRole } from "@/lib/user-roles"
 
 function resolveOmniEnabled(data: any) {
     return data?.enableOmniChannel === true || data?.productEntitlements?.omniChannel === true || data?.productEntitlements?.chatbot === true
@@ -55,7 +56,7 @@ function serializeManagedAccountDoc(doc: any, partnerMap: Map<string, any>): Man
 export async function listManagedAccountsForViewer(input: {
     adminDb: any
     viewerId: string
-    viewerRole: "SUPER_ADMIN" | "AGENCY_ADMIN" | "TENANT_ADMIN" | "USER"
+    viewerRole: UserRole
     canSwitchOmniAccounts?: boolean
     includeArchived?: boolean
 }) {
