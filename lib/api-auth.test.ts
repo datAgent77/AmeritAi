@@ -11,6 +11,7 @@ type UserDoc = {
     role?: string;
     agencyId?: string | null;
     partnerLevel?: string;
+    agentTenantId?: string | null;
 };
 
 function createUsersDb(users: Record<string, UserDoc>) {
@@ -133,6 +134,39 @@ describe("authorizeTargetAccess", () => {
         if (result.ok) {
             expect(result.isSuperAdmin).toBe(false);
             expect(result.isAgencyAdmin).toBe(false);
+        }
+    });
+
+    test("allows AGENT to access assigned tenant workspace", async () => {
+        const verifyIdToken = vi.fn().mockResolvedValue({ uid: "agent-1", role: "AGENT" });
+        vi.mocked(getAdminAuth).mockReturnValue({ verifyIdToken } as any);
+        vi.mocked(getAdminDb).mockReturnValue(
+            createUsersDb({
+                "agent-1": { role: "AGENT", agentTenantId: "tenant-1" },
+                "tenant-1": { role: "TENANT_ADMIN", agencyId: "agency-1" }
+            }) as any
+        );
+
+        const result = await authorizeTargetAccess(createRequest("agent-token"), "tenant-1");
+
+        expect(result.ok).toBe(true);
+    });
+
+    test("denies AGENT for non-assigned tenant workspace", async () => {
+        const verifyIdToken = vi.fn().mockResolvedValue({ uid: "agent-1", role: "AGENT" });
+        vi.mocked(getAdminAuth).mockReturnValue({ verifyIdToken } as any);
+        vi.mocked(getAdminDb).mockReturnValue(
+            createUsersDb({
+                "agent-1": { role: "AGENT", agentTenantId: "tenant-1" },
+                "tenant-2": { role: "TENANT_ADMIN", agencyId: "agency-1" }
+            }) as any
+        );
+
+        const result = await authorizeTargetAccess(createRequest("agent-token"), "tenant-2");
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.response.status).toBe(403);
         }
     });
 });

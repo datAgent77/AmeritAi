@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import { buildVoiceReadiness, normalizeVoiceNumberRecords } from "@/lib/omni/voice-config"
 import {
     authorizeOmniRequest,
     authorizedForOmniPermission,
     getOmniChannelConfig,
+    getPublicAppOrigin,
     getRequestOrigin,
     jsonError,
     mergeOmniChannelConfig,
     normalizeVoiceIntegrationConfig,
 } from "@/lib/omni/server-utils"
 import type { OmniOperationsSettings, OmniProvisioningTask, OmniTeamMember } from "@/lib/omni/types"
+import { getAdminAuth } from "@/lib/firebase-admin"
+import { sendAgentInvitationEmail } from "@/lib/email-service"
 
 function isPublicOrigin(origin: string) {
     return !/localhost|127\.0\.0\.1/i.test(origin)
@@ -167,6 +171,179 @@ function normalizeProvisioning(config: any): OmniProvisioningTask[] {
         .filter(Boolean) as OmniProvisioningTask[]
 
     return [...merged, ...customTasks]
+}
+
+type AgentProvisioningSummary = {
+    processed: number
+    invited: number
+    created: number
+    updated: number
+    skipped: number
+    failed: number
+    errors: string[]
+}
+
+const DEFAULT_AGENT_PERMISSIONS = [
+    "dashboard.view",
+    "analytics.view",
+    "aiCore.view",
+    "channels.view",
+    "operations.view",
+    "settings.view",
+    "accountCenter.view",
+]
+
+function normalizeEmail(value: unknown): string | null {
+    const normalized = String(value || "").trim().toLowerCase()
+    if (!normalized) return null
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return null
+    return normalized
+}
+
+function buildWorkspaceName(tenantData: Record<string, any> | null, fallbackId: string) {
+    const candidates = [
+        tenantData?.companyName,
+        tenantData?.brandName,
+        tenantData?.displayName,
+        tenantData?.name,
+        tenantData?.email,
+        fallbackId,
+    ]
+    const first = candidates.find((value) => typeof value === "string" && value.trim().length > 0)
+    return String(first || "Workspace").trim()
+}
+
+async function syncAgentWorkspaceUsers(params: {
+    req: Request
+    adminDb: any
+    chatbotId: string
+    actorUid: string
+    previousMembers: OmniTeamMember[]
+    nextMembers: OmniTeamMember[]
+}): Promise<AgentProvisioningSummary> {
+    const adminAuth = getAdminAuth()
+    if (!adminAuth) {
+        return {
+            processed: 0,
+            invited: 0,
+            created: 0,
+            updated: 0,
+            skipped: 0,
+            failed: 1,
+            errors: ["Firebase Admin Auth not initialized"],
+        }
+    }
+
+    const summary: AgentProvisioningSummary = {
+        processed: 0,
+        invited: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        failed: 0,
+        errors: [],
+    }
+
+    const previousEmails = new Set(
+        params.previousMembers
+            .map((member: OmniTeamMember) => normalizeEmail(member.email))
+            .filter(Boolean) as string[]
+    )
+    const invitationLanguage = params.req.headers.get("accept-language")?.toLowerCase().startsWith("tr") ? "tr" : "en"
+    const appOrigin = getPublicAppOrigin(params.req)
+    const tenantSnapshot = await params.adminDb.collection("users").doc(params.chatbotId).get()
+    const tenantData = tenantSnapshot.exists ? tenantSnapshot.data() || {} : {}
+    const workspaceName = buildWorkspaceName(tenantData, params.chatbotId)
+
+    for (const member of params.nextMembers) {
+        const email = normalizeEmail(member.email)
+        if (!email) continue
+
+        summary.processed += 1
+
+        const shouldInvite = member.active !== false && !previousEmails.has(email)
+
+        try {
+            let userRecord: any
+            let isNewUser = false
+
+            try {
+                userRecord = await adminAuth.getUserByEmail(email)
+            } catch (error: any) {
+                if (error?.code !== "auth/user-not-found") {
+                    throw error
+                }
+                isNewUser = true
+                userRecord = await adminAuth.createUser({
+                    email,
+                    emailVerified: false,
+                    password: crypto.randomBytes(24).toString("hex"),
+                    displayName: member.name || undefined,
+                    disabled: false,
+                })
+                summary.created += 1
+            }
+
+            const existingUserSnapshot = await params.adminDb.collection("users").doc(userRecord.uid).get()
+            const existingUserData = existingUserSnapshot.exists ? existingUserSnapshot.data() || {} : {}
+            const existingRole = String(existingUserData.role || "").trim().toUpperCase()
+            if (existingRole === "SUPER_ADMIN" || existingRole === "AGENCY_ADMIN" || existingRole === "TENANT_ADMIN") {
+                summary.skipped += 1
+                summary.errors.push(`${email}: existing privileged role ${existingRole} cannot be reassigned as AGENT`)
+                continue
+            }
+
+            const currentClaims = userRecord.customClaims || {}
+            await adminAuth.setCustomUserClaims(userRecord.uid, {
+                ...currentClaims,
+                role: "AGENT",
+                agentTenantId: params.chatbotId,
+            })
+
+            await params.adminDb.collection("users").doc(userRecord.uid).set(
+                {
+                    email,
+                    name: member.name || existingUserData.name || userRecord.displayName || "",
+                    role: "AGENT",
+                    isActive: member.active !== false,
+                    omniPermissions: Array.isArray(existingUserData.omniPermissions)
+                        ? existingUserData.omniPermissions
+                        : DEFAULT_AGENT_PERMISSIONS,
+                    agentTenantId: params.chatbotId,
+                    agentWorkspaceName: workspaceName,
+                    agentAssignedBy: params.actorUid,
+                    agentAssignedAt: existingUserData.agentAssignedAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                },
+                { merge: true }
+            )
+            summary.updated += isNewUser ? 0 : 1
+
+            if (shouldInvite) {
+                const invitationLink = await adminAuth.generatePasswordResetLink(email, {
+                    url: `${appOrigin}/login`,
+                })
+                const sent = await sendAgentInvitationEmail({
+                    recipientEmail: email,
+                    recipientName: member.name,
+                    invitationLink,
+                    tenantName: workspaceName,
+                    language: invitationLanguage,
+                })
+                if (!sent) {
+                    summary.failed += 1
+                    summary.errors.push(`${email}: invitation email could not be sent`)
+                    continue
+                }
+                summary.invited += 1
+            }
+        } catch (error: any) {
+            summary.failed += 1
+            summary.errors.push(`${email}: ${error?.message || "failed to provision agent account"}`)
+        }
+    }
+
+    return summary
 }
 
 export const dynamic = "force-dynamic"
@@ -336,16 +513,28 @@ export async function POST(req: Request) {
         return jsonError("Forbidden", 403)
     }
 
+    const existingConfig = await getOmniChannelConfig(authz.adminDb, chatbotId)
+    const previousOperations = normalizeOperations(existingConfig.operations)
     const operations = normalizeOperations(body.operations || {})
     const provisioning = normalizeProvisioning(body.provisioning || [])
     const merged = await mergeOmniChannelConfig(authz.adminDb, chatbotId, {
         operations,
         provisioning,
     })
+    const mergedOperations = normalizeOperations(merged.operations)
+    const agentProvisioning = await syncAgentWorkspaceUsers({
+        req,
+        adminDb: authz.adminDb,
+        chatbotId,
+        actorUid: authz.callerUid,
+        previousMembers: previousOperations.teamMembers || [],
+        nextMembers: mergedOperations.teamMembers || [],
+    })
 
     return NextResponse.json({
         ok: true,
-        operations: normalizeOperations(merged.operations),
+        operations: mergedOperations,
         provisioning: normalizeProvisioning(merged.provisioning),
+        agentProvisioning,
     })
 }

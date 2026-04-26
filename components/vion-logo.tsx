@@ -12,10 +12,9 @@ export function VionLogo({ className, variant = "white" }: VionLogoProps) {
             <Image
                 src={variant === "black" ? "/vion-logo-full-dark.png" : "/vion-logo-text-light.png"}
                 alt="Vion"
-                width={133}
-                height={42}
+                width={128}
+                height={40}
                 className="h-7 w-auto object-contain object-left"
-                style={{ width: "auto", height: "auto" }}
                 priority
             />
         </div>

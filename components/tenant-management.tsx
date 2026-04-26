@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore"
+import { doc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { INDUSTRY_CONFIG } from "@/lib/industry-config"
 import {
@@ -75,6 +75,12 @@ export function TenantManagement() {
 
     const fetchUsers = useCallback(async () => {
         if (!user) return
+        if (role === "TENANT_ADMIN") {
+            setUsers([])
+            setError(null)
+            setIsLoading(false)
+            return
+        }
 
         setIsLoading(true)
         setError(null)
@@ -103,7 +109,7 @@ export function TenantManagement() {
             setError(t('failedToLoadUsers'))
             setIsLoading(false)
         }
-    }, [t, user, showArchived])
+    }, [t, user, showArchived, role])
 
     useEffect(() => {
         // Wait for user to be authenticated before fetching
@@ -111,12 +117,18 @@ export function TenantManagement() {
             setIsLoading(true)
             return
         }
+        if (role === "TENANT_ADMIN") {
+            setUsers([])
+            setError(null)
+            setIsLoading(false)
+            return
+        }
 
         fetchUsers()
         const interval = setInterval(fetchUsers, 60000) // 60 seconds polling
 
         return () => clearInterval(interval)
-    }, [fetchUsers, user])
+    }, [fetchUsers, user, role])
 
     const toggleStatus = async (userId: string, currentStatus: boolean) => {
         try {
@@ -307,10 +319,38 @@ export function TenantManagement() {
         user.role.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
+    const isTenantAdmin = role === "TENANT_ADMIN"
+
     if (isLoading) {
         return (
             <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
+
+    if (isTenantAdmin) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h2 className="text-3xl font-bold tracking-tight">Agent Hesaplari</h2>
+                    <p className="text-muted-foreground">
+                        Kendi tenant hesabiniz icin Agent hesaplarini Console icinden yonetebilirsiniz.
+                    </p>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Console Agent Yonetimi</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Agent uyeleri tenant bazinda tutulur. Her tenant yalnizca kendi hesabinin Agent listesini gunceller.
+                        </p>
+                        <Button type="button" onClick={() => { window.location.href = "/console/modules/human-handoff#agent-accounts" }}>
+                            Agent Hesaplarini Yonet
+                        </Button>
+                    </CardContent>
+                </Card>
             </div>
         )
     }

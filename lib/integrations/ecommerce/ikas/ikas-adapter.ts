@@ -1,5 +1,5 @@
 import { BaseEcommercePlatform } from "../base-platform"
-import type { EcomCredentials, EcomProduct, EcomOrder, EcomOrderStatus, EcomVariant, EcomCoupon } from "../types"
+import type { EcomProduct, EcomOrder, EcomOrderStatus, EcomVariant, EcomCoupon } from "../types"
 
 interface IkasTokenResponse {
     access_token: string
@@ -11,14 +11,19 @@ export class IkasAdapter extends BaseEcommercePlatform {
     private accessToken: string | null = null
     private tokenExpiresAt = 0
 
+    private get storeOrigin(): string {
+        const raw = (this.credentials.storeUrl || "").trim().replace(/\/$/, "")
+        if (!raw) return ""
+        if (/^https?:\/\//i.test(raw)) return raw
+        return `https://${raw}`
+    }
+
     private get apiBase(): string {
-        const url = (this.credentials.storeUrl || "").replace(/\/$/, "")
-        return `${url}/api/v1`
+        return `${this.storeOrigin}/api/v1`
     }
 
     private get graphqlUrl(): string {
-        const url = (this.credentials.storeUrl || "").replace(/\/$/, "")
-        return `${url}/graphql`
+        return `${this.storeOrigin}/graphql`
     }
 
     private async getToken(): Promise<string> {
@@ -67,7 +72,7 @@ export class IkasAdapter extends BaseEcommercePlatform {
         }
     }
 
-    async getProducts(params?: { limit?: number; updatedSince?: string }): Promise<EcomProduct[]> {
+    async getProducts(params?: { limit?: number; page?: number; updatedSince?: string }): Promise<EcomProduct[]> {
         const data = await this.gql<{ listProduct: { data: any[] } }>(`
             query ListProducts($first: Int) {
                 listProduct(first: $first) {
@@ -108,9 +113,7 @@ export class IkasAdapter extends BaseEcommercePlatform {
                 compareAtPrice: p.price?.buyingPrice ?? undefined,
                 currency: p.price?.currency || "TRY",
                 stock: totalStock || (p.variants?.[0]?.stock ?? 0),
-                images: (p.images || []).map((img: any) =>
-                    `${this.credentials.storeUrl}/media/${img.fileName}`
-                ),
+                images: (p.images || []).map((img: any) => `${this.storeOrigin}/media/${img.fileName}`),
                 category: p.categories?.[0]?.name || "",
                 tags: p.tags || [],
                 variants,
@@ -119,7 +122,7 @@ export class IkasAdapter extends BaseEcommercePlatform {
         })
     }
 
-    async getOrders(params?: { limit?: number; customerEmail?: string }): Promise<EcomOrder[]> {
+    async getOrders(params?: { limit?: number; page?: number; customerEmail?: string }): Promise<EcomOrder[]> {
         const data = await this.gql<{ listOrder: { data: any[] } }>(`
             query ListOrders($first: Int) {
                 listOrder(first: $first) {
@@ -150,7 +153,7 @@ export class IkasAdapter extends BaseEcommercePlatform {
             CANCELLED: "cancelled",
         }
 
-        return (data.listOrder.data || []).map(o => ({
+        const mapped = (data.listOrder.data || []).map(o => ({
             platformId: o.id,
             orderNumber: o.orderNumber,
             status: statusMap[o.status] || "pending",
@@ -190,6 +193,10 @@ export class IkasAdapter extends BaseEcommercePlatform {
             createdAt: o.createdAt,
             updatedAt: o.updatedAt,
         }))
+
+        if (!params?.customerEmail) return mapped
+        const needle = params.customerEmail.trim().toLowerCase()
+        return mapped.filter((order) => (order.customer.email || "").toLowerCase() === needle)
     }
 
     async createCoupon(coupon: EcomCoupon): Promise<{ code: string; platformCouponId?: string } | null> {

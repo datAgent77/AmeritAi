@@ -214,7 +214,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     if (docSnap.exists()) {
                         data = docSnap.data()
                         const roleFromData = typeof data.role === "string" ? data.role.toUpperCase() : "USER"
-                        userRole = (roleFromData === "SUPER_ADMIN" || roleFromData === "AGENCY_ADMIN" || roleFromData === "TENANT_ADMIN")
+                        userRole = (roleFromData === "SUPER_ADMIN" || roleFromData === "AGENCY_ADMIN" || roleFromData === "TENANT_ADMIN" || roleFromData === "AGENT")
                             ? roleFromData
                             : "USER"
                     }

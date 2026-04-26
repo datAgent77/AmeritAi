@@ -2,9 +2,28 @@ import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
 import { createPlatformAdapter, PLATFORM_META } from "@/lib/integrations/ecommerce/platform-registry"
+import { encryptEcomCredentials } from "@/lib/integrations/ecommerce/credentials-cipher"
 import type { EcomPlatform, EcomCredentials } from "@/lib/integrations/ecommerce/types"
 
 export const runtime = "nodejs"
+
+const WEBHOOK_EVENTS = [
+    "product.created",
+    "product.updated",
+    "product.deleted",
+    "order.created",
+    "order.updated",
+    "order.shipped",
+    "order.cancelled",
+]
+
+function resolvePublicBaseUrl(req: Request): string {
+    const configured = process.env.NEXT_PUBLIC_APP_URL?.trim()
+    if (configured) return configured.replace(/\/$/, "")
+
+    const url = new URL(req.url)
+    return `${url.protocol}//${url.host}`.replace(/\/$/, "")
+}
 
 // POST: Yeni platform bağlantısı kur veya güncelle
 export async function POST(req: Request) {
@@ -47,16 +66,29 @@ export async function POST(req: Request) {
             .get()
 
         const now = new Date().toISOString()
+        const encryptedCredentials = encryptEcomCredentials(credentials)
+        const callbackUrl = `${resolvePublicBaseUrl(req)}/api/ecommerce/webhook/${platform}?chatbotId=${encodeURIComponent(chatbotId)}`
+        let webhookRegistered = false
+
+        if (PLATFORM_META[platform]?.webhookSupport) {
+            const results = await Promise.allSettled(
+                WEBHOOK_EVENTS.map((eventType) => adapter.registerWebhook(eventType, callbackUrl))
+            )
+            webhookRegistered = results.some(
+                (result) => result.status === "fulfilled" && result.value === true
+            )
+        }
+
         const connectionData = {
             chatbotId,
             platform,
-            credentials, // TODO: üretimde encrypt et
+            credentials: encryptedCredentials,
             status: "active",
             storeName: test.storeName || null,
             storeUrl: test.storeUrl || null,
             syncedProductCount: 0,
             syncedOrderCount: 0,
-            webhookRegistered: false,
+            webhookRegistered,
             updatedAt: now,
         }
 

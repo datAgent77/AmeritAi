@@ -26,10 +26,11 @@ function getLoginFailureReason(error: unknown): string {
   return maybeCode.replace(/^auth\//, "")
 }
 
-function resolvePostLoginPath(role: unknown): string {
+function resolvePostLoginPath(role: unknown, source?: Record<string, unknown>): string {
   const normalized = typeof role === "string" ? role.trim().toUpperCase() : ""
   if (normalized === "SUPER_ADMIN") return "/console/chatbot"
   if (normalized === "AGENCY_ADMIN") return "/agency"
+  if (normalized === "AGENT") return "/console/chatbot"
   return "/console/chatbot"
 }
 
@@ -107,7 +108,7 @@ export default function LoginForm() {
           return
         }
         // User exists and is active
-        router.push(resolvePostLoginPath(userData.role))
+        router.push(resolvePostLoginPath(userData.role, userData))
       } else {
         // New user from social login - redirect to signup to complete profile
         // The signup page will detect the existing social auth and show the form step
@@ -182,7 +183,7 @@ export default function LoginForm() {
         const userDoc = await getDoc(doc(db, "users", userCredential.user.uid))
         if (userDoc.exists()) {
           const userData = userDoc.data()
-          postLoginPath = resolvePostLoginPath(userData.role)
+          postLoginPath = resolvePostLoginPath(userData.role, userData)
           if (userData?.emailVerified !== true) {
             await setDoc(doc(db, "users", userCredential.user.uid), { emailVerified: true }, { merge: true })
           }
@@ -208,7 +209,8 @@ export default function LoginForm() {
         console.warn("Could not check user status in Firestore:", firestoreError)
         try {
           const idTokenResult = await userCredential.user.getIdTokenResult(true)
-          postLoginPath = resolvePostLoginPath((idTokenResult.claims as Record<string, unknown>)?.role)
+          const claims = (idTokenResult.claims as Record<string, unknown>) || {}
+          postLoginPath = resolvePostLoginPath(claims.role, claims)
         } catch {
           // fallback stays /console/chatbot
         }

@@ -76,7 +76,7 @@ export class TicimaxAdapter extends BaseEcommercePlatform {
             6: "cancelled", 7: "refunded",
         }
 
-        return (data.Siparisler || []).map(o => ({
+        const mapped = (data.Siparisler || []).map(o => ({
             platformId: String(o.SiparisId || o.Id),
             orderNumber: o.SiparisNo || String(o.SiparisId),
             status: statusMap[o.Durum] || "pending",
@@ -113,6 +113,10 @@ export class TicimaxAdapter extends BaseEcommercePlatform {
             createdAt: o.OlusturmaTarihi || o.Tarih,
             updatedAt: o.GuncellemeTarihi,
         }))
+
+        if (!params?.customerEmail) return mapped
+        const needle = params.customerEmail.trim().toLowerCase()
+        return mapped.filter((order) => (order.customer.email || "").toLowerCase() === needle)
     }
 
     async createCoupon(coupon: EcomCoupon): Promise<{ code: string; platformCouponId?: string } | null> {

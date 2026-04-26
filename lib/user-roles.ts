@@ -1,4 +1,4 @@
-export type UserRole = "SUPER_ADMIN" | "AGENCY_ADMIN" | "TENANT_ADMIN" | "USER";
+export type UserRole = "SUPER_ADMIN" | "AGENCY_ADMIN" | "TENANT_ADMIN" | "AGENT" | "USER";
 
 function normalizeRoleValue(role: unknown): string {
     return typeof role === "string" ? role.trim().toUpperCase() : "";
@@ -14,4 +14,8 @@ export function isAgencyAdminRole(role: unknown): boolean {
 
 export function isTenantAdminRole(role: unknown): boolean {
     return normalizeRoleValue(role) === "TENANT_ADMIN";
+}
+
+export function isAgentRole(role: unknown): boolean {
+    return normalizeRoleValue(role) === "AGENT";
 }

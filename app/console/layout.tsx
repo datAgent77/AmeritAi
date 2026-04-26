@@ -42,8 +42,21 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         }
         if (role === "AGENCY_ADMIN") {
             router.replace("/agency")
+            return
         }
-    }, [authLoading, role, router])
+        if (role === "AGENT") {
+            const restrictedPrefixes = [
+                "/console/knowledge",
+                "/console/modules",
+                "/console/chatbot/widget",
+                "/console/chatbot/integration",
+            ]
+            const isRestricted = restrictedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+            if (isRestricted) {
+                router.replace("/console/chatbot/chats")
+            }
+        }
+    }, [authLoading, role, router, pathname])
 
     // Fetch user data and build context
     useEffect(() => {
@@ -52,7 +65,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
             setIsInitializing(false)
             return
         }
-        if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") {
+        if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN" || role === "AGENT") {
             setIsInitializing(false)
             return
         }

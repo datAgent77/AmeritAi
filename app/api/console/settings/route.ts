@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { authorizeTargetAccess } from "@/lib/api-auth";
+import { isAgentRole } from "@/lib/user-roles";
 
 export async function POST(req: Request) {
     try {
@@ -25,6 +26,12 @@ export async function POST(req: Request) {
         const authz = await authorizeTargetAccess(req, chatbotId);
         if (!authz.ok) {
             return authz.response;
+        }
+
+        const callerDoc = await adminDb.collection("users").doc(authz.callerUid).get();
+        const callerRole = callerDoc.exists ? callerDoc.data()?.role : null;
+        if (isAgentRole(callerRole)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
         const updates = [];

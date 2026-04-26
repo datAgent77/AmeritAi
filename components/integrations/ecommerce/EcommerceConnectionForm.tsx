@@ -11,6 +11,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from "@/components/ui/dialog"
 import type { PlatformMeta } from "@/lib/integrations/ecommerce/platform-registry"
 import type { EcomPlatform } from "@/lib/integrations/ecommerce/types"
@@ -79,36 +80,38 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-                    {meta.fields.map(field => (
-                        <div key={field.key} className="space-y-1.5">
-                            <Label htmlFor={field.key} className="text-sm font-medium">
-                                {field.label}
-                                {field.required && <span className="text-rose-500 ml-1">*</span>}
-                            </Label>
-                            <Input
-                                id={field.key}
-                                type={field.type === "password" ? "password" : "text"}
-                                placeholder={field.placeholder}
-                                value={values[field.key] || ""}
-                                onChange={e => handleChange(field.key, e.target.value)}
-                                required={field.required}
-                                className="text-sm"
-                            />
-                            {field.hint && (
-                                <p className="text-xs text-zinc-500">{field.hint}</p>
-                            )}
-                        </div>
-                    ))}
+                <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+                    <div className="px-8 py-6 space-y-4 overflow-y-auto">
+                        {meta.fields.map(field => (
+                            <div key={field.key} className="space-y-1.5">
+                                <Label htmlFor={field.key} className="text-sm font-medium">
+                                    {field.label}
+                                    {field.required && <span className="text-rose-500 ml-1">*</span>}
+                                </Label>
+                                <Input
+                                    id={field.key}
+                                    type={field.type === "password" ? "password" : "text"}
+                                    placeholder={field.placeholder}
+                                    value={values[field.key] || ""}
+                                    onChange={e => handleChange(field.key, e.target.value)}
+                                    required={field.required}
+                                    className="text-sm"
+                                />
+                                {field.hint && (
+                                    <p className="text-xs text-zinc-500">{field.hint}</p>
+                                )}
+                            </div>
+                        ))}
 
-                    {error && (
-                        <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
-                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                            <p>{error}</p>
-                        </div>
-                    )}
+                        {error && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <p>{error}</p>
+                            </div>
+                        )}
+                    </div>
 
-                    <div className="flex gap-3 pt-2">
+                    <DialogFooter>
                         <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={loading}>
                             İptal
                         </Button>
@@ -116,7 +119,7 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
                             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Bağlantıyı Kur
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>

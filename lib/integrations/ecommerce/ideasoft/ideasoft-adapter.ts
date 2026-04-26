@@ -79,7 +79,7 @@ export class IdeaSoftAdapter extends BaseEcommercePlatform {
             6: "cancelled", 7: "refunded",
         }
 
-        return (data || []).map(o => ({
+        const mapped = (data || []).map(o => ({
             platformId: String(o.id),
             orderNumber: o.orderNumber || String(o.id),
             status: statusMap[o.orderStatus] || "pending",
@@ -118,6 +118,10 @@ export class IdeaSoftAdapter extends BaseEcommercePlatform {
             createdAt: o.createdAt || o.date,
             updatedAt: o.updatedAt,
         }))
+
+        if (!params?.customerEmail) return mapped
+        const needle = params.customerEmail.trim().toLowerCase()
+        return mapped.filter((order) => (order.customer.email || "").toLowerCase() === needle)
     }
 
     async createCoupon(coupon: EcomCoupon): Promise<{ code: string; platformCouponId?: string } | null> {

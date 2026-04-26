@@ -91,6 +91,31 @@ export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
         minPlan: 'pro',
         displayName: { en: 'Shopify', tr: 'Shopify' }
     },
+    'ikas': { 
+        minSortOrder: 3, 
+        minPlan: 'pro',
+        displayName: { en: 'İkas', tr: 'İkas' }
+    },
+    'ideasoft': { 
+        minSortOrder: 3, 
+        minPlan: 'pro',
+        displayName: { en: 'IdeaSoft', tr: 'IdeaSoft' }
+    },
+    'ticimax': { 
+        minSortOrder: 3, 
+        minPlan: 'pro',
+        displayName: { en: 'Ticimax', tr: 'Ticimax' }
+    },
+    'tsoft': { 
+        minSortOrder: 3, 
+        minPlan: 'pro',
+        displayName: { en: 'T-Soft', tr: 'T-Soft' }
+    },
+    'woocommerce': { 
+        minSortOrder: 3, 
+        minPlan: 'pro',
+        displayName: { en: 'WooCommerce', tr: 'WooCommerce' }
+    },
     'mailchimp': { 
         minSortOrder: 3, 
         minPlan: 'pro',

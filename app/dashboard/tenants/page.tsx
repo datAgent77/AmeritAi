@@ -16,8 +16,8 @@ export default function TenantsPage() {
             if (!user) {
                 console.log("TenantsPage: No user, redirecting to home")
                 router.push("/")
-            } else if (role !== "SUPER_ADMIN") {
-                console.log("TenantsPage: Not super admin, redirecting to dashboard")
+            } else if (role !== "SUPER_ADMIN" && role !== "TENANT_ADMIN") {
+                console.log("TenantsPage: Unauthorized role for tenants page, redirecting to dashboard")
                 router.push("/dashboard")
             }
         }
@@ -36,7 +36,7 @@ export default function TenantsPage() {
         )
     }
 
-    if (!user || role !== "SUPER_ADMIN") {
+    if (!user || (role !== "SUPER_ADMIN" && role !== "TENANT_ADMIN")) {
         return null
     }
 

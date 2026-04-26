@@ -1715,12 +1715,12 @@ export function OmniSettingsPanel() {
                         />
                     </div>
 
-                    <div className="space-y-4 rounded-lg border p-4">
+                    <div id="team-roster" className="space-y-4 rounded-lg border p-4">
                         <div className="flex items-center justify-between gap-3">
                             <div>
-                                <div className="text-sm font-medium text-foreground">Team Roster</div>
+                                <div className="text-sm font-medium text-foreground">Agent Accounts (Team Roster)</div>
                                 <div className="text-sm text-muted-foreground">
-                                    Owners shown in callback, lead, and appointment queues come from this list.
+                                    Each tenant manages only its own agent list. Callback, lead, and appointment assignees are selected from this roster.
                                 </div>
                             </div>
                             <Button type="button" variant="outline" onClick={addTeamMember}>

@@ -1,5 +1,5 @@
 import { BaseEcommercePlatform } from "../base-platform"
-import type { EcomProduct, EcomOrder, EcomOrderStatus, EcomCoupon } from "../types"
+import type { EcomProduct, EcomOrder, EcomOrderStatus } from "../types"
 
 export class TSoftAdapter extends BaseEcommercePlatform {
     readonly platform = "tsoft" as const
@@ -89,7 +89,7 @@ export class TSoftAdapter extends BaseEcommercePlatform {
         }))
     }
 
-    async getOrders(params?: { limit?: number; page?: number }): Promise<EcomOrder[]> {
+    async getOrders(params?: { limit?: number; page?: number; status?: string; customerEmail?: string }): Promise<EcomOrder[]> {
         const qs = new URLSearchParams()
         qs.set("pageSize", String(params?.limit ?? 100))
         qs.set("pageIndex", String((params?.page ?? 1) - 1))
@@ -102,7 +102,7 @@ export class TSoftAdapter extends BaseEcommercePlatform {
             6: "cancelled", 7: "refunded",
         }
 
-        return items.map(o => ({
+        const mapped = items.map(o => ({
             platformId: String(o.id || o.Id),
             orderNumber: o.orderNumber || o.OrderNumber || String(o.id || o.Id),
             status: statusMap[o.statusId || o.StatusId] || "pending",
@@ -139,5 +139,9 @@ export class TSoftAdapter extends BaseEcommercePlatform {
             createdAt: o.createDate || o.CreateDate || o.createdAt || new Date().toISOString(),
             updatedAt: o.updateDate || o.UpdateDate,
         }))
+
+        if (!params?.customerEmail) return mapped
+        const needle = params.customerEmail.trim().toLowerCase()
+        return mapped.filter((order) => (order.customer.email || "").toLowerCase() === needle)
     }
 }

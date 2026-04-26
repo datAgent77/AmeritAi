@@ -6,7 +6,7 @@ import { normalizeVoiceIntegrationConfig as normalizeVoiceIntegrationConfigValue
 import { hasOmniPermissionOrDefault, resolveOmniPermissions, type OmniPermission } from "@/lib/omni/permissions"
 import { resolveOmniWorkspaceEnabled } from "@/lib/omni/workspace-access"
 import type { GuidedSkillState } from "@/lib/guided-skills/types"
-import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole, type UserRole } from "@/lib/user-roles"
+import { isAgencyAdminRole, isAgentRole, isSuperAdminRole, isTenantAdminRole, type UserRole } from "@/lib/user-roles"
 import type {
     CallbackPriority,
     CallbackRequestRecord,
@@ -76,6 +76,8 @@ export async function authorizeOmniRequest(req: Request, chatbotId: string): Pro
           ? "AGENCY_ADMIN"
           : isTenantAdminRole(callerRoleRaw)
             ? "TENANT_ADMIN"
+            : isAgentRole(callerRoleRaw)
+              ? "AGENT"
             : "USER"
     const callerPermissions = resolveOmniPermissions(callerRole, callerData.omniPermissions, callerData.omniDeniedPermissions)
 
@@ -145,6 +147,8 @@ export async function authorizeOmniDirectoryRequest(req: Request): Promise<Autho
           ? "AGENCY_ADMIN"
           : isTenantAdminRole(callerRoleRaw)
             ? "TENANT_ADMIN"
+            : isAgentRole(callerRoleRaw)
+              ? "AGENT"
             : "USER"
 
     return {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { createPlatformAdapter } from "@/lib/integrations/ecommerce/platform-registry"
+import { decryptEcomCredentials } from "@/lib/integrations/ecommerce/credentials-cipher"
 import type { EcomPlatform } from "@/lib/integrations/ecommerce/types"
 import crypto from "crypto"
 
@@ -46,11 +47,14 @@ export async function POST(req: Request, { params }: { params: { platform: strin
         }
 
         const connection = connSnap.docs[0].data()
+        const credentials = decryptEcomCredentials(connection.credentials || {})
 
         // Platform bazlı imza doğrulama
+        const webhookSecret = (credentials as Record<string, string | undefined>).webhookSecret || ""
+
         if (platform === "shopify") {
             const hmacHeader = req.headers.get("x-shopify-hmac-sha256") || ""
-            const secret = connection.credentials?.webhookSecret || ""
+            const secret = webhookSecret
             if (secret && !verifyShopifyHmac(rawBody, hmacHeader, secret)) {
                 return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
             }
@@ -58,7 +62,7 @@ export async function POST(req: Request, { params }: { params: { platform: strin
 
         if (platform === "woocommerce") {
             const signature = req.headers.get("x-wc-webhook-signature") || ""
-            const secret = connection.credentials?.webhookSecret || ""
+            const secret = webhookSecret
             if (secret) {
                 const digest = crypto.createHmac("sha256", secret).update(rawBody).digest("base64")
                 if (!crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature))) {
@@ -101,7 +105,7 @@ export async function POST(req: Request, { params }: { params: { platform: strin
 
         // Adapter ile gerçek işlemi yap
         try {
-            const adapter = await createPlatformAdapter(platform, connection.credentials)
+            const adapter = await createPlatformAdapter(platform, credentials)
 
             if (normalizedEvent.startsWith("product.")) {
                 const platformProductId = payload.id?.toString() || payload.product?.id?.toString()

@@ -88,10 +88,13 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     const {
         user,
         role,
+        userData,
         enableLeadCollection
     } = useAuth()
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
+    const [isHumanHandoffEnabled, setIsHumanHandoffEnabled] = useState(false)
+    const isAgentUser = role === "AGENT"
     const isAgenciesAdminRoute =
         normalizedPathname === "/admin/agencies" ||
         normalizedPathname.startsWith("/admin/agency/")
@@ -106,6 +109,28 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
             setIsCustomersMenuOpen(true)
         }
     }, [isCustomersMenuActive])
+
+    useEffect(() => {
+        const loadHumanHandoffStatus = async () => {
+            if (!user) return
+            try {
+                const assignedTenantId = typeof userData?.agentTenantId === "string" ? userData.agentTenantId.trim() : ""
+                const chatbotId = targetUserId || (isAgentUser ? assignedTenantId : user.uid)
+                if (!chatbotId) return
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${chatbotId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                if (!response.ok) return
+                const data = await response.json()
+                setIsHumanHandoffEnabled(data.enableHumanHandoff === true)
+            } catch (error) {
+                console.error("Failed to load human handoff status:", error)
+            }
+        }
+
+        loadHumanHandoffStatus()
+    }, [targetUserId, user, userData, isAgentUser])
 
     // Build link based on whether we're in super admin mode (targetUserId provided)
     const buildLink = (path: string) => {
@@ -151,6 +176,8 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         href: overviewHref,
         active: isOverviewActive
     }
+    const isAgentsActive = isActive("/console/modules/human-handoff")
+    const isSkillsActive = isActive("/console/modules") && !isAgentsActive
 
     const tenantGroups = [
 // ... unchanged ...
@@ -167,8 +194,14 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     title: t('skills') || "Skills",
                     icon: Grid,
                     href: "/console/modules",
-                    active: isActive("/console/modules")
+                    active: isSkillsActive
                 },
+                ...((isHumanHandoffEnabled || isAgentsActive) ? [{
+                    title: "Agents",
+                    icon: Users,
+                    href: "/console/modules/human-handoff",
+                    active: isAgentsActive
+                }] : []),
 
             ]
         },
@@ -230,6 +263,21 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
             ]
         }
     ]
+    const hiddenForAgent = new Set([
+        "/console/knowledge",
+        "/console/modules",
+        "/console/modules/human-handoff",
+        "/console/chatbot/widget",
+        "/console/chatbot/integration",
+    ])
+    const visibleTenantGroups = isAgentUser
+        ? tenantGroups
+            .map((group) => ({
+                ...group,
+                items: group.items.filter((item) => !hiddenForAgent.has(item.href)),
+            }))
+            .filter((group) => group.items.length > 0)
+        : tenantGroups
 
     // Special items that don't fit groups or are conditional
     const specialItems = [
@@ -252,10 +300,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                         <Image
                             src="/vion-logo-text-light.png"
                             alt="Vion"
-                            width={80}
+                            width={76}
                             height={24}
                             className="h-6 w-auto object-contain"
-                            style={{ width: "auto", height: "auto" }}
                             priority
                         />
                     </div>
@@ -264,9 +311,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                         <Image
                             src="/vion-logo-icon-white.png"
                             alt="Vion"
-                            width={32}
-                            height={32}
-                            className="h-8 w-8 object-contain"
+                            width={30}
+                            height={30}
+                            className="h-[30px] w-[30px] object-contain"
                             priority
                         />
                     </div>
@@ -342,7 +389,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                             </SidebarMenu>
 
                             {/* TENANT NAVIGATION GROUPS */}
-                            {tenantGroups.map((group) => (
+                            {visibleTenantGroups.map((group) => (
                                 <SidebarGroup key={group.label} className="group-data-[collapsible=icon]:p-0">
                                     <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden text-zinc-500 font-semibold uppercase tracking-wider text-xs px-2 mb-1">
                                         {group.label}

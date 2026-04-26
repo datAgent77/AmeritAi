@@ -1,6 +1,6 @@
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { resolvePartnerCapabilities, resolvePartnerLevel } from "@/lib/management/access";
-import { isAgencyAdminRole, isSuperAdminRole, isTenantAdminRole } from "./user-roles";
+import { isAgencyAdminRole, isAgentRole, isSuperAdminRole, isTenantAdminRole } from "./user-roles";
 
 type AccessAllowed = {
     ok: true;
@@ -97,6 +97,13 @@ export async function authorizeTargetAccess(
             }
         }
         return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: true };
+    }
+
+    const isAgent = isAgentRole(callerRole) || isAgentRole(decodedRole);
+    const callerAgentTenantId = typeof callerData?.agentTenantId === "string" ? callerData.agentTenantId.trim() : "";
+    const targetRoleNormalized = typeof targetRole === "string" ? targetRole.trim().toUpperCase() : "";
+    if (isAgent && callerAgentTenantId && callerAgentTenantId === targetUserId && targetRoleNormalized === "TENANT_ADMIN") {
+        return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: false };
     }
 
     return {

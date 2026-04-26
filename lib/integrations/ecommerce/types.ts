@@ -22,6 +22,7 @@ export interface EcomCredentials {
     oauthToken?: string
     refreshToken?: string
     tokenExpiresAt?: string
+    webhookSecret?: string
     // WooCommerce
     consumerKey?: string
     consumerSecret?: string

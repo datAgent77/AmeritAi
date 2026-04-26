@@ -74,6 +74,15 @@ const DEFAULT_PERMISSIONS_BY_ROLE: Record<UserRole, OmniPermission[]> = {
         "accountCenter.view",
         "accountCenter.manage",
     ],
+    AGENT: [
+        "dashboard.view",
+        "analytics.view",
+        "aiCore.view",
+        "channels.view",
+        "operations.view",
+        "settings.view",
+        "accountCenter.view",
+    ],
     USER: ["accountCenter.view"],
 }
 

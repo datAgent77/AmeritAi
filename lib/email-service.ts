@@ -299,6 +299,114 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
     });
 }
 
+export interface AgentInvitationEmailData {
+    recipientEmail: string;
+    recipientName?: string;
+    invitationLink: string;
+    tenantName?: string;
+    language?: string;
+    companyName?: string;
+}
+
+export async function sendAgentInvitationEmail(data: AgentInvitationEmailData): Promise<boolean> {
+    const transporter = createTransporter();
+    if (!transporter) {
+        console.error('Email Service: Transporter not configured');
+        return false;
+    }
+
+    const {
+        recipientEmail,
+        recipientName,
+        invitationLink,
+        tenantName = "Workspace",
+        language = "en",
+        companyName = "Vion AI",
+    } = data;
+
+    const isTurkish = String(language).toLowerCase().startsWith("tr");
+    const subject = isTurkish
+        ? `${companyName} agent daveti`
+        : `${companyName} agent invitation`;
+    const intro = isTurkish
+        ? `${tenantName} calisma alani icin agent olarak davet edildiniz.`
+        : `You have been invited as an agent for the ${tenantName} workspace.`;
+    const ctaText = isTurkish ? "Sifre Belirle ve Giris Yap" : "Set Password and Sign In";
+    const fallbackLine = isTurkish
+        ? "Buton calismazsa asagidaki baglantiyi tarayiciniza yapistirin:"
+        : "If the button does not work, paste this link into your browser:";
+    const footer = isTurkish
+        ? "Bu e-posta, Agent Hesaplari uzerinden olusturulan bir davet nedeniyle gonderildi."
+        : "This email was sent because an invitation was created from Agent Accounts.";
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fb;padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="padding:28px 28px 20px;background:#0f172a;color:#ffffff;">
+              <h1 style="margin:0;font-size:20px;font-weight:700;">${companyName}</h1>
+              <p style="margin:8px 0 0;font-size:14px;opacity:0.92;">${isTurkish ? "Agent daveti" : "Agent invitation"}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">
+                ${isTurkish ? "Merhaba" : "Hello"}${recipientName ? ` <strong>${recipientName}</strong>` : ""},
+              </p>
+              <p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#374151;">
+                ${intro}
+              </p>
+              <p style="margin:0 0 22px;text-align:center;">
+                <a href="${invitationLink}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;font-size:14px;">
+                  ${ctaText}
+                </a>
+              </p>
+              <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#4b5563;">
+                ${fallbackLine}
+              </p>
+              <p style="margin:0 0 16px;font-size:12px;line-height:1.6;word-break:break-all;color:#2563eb;">
+                ${invitationLink}
+              </p>
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;">
+                ${footer}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    const textContent = isTurkish
+        ? `Merhaba ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${invitationLink}\n\n${footer}`.trim()
+        : `Hello ${recipientName || ""}\n\n${intro}\n\n${ctaText}: ${invitationLink}\n\n${footer}`.trim();
+
+    return sendEmailOrMock(transporter, {
+        ...buildMailSenderOptions(senderIdentity),
+        to: recipientEmail,
+        subject,
+        text: textContent,
+        html: htmlContent,
+    });
+}
+
 export interface AppointmentEmailData {
     customerEmail: string;
     customerName: string;

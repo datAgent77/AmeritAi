@@ -211,10 +211,9 @@ export function OmniSidebar() {
                         <Image
                             src="/vion-logo-text-light.png"
                             alt="Vion"
-                            width={80}
-                            height={24}
-                            className="h-6 w-auto object-contain"
-                            style={{ width: "auto", height: "auto" }}
+                            width={72}
+                            height={22}
+                            className="h-[22px] w-auto object-contain"
                             priority
                         />
                         <Badge className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/5">
@@ -225,9 +224,9 @@ export function OmniSidebar() {
                         <Image
                             src="/vion-logo-icon-white.png"
                             alt="Vion"
-                            width={32}
-                            height={32}
-                            className="h-8 w-8 object-contain"
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 object-contain"
                             priority
                         />
                     </div>

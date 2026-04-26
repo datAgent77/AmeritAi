@@ -20,7 +20,7 @@ export function TenantLayoutClient({
     userId,
     initialEmail
 }: TenantLayoutClientProps) {
-    const { role, user, loading } = useAuth()
+    const { role, user, userData, loading } = useAuth()
     const router = useRouter()
     const [accessState, setAccessState] = useState<"checking" | "allowed" | "denied">("checking")
 
@@ -38,6 +38,17 @@ export function TenantLayoutClient({
 
         if (role === "SUPER_ADMIN") {
             setAccessState("allowed")
+            return
+        }
+
+        if (role === "AGENT") {
+            const assignedTenantId = typeof userData?.agentTenantId === "string" ? userData.agentTenantId.trim() : ""
+            if (assignedTenantId && assignedTenantId === userId) {
+                setAccessState("allowed")
+                return
+            }
+            setAccessState("denied")
+            router.push("/console/chatbot")
             return
         }
 
@@ -74,7 +85,7 @@ export function TenantLayoutClient({
         return () => {
             cancelled = true
         }
-    }, [role, user, loading, userId, router])
+    }, [role, user, userData, loading, userId, router])
 
     if (loading || accessState === "checking") {
         return (
