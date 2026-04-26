@@ -297,9 +297,14 @@ function resolveQuickActionLocale(language: string | undefined): "tr" | "en" {
     return language === "tr" ? "tr" : "en"
 }
 
-export function getQuickActionDisplayLabel(button: Pick<QuickActionButton, "label" | "moduleId">, language: string) {
+export function getQuickActionDisplayLabel(button: Pick<QuickActionButton, "label" | "localizedLabel" | "moduleId">, language: string) {
     const definition = getQuickActionDefinition(button.moduleId)
-    return definition.localized[resolveQuickActionLocale(language)].label
+    const locale = resolveQuickActionLocale(language)
+    const localizedLabel = typeof button.localizedLabel?.[locale] === "string"
+        ? button.localizedLabel[locale]?.trim()
+        : ""
+
+    return localizedLabel || definition.localized[locale].label
 }
 
 export function getQuickActionTriggerMessage(button: Pick<QuickActionButton, "triggerMessage" | "moduleId">, language: string) {
@@ -403,6 +408,10 @@ export function normalizeQuickActionButton(
     return {
         id: rawId && !idLooksStale ? rawId : definition.id,
         label: rawLabel && !labelLooksStale ? rawLabel : definition.label,
+        localizedLabel: {
+            tr: typeof button.localizedLabel?.tr === "string" ? button.localizedLabel.tr.trim() : "",
+            en: typeof button.localizedLabel?.en === "string" ? button.localizedLabel.en.trim() : "",
+        },
         moduleId: inferredModuleId,
         triggerMessage: definition.triggerMessage,
         visible: typeof button.visible === "boolean" ? button.visible : true,
@@ -421,6 +430,8 @@ export function areQuickActionsEqual(left: QuickActionsConfig | undefined, right
         return Boolean(other)
             && button.id === other.id
             && button.label === other.label
+            && (button.localizedLabel?.tr || "") === (other.localizedLabel?.tr || "")
+            && (button.localizedLabel?.en || "") === (other.localizedLabel?.en || "")
             && button.moduleId === other.moduleId
             && button.triggerMessage === other.triggerMessage
             && button.visible === other.visible

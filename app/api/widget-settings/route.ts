@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { OpenAI } from "openai";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { buildGuidedSkillShortcut, listEnabledGuidedSkills } from "@/lib/guided-skills";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
@@ -11,6 +12,112 @@ import { buildDefaultSurveyWidgetConfig, buildPublicSurvey, buildSurveyModuleCon
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
+
+const quickActionTranslator = process.env.OPENAI_API_KEY
+    ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    : null;
+
+type QuickActionLabelTranslation = {
+    index: number;
+    tr: string;
+    en: string;
+};
+
+function normalizeLocalizedLabelValue(value: unknown) {
+    return typeof value === "string" ? value.trim() : "";
+}
+
+async function enrichQuickActionLabels(rawQuickActions: any) {
+    if (!rawQuickActions || typeof rawQuickActions !== "object" || !Array.isArray(rawQuickActions.buttons)) {
+        return rawQuickActions;
+    }
+
+    const buttons = rawQuickActions.buttons.map((button: any) => ({ ...button }));
+    const itemsToTranslate = buttons
+        .map((button: any, index: number) => {
+            const sourceLabel = normalizeLocalizedLabelValue(button?.label);
+            const existingTr = normalizeLocalizedLabelValue(button?.localizedLabel?.tr);
+            const existingEn = normalizeLocalizedLabelValue(button?.localizedLabel?.en);
+            if (!sourceLabel || (existingTr && existingEn)) return null;
+            return {
+                index,
+                sourceLabel,
+                moduleId: typeof button?.moduleId === "string" ? button.moduleId : "unknown",
+            };
+        })
+        .filter(Boolean) as Array<{ index: number; sourceLabel: string; moduleId: string }>;
+
+    if (itemsToTranslate.length === 0) {
+        return {
+            ...rawQuickActions,
+            buttons,
+        };
+    }
+
+    let translated = new Map<number, QuickActionLabelTranslation>();
+
+    if (quickActionTranslator) {
+        try {
+            const completion = await quickActionTranslator.chat.completions.create({
+                model: "gpt-4o-mini",
+                temperature: 0,
+                response_format: { type: "json_object" },
+                messages: [
+                    {
+                        role: "system",
+                        content:
+                            "You translate short chatbot quick action button labels. Return concise UI CTA text in Turkish and English. Keep intent and tone, avoid extra punctuation. Respond only with JSON.",
+                    },
+                    {
+                        role: "user",
+                        content: JSON.stringify({
+                            task: "Translate each label to tr and en for chatbot quick action buttons.",
+                            items: itemsToTranslate,
+                            outputSchema: {
+                                translations: [{ index: 0, tr: "string", en: "string" }],
+                            },
+                        }),
+                    },
+                ],
+            });
+
+            const rawContent = completion.choices?.[0]?.message?.content || "{}";
+            const parsed = JSON.parse(rawContent) as { translations?: QuickActionLabelTranslation[] };
+            const entries = Array.isArray(parsed.translations) ? parsed.translations : [];
+            translated = new Map(
+                entries
+                    .filter((entry) => Number.isInteger(entry?.index))
+                    .map((entry) => [
+                        entry.index,
+                        {
+                            index: entry.index,
+                            tr: normalizeLocalizedLabelValue(entry.tr),
+                            en: normalizeLocalizedLabelValue(entry.en),
+                        },
+                    ])
+            );
+        } catch (error) {
+            console.warn("[widget-settings] quick action label translation failed, falling back to source labels", error);
+        }
+    }
+
+    for (const item of itemsToTranslate) {
+        const current = buttons[item.index];
+        if (!current) continue;
+        const existingTr = normalizeLocalizedLabelValue(current?.localizedLabel?.tr);
+        const existingEn = normalizeLocalizedLabelValue(current?.localizedLabel?.en);
+        const translatedItem = translated.get(item.index);
+        current.localizedLabel = {
+            tr: existingTr || translatedItem?.tr || item.sourceLabel,
+            en: existingEn || translatedItem?.en || item.sourceLabel,
+        };
+    }
+
+    return {
+        ...rawQuickActions,
+        buttons,
+    };
+}
 
 function normalizeWebChannelEnabled(config: any) {
     return config?.enabled !== false;
@@ -730,25 +837,30 @@ export async function POST(req: Request) {
 
         // Remove chatbotId from body before saving
         const { chatbotId: _, ...settingsToSave } = body;
+        const normalizedQuickActions = await enrichQuickActionLabels(settingsToSave.quickActions);
+        const normalizedSettingsToSave = {
+            ...settingsToSave,
+            quickActions: normalizedQuickActions,
+        };
 
         // If industry is being set, also update sector and sectorId to ensure AI uses correct sector
         // AI service prioritizes sector > sectorId > industry, so we must sync all three
         const dataToSave = {
-            ...settingsToSave,
+            ...normalizedSettingsToSave,
             updatedAt: new Date().toISOString(),
         };
 
-        if (settingsToSave.industry) {
-            dataToSave.sector = settingsToSave.industry;
-            dataToSave.sectorId = settingsToSave.industry;
+        if (normalizedSettingsToSave.industry) {
+            dataToSave.sector = normalizedSettingsToSave.industry;
+            dataToSave.sectorId = normalizedSettingsToSave.industry;
         }
 
         await adminDb.collection("chatbots").doc(targetChatbotId).set(dataToSave, { merge: true });
 
         // Sync industry to users collection for Company Settings page
-        if (settingsToSave.industry) {
+        if (normalizedSettingsToSave.industry) {
             await adminDb.collection("users").doc(targetChatbotId).set({
-                industry: settingsToSave.industry,
+                industry: normalizedSettingsToSave.industry,
                 updatedAt: new Date().toISOString(),
             }, { merge: true });
         }

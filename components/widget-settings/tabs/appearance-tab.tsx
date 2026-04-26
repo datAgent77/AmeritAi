@@ -799,6 +799,7 @@ export function AppearanceTab({
                                                 moduleId: val,
                                                 triggerMessage: nextDefinition.triggerMessage,
                                                 label: shouldResetLabel ? nextDefinition.label : current.label,
+                                                localizedLabel: undefined,
                                             }
                                             setSettings(prev => ({
                                                 ...prev,

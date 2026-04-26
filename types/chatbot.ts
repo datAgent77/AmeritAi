@@ -285,6 +285,10 @@ export type QuickActionModuleId =
 export interface QuickActionButton {
     id: string;
     label: string;
+    localizedLabel?: {
+        tr?: string;
+        en?: string;
+    };
     moduleId: QuickActionModuleId;
     triggerMessage: string;
     visible: boolean;

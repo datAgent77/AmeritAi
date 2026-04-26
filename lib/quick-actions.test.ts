@@ -43,6 +43,24 @@ test("always localizes quick action text by module id and widget language", () =
     expect(getQuickActionTriggerMessage({ ...button, triggerMessage: "panelde ne yazarsa yazsin" }, "tr")).toBe("randevu almak istiyorum")
 })
 
+test("prefers stored localized quick action labels when available", () => {
+    const button = {
+        id: "leadCollection",
+        label: "Beni Arayın",
+        localizedLabel: {
+            tr: "Beni Arayın",
+            en: "Call Me",
+        },
+        moduleId: "leadCollection" as const,
+        triggerMessage: "iletişim bilgilerimi bırakmak istiyorum",
+        visible: true,
+        order: 0,
+    }
+
+    expect(getQuickActionDisplayLabel(button, "tr")).toBe("Beni Arayın")
+    expect(getQuickActionDisplayLabel(button, "en")).toBe("Call Me")
+})
+
 test("filters quick actions to enabled modules and normalizes extended module routing", () => {
     const config = resolveQuickActionsConfig({
         enableHumanHandoff: true,
