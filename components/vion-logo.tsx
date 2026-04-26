@@ -15,6 +15,7 @@ export function VionLogo({ className, variant = "white" }: VionLogoProps) {
                 width={133}
                 height={42}
                 className="h-7 w-auto object-contain object-left"
+                style={{ width: "auto", height: "auto" }}
                 priority
             />
         </div>

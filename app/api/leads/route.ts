@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
+import { pushLeadToZoho } from "@/lib/integrations/zoho/client";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -97,6 +98,28 @@ Leadlerinizi yönetmek için paneli ziyaret edin.
         } catch (emailError) {
             // Don't fail the request if email fails - just log it
             console.error("Failed to send lead notification email:", emailError);
+        }
+
+        // Forward to Zoho CRM if connected (fail-soft)
+        try {
+            const zohoResult = await pushLeadToZoho(chatbotId, {
+                name,
+                email,
+                phone,
+                company: customFields?.company || customFields?.Company,
+                source: source || "Vion Chatbot",
+                description: sessionId ? `Vion session: ${sessionId}` : null,
+            });
+            if (zohoResult.ok) {
+                await docRef.set(
+                    { zohoLeadId: zohoResult.id || null, zohoSyncedAt: admin.firestore.FieldValue.serverTimestamp() },
+                    { merge: true }
+                );
+            } else if (zohoResult.error && zohoResult.error !== "Zoho not connected") {
+                console.error("Zoho lead push failed:", zohoResult.error);
+            }
+        } catch (zohoError) {
+            console.error("Zoho lead push exception:", zohoError);
         }
 
         return NextResponse.json({ success: true, id: docRef.id });
