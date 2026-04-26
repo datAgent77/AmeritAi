@@ -24,7 +24,7 @@ test("repairs stale module selection from trigger message", () => {
     expect(button?.triggerMessage).toBe("bir temsilciyle görüşmek istiyorum")
 })
 
-test("uses panel overrides while keeping module defaults localized by widget language", () => {
+test("always localizes quick action text by module id and widget language", () => {
     const button = {
         id: "appointments",
         label: "Randevu Al",
@@ -36,11 +36,11 @@ test("uses panel overrides while keeping module defaults localized by widget lan
 
     expect(getQuickActionDisplayLabel(button, "en")).toBe("Book Appointment")
     expect(getQuickActionDisplayLabel({ ...button, label: "Book Appointment" }, "tr")).toBe("Randevu Al")
-    expect(getQuickActionDisplayLabel({ ...button, label: "Custom Turkish panel text" }, "tr")).toBe("Custom Turkish panel text")
-    expect(getQuickActionDisplayLabel({ ...button, label: "Custom Turkish panel text" }, "en")).toBe("Custom Turkish panel text")
+    expect(getQuickActionDisplayLabel({ ...button, label: "Custom Turkish panel text" }, "tr")).toBe("Randevu Al")
+    expect(getQuickActionDisplayLabel({ ...button, label: "Custom Turkish panel text" }, "en")).toBe("Book Appointment")
     expect(getQuickActionTriggerMessage(button, "en")).toBe("I want to book an appointment")
     expect(getQuickActionTriggerMessage({ ...button, triggerMessage: "I want to book an appointment" }, "tr")).toBe("randevu almak istiyorum")
-    expect(getQuickActionTriggerMessage({ ...button, triggerMessage: "panelde ne yazarsa yazsin" }, "tr")).toBe("panelde ne yazarsa yazsin")
+    expect(getQuickActionTriggerMessage({ ...button, triggerMessage: "panelde ne yazarsa yazsin" }, "tr")).toBe("randevu almak istiyorum")
 })
 
 test("filters quick actions to enabled modules and normalizes extended module routing", () => {
