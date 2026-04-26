@@ -36,6 +36,13 @@ describe("conversation-language", () => {
         })).toBe("tr");
     });
 
+    test("keeps English for plain ASCII sentences even when UI language is Turkish", () => {
+        expect(resolveConversationLanguage({
+            explicitLanguage: "tr",
+            userText: "Need a quotation for aluminium profile sizes",
+        })).toBe("en");
+    });
+
     test("normalizes locale tags", () => {
         expect(normalizeConversationLanguage("en-US")).toBe("en");
         expect(normalizeConversationLanguage("tr-TR")).toBe("tr");

@@ -42,6 +42,20 @@ function countMatches(pattern: RegExp, text: string): number {
     return matches ? matches.length : 0;
 }
 
+function shouldPreferEnglishOverTurkishFallback(text?: string | null): boolean {
+    const input = String(text || "").trim();
+    if (!input) return false;
+
+    // Guard only for plain Latin-script content (common English user input).
+    const hasLatinLetters = /[A-Za-z]/.test(input);
+    const hasTurkishSpecificChars = /[çğıöşüİı]/u.test(input);
+    const hasOnlyAscii = /^[\x00-\x7F]+$/.test(input);
+    const words = input.match(/[A-Za-z]+/g) || [];
+    const letterCount = words.join("").length;
+    const looksLikeSentence = words.length >= 2 || letterCount >= 12;
+    return hasLatinLetters && hasOnlyAscii && !hasTurkishSpecificChars && looksLikeSentence;
+}
+
 export function normalizeConversationLanguage(input?: string | null): ConversationLanguage | null {
     const normalized = String(input || "").trim().toLowerCase().replace(/_/g, "-");
     if (!normalized || normalized === "auto") return null;
@@ -102,7 +116,13 @@ export function resolveConversationLanguage(params: {
 }): ConversationLanguage {
     const detected = detectConversationLanguage(params.userText);
     if (detected) return detected;
-    return normalizeConversationLanguage(params.explicitLanguage) || params.fallback || "en";
+
+    const normalizedExplicit = normalizeConversationLanguage(params.explicitLanguage);
+    if (normalizedExplicit === "tr" && shouldPreferEnglishOverTurkishFallback(params.userText)) {
+        return "en";
+    }
+
+    return normalizedExplicit || params.fallback || "en";
 }
 
 export function toCopyLanguage(language?: string | null): CopyLanguage {
