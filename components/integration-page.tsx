@@ -39,7 +39,7 @@ interface Integration {
     features?: string[]
     connected?: boolean
     connectedInfo?: string
-    category?: "embed" | "messaging" | "ecommerce" | "crm" | "calendar" | "email"
+    category?: "embed" | "messaging" | "ecommerce" | "crm" | "calendar" | "email" | "all"
 }
 
 const HIDDEN_INTEGRATION_IDS = new Set([
