@@ -1240,6 +1240,7 @@ export default function ChatbotContainer() {
                         sessionId={sessionId}
                         onBookingSuccess={handleBookingSuccess}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
+                        onCloseWidget={handleCloseWidget}
                     />
 
                     <ChatInput

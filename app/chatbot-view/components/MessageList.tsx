@@ -190,19 +190,21 @@ function GuidedShortcutButtons({
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-zinc-100">{copy.flowsTitle}</h3>
                 <p className="text-xs text-gray-500 dark:text-zinc-400">{copy.flowsDescription}</p>
             </div>
-            <div className="grid grid-cols-1 gap-2 w-full">
-                {shortcuts.map((shortcut) => (
-                    <button
-                        key={shortcut.id}
-                        onClick={() => onSelect(shortcut)}
-                        className="w-full rounded-xl border border-emerald-200/80 bg-white px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-emerald-900/70 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
-                    >
-                        <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{shortcut.title}</div>
-                        {shortcut.description ? (
-                            <div className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{shortcut.description}</div>
-                        ) : null}
-                    </button>
-                ))}
+            <div className="-mx-5 px-5 pb-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex gap-2 w-max min-w-full snap-x snap-mandatory">
+                    {shortcuts.map((shortcut) => (
+                        <button
+                            key={shortcut.id}
+                            onClick={() => onSelect(shortcut)}
+                            className="w-[240px] shrink-0 snap-start rounded-xl border border-emerald-200/80 bg-white px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-emerald-900/70 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+                        >
+                            <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{shortcut.title}</div>
+                            {shortcut.description ? (
+                                <div className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-zinc-400">{shortcut.description}</div>
+                            ) : null}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     )
@@ -400,7 +402,7 @@ export function MessageList({
                             <button
                                 type="button"
                                 onClick={onCloseWidget}
-                                className="md:hidden absolute right-2 top-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
+                                className="absolute right-2 top-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/12 text-white/90 transition-colors hover:bg-white/18 hover:text-white"
                                 aria-label={t("closeWidget")}
                             >
                                 <X className="h-5 w-5" />

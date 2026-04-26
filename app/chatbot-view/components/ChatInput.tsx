@@ -383,7 +383,7 @@ export function ChatInput({
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : isSidecarMode
                     ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"
-                    : "px-8 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
+                    : "px-4 sm:px-8 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
@@ -391,8 +391,8 @@ export function ChatInput({
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
-                    <div className="-mx-2 mb-3 overflow-x-auto px-2 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                        <div className="flex w-max min-w-full gap-2 sm:w-full sm:flex-wrap">
+                    <div className={`${isSidecarMode ? "-mx-4 px-4" : "-mx-4 sm:-mx-8 px-4 sm:px-8"} mb-3 overflow-x-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}>
+                        <div className="flex w-max min-w-full gap-2 flex-nowrap">
                         {quickActions.buttons
                             .filter(b => b.visible)
                             .sort((a, b) => a.order - b.order)
