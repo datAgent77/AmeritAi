@@ -255,6 +255,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                             width={80}
                             height={24}
                             className="h-6 w-auto object-contain"
+                            style={{ width: "auto", height: "auto" }}
                             priority
                         />
                     </div>

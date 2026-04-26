@@ -214,6 +214,7 @@ export function OmniSidebar() {
                             width={80}
                             height={24}
                             className="h-6 w-auto object-contain"
+                            style={{ width: "auto", height: "auto" }}
                             priority
                         />
                         <Badge className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/5">

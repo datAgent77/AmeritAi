@@ -44,11 +44,11 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg border border-zinc-200 bg-white flex items-center justify-center p-1.5">
+                        <div className="w-12 h-12 rounded-lg border border-zinc-200 bg-white flex items-center justify-center p-2 shrink-0">
                             <img
                                 src={meta.logoUrl}
                                 alt={meta.name}
-                                className="w-full h-full object-contain"
+                                className="max-w-full max-h-full object-contain"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = "none"
                                 }}

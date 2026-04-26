@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { getPlan } from "@/lib/pricing-config"
 import { hasIntegrationAccess, getIntegrationMinPlan, INTEGRATION_ACCESS } from "@/lib/integration-access-config"
@@ -18,6 +19,11 @@ import { PricingModal } from "@/components/pricing-modal"
 import { InstagramDMWizard } from "@/components/integrations/instagram-dm/InstagramDMWizard"
 import { WhatsAppBizWizard } from "@/components/integrations/whatsapp-business/WhatsAppBizWizard"
 import { MessengerWizard } from "@/components/integrations/messenger/MessengerWizard"
+import { EcommerceConnectionForm } from "@/components/integrations/ecommerce/EcommerceConnectionForm"
+import { EcommercePlatformCard } from "@/components/integrations/ecommerce/EcommercePlatformCard"
+import { PLATFORM_META } from "@/lib/integrations/ecommerce/platform-registry"
+import type { EcomConnection, EcomPlatform } from "@/lib/integrations/ecommerce/types"
+import { ZOHO_REGIONS, ZOHO_DEFAULT_REGION, type ZohoRegion } from "@/lib/integrations/zoho/config"
 
 interface IntegrationPageProps {
     userId: string
@@ -33,6 +39,7 @@ interface Integration {
     features?: string[]
     connected?: boolean
     connectedInfo?: string
+    category?: "embed" | "messaging" | "ecommerce" | "crm" | "calendar" | "email"
 }
 
 const HIDDEN_INTEGRATION_IDS = new Set([
@@ -88,6 +95,12 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [isConnectingSalesforce, setIsConnectingSalesforce] = useState(false)
     const [salesforceConnected, setSalesforceConnected] = useState(false)
 
+    // Zoho CRM State
+    const [zohoRegion, setZohoRegion] = useState<ZohoRegion>(ZOHO_DEFAULT_REGION)
+    const [isConnectingZoho, setIsConnectingZoho] = useState(false)
+    const [zohoConnected, setZohoConnected] = useState(false)
+    const [zohoConnectedRegion, setZohoConnectedRegion] = useState<ZohoRegion | null>(null)
+
     // Google Calendar State
     const [isConnectingGoogleCalendar, setIsConnectingGoogleCalendar] = useState(false)
     const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false)
@@ -121,6 +134,9 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [constantContactApiSecret, setConstantContactApiSecret] = useState("")
     const [isConnectingConstantContact, setIsConnectingConstantContact] = useState(false)
     const [constantContactConnected, setConstantContactConnected] = useState(false)
+
+    const [ecomConnections, setEcomConnections] = useState<EcomConnection[]>([])
+    const [ecomConnectingPlatform, setEcomConnectingPlatform] = useState<EcomPlatform | null>(null)
 
     const whatsAppConnected = settings?.integrations?.whatsapp?.connected
     const waWebhookSecret = settings?.integrations?.whatsapp?.webhookSecret
@@ -262,6 +278,15 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             connected: salesforceConnected,
         },
         {
+            id: "zoho-crm",
+            name: t('zohoCRM') || "Zoho CRM",
+            description: t('zohoCRMDescription') || "Push leads captured by your chatbot into your Zoho CRM account.",
+            logo: "/integrations/zoho-crm.svg",
+            iconBg: "bg-gray-100",
+            connected: zohoConnected,
+            connectedInfo: zohoConnectedRegion ? `.${zohoConnectedRegion}` : undefined,
+        },
+        {
             id: "google-calendar",
             name: t('googleCalendar') || "Google Calendar",
             description: t('googleCalendarDescription'),
@@ -276,14 +301,6 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             logo: "/integrations/outlook.svg",
             iconBg: "bg-gray-100",
             connected: outlookCalendarConnected,
-        },
-        {
-            id: "shopify",
-            name: t('shopify') || "Shopify",
-            description: t('shopifyDescription'),
-            logo: "/integrations/shopify.svg",
-            iconBg: "bg-gray-100",
-            connected: shopifyConnected,
         },
         {
             id: "mailchimp",
@@ -327,6 +344,32 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             ],
         },
     ]
+
+    const ecomIntegrations: Integration[] = Object.values(PLATFORM_META).map(meta => {
+        const connection = ecomConnections.find(c => c.platform === meta.id)
+        return {
+            id: meta.id,
+            name: meta.name,
+            description: `${meta.name} mağazanızı bağlayın. Ürünler ve siparişler otomatik olarak senkronize edilir.`,
+            logo: meta.logoUrl,
+            iconBg: "bg-gray-100",
+            connected: !!connection,
+            connectedInfo: connection?.storeName,
+            category: "ecommerce"
+        }
+    })
+
+    const allIntegrations = [...integrations, ...ecomIntegrations].map(i => {
+        if (!i.category) {
+            if (["meta-channels", "telegram", "whatsapp", "instagram"].includes(i.id)) i.category = "messaging"
+            else if (["website", "iframe", "direct-link", "wordpress"].includes(i.id)) i.category = "embed"
+            else if (["slack", "salesforce", "zoho-crm"].includes(i.id)) i.category = "crm"
+            else if (["google-calendar", "outlook-calendar"].includes(i.id)) i.category = "calendar"
+            else if (["mailchimp", "sendgrid", "constant-contact"].includes(i.id)) i.category = "email"
+            else i.category = "all"
+        }
+        return i
+    })
 
     const handleConnectSlack = async () => {
         if (!slackBotToken || !slackSigningSecret) {
@@ -420,6 +463,89 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             toast({ title: t('error'), description: error.message, variant: "destructive" })
         } finally {
             setIsConnectingSalesforce(false)
+        }
+    }
+
+    const handleConnectZoho = async () => {
+        if (!user) return
+        setIsConnectingZoho(true)
+        let popup: Window | null = null
+        let messageHandler: ((event: MessageEvent) => void) | null = null
+        let pollTimer: ReturnType<typeof setInterval> | null = null
+
+        const cleanup = () => {
+            if (messageHandler) window.removeEventListener("message", messageHandler)
+            if (pollTimer) clearInterval(pollTimer)
+            setIsConnectingZoho(false)
+        }
+
+        try {
+            const response = await fetch("/api/integrations/zoho-crm/connect", {
+                method: "POST",
+                headers: await getAuthHeaders(),
+                body: JSON.stringify({ chatbotId: userId, region: zohoRegion }),
+            })
+            const data = await response.json()
+            if (!response.ok || !data.url) {
+                throw new Error(data.error || t('failedToConnect') || "Failed to connect")
+            }
+
+            const w = 600, h = 720
+            const left = window.screenX + (window.outerWidth - w) / 2
+            const top = window.screenY + (window.outerHeight - h) / 2
+            popup = window.open(data.url, "vion-zoho-oauth", `width=${w},height=${h},left=${left},top=${top}`)
+            if (!popup) {
+                throw new Error("Popup blocked. Please allow popups for this site.")
+            }
+
+            await new Promise<void>((resolve, reject) => {
+                messageHandler = (event: MessageEvent) => {
+                    if (!event.data || event.data.type !== "vion-zoho-crm-oauth") return
+                    const result = event.data.payload
+                    if (result?.success) resolve()
+                    else reject(new Error(result?.error || "Authorization failed"))
+                }
+                window.addEventListener("message", messageHandler)
+
+                pollTimer = setInterval(() => {
+                    if (popup && popup.closed) reject(new Error("Window closed before authorization"))
+                }, 500)
+            })
+
+            setZohoConnected(true)
+            setZohoConnectedRegion(zohoRegion)
+            toast({ title: t('success'), description: t('zohoCRMConnected') || "Zoho CRM connected." })
+
+            const res = await fetch(`/api/console/settings?chatbotId=${userId}`, { headers: await getAuthHeaders() })
+            if (res.ok) {
+                const settingsData = await res.json()
+                setSettings(settingsData)
+            }
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            try { popup?.close() } catch { /* ignore */ }
+            cleanup()
+        }
+    }
+
+    const handleDisconnectZoho = async () => {
+        setIsConnectingZoho(true)
+        try {
+            const response = await fetch("/api/integrations/zoho-crm/disconnect", {
+                method: "POST",
+                headers: await getAuthHeaders(),
+                body: JSON.stringify({ chatbotId: userId }),
+            })
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) throw new Error(data.error || "Failed to disconnect")
+            setZohoConnected(false)
+            setZohoConnectedRegion(null)
+            toast({ title: t('success'), description: t('zohoCRMDisconnected') || "Zoho CRM disconnected." })
+        } catch (error: any) {
+            toast({ title: t('error'), description: error.message, variant: "destructive" })
+        } finally {
+            setIsConnectingZoho(false)
         }
     }
 
@@ -643,6 +769,55 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         }
     }
 
+    async function handleDisconnectEcom(platform: EcomPlatform) {
+        const res = await fetch(`/api/ecommerce/connect?chatbotId=${userId}&platform=${platform}`, {
+            method: "DELETE",
+        })
+        if (res.ok) {
+            setEcomConnections(prev => prev.filter(c => c.platform !== platform))
+            toast({ title: t('success'), description: `${PLATFORM_META[platform].name} bağlantısı kaldırıldı.` })
+        } else {
+            toast({ title: t('error'), description: "Bağlantı kaldırılamadı.", variant: "destructive" })
+        }
+    }
+
+    async function handleSyncEcom(platform: EcomPlatform) {
+        const res = await fetch("/api/ecommerce/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chatbotId: userId, platform, type: "all" }),
+        })
+        const data = await res.json()
+        if (res.ok) {
+            toast({ title: t('success'), description: `Senkronizasyon tamamlandı. ${data.syncedProducts} ürün, ${data.syncedOrders} sipariş.` })
+            await loadEcomConnections()
+        } else {
+            toast({ title: t('error'), description: data.error || "Senkronizasyon başarısız.", variant: "destructive" })
+        }
+    }
+
+    function handleConnectEcomSuccess(platform: EcomPlatform, result: { connectionId: string; storeName?: string }) {
+        setEcomConnectingPlatform(null)
+        toast({ title: t('success'), description: `${PLATFORM_META[platform].name} başarıyla bağlandı! ${result.storeName ? `"${result.storeName}"` : ""}` })
+        loadEcomConnections()
+    }
+
+    const loadEcomConnections = useCallback(async () => {
+        if (!user) return
+        try {
+            const token = await user.getIdToken()
+            const res = await fetch(`/api/ecommerce/status?chatbotId=${userId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                const data = await res.json()
+                setEcomConnections(data.connections || [])
+            }
+        } catch {
+            // ignore
+        }
+    }, [userId, user])
+
     useEffect(() => {
         setOrigin(window.location.origin)
         const fetchSettings = async () => {
@@ -668,6 +843,14 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     }
                     if (data.integrations?.salesforce?.connected) {
                         setSalesforceConnected(true)
+                    }
+                    if (data.integrations?.zoho?.connected) {
+                        setZohoConnected(true)
+                        const region = data.integrations.zoho.region
+                        if (region && ZOHO_REGIONS.some((r) => r.value === region)) {
+                            setZohoConnectedRegion(region as ZohoRegion)
+                            setZohoRegion(region as ZohoRegion)
+                        }
                     }
                     if (data.integrations?.googleCalendar?.connected) {
                         setGoogleCalendarConnected(true)
@@ -723,7 +906,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             }
         }
         fetchSettings()
-    }, [userId, user])
+        loadEcomConnections()
+    }, [userId, user, loadEcomConnections])
 
     const copyToClipboard = (text: string, key: string) => {
         navigator.clipboard.writeText(text)
@@ -743,13 +927,15 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         : `${origin}/api/integrations/instagram/webhook?chatbotId=${userId}`
 
     // Hide deprecated integrations and apply search filter
-    const visibleIntegrations = integrations.filter(
+    const visibleIntegrations = allIntegrations.filter(
         (integration) => !HIDDEN_INTEGRATION_IDS.has(integration.id)
     )
+    const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const filteredIntegrations = visibleIntegrations.filter(integration => {
         const matchesSearch = integration.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             integration.description.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchesSearch
+        const matchesCategory = selectedCategory === "all" || integration.category === selectedCategory
+        return matchesSearch && matchesCategory
     })
 
     const currentIntegration = selectedIntegration
@@ -960,6 +1146,18 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
 
                     {/* Right: Connection Dialog for messaging platforms */}
                     <div>
+                        {/* Ecommerce Dialog */}
+                        {currentIntegration.category === "ecommerce" && currentIntegration.id in PLATFORM_META && (
+                            <EcommercePlatformCard
+                                meta={PLATFORM_META[currentIntegration.id as EcomPlatform]}
+                                connection={ecomConnections.find(c => c.platform === currentIntegration.id)}
+                                chatbotId={userId}
+                                onConnect={() => setEcomConnectingPlatform(currentIntegration.id as EcomPlatform)}
+                                onDisconnect={() => handleDisconnectEcom(currentIntegration.id as EcomPlatform)}
+                                onSync={() => handleSyncEcom(currentIntegration.id as EcomPlatform)}
+                            />
+                        )}
+
                         {/* Telegram Dialog */}
                         {currentIntegration.id === "telegram" && (
                             <Card>
@@ -1149,6 +1347,51 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                                     >
                                         {isConnectingSalesforce && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         {salesforceConnected ? t('manageSettings') : t('connectSalesforce')}
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        )}
+
+                        {/* Zoho CRM Dialog */}
+                        {currentIntegration.id === "zoho-crm" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">{t('zohoCRMConnection') || "Zoho CRM Connection"}</CardTitle>
+                                    <CardDescription>
+                                        {zohoConnected
+                                            ? `${t('connected')}${zohoConnectedRegion ? ` — .${zohoConnectedRegion}` : ""}`
+                                            : (t('zohoCRMDescription') || "Push leads captured by your chatbot into your Zoho CRM account.")}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {!zohoConnected && (
+                                        <div className="space-y-2">
+                                            <Label>{t('zohoDataCenter') || "Data Center"}</Label>
+                                            <Select value={zohoRegion} onValueChange={(v) => setZohoRegion(v as ZohoRegion)}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {ZOHO_REGIONS.map((r) => (
+                                                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <p className="text-xs text-muted-foreground">
+                                                {t('zohoDataCenterHint') || "Pick the region where your Zoho account lives. Wrong region will fail to authorize."}
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <Button
+                                        onClick={zohoConnected ? handleDisconnectZoho : handleConnectZoho}
+                                        disabled={isConnectingZoho}
+                                        className="w-full"
+                                        variant={zohoConnected ? "outline" : "default"}
+                                    >
+                                        {isConnectingZoho && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {zohoConnected ? (t('disconnect') || "Disconnect") : (t('connectZohoCRM') || "Connect Zoho CRM")}
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -1468,18 +1711,39 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     // Render Grid View
     const renderGridView = () => (
         <div className="flex-1 p-8">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl font-semibold">
-                    {t('allIntegrations')} ({filteredIntegrations.length})
-                </h1>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder={t('search')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 w-64"
-                    />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('integration') || (language === 'tr' ? 'Entegrasyonlar' : 'Integrations')}</h1>
+                    <p className="text-muted-foreground mt-1">
+                        {language === 'tr' 
+                            ? 'Chatbotunuzu farklı platformlara bağlayarak yeteneklerini genişletin.'
+                            : 'Expand your chatbot\'s capabilities by connecting to different platforms.'}
+                    </p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="w-full sm:w-[160px]">
+                            <SelectValue placeholder={t('allCategories') || (language === 'tr' ? 'Tüm Kategoriler' : 'All Categories')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">{t('allCategories') || (language === 'tr' ? 'Tüm Kategoriler' : 'All Categories')}</SelectItem>
+                            <SelectItem value="embed">{language === 'tr' ? 'Web Sitesi' : 'Website'}</SelectItem>
+                            <SelectItem value="messaging">{language === 'tr' ? 'Mesajlaşma' : 'Messaging'}</SelectItem>
+                            <SelectItem value="ecommerce">{language === 'tr' ? 'E-Ticaret' : 'E-commerce'}</SelectItem>
+                            <SelectItem value="crm">{language === 'tr' ? 'CRM' : 'CRM'}</SelectItem>
+                            <SelectItem value="calendar">{language === 'tr' ? 'Takvim' : 'Calendar'}</SelectItem>
+                            <SelectItem value="email">{language === 'tr' ? 'E-Posta' : 'Email'}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder={t('search')}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 w-full"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -1568,6 +1832,17 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 }}
                 currentPlanId={planId}
             />
+
+            {/* Ecommerce Connection Modal */}
+            {ecomConnectingPlatform && PLATFORM_META[ecomConnectingPlatform] && (
+                <EcommerceConnectionForm
+                    open={!!ecomConnectingPlatform}
+                    meta={PLATFORM_META[ecomConnectingPlatform]}
+                    chatbotId={userId}
+                    onClose={() => setEcomConnectingPlatform(null)}
+                    onSuccess={result => handleConnectEcomSuccess(ecomConnectingPlatform, result)}
+                />
+            )}
         </>
     )
 }
