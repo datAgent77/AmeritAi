@@ -392,7 +392,7 @@ export function MessageList({
             {showClassicEntryOnboarding ? (
                 <div className="flex h-full w-full flex-col">
                     <div
-                        className="relative px-6 pb-8 pt-5 shrink-0"
+                        className="sticky top-0 z-10 px-6 pb-8 pt-5 shrink-0 rounded-none md:rounded-t-[20px]"
                         style={{
                             backgroundColor: settings.headerBackgroundColor || settings.brandColor || "#111827",
                             color: settings.headerTextColor || "#FFFFFF"

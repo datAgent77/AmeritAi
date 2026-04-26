@@ -584,6 +584,16 @@ export default function ChatbotContainer() {
         window.parent.postMessage({ type: 'USEREX_CLOSE_WIDGET' }, '*')
     }
 
+    useEffect(() => {
+        const handleGlobalKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                handleCloseWidget()
+            }
+        }
+        window.addEventListener("keydown", handleGlobalKeyDown)
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown)
+    }, [])
+
     const handleTriggerAction = (button: QuickActionButton) => {
         const action = resolveQuickActionRuntimeAction({
             button,
@@ -1207,7 +1217,7 @@ export default function ChatbotContainer() {
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full flex-col bg-white dark:bg-zinc-900 rounded-t-[20px] overflow-hidden">
+                <div className="flex h-full flex-col bg-white dark:bg-zinc-900 rounded-none md:rounded-[20px] overflow-hidden">
                     {!showClassicEntryOnboarding && (
                         <ChatHeader
                             settings={effectiveSettings}

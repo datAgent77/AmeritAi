@@ -3218,25 +3218,7 @@
       if (document.getElementById('userex-mobile-styles')) return;
       const style = document.createElement('style');
       style.id = 'userex-mobile-styles';
-      const alwaysOpenWidth = isAmbientWidgetMode ? '100vw' : 'calc(100vw - 20px)';
-      const alwaysOpenInset = isAmbientWidgetMode ? '0px' : '10px';
-      const alwaysOpenRadius = isAmbientWidgetMode ? '0' : '20px';
-      style.innerHTML = isAlwaysOpenMode
-        ? `
-        @media (max-width: 768px) {
-          #userex-chatbot-container {
-            width: ${alwaysOpenWidth} !important;
-            max-width: ${alwaysOpenWidth} !important;
-            left: ${alwaysOpenInset} !important;
-            right: ${alwaysOpenInset} !important;
-            border-radius: ${alwaysOpenRadius} !important;
-          }
-          #userex-chatbot-launcher {
-             max-width: calc(100vw - 40px) !important;
-          }
-        }
-      `
-        : `
+      style.innerHTML = `
         @media (max-width: 768px) {
           #userex-chatbot-container {
             width: 100% !important;
@@ -3411,7 +3393,7 @@
     launcherContainer.id = 'userex-launcher-wrapper';
     Object.assign(launcherContainer.style, {
       position: 'fixed',
-      zIndex: '9999',
+      zIndex: '2147483647',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -3636,7 +3618,7 @@
       Object.assign(launcherContainer.style, {
         display: 'flex',
         position: 'fixed',
-        zIndex: '10001',
+        zIndex: '2147483647',
         right: '',
         left: '',
         top: '',
@@ -3673,7 +3655,7 @@
       Object.assign(launcherContainer.style, {
         display: 'flex',
         position: 'fixed',
-        zIndex: '9999',
+        zIndex: '2147483647',
         right: '',
         left: '',
         top: '',
@@ -3863,7 +3845,7 @@
       boxShadow: '0 12px 40px rgba(0,0,0,0.16), 0 2px 10px rgba(0,0,0,0.06)',
       borderRadius: '24px',
       overflow: 'hidden',
-      zIndex: '9999',
+      zIndex: '2147483647',
       display: usesLauncher ? 'none' : 'block',
       background: 'transparent',
       backgroundColor: 'transparent',
@@ -4254,6 +4236,33 @@
       hideAmbientFeed();
     };
     document.addEventListener('pointerdown', handleAmbientOutsidePointerDown, true);
+
+    const handleOutsidePointerDown = (event) => {
+      if (isAmbientWidgetMode) return;
+      if (!isOpen || isAlwaysOpenMode || isPersistentSidecar) return;
+
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      if (iframeContainer.contains(target)) return;
+      if (usesLauncher && launcherContainer.contains(target)) return;
+      
+      const engagementBubble = document.getElementById('userex-engagement-bubble');
+      if (engagementBubble && engagementBubble.contains(target)) return;
+
+      toggleWidget(false);
+    };
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && isOpen && !isAlwaysOpenMode && !isPersistentSidecar) {
+        if (isAmbientWidgetMode) {
+          hideAmbientFeed();
+        } else {
+          toggleWidget(false);
+        }
+      }
+    });
 
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
