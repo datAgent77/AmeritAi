@@ -166,12 +166,12 @@ export function PlanUpgradePrompt({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => onOpenChange?.(open)}>
-            <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
-                <DialogHeader className="sr-only">
+            <DialogContent className="sm:max-w-2xl p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="sr-only px-8 pt-8 pb-4 shrink-0 border-b">
                     <DialogTitle>{t('upgradeRequired') || 'Upgrade Required'}</DialogTitle>
                     <DialogDescription>{featureName}</DialogDescription>
                 </DialogHeader>
-                <div className="p-6">
+                <div className="p-8 flex-1 overflow-y-auto">
                     {infoCard}
                 </div>
             </DialogContent>

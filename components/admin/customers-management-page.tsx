@@ -1384,14 +1384,14 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             {/* Add Tenant Dialog */}
             {isEndUsersSection && (
                 <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent className="max-w-2xl p-10">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{t('addNewTenant') || "Yeni Son Kullanıcı Ekle"}</DialogTitle>
                         <DialogDescription>
                             Sistem için yeni bir kiracı hesabı oluşturun. Tüm detaylar otomatik olarak atanacaktır.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-6 py-4">
+                    <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="col-span-2 space-y-4">
                                 <h3 className="text-sm font-semibold border-b pb-1 uppercase tracking-wider text-gray-500">{t('companyInfo')}</h3>
@@ -1487,7 +1487,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="pt-4 border-t mt-4">
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setIsAddTenantOpen(false)}>{t('cancel')}</Button>
                         <Button onClick={handleCreateTenant} disabled={isCreating} className="bg-zinc-900 hover:bg-zinc-800 text-white">
                             {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1500,12 +1500,12 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             {isAgenciesSection && (
                 <Dialog open={isAddAgencyOpen} onOpenChange={setIsAddAgencyOpen}>
-                <DialogContent className="max-w-xl p-8">
-                    <DialogHeader>
+                <DialogContent className="max-w-xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{t('createAgency') || "Create Partner"}</DialogTitle>
                         <DialogDescription>{t('createAgencyDesc') || "Create a new partner admin account."}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-2">
+                    <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="agencyName">{t('agencyName') || "Partner Name"}</Label>
                             <Input id="agencyName" value={newAgencyName} onChange={(e) => setNewAgencyName(e.target.value)} />
@@ -1546,7 +1546,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                             </select>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setIsAddAgencyOpen(false)}>{t('cancel') || "Cancel"}</Button>
                         <Button onClick={handleCreateAgency} disabled={isCreatingAgency}>
                             {isCreatingAgency && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1568,14 +1568,14 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         }
                     }}
                 >
-                    <DialogContent className="max-w-xl p-8">
-                        <DialogHeader>
+                    <DialogContent className="max-w-xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                             <DialogTitle>{t('convertUserToPartner') || "Kullanıcıyı Partnera Dönüştür"}</DialogTitle>
                             <DialogDescription>
                                 Seçilen son kullanıcı partner hesabına çevrilecek. Kullanıcı müşteri listesinden çıkar ve Partnerler listesinde görünür.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-2">
+                        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
                             <div className="space-y-2">
                                 <Label>{t('email') || "E-posta"}</Label>
                                 <Input value={partnerConversionUser?.email || ""} disabled className="bg-muted/50" />
@@ -1608,7 +1608,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 </div>
                             ) : null}
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                             <Button
                                 variant="outline"
                                 onClick={() => {

@@ -131,15 +131,15 @@ export function ProductDialog({ open, onOpenChange, onClose, product, userId }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-[600px] p-0 flex flex-col max-h-[90vh]">
+                <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                     <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
                     <DialogDescription>
                         {product ? "Update the details of your product." : "Add a new product to your catalog."}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid gap-4 py-4">
+                <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+                    <div className="grid gap-4 py-6 px-8 overflow-y-auto">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Product Name *</Label>
                             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -185,7 +185,7 @@ export function ProductDialog({ open, onOpenChange, onClose, product, userId }: 
                             <Label htmlFor="inStock">In Stock</Label>
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -513,22 +513,23 @@ export function TenantManagement() {
             </Card>
 
             <Dialog open={isAddTenantOpen} onOpenChange={setIsAddTenantOpen}>
-                <DialogContent className="sm:max-w-[550px]">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{t('addNewTenant')}</DialogTitle>
                         <DialogDescription>
                             {t('addNewTenantDescription')}
                         </DialogDescription>
                     </DialogHeader>
 
-                    {createError && (
-                        <div className="bg-red-500/15 border border-red-500/50 rounded-md p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2 mt-4">
-                            <div className="w-1 h-1 rounded-full bg-red-500" />
-                            {createError}
-                        </div>
-                    )}
+                    <div className="flex-1 overflow-y-auto px-8 py-6">
+                        {createError && (
+                            <div className="bg-red-500/15 border border-red-500/50 rounded-md p-3 text-sm text-red-600 dark:text-red-400 flex items-center gap-2 mb-6">
+                                <div className="w-1 h-1 rounded-full bg-red-500" />
+                                {createError}
+                            </div>
+                        )}
 
-                    <div className="grid gap-6 py-6 px-1">
+                        <div className="grid gap-6">
                         {/* COMPANY INFORMATION */}
                         <div className="space-y-4">
                             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -626,7 +627,8 @@ export function TenantManagement() {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="pt-4 border-t">
+                    </div>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setIsAddTenantOpen(false)}>
                             {t('cancel')}
                         </Button>

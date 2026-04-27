@@ -132,10 +132,10 @@ export function UpgradeModal({
                 if (!open) handleDismiss()
             }}
         >
-            <DialogContent className="sm:max-w-[420px] px-6 py-0 overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-lg">
+            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-lg flex flex-col">
 
                 {/* HEADER */}
-                <div className="bg-white dark:bg-zinc-950 p-6 pt-8 text-center border-b border-zinc-100 dark:border-zinc-800/50">
+                <div className="bg-white dark:bg-zinc-950 px-8 py-6 text-center border-b border-zinc-100 dark:border-zinc-800/50 shrink-0">
                     <div className="mx-auto mb-4 w-12 h-12 rounded-xl bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 flex items-center justify-center">
                         {Icon ? <Icon className="w-6 h-6" /> : <Sparkles className="w-6 h-6" />}
                     </div>
@@ -151,7 +151,7 @@ export function UpgradeModal({
                 </div>
 
                 {/* BODY */}
-                <div className="p-6 space-y-6">
+                <div className="px-8 py-6 space-y-6 flex-1 overflow-y-auto">
                     <DialogDescription className="text-center text-zinc-500 dark:text-zinc-400 text-base leading-relaxed max-w-[90%] mx-auto">
                         {desc} {language === "tr" ? "Bu özellik işletmenizi büyütmek için tasarlanmış gelişmiş araçlar sunar. Şimdi yükseltin ve sınırları kaldırın." : "This feature offers advanced tools designed to grow your business. Upgrade now and remove limits."}
                     </DialogDescription>

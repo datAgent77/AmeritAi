@@ -107,7 +107,7 @@ export function PricingModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[1400px] sm:max-w-[1400px] max-h-[90vh] py-0 overflow-hidden">
+            <DialogContent className="max-w-[1400px] sm:max-w-[1400px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
                 {showSuccess ? (
                     <div className="flex flex-col items-center justify-center p-12 text-center h-full min-h-[400px]">
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">

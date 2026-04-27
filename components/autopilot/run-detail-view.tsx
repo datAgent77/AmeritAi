@@ -19,8 +19,8 @@ export function RunDetailView({ run, isOpen, onClose }: RunDetailViewProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                     <div className="flex items-center gap-4">
                         <DialogTitle className="text-2xl">Test Details: {run.testSuiteName}</DialogTitle>
                         <Badge variant={run.status === 'passed' ? 'default' : 'destructive'} className={run.status === 'passed' ? 'bg-green-600' : ''}>
@@ -32,7 +32,8 @@ export function RunDetailView({ run, isOpen, onClose }: RunDetailViewProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="steps" className="mt-6">
+                <div className="flex-1 overflow-y-auto px-8 py-6">
+                    <Tabs defaultValue="steps" className="mt-2">
                     <TabsList>
                         <TabsTrigger value="steps">Execution Steps</TabsTrigger>
                         <TabsTrigger value="analysis">
@@ -124,6 +125,7 @@ export function RunDetailView({ run, isOpen, onClose }: RunDetailViewProps) {
                         )}
                     </TabsContent>
                 </Tabs>
+                </div>
             </DialogContent>
         </Dialog>
     );

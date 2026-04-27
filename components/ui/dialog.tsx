@@ -57,6 +57,7 @@ const DialogContent = React.forwardRef<
       data-slot="dialog-content"
       className={cn(
         "bg-background fixed top-[50%] left-[50%] z-50 flex flex-col w-full max-w-lg translate-x-[-50%] translate-y-[-50%] max-h-[90dvh] border shadow-lg duration-200 sm:rounded-xl overflow-hidden",
+        "p-6",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -84,7 +85,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left px-8 pt-8 pb-4 shrink-0 border-b", className)}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
   )
@@ -95,7 +96,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end px-8 py-6 shrink-0 border-t bg-muted/20 rounded-b-xl",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}

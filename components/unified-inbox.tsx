@@ -1033,12 +1033,12 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         </div>
         {selectedSession && showOmniFeatures ? (
             <Dialog open={isSessionDetailsOpen} onOpenChange={setIsSessionDetailsOpen}>
-                <DialogContent className="max-w-3xl overflow-hidden p-0 sm:rounded-xl">
-                    <DialogHeader className="border-b border-border/70 bg-white/90 px-5 py-4 text-left">
+                <DialogContent className="max-w-3xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="border-b border-border/70 bg-white/90 px-8 pt-8 pb-4 shrink-0 text-left">
                         <DialogTitle>{t("omni.inbox.section.sessionDetails")}</DialogTitle>
                         <DialogDescription>{t("omni.inbox.sessionDetailsDescription")}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 px-8 py-6 flex-1 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
                         <div className="rounded-lg border border-border/60 bg-muted/20 p-4 text-sm">
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">{t("omni.inbox.meta.contact")}</p>
                             <p className="mt-1 break-words font-medium text-foreground">{selectedSession.contactKey || selectedSession.visitorEmail || t("omni.inbox.unknown")}</p>

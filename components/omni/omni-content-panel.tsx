@@ -482,8 +482,8 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
             </Card>
 
             <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-                <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-                    <DialogHeader>
+                <DialogContent className="max-h-[90vh] max-w-4xl p-0 overflow-hidden flex flex-col">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>
                             {editingId
                                 ? language === "tr" ? `${copy.singular} düzenle` : `Edit ${copy.singular}`
@@ -496,7 +496,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="grid gap-6">
+                    <div className="grid gap-6 flex-1 overflow-y-auto px-8 py-6">
                         {kind === "blog" ? (
                             <>
                                 <div className="grid gap-4 md:grid-cols-2">
@@ -647,7 +647,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                         ) : null}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setEditorOpen(false)}>
                             {language === "tr" ? "Kapat" : "Close"}
                         </Button>
@@ -660,13 +660,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
             </Dialog>
 
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-                <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-                    <DialogHeader>
+                <DialogContent className="max-h-[90vh] max-w-3xl p-0 overflow-hidden flex flex-col">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{language === "tr" ? "İçerik önizleme" : "Content preview"}</DialogTitle>
                         <DialogDescription>
                             {language === "tr" ? "Seçili dilde nasıl görüneceğini burada kontrol edin." : "Review how the selected locale will appear."}
                         </DialogDescription>
                     </DialogHeader>
+                    <div className="flex-1 overflow-y-auto px-8 py-6">
                     {previewItem ? (
                         <div className="space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
@@ -708,7 +709,8 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                             </div>
                         </div>
                     ) : null}
-                    <DialogFooter>
+                    </div>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setPreviewOpen(false)}>
                             {language === "tr" ? "Kapat" : "Close"}
                         </Button>

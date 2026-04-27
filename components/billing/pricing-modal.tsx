@@ -60,8 +60,8 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="text-center mb-8">
+            <DialogContent className="sm:max-w-5xl w-full p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="text-center px-8 pt-8 pb-4 shrink-0 border-b">
                     <DialogTitle className="text-3xl font-bold">
                         {language === "tr" ? "Basit ve Şeffaf Fiyatlandırma" : "Simple, Transparent Pricing"}
                     </DialogTitle>
@@ -70,7 +70,8 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="flex-1 overflow-y-auto px-8 py-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {plans.map((plan) => {
                         const Icon = PLAN_ICONS[plan.planId] || Sparkles
                         const isPopular = plan.copy.badge === "recommended" || plan.copy.badge === "Önerilen" || plan.copy.badge === "Recommended"
@@ -155,9 +156,10 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                             </div>
                         )
                     })}
+                    </div>
                 </div>
 
-                <div className="py-4 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="px-8 py-6 shrink-0 border-t bg-muted/20">
                     <p className="text-xs text-center text-muted-foreground">
                         {t("fairUseUnlimited")} <span className="opacity-70">|</span> {t("fairUseWarning")}
                     </p>

@@ -66,43 +66,42 @@ export function ModuleDetailsDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2">
-                                <DialogTitle className="text-2xl font-bold">{title}</DialogTitle>
-
-                            </div>
-                            <DialogDescription className="text-base leading-relaxed text-muted-foreground">
-                                {description}
-                            </DialogDescription>
-                            {/* Plan Inclusion Display */}
-                            {(() => {
-                                // Dynamic Plan Check
-                                const allPlans = getAllPlans().filter((p: any) => p.availability === 'public').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-                                const minPlan = allPlans.find((plan: any) => 
-                                    plan.modules.included.includes(selectedModuleId) || plan.modules.included.includes('all')
-                                );
-
-                                if (minPlan) {
-                                    return (
-                                        <div className="mt-2 flex flex-col gap-1">
-                                            <div className="text-sm font-medium text-muted-foreground">
-                                                {language === 'tr' ? 'Dahil olduğu paket:' : 'Included in:'}
-                                            </div>
-                                            <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
-                                                {minPlan.displayName}
-                                                {/* Optional: Show plan price info if needed, but just plan name is cleaner for now */}
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })()}
+            <DialogContent className="sm:max-w-2xl max-h-[85vh] p-0 flex flex-col overflow-hidden">
+                <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <DialogTitle className="text-2xl font-bold">{title}</DialogTitle>
                         </div>
+                        <DialogDescription className="text-base leading-relaxed text-muted-foreground">
+                            {description}
+                        </DialogDescription>
+                        {/* Plan Inclusion Display */}
+                        {(() => {
+                            // Dynamic Plan Check
+                            const allPlans = getAllPlans().filter((p: any) => p.availability === 'public').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+                            const minPlan = allPlans.find((plan: any) => 
+                                plan.modules.included.includes(selectedModuleId) || plan.modules.included.includes('all')
+                            );
+
+                            if (minPlan) {
+                                return (
+                                    <div className="mt-2 flex flex-col gap-1">
+                                        <div className="text-sm font-medium text-muted-foreground">
+                                            {language === 'tr' ? 'Dahil olduğu paket:' : 'Included in:'}
+                                        </div>
+                                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">
+                                            {minPlan.displayName}
+                                            {/* Optional: Show plan price info if needed, but just plan name is cleaner for now */}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
+                    </div>
                 </DialogHeader>
 
-                <div className="py-2 space-y-6">
+                <div className="flex-1 overflow-y-auto p-8 space-y-6">
                     {/* Features Section */}
                     {registryModule?.features && (
                         <div className="space-y-3">
@@ -159,12 +158,10 @@ export function ModuleDetailsDialog({
                     )}
                 </div>
 
-                <DialogFooter className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-6 border-t mt-4">
-                    <DialogClose asChild>
-                        <Button variant="outline" className="h-10">
-                            {language === 'tr' ? 'Kapat' : 'Close'}
-                        </Button>
-                    </DialogClose>
+                <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
+                    <Button variant="outline" className="h-10" onClick={() => onOpenChange(false)}>
+                        {language === 'tr' ? 'Kapat' : 'Close'}
+                    </Button>
                     <Button
                         className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
                         onClick={() => {

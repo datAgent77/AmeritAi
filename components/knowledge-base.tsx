@@ -123,17 +123,19 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
                                 {t('addNewData') || "Yeni Eğitim Ekle"}
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
+                        <DialogContent className="max-w-4xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                            <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                                 <DialogTitle>{t('addNewData') || "Yeni Eğitim Ekle"}</DialogTitle>
                             </DialogHeader>
-                            <KnowledgeForm 
-                                targetUserId={userId} 
-                                onSuccess={() => {
-                                    fetchDocs()
-                                    setIsFormModalOpen(false)
-                                }} 
-                            />
+                            <div className="flex-1 overflow-y-auto px-8 py-6">
+                                <KnowledgeForm 
+                                    targetUserId={userId} 
+                                    onSuccess={() => {
+                                        fetchDocs()
+                                        setIsFormModalOpen(false)
+                                    }} 
+                                />
+                            </div>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -196,17 +198,16 @@ export function KnowledgeBase({ targetUserId, embedded = false }: KnowledgeBaseP
 
             {/* View Modal */}
             {selectedDoc && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col shadow-xl">
-                        <div className="p-4 border-b flex justify-between items-center">
-                            <h3 className="font-bold text-lg">{selectedDoc.title}</h3>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedDoc(null)}><Eye className="w-4 h-4 mr-2" /> Close</Button>
-                        </div>
-                        <div className="p-4 overflow-y-auto whitespace-pre-wrap font-mono text-sm">
+                <Dialog open={!!selectedDoc} onOpenChange={() => setSelectedDoc(null)}>
+                    <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[80vh]">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b flex flex-row items-center justify-between">
+                            <DialogTitle className="font-bold text-lg">{selectedDoc.title}</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1 overflow-y-auto px-8 py-6 whitespace-pre-wrap font-mono text-sm bg-muted/30">
                             {selectedDoc.fullContent || selectedDoc.content}
                         </div>
-                    </div>
-                </div>
+                    </DialogContent>
+                </Dialog>
             )}
         </div>
     )

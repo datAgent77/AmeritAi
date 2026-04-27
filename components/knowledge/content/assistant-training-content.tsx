@@ -582,11 +582,11 @@ export function AssistantTrainingContent({ userId }: AssistantTrainingContentPro
             </div>
 
             <Dialog open={isFormOpen} onOpenChange={(open) => open ? setIsFormOpen(true) : resetForm()}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{copy.addTitle}</DialogTitle>
                     </DialogHeader>
-                    <div id="assistant-training-form" className="space-y-4 px-8 py-4 overflow-y-auto flex-1">
+                    <div id="assistant-training-form" className="space-y-4 px-8 py-6 overflow-y-auto flex-1">
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2 sm:col-span-2">
                                 <Label>{copy.type}</Label>
@@ -739,7 +739,7 @@ export function AssistantTrainingContent({ userId }: AssistantTrainingContentPro
                         </div>
                     </div>
                     
-                    <DialogFooter>
+                    <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         {editingId ? (
                             <Button variant="outline" className="w-full sm:w-auto" onClick={resetForm}>
                                 <RotateCcw className="mr-2 h-4 w-4" />
@@ -747,7 +747,7 @@ export function AssistantTrainingContent({ userId }: AssistantTrainingContentPro
                             </Button>
                         ) : null}
                         <Button className="w-full sm:w-auto" onClick={handleSave} disabled={isSaving || !canSave}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {copy.save}
                         </Button>
                     </DialogFooter>
@@ -755,11 +755,11 @@ export function AssistantTrainingContent({ userId }: AssistantTrainingContentPro
             </Dialog>
 
             <Dialog open={isEvaluateModalOpen} onOpenChange={setIsEvaluateModalOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>{copy.test}</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 px-8 py-4 overflow-y-auto flex-1">
+                    <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
                         <div className="flex gap-2">
                             <Input
                                 value={evaluationQuestion}

@@ -312,14 +312,14 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
         </div>
 
         <Dialog open={!!conversationLead} onOpenChange={(open) => !open && setConversationLead(null)}>
-            <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="max-w-lg max-h-[80vh] p-0 overflow-hidden flex flex-col">
+                <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                     <DialogTitle className="flex items-center gap-2">
                         <MessageSquare className="h-4 w-4" />
                         {conversationLead?.name} — Sohbet Geçmişi
                     </DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                <div className="flex-1 overflow-y-auto space-y-3 px-8 py-6 pr-1">
                     {isLoadingConversation ? (
                         <div className="flex justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

@@ -80,8 +80,8 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
-                    <div className="px-8 py-6 space-y-4 overflow-y-auto">
+                <form onSubmit={handleSubmit} className="flex flex-col min-h-0 space-y-4 pt-4">
+                    <div className="space-y-4 overflow-y-auto">
                         {meta.fields.map(field => (
                             <div key={field.key} className="space-y-1.5">
                                 <Label htmlFor={field.key} className="text-sm font-medium">
@@ -111,7 +111,7 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
                         )}
                     </div>
 
-                    <DialogFooter>
+                    <DialogFooter className="pt-2">
                         <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={loading}>
                             İptal
                         </Button>

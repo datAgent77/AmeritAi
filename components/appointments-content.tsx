@@ -809,21 +809,23 @@ export function AppointmentsContent({ targetUserId }: AppointmentsContentProps) 
 
             {effectiveUserId && (
                 <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
+                    <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                        <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                             <DialogTitle className="flex items-center gap-2">
                                 <CalendarPlus className="h-5 w-5" />
                                 {language === 'tr' ? 'Manuel Randevu Ekle' : 'Add Appointment'}
                             </DialogTitle>
                         </DialogHeader>
-                        <ManualAppointmentForm
-                            chatbotId={effectiveUserId}
-                            getAuthHeaders={getAuthHeaders}
-                            onCreated={async () => {
-                                setShowAddModal(false)
-                                await fetchData()
-                            }}
-                        />
+                        <div className="flex-1 overflow-y-auto px-8 py-6">
+                            <ManualAppointmentForm
+                                chatbotId={effectiveUserId}
+                                getAuthHeaders={getAuthHeaders}
+                                onCreated={async () => {
+                                    setShowAddModal(false)
+                                    await fetchData()
+                                }}
+                            />
+                        </div>
                     </DialogContent>
                 </Dialog>
             )}

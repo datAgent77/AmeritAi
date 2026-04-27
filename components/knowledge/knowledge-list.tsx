@@ -410,14 +410,14 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
 
             {/* Preview Modal */}
             <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl max-h-[80vh] p-0 overflow-hidden flex flex-col">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <div className="flex items-center gap-3">
                             {getTypeIcon(previewDoc?.type)}
                             <DialogTitle className="pr-8">{previewDoc?.title || t('preview')}</DialogTitle>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto px-8 py-6">
                         {previewDoc?.source && (
                             <p className="text-xs text-muted-foreground mb-3">
                                 {t('source')}: <a href={previewDoc.source} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{previewDoc.source}</a>
@@ -432,14 +432,14 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
 
             {/* Edit Modal */}
             <Dialog open={!!editDoc} onOpenChange={() => setEditDoc(null)}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                    <DialogHeader>
+                <DialogContent className="max-w-2xl max-h-[80vh] p-0 overflow-hidden flex flex-col">
+                    <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <div className="flex items-center gap-3">
                             <Pencil className="h-5 w-5 text-amber-500" />
                             <DialogTitle>{t('edit') || "Düzenle"}</DialogTitle>
                         </div>
                     </DialogHeader>
-                    <div className="flex-1 overflow-y-auto space-y-4">
+                    <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="edit-title">{t('title') || "Başlık"}</Label>
                             <Input
@@ -467,7 +467,7 @@ export function KnowledgeList({ userId, filterType, refreshTrigger }: KnowledgeL
                             </p>
                         )}
                     </div>
-                    <div className="flex justify-end gap-2 pt-4 border-t">
+                    <div className="px-8 py-6 shrink-0 border-t bg-muted/20 flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setEditDoc(null)}>
                             {t('cancel') || "İptal"}
                         </Button>

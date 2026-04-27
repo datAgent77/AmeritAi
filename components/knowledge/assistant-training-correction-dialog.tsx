@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2, Save } from "lucide-react"
@@ -96,11 +96,11 @@ export function AssistantTrainingCorrectionDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
+            <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                     <DialogTitle>{isTr ? "Cevabı Eğit" : "Train This Answer"}</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
                     <div className="space-y-2">
                         <Label>{isTr ? "Kullanıcı Sorusu" : "User Question"}</Label>
                         <Textarea
@@ -126,16 +126,16 @@ export function AssistantTrainingCorrectionDialog({
                             autoFocus
                         />
                     </div>
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>
-                            {isTr ? "İptal" : "Cancel"}
-                        </Button>
-                        <Button onClick={handleSave} disabled={isSaving || !answer.trim() || !draftQuestion.trim()}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {isTr ? "Kaydet" : "Save"}
-                        </Button>
-                    </div>
                 </div>
+                <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        {isTr ? "İptal" : "Cancel"}
+                    </Button>
+                    <Button onClick={handleSave} disabled={isSaving || !answer.trim() || !draftQuestion.trim()}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {isTr ? "Kaydet" : "Save"}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     )
