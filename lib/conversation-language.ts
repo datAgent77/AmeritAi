@@ -3,10 +3,10 @@ export type CopyLanguage = "tr" | "en" | "de" | "fr" | "es";
 
 const LANGUAGE_KEYWORDS: Array<[ConversationLanguage, RegExp[]]> = [
     ["tr", [
-        /\b(merhaba|selam|teşekkür|tesekkur|fiyat|ücret|urun|ürün|yardım|yardim|randevu|adres|telefon|saat|hangi|nasıl|nasil|ne kadar|var mı|yardımcı)\b/giu,
+        /\b(merhaba|selam|teşekkür|tesekkur|fiyat|ücret|urun|ürün|yardım|yardim|randevu|adres|telefon|saat|hangi|nasıl|nasil|ne kadar|var mı|yardımcı|ve|bir|bu|da|için|çok|daha|gibi|en|kadar|sonra|son|olarak|ben|bana|beni|benim|sen|sana|seni|senin|biz|bize|bizi|bizim|siz|size|sizi|sizin|onlar|onlara|onları|onların|mı|mi|mu|mü|de)\b/giu,
     ]],
     ["en", [
-        /\b(hello|hi|thanks|thank you|price|how much|what|how|where|can you|do you|please|appointment|available|product|support|help|i need|i want|buy|order|shipping|return|refund|book|schedule)\b/giu,
+        /\b(hello|hi|thanks|thank you|price|how much|what|how|where|can you|do you|please|appointment|available|product|support|help|i need|i want|buy|order|shipping|return|refund|book|schedule|the|be|to|of|and|a|in|that|have|i|it|for|not|on|with|he|as|you|do|at|this|but|his|by|from|they|we|say|her|she|or|an|will|my|one|all|would|there|their|so|up|out|if|about|who|get|which|go|me|when|make|can|like|time|no|just|him|know|take|people|into|year|your|good|some|could|them|see|other|than|then|now|look|only|come|its|over|think|also|back|after|use|two|our|work|first|well|way|even|new|want|because|any|these|give|day|most|us|ask|concise|questions|understand|need|guide|best|next|step)\b/giu,
     ]],
     ["de", [
         /\b(hallo|danke|preis|wie viel|produkt|termin|verfugbar|verfügbar|hilfe|bitte|ich mochte|ich möchte)\b/giu,

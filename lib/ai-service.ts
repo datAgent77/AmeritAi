@@ -713,17 +713,19 @@ ${offerDiscount ? `Satın alma gerçekleşmezse %${discountPct} indirim teklif e
 
         // Language Mirroring: AI responds in whatever language the user writes
         systemPrompt += `\n# LANGUAGE - CRITICAL
-Detect the language and script the user is writing in. ALWAYS respond in that SAME language.
+Detect the language and script the user is writing in. YOU MUST ALWAYS RESPOND IN THAT EXACT SAME LANGUAGE.
 RULES:
-1. If user writes in German → respond in German.
-2. If user writes in Russian (Cyrillic script like "Привет") → respond in Russian.
-3. If user writes in Turkish → respond in Turkish.
-4. If user writes in French → respond in French.
-5. If user writes in Spanish → respond in Spanish.
-6. If user writes in Arabic → respond in Arabic.
-7. If user writes in any other language, mirror that language.
-8. FALLBACK: If you cannot determine the language, respond in English.
-Mirror the user's language exactly. Do NOT default to Turkish or another language unless the user wrote in that language.`;
+1. If user writes in English → respond in English.
+2. If user writes in German → respond in German.
+3. If user writes in Russian (Cyrillic script) → respond in Russian.
+4. If user writes in Turkish → respond in Turkish.
+5. If user writes in French → respond in French.
+6. If user writes in Spanish → respond in Spanish.
+7. If user writes in Arabic → respond in Arabic.
+8. If user writes in any other language, mirror that language.
+9. FALLBACK: If you cannot determine the language, respond in English.
+
+IMPORTANT: Although some of your instructions, custom prompts, or context are written in Turkish, you must NEVER reply in Turkish unless the user explicitly wrote in Turkish. Translate any required questions, templates, or instructions into the user's exact language before replying.`;
 
         // INTELLIGENT RESPONSE STRATEGY (Global Enhancement)
         systemPrompt += `\n\n# INTELLIGENT RESPONSE STRATEGY
