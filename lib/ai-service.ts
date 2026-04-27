@@ -1157,6 +1157,14 @@ In voice mode you must continue the flow verbally and ask only the next missing 
 
         console.log(`AI Service: Using ${recentMessages.length} messages (truncated from ${messages.length}) to save tokens.`);
 
+        // FINAL SAFETY & LANGUAGE OVERRIDE
+        systemPrompt += `\n\n# FINAL LANGUAGE ENFORCEMENT
+CRITICAL: You MUST evaluate the language of the USER'S LAST MESSAGE.
+If the user's last message is in English, your ENTIRE response MUST be in English.
+If the user's last message is in German, your ENTIRE response MUST be in German.
+(Apply this to any language).
+Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' above contains Turkish text or explicit Turkish templates, YOU MUST TRANSLATE them into the user's language. NEVER reply in Turkish unless the user's message was in Turkish.`;
+
         const fullMessages = [
             { role: "system", content: systemPrompt },
             ...recentMessages.map((m) => ({ role: m.role, content: m.content })),
