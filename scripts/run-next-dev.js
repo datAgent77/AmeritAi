@@ -5,7 +5,9 @@ const env = {
   ...process.env,
 };
 
-const child = spawn(process.execPath, [nextBin, "dev"], {
+const args = process.argv.slice(2);
+
+const child = spawn(process.execPath, [nextBin, "dev", ...args], {
   stdio: "inherit",
   env,
 });
