@@ -11,6 +11,7 @@ import { event as trackEvent } from "@/lib/gtag"
 import { getAmbientDockStateKey, resolveAmbientDockStyle } from "@/lib/ambient-dock-style"
 import { resolveAmbientInputSizeConfig } from "@/lib/ambient-layout"
 import { ConversationModeSwitch, type ConversationMode } from "./ConversationModeSwitch"
+import { resolveLocalizedText } from "../utils/localized-copy"
 
 type AmbientIconComponent = React.ComponentType<{ className?: string; color?: string }>
 const ambientIconRegistry = LucideIcons as unknown as Record<string, AmbientIconComponent>
@@ -109,8 +110,12 @@ export function ChatInput({
     const isAmbientMode = mode === "ambient"
     const isSidecarMode = mode === "sidecar"
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
-    const ambientPlaceholder = settings.ambientPlaceholderText?.trim()
-        || (language === "tr" ? "AI Asistanına Sor" : "Ask the AI assistant")
+    const ambientPlaceholder = resolveLocalizedText(
+        settings.ambientPlaceholderText,
+        settings.ambientPlaceholderTextLocalized,
+        language,
+        language === "tr" ? "AI Asistanına Sor" : "Ask the AI assistant"
+    )
 
     const sizeConfig = resolveAmbientInputSizeConfig(settings.ambientInputSize)
 

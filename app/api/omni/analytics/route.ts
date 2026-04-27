@@ -142,7 +142,7 @@ export async function GET(req: Request) {
     }
 
     const now = Date.now()
-    const rangeStart = now - days * DAY_MS
+    const rangeStart = startOfDay(now - days * DAY_MS)
     const origin = getRequestOrigin(req)
     const publicOrigin = isPublicOrigin(origin)
     const config = await getOmniChannelConfig(authz.adminDb, chatbotId)

@@ -412,7 +412,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`/console/modules/kvkk?userId=${targetUserId}`)
                     break
                 case 'humanHandoff':
-                    router.push(`/console/modules/human-handoff?userId=${targetUserId}`)
+                    router.push(`/admin/tenant/${targetUserId}/modules/human-handoff`)
                     break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet

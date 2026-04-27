@@ -10,12 +10,12 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
 import { ProductCarousel } from "@/components/chatbot/product-carousel"
-import { INDUSTRY_CONFIG, type IndustryType } from "@/lib/industry-config"
 import Image from "next/image"
 import { RefObject, WheelEvent } from "react"
 import { InlineLeadForm } from "./InlineLeadForm"
 import { InlineBookingForm } from "./InlineBookingForm"
 import { ThinkingIndicatorBubble } from "@/components/chatbot/thinking-indicator-bubble"
+import { resolveLocalizedSuggestions, resolveLocalizedText } from "../utils/localized-copy"
 
 interface MessageListProps {
     messages: any[]
@@ -135,40 +135,6 @@ function isGuidedUiInteractive(guidedUi: GuidedSkillMessageUi | undefined, guide
         && guidedSkillState.skillId === guidedUi.skillId
         && guidedSkillState.stepId === guidedUi.stepId
     )
-}
-
-const DEFAULT_SUGGESTED_QUESTIONS = {
-    en: ["What are your pricing plans?", "How do I get started?", "Contact support"],
-    tr: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
-}
-
-function localizeSuggestedQuestion(question: string, settings: ChatbotSettings, language: string) {
-    const locale = language === "tr" ? "tr" : "en"
-    const rawQuestion = question.trim()
-    const industryConfig = INDUSTRY_CONFIG[settings.industry as IndustryType]
-    const industryQuestions = industryConfig?.suggestedQuestions as Record<"en" | "tr", readonly string[]> | undefined
-
-    if (industryQuestions) {
-        const sourceLocale = (["en", "tr"] as const).find((candidateLocale) =>
-            industryQuestions[candidateLocale]?.includes(rawQuestion)
-        )
-        const questionIndex = sourceLocale ? industryQuestions[sourceLocale].indexOf(rawQuestion) : -1
-
-        if (questionIndex >= 0 && industryQuestions[locale]?.[questionIndex]) {
-            return industryQuestions[locale][questionIndex]
-        }
-    }
-
-    const defaultSourceLocale = (["en", "tr"] as const).find((candidateLocale) =>
-        DEFAULT_SUGGESTED_QUESTIONS[candidateLocale].includes(rawQuestion)
-    )
-    const defaultQuestionIndex = defaultSourceLocale ? DEFAULT_SUGGESTED_QUESTIONS[defaultSourceLocale].indexOf(rawQuestion) : -1
-
-    if (defaultQuestionIndex >= 0 && DEFAULT_SUGGESTED_QUESTIONS[locale][defaultQuestionIndex]) {
-        return DEFAULT_SUGGESTED_QUESTIONS[locale][defaultQuestionIndex]
-    }
-
-    return rawQuestion
 }
 
 function GuidedShortcutButtons({
@@ -351,8 +317,22 @@ export function MessageList({
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
     const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
-    const suggestedQuestions = settings.suggestedQuestions
-        .map((question) => localizeSuggestedQuestion(question, settings, language))
+    const localizedWelcomeTitle = resolveLocalizedText(
+        settings.welcomeTitle,
+        settings.welcomeTitleLocalized,
+        language,
+        `${t("welcomeTo")} ${settings.companyName}`
+    )
+    const localizedWelcomeMessage = resolveLocalizedText(
+        settings.welcomeMessage,
+        settings.welcomeMessageLocalized,
+        language
+    )
+    const suggestedQuestions = resolveLocalizedSuggestions(
+        settings.suggestedQuestions,
+        settings.suggestedQuestionsLocalized,
+        language
+    )
         .filter((question) => question.trim() !== "")
     const guidedShortcuts = settings.guidedSkills || []
     const guidedCopy = getGuidedCopy(language)
@@ -431,10 +411,10 @@ export function MessageList({
                         </div>
                         <div className="mt-7 space-y-2">
                             <h2 className="text-4xl font-bold leading-tight tracking-tight">
-                                {settings.welcomeTitle || `${t("welcomeTo")} ${settings.companyName}`}
+                                {localizedWelcomeTitle}
                             </h2>
                             <p className="text-base leading-relaxed opacity-90">
-                                {settings.welcomeMessage}
+                                {localizedWelcomeMessage}
                             </p>
                         </div>
                     </div>
@@ -494,9 +474,9 @@ export function MessageList({
                             <Sparkles className="w-8 h-8" />
                         </div>
                         <div className="space-y-2 max-w-xs">
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-zinc-100">{settings.welcomeTitle || `${t('welcomeTo')} ${settings.companyName}`}</h2>
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-zinc-100">{localizedWelcomeTitle}</h2>
                             <p className="text-sm text-gray-500 dark:text-zinc-400 leading-relaxed">
-                                {settings.welcomeMessage}
+                                {localizedWelcomeMessage}
                             </p>
                         </div>
                         <div className="w-full max-w-xs space-y-4">

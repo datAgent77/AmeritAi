@@ -176,7 +176,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         href: overviewHref,
         active: isOverviewActive
     }
-    const isAgentsActive = isActive("/console/modules/human-handoff")
+    const isAgentsActive = isActive("/console/agents")
     const isSkillsActive = isActive("/console/modules") && !isAgentsActive
 
     const tenantGroups = [
@@ -199,7 +199,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 ...((isHumanHandoffEnabled || isAgentsActive) ? [{
                     title: "Agents",
                     icon: Users,
-                    href: "/console/modules/human-handoff",
+                    href: "/console/agents",
                     active: isAgentsActive
                 }] : []),
 
@@ -266,7 +266,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     const hiddenForAgent = new Set([
         "/console/knowledge",
         "/console/modules",
-        "/console/modules/human-handoff",
+        "/console/agents",
         "/console/chatbot/widget",
         "/console/chatbot/integration",
     ])

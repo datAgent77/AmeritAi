@@ -23,8 +23,153 @@ type QuickActionLabelTranslation = {
     en: string;
 };
 
+type LocalizedTextMap = {
+    tr: string;
+    en: string;
+};
+
 function normalizeLocalizedLabelValue(value: unknown) {
     return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeLocalizedTextMap(value: unknown) {
+    const map = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+    return {
+        tr: normalizeLocalizedLabelValue(map.tr),
+        en: normalizeLocalizedLabelValue(map.en),
+    };
+}
+
+async function translateTextEntries(
+    items: Array<{ key: string; text: string }>
+): Promise<Map<string, LocalizedTextMap>> {
+    if (!quickActionTranslator || items.length === 0) {
+        return new Map();
+    }
+
+    try {
+        const completion = await quickActionTranslator.chat.completions.create({
+            model: "gpt-4o-mini",
+            temperature: 0,
+            response_format: { type: "json_object" },
+            messages: [
+                {
+                    role: "system",
+                    content:
+                        "You translate short chatbot UI strings. Return concise, faithful Turkish (tr) and English (en) texts. Preserve punctuation and CTA tone when possible. Respond only with JSON.",
+                },
+                {
+                    role: "user",
+                    content: JSON.stringify({
+                        task: "Translate each source text into tr and en.",
+                        items,
+                        outputSchema: {
+                            translations: [{ key: "string", tr: "string", en: "string" }],
+                        },
+                    }),
+                },
+            ],
+        });
+
+        const rawContent = completion.choices?.[0]?.message?.content || "{}";
+        const parsed = JSON.parse(rawContent) as {
+            translations?: Array<{ key?: string; tr?: string; en?: string }>;
+        };
+        const translations = Array.isArray(parsed.translations) ? parsed.translations : [];
+        const result = new Map<string, LocalizedTextMap>();
+
+        for (const entry of translations) {
+            const key = typeof entry?.key === "string" ? entry.key : "";
+            if (!key) continue;
+            result.set(key, {
+                tr: normalizeLocalizedLabelValue(entry.tr),
+                en: normalizeLocalizedLabelValue(entry.en),
+            });
+        }
+
+        return result;
+    } catch (error) {
+        console.warn("[widget-settings] localization translation failed, falling back to source values", error);
+        return new Map();
+    }
+}
+
+async function enrichWidgetLocalizedCopy(settings: Record<string, any>) {
+    const textFields = [
+        "welcomeTitle",
+        "welcomeMessage",
+        "launcherText",
+        "offlineMessage",
+        "ambientPlaceholderText",
+    ] as const;
+    const items: Array<{ key: string; text: string }> = [];
+    const existingMaps: Record<string, LocalizedTextMap> = {};
+
+    for (const field of textFields) {
+        const sourceValue = normalizeLocalizedLabelValue(settings[field]);
+        const localizedFieldKey = `${field}Localized`;
+        const existingMap = normalizeLocalizedTextMap(settings[localizedFieldKey]);
+        existingMaps[localizedFieldKey] = existingMap;
+        if (sourceValue && (!existingMap.tr || !existingMap.en)) {
+            items.push({ key: field, text: sourceValue });
+        }
+    }
+
+    const suggestedQuestions = Array.isArray(settings.suggestedQuestions)
+        ? settings.suggestedQuestions.map((question: unknown) => normalizeLocalizedLabelValue(question)).filter(Boolean)
+        : [];
+    const suggestedLocalized = settings.suggestedQuestionsLocalized && typeof settings.suggestedQuestionsLocalized === "object"
+        ? settings.suggestedQuestionsLocalized
+        : {};
+    const existingSuggestedTr = Array.isArray(suggestedLocalized.tr) ? suggestedLocalized.tr.map((q: unknown) => normalizeLocalizedLabelValue(q)) : [];
+    const existingSuggestedEn = Array.isArray(suggestedLocalized.en) ? suggestedLocalized.en.map((q: unknown) => normalizeLocalizedLabelValue(q)) : [];
+
+    for (let index = 0; index < suggestedQuestions.length; index += 1) {
+        const source = suggestedQuestions[index];
+        const hasTr = !!existingSuggestedTr[index];
+        const hasEn = !!existingSuggestedEn[index];
+        if (!source || (hasTr && hasEn)) continue;
+        items.push({ key: `suggestedQuestions.${index}`, text: source });
+    }
+
+    const translations = await translateTextEntries(items);
+    const nextSettings: Record<string, any> = { ...settings };
+
+    for (const field of textFields) {
+        const sourceValue = normalizeLocalizedLabelValue(settings[field]);
+        const localizedFieldKey = `${field}Localized`;
+        if (!sourceValue) {
+            nextSettings[localizedFieldKey] = { tr: "", en: "" };
+            continue;
+        }
+
+        const translated = translations.get(field);
+        const existing = existingMaps[localizedFieldKey];
+        nextSettings[localizedFieldKey] = {
+            tr: existing.tr || translated?.tr || sourceValue,
+            en: existing.en || translated?.en || sourceValue,
+        };
+    }
+
+    if (suggestedQuestions.length > 0) {
+        const nextSuggestedTr = [...existingSuggestedTr];
+        const nextSuggestedEn = [...existingSuggestedEn];
+        for (let index = 0; index < suggestedQuestions.length; index += 1) {
+            const source = suggestedQuestions[index];
+            const translated = translations.get(`suggestedQuestions.${index}`);
+            nextSuggestedTr[index] = nextSuggestedTr[index] || translated?.tr || source;
+            nextSuggestedEn[index] = nextSuggestedEn[index] || translated?.en || source;
+        }
+
+        nextSettings.suggestedQuestionsLocalized = {
+            tr: nextSuggestedTr.slice(0, suggestedQuestions.length),
+            en: nextSuggestedEn.slice(0, suggestedQuestions.length),
+        };
+    } else {
+        nextSettings.suggestedQuestionsLocalized = { tr: [], en: [] };
+    }
+
+    return nextSettings;
 }
 
 async function enrichQuickActionLabels(rawQuickActions: any) {
@@ -270,7 +415,9 @@ export async function GET(req: Request) {
                         isEnabled: shouldEnable,
                         companyName: mergedData.companyName || "Acme Corp",
                         welcomeTitle: mergedData.welcomeTitle || "",
+                        welcomeTitleLocalized: mergedData.welcomeTitleLocalized || { tr: "", en: "" },
                         welcomeMessage: mergedData.welcomeMessage || "Hello! How can I help you today?",
+                        welcomeMessageLocalized: mergedData.welcomeMessageLocalized || { tr: "", en: "" },
                         brandColor: mergedData.brandColor || "#000000",
                         brandLogo: mergedData.brandLogo || "",
                         headerLogo: mergedData.headerLogo || "",
@@ -279,6 +426,7 @@ export async function GET(req: Request) {
                         headerBackgroundColor: mergedData.headerBackgroundColor || "",
                         headerTextColor: mergedData.headerTextColor || "#FFFFFF",
                         suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
+                        suggestedQuestionsLocalized: mergedData.suggestedQuestionsLocalized || { tr: [], en: [] },
                         enableLeadCollection: mergedData.enableLeadCollection || false,
                         enableSurveyManager: mergedData.enableSurveyManager === true,
                         enableHumanHandoff: mergedData.enableHumanHandoff || false,
@@ -298,6 +446,7 @@ export async function GET(req: Request) {
                         businessHoursStart: mergedData.businessHoursStart || "09:00",
                         businessHoursEnd: mergedData.businessHoursEnd || "17:00",
                         offlineMessage: mergedData.offlineMessage || "",
+                        offlineMessageLocalized: mergedData.offlineMessageLocalized || { tr: "", en: "" },
                         enableInitialLeadCollection: mergedData.enableInitialLeadCollection ?? mergedData.enableLeadCollection ?? false,
                         enableInChatLeadCollection: mergedData.enableInChatLeadCollection ?? false,
                         leadFormConfig: mergedData.leadFormConfig || null,
@@ -311,6 +460,7 @@ export async function GET(req: Request) {
                         launcherStyle: mergedData.launcherStyle || "circle",
                         launcherCollapse: mergedData.launcherCollapse || false,
                         launcherText: mergedData.launcherText || "Chat",
+                        launcherTextLocalized: mergedData.launcherTextLocalized || { tr: "", en: "" },
                         launcherRadius: mergedData.launcherRadius !== undefined ? mergedData.launcherRadius : 50,
                         launcherHeight: mergedData.launcherHeight || 60,
                         launcherWidth: mergedData.launcherWidth || 60,
@@ -364,6 +514,7 @@ export async function GET(req: Request) {
                         ambientInputBgColorFocused: mergedData.ambientInputBgColorFocused || "",
                         ambientInputTextColor: mergedData.ambientInputTextColor || "",
                         ambientPlaceholderText: mergedData.ambientPlaceholderText || "",
+                        ambientPlaceholderTextLocalized: mergedData.ambientPlaceholderTextLocalized || { tr: "", en: "" },
                         ambientClosedBorderColorIdle: mergedData.ambientClosedBorderColorIdle || "",
                         ambientClosedBorderColorFocused: mergedData.ambientClosedBorderColorFocused || "",
                         ambientAiBubbleColor: mergedData.ambientAiBubbleColor || "",
@@ -838,14 +989,15 @@ export async function POST(req: Request) {
         // Remove chatbotId from body before saving
         const { chatbotId: _, ...settingsToSave } = body;
         const normalizedQuickActions = await enrichQuickActionLabels(settingsToSave.quickActions);
-        const normalizedSettingsToSave = {
-            ...settingsToSave,
+        const localizedSettingsToSave = await enrichWidgetLocalizedCopy(settingsToSave);
+        const normalizedSettingsToSave: Record<string, any> = {
+            ...localizedSettingsToSave,
             quickActions: normalizedQuickActions,
         };
 
         // If industry is being set, also update sector and sectorId to ensure AI uses correct sector
         // AI service prioritizes sector > sectorId > industry, so we must sync all three
-        const dataToSave = {
+        const dataToSave: Record<string, any> = {
             ...normalizedSettingsToSave,
             updatedAt: new Date().toISOString(),
         };

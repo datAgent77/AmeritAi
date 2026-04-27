@@ -18,6 +18,7 @@ import type { OmniOperationsSettings, OmniTeamMember } from "@/lib/omni/types"
 
 interface HumanHandoffSettingsFormProps {
     targetUserId: string
+    mode?: "combined" | "agents" | "settings"
 }
 
 type HandoffState = {
@@ -99,7 +100,37 @@ function buildEmptyMember(index: number): OmniTeamMember {
     }
 }
 
-export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsFormProps) {
+function hasMeaningfulTeamMemberInput(member: OmniTeamMember) {
+    const name = String(member?.name || "").trim()
+    const email = String(member?.email || "").trim()
+    return Boolean(name || email)
+}
+
+function sanitizeTeamMembers(members: OmniTeamMember[]): OmniTeamMember[] {
+    return members
+        .filter(hasMeaningfulTeamMemberInput)
+        .map((member, index) => {
+            const name = String(member.name || "").trim()
+            const email = String(member.email || "").trim().toLowerCase()
+            const fallbackId = normalizeTeamMemberValue({
+                name,
+                email,
+                fallback: `member-${index + 1}`,
+            })
+            return {
+                ...member,
+                id: String(member.id || fallbackId).trim() || fallbackId,
+                name,
+                email: email || null,
+                active: member.active !== false,
+                role: member.role === "support" || member.role === "sales" || member.role === "manager"
+                    ? member.role
+                    : "operations",
+            }
+        })
+}
+
+export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: HumanHandoffSettingsFormProps) {
     const { user, role } = useAuth()
     const { language } = useLanguage()
     const isSuperAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
@@ -112,11 +143,13 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
     const [operations, setOperations] = useState<OmniOperationsSettings>(DEFAULT_OPERATIONS_STATE)
     const [isRosterLoading, setIsRosterLoading] = useState(true)
     const [isRosterSaving, setIsRosterSaving] = useState(false)
-    const [activeTab, setActiveTab] = useState<"agents" | "settings">("agents")
+    const [activeTab, setActiveTab] = useState<"agents" | "settings">(mode === "agents" ? "agents" : "settings")
     const i18n = language === "tr"
         ? {
             pageTitle: "Agent ve Aktarma Yonetimi",
             pageDescription: "Bu sayfada Agent hesaplarini yonetebilir, temsilciye aktarma kurallarini ve bildirim ayarlarini tek yerden duzenleyebilirsiniz.",
+            pageDescriptionAgents: "Bu sayfada yalnızca eklenen Agent hesaplarını yönetirsiniz.",
+            pageDescriptionSettings: "Bu sayfada müşteri temsilcisine aktarma modülünün tüm ayarlarını yönetirsiniz.",
             tabAgents: "Agentlar",
             tabSettings: "Ayarlar",
             agentAccountsTitle: "Agent Hesaplari",
@@ -132,6 +165,8 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
         : {
             pageTitle: "Agent and Handoff Management",
             pageDescription: "Manage agent accounts, human handoff rules, and notification settings from a single page.",
+            pageDescriptionAgents: "Manage only the added agent accounts on this page.",
+            pageDescriptionSettings: "Manage all human handoff module settings on this page.",
             tabAgents: "Agents",
             tabSettings: "Settings",
             agentAccountsTitle: "Agent Accounts",
@@ -220,7 +255,7 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                 setOperations({
                     ...DEFAULT_OPERATIONS_STATE,
                     ...nextOperations,
-                    teamMembers: Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : [],
+                    teamMembers: sanitizeTeamMembers(Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : []),
                 })
             } catch (error) {
                 console.error("Failed to load agent accounts:", error)
@@ -238,14 +273,25 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
     }, [targetUserId, toast, user])
 
     useEffect(() => {
+        if (mode !== "combined") return
         if (typeof window === "undefined") return
         const currentHash = window.location.hash
-        if (currentHash === "#agent-settings") {
-            setActiveTab("settings")
+        if (currentHash === "#agent-accounts") {
+            setActiveTab("agents")
             return
         }
-        setActiveTab("agents")
-    }, [])
+        setActiveTab("settings")
+    }, [mode])
+
+    useEffect(() => {
+        if (mode === "agents") {
+            setActiveTab("agents")
+            return
+        }
+        if (mode === "settings") {
+            setActiveTab("settings")
+        }
+    }, [mode])
 
     const addTeamMember = () => {
         setOperations((current) => ({
@@ -302,7 +348,10 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                 },
                 body: JSON.stringify({
                     chatbotId: targetUserId,
-                    operations,
+                    operations: {
+                        ...operations,
+                        teamMembers: sanitizeTeamMembers(operations.teamMembers || []),
+                    },
                 }),
             })
 
@@ -315,7 +364,7 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
             setOperations({
                 ...DEFAULT_OPERATIONS_STATE,
                 ...nextOperations,
-                teamMembers: Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : [],
+                teamMembers: sanitizeTeamMembers(Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : []),
             })
             const invitedCount = Number(data?.agentProvisioning?.invited || 0)
             toast({
@@ -345,6 +394,8 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
         if (!canManage) return
         setIsSaving(true)
         try {
+            const notifyEmail = state.enabled ? true : state.notifyEmail
+            const notifyInApp = state.enabled ? true : state.notifyInApp
             const token = await user.getIdToken()
             const response = await fetch("/api/console/settings", {
                 method: "POST",
@@ -358,8 +409,8 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                         enableHumanHandoff: state.enabled,
                         humanHandoffSettings: {
                             notificationEmail: state.notificationEmail,
-                            notifyEmail: state.notifyEmail,
-                            notifyInApp: state.notifyInApp,
+                            notifyEmail,
+                            notifyInApp,
                             triggerOnUserRequest: state.triggerOnUserRequest,
                             triggerOnAssistantHandoff: state.triggerOnAssistantHandoff,
                             customWaitMessage: state.customWaitMessage,
@@ -378,8 +429,8 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                         enableHumanHandoff: state.enabled,
                         humanHandoffSettings: {
                             notificationEmail: state.notificationEmail,
-                            notifyEmail: state.notifyEmail,
-                            notifyInApp: state.notifyInApp,
+                            notifyEmail,
+                            notifyInApp,
                             triggerOnUserRequest: state.triggerOnUserRequest,
                             triggerOnAssistantHandoff: state.triggerOnAssistantHandoff,
                             customWaitMessage: state.customWaitMessage,
@@ -403,6 +454,7 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                 title: "Kaydedildi",
                 description: "Musteri temsilcisine aktarma ayarlari guncellendi.",
             })
+            setState((prev) => ({ ...prev, notifyEmail, notifyInApp }))
         } catch (error) {
             console.error("Failed to save handoff settings:", error)
             toast({
@@ -423,20 +475,32 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
         )
     }
 
+    const pageTitle = mode === "agents"
+        ? i18n.tabAgents
+        : mode === "settings"
+            ? (language === "tr" ? "Müşteri Temsilcisine Aktarma" : "Human Handoff")
+            : i18n.pageTitle
+    const pageDescription = mode === "agents"
+        ? i18n.pageDescriptionAgents
+        : mode === "settings"
+            ? i18n.pageDescriptionSettings
+            : i18n.pageDescription
+
     return (
         <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
             <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold tracking-tight">{i18n.pageTitle}</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
                 </div>
                 <p className="max-w-3xl text-sm text-muted-foreground">
-                    {i18n.pageDescription}
+                    {pageDescription}
                 </p>
             </div>
 
             <Tabs
                 value={activeTab}
                 onValueChange={(value) => {
+                    if (mode !== "combined") return
                     const nextTab = value === "settings" ? "settings" : "agents"
                     setActiveTab(nextTab)
                     if (typeof window !== "undefined") {
@@ -446,10 +510,12 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                 }}
                 className="space-y-4"
             >
-                <TabsList>
-                    <TabsTrigger value="agents">{i18n.tabAgents}</TabsTrigger>
-                    <TabsTrigger value="settings">{i18n.tabSettings}</TabsTrigger>
-                </TabsList>
+                {mode === "combined" && (
+                    <TabsList>
+                        <TabsTrigger value="agents">{i18n.tabAgents}</TabsTrigger>
+                        <TabsTrigger value="settings">{i18n.tabSettings}</TabsTrigger>
+                    </TabsList>
+                )}
 
                 <TabsContent value="agents" className="space-y-4">
                     <div id="agent-accounts" className="scroll-mt-24" />
@@ -553,7 +619,14 @@ export function HumanHandoffSettingsForm({ targetUserId }: HumanHandoffSettingsF
                                 <Switch
                                     id="handoff-enabled"
                                     checked={state.enabled}
-                                    onCheckedChange={(checked) => setState((prev) => ({ ...prev, enabled: checked }))}
+                                    onCheckedChange={(checked) =>
+                                        setState((prev) => ({
+                                            ...prev,
+                                            enabled: checked,
+                                            notifyEmail: checked ? true : prev.notifyEmail,
+                                            notifyInApp: checked ? true : prev.notifyInApp,
+                                        }))
+                                    }
                                 />
                             </CardContent>
                         </Card>

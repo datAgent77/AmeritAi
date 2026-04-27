@@ -37,6 +37,16 @@ export interface AmbientDeviceAppearanceSettings {
     ambientBorderGradientShowWhenThinking?: boolean;
 }
 
+export interface LocalizedTextValue {
+    tr?: string;
+    en?: string;
+}
+
+export interface LocalizedStringListValue {
+    tr?: string[];
+    en?: string[];
+}
+
 export interface ClassicDeviceAppearanceSettings {
     bottomSpacing?: number;
     sideSpacing?: number;
@@ -44,6 +54,7 @@ export interface ClassicDeviceAppearanceSettings {
     launcherStyle?: string;
     launcherCollapse?: boolean;
     launcherText?: string;
+    launcherTextLocalized?: LocalizedTextValue;
     launcherRadius?: number;
     launcherHeight?: number;
     launcherWidth?: number;
@@ -67,7 +78,9 @@ export interface ClassicDeviceAppearanceSettings {
 export interface ChatbotSettings {
     companyName: string;
     welcomeTitle: string;
+    welcomeTitleLocalized?: LocalizedTextValue;
     welcomeMessage: string;
+    welcomeMessageLocalized?: LocalizedTextValue;
     brandColor: string;
     brandLogo: string;
     headerLogo: string;
@@ -76,6 +89,7 @@ export interface ChatbotSettings {
     headerBackgroundColor: string;
     headerTextColor: string;
     suggestedQuestions: string[];
+    suggestedQuestionsLocalized?: LocalizedStringListValue;
     enableLeadCollection: boolean;
     enableSurveyManager?: boolean;
     enableHumanHandoff?: boolean;
@@ -175,6 +189,7 @@ export interface ChatbotSettings {
     // Error Handling
     errorMessage?: string;
     offlineMessage?: string;
+    offlineMessageLocalized?: LocalizedTextValue;
     launcherIconUrl: string;
     launcherLibraryIcon: string;
     // Mobile Settings
@@ -205,6 +220,7 @@ export interface ChatbotSettings {
     ambientIconColor?: string;
     ambientInputTextColor?: string;
     ambientPlaceholderText?: string;
+    ambientPlaceholderTextLocalized?: LocalizedTextValue;
     ambientTheme?: 'light' | 'dark' | 'auto';
     enableAmbientRainbowBorder?: boolean;
     ambientBorderColorIdle?: string;

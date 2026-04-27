@@ -480,6 +480,10 @@ export function useWidgetSettings(userId?: string) {
                 throw new Error('Failed to save settings')
             }
 
+            if (typeof window !== "undefined") {
+                localStorage.removeItem(`widget_settings_cache_${effectiveUserId}`)
+            }
+
             return true
         } catch (error) {
             console.error("Error saving settings:", error)

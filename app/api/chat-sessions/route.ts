@@ -108,6 +108,8 @@ export async function GET(req: Request) {
                 lastMessage: lastMessage?.content || "",
                 lastMessageTime: lastMessageTimeIso,
                 isPaused: data.isPaused || false,
+                isFavorite: data.isFavorite === true,
+                isHidden: data.isHidden === true,
                 visitorEmail: data.visitorEmail || null,
                 visitorName: data.visitorName || null,
                 channel: data.channel || "web",

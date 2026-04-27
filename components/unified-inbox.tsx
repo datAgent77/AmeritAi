@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { format, isValid } from "date-fns"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Bot, CalendarDays, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, User } from "lucide-react"
+import { Bot, CalendarDays, EyeOff, Info, Instagram, Loader2, MessageCircle, MessageSquare, Monitor, PhoneCall, RefreshCw, Search, Send, Star, User } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,8 @@ interface ChatSession {
     lastMessage?: string
     lastMessageTime?: any
     isPaused?: boolean
+    isFavorite?: boolean
+    isHidden?: boolean
     channel?: string
     visitorEmail?: string | null
     visitorName?: string | null
@@ -91,6 +93,8 @@ function normalizeSessionRecord(id: string, data: Record<string, any>): ChatSess
         lastMessage: lastMessage?.content || "",
         lastMessageTime: lastMessageTimeIso,
         isPaused: data.isPaused || false,
+        isFavorite: data.isFavorite === true,
+        isHidden: data.isHidden === true,
         visitorEmail: data.visitorEmail || null,
         visitorName: data.visitorName || null,
         channel: data.channel || "web",
@@ -129,7 +133,9 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     const [isSending, setIsSending] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const [channelFilter, setChannelFilter] = useState<string>("all")
+    const [visibilityFilter, setVisibilityFilter] = useState<"visible" | "favorites" | "hidden" | "all">("visible")
     const [isTogglingPause, setIsTogglingPause] = useState(false)
+    const [isUpdatingSessionFlags, setIsUpdatingSessionFlags] = useState(false)
     const [isCreatingCallback, setIsCreatingCallback] = useState(false)
     const [isCreatingLead, setIsCreatingLead] = useState(false)
     const [isSessionDetailsOpen, setIsSessionDetailsOpen] = useState(false)
@@ -212,7 +218,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         return getOmniChannelLabel(t, resolveSessionChannel(session))
     }
 
-    const getSessionDisplayName = (session: ChatSession) => {
+    const getSessionDisplayName = useCallback((session: ChatSession) => {
         const channel = resolveSessionChannel(session)
         if (channel === "telegram") return session.visitorName || t("omni.inbox.user.telegram")
         if (channel === "whatsapp") return session.visitorName || formatPhoneLike(session.contactKey) || formatPhoneLike(fallbackSessionKey(session.id)) || t("omni.inbox.user.whatsapp")
@@ -220,9 +226,19 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         if (channel === "messenger") return session.visitorName || session.channelMeta?.pageName || session.contactKey || "Messenger User"
         if (channel === "voice") return session.visitorName || formatPhoneLike(session.contactKey) || t("omni.inbox.user.voice")
         return session.visitorName || session.visitorEmail || t("omni.inbox.user.web")
+    }, [t])
+
+    const isLiveConversation = (session: ChatSession) => {
+        const lastMessage = Array.isArray(session.messages) && session.messages.length > 0
+            ? session.messages[session.messages.length - 1]
+            : null
+        const lastRole = typeof lastMessage?.role === "string" ? lastMessage.role : ""
+        const lastActivityMs = toMillis(session.lastMessageTime || session.createdAt)
+        const isRecent = lastActivityMs > 0 && (Date.now() - lastActivityMs) <= (3 * 60 * 1000)
+        return isRecent && (lastRole === "user" || lastRole === "agent")
     }
 
-    const fetchSessions = async (background: boolean = false) => {
+    const fetchSessions = useCallback(async (background: boolean = false) => {
         if (!userId || !user) return
 
         if (background) {
@@ -254,7 +270,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
             setIsLoading(false)
             setIsRefreshing(false)
         }
-    }
+    }, [t, toast, user, userId])
 
     useEffect(() => {
         if (!userId || !user) return
@@ -283,7 +299,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         )
 
         return () => unsubscribe()
-    }, [userId, user])
+    }, [fetchSessions, userId, user])
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -368,6 +384,47 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
             })
         } finally {
             setIsTogglingPause(false)
+        }
+    }
+
+    const updateSessionFlag = async (
+        sessionId: string,
+        flag: "isFavorite" | "isHidden",
+        value: boolean
+    ) => {
+        if (!user) return
+        const endpoint = flag === "isFavorite" ? "/api/admin/set-favorite" : "/api/admin/set-hidden"
+        const requestKey = flag === "isFavorite" ? "isFavorite" : "isHidden"
+        setIsUpdatingSessionFlags(true)
+        try {
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: await getAuthHeaders(true),
+                body: JSON.stringify({
+                    sessionId,
+                    chatbotId: userId,
+                    [requestKey]: value,
+                }),
+            })
+            if (!response.ok) {
+                throw new Error("Failed to update session")
+            }
+            setSessions((prevSessions) =>
+                prevSessions.map((session) =>
+                    session.id === sessionId
+                        ? { ...session, [flag]: value }
+                        : session
+                )
+            )
+        } catch (error) {
+            console.error("Error updating session flag:", error)
+            toast({
+                title: language === "tr" ? "Sohbet güncellenemedi" : "Failed to update chat",
+                description: language === "tr" ? "Lütfen tekrar deneyin." : "Please try again.",
+                variant: "destructive",
+            })
+        } finally {
+            setIsUpdatingSessionFlags(false)
         }
     }
 
@@ -526,6 +583,14 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         return sessions.filter((session) => {
             const channel = resolveSessionChannel(session)
             const matchesChannel = channelFilter === "all" ? true : channel === channelFilter
+            const matchesVisibility =
+                visibilityFilter === "all"
+                    ? true
+                    : visibilityFilter === "favorites"
+                        ? session.isFavorite === true
+                        : visibilityFilter === "hidden"
+                            ? session.isHidden === true
+                            : session.isHidden !== true
             const haystack = [
                 session.id,
                 session.lastMessage,
@@ -538,9 +603,9 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                 .toLowerCase()
 
             const matchesSearch = haystack.includes(searchTerm.toLowerCase())
-            return matchesChannel && matchesSearch
+            return matchesChannel && matchesVisibility && matchesSearch
         })
-    }, [sessions, channelFilter, searchTerm])
+    }, [sessions, channelFilter, visibilityFilter, searchTerm, getSessionDisplayName])
 
     useEffect(() => {
         if (filteredSessions.length === 0) {
@@ -571,7 +636,6 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
         return <OmniStateShell title={t("omni.common.loading")} description={t("omni.inbox.toast.loadFailed.description")} />
     }
 
-    const pausedSessionCount = filteredSessions.filter((session) => session.isPaused).length
     const selectedSessionMessageCount = selectedSession?.messages?.length ?? 0
     const selectedSessionLastActivity = selectedSession?.lastMessageTime || selectedSession?.createdAt || null
 
@@ -595,8 +659,8 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                             {filteredSessions.length}
                         </Badge>
                     </div>
-                    <div className="grid grid-cols-[minmax(0,1fr)_120px_36px] items-center gap-2">
-                        <div className="relative min-w-0">
+                    <div className="flex items-center gap-2">
+                        <div className="relative min-w-0 flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 placeholder={t("searchChats")}
@@ -605,6 +669,19 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9 rounded-md bg-white/80"
+                            onClick={() => fetchSessions(true)}
+                            disabled={isRefreshing}
+                            aria-label={t("omni.dashboard.refresh")}
+                            type="button"
+                        >
+                            {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
                         {showOmniFeatures ? (
                             <select
                                 aria-label={t("omni.inbox.filter.allChannels")}
@@ -624,27 +701,17 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                 {t("omni.inbox.filter.allChannels")}
                             </div>
                         )}
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-9 w-9 rounded-md bg-white/80"
-                            onClick={() => fetchSessions(true)}
-                            disabled={isRefreshing}
-                            aria-label={t("omni.dashboard.refresh")}
-                            type="button"
+                        <select
+                            aria-label={language === "tr" ? "Gorunum filtresi" : "Visibility filter"}
+                            className="flex h-9 min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm"
+                            value={visibilityFilter}
+                            onChange={(e) => setVisibilityFilter(e.target.value as "visible" | "favorites" | "hidden" | "all")}
                         >
-                            {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
-                            <span className="uppercase tracking-[0.16em] text-muted-foreground">{t("omni.inbox.sidebar.visible")}</span>
-                            <span className="font-semibold text-foreground">{filteredSessions.length}</span>
-                        </div>
-                        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
-                            <span className="uppercase tracking-[0.16em] text-muted-foreground">{t("omni.inbox.sidebar.paused")}</span>
-                            <span className="font-semibold text-foreground">{pausedSessionCount}</span>
-                        </div>
+                            <option value="visible">{language === "tr" ? "Gorunen" : "Visible"}</option>
+                            <option value="favorites">{language === "tr" ? "Favoriler" : "Favorites"}</option>
+                            <option value="hidden">{language === "tr" ? "Gizlenenler" : "Hidden"}</option>
+                            <option value="all">{language === "tr" ? "Tum Sohbetler" : "All Chats"}</option>
+                        </select>
                     </div>
                 </div>
                 <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
@@ -688,9 +755,54 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                                                 {t("omni.inbox.badge.paused")}
                                                             </Badge>
                                                         ) : null}
+                                                        {isLiveConversation(session) ? (
+                                                            <Badge variant="secondary" className="h-5 rounded-full bg-emerald-100 px-2 text-[10px] text-emerald-700 hover:bg-emerald-100">
+                                                                {language === "tr" ? "Canli" : "Live"}
+                                                            </Badge>
+                                                        ) : null}
                                                     </div>
                                                 </div>
-                                                <span className="shrink-0 whitespace-nowrap pt-0.5 text-[10px] text-muted-foreground">{formatDateSafe(session.lastMessageTime, "HH:mm")}</span>
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        className={cn(
+                                                            "inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors",
+                                                            session.isFavorite
+                                                                ? "border-amber-200 bg-amber-50 text-amber-600"
+                                                                : "border-border/70 bg-white text-muted-foreground hover:bg-muted/30"
+                                                        )}
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            void updateSessionFlag(session.id, "isFavorite", !session.isFavorite)
+                                                        }}
+                                                        aria-label={session.isFavorite
+                                                            ? (language === "tr" ? "Favoriden cikar" : "Remove from favorites")
+                                                            : (language === "tr" ? "Favorilere ekle" : "Add to favorites")}
+                                                        disabled={isUpdatingSessionFlags}
+                                                    >
+                                                        <Star className={cn("h-3.5 w-3.5", session.isFavorite ? "fill-current" : "")} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className={cn(
+                                                            "inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors",
+                                                            session.isHidden
+                                                                ? "border-slate-300 bg-slate-100 text-slate-600"
+                                                                : "border-border/70 bg-white text-muted-foreground hover:bg-muted/30"
+                                                        )}
+                                                        onClick={(event) => {
+                                                            event.stopPropagation()
+                                                            void updateSessionFlag(session.id, "isHidden", !session.isHidden)
+                                                        }}
+                                                        aria-label={session.isHidden
+                                                            ? (language === "tr" ? "Sohbeti goster" : "Show chat")
+                                                            : (language === "tr" ? "Sohbeti gizle" : "Hide chat")}
+                                                        disabled={isUpdatingSessionFlags}
+                                                    >
+                                                        <EyeOff className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <span className="whitespace-nowrap pl-1 pt-0.5 text-[10px] text-muted-foreground">{formatDateSafe(session.lastMessageTime, "HH:mm")}</span>
+                                                </div>
                                             </div>
                                             <p className="mt-1.5 line-clamp-2 break-words text-[13px] leading-5 text-muted-foreground">{session.lastMessage || t("noMessages")}</p>
                                         </div>
@@ -714,6 +826,18 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                     <div className="min-w-0 flex-1 space-y-2">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="min-w-0 truncate text-base font-semibold text-foreground">{getSessionDisplayName(selectedSession)}</h3>
+                                            {selectedSession.isFavorite ? (
+                                                <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-700">
+                                                    <Star className="h-3.5 w-3.5 fill-current" />
+                                                    {language === "tr" ? "Favori" : "Favorite"}
+                                                </Badge>
+                                            ) : null}
+                                            {isLiveConversation(selectedSession) ? (
+                                                <Badge variant="outline" className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700">
+                                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span>
+                                                    {language === "tr" ? "Canli Konusma" : "Live Conversation"}
+                                                </Badge>
+                                            ) : null}
                                             {selectedSession.isPaused ? (
                                                 <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-700">
                                                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500"></span>
@@ -741,6 +865,30 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                     </div>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-2">
+                                    <Button
+                                        variant={selectedSession.isFavorite ? "default" : "outline"}
+                                        size="sm"
+                                        className={cn("rounded-lg", selectedSession.isFavorite ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-white/80")}
+                                        onClick={() => updateSessionFlag(selectedSession.id, "isFavorite", !selectedSession.isFavorite)}
+                                        disabled={isUpdatingSessionFlags}
+                                    >
+                                        <Star className={cn("mr-2 h-4 w-4", selectedSession.isFavorite ? "fill-current" : "")} />
+                                        {selectedSession.isFavorite
+                                            ? (language === "tr" ? "Favoriden Cikar" : "Unfavorite")
+                                            : (language === "tr" ? "Favorile" : "Favorite")}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="rounded-lg bg-white/80"
+                                        onClick={() => updateSessionFlag(selectedSession.id, "isHidden", !selectedSession.isHidden)}
+                                        disabled={isUpdatingSessionFlags}
+                                    >
+                                        <EyeOff className="mr-2 h-4 w-4" />
+                                        {selectedSession.isHidden
+                                            ? (language === "tr" ? "Goster" : "Unhide")
+                                            : (language === "tr" ? "Gizle" : "Hide")}
+                                    </Button>
                                     <Button
                                         variant={selectedSession.isPaused ? "default" : "outline"}
                                         size="sm"

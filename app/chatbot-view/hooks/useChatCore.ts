@@ -6,6 +6,7 @@ import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-
 import { hydrateChatSessionMessage } from "@/lib/chat-session-messages"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import type { GuidedSkillClientEvent, GuidedSkillState } from "@/lib/guided-skills/types"
+import { resolveLocalizedText } from "../utils/localized-copy"
 
 export interface UseChatCoreProps {
     chatbotId: string
@@ -59,6 +60,12 @@ export function useChatCore({
     const [guidedSkillState, setGuidedSkillState] = useState<GuidedSkillState | null>(null)
     const messagesRef = useRef<any[]>([])
     const sendQueueRef = useRef<Promise<string>>(Promise.resolve(""))
+    const localizedWelcomeMessage = resolveLocalizedText(
+        settings.welcomeMessage,
+        settings.welcomeMessageLocalized,
+        language,
+        "Hello! How can I help you today?"
+    )
     
     // Lead capture states
     const [hasRequestedContactInfo, setHasRequestedContactInfo] = useState(false)
@@ -516,7 +523,7 @@ export function useChatCore({
 
     // 5. Proactive Engagement
     useEffect(() => {
-        const isOnlyWelcomeMessage = messages.length === 1 && messages[0].content === settings.welcomeMessage;
+        const isOnlyWelcomeMessage = messages.length === 1 && messages[0].content === localizedWelcomeMessage;
         const hasUserMessages = messages.some(m => m.role === 'user');
         const holdProactiveForEntryOnboarding =
             settings.chatDisplayMode !== "ambient"
@@ -548,7 +555,7 @@ export function useChatCore({
                     if (prev.length === 1 && prev[0].role === 'assistant') {
                         return [proactiveMsg]
                     }
-                    const filtered = prev.filter(m => m.content !== settings.welcomeMessage)
+                    const filtered = prev.filter(m => m.content !== localizedWelcomeMessage)
                     return [...filtered, proactiveMsg]
                 })
                 setHasProactiveTriggered(true)
@@ -556,7 +563,7 @@ export function useChatCore({
         }, 12000)
 
         return () => clearTimeout(timer)
-    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, settings.welcomeMessage, settings.chatDisplayMode, settings.enableClassicEntryOnboarding, language])
+    }, [hasProactiveTriggered, messages, pageContext, settings.industry, settings.enableIndustryGreeting, localizedWelcomeMessage, settings.chatDisplayMode, settings.enableClassicEntryOnboarding, language])
 
     // 6. Reset Session
     const resetSession = () => {

@@ -3,5 +3,5 @@
 import { HumanHandoffSettingsForm } from "@/components/modules/handoff/human-handoff-settings-form"
 
 export default function AdminTenantHumanHandoffModulePage({ params }: { params: { userId: string } }) {
-    return <HumanHandoffSettingsForm targetUserId={params.userId} />
+    return <HumanHandoffSettingsForm targetUserId={params.userId} mode="settings" />
 }
