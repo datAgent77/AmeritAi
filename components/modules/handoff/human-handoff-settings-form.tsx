@@ -141,7 +141,7 @@ function sanitizeTeamMembers(members: OmniTeamMember[]): OmniTeamMember[] {
         })
 }
 
-function isTeamMemberRole(value: string): value is OmniTeamMember["role"] {
+function isTeamMemberRole(value: string): value is NonNullable<OmniTeamMember["role"]> {
     return value === "operations" || value === "support" || value === "sales" || value === "manager"
 }
 

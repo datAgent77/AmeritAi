@@ -17,7 +17,7 @@ const numericTriggerDefaults = {
 
 export function EngagementTriggersTab({ settings, setSettings }: EngagementTriggersTabProps) {
     const getTriggerNumber = (key: 'scrollDepth' | 'inactivity' | 'timeOnPage' | 'clickCount') => {
-        const value = settings.triggers[key]
+        const value = (settings.triggers as Record<string, unknown>)[key]
         if (value === true) return numericTriggerDefaults[key]
         return typeof value === 'number' && Number.isFinite(value) ? value : 0
     }

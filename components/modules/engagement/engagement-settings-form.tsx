@@ -64,7 +64,7 @@ function normalizeEngagementSettings(settings: EngagementSettings): EngagementSe
     const triggers = { ...settings.triggers }
 
     numericTriggerKeys.forEach((key) => {
-        const value = triggers[key]
+        const value = (triggers as Record<string, unknown>)[key]
         triggers[key] = value === true
             ? numericTriggerDefaults[key]
             : (typeof value === 'number' && Number.isFinite(value) ? value : 0)

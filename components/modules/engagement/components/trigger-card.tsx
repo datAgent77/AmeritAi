@@ -25,7 +25,7 @@ const numericTriggerDefaults: Record<string, number> = {
 
 export function TriggerCard({ id, label, description, configInput, messageListKey, settings, setSettings }: TriggerCardProps) {
     const messages = (settings.triggers[messageListKey] as BubbleMessage[]) || [];
-    const rawTriggerValue = settings.triggers[id as keyof EngagementSettings['triggers']]
+    const rawTriggerValue = (settings.triggers as Record<string, unknown>)[id]
     const numericDefault = numericTriggerDefaults[id]
     const isNumericTrigger = numericDefault !== undefined
 
@@ -64,7 +64,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
 
     const toggleEnable = (checked: boolean) => {
         setSettings(p => {
-            const currentValue = p.triggers[id as keyof EngagementSettings['triggers']]
+            const currentValue = (p.triggers as Record<string, unknown>)[id]
             const currentNumber = typeof currentValue === 'number' ? currentValue : 0
             return {
                 ...p,
