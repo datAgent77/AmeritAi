@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, MessageSquare, Activity, Users, Download, UserX, Clock, UserPlus, CalendarCheck2, Target } from "lucide-react"
+import { Loader2, MessageSquare, Activity, Users, Download, UserX, Clock, UserPlus, CalendarCheck2, Target, Gauge, PhoneCall, PauseCircle, EyeOff, Heart } from "lucide-react"
 import { AnalyticsSummary } from "@/lib/analytics"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
@@ -24,7 +24,7 @@ import {
     Cell,
     Legend
 } from "recharts"
-import { format, subDays } from "date-fns"
+import { endOfDay, format, startOfDay, subDays } from "date-fns"
 import { tr, enUS } from "date-fns/locale"
 
 interface AnalyticsContentProps {
@@ -52,10 +52,12 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
 
         setIsLoading(true)
         try {
+            const normalizedStartDate = startOfDay(startDate)
+            const normalizedEndDate = endOfDay(endDate)
             const queryParams = new URLSearchParams({
                 chatbotId: effectiveUserId,
-                startDate: startDate.toISOString(),
-                endDate: endDate.toISOString()
+                startDate: normalizedStartDate.toISOString(),
+                endDate: normalizedEndDate.toISOString()
             })
 
             const idToken = await user?.getIdToken()
@@ -80,6 +82,20 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
         }
     }, [startDate, endDate, effectiveUserId, t, toast, user])
 
+    const handleStartDateChange = (date: Date | undefined) => {
+        setStartDate(date)
+        if (date && endDate && date > endDate) {
+            setEndDate(date)
+        }
+    }
+
+    const handleEndDateChange = (date: Date | undefined) => {
+        setEndDate(date)
+        if (date && startDate && date < startDate) {
+            setStartDate(date)
+        }
+    }
+
     useEffect(() => {
         if (effectiveUserId && startDate && endDate) {
             fetchAnalytics()
@@ -87,7 +103,14 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
     }, [effectiveUserId, startDate, endDate, fetchAnalytics])
 
     const handleExport = () => {
-        if (!data || !data.dailyStats) return;
+        if (!data || !data.dailyStats?.length) {
+            toast({
+                title: language === "tr" ? "Rapor oluşturulamadı" : "Report could not be created",
+                description: language === "tr" ? "Dışa aktarılacak rapor verisi bulunamadı." : "There is no report data to export.",
+                variant: "destructive"
+            })
+            return
+        }
 
         // Create CSV content
         const headers = ["Date", "Conversations", "Messages"];
@@ -112,9 +135,25 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast({
+            title: language === "tr" ? "Rapor oluşturuldu" : "Report created",
+            description: language === "tr" ? "CSV raporu indirilmeye hazırlandı." : "The CSV report was prepared for download."
+        })
     };
 
-    const COLORS = ['#4ade80', '#94a3b8', '#f87171']; // Green, Gray, Red
+    const formatDuration = (seconds: number, emptyValue = "0 sn") => {
+        if (!seconds) return emptyValue
+        if (seconds < 60) return `${seconds} sn`
+        const minutes = Math.floor(seconds / 60)
+        const remainingSeconds = seconds % 60
+        return remainingSeconds ? `${minutes} dk ${remainingSeconds} sn` : `${minutes} dk`
+    }
+    const formatPercent = (value: number | undefined) => `%${value || 0}`
+    const responseTime = data?.responseTime
+    const handoffQuality = data?.handoffQuality
+    const sessionQuality = data?.sessionQuality
+    const callbackQuality = data?.callbackQuality
 
     if (isLoading && !data) {
         return <div className="p-8 flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -130,14 +169,15 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
 
                 <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-background/80 p-2 shadow-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                        <DatePicker date={startDate} setDate={setStartDate} placeholder={t('startDate')} />
+                        <DatePicker date={startDate} setDate={handleStartDateChange} placeholder={t('startDate')} />
                         <span className="text-muted-foreground">-</span>
-                        <DatePicker date={endDate} setDate={setEndDate} placeholder={t('endDate')} />
+                        <DatePicker date={endDate} setDate={handleEndDateChange} placeholder={t('endDate')} />
                     </div>
-                    <Button variant="outline" onClick={fetchAnalytics}>
+                    <Button type="button" variant="outline" onClick={fetchAnalytics} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         {t('refresh')}
                     </Button>
-                    <Button variant="outline" onClick={handleExport}>
+                    <Button type="button" variant="outline" onClick={handleExport} disabled={isLoading || !data}>
                         <Download className="mr-2 h-4 w-4" />
                         {language === 'tr' ? 'Rapor Oluştur' : 'Export Report'}
                     </Button>
@@ -208,6 +248,114 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Quality Summary */}
+            <section className="space-y-4">
+                <div>
+                    <h2 className="text-xl font-semibold tracking-tight">{language === "tr" ? "Kalite Özeti" : "Quality Summary"}</h2>
+                    <p className="text-sm text-muted-foreground">
+                        {language === "tr" ? "Yanıt hızı, insan devri, callback ve oturum kalitesi metrikleri" : "Response speed, handoff, callback and session quality metrics"}
+                    </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{language === "tr" ? "İlk Yanıt" : "First Response"}</CardTitle>
+                            <Gauge className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatDuration(responseTime?.averageSeconds || 0, "-")}</div>
+                            <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                                <div>
+                                    <div className="font-medium text-foreground">{formatDuration(responseTime?.medianSeconds || 0, "-")}</div>
+                                    <div>Medyan</div>
+                                </div>
+                                <div>
+                                    <div className="font-medium text-foreground">{formatDuration(responseTime?.p95Seconds || 0, "-")}</div>
+                                    <div>P95</div>
+                                </div>
+                                <div>
+                                    <div className="font-medium text-foreground">{responseTime?.sampleSize || 0}</div>
+                                    <div>{language === "tr" ? "Örnek" : "Samples"}</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{language === "tr" ? "İnsan Devri" : "Human Handoff"}</CardTitle>
+                            <UserX className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatPercent(handoffQuality?.handoffRate ?? data?.handoffRate)}</div>
+                            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{handoffQuality?.handoffCount ?? data?.handoffCount ?? 0} {language === "tr" ? "devir" : "handoffs"}</span>
+                                <span>{formatPercent(handoffQuality?.pausedRate)} {language === "tr" ? "duraklama" : "paused"}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{language === "tr" ? "Callback Kalitesi" : "Callback Quality"}</CardTitle>
+                            <PhoneCall className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatPercent(callbackQuality?.resolutionRate)}</div>
+                            <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{callbackQuality?.openCount || 0} {language === "tr" ? "açık" : "open"}</span>
+                                <span>{callbackQuality?.resolvedCount || 0} {language === "tr" ? "çözülmüş" : "resolved"}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{language === "tr" ? "Oturum İşaretleri" : "Session Signals"}</CardTitle>
+                            <PauseCircle className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                <div>
+                                    <PauseCircle className="mb-2 h-4 w-4 text-muted-foreground" />
+                                    <div className="text-xl font-bold">{handoffQuality?.pausedCount || 0}</div>
+                                    <div className="text-xs text-muted-foreground">{language === "tr" ? "Duraklatılan" : "Paused"}</div>
+                                </div>
+                                <div>
+                                    <EyeOff className="mb-2 h-4 w-4 text-muted-foreground" />
+                                    <div className="text-xl font-bold">{sessionQuality?.hiddenCount || 0}</div>
+                                    <div className="text-xs text-muted-foreground">{language === "tr" ? "Gizlenen" : "Hidden"}</div>
+                                </div>
+                                <div>
+                                    <Heart className="mb-2 h-4 w-4 text-muted-foreground" />
+                                    <div className="text-xl font-bold">{sessionQuality?.favoriteCount || 0}</div>
+                                    <div className="text-xs text-muted-foreground">{language === "tr" ? "Favori" : "Favorite"}</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{language === "tr" ? "Disposition Dağılımı" : "Disposition Breakdown"}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {sessionQuality?.dispositionBreakdown?.length ? (
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                {sessionQuality.dispositionBreakdown.map((item) => (
+                                    <div key={item.disposition} className="rounded-lg border border-border/70 bg-background p-4">
+                                        <div className="truncate text-sm font-medium">{item.disposition}</div>
+                                        <div className="mt-2 text-2xl font-bold">{item.count}</div>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            {language === "tr" ? "sohbet" : "conversations"}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-sm text-muted-foreground">-</div>
+                        )}
+                    </CardContent>
+                </Card>
+            </section>
             
             {/* Business Impact Stats */}
             <div className="grid gap-4 md:grid-cols-2">
@@ -219,7 +367,7 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                     <CardContent>
                         <div className="text-2xl font-bold">{data?.missedOpportunities || 0}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {t('potentialLeadsLost') || "Potential customers who left without interacting"}
+                            {language === "tr" ? "Tahmini: sohbet hacmine göre kaçan fırsat sinyali" : (t('potentialLeadsLost') || "Estimated potential customers who left without interacting")}
                         </p>
                     </CardContent>
                 </Card>
@@ -231,11 +379,32 @@ export function AnalyticsContent({ targetUserId }: AnalyticsContentProps) {
                      <CardContent>
                         <div className="text-2xl font-bold">{data?.savedTimeHours || 0} {t('hours') || "hours"}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {t('manualWorkSaved') || "Manual work automatically handled by AI"}
+                            {language === "tr" ? "Tahmini: asistan mesajı başına 2 dk manuel iş" : (t('manualWorkSaved') || "Estimated manual work automatically handled by AI")}
                         </p>
                     </CardContent>
                 </Card>
             </div>
+
+            {data?.channelBreakdown?.length ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{language === "tr" ? "Kanal Dağılımı" : "Channel Breakdown"}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            {data.channelBreakdown.map((item) => (
+                                <div key={item.channel} className="rounded-lg border border-border/70 bg-background p-4">
+                                    <div className="text-sm font-medium capitalize">{item.channel}</div>
+                                    <div className="mt-2 text-2xl font-bold">{item.count}</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        {language === "tr" ? "sohbet" : "conversations"}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                 {/* Activity Chart - Full Width */}

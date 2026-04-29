@@ -37,7 +37,7 @@ export function AdminActivityFeed() {
                     const activityItems: ActivityItem[] = (data.recentActivity || []).map((item: any) => ({
                         id: item.id,
                         type: 'user' as const,
-                        title: "New User Registered",
+                        title: "Yeni kullanıcı kaydı",
                         subtitle: item.userEmail,
                         timestamp: item.timestamp?.seconds
                             ? new Date(item.timestamp.seconds * 1000)
@@ -65,7 +65,7 @@ export function AdminActivityFeed() {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
+                    <CardTitle>Son Aktivite</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -77,7 +77,7 @@ export function AdminActivityFeed() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>Son Aktivite</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-8">
@@ -100,7 +100,7 @@ export function AdminActivityFeed() {
                         </div>
                     ))}
                     {activities.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">Yakın aktivite yok.</p>
                     )}
                 </div>
             </CardContent>

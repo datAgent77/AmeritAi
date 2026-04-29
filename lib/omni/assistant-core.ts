@@ -194,7 +194,6 @@ function detectRichUiIntent(value: string): RichUiIntent | null {
 function buildPlainChannelFallback(intent: RichUiIntent, language?: string | null) {
     const resolvedLanguage = resolveConversationLanguage({
         explicitLanguage: language,
-        userText: language,
         fallback: "en",
     })
     const copy = PLAIN_CHANNEL_FALLBACKS[toCopyLanguage(resolvedLanguage)]

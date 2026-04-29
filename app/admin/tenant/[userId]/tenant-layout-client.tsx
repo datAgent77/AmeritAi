@@ -43,7 +43,7 @@ export function TenantLayoutClient({
 
         if (role === "AGENT") {
             const assignedTenantId = typeof userData?.agentTenantId === "string" ? userData.agentTenantId.trim() : ""
-            if (assignedTenantId && assignedTenantId === userId) {
+            if (userData?.isActive !== false && assignedTenantId && assignedTenantId === userId) {
                 setAccessState("allowed")
                 return
             }

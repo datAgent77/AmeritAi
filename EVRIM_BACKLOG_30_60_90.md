@@ -18,7 +18,7 @@ Vion AI'yi "chatbot"tan "AI calisani + otomasyon platformu" seviyesine cikarmak.
 - [x] Eksik autopilot runs endpointini ekle + token dogrulama (`app/api/autopilot/runs/route.ts`)
 
 ### P1
-- [ ] `/api/analytics` endpointine yetkilendirme ekle
+- [x] `/api/analytics` endpointine yetkilendirme ekle
 - [ ] Event log standardi tanimla: `event_type`, `actor`, `source_module`, `result`
 - [ ] Tenant bazli outcome dashboard taslagi (lead, appointment, conversion)
 

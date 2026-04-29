@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { GET } from "./route"
 import { authorizeOmniRequest, getOmniChannelConfig, getRequestOrigin, normalizeVoiceIntegrationConfig } from "@/lib/omni/server-utils"
 import { buildVoiceReadiness, normalizeVoiceNumberRecords } from "@/lib/omni/voice-config"
@@ -41,8 +41,8 @@ function createAdminDb() {
                                 createDoc("session-1", {
                                     chatbotId: "tenant-1",
                                     channel: "whatsapp",
-                                    createdAt: "2026-03-27T10:00:00.000Z",
-                                    updatedAt: "2026-03-28T09:00:00.000Z",
+                                    createdAt: "2026-04-20T10:00:00.000Z",
+                                    updatedAt: "2026-04-20T09:00:00.000Z",
                                     lastDisposition: "resolved",
                                     messages: [{}, {}],
                                 }),
@@ -62,8 +62,8 @@ function createAdminDb() {
                                     sourceChannel: "voice",
                                     status: "resolved",
                                     resolutionStatus: "completed",
-                                    createdAt: "2026-03-28T08:00:00.000Z",
-                                    updatedAt: "2026-03-28T08:30:00.000Z",
+                                    createdAt: "2026-04-20T08:00:00.000Z",
+                                    updatedAt: "2026-04-20T08:30:00.000Z",
                                 }),
                             ],
                         }),
@@ -81,7 +81,7 @@ function createAdminDb() {
                                     linkedChannels: ["whatsapp", "voice"],
                                     manualMergeReview: false,
                                     mergedInto: null,
-                                    lastInteractionAt: "2026-03-28T09:00:00.000Z",
+                                    lastInteractionAt: "2026-04-20T09:00:00.000Z",
                                 }),
                             ],
                         }),
@@ -100,7 +100,7 @@ function createAdminDb() {
                                     eventType: "whatsapp.auto_reply",
                                     result: "success",
                                     message: "ok",
-                                    createdAt: "2026-03-28T09:10:00.000Z",
+                                    createdAt: "2026-04-20T09:10:00.000Z",
                                 }),
                                 createDoc("audit-2", {
                                     chatbotId: "tenant-1",
@@ -108,7 +108,7 @@ function createAdminDb() {
                                     eventType: "whatsapp.webhook_signature",
                                     result: "denied",
                                     message: "denied",
-                                    createdAt: "2026-03-28T09:15:00.000Z",
+                                    createdAt: "2026-04-20T09:15:00.000Z",
                                 }),
                             ],
                         }),
@@ -128,7 +128,7 @@ function createAdminDb() {
                                     retryEligible: true,
                                     retryState: "exhausted",
                                     errorClass: "provider",
-                                    createdAt: "2026-03-28T09:20:00.000Z",
+                                    createdAt: "2026-04-20T09:20:00.000Z",
                                 }),
                                 createDoc("delivery-2", {
                                     chatbotId: "tenant-1",
@@ -137,7 +137,7 @@ function createAdminDb() {
                                     retryEligible: false,
                                     retryState: "none",
                                     errorClass: null,
-                                    createdAt: "2026-03-28T09:25:00.000Z",
+                                    createdAt: "2026-04-20T09:25:00.000Z",
                                 }),
                             ],
                         }),
@@ -161,6 +161,8 @@ function createAdminDb() {
 }
 
 beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-04-28T12:00:00.000Z"))
     vi.clearAllMocks()
     vi.mocked(getOmniChannelConfig).mockResolvedValue({
         web: {
@@ -198,6 +200,10 @@ beforeEach(() => {
         callControlConfigured: true,
         renderingConfigured: false,
     } as any)
+})
+
+afterEach(() => {
+    vi.useRealTimers()
 })
 
 describe("GET /api/omni/analytics", () => {

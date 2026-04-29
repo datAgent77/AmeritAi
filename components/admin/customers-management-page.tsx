@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, type SelectHTMLAttributes } from "react"
 import { useRouter } from "next/navigation"
 import { auth } from "@/lib/firebase"
 import { getPartnerLevelLabel } from "@/lib/management/access"
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { Switch } from "@/components/ui/switch"
-import { Loader2, Plus, Archive, ArchiveRestore, Users, Activity, MessageSquare, Search, CreditCard, Settings, Building2, MoreHorizontal, Trash2 } from "lucide-react"
+import { Loader2, Plus, Users, Activity, MessageSquare, Search, CreditCard, Settings, Building2, MoreHorizontal, Trash2, ChevronDown } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -47,6 +47,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/context/LanguageContext"
+import { cn } from "@/lib/utils"
 
 interface UserData {
     id: string
@@ -95,6 +96,47 @@ interface CustomersManagementPageProps {
     section: CustomersManagementSection
 }
 
+function getCreatedAtTime(value: unknown) {
+    if (!value) return 0
+
+    if (typeof value === "string") {
+        const parsed = Date.parse(value)
+        return Number.isNaN(parsed) ? 0 : parsed
+    }
+
+    if (typeof value === "object") {
+        const timestamp = value as { seconds?: unknown; _seconds?: unknown }
+        const seconds = typeof timestamp.seconds === "number"
+            ? timestamp.seconds
+            : typeof timestamp._seconds === "number"
+                ? timestamp._seconds
+                : null
+
+        return seconds ? seconds * 1000 : 0
+    }
+
+    return 0
+}
+
+function NativeSelect({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+    return (
+        <div
+            className={cn(
+                "relative items-center focus-within:ring-2 focus-within:ring-ring/70",
+                className
+            )}
+        >
+            <select
+                className="h-full w-full appearance-none border-0 bg-transparent p-0 pr-7 text-inherit outline-none"
+                {...props}
+            >
+                {children}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
+    )
+}
+
 export function CustomersManagementPage({ section }: CustomersManagementPageProps) {
     const { t, language } = useLanguage()
     const router = useRouter()
@@ -114,10 +156,6 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
         totalChatSessions: 0
     })
 
-    // Archive Tenant State (moved before useCallback that uses it)
-    const [showArchived, setShowArchived] = useState(false)
-    const [isArchiving, setIsArchiving] = useState<string | null>(null)
-    const [archiveConfirmId, setArchiveConfirmId] = useState<string | null>(null)  // For AlertDialog
     const [deleteConfirmUser, setDeleteConfirmUser] = useState<UserData | null>(null)
     const [isDeletingTenant, setIsDeletingTenant] = useState<string | null>(null)
 
@@ -127,10 +165,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             if (!currentUser) return
 
             const token = await currentUser.getIdToken()
-            const dashboardUrl = showArchived
-                ? "/api/admin/dashboard-stats?includeArchived=true"
-                : "/api/admin/dashboard-stats"
-            const accountsUrl = `/api/omni/directory/accounts?includeArchived=${showArchived ? "true" : "false"}`
+            const dashboardUrl = "/api/admin/dashboard-stats"
+            const accountsUrl = "/api/omni/directory/accounts?includeArchived=false"
             const [dashboardResponse, accountsResponse] = await Promise.all([
                 fetch(dashboardUrl, {
                     headers: {
@@ -209,7 +245,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
         } finally {
             setIsLoading(false)
         }
-    }, [toast, showArchived])
+    }, [toast])
 
     const fetchAgencies = useCallback(async () => {
         setIsAgenciesLoading(true)
@@ -218,7 +254,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             if (!currentUser) return
 
             const token = await currentUser.getIdToken()
-            const response = await fetch(`/api/admin/agencies?includeArchived=${showArchived ? "true" : "false"}`, {
+            const response = await fetch("/api/admin/agencies?includeArchived=false", {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -241,7 +277,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
         } finally {
             setIsAgenciesLoading(false)
         }
-    }, [toast, showArchived])
+    }, [toast])
 
     // Add Tenant State
     const [isAddTenantOpen, setIsAddTenantOpen] = useState(false)
@@ -634,57 +670,6 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
         }
     }
 
-    const handleArchiveTenant = async (userId: string) => {
-        // Called when user confirms in AlertDialog
-
-        setIsArchiving(userId)
-        try {
-            const token = await auth.currentUser?.getIdToken()
-            const response = await fetch("/api/admin/archive-tenant", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ userId })
-            })
-
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || "Failed to archive tenant")
-            }
-
-            // Remove from visible list (or mark as archived if showArchived is true)
-            if (!showArchived) {
-                const updatedUsers = users.filter(u => u.id !== userId)
-                setUsers(updatedUsers)
-                // Update stats
-                const tenants = updatedUsers.filter(u => u.role === 'TENANT_ADMIN')
-                const active = tenants.filter(u => u.isActive).length
-                setStats(prev => ({ ...prev, totalTenants: tenants.length, activeTenants: active }))
-            } else {
-                const updatedUsers = users.map(u =>
-                    u.id === userId ? { ...u, isArchived: true, archivedAt: new Date().toISOString() } : u
-                )
-                setUsers(updatedUsers)
-            }
-
-            toast({
-                title: t('success') || "Başarılı",
-                description: t('archiveTenantSuccess') || "Kiracı başarıyla arşivlendi.",
-            })
-        } catch (error: any) {
-            console.error("Error archiving tenant:", error)
-            toast({
-                title: "Hata",
-                description: error.message || "Kiracı arşivlenemedi.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsArchiving(null)
-        }
-    }
-
     const handleDeleteTenant = async (user: UserData) => {
         setIsDeletingTenant(user.id)
         try {
@@ -722,46 +707,6 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
         }
     }
 
-    const handleRestoreTenant = async (userId: string) => {
-        setIsArchiving(userId)
-        try {
-            const token = await auth.currentUser?.getIdToken()
-            const response = await fetch("/api/admin/restore-tenant", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ userId })
-            })
-
-            if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || "Failed to restore tenant")
-            }
-
-            // Update local state
-            const updatedUsers = users.map(u =>
-                u.id === userId ? { ...u, isArchived: false, archivedAt: undefined } : u
-            )
-            setUsers(updatedUsers)
-
-            toast({
-                title: t('success') || "Başarılı",
-                description: t('restoreTenantSuccess') || "Kiracı başarıyla geri yüklendi.",
-            })
-        } catch (error: any) {
-            console.error("Error restoring tenant:", error)
-            toast({
-                title: "Hata",
-                description: error.message || "Kiracı geri yüklenemedi.",
-                variant: "destructive",
-            })
-        } finally {
-            setIsArchiving(null)
-        }
-    }
-
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             if (user) {
@@ -778,16 +723,6 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
         return () => unsubscribe();
     }, [fetchDashboardData, fetchAgencies, isEndUsersSection])
-
-    // Refetch when showArchived changes
-    useEffect(() => {
-        if (auth.currentUser) {
-            fetchAgencies();
-            if (isEndUsersSection) {
-                fetchDashboardData();
-            }
-        }
-    }, [showArchived, fetchDashboardData, fetchAgencies, isEndUsersSection])
 
     const userPlanOptions = useMemo(() => {
         const options = new Set<string>()
@@ -828,33 +763,40 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
     const filteredUsers = useMemo(() => {
         const query = searchTerm.trim().toLowerCase()
 
-        return users.filter((user) => {
-            if (user.role !== "TENANT_ADMIN") return false
+        return users
+            .filter((user) => {
+                if (user.role !== "TENANT_ADMIN") return false
 
-            const matchesQuery = !query ||
-                (user.email || "").toLowerCase().includes(query) ||
-                (user.companyName || "").toLowerCase().includes(query)
+                const matchesQuery = !query ||
+                    (user.email || "").toLowerCase().includes(query) ||
+                    (user.companyName || "").toLowerCase().includes(query)
 
-            const matchesStatus =
-                userStatusFilter === "all" ||
-                (userStatusFilter === "active" && user.isActive) ||
-                (userStatusFilter === "inactive" && !user.isActive)
+                const matchesStatus =
+                    userStatusFilter === "all" ||
+                    (userStatusFilter === "active" && user.isActive) ||
+                    (userStatusFilter === "inactive" && !user.isActive)
 
-            const planId = getUserPlanId(user)
-            const matchesPlan = userPlanFilter === "all" || planId === userPlanFilter
+                const planId = getUserPlanId(user)
+                const matchesPlan = userPlanFilter === "all" || planId === userPlanFilter
 
-            const matchesAgency =
-                userAgencyFilter === "all" ||
-                (userAgencyFilter === "unassigned" && !user.agencyId) ||
-                user.agencyId === userAgencyFilter
+                const matchesAgency =
+                    userAgencyFilter === "all" ||
+                    (userAgencyFilter === "unassigned" && !user.agencyId) ||
+                    user.agencyId === userAgencyFilter
 
-            const subscriptionType = getUserSubscriptionType(user)
-            const matchesSubscription =
-                userSubscriptionFilter === "all" ||
-                subscriptionType === userSubscriptionFilter
+                const subscriptionType = getUserSubscriptionType(user)
+                const matchesSubscription =
+                    userSubscriptionFilter === "all" ||
+                    subscriptionType === userSubscriptionFilter
 
-            return matchesQuery && matchesStatus && matchesPlan && matchesAgency && matchesSubscription
-        })
+                return matchesQuery && matchesStatus && matchesPlan && matchesAgency && matchesSubscription
+            })
+            .sort((left, right) => {
+                const createdDiff = getCreatedAtTime(right.createdAt) - getCreatedAtTime(left.createdAt)
+                if (createdDiff !== 0) return createdDiff
+
+                return (left.email || "").localeCompare(right.email || "")
+            })
     }, [users, searchTerm, userStatusFilter, userPlanFilter, userAgencyFilter, userSubscriptionFilter, getUserPlanId, getUserSubscriptionType])
 
     const activeAgencyCount = agencies.filter((agency) => agency.isActive).length
@@ -1009,7 +951,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     onChange={(e) => setAgencySearchTerm(e.target.value)}
                                 />
                             </div>
-                            <select
+                            <NativeSelect
                                 className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={agencyStatusFilter}
                                 onChange={(e) => setAgencyStatusFilter(e.target.value as "all" | "active" | "inactive")}
@@ -1017,8 +959,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="all">{t('status') || "Status"}: {t('all') || "All"}</option>
                                 <option value="active">{t('active') || "Active"}</option>
                                 <option value="inactive">{t('inactive') || "Inactive"}</option>
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 className="flex h-9 min-w-[220px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={agencyCustomerFilter}
                                 onChange={(e) => setAgencyCustomerFilter(e.target.value as "all" | "has-customers" | "no-customers")}
@@ -1026,8 +968,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="all">{t('customers') || "Customers"}: {t('all') || "All"}</option>
                                 <option value="has-customers">{t('customers') || "Customers"} &gt; 0</option>
                                 <option value="no-customers">{t('customers') || "Customers"} = 0</option>
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 className="flex h-9 min-w-[220px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={agencyLevelFilter}
                                 onChange={(e) => setAgencyLevelFilter(e.target.value as PartnerLevel | "all")}
@@ -1036,7 +978,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="partner">Partner</option>
                                 <option value="solution_partner">Solution Partner</option>
                                 <option value="strategic_partner">Strategic Partner</option>
-                            </select>
+                            </NativeSelect>
                             {(agencySearchTerm || agencyStatusFilter !== "all" || agencyCustomerFilter !== "all" || agencyLevelFilter !== "all") && (
                                 <Button
                                     variant="outline"
@@ -1121,7 +1063,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
 
             {/* Tenant List */}
             {isEndUsersSection && (
-                <Card className={listCardClassName}>
+                <Card className={cn(listCardClassName, "my-8")}>
                     <CardHeader className={listCardHeaderClassName}>
                         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                             <CardTitle className="text-base font-semibold">
@@ -1141,7 +1083,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <select
+                            <NativeSelect
                                 aria-label={t('status') || "Status"}
                                 className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={userStatusFilter}
@@ -1150,8 +1092,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="all">{t('status') || "Status"}: {t('all') || "All"}</option>
                                 <option value="active">{t('active') || "Active"}</option>
                                 <option value="inactive">{t('inactive') || "Inactive"}</option>
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 aria-label={t('plan') || "Plan"}
                                 className="flex h-9 min-w-[160px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={userPlanFilter}
@@ -1163,8 +1105,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                         {plan.charAt(0).toUpperCase() + plan.slice(1)}
                                     </option>
                                 ))}
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 aria-label={t('agency') || "Partner"}
                                 className="flex h-9 min-w-[200px] flex-[1.2] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={userAgencyFilter}
@@ -1179,8 +1121,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                             {getPartnerName(agency)}
                                         </option>
                                     ))}
-                            </select>
-                            <select
+                            </NativeSelect>
+                            <NativeSelect
                                 aria-label={t('subscription') || "Subscription"}
                                 className="flex h-9 min-w-[180px] flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
                                 value={userSubscriptionFilter}
@@ -1190,7 +1132,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="trial">{t('trial') || "Trial"}</option>
                                 <option value="paid">{t('paid') || "Paid"}</option>
                                 <option value="unknown">{t('unknown') || "Unknown"}</option>
-                            </select>
+                            </NativeSelect>
                             {hasUserFilters && (
                                 <Button
                                     variant="outline"
@@ -1208,22 +1150,9 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 </Button>
                             )}
                         </div>
-                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed border-border/70 bg-muted/30 px-3 py-2">
-                            <span className="text-xs text-muted-foreground">
-                                {t('manageTenantsDescription') || "Sistem kullanıcılarını ve erişimlerini yönetin."}
-                            </span>
-                            <label className="ml-auto flex items-center gap-2 text-sm cursor-pointer">
-                                <Switch
-                                    checked={showArchived}
-                                    onCheckedChange={setShowArchived}
-                                    aria-label={t('showArchivedTenants') || "Arşivlenmiş kullanıcıları göster"}
-                                />
-                                <span className="text-muted-foreground">{t('showArchivedTenants') || "Arşivlenmiş kullanıcıları göster"}</span>
-                            </label>
-                        </div>
                     </CardHeader>
-                    <CardContent className={listCardContentClassName}>
-                        <div className={listTableWrapperClassName}>
+                    <CardContent className="pt-0">
+                        <div className="overflow-hidden rounded-lg border border-border/70 bg-background">
                             <Table>
                                 <TableHeader className={listTableHeaderClassName}>
                                     <TableRow>
@@ -1266,7 +1195,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                 <div className="text-sm">
                                                     {agencies.find((agency) => agency.id === user.agencyId)?.partnerName || agencies.find((agency) => agency.id === user.agencyId)?.agencyName || t('unassigned') || "Unassigned"}
                                                 </div>
-                                                <select
+                                                <NativeSelect
                                                     className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                                     value={user.agencyId || ""}
                                                     disabled={assigningTenantId === user.id}
@@ -1280,7 +1209,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                                 {getPartnerName(agency)}
                                                             </option>
                                                         ))}
-                                                </select>
+                                                </NativeSelect>
                                             </div>
                                         </TableCell>
                                         {/* Plan & Subscription Status */}
@@ -1402,7 +1331,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="industry">{t('industry')}</Label>
-                                        <select
+                                        <NativeSelect
                                             id="industry"
                                             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                             value={industry}
@@ -1427,7 +1356,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                             <option value="fitness">{language === 'tr' ? 'Spor & Fitness' : 'Sports & Fitness'}</option>
                                             <option value="maritime">{language === 'tr' ? 'Denizcilik' : 'Maritime'}</option>
                                             <option value="other">{t('industryOther')}</option>
-                                        </select>
+                                        </NativeSelect>
                                     </div>
                                     <div className="space-y-2 col-span-2">
                                         <Label htmlFor="website">{t('website')}</Label>
@@ -1467,7 +1396,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     </div>
                                     <div className="space-y-2 col-span-2">
                                         <Label htmlFor="agency">{t('agency') || "Partner"} ({t('optional') || "optional"})</Label>
-                                        <select
+                                        <NativeSelect
                                             id="agency"
                                             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                             value={selectedAgencyId}
@@ -1481,7 +1410,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                         {getPartnerName(agency)}
                                                     </option>
                                                 ))}
-                                        </select>
+                                        </NativeSelect>
                                     </div>
                                 </div>
                             </div>
@@ -1534,7 +1463,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="agencyPartnerLevel">Partner Level</Label>
-                            <select
+                            <NativeSelect
                                 id="agencyPartnerLevel"
                                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                 value={newAgencyPartnerLevel}
@@ -1543,7 +1472,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                 <option value="partner">Partner</option>
                                 <option value="solution_partner">Solution Partner</option>
                                 <option value="strategic_partner">Strategic Partner</option>
-                            </select>
+                            </NativeSelect>
                         </div>
                     </div>
                     <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
@@ -1591,7 +1520,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="conversionPartnerLevel">Partner Level</Label>
-                                <select
+                                <NativeSelect
                                     id="conversionPartnerLevel"
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                     value={conversionPartnerLevel}
@@ -1600,7 +1529,7 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                     <option value="partner">Partner</option>
                                     <option value="solution_partner">Solution Partner</option>
                                     <option value="strategic_partner">Strategic Partner</option>
-                                </select>
+                                </NativeSelect>
                             </div>
                             {partnerConversionUser?.agencyId ? (
                                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -1627,34 +1556,6 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            )}
-
-            {/* Archive Confirmation AlertDialog */}
-            {isEndUsersSection && (
-                <AlertDialog open={!!archiveConfirmId} onOpenChange={(open) => !open && setArchiveConfirmId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t('archiveTenant') || "Kiracıyı Arşivle"}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('archiveTenantConfirm') || "Bu kiracıyı arşivlemek istediğinizden emin misiniz? Hesabı deaktive edilecek ancak veriler korunacak."}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>{t('cancel') || "İptal"}</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-orange-500 hover:bg-orange-600"
-                            onClick={() => {
-                                if (archiveConfirmId) {
-                                    handleArchiveTenant(archiveConfirmId)
-                                    setArchiveConfirmId(null)
-                                }
-                            }}
-                        >
-                            {t('archiveTenant') || "Arşivle"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
             )}
 
             {isEndUsersSection && (

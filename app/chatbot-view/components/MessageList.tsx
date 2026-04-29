@@ -5,6 +5,7 @@ import type {
     GuidedSkillShortcut,
     GuidedSkillState,
 } from "@/lib/guided-skills/types"
+import { AI_GUIDED_SKILL_ID } from "@/lib/guided-ai"
 import { Sparkles, X } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -129,7 +130,9 @@ function getGuidedCopy(language: string) {
 }
 
 function isGuidedUiInteractive(guidedUi: GuidedSkillMessageUi | undefined, guidedSkillState?: GuidedSkillState | null) {
-    if (!guidedUi || !guidedSkillState) return false
+    if (!guidedUi) return false
+    if (guidedUi.skillId === AI_GUIDED_SKILL_ID) return true
+    if (!guidedSkillState) return false
     return (
         guidedSkillState.status === "active"
         && guidedSkillState.skillId === guidedUi.skillId

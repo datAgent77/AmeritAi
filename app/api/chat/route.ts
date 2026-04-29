@@ -5,6 +5,7 @@ import { upsertChatSessionRecord } from "@/lib/chat-sessions";
 import { normalizeGuidedSkillState } from "@/lib/guided-skills";
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine";
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types";
+import { buildAiGeneratedGuidedUi, extractGuidedOptionsFromContent } from "@/lib/guided-ai";
 import { getPublishedContract } from "@/lib/contracts";
 import {
     getHumanHandoffAssistantMessage,
@@ -563,6 +564,7 @@ export async function POST(req: Request) {
             ...tenantUserData,
             ...chatbotData,
         }
+        const isGuidedAiModeEnabled = mergedTenantData.enableGuided === true;
         const omniChannelConfig = omniChannelConfigSnapshot && "exists" in omniChannelConfigSnapshot && omniChannelConfigSnapshot.exists
             ? omniChannelConfigSnapshot.data() || {}
             : {}
@@ -779,18 +781,20 @@ export async function POST(req: Request) {
                 });
             }
 
-            const guidedResult = await resolveGuidedSkillTurn({
-                adminDb,
-                chatbotId,
-                channel: "web",
-                sessionId: activeSessionId,
-                transcript: userContent,
-                guidedEvent: body.guidedEvent || null,
-                currentState: currentGuidedState,
-                contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                canonicalContactId: syncedIdentity?.contact?.id || null,
-                language: resolvedLanguage,
-            });
+            const guidedResult = !isGuidedAiModeEnabled
+                ? await resolveGuidedSkillTurn({
+                    adminDb,
+                    chatbotId,
+                    channel: "web",
+                    sessionId: activeSessionId,
+                    transcript: userContent,
+                    guidedEvent: body.guidedEvent || null,
+                    currentState: currentGuidedState,
+                    contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
+                    canonicalContactId: syncedIdentity?.contact?.id || null,
+                    language: resolvedLanguage,
+                })
+                : { handled: false as const };
 
                 if (guidedResult.handled) {
                         const guidedAssistantMessageId = assistantMessageId || `assistant-guided-${Date.now()}`
@@ -896,16 +900,18 @@ export async function POST(req: Request) {
                 }
         }
 
+        const effectiveShouldStream = shouldStream && !isGuidedAiModeEnabled;
         const result = await generateAIResponse(
             chatbotId,
             normalizedMessages,
             activeSessionId,
-            shouldStream,
+            effectiveShouldStream,
             safeContext,
             isVoice,
             resolvedLanguage,
             visualAnalysisContext,
-            body.industry
+            body.industry,
+            isGuidedAiModeEnabled && !isVoice
         );
 
         // ... sentiment code ...
@@ -1117,6 +1123,41 @@ export async function POST(req: Request) {
                 },
             });
         } else {
+            if (isGuidedAiModeEnabled && !isVoice) {
+                const guidedAssistantMessageId = assistantMessageId || `assistant-guided-ai-${Date.now()}`
+                const parsedGuided = extractGuidedOptionsFromContent(result.content || "")
+                const assistantGuidedUi = buildAiGeneratedGuidedUi({
+                    assistantMessageId: guidedAssistantMessageId,
+                    content: parsedGuided.content,
+                    options: parsedGuided.options,
+                    language: resolvedLanguage,
+                })
+
+                if (activeSessionId && parsedGuided.content) {
+                    await upsertChatSessionRecord({
+                        sessionId: activeSessionId,
+                        chatbotId,
+                        userId,
+                        channel: "web",
+                        guidedSkillState: null,
+                        message: {
+                            id: guidedAssistantMessageId,
+                            role: "assistant",
+                            content: parsedGuided.content,
+                            guidedUi: assistantGuidedUi || undefined,
+                        },
+                    })
+                }
+
+                return NextResponse.json({
+                    content: parsedGuided.content,
+                    guidedUi: assistantGuidedUi || null,
+                    assistantMessageId: guidedAssistantMessageId,
+                    guidedSkillState: null,
+                    sessionId: activeSessionId,
+                })
+            }
+
             return new Response(result.content, { status: 200 });
         }
 

@@ -1,13 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Loader2, Plus, Save, Trash2, Users } from "lucide-react"
+import { Info, Loader2, Plus, Save, Send, Trash2, UserCheck, UserX, Users } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -38,6 +47,12 @@ type HandoffState = {
     businessHoursEnd: string
     businessHoursTimezone: string
     businessDays: HumanHandoffBusinessDayCode[]
+}
+
+type AgentDraft = {
+    name: string
+    email: string
+    role: OmniTeamMember["role"]
 }
 
 const DAY_OPTIONS: Array<{ code: HumanHandoffBusinessDayCode; label: string }> = [
@@ -83,21 +98,17 @@ const DEFAULT_OPERATIONS_STATE: OmniOperationsSettings = {
     teamMembers: [],
 }
 
+const DEFAULT_AGENT_DRAFT: AgentDraft = {
+    name: "",
+    email: "",
+    role: "operations",
+}
+
 function normalizeTeamMemberValue(values: { name?: string; email?: string; fallback?: string }) {
     return String(values.email || values.name || values.fallback || "")
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "-")
-}
-
-function buildEmptyMember(index: number): OmniTeamMember {
-    return {
-        id: `member-${index}`,
-        name: "",
-        email: "",
-        role: "operations",
-        active: true,
-    }
 }
 
 function hasMeaningfulTeamMemberInput(member: OmniTeamMember) {
@@ -130,6 +141,10 @@ function sanitizeTeamMembers(members: OmniTeamMember[]): OmniTeamMember[] {
         })
 }
 
+function isTeamMemberRole(value: string): value is OmniTeamMember["role"] {
+    return value === "operations" || value === "support" || value === "sales" || value === "manager"
+}
+
 export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: HumanHandoffSettingsFormProps) {
     const { user, role } = useAuth()
     const { language } = useLanguage()
@@ -143,6 +158,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
     const [operations, setOperations] = useState<OmniOperationsSettings>(DEFAULT_OPERATIONS_STATE)
     const [isRosterLoading, setIsRosterLoading] = useState(true)
     const [isRosterSaving, setIsRosterSaving] = useState(false)
+    const [isAddAgentOpen, setIsAddAgentOpen] = useState(false)
+    const [agentDraft, setAgentDraft] = useState<AgentDraft>(DEFAULT_AGENT_DRAFT)
     const [activeTab, setActiveTab] = useState<"agents" | "settings">(mode === "agents" ? "agents" : "settings")
     const i18n = language === "tr"
         ? {
@@ -153,13 +170,42 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
             tabAgents: "Agentlar",
             tabSettings: "Ayarlar",
             agentAccountsTitle: "Agent Hesaplari",
-            agentAccountsDescription: "Bu liste tenant hesabiniza ozeldir. Agent eklendikten sonra \"Agent Hesaplarini Kaydet\" ile kayit tamamlanir; callback, lead ve randevu atamalari aktif Agentlar icinden role ve durum bilgisine gore yapilir.",
+            agentAccountsDescription: "Bu liste tenant hesabiniza ozeldir. Agent ekleme ve davet gonderme islemi Agent Ekle modalindan tamamlanir.",
+            agentFlowTitle: "Agentlar nasil calisir?",
+            agentFlowDescription: "Agent hesaplari davetle olusturulur ve yalnizca bagli olduklari tenant calisma alanina erisir.",
+            agentFlowSteps: [
+                "Agent satiri eklenir, ad/e-posta/rol bilgisi girilir ve hesaplar kaydedilir.",
+                "Sistem agent icin Firebase Auth hesabi olusturur veya mevcut hesabi AGENT rolune baglar.",
+                "Yeni ve aktif agentlara sifre belirleme linki iceren davet e-postasi gonderilir.",
+                "Agent linkten sifresini belirler, /login uzerinden giris yapar ve dogrudan tenant sohbet alanina yonlenir.",
+                "Agent yalnizca kendi tenant verisine erisebilir; egitim, skills, widget, entegrasyon ve agent yonetimi yapamaz.",
+            ],
+            agentFlowCloseNote: "Bu akista agent e-postasi davetle guvenilir kabul edilir; ayrica e-posta dogrulama adimina takilmaz.",
             loadingAgents: "Agent hesaplari yukleniyor...",
             emptyAgents: "Henuz Agent hesabi yok. \"Agent Ekle\" ile yeni hesap tanimlayin.",
             fullNamePlaceholder: "Ad Soyad",
             activeLabel: "Aktif",
+            inactiveLabel: "Pasif",
             addAgent: "Agent Ekle",
-            saveAgents: "Agent Hesaplarini Kaydet",
+            sendInvite: "Davet gonder",
+            inviteSentTitle: "Davet gonderildi",
+            inviteSentDescription: "Agent hesabi kaydedildi ve davet e-postasi gonderildi.",
+            inviteFailedTitle: "Davet gonderilemedi",
+            inviteFailedDescription: "Agent hesabi kaydedildi ancak davet e-postasi gonderilemedi.",
+            invalidAgentEmail: "Gecerli bir agent e-postasi girin.",
+            agentUpdatedTitle: "Agent guncellendi",
+            agentUpdatedDescription: "Agent durumu guncellendi.",
+            agentDeletedTitle: "Agent silindi",
+            agentDeletedDescription: "Agent roster'dan kaldirildi ve tenant erisimi kapatildi.",
+            agentUpdateFailedTitle: "Agent guncellenemedi",
+            deleteAgentConfirm: "Bu agent roster'dan kaldirilacak ve tenant erisimi kapatilacak. Devam edilsin mi?",
+            activateAgent: "Aktif yap",
+            deactivateAgent: "Pasif yap",
+            deleteAgent: "Sil",
+            agentRole: "Rol",
+            agentStatus: "Durum",
+            agentEmail: "E-posta",
+            existingAgents: "Mevcut Agentlar",
             save: "Kaydet",
         }
         : {
@@ -170,13 +216,42 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
             tabAgents: "Agents",
             tabSettings: "Settings",
             agentAccountsTitle: "Agent Accounts",
-            agentAccountsDescription: "This list is tenant-specific. After adding an agent, click \"Save Agent Accounts\" to finalize. Callback, lead, and appointment assignments are made from active agents based on role and status.",
+            agentAccountsDescription: "This list is tenant-specific. Add and invite agents from the Add Agent modal.",
+            agentFlowTitle: "How do agents work?",
+            agentFlowDescription: "Agent accounts are invitation-based and can access only their assigned tenant workspace.",
+            agentFlowSteps: [
+                "Add an agent row, enter name/email/role, and save the accounts.",
+                "The system creates a Firebase Auth account or binds the existing account to the AGENT role.",
+                "New active agents receive an invitation email with a password setup link.",
+                "The agent sets a password from the link, signs in from /login, and lands directly in the tenant chat workspace.",
+                "The agent can access only the assigned tenant data and cannot manage training, skills, widget, integrations, or agent accounts.",
+            ],
+            agentFlowCloseNote: "In this flow the invited agent email is treated as trusted, so the login is not blocked by a separate email verification step.",
             loadingAgents: "Loading agent accounts...",
             emptyAgents: "No agent account yet. Add a new one with \"Add Agent\".",
             fullNamePlaceholder: "Full Name",
             activeLabel: "Active",
+            inactiveLabel: "Passive",
             addAgent: "Add Agent",
-            saveAgents: "Save Agent Accounts",
+            sendInvite: "Send invitation",
+            inviteSentTitle: "Invitation sent",
+            inviteSentDescription: "Agent account was saved and the invitation email was sent.",
+            inviteFailedTitle: "Invitation failed",
+            inviteFailedDescription: "Agent account was saved but the invitation email could not be sent.",
+            invalidAgentEmail: "Enter a valid agent email.",
+            agentUpdatedTitle: "Agent updated",
+            agentUpdatedDescription: "Agent status was updated.",
+            agentDeletedTitle: "Agent deleted",
+            agentDeletedDescription: "Agent was removed from the roster and tenant access was revoked.",
+            agentUpdateFailedTitle: "Agent update failed",
+            deleteAgentConfirm: "This agent will be removed from the roster and tenant access will be revoked. Continue?",
+            activateAgent: "Activate",
+            deactivateAgent: "Deactivate",
+            deleteAgent: "Delete",
+            agentRole: "Role",
+            agentStatus: "Status",
+            agentEmail: "Email",
+            existingAgents: "Current Agents",
             save: "Save",
         }
 
@@ -293,53 +368,34 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
         }
     }, [mode])
 
-    const addTeamMember = () => {
-        setOperations((current) => ({
-            ...current,
-            teamMembers: [...(current.teamMembers || []), buildEmptyMember((current.teamMembers || []).length + 1)],
-        }))
-    }
-
-    const updateTeamMember = (index: number, patch: Partial<OmniTeamMember>) => {
-        setOperations((current) => ({
-            ...current,
-            teamMembers: (current.teamMembers || []).map((member, memberIndex) =>
-                memberIndex === index
-                    ? (() => {
-                        const nextMember = {
-                            ...member,
-                            ...patch,
-                        }
-                        const existingId = String(member.id || "").trim()
-                        const fallbackId = normalizeTeamMemberValue({
-                            name: nextMember.name,
-                            email: nextMember.email || undefined,
-                            fallback: `member-${memberIndex + 1}`,
-                        })
-                        return {
-                            ...nextMember,
-                            // Keep id stable to prevent input remount/focus loss while typing.
-                            id: existingId || fallbackId,
-                        }
-                    })()
-                    : member
-            ),
-        }))
-    }
-
-    const removeTeamMember = (index: number) => {
-        setOperations((current) => ({
-            ...current,
-            teamMembers: (current.teamMembers || []).filter((_, memberIndex) => memberIndex !== index),
-        }))
-    }
-
-    const saveTeamRoster = async () => {
+    const sendAgentInvite = async () => {
         if (!user?.uid) return
         if (!canManage) return
+        const name = agentDraft.name.trim()
+        const email = agentDraft.email.trim().toLowerCase()
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            toast({
+                title: language === "tr" ? "Hata" : "Error",
+                description: i18n.invalidAgentEmail,
+                variant: "destructive",
+            })
+            return
+        }
+
         setIsRosterSaving(true)
         try {
             const token = await user.getIdToken()
+            const existingMembers = sanitizeTeamMembers(operations.teamMembers || [])
+            const nextMembers = sanitizeTeamMembers([
+                ...existingMembers.filter((member) => String(member.email || "").trim().toLowerCase() !== email),
+                {
+                    id: normalizeTeamMemberValue({ name, email, fallback: `member-${existingMembers.length + 1}` }),
+                    name,
+                    email,
+                    role: agentDraft.role,
+                    active: true,
+                },
+            ])
             const response = await fetch("/api/omni/settings", {
                 method: "POST",
                 headers: {
@@ -350,8 +406,9 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                     chatbotId: targetUserId,
                     operations: {
                         ...operations,
-                        teamMembers: sanitizeTeamMembers(operations.teamMembers || []),
+                        teamMembers: nextMembers,
                     },
+                    agentInvitationEmails: [email],
                 }),
             })
 
@@ -367,26 +424,101 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                 teamMembers: sanitizeTeamMembers(Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : []),
             })
             const invitedCount = Number(data?.agentProvisioning?.invited || 0)
+            const failedCount = Number(data?.agentProvisioning?.failed || 0)
+            const provisioningErrors = Array.isArray(data?.agentProvisioning?.errors)
+                ? data.agentProvisioning.errors.filter(Boolean).join(" ")
+                : ""
+            if (failedCount > 0 || invitedCount === 0) {
+                throw new Error(provisioningErrors || i18n.inviteFailedDescription)
+            }
+
+            setAgentDraft(DEFAULT_AGENT_DRAFT)
+            setIsAddAgentOpen(false)
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
-                description: language === "tr"
-                    ? (invitedCount > 0
-                        ? `Agent hesaplari guncellendi. ${invitedCount} davet e-postasi gonderildi.`
-                        : "Agent hesaplari guncellendi.")
-                    : (invitedCount > 0
-                        ? `Agent accounts updated. ${invitedCount} invitation email sent.`
-                        : "Agent accounts updated."),
+                title: i18n.inviteSentTitle,
+                description: i18n.inviteSentDescription,
             })
         } catch (error) {
             console.error("Failed to save agent accounts:", error)
             toast({
-                title: "Hata",
-                description: "Agent hesaplari kaydedilemedi.",
+                title: i18n.inviteFailedTitle,
+                description: error instanceof Error && error.message ? error.message : i18n.inviteFailedDescription,
                 variant: "destructive",
             })
         } finally {
             setIsRosterSaving(false)
         }
+    }
+
+    const persistAgentRoster = async (nextMembers: OmniTeamMember[], successMessage: { title: string; description: string }) => {
+        if (!user?.uid) return
+        if (!canManage) return
+        setIsRosterSaving(true)
+        try {
+            const token = await user.getIdToken()
+            const response = await fetch("/api/omni/settings", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    chatbotId: targetUserId,
+                    operations: {
+                        ...operations,
+                        teamMembers: sanitizeTeamMembers(nextMembers),
+                    },
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Roster update failed")
+            }
+
+            const data = await response.json()
+            const nextOperations = data?.operations || {}
+            const provisioningErrors = Array.isArray(data?.agentProvisioning?.errors)
+                ? data.agentProvisioning.errors.filter(Boolean).join(" ")
+                : ""
+            if (Number(data?.agentProvisioning?.failed || 0) > 0) {
+                throw new Error(provisioningErrors || i18n.agentUpdateFailedTitle)
+            }
+
+            setOperations({
+                ...DEFAULT_OPERATIONS_STATE,
+                ...nextOperations,
+                teamMembers: sanitizeTeamMembers(Array.isArray(nextOperations.teamMembers) ? nextOperations.teamMembers : []),
+            })
+            toast(successMessage)
+        } catch (error) {
+            console.error("Failed to update agent roster:", error)
+            toast({
+                title: i18n.agentUpdateFailedTitle,
+                description: error instanceof Error && error.message ? error.message : i18n.agentUpdateFailedTitle,
+                variant: "destructive",
+            })
+        } finally {
+            setIsRosterSaving(false)
+        }
+    }
+
+    const toggleAgentActive = (index: number, active: boolean) => {
+        const nextMembers = (operations.teamMembers || []).map((member, memberIndex) =>
+            memberIndex === index ? { ...member, active } : member
+        )
+        persistAgentRoster(nextMembers, {
+            title: i18n.agentUpdatedTitle,
+            description: i18n.agentUpdatedDescription,
+        })
+    }
+
+    const deleteAgent = (index: number) => {
+        if (typeof window !== "undefined" && !window.confirm(i18n.deleteAgentConfirm)) return
+        const nextMembers = (operations.teamMembers || []).filter((_, memberIndex) => memberIndex !== index)
+        persistAgentRoster(nextMembers, {
+            title: i18n.agentDeletedTitle,
+            description: i18n.agentDeletedDescription,
+        })
     }
 
     const saveSettings = async () => {
@@ -487,7 +619,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
             : i18n.pageDescription
 
     return (
-        <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
+        <div className="flex w-full flex-col gap-6 px-8 py-8">
             <div className="space-y-2">
                 <div className="flex items-center gap-3">
                     <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
@@ -524,6 +656,39 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                             <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5" />
                                 {i18n.agentAccountsTitle}
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                            aria-label={i18n.agentFlowTitle}
+                                        >
+                                            <Info className="h-4 w-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-xl">
+                                        <DialogHeader>
+                                            <DialogTitle>{i18n.agentFlowTitle}</DialogTitle>
+                                            <DialogDescription>
+                                                {i18n.agentFlowDescription}
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 text-sm text-muted-foreground">
+                                            <ol className="space-y-3 pl-5 list-decimal">
+                                                {i18n.agentFlowSteps.map((step) => (
+                                                    <li key={step} className="leading-relaxed">
+                                                        {step}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                            <div className="rounded-lg border bg-muted/40 px-4 py-3 text-foreground">
+                                                {i18n.agentFlowCloseNote}
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </CardTitle>
                             <CardDescription>
                                 {i18n.agentAccountsDescription}
@@ -537,6 +702,72 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                 </div>
                             ) : (
                                 <>
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <h3 className="text-sm font-medium text-muted-foreground">{i18n.existingAgents}</h3>
+                                        <Dialog open={isAddAgentOpen} onOpenChange={setIsAddAgentOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    disabled={!canManage}
+                                                    onClick={() => setAgentDraft(DEFAULT_AGENT_DRAFT)}
+                                                >
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    {i18n.addAgent}
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-lg">
+                                                <DialogHeader>
+                                                    <DialogTitle>{i18n.addAgent}</DialogTitle>
+                                                    <DialogDescription className="pb-3">
+                                                        {i18n.agentAccountsDescription}
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="agent-draft-name">{i18n.fullNamePlaceholder}</Label>
+                                                        <Input
+                                                            id="agent-draft-name"
+                                                            value={agentDraft.name}
+                                                            onChange={(event) => setAgentDraft((current) => ({ ...current, name: event.target.value }))}
+                                                            placeholder={i18n.fullNamePlaceholder}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="agent-draft-email">{i18n.agentEmail}</Label>
+                                                        <Input
+                                                            id="agent-draft-email"
+                                                            value={agentDraft.email}
+                                                            onChange={(event) => setAgentDraft((current) => ({ ...current, email: event.target.value }))}
+                                                            placeholder="agent@firma.com"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="agent-draft-role">{i18n.agentRole}</Label>
+                                                        <select
+                                                            id="agent-draft-role"
+                                                            className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                                            value={agentDraft.role}
+                                                            onChange={(event) => setAgentDraft((current) => ({
+                                                                ...current,
+                                                                role: isTeamMemberRole(event.target.value) ? event.target.value : "operations",
+                                                            }))}
+                                                        >
+                                                            <option value="operations">operations</option>
+                                                            <option value="support">support</option>
+                                                            <option value="sales">sales</option>
+                                                            <option value="manager">manager</option>
+                                                        </select>
+                                                    </div>
+                                                    <Button type="button" className="w-full" onClick={sendAgentInvite} disabled={isRosterSaving || !canManage}>
+                                                        {isRosterSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                                                        {i18n.sendInvite}
+                                                    </Button>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+
                                     {(operations.teamMembers || []).length === 0 ? (
                                         <div className="rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
                                             {i18n.emptyAgents}
@@ -544,57 +775,45 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                     ) : (
                                         <div className="space-y-3">
                                             {(operations.teamMembers || []).map((member, index) => (
-                                                <div key={member.id || index} className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1.2fr_1.4fr_0.9fr_0.7fr_auto]">
-                                                    <Input
-                                                        value={member.name}
-                                                        onChange={(event) => updateTeamMember(index, { name: event.target.value })}
-                                                        placeholder={i18n.fullNamePlaceholder}
-                                                    />
-                                                    <Input
-                                                        value={member.email || ""}
-                                                        onChange={(event) => updateTeamMember(index, { email: event.target.value })}
-                                                        placeholder="agent@firma.com"
-                                                    />
-                                                    <select
-                                                        className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                        value={member.role}
-                                                        onChange={(event) => updateTeamMember(index, {
-                                                            role: event.target.value === "support" || event.target.value === "sales" || event.target.value === "manager"
-                                                                ? event.target.value
-                                                                : "operations",
-                                                        })}
-                                                    >
-                                                        <option value="operations">operations</option>
-                                                        <option value="support">support</option>
-                                                        <option value="sales">sales</option>
-                                                        <option value="manager">manager</option>
-                                                    </select>
-                                                    <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                                                        <Label htmlFor={`agent-active-${index}`} className="text-sm">{i18n.activeLabel}</Label>
-                                                        <Switch
-                                                            id={`agent-active-${index}`}
-                                                            checked={member.active !== false}
-                                                            onCheckedChange={(checked) => updateTeamMember(index, { active: checked })}
-                                                        />
+                                                <div key={member.id || index} className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1.2fr_1.5fr_0.7fr_0.7fr_auto]">
+                                                    <div>
+                                                        <div className="font-medium">{member.name || "-"}</div>
+                                                        <div className="text-xs text-muted-foreground">{member.id}</div>
                                                     </div>
-                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeTeamMember(index)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    <div className="text-sm text-muted-foreground">{member.email || "-"}</div>
+                                                    <Badge variant="outline" className="w-fit">{member.role || "operations"}</Badge>
+                                                    <Badge variant={member.active !== false ? "default" : "secondary"} className="w-fit">
+                                                        {member.active !== false ? i18n.activeLabel : i18n.inactiveLabel}
+                                                    </Badge>
+                                                    <div className="flex items-center gap-2 justify-end">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            disabled={!canManage || isRosterSaving}
+                                                            onClick={() => toggleAgentActive(index, member.active === false)}
+                                                            aria-label={member.active === false ? i18n.activateAgent : i18n.deactivateAgent}
+                                                            title={member.active === false ? i18n.activateAgent : i18n.deactivateAgent}
+                                                        >
+                                                            {member.active === false ? <UserCheck className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="icon"
+                                                            disabled={!canManage || isRosterSaving}
+                                                            onClick={() => deleteAgent(index)}
+                                                            aria-label={i18n.deleteAgent}
+                                                            title={i18n.deleteAgent}
+                                                            className="text-destructive hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <Button type="button" variant="outline" onClick={addTeamMember} disabled={!canManage}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            {i18n.addAgent}
-                                        </Button>
-                                        <Button type="button" onClick={saveTeamRoster} disabled={isRosterSaving || !canManage}>
-                                            {isRosterSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                            {i18n.saveAgents}
-                                        </Button>
-                                    </div>
                                 </>
                             )}
                         </CardContent>

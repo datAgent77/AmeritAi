@@ -33,6 +33,8 @@ export function SiteHeader({
     const { t } = useLanguage()
     const pathname = usePathname()
     const showWidgetTest = pathname?.startsWith("/console") || pathname?.startsWith("/admin/tenant/")
+    const tenantWidgetTestId = pathname?.match(/^\/admin\/tenant\/([^/]+)/)?.[1] || user?.uid
+    const widgetTestHref = tenantWidgetTestId ? `/widget-test?id=${encodeURIComponent(tenantWidgetTestId)}` : "/widget-test"
     const [partnerBranding, setPartnerBranding] = useState<HeaderBranding | null>(null)
 
     useEffect(() => {
@@ -104,12 +106,14 @@ export function SiteHeader({
                 {showNotifications ? <NotificationBell /> : null}
                 {showWidgetTest ? (
                     <Button
+                        asChild
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`/widget-test?id=${user?.uid}`, "_blank")}
                         className="hidden md:flex items-center gap-2"
                     >
-                        {t('widgetTest') || "Widget Test"}
+                        <a href={widgetTestHref} target="_blank" rel="noopener noreferrer">
+                            {t('widgetTest') || "Widget Test"}
+                        </a>
                     </Button>
                 ) : null}
                 {partnerBranding?.show ? (

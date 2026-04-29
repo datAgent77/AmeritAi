@@ -21,7 +21,6 @@ import {
     CreditCard,
     Bell,
     ChevronRight,
-    ChevronDown,
     Globe,
     Check,
     Building2,
@@ -49,9 +48,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarRail,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
     SidebarGroup,
     SidebarGroupLabel,
     SidebarGroupContent,
@@ -101,14 +97,6 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     const isEndUsersAdminRoute =
         normalizedPathname === "/admin/end-users" ||
         normalizedPathname.startsWith("/admin/tenant/")
-    const isCustomersMenuActive = isAgenciesAdminRoute || isEndUsersAdminRoute
-    const [isCustomersMenuOpen, setIsCustomersMenuOpen] = useState(isCustomersMenuActive)
-
-    useEffect(() => {
-        if (isCustomersMenuActive) {
-            setIsCustomersMenuOpen(true)
-        }
-    }, [isCustomersMenuActive])
 
     useEffect(() => {
         const loadHumanHandoffStatus = async () => {
@@ -453,54 +441,39 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
-                                        onClick={() => setIsCustomersMenuOpen((prev) => !prev)}
-                                        isActive={isCustomersMenuActive}
+                                        asChild
+                                        isActive={isAgenciesAdminRoute}
                                         className={cn(
                                             "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                                             "hover:bg-white/10 hover:text-white",
-                                            isCustomersMenuActive
+                                            isAgenciesAdminRoute
                                                 ? "bg-white/15 text-white shadow-sm"
                                                 : "text-zinc-400 group-hover:text-white"
                                         )}
                                     >
-                                        <Building2 className={cn("size-4", isCustomersMenuActive ? "text-white" : "text-zinc-400 group-hover:text-white")} />
-                                        <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">
-                                            {t('customersMenu') || t('customers') || "Müşteriler"}
-                                        </span>
-                                        <ChevronDown className={cn("ml-auto size-4 transition-transform group-data-[collapsible=icon]:hidden", isCustomersMenuOpen ? "rotate-180" : "")} />
+                                        <Link href="/admin/agencies">
+                                            <Building2 className={cn("size-4", isAgenciesAdminRoute ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('agencies') || "Partnerler"}</span>
+                                        </Link>
                                     </SidebarMenuButton>
-                                    {isCustomersMenuOpen && (
-                                        <SidebarMenuSub>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton
-                                                    asChild
-                                                    isActive={isAgenciesAdminRoute}
-                                                    className={cn(
-                                                        "px-2",
-                                                        isAgenciesAdminRoute
-                                                            ? "bg-white/15 text-white"
-                                                            : "text-zinc-400 hover:text-white hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    <Link href="/admin/agencies">{t('agencies') || "Ajanslar"}</Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton
-                                                    asChild
-                                                    isActive={isEndUsersAdminRoute}
-                                                    className={cn(
-                                                        "px-2",
-                                                        isEndUsersAdminRoute
-                                                            ? "bg-white/15 text-white"
-                                                            : "text-zinc-400 hover:text-white hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    <Link href="/admin/end-users">{t('endUsers') || "Son Kullanıcılar"}</Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        </SidebarMenuSub>
-                                    )}
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={isEndUsersAdminRoute}
+                                        className={cn(
+                                            "w-full justify-start gap-3 px-3 h-10 transition-all duration-200 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                                            "hover:bg-white/10 hover:text-white",
+                                            isEndUsersAdminRoute
+                                                ? "bg-white/15 text-white shadow-sm"
+                                                : "text-zinc-400 group-hover:text-white"
+                                        )}
+                                    >
+                                        <Link href="/admin/end-users">
+                                            <Users className={cn("size-4", isEndUsersAdminRoute ? "text-white" : "text-zinc-400 group-hover:text-white")} />
+                                            <span className="font-medium text-[14px] group-data-[collapsible=icon]:hidden">{t('endUsers') || "Son Kullanıcılar"}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {/* ... other admin links ... */}
                                 {/* Removed Module Requests Link */}

@@ -10,6 +10,7 @@ import { getAllModules } from "@/lib/modules-registry";
 import { resolveConversationLanguage } from "@/lib/conversation-language";
 import { evaluateCampaigns, buildCampaignSystemPromptBlock, fetchWeatherByCity } from "@/lib/campaigns/campaign-engine";
 import { buildTenantTrainingPromptFromDb } from "@/lib/assistant-training";
+import { getGuidedOptionsSystemInstruction } from "@/lib/guided-ai";
 
 const pineconeApiKey = process.env.PINECONE_API_KEY?.trim();
 const pc = pineconeApiKey
@@ -479,7 +480,8 @@ export async function generateAIResponse(
     isVoice?: boolean,
     language?: string,
     visualAnalysisContext?: string,
-    forcedIndustry?: string
+    forcedIndustry?: string,
+    guidedOptionsEnabled: boolean = false
 ) {
     try {
         const adminDb = getAdminDb();
@@ -1117,6 +1119,10 @@ VOICE-SAFE RULES:
         if (activeModuleInstructions.length > 0) {
             systemPrompt += `\n\n# ACTIVE MODULE CAPABILITIES\n${activeModuleInstructions.join('\n')}`;
             console.log("AI Service: Active module instructions count:", activeModuleInstructions.length);
+        }
+
+        if (guidedOptionsEnabled && !isVoice) {
+            systemPrompt += getGuidedOptionsSystemInstruction(resolvedLanguage);
         }
 
         // Inject conflict resolution when overlapping action modules are both active

@@ -71,6 +71,7 @@ import { ModuleDetailsDialog } from "@/components/modules/module-details-dialog"
 import { getModuleAccess, isModuleIncluded } from "@/lib/module-access"
 import { PlanUpgradePrompt } from "@/components/plan-upgrade-prompt"
 import { getModuleUpgradeTarget } from "@/lib/pricing-config"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // Lucide Icon Mapping
 export const ICON_MAP = {
@@ -135,6 +136,50 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     surveyManager: 'enableSurveyManager'
 }
 
+const DEFAULT_MODULE_STATES: Record<string, boolean> = {
+    generalChatbot: true,
+    productCatalog: false,
+    voiceAssistant: false,
+    knowledgeBase: true,
+    guided: false,
+    leadCollection: false,
+    appointments: false,
+    salesOptimization: false,
+    campaignManager: false,
+    gamification: false,
+    smartShopper: false,
+    visualDiagnosis: false,
+    digitalWaiter: false,
+    proactiveMessaging: false,
+    dynamicContext: false,
+    kvkkConsent: false,
+    humanHandoff: false,
+    surveyManager: false,
+}
+
+function buildModuleStatesFromSettings(data: Record<string, any>): Record<string, boolean> {
+    return {
+        generalChatbot: data.enableChatbot ?? true,
+        productCatalog: data.enablePersonalShopper ?? false,
+        voiceAssistant: data.enableVoiceAssistant ?? false,
+        knowledgeBase: data.enableKnowledgeBase ?? true,
+        guided: data.enableGuided ?? false,
+        leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
+        appointments: data.enableAppointments ?? false,
+        salesOptimization: data.enableSalesOptimization ?? false,
+        campaignManager: data.enableCampaignManager ?? false,
+        gamification: data.enableGamification ?? false,
+        smartShopper: data.enableSmartShopper ?? false,
+        visualDiagnosis: data.enableVisualDiagnosis ?? false,
+        digitalWaiter: data.enableDigitalWaiter ?? false,
+        proactiveMessaging: data.enableProactiveMessaging ?? false,
+        dynamicContext: data.enableDynamicContext ?? false,
+        kvkkConsent: data.enableKvkkConsent ?? false,
+        humanHandoff: data.enableHumanHandoff ?? false,
+        surveyManager: data.enableSurveyManager ?? false,
+    }
+}
+
 interface ModulesContentProps {
     targetUserId?: string
 }
@@ -156,6 +201,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const [isPageLoading, setIsPageLoading] = useState(true)
     const [moduleStates, setModuleStates] = useState<Record<string, boolean>>({})
     const [adminGrantedModules, setAdminGrantedModules] = useState<Record<string, boolean> | null>(null)
+    const [settingsLoadError, setSettingsLoadError] = useState<string | null>(null)
+    const [loadAttempt, setLoadAttempt] = useState(0)
     const [selectedModuleId, setSelectedModuleId] = useState<ModuleId | null>(null)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -180,76 +227,46 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         const loadModuleStates = async () => {
             if (!effectiveUserId || !user) return
             setIsPageLoading(true)
+            setSettingsLoadError(null)
+            const controller = new AbortController()
+            const timeoutId = window.setTimeout(() => controller.abort(), 10000)
             try {
                 // Fetch from API to avoid client-side permission issues
                 const token = await user.getIdToken()
                 const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
-                    }
+                    },
+                    signal: controller.signal,
                 })
 
-                if (response.ok) {
-                    const data = await response.json()
-
-                    setModuleStates({
-                        generalChatbot: data.enableChatbot ?? true,
-                        productCatalog: data.enablePersonalShopper ?? false,
-                        voiceAssistant: data.enableVoiceAssistant ?? false,
-                        knowledgeBase: data.enableKnowledgeBase ?? true,
-                        guided: data.enableGuided ?? false,
-                        leadCollection: data.enableLeadCollection ?? data.enableLeadFinder ?? false,
-                        appointments: data.enableAppointments ?? false,
-                        salesOptimization: data.enableSalesOptimization ?? false,
-                        campaignManager: data.enableCampaignManager ?? false,
-                        gamification: data.enableGamification ?? false,
-                        smartShopper: data.enableSmartShopper ?? false,
-                        visualDiagnosis: data.enableVisualDiagnosis ?? false,
-                        digitalWaiter: data.enableDigitalWaiter ?? false,
-                        proactiveMessaging: data.enableProactiveMessaging ?? false,
-                        dynamicContext: data.enableDynamicContext ?? false,
-                        kvkkConsent: data.enableKvkkConsent ?? false,
-                        humanHandoff: data.enableHumanHandoff ?? false,
-                        surveyManager: data.enableSurveyManager ?? false,
-                    })
-                    setAdminGrantedModules(
-                        data.adminGrantedModules && typeof data.adminGrantedModules === "object"
-                            ? data.adminGrantedModules
-                            : null
-                    )
-                } else {
-                    console.error("Failed to load settings via API")
-                    // Fallback to defaults
-                    setModuleStates({
-                        generalChatbot: true,
-                        productCatalog: false,
-                        voiceAssistant: false,
-                        knowledgeBase: true,
-                        guided: false,
-                        leadCollection: false,
-                        appointments: false,
-                        salesOptimization: false,
-                        campaignManager: false,
-                        gamification: false,
-                        smartShopper: false,
-                        visualDiagnosis: false,
-                        digitalWaiter: false,
-                        proactiveMessaging: false,
-                        dynamicContext: false,
-                        kvkkConsent: false,
-                        humanHandoff: false,
-                        surveyManager: false,
-                    })
+                if (!response.ok) {
+                    throw new Error(`Settings request failed with ${response.status}`)
                 }
 
+                const data = await response.json()
+                setModuleStates(buildModuleStatesFromSettings(data))
+                setAdminGrantedModules(
+                    data.adminGrantedModules && typeof data.adminGrantedModules === "object"
+                        ? data.adminGrantedModules
+                        : null
+                )
             } catch (error) {
                 console.error("Error loading module states:", error)
+                setModuleStates(DEFAULT_MODULE_STATES)
+                setAdminGrantedModules(null)
+                setSettingsLoadError(
+                    error instanceof DOMException && error.name === "AbortError"
+                        ? "settings-timeout"
+                        : "settings-failed"
+                )
             } finally {
+                window.clearTimeout(timeoutId)
                 setIsPageLoading(false)
             }
         }
         loadModuleStates()
-    }, [effectiveUserId, user])
+    }, [effectiveUserId, user, loadAttempt])
 
     const handleToggle = async (moduleId: ModuleId, checked: boolean) => {
         if (!effectiveUserId) return
@@ -541,9 +558,15 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
             return matchesSearch
         }).sort((a, b) => {
-            // 1. Coming soon modules always at the end
-            if (a.status === 'coming_soon' && b.status !== 'coming_soon') return 1
-            if (a.status !== 'coming_soon' && b.status === 'coming_soon') return -1
+            const getSortGroup = (module: ModuleDefinition) => {
+                if (module.status === 'coming_soon') return 2
+                return moduleStates[module.id] === true ? 0 : 1
+            }
+
+            // 1. Active modules first, inactive modules second, in-development modules last
+            const aGroup = getSortGroup(a)
+            const bGroup = getSortGroup(b)
+            if (aGroup !== bGroup) return aGroup - bGroup
 
             // 2. Included modules come first (before premium modules)
             const aIncluded = checkModuleIncluded(a.id)
@@ -641,6 +664,35 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     </Button>
                 </div>
             </div>
+
+            {settingsLoadError && (
+                <Alert variant="destructive" className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>
+                        {language === "tr" ? "Skill ayarları yüklenemedi" : "Skill settings could not be loaded"}
+                    </AlertTitle>
+                    <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <span>
+                            {settingsLoadError === "settings-timeout"
+                                ? (language === "tr"
+                                    ? "Ayar servisi zamanında yanıt vermedi. Liste varsayılan durumlarla açıldı."
+                                    : "The settings service did not respond in time. The list opened with default states.")
+                                : (language === "tr"
+                                    ? "Ayar servisi şu anda yanıt vermiyor. Liste varsayılan durumlarla açıldı."
+                                    : "The settings service is not responding right now. The list opened with default states.")}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 shrink-0 border-amber-300 bg-white text-amber-950 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 dark:hover:bg-amber-900"
+                            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                        >
+                            {language === "tr" ? "Tekrar dene" : "Retry"}
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             {/* Modules Render */}
             {filteredModules.length === 0 ? (

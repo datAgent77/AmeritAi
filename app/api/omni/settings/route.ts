@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
+import { FieldValue } from "firebase-admin/firestore"
 import { buildVoiceReadiness, normalizeVoiceNumberRecords } from "@/lib/omni/voice-config"
 import {
     authorizeOmniRequest,
@@ -220,6 +221,7 @@ async function syncAgentWorkspaceUsers(params: {
     actorUid: string
     previousMembers: OmniTeamMember[]
     nextMembers: OmniTeamMember[]
+    invitationEmails?: string[]
 }): Promise<AgentProvisioningSummary> {
     const adminAuth = getAdminAuth()
     if (!adminAuth) {
@@ -249,6 +251,16 @@ async function syncAgentWorkspaceUsers(params: {
             .map((member: OmniTeamMember) => normalizeEmail(member.email))
             .filter(Boolean) as string[]
     )
+    const nextEmails = new Set(
+        params.nextMembers
+            .map((member: OmniTeamMember) => normalizeEmail(member.email))
+            .filter(Boolean) as string[]
+    )
+    const forcedInvitationEmails = new Set(
+        (params.invitationEmails || [])
+            .map((email) => normalizeEmail(email))
+            .filter(Boolean) as string[]
+    )
     const invitationLanguage = params.req.headers.get("accept-language")?.toLowerCase().startsWith("tr") ? "tr" : "en"
     const appOrigin = getPublicAppOrigin(params.req)
     const tenantSnapshot = await params.adminDb.collection("users").doc(params.chatbotId).get()
@@ -261,7 +273,7 @@ async function syncAgentWorkspaceUsers(params: {
 
         summary.processed += 1
 
-        const shouldInvite = member.active !== false && !previousEmails.has(email)
+        const shouldInvite = member.active !== false && (forcedInvitationEmails.has(email) || !previousEmails.has(email))
 
         try {
             let userRecord: any
@@ -276,12 +288,18 @@ async function syncAgentWorkspaceUsers(params: {
                 isNewUser = true
                 userRecord = await adminAuth.createUser({
                     email,
-                    emailVerified: false,
+                    emailVerified: true,
                     password: crypto.randomBytes(24).toString("hex"),
                     displayName: member.name || undefined,
                     disabled: false,
                 })
                 summary.created += 1
+            }
+
+            if (userRecord.emailVerified !== true) {
+                userRecord = await adminAuth.updateUser(userRecord.uid, {
+                    emailVerified: true,
+                })
             }
 
             const existingUserSnapshot = await params.adminDb.collection("users").doc(userRecord.uid).get()
@@ -340,6 +358,45 @@ async function syncAgentWorkspaceUsers(params: {
         } catch (error: any) {
             summary.failed += 1
             summary.errors.push(`${email}: ${error?.message || "failed to provision agent account"}`)
+        }
+    }
+
+    for (const email of previousEmails) {
+        if (nextEmails.has(email)) continue
+
+        try {
+            const userRecord = await adminAuth.getUserByEmail(email)
+            const existingUserSnapshot = await params.adminDb.collection("users").doc(userRecord.uid).get()
+            const existingUserData = existingUserSnapshot.exists ? existingUserSnapshot.data() || {} : {}
+            const existingRole = String(existingUserData.role || "").trim().toUpperCase()
+            const existingAgentTenantId = typeof existingUserData.agentTenantId === "string" ? existingUserData.agentTenantId.trim() : ""
+
+            if (existingRole !== "AGENT" || existingAgentTenantId !== params.chatbotId) {
+                continue
+            }
+
+            const nextClaims = { ...(userRecord.customClaims || {}) }
+            delete nextClaims.role
+            delete nextClaims.agentTenantId
+            await adminAuth.setCustomUserClaims(userRecord.uid, nextClaims)
+
+            await params.adminDb.collection("users").doc(userRecord.uid).set(
+                {
+                    role: "USER",
+                    isActive: false,
+                    agentTenantId: FieldValue.delete(),
+                    agentWorkspaceName: FieldValue.delete(),
+                    agentAssignedBy: FieldValue.delete(),
+                    agentAssignedAt: FieldValue.delete(),
+                    updatedAt: new Date().toISOString(),
+                },
+                { merge: true }
+            )
+            summary.updated += 1
+        } catch (error: any) {
+            if (error?.code === "auth/user-not-found") continue
+            summary.failed += 1
+            summary.errors.push(`${email}: ${error?.message || "failed to revoke removed agent access"}`)
         }
     }
 
@@ -529,6 +586,7 @@ export async function POST(req: Request) {
         actorUid: authz.callerUid,
         previousMembers: previousOperations.teamMembers || [],
         nextMembers: mergedOperations.teamMembers || [],
+        invitationEmails: Array.isArray(body.agentInvitationEmails) ? body.agentInvitationEmails : [],
     })
 
     return NextResponse.json({

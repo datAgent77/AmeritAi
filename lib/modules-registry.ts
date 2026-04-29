@@ -416,8 +416,8 @@ KURALLAR:
             tr: 'Guided'
         },
         description: {
-            en: 'Button and card based guided flows for web and messaging channels',
-            tr: 'Web ve mesajlaşma kanalları için buton ve kart tabanlı yönlendirmeli akışlar'
+            en: 'AI-generated answer options that guide each conversation',
+            tr: 'Her konuşmayı yönlendiren AI üretimli cevap seçenekleri'
         },
         icon: 'Route',
         isCore: false,
@@ -429,29 +429,29 @@ KURALLAR:
         showOnLandingPage: false,
         legacyFirestoreField: 'enableGuided',
         longDescription: {
-            en: 'Build deterministic guided journeys with buttons, cards, and final actions. Guided helps you turn repetitive operational flows into structured self-service experiences across web, WhatsApp, and Instagram.',
-            tr: 'Butonlar, kartlar ve final aksiyonlarla deterministik yönlendirmeli akışlar oluşturun. Guided, tekrar eden operasyonel süreçleri web, WhatsApp ve Instagram genelinde yapılandırılmış self-servis deneyimlere dönüştürür.'
+            en: 'Guided turns every assistant answer into a clearer next step. When active, the AI answers in plain text and generates short contextual options that users can tap to continue the conversation.',
+            tr: 'Guided, her asistan cevabını daha net bir sonraki adıma dönüştürür. Aktifken AI düz metin cevap verir ve kullanıcının sohbete devam edebilmesi için kısa, bağlamsal seçenekler üretir.'
         },
         features: [
             {
-                title: { en: 'Step-by-Step Flows', tr: 'Adım Adım Akışlar' },
-                description: { en: 'Guide users through structured choices with chips or cards.', tr: 'Kullanıcıları chip veya kart tabanlı yapılandırılmış seçimlerle yönlendirin.' },
+                title: { en: 'AI-Generated Options', tr: 'AI Üretimli Seçenekler' },
+                description: { en: 'Creates contextual next-step buttons from the assistant response.', tr: 'Asistan cevabından bağlamsal sonraki adım butonları üretir.' },
+                icon: 'Sparkles'
+            },
+            {
+                title: { en: 'Plain Text Answers', tr: 'Düz Metin Cevaplar' },
+                description: { en: 'Keeps the answer readable while moving choices into the UI.', tr: 'Cevabı okunabilir tutar, seçenekleri arayüze taşır.' },
+                icon: 'MessageSquare'
+            },
+            {
+                title: { en: 'Conversation Steering', tr: 'Konuşma Yönlendirme' },
+                description: { en: 'Reduces open-ended friction by suggesting useful next actions.', tr: 'Faydalı sonraki aksiyonlar önererek açık uçlu sürtünmeyi azaltır.' },
                 icon: 'Route'
-            },
-            {
-                title: { en: 'Multi-Channel Runtime', tr: 'Çok Kanallı Çalışma' },
-                description: { en: 'Render rich UI on web and numbered text menus on messaging channels.', tr: 'Webde zengin arayüz, mesajlaşma kanallarında numaralı metin menüleri sunar.' },
-                icon: 'Share2'
-            },
-            {
-                title: { en: 'Action Handoff', tr: 'Aksiyon Tetikleme' },
-                description: { en: 'Complete flows with confirmation or existing omni actions.', tr: 'Akışları onay veya mevcut omni aksiyonlarıyla tamamlayın.' },
-                icon: 'Zap'
             }
         ],
         benefits: [
-            { en: 'Reduce friction in repetitive support and operations flows', tr: 'Tekrarlayan destek ve operasyon akışlarındaki sürtünmeyi azaltın' },
-            { en: 'Keep user choices deterministic without relying on semantic LLM matching', tr: 'LLM tabanlı semantik eşleme olmadan seçimleri deterministik tutun' }
+            { en: 'Help users continue without thinking of the next prompt', tr: 'Kullanıcıların sıradaki soruyu düşünmeden devam etmesini sağlar' },
+            { en: 'Turn answers into guided micro-decisions', tr: 'Cevapları yönlendirilmiş küçük kararlara dönüştürür' }
         ]
     },
 

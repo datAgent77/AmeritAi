@@ -102,7 +102,13 @@ export async function authorizeTargetAccess(
     const isAgent = isAgentRole(callerRole) || isAgentRole(decodedRole);
     const callerAgentTenantId = typeof callerData?.agentTenantId === "string" ? callerData.agentTenantId.trim() : "";
     const targetRoleNormalized = typeof targetRole === "string" ? targetRole.trim().toUpperCase() : "";
-    if (isAgent && callerAgentTenantId && callerAgentTenantId === targetUserId && targetRoleNormalized === "TENANT_ADMIN") {
+    if (
+        isAgent &&
+        callerData?.isActive !== false &&
+        callerAgentTenantId &&
+        callerAgentTenantId === targetUserId &&
+        targetRoleNormalized === "TENANT_ADMIN"
+    ) {
         return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: false };
     }
 

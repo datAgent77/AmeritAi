@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { buildGuidedSkillShortcut, listEnabledGuidedSkills } from "@/lib/guided-skills";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
 import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
 import { resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
@@ -372,11 +371,7 @@ export async function GET(req: Request) {
                         && mergedData.enableVoiceAssistant === true
                         && hasConfiguredWebVoiceProvider(userData, mergedData);
                     const isGuidedEnabled = MODULES_REGISTRY.guided?.status === "ready" && mergedData.enableGuided === true;
-                    const guidedSkills = isGuidedEnabled
-                        ? await listEnabledGuidedSkills(adminDb, chatbotId, "web")
-                            .then((skills) => skills.map(buildGuidedSkillShortcut))
-                            .catch(() => [])
-                        : [];
+                    const guidedSkills: [] = [];
                     const dynamicContextPresetSelection = resolveDynamicContextPresetSelection({
                         sectorId: mergedData?.sector || mergedData?.sectorId || mergedData?.industry,
                         presetMode: mergedData?.dynamicSiteContextPresetMode,

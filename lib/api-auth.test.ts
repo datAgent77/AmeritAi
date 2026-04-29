@@ -169,4 +169,22 @@ describe("authorizeTargetAccess", () => {
             expect(result.response.status).toBe(403);
         }
     });
+
+    test("denies inactive AGENT for assigned tenant workspace", async () => {
+        const verifyIdToken = vi.fn().mockResolvedValue({ uid: "agent-1", role: "AGENT" });
+        vi.mocked(getAdminAuth).mockReturnValue({ verifyIdToken } as any);
+        vi.mocked(getAdminDb).mockReturnValue(
+            createUsersDb({
+                "agent-1": { role: "AGENT", agentTenantId: "tenant-1", isActive: false },
+                "tenant-1": { role: "TENANT_ADMIN", agencyId: "agency-1" }
+            }) as any
+        );
+
+        const result = await authorizeTargetAccess(createRequest("agent-token"), "tenant-1");
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.response.status).toBe(403);
+        }
+    });
 });

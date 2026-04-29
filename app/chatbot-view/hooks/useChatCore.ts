@@ -341,7 +341,7 @@ export function useChatCore({
                         context: pageContext,
                         language,
                         isVoice: isVoiceTurn,
-                        shouldStream: isVoiceTurn ? false : true,
+                        shouldStream: isVoiceTurn ? false : settings.enableGuided !== true,
                         userId: guestAuth.currentUser?.uid,
                         industry: settings.industry,
                         visualAnalysisContext, // Pass dynamic context

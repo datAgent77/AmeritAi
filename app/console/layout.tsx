@@ -26,7 +26,7 @@ import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 
 function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
-    const { user, role, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
+    const { user, role, userData, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
     const { language, t } = useLanguage() // Get t function
     const router = useRouter()
     const pathname = usePathname()
@@ -45,6 +45,11 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
             return
         }
         if (role === "AGENT") {
+            const assignedTenantId = typeof userData?.agentTenantId === "string" ? userData.agentTenantId.trim() : ""
+            if (assignedTenantId) {
+                router.replace(`/admin/tenant/${assignedTenantId}/chatbot/chats`)
+                return
+            }
             const restrictedPrefixes = [
                 "/console/knowledge",
                 "/console/modules",
@@ -56,7 +61,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 router.replace("/console/chatbot/chats")
             }
         }
-    }, [authLoading, role, router, pathname])
+    }, [authLoading, role, router, pathname, userData])
 
     // Fetch user data and build context
     useEffect(() => {
@@ -67,6 +72,59 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         }
         if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN" || role === "AGENT") {
             setIsInitializing(false)
+            return
+        }
+
+        const initializeFromProfileData = (data: any) => {
+            recordAuthDebug("console_profile_data", {
+                uid: user.uid,
+                status: data.status ?? null,
+                isDeleted: data.isDeleted ?? null,
+                isActive: data.isActive ?? null
+            })
+
+            // Check termination status
+            if (data.status === 'archived' || data.status === 'deleted' || data.isDeleted === true) {
+                recordAuthDebug("console_profile_terminated", {
+                    uid: user.uid,
+                    status: data.status ?? null,
+                    isDeleted: data.isDeleted ?? null
+                })
+                setIsTerminated(true)
+                setIsInitializing(false)
+                return
+            }
+
+            // Extract entitlements
+            const entitlements = extractEntitlementsFromDoc(user.uid, data)
+
+            // Calculate trial days remaining
+            const daysLeft = getTrialDaysRemaining(entitlements)
+
+            // Build user context for orchestrator
+            const context: UserContext = {
+                userId: user.uid,
+                planId: entitlements.planId,
+                sectorId: entitlements.sectorId,
+                onboardingStatus: (data.onboarding?.status || 'pending') as OnboardingStatus,
+                trialStatus: entitlements.trial.isActive ? 'active' : 'none',
+                daysLeftInTrial: daysLeft,
+                userActionCount: 0 // TODO: Track actual action count
+            }
+
+            // Check if needs onboarding redirect
+            if (needsOnboardingRedirect(context)) {
+                router.replace("/onboarding")
+                return
+            }
+
+            setUserContext(context)
+            setIsInitializing(false)
+        }
+
+        if (userData && Object.keys(userData).length > 0) {
+            recordAuthDebug("console_profile_using_auth_context", { uid: user.uid })
+            initializeFromProfileData(userData)
             return
         }
 
@@ -96,50 +154,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 }
 
                 const data = await response.json();
-                recordAuthDebug("console_profile_data", {
-                    uid: user.uid,
-                    status: data.status ?? null,
-                    isDeleted: data.isDeleted ?? null,
-                    isActive: data.isActive ?? null
-                })
-
-                // Check termination status
-                if (data.status === 'archived' || data.status === 'deleted' || data.isDeleted === true) {
-                    recordAuthDebug("console_profile_terminated", {
-                        uid: user.uid,
-                        status: data.status ?? null,
-                        isDeleted: data.isDeleted ?? null
-                    })
-                    setIsTerminated(true)
-                    setIsInitializing(false)
-                    return
-                }
-
-                // Extract entitlements
-                const entitlements = extractEntitlementsFromDoc(user.uid, data)
-
-                // Calculate trial days remaining
-                const daysLeft = getTrialDaysRemaining(entitlements)
-
-                // Build user context for orchestrator
-                const context: UserContext = {
-                    userId: user.uid,
-                    planId: entitlements.planId,
-                    sectorId: entitlements.sectorId,
-                    onboardingStatus: (data.onboarding?.status || 'pending') as OnboardingStatus,
-                    trialStatus: entitlements.trial.isActive ? 'active' : 'none',
-                    daysLeftInTrial: daysLeft,
-                    userActionCount: 0 // TODO: Track actual action count
-                }
-
-                // Check if needs onboarding redirect
-                if (needsOnboardingRedirect(context)) {
-                    router.replace("/onboarding")
-                    return
-                }
-
-                setUserContext(context)
-                setIsInitializing(false)
+                initializeFromProfileData(data)
             } catch (error) {
                 console.error("Error initializing console:", error)
                 recordAuthDebug("console_profile_fetch_error", {
@@ -151,7 +166,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
         }
 
         initialize()
-    }, [user, authLoading, role, router])
+    }, [user, userData, authLoading, role, router])
 
     const handleLogout = async () => {
         recordAuthDebug("console_manual_logout", { pathname })

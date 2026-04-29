@@ -11,6 +11,18 @@ import { LanguageProvider } from "@/context/LanguageContext"
 import { AnnouncementBanner } from "@/components/announcement-banner"
 import { ThemeProvider } from "next-themes"
 
+function toOwnedTenantConsolePath(pathname: string | null, uid: string | undefined): string {
+    if (!pathname || !uid) return "/console/chatbot"
+
+    const tenantPrefix = `/admin/tenant/${uid}`
+    if (!pathname.startsWith(tenantPrefix)) {
+        return "/console/chatbot"
+    }
+
+    const suffix = pathname.slice(tenantPrefix.length)
+    return suffix ? `/console${suffix}` : "/console/chatbot"
+}
+
 export default function AdminLayout({
     children,
 }: {
@@ -22,7 +34,8 @@ export default function AdminLayout({
     const isTenantDetail = pathname && pathname.startsWith("/admin/tenant/") && pathname.split("/").length > 3
     const isSuperAdmin = role === "SUPER_ADMIN"
     const isAgencyAdmin = role === "AGENCY_ADMIN"
-    const canAccessCurrentRoute = isSuperAdmin || (isAgencyAdmin && isTenantDetail)
+    const isAgent = role === "AGENT"
+    const canAccessCurrentRoute = isSuperAdmin || ((isAgencyAdmin || isAgent) && isTenantDetail)
 
     useEffect(() => {
         if (!loading) {
@@ -31,10 +44,10 @@ export default function AdminLayout({
             } else if (isAgencyAdmin && !isTenantDetail) {
                 router.push("/agency")
             } else if (!canAccessCurrentRoute) {
-                router.push("/dashboard")
+                router.replace(toOwnedTenantConsolePath(pathname, user.uid))
             }
         }
-    }, [user, loading, router, canAccessCurrentRoute, isAgencyAdmin, isTenantDetail])
+    }, [user, loading, router, canAccessCurrentRoute, isAgencyAdmin, isTenantDetail, pathname])
 
     if (loading) {
         return (

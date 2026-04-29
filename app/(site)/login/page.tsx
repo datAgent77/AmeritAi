@@ -30,7 +30,10 @@ function resolvePostLoginPath(role: unknown, source?: Record<string, unknown>): 
   const normalized = typeof role === "string" ? role.trim().toUpperCase() : ""
   if (normalized === "SUPER_ADMIN") return "/console/chatbot"
   if (normalized === "AGENCY_ADMIN") return "/agency"
-  if (normalized === "AGENT") return "/console/chatbot"
+  if (normalized === "AGENT") {
+    const agentTenantId = typeof source?.agentTenantId === "string" ? source.agentTenantId.trim() : ""
+    return agentTenantId ? `/admin/tenant/${agentTenantId}/chatbot/chats` : "/console/chatbot/chats"
+  }
   return "/console/chatbot"
 }
 
