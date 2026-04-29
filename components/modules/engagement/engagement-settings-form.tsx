@@ -51,6 +51,31 @@ const sectorTemplates: Record<string, BubbleMessage[]> = {
     ]
 }
 
+const numericTriggerKeys = ['scrollDepth', 'inactivity', 'pageRevisit', 'timeOnPage', 'clickCount'] as const
+const numericTriggerDefaults: Record<(typeof numericTriggerKeys)[number], number> = {
+    scrollDepth: 50,
+    inactivity: 30,
+    pageRevisit: 2,
+    timeOnPage: 10,
+    clickCount: 3,
+}
+
+function normalizeEngagementSettings(settings: EngagementSettings): EngagementSettings {
+    const triggers = { ...settings.triggers }
+
+    numericTriggerKeys.forEach((key) => {
+        const value = triggers[key]
+        triggers[key] = value === true
+            ? numericTriggerDefaults[key]
+            : (typeof value === 'number' && Number.isFinite(value) ? value : 0)
+    })
+
+    return {
+        ...settings,
+        triggers,
+    }
+}
+
 export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: EngagementSettingsFormProps) {
     const { user, role } = useAuth()
     const isSysAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
@@ -157,6 +182,10 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         if (!user?.uid) return
         setIsSaving(true)
         try {
+            const normalizedSettings = normalizeEngagementSettings(settings)
+            if (normalizedSettings !== settings) {
+                setSettings(normalizedSettings)
+            }
             recordAuthDebug("engagement_save_start", {
                 actorUid: user.uid,
                 targetUserId: effectiveUserId
@@ -170,8 +199,8 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                 },
                 body: JSON.stringify({
                     chatbotId: effectiveUserId,
-                    engagement: settings,
-                    enableProactiveMessaging: settings.enabled
+                    engagement: normalizedSettings,
+                    enableProactiveMessaging: normalizedSettings.enabled
                 })
             })
             recordAuthDebug("engagement_save_response", {
@@ -269,8 +298,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
 
                                 <TabsTrigger
                                     value="triggers"
-                                    disabled={settings.aiSmartBubbles.enabled}
-                                    className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-auto flex items-center justify-center p-3 rounded-xl border border-muted data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary hover:border-primary/30 transition-all duration-200 shadow-none bg-background"
                                 >
                                     <span className="font-medium text-sm">Tetikleyiciler</span>
                                 </TabsTrigger>

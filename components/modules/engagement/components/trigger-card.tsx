@@ -15,9 +15,19 @@ interface TriggerCardProps {
     setSettings: React.Dispatch<React.SetStateAction<EngagementSettings>>
 }
 
+const numericTriggerDefaults: Record<string, number> = {
+    scrollDepth: 50,
+    inactivity: 30,
+    pageRevisit: 2,
+    timeOnPage: 10,
+    clickCount: 3,
+}
+
 export function TriggerCard({ id, label, description, configInput, messageListKey, settings, setSettings }: TriggerCardProps) {
     const messages = (settings.triggers[messageListKey] as BubbleMessage[]) || [];
-    const isAiEnabled = settings.aiSmartBubbles.enabled;
+    const rawTriggerValue = settings.triggers[id as keyof EngagementSettings['triggers']]
+    const numericDefault = numericTriggerDefaults[id]
+    const isNumericTrigger = numericDefault !== undefined
 
     const addMessage = () => {
         const newMessage: BubbleMessage = {
@@ -53,10 +63,24 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
     }
 
     const toggleEnable = (checked: boolean) => {
-        setSettings(p => ({ ...p, triggers: { ...p.triggers, [id]: checked } }))
+        setSettings(p => {
+            const currentValue = p.triggers[id as keyof EngagementSettings['triggers']]
+            const currentNumber = typeof currentValue === 'number' ? currentValue : 0
+            return {
+                ...p,
+                triggers: {
+                    ...p.triggers,
+                    [id]: isNumericTrigger
+                        ? (checked ? (currentNumber > 0 ? currentNumber : numericDefault) : 0)
+                        : checked
+                }
+            }
+        })
     }
 
-    const isEnabled = settings.triggers[id as keyof EngagementSettings['triggers']] as boolean;
+    const isEnabled = isNumericTrigger
+        ? (rawTriggerValue === true || (typeof rawTriggerValue === 'number' && rawTriggerValue > 0))
+        : rawTriggerValue === true;
 
     // Action Type key
     const actionTypeKey = `${id}ActionType` as keyof EngagementSettings['triggers'];
@@ -73,7 +97,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
     };
 
     return (
-        <div className={`flex flex-col gap-4 p-5 bg-card border rounded-xl shadow-sm transition-all hover:border-primary/20 ${isAiEnabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}>
+        <div className="flex flex-col gap-4 p-5 bg-card border rounded-xl shadow-sm transition-all hover:border-primary/20">
             <div className="flex justify-between items-start">
                 <div className="space-y-1">
                     <div className="font-semibold text-base flex items-center gap-2">
@@ -84,7 +108,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                 </div>
                 <div className="flex items-center gap-4">
                     {configInput}
-                    <Switch checked={isEnabled} onCheckedChange={toggleEnable} disabled={isAiEnabled} />
+                    <Switch checked={isEnabled} onCheckedChange={toggleEnable} />
                 </div>
             </div>
 
@@ -98,7 +122,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                 type="button"
                                 onClick={() => setActionType('bubble')}
                                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${currentActionType === 'bubble' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                disabled={isAiEnabled}
                             >
                                 <MessageCircle className="w-3 h-3 inline-block mr-1.5" />
                                 Baloncuk
@@ -107,7 +130,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                 type="button"
                                 onClick={() => setActionType('openWidget')}
                                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${currentActionType === 'openWidget' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                disabled={isAiEnabled}
                             >
                                 <Layout className="w-3 h-3 inline-block mr-1.5" />
                                 Widget Aç
@@ -129,7 +151,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                             onChange={(e) => updateMessage(msg.id, e.target.value)}
                                             placeholder="Ziyaretçiye ne söylemek istersiniz?"
                                             className="min-h-[60px] text-sm resize-none bg-background/50 focus:bg-background flex-1"
-                                            disabled={isAiEnabled}
                                         />
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-1 bg-background/50 border rounded-md px-2 h-8" title="Görüntülenme Süresi (sn)">
@@ -147,7 +168,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                                             triggers: { ...p.triggers, [messageListKey]: newMessages }
                                                         }));
                                                     }}
-                                                    disabled={isAiEnabled}
                                                 />
                                             </div>
                                             <Button
@@ -155,7 +175,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                                 size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                                 onClick={() => deleteMessage(msg.id)}
-                                                disabled={isAiEnabled}
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
@@ -166,7 +185,6 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                             <Button
                                 variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground"
                                 onClick={addMessage}
-                                disabled={isAiEnabled}
                             >
                                 <Plus className="w-3 h-3 mr-1.5" />
                                 Mesaj Ekle

@@ -8,7 +8,20 @@ interface EngagementTriggersTabProps {
     setSettings: React.Dispatch<React.SetStateAction<EngagementSettings>>
 }
 
+const numericTriggerDefaults = {
+    scrollDepth: 50,
+    inactivity: 30,
+    timeOnPage: 10,
+    clickCount: 3,
+}
+
 export function EngagementTriggersTab({ settings, setSettings }: EngagementTriggersTabProps) {
+    const getTriggerNumber = (key: 'scrollDepth' | 'inactivity' | 'timeOnPage' | 'clickCount') => {
+        const value = settings.triggers[key]
+        if (value === true) return numericTriggerDefaults[key]
+        return typeof value === 'number' && Number.isFinite(value) ? value : 0
+    }
+
     return (
         <div className="space-y-6">
             <Card className="border-0 shadow-none bg-transparent">
@@ -26,14 +39,13 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                     <TriggerCard
                         id="scrollDepth"
                         label="Scroll Derinliği"
-                        description={`Sayfanın belirli bir kısmına inildiğinde (%${settings.triggers.scrollDepth || 0})`}
+                        description={`Sayfanın belirli bir kısmına inildiğinde (%${getTriggerNumber('scrollDepth')})`}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number" className="w-16 h-8 text-xs" min={0} max={100}
-                                    value={settings.triggers.scrollDepth || 0}
+                                    value={getTriggerNumber('scrollDepth')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, scrollDepth: parseInt(e.target.value) || 0 } }))}
-                                    disabled={settings.aiSmartBubbles.enabled}
                                 />
                                 <span className="text-xs text-muted-foreground">%</span>
                             </div>
@@ -46,14 +58,13 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                     <TriggerCard
                         id="inactivity"
                         label="Hareketsizlik (Idle)"
-                        description={`Kullanıcı ${settings.triggers.inactivity || 0} saniye işlem yapmazsa`}
+                        description={`Kullanıcı ${getTriggerNumber('inactivity')} saniye işlem yapmazsa`}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number" className="w-16 h-8 text-xs" min={0}
-                                    value={settings.triggers.inactivity || 0}
+                                    value={getTriggerNumber('inactivity')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, inactivity: parseInt(e.target.value) || 0 } }))}
-                                    disabled={settings.aiSmartBubbles.enabled}
                                 />
                                 <span className="text-xs text-muted-foreground">sn</span>
                             </div>
@@ -66,14 +77,13 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                     <TriggerCard
                         id="timeOnPage"
                         label="Sayfada Geçirilen Süre"
-                        description={`${settings.triggers.timeOnPage || 0} saniye sonra (Hareketsizlikten bağımsız)`}
+                        description={`${getTriggerNumber('timeOnPage')} saniye sonra (Hareketsizlikten bağımsız)`}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number" className="w-16 h-8 text-xs" min={0}
-                                    value={settings.triggers.timeOnPage || 0}
+                                    value={getTriggerNumber('timeOnPage')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, timeOnPage: parseInt(e.target.value) || 0 } }))}
-                                    disabled={settings.aiSmartBubbles.enabled}
                                 />
                                 <span className="text-xs text-muted-foreground">sn</span>
                             </div>
@@ -86,14 +96,13 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                     <TriggerCard
                         id="clickCount"
                         label="Tıklama Sayısı"
-                        description={`${settings.triggers.clickCount || 0} tıklamadan sonra`}
+                        description={`${getTriggerNumber('clickCount')} tıklamadan sonra`}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
                                     type="number" className="w-16 h-8 text-xs" min={0}
-                                    value={settings.triggers.clickCount || 0}
+                                    value={getTriggerNumber('clickCount')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, clickCount: parseInt(e.target.value) || 0 } }))}
-                                    disabled={settings.aiSmartBubbles.enabled}
                                 />
                                 <span className="text-xs text-muted-foreground">tık</span>
                             </div>

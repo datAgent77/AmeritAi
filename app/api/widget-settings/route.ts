@@ -27,6 +27,24 @@ type LocalizedTextMap = {
     en: string;
 };
 
+function stripUndefinedDeep<T>(value: T): T {
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => stripUndefinedDeep(item))
+            .filter((item) => item !== undefined) as T;
+    }
+
+    if (value && typeof value === "object") {
+        return Object.fromEntries(
+            Object.entries(value as Record<string, unknown>)
+                .filter(([, fieldValue]) => fieldValue !== undefined)
+                .map(([key, fieldValue]) => [key, stripUndefinedDeep(fieldValue)])
+        ) as T;
+    }
+
+    return value;
+}
+
 function normalizeLocalizedLabelValue(value: unknown) {
     return typeof value === "string" ? value.trim() : "";
 }
@@ -979,10 +997,26 @@ export async function POST(req: Request) {
             }
         }
 
-        // Validation or sanitization could go here if needed
-
         // Remove chatbotId from body before saving
         const { chatbotId: _, ...settingsToSave } = body;
+
+        const saveKeys = Object.keys(settingsToSave);
+        const isEngagementOnlySave =
+            settingsToSave.engagement &&
+            typeof settingsToSave.engagement === "object" &&
+            saveKeys.every((key) => key === "engagement" || key === "enableProactiveMessaging");
+
+        if (isEngagementOnlySave) {
+            const dataToSave = stripUndefinedDeep({
+                engagement: settingsToSave.engagement,
+                enableProactiveMessaging: settingsToSave.enableProactiveMessaging === true,
+                updatedAt: new Date().toISOString(),
+            });
+
+            await adminDb.collection("chatbots").doc(targetChatbotId).set(dataToSave, { merge: true });
+            return NextResponse.json({ success: true });
+        }
+
         const normalizedQuickActions = await enrichQuickActionLabels(settingsToSave.quickActions);
         const localizedSettingsToSave = await enrichWidgetLocalizedCopy(settingsToSave);
         const normalizedSettingsToSave: Record<string, any> = {
@@ -992,10 +1026,10 @@ export async function POST(req: Request) {
 
         // If industry is being set, also update sector and sectorId to ensure AI uses correct sector
         // AI service prioritizes sector > sectorId > industry, so we must sync all three
-        const dataToSave: Record<string, any> = {
+        const dataToSave: Record<string, any> = stripUndefinedDeep({
             ...normalizedSettingsToSave,
             updatedAt: new Date().toISOString(),
-        };
+        });
 
         if (normalizedSettingsToSave.industry) {
             dataToSave.sector = normalizedSettingsToSave.industry;

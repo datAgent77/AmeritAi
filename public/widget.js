@@ -2136,12 +2136,6 @@
     }
 
     setupTriggers() {
-      // Exclusivity Check: If AI Smart Bubbles are enabled, ignore manual triggers
-      if (this.settings.aiSmartBubbles && this.settings.aiSmartBubbles.enabled) {
-        console.log('Engagement: AI Auto-Pilot active. Skipping manual triggers.');
-        return;
-      }
-
       const triggers = this.settings.triggers;
       console.log('Engagement: Setting up triggers', triggers);
 
