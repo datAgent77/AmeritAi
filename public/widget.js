@@ -1510,6 +1510,69 @@
       return true;
     }
 
+    normalizePathForTargeting(value) {
+      if (!value || typeof value !== 'string') return '';
+      const trimmed = value.trim();
+      if (!trimmed) return '';
+
+      try {
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          return new URL(trimmed).pathname || '/';
+        }
+      } catch (error) {
+        console.warn('Engagement: Invalid target URL ignored', trimmed);
+        return '';
+      }
+
+      return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    }
+
+    matchesPageTargeting(targeting) {
+      if (!targeting || typeof targeting !== 'object') return true;
+
+      const mode = targeting.mode || 'all';
+      const pathname = window.location.pathname || '/';
+      const currentHref = window.location.href;
+
+      if (mode === 'all') return true;
+      if (mode === 'homepage') return pathname === '/' || pathname === '';
+      if (mode !== 'custom') return true;
+
+      const targetUrls = Array.isArray(targeting.urls) ? targeting.urls : [];
+      if (targetUrls.length === 0) return false;
+
+      return targetUrls.some((rawTarget) => {
+        if (!rawTarget || typeof rawTarget !== 'string') return false;
+        const trimmed = rawTarget.trim();
+        if (!trimmed) return false;
+
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          return currentHref.startsWith(trimmed.replace(/\*$/, ''));
+        }
+
+        const hasWildcard = trimmed.endsWith('*');
+        const normalizedTarget = this.normalizePathForTargeting(hasWildcard ? trimmed.slice(0, -1) : trimmed);
+        if (!normalizedTarget) return false;
+
+        if (hasWildcard) {
+          const wildcardBase = normalizedTarget.length > 1 && normalizedTarget.endsWith('/')
+            ? normalizedTarget.slice(0, -1)
+            : normalizedTarget;
+          return pathname === wildcardBase || pathname.startsWith(`${wildcardBase}/`);
+        }
+        return pathname === normalizedTarget;
+      });
+    }
+
+    shouldRunTriggerOnThisPage(triggerId, logSkipped = true) {
+      const targeting = this.settings?.triggers?.[`${triggerId}Targeting`];
+      const shouldRun = this.matchesPageTargeting(targeting);
+      if (!shouldRun && logSkipped) {
+        console.log(`Engagement: ${triggerId} skipped by page targeting`);
+      }
+      return shouldRun;
+    }
+
     // Check if current time is in quiet hours
     isInQuietHours() {
       const quietHours = this.settings.quietHours;
@@ -2159,8 +2222,9 @@
       // (Done in getNextMessage or init)
 
       // 2. Scroll Depth Trigger
-      if (triggers.scrollDepth && triggers.scrollDepth > 0) {
+      if (triggers.scrollDepth && triggers.scrollDepth > 0 && this.shouldRunTriggerOnThisPage('scrollDepth')) {
         const checkScroll = () => {
+          if (!this.shouldRunTriggerOnThisPage('scrollDepth', false)) return;
           const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
           if (scrollHeight <= 0) return;
 
@@ -2177,8 +2241,9 @@
       }
 
       // 3. Exit Intent Trigger (Desktop only)
-      if (triggers.exitIntent && !isMobileDevice()) {
+      if (triggers.exitIntent && !isMobileDevice() && this.shouldRunTriggerOnThisPage('exitIntent')) {
         const handleMouseLeave = (e) => {
+          if (!this.shouldRunTriggerOnThisPage('exitIntent', false)) return;
           if (e.clientY <= 10) {
             console.log('Engagement: Exit intent trigger fired');
             this.executeTriggerAction('exitIntent', 'exitIntent');
@@ -2194,20 +2259,24 @@
 
 
       // 4. Page Revisit Trigger
-      if (triggers.pageRevisit && triggers.pageRevisit > 0) {
+      if (triggers.pageRevisit && triggers.pageRevisit > 0 && this.shouldRunTriggerOnThisPage('pageRevisit')) {
         let visits = parseInt(localStorage.getItem(this.visitCountKey) || '0');
         if (visits >= triggers.pageRevisit) {
           console.log('Engagement: Page revisit trigger fired', visits);
-          setTimeout(() => this.executeTriggerAction('pageRevisit', 'pageRevisit'), 1000);
+          setTimeout(() => {
+            if (!this.shouldRunTriggerOnThisPage('pageRevisit', false)) return;
+            this.executeTriggerAction('pageRevisit', 'pageRevisit');
+          }, 1000);
         }
       }
 
       // 5. Inactivity Trigger (Idle)
-      if (triggers.inactivity && triggers.inactivity > 0) {
+      if (triggers.inactivity && triggers.inactivity > 0 && this.shouldRunTriggerOnThisPage('inactivity')) {
         let inactivityTimer;
         const resetTimer = () => {
           clearTimeout(inactivityTimer);
           inactivityTimer = setTimeout(() => {
+            if (!this.shouldRunTriggerOnThisPage('inactivity', false)) return;
             console.log('Engagement: Inactivity trigger fired');
             this.executeTriggerAction('inactivity', 'inactivity');
           }, triggers.inactivity * 1000);
@@ -2222,8 +2291,9 @@
       }
 
       // 6. Time on Page (New)
-      if (triggers.timeOnPage && triggers.timeOnPage > 0) {
+      if (triggers.timeOnPage && triggers.timeOnPage > 0 && this.shouldRunTriggerOnThisPage('timeOnPage')) {
         const timer = setTimeout(() => {
+          if (!this.shouldRunTriggerOnThisPage('timeOnPage', false)) return;
           console.log('Engagement: Time on Page trigger fired');
           this.executeTriggerAction('timeOnPage', 'timeOnPage');
         }, triggers.timeOnPage * 1000);
@@ -2231,9 +2301,10 @@
       }
 
       // 7. Click Count (New)
-      if (triggers.clickCount && triggers.clickCount > 0) {
+      if (triggers.clickCount && triggers.clickCount > 0 && this.shouldRunTriggerOnThisPage('clickCount')) {
         let clicks = 0;
         const clickHandler = () => {
+          if (!this.shouldRunTriggerOnThisPage('clickCount', false)) return;
           clicks++;
           if (clicks >= triggers.clickCount) {
             console.log('Engagement: Click count trigger fired', clicks);
@@ -2246,8 +2317,9 @@
       }
 
       // 8. Copy Trigger (New)
-      if (triggers.copyTrigger) {
+      if (triggers.copyTrigger && this.shouldRunTriggerOnThisPage('copyTrigger')) {
         const copyHandler = () => {
+          if (!this.shouldRunTriggerOnThisPage('copyTrigger', false)) return;
           console.log('Engagement: Copy trigger fired');
           this.executeTriggerAction('copyTrigger', 'copyTrigger');
         };

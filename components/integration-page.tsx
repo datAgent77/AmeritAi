@@ -21,6 +21,7 @@ import { WhatsAppBizWizard } from "@/components/integrations/whatsapp-business/W
 import { MessengerWizard } from "@/components/integrations/messenger/MessengerWizard"
 import { EcommerceConnectionForm } from "@/components/integrations/ecommerce/EcommerceConnectionForm"
 import { EcommercePlatformCard } from "@/components/integrations/ecommerce/EcommercePlatformCard"
+import { MobileSupportIntegrationPanel } from "@/components/integrations/mobile-support/MobileSupportIntegrationPanel"
 import { PLATFORM_META } from "@/lib/integrations/ecommerce/platform-registry"
 import type { EcomConnection, EcomPlatform } from "@/lib/integrations/ecommerce/types"
 import { ZOHO_REGIONS, ZOHO_DEFAULT_REGION, type ZohoRegion } from "@/lib/integrations/zoho/config"
@@ -39,7 +40,7 @@ interface Integration {
     features?: string[]
     connected?: boolean
     connectedInfo?: string
-    category?: "embed" | "messaging" | "ecommerce" | "crm" | "calendar" | "email" | "all"
+    category?: "embed" | "messaging" | "ecommerce" | "crm" | "calendar" | "email" | "api" | "all"
 }
 
 const HIDDEN_INTEGRATION_IDS = new Set([
@@ -211,6 +212,40 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             ]
         },
         {
+            id: "mobile-app-api",
+            name: language === "tr" ? "Mobile App / API" : "Mobile App / API",
+            description: language === "tr"
+                ? "Native mobil uygulamanızdan Vion destek asistanına güvenli mesaj ve context gönderin."
+                : "Send secure messages and context from your native mobile app to the Vion support assistant.",
+            icon: <Code2 className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
+            connected: settings?.integrations?.mobileApp?.enabled === true,
+            connectedInfo: settings?.integrations?.mobileApp?.environment,
+            category: "api",
+            features: [
+                language === "tr" ? "API-first mobil destek asistanı" : "API-first mobile support assistant",
+                language === "tr" ? "Client token ve allowed app id kontrolü" : "Client token and allowed app id controls",
+                language === "tr" ? "Sipariş, sepet ve müşteri context payload örneği" : "Order, cart, and customer context payload sample",
+            ],
+        },
+        {
+            id: "ticket-webhook",
+            name: language === "tr" ? "Ticket Webhook" : "Ticket Webhook",
+            description: language === "tr"
+                ? "Çözülemeyen mobil destek konuşmalarını müşterinin kendi ticket sistemine gönderin."
+                : "Send unresolved mobile support conversations to the customer's ticket system.",
+            icon: <Send className="h-6 w-6 text-gray-900" />,
+            iconBg: "bg-gray-100",
+            connected: settings?.integrations?.ticketWebhook?.enabled === true,
+            connectedInfo: settings?.integrations?.ticketWebhook?.connected ? "Tested" : undefined,
+            category: "api",
+            features: [
+                language === "tr" ? "Generic support_ticket.create webhook event'i" : "Generic support_ticket.create webhook event",
+                language === "tr" ? "Bearer veya API key header desteği" : "Bearer or API key header support",
+                language === "tr" ? "Test ticket gönderimi ve retry için pending kayıt" : "Test ticket sending and pending records for retry",
+            ],
+        },
+        {
             id: "wordpress",
             name: t('wordpress'),
             description: t('wordpressDescription'),
@@ -363,6 +398,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         if (!i.category) {
             if (["meta-channels", "telegram", "whatsapp", "instagram"].includes(i.id)) i.category = "messaging"
             else if (["website", "iframe", "direct-link", "wordpress"].includes(i.id)) i.category = "embed"
+            else if (["mobile-app-api", "ticket-webhook"].includes(i.id)) i.category = "api"
             else if (["slack", "salesforce", "zoho-crm"].includes(i.id)) i.category = "crm"
             else if (["google-calendar", "outlook-calendar"].includes(i.id)) i.category = "calendar"
             else if (["mailchimp", "sendgrid", "constant-contact"].includes(i.id)) i.category = "email"
@@ -1002,6 +1038,27 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     </div>
 
                     <MessengerWizard chatbotId={userId} />
+                </div>
+            )
+        }
+
+        if (currentIntegration.id === "mobile-app-api" || currentIntegration.id === "ticket-webhook") {
+            return (
+                <div className="flex-1 p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setSelectedIntegration(null)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t('backToIntegrations')}
+                        </button>
+                    </div>
+
+                    <MobileSupportIntegrationPanel
+                        chatbotId={userId}
+                        mode={currentIntegration.id === "mobile-app-api" ? "mobile" : "ticket"}
+                    />
                 </div>
             )
         }
@@ -1733,6 +1790,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                             <SelectItem value="crm">{language === 'tr' ? 'CRM' : 'CRM'}</SelectItem>
                             <SelectItem value="calendar">{language === 'tr' ? 'Takvim' : 'Calendar'}</SelectItem>
                             <SelectItem value="email">{language === 'tr' ? 'E-Posta' : 'Email'}</SelectItem>
+                            <SelectItem value="api">API</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="relative w-full sm:w-64">

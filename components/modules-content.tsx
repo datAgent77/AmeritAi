@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     ShoppingBag,
     ArrowRight,
@@ -53,7 +54,7 @@ import { useState, useEffect, useMemo, useCallback } from "react"
 import { doc, updateDoc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
-import { MODULES_REGISTRY as MODULE_DEFINITIONS, ModuleId, ORDERED_MODULES, ModuleDefinition } from "@/lib/modules-registry"
+import { MODULES_REGISTRY as MODULE_DEFINITIONS, ModuleId, ORDERED_MODULES, ModuleDefinition, SectorId } from "@/lib/modules-registry"
 import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-config"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -136,6 +137,38 @@ const MODULE_FIRESTORE_MAP: Record<ModuleId, string> = {
     surveyManager: 'enableSurveyManager'
 }
 
+const ALL_SECTORS_FILTER = "all"
+const SECTOR_FILTER_OPTIONS: Array<{ id: SectorId; tr: string; en: string }> = [
+    { id: "ecommerce", tr: "E-Ticaret", en: "E-Commerce" },
+    { id: "booking", tr: "Seyahat ve Rezervasyon", en: "Travel & Booking" },
+    { id: "real_estate", tr: "Emlak ve Gayrimenkul", en: "Real Estate" },
+    { id: "saas", tr: "SaaS ve Yazılım", en: "SaaS / Software" },
+    { id: "service", tr: "Hizmet ve Ajans", en: "Service & Agency" },
+    { id: "healthcare", tr: "Sağlık", en: "Healthcare" },
+    { id: "education", tr: "Eğitim", en: "Education" },
+    { id: "academic", tr: "Akademik", en: "Academic" },
+    { id: "finance", tr: "Finans", en: "Finance" },
+    { id: "restaurant", tr: "Restoran", en: "Restaurant" },
+    { id: "agriculture", tr: "Tarım", en: "Agriculture" },
+    { id: "automotive", tr: "Otomotiv", en: "Automotive" },
+    { id: "insurance", tr: "Sigorta", en: "Insurance" },
+    { id: "logistics", tr: "Lojistik", en: "Logistics" },
+    { id: "beauty", tr: "Güzellik", en: "Beauty" },
+    { id: "legal", tr: "Hukuk", en: "Legal" },
+    { id: "fitness", tr: "Fitness", en: "Fitness" },
+    { id: "maritime", tr: "Denizcilik", en: "Maritime" },
+    { id: "manufacturing", tr: "Üretim", en: "Manufacturing" },
+    { id: "other", tr: "Diğer", en: "Other" },
+]
+
+function getSectorLabel(sectorId: SectorId, language: string) {
+    const configured = INDUSTRY_CONFIG[sectorId as IndustryType]
+    const localized = (configured as any)?.names?.[language]
+    if (localized) return localized
+    const fallback = SECTOR_FILTER_OPTIONS.find((option) => option.id === sectorId)
+    return language === "tr" ? fallback?.tr || sectorId : fallback?.en || configured?.label || sectorId
+}
+
 const DEFAULT_MODULE_STATES: Record<string, boolean> = {
     generalChatbot: true,
     productCatalog: false,
@@ -211,6 +244,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
     // Search state
     const [searchQuery, setSearchQuery] = useState("")
+    const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>("")
 
     // Use targetUserId if provided, otherwise use current user's uid
     const effectiveUserId = targetUserId || user?.uid
@@ -219,25 +253,62 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     // Determine User Industry - Default to ecommerce if not set
     const userIndustry: IndustryType = (user as any)?.industry || DEFAULT_INDUSTRY
     const industryConfig = INDUSTRY_CONFIG[userIndustry]
+    const defaultSectorFilter = isSuperAdminViewingTenant ? ALL_SECTORS_FILTER : userIndustry
+
+    useEffect(() => {
+        setSelectedSectorFilter((current) => current || defaultSectorFilter)
+    }, [defaultSectorFilter])
     
     // Get user plan ID - Default to starter if not set
     const userPlanId = (user as any)?.planId || (user as any)?.entitlements?.planId || 'starter'
 
     useEffect(() => {
+        let isCancelled = false
+        let controller: AbortController | null = null
+        let timeoutId: number | null = null
+
+        const clearLoadTimeout = () => {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId)
+                timeoutId = null
+            }
+        }
+
+        const loadSettingsFromClientFirestore = async () => {
+            if (!effectiveUserId) {
+                throw new Error("Missing user id")
+            }
+
+            const [userSnap, chatbotSnap] = await Promise.all([
+                getDoc(doc(db, "users", effectiveUserId)),
+                getDoc(doc(db, "chatbots", effectiveUserId)),
+            ])
+
+            if (!userSnap.exists() && !chatbotSnap.exists()) {
+                throw new Error("Settings not found")
+            }
+
+            return {
+                ...(userSnap.exists() ? userSnap.data() : {}),
+                ...(chatbotSnap.exists() ? chatbotSnap.data() : {}),
+            }
+        }
+
         const loadModuleStates = async () => {
             if (!effectiveUserId || !user) return
             setIsPageLoading(true)
             setSettingsLoadError(null)
-            const controller = new AbortController()
-            const timeoutId = window.setTimeout(() => controller.abort(), 10000)
             try {
                 // Fetch from API to avoid client-side permission issues
                 const token = await user.getIdToken()
+                controller = new AbortController()
+                timeoutId = window.setTimeout(() => controller?.abort(), 8000)
                 const response = await fetch(`/api/console/settings?chatbotId=${effectiveUserId}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     },
                     signal: controller.signal,
+                    cache: "no-store",
                 })
 
                 if (!response.ok) {
@@ -245,6 +316,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 }
 
                 const data = await response.json()
+                if (isCancelled) return
                 setModuleStates(buildModuleStatesFromSettings(data))
                 setAdminGrantedModules(
                     data.adminGrantedModules && typeof data.adminGrantedModules === "object"
@@ -252,21 +324,48 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                         : null
                 )
             } catch (error) {
-                console.error("Error loading module states:", error)
-                setModuleStates(DEFAULT_MODULE_STATES)
-                setAdminGrantedModules(null)
-                setSettingsLoadError(
-                    error instanceof DOMException && error.name === "AbortError"
-                        ? "settings-timeout"
-                        : "settings-failed"
-                )
+                if (isCancelled) return
+                clearLoadTimeout()
+
+                try {
+                    const fallbackData = await loadSettingsFromClientFirestore()
+                    if (isCancelled) return
+                    setModuleStates(buildModuleStatesFromSettings(fallbackData))
+                    setAdminGrantedModules(
+                        fallbackData.adminGrantedModules && typeof fallbackData.adminGrantedModules === "object"
+                            ? fallbackData.adminGrantedModules
+                            : null
+                    )
+                    setSettingsLoadError(null)
+                } catch (fallbackError) {
+                    if (isCancelled) return
+                    console.error("Error loading module states:", error)
+                    console.error("Client Firestore fallback also failed:", fallbackError)
+                    setModuleStates(DEFAULT_MODULE_STATES)
+                    setAdminGrantedModules(null)
+                    setSettingsLoadError(
+                        isSuperAdminViewingTenant
+                            ? null
+                            : error instanceof DOMException && error.name === "AbortError"
+                                ? "settings-timeout"
+                                : "settings-failed"
+                    )
+                }
             } finally {
-                window.clearTimeout(timeoutId)
-                setIsPageLoading(false)
+                clearLoadTimeout()
+                if (!isCancelled) {
+                    setIsPageLoading(false)
+                }
             }
         }
         loadModuleStates()
-    }, [effectiveUserId, user, loadAttempt])
+
+        return () => {
+            isCancelled = true
+            clearLoadTimeout()
+            controller?.abort()
+        }
+    }, [effectiveUserId, user, loadAttempt, isSuperAdminViewingTenant])
 
     const handleToggle = async (moduleId: ModuleId, checked: boolean) => {
         if (!effectiveUserId) return
@@ -526,6 +625,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
 
     // Admin view: super admin viewing a tenant's modules, or super admin on own console
     const isAdminView = isSuperAdminViewingTenant || role === 'SUPER_ADMIN'
+    const activeSectorFilter = selectedSectorFilter || defaultSectorFilter
 
     // Filter Logic
     const filteredModules = useMemo(() => {
@@ -545,6 +645,14 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             // visibility so they can grant, revoke, or configure modules for tenants.
             if (!isAdminView) {
                 if (moduleStates[module.id] !== true) {
+                    return false
+                }
+            }
+
+            if (activeSectorFilter !== ALL_SECTORS_FILTER) {
+                const sector = activeSectorFilter as SectorId
+                const supportsSector = module.supportedSectors.length === 0 || module.supportedSectors.includes(sector)
+                if (!supportsSector) {
                     return false
                 }
             }
@@ -579,7 +687,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             const nameB = (b.name[lang] || b.name.en).toLowerCase()
             return nameA.localeCompare(nameB, language === 'tr' ? 'tr' : 'en')
         })
-    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates])
+    }, [searchQuery, language, checkModuleIncluded, isAdminView, moduleStates, activeSectorFilter])
 
     // Show loading skeleton while fetching data
     if (isPageLoading) {
@@ -629,10 +737,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 )}
             </div>
 
-            {/* Toolbar: Search, View Toggle */}
+            {/* Toolbar: Search, Sector Filter, View Toggle */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white dark:bg-zinc-950 p-1 rounded-xl">
-                <div className="flex flex-1 w-full md:w-auto items-center gap-3">
-                    <div className="relative flex-1 md:max-w-xs">
+                <div className="flex flex-1 w-full md:w-auto flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="relative flex-1 sm:max-w-xs">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder={t('searchModules') || "Search modules..."}
@@ -640,6 +748,26 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
+                    </div>
+                    <div className="w-full sm:w-64">
+                        <Select
+                            value={activeSectorFilter}
+                            onValueChange={setSelectedSectorFilter}
+                        >
+                            <SelectTrigger className="h-10 w-full">
+                                <SelectValue placeholder={language === "tr" ? "Sektör seç" : "Select sector"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_SECTORS_FILTER}>
+                                    {language === "tr" ? "Tüm sektörler" : "All sectors"}
+                                </SelectItem>
+                                {SECTOR_FILTER_OPTIONS.map((option) => (
+                                    <SelectItem key={option.id} value={option.id}>
+                                        {getSectorLabel(option.id, language)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 

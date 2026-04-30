@@ -146,6 +146,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     // Tenant-scoped chatbot menus only make sense while viewing a specific tenant.
     const showGlobalAdminOverview = role === "SUPER_ADMIN" && !targetUserId
     const showChatbotMenus = role !== "SUPER_ADMIN" || !!targetUserId
+    const canViewTenantSettings = !!targetUserId && (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN")
 
     // Top-level overview item (outside groups)
     const overviewHref = targetUserId
@@ -239,6 +240,35 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 }
             ]
         },
+        ...(canViewTenantSettings ? [{
+            label: t('settings') || "Ayarlar",
+            items: [
+                {
+                    title: t('subscription') || "Abonelik",
+                    icon: CreditCard,
+                    href: "/console/settings/customer-admin",
+                    active: isActive("/console/settings/customer-admin")
+                },
+                {
+                    title: t('aiConfiguration') || "AI Yapılandırması",
+                    icon: Settings,
+                    href: "/console/settings/ai",
+                    active: isActive("/console/settings/ai")
+                },
+                {
+                    title: t('notificationSettings') || "Bildirimler",
+                    icon: Bell,
+                    href: "/console/settings/notifications",
+                    active: isActive("/console/settings/notifications")
+                },
+                ...(role === "SUPER_ADMIN" ? [{
+                    title: t('accountSettings') || "Hesap Ayarları",
+                    icon: UserCircle,
+                    href: "/console/settings/account",
+                    active: isActive("/console/settings/account")
+                }] : [])
+            ]
+        }] : []),
         {
             label: language === "tr" ? "Destek" : "Support",
             items: [

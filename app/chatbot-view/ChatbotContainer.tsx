@@ -303,8 +303,30 @@ export default function ChatbotContainer() {
         const url = searchParams?.get("url")
         const title = searchParams?.get("title")
         const desc = searchParams?.get("desc")
+        const mobileSession = searchParams?.get("mobileSession")
         if (url) {
             setPageContext({ url, title: title || "", desc: desc || "" })
+        }
+
+        if (mobileSession && chatbotId) {
+            const controller = new AbortController()
+            fetch(`/api/mobile-assistant/session-context?chatbotId=${encodeURIComponent(chatbotId)}&mobileSession=${encodeURIComponent(mobileSession)}`, {
+                cache: "no-store",
+                signal: controller.signal,
+            })
+                .then(async (response) => {
+                    const data = await response.json().catch(() => null)
+                    if (!response.ok) throw new Error(data?.error || "Failed to resolve mobile session")
+                    if (data?.context) setPageContext(data.context)
+                    if (data?.language) setLanguage(data.language)
+                })
+                .catch((error) => {
+                    if (error?.name !== "AbortError") {
+                        console.warn("[ChatbotContainer] Mobile session context could not be loaded", error)
+                    }
+                })
+
+            return () => controller.abort()
         }
 
         const handleMessage = (event: MessageEvent) => {
@@ -323,7 +345,7 @@ export default function ChatbotContainer() {
         }
         window.addEventListener('message', handleMessage)
         return () => window.removeEventListener('message', handleMessage)
-    }, [searchParams])
+    }, [chatbotId, searchParams, setLanguage])
 
     // 5. Circular Dependency Resolution (Voice <-> Chat)
     // We create a mutable ref for sendMessage so Voice hook can use it before Chat hook is fully initialized

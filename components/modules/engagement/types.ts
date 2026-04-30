@@ -12,6 +12,12 @@ export type EngagementBubblePosition = 'top' | 'left' | 'right' | 'bottom-left' 
 export type EngagementBubbleAnimation = 'none' | 'bounce' | 'pulse' | 'shake' | 'slide' | 'fade'
 export type EngagementBubbleRenderStyle = 'custom' | 'ambient_ai_bubble' | 'ambient_ai_bubble_typewriter'
 export type EngagementAmbientAiBubbleTheme = 'default' | 'minimal' | 'glass' | 'compact'
+export type EngagementTriggerTargetingMode = 'all' | 'homepage' | 'custom'
+
+export interface EngagementTriggerTargeting {
+    mode: EngagementTriggerTargetingMode
+    urls: string[]
+}
 
 export interface EngagementBubbleStyle {
     backgroundColor: string
@@ -91,6 +97,15 @@ export interface EngagementSettings {
         timeOnPageActionType?: 'bubble' | 'openWidget'
         clickCountActionType?: 'bubble' | 'openWidget'
         copyTriggerActionType?: 'bubble' | 'openWidget'
+
+        // Page Targeting
+        exitIntentTargeting?: EngagementTriggerTargeting
+        scrollDepthTargeting?: EngagementTriggerTargeting
+        inactivityTargeting?: EngagementTriggerTargeting
+        pageRevisitTargeting?: EngagementTriggerTargeting
+        timeOnPageTargeting?: EngagementTriggerTargeting
+        clickCountTargeting?: EngagementTriggerTargeting
+        copyTriggerTargeting?: EngagementTriggerTargeting
 
         // Deprecated fields kept for backward compatibility if needed, though clean up preferred
         scrollDepthMessageId?: string
@@ -192,7 +207,15 @@ export const defaultSettings: EngagementSettings = {
         pageRevisitActionType: 'bubble',
         timeOnPageActionType: 'bubble',
         clickCountActionType: 'bubble',
-        copyTriggerActionType: 'bubble'
+        copyTriggerActionType: 'bubble',
+
+        exitIntentTargeting: { mode: 'all', urls: [] },
+        scrollDepthTargeting: { mode: 'all', urls: [] },
+        inactivityTargeting: { mode: 'all', urls: [] },
+        pageRevisitTargeting: { mode: 'all', urls: [] },
+        timeOnPageTargeting: { mode: 'all', urls: [] },
+        clickCountTargeting: { mode: 'all', urls: [] },
+        copyTriggerTargeting: { mode: 'all', urls: [] }
     },
     aiSmartBubbles: {
         visible: false,

@@ -1,4 +1,3 @@
-import { type ReactNode } from "react"
 import { Eye, MessageCircle } from "lucide-react"
 import { EngagementSettings } from "../types"
 import { getPreviewBubbleConfig, getPreviewStyle, type EngagementPreviewVariantMode } from "../utils"
@@ -6,10 +5,9 @@ import { getPreviewBubbleConfig, getPreviewStyle, type EngagementPreviewVariantM
 interface EngagementPreviewProps {
     settings: EngagementSettings
     chatDisplayMode: "classic" | "ambient"
-    headerActions?: ReactNode
 }
 
-export function EngagementPreview({ settings, chatDisplayMode, headerActions }: EngagementPreviewProps) {
+export function EngagementPreview({ settings, chatDisplayMode }: EngagementPreviewProps) {
     const previewMode: EngagementPreviewVariantMode = chatDisplayMode === "ambient" ? "ambient" : "classic"
     const previewStyle = getPreviewStyle(settings, previewMode)
     const previewConfig = getPreviewBubbleConfig(settings, previewMode)
@@ -28,11 +26,6 @@ export function EngagementPreview({ settings, chatDisplayMode, headerActions }: 
                         {previewMode === "ambient" ? "Ambient görünüm" : "Classic görünüm"}
                     </div>
                 </div>
-                {headerActions && (
-                    <div className="pt-1 border-t border-black/5 dark:border-white/10">
-                        {headerActions}
-                    </div>
-                )}
             </div>
 
             <div className="flex-1 relative p-6 overflow-hidden">

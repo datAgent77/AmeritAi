@@ -11,7 +11,7 @@ export default function TenantSettingsPage() {
     useEffect(() => {
         if (!role) return
         if (params.userId) {
-            const target = role === "SUPER_ADMIN" ? "subscription" : "ai"
+            const target = role === "SUPER_ADMIN" || role === "AGENCY_ADMIN" ? "customer-admin" : "ai"
             router.replace(`/admin/tenant/${params.userId}/settings/${target}`)
         }
     }, [router, params.userId, role])

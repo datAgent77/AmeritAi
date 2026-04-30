@@ -13,15 +13,6 @@ export default function nextConfig(phase) {
     // when `next dev` and `next build` run in the same workspace.
     // Vercel expects artifacts under ".next" (routes-manifest.json lookup).
     distDir: isVercel ? ".next" : localDistDir,
-    // Exclude chrome-extension from Next.js build
-    webpack: (config, { isServer }) => {
-        config.watchOptions = {
-            ...config.watchOptions,
-            ignored: /chrome-extension/,
-        };
-        return config;
-    },
-    // Exclude chrome-extension from TypeScript compilation
     typescript: {
         ignoreBuildErrors: false,
     },

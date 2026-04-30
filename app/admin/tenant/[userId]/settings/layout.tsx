@@ -4,7 +4,7 @@ import { useParams } from "next/navigation"
 import { SubpageSidebar } from "@/components/subpage-sidebar"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
-import { CreditCard, Code, Bell, Bot, ShieldCheck, UserCog, Shield } from "lucide-react"
+import { CreditCard, Bell, Bot, UserCog } from "lucide-react"
 
 
 export default function TenantSettingsLayout({
@@ -17,12 +17,13 @@ export default function TenantSettingsLayout({
     const params = useParams()
     const userId = params.userId as string
     const isSuperAdmin = role === "SUPER_ADMIN"
+    const canViewTenantSettings = role === "SUPER_ADMIN" || role === "AGENCY_ADMIN"
 
     const settingsMenuItems = [
-        ...(isSuperAdmin ? [{
-            id: "subscription",
+        ...(canViewTenantSettings ? [{
+            id: "customer-admin",
             label: t('subscription') || "Abonelik",
-            href: `/admin/tenant/${userId}/settings/subscription`,
+            href: `/admin/tenant/${userId}/settings/customer-admin`,
             icon: <CreditCard className="w-4 h-4" />
         }] : []),
         {
@@ -39,12 +40,6 @@ export default function TenantSettingsLayout({
         },
         // Super Admin Only
         ...(isSuperAdmin ? [
-            {
-                id: "customer-admin",
-                label: t('customerAdmin') || "Planı Göster",
-                href: `/admin/tenant/${userId}/settings/customer-admin`,
-                icon: <Shield className="w-4 h-4" />
-            },
             {
                 id: "account",
                 label: t('accountSettings') || "Hesap Ayarları",

@@ -72,6 +72,7 @@ function initAdmin() {
         // Assign instances
         adminAuth = admin.auth();
         adminDb = admin.firestore();
+        adminDb.settings({ preferRest: true });
         adminStorage = admin.storage();
 
     } catch (error) {

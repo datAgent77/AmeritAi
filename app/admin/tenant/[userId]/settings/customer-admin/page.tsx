@@ -84,6 +84,7 @@ export default function CustomerAdminPage() {
     const params = useParams()
     const router = useRouter()
     const userId = params.userId as string
+    const canManageCustomerAdmin = currentRole === "SUPER_ADMIN" || currentRole === "AGENCY_ADMIN"
 
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
@@ -120,7 +121,7 @@ export default function CustomerAdminPage() {
     useEffect(() => {
         const fetchData = async () => {
             if (!currentRole) return
-            if (currentRole && currentRole !== "SUPER_ADMIN") {
+            if (currentRole && !canManageCustomerAdmin) {
                 router.replace(`/admin/tenant/${userId}`)
                 return
             }
@@ -196,13 +197,13 @@ export default function CustomerAdminPage() {
         }
 
         fetchData()
-    }, [userId, t, toast, currentUser, currentRole, router])
+    }, [userId, t, toast, currentUser, currentRole, canManageCustomerAdmin, router])
 
     if (!currentRole) {
         return null
     }
 
-    if (currentRole !== "SUPER_ADMIN") {
+    if (!canManageCustomerAdmin) {
         return null
     }
 

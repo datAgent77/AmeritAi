@@ -8,6 +8,7 @@ import {
 } from "@/lib/appointment-scheduling"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 const DEFAULT_LOOKAHEAD_DAYS = 120
 

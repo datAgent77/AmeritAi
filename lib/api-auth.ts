@@ -69,11 +69,13 @@ export async function authorizeTargetAccess(
         return { ok: true, callerUid, isSuperAdmin: false, isAgencyAdmin: false };
     }
 
-    const callerDoc = await adminDb.collection("users").doc(callerUid).get();
+    const [callerDoc, targetDoc] = await Promise.all([
+        adminDb.collection("users").doc(callerUid).get(),
+        adminDb.collection("users").doc(targetUserId).get(),
+    ]);
     const callerData = callerDoc.data() || {};
     const callerRole = callerData?.role;
     const decodedRole = (decodedToken as any).role;
-    const targetDoc = await adminDb.collection("users").doc(targetUserId).get();
     const targetRole = targetDoc.data()?.role;
     const targetAgencyId = targetDoc.data()?.agencyId || null;
 

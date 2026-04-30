@@ -52,6 +52,7 @@ const sectorTemplates: Record<string, BubbleMessage[]> = {
 }
 
 const numericTriggerKeys = ['scrollDepth', 'inactivity', 'pageRevisit', 'timeOnPage', 'clickCount'] as const
+const triggerIds = ['exitIntent', 'scrollDepth', 'inactivity', 'pageRevisit', 'timeOnPage', 'clickCount', 'copyTrigger'] as const
 const numericTriggerDefaults: Record<(typeof numericTriggerKeys)[number], number> = {
     scrollDepth: 50,
     inactivity: 30,
@@ -62,12 +63,30 @@ const numericTriggerDefaults: Record<(typeof numericTriggerKeys)[number], number
 
 function normalizeEngagementSettings(settings: EngagementSettings): EngagementSettings {
     const triggers = { ...settings.triggers }
+    const triggerRecord = triggers as Record<string, unknown>
 
     numericTriggerKeys.forEach((key) => {
-        const value = (triggers as Record<string, unknown>)[key]
+        const value = triggerRecord[key]
         triggers[key] = value === true
             ? numericTriggerDefaults[key]
             : (typeof value === 'number' && Number.isFinite(value) ? value : 0)
+    })
+
+    triggerIds.forEach((triggerId) => {
+        const key = `${triggerId}Targeting`
+        const value = triggerRecord[key]
+        if (!value || typeof value !== 'object') {
+            triggerRecord[key] = { mode: 'all', urls: [] }
+            return
+        }
+
+        const targeting = value as { mode?: unknown; urls?: unknown }
+        const mode = targeting.mode === 'homepage' || targeting.mode === 'custom' ? targeting.mode : 'all'
+        const urls = Array.isArray(targeting.urls)
+            ? targeting.urls.filter((url): url is string => typeof url === 'string').map((url) => url.trim()).filter(Boolean)
+            : []
+
+        triggerRecord[key] = { mode, urls }
     })
 
     return {
@@ -233,20 +252,19 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         }
     }
 
-    const renderActionControls = (mode: "mobile" | "desktop") => {
-        const isDesktop = mode === "desktop"
+    const renderActionControls = () => {
         return (
-            <div className={`flex flex-wrap items-center gap-3 ${isDesktop ? "" : "lg:hidden"}`}>
+            <div className="flex flex-wrap items-center gap-3">
                 {(isSuperAdmin || isSysAdmin) && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full border">
                         <Switch
-                            id={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                            id="module-enabled"
                             className="scale-75"
                             checked={settings.enabled}
                             onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
                         />
                         <Label
-                            htmlFor={isDesktop ? "module-enabled-desktop" : "module-enabled"}
+                            htmlFor="module-enabled"
                             className="text-xs font-medium cursor-pointer"
                         >
                             {settings.enabled ? 'Aktif' : 'Pasif'}
@@ -273,7 +291,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
         <div className="flex flex-col lg:flex-row gap-8 p-6 items-start">
             {/* Left Panel: Settings Controls */}
             <div className="flex-1 flex flex-col gap-6">
-                <div className="flex-none flex flex-col gap-4 py-2 border-b">
+                <div className="flex-none flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 py-2 border-b">
                     <div>
                         <h1 className="text-xl font-semibold flex items-center gap-2">
                             {t('modules.proactiveMessaging') || 'Etkileşim Tasarımcısı'}
@@ -282,7 +300,9 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                             Ziyaretçi balonlarını özelleştirin.
                         </p>
                     </div>
-                    {renderActionControls("mobile")}
+                    <div className="shrink-0 sm:pt-1">
+                        {renderActionControls()}
+                    </div>
                 </div>
 
                 <div className="space-y-6">
@@ -337,11 +357,6 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
             <EngagementPreview
                 settings={settings}
                 chatDisplayMode={chatDisplayMode}
-                headerActions={
-                    <div className="flex items-center justify-start">
-                        {renderActionControls("desktop")}
-                    </div>
-                }
             />
         </div >
     )

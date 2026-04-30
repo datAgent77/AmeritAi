@@ -42,6 +42,16 @@ export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
         minPlan: 'starter',
         displayName: { en: 'WordPress', tr: 'WordPress' }
     },
+    'mobile-app-api': {
+        minSortOrder: 3,
+        minPlan: 'pro',
+        displayName: { en: 'Mobile App / API', tr: 'Mobile App / API' }
+    },
+    'ticket-webhook': {
+        minSortOrder: 3,
+        minPlan: 'pro',
+        displayName: { en: 'Ticket Webhook', tr: 'Ticket Webhook' }
+    },
     
     // Growth+ - Messaging platforms
     'telegram': {

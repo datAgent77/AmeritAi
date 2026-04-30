@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Clock, Layout, MessageCircle, Trash2, Plus } from "lucide-react"
-import { EngagementSettings, BubbleMessage } from "../types"
+import { EngagementSettings, BubbleMessage, EngagementTriggerTargetingMode } from "../types"
 
 interface TriggerCardProps {
     id: keyof EngagementSettings['triggers'] & string
@@ -22,6 +22,12 @@ const numericTriggerDefaults: Record<string, number> = {
     timeOnPage: 10,
     clickCount: 3,
 }
+
+const targetingOptions: Array<{ value: EngagementTriggerTargetingMode; label: string }> = [
+    { value: 'all', label: 'Tüm sayfalar' },
+    { value: 'homepage', label: 'Ana sayfa' },
+    { value: 'custom', label: 'Özel URL' },
+]
 
 export function TriggerCard({ id, label, description, configInput, messageListKey, settings, setSettings }: TriggerCardProps) {
     const messages = (settings.triggers[messageListKey] as BubbleMessage[]) || [];
@@ -85,6 +91,12 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
     // Action Type key
     const actionTypeKey = `${id}ActionType` as keyof EngagementSettings['triggers'];
     const currentActionType = (settings.triggers[actionTypeKey] as 'bubble' | 'openWidget') || 'bubble';
+    const targetingKey = `${id}Targeting` as keyof EngagementSettings['triggers'];
+    const rawTargeting = settings.triggers[targetingKey] as { mode?: unknown; urls?: unknown } | undefined;
+    const currentTargeting = {
+        mode: rawTargeting?.mode === 'homepage' || rawTargeting?.mode === 'custom' ? rawTargeting.mode : 'all',
+        urls: Array.isArray(rawTargeting?.urls) ? rawTargeting.urls.filter((url): url is string => typeof url === 'string') : []
+    };
 
     const setActionType = (type: 'bubble' | 'openWidget') => {
         setSettings(p => ({
@@ -92,6 +104,37 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
             triggers: {
                 ...p.triggers,
                 [actionTypeKey]: type
+            }
+        }));
+    };
+
+    const setTargetingMode = (mode: EngagementTriggerTargetingMode) => {
+        setSettings(p => ({
+            ...p,
+            triggers: {
+                ...p.triggers,
+                [targetingKey]: {
+                    mode,
+                    urls: mode === 'custom' ? currentTargeting.urls : []
+                }
+            }
+        }));
+    };
+
+    const setTargetingUrls = (value: string) => {
+        const urls = value
+            .split('\n')
+            .map((url) => url.trim())
+            .filter(Boolean);
+
+        setSettings(p => ({
+            ...p,
+            triggers: {
+                ...p.triggers,
+                [targetingKey]: {
+                    mode: 'custom',
+                    urls
+                }
             }
         }));
     };
@@ -135,6 +178,30 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                 Widget Aç
                             </button>
                         </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 text-sm">
+                        <span className="text-muted-foreground">Nerede çalışsın?</span>
+                        <div className="flex flex-wrap gap-1 bg-muted/50 rounded-lg p-1 w-fit">
+                            {targetingOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => setTargetingMode(option.value)}
+                                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${currentTargeting.mode === option.value ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                        {currentTargeting.mode === 'custom' && (
+                            <Textarea
+                                value={currentTargeting.urls.join('\n')}
+                                onChange={(e) => setTargetingUrls(e.target.value)}
+                                placeholder={"/\n/urunler\n/kampanyalar/*"}
+                                className="min-h-[74px] max-w-xl text-xs resize-none bg-background/50 focus:bg-background"
+                            />
+                        )}
                     </div>
 
                     {/* Message List (Only shown if actionType is 'bubble') */}
