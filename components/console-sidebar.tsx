@@ -227,7 +227,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     active: isActive("/console/appointments")
                 },
                 {
-                    title: t('leads') || "Shopper Intelligence",
+                    title: t('leads') || "Müşteri Adayları",
                     icon: Users,
                     href: "/console/chatbot/leads",
                     active: isActive("/console/chatbot/leads")

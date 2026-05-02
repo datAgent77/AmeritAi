@@ -641,10 +641,15 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 return false
             }
 
-            // Tenant view: hide closed modules entirely. Admins retain full module
-            // visibility so they can grant, revoke, or configure modules for tenants.
+            // Tenant view:
+            // - Admin-granted modules are always visible (even if tenant turned them off)
+            //   so tenant can re-enable them at any time.
+            // - Non-granted modules are only visible when they're active.
+            // - Admins retain full module visibility to grant/revoke/configure.
             if (!isAdminView) {
-                if (moduleStates[module.id] !== true) {
+                const isAdminGranted = adminGrantedModules && adminGrantedModules[module.id] === true
+                const isActive = moduleStates[module.id] === true
+                if (!isAdminGranted && !isActive) {
                     return false
                 }
             }
