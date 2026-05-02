@@ -554,16 +554,12 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 <SidebarFooter className="bg-[#000000] border-t border-white/10 p-2">
                     {/* Trial / Upgrade Status (Only for users on free/trial plan, not paid users) */}
                     {(() => {
-                        // Show banner only for users who are NOT on a paid plan
-                        // Show banner ONLY if isTrial is explicitly true (regardless of plan)
-                        // AND we are not in super-admin view (targetUserId)
-                        // AND user is NOT a SUPER_ADMIN
-                        const shouldShowBanner = !targetUserId && isTrial && role !== 'SUPER_ADMIN'
-                        
-                        // Debug log for trial banner
-                        if (isTrial) {
-                             console.log('ConsoleSidebar: Trial Banner Debug', { shouldShowBanner, targetUserId, isTrial, planId, daysLeft })
-                        }
+                        // Show banner only if:
+                        // - planId is loaded (non-empty) to avoid flicker during initial load
+                        // - isTrial is explicitly true
+                        // - NOT in super-admin tenant view
+                        // - user is NOT a SUPER_ADMIN
+                        const shouldShowBanner = !!planId && !targetUserId && isTrial && role !== 'SUPER_ADMIN'
                         
                         if (!shouldShowBanner) return null
                         

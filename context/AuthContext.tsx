@@ -67,12 +67,12 @@ const AuthContext = createContext<AuthContextType>({
     productEntitlements: DEFAULT_PRODUCT_ENTITLEMENTS,
     omniPermissions: [],
     hasOmniPermission: () => false,
-    // Plan & Subscription defaults
-    planId: 'starter',
+    // Plan & Subscription defaults — intentionally empty to avoid flicker
+    planId: '',
     planConfig: null,
     subscriptionStatus: 'trial',
     isTrialExpired: false,
-    trialDaysLeft: 14,
+    trialDaysLeft: 0,
     trialEndsAt: null,
     isPaidPlan: false,
     // Module flags defaults
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [productEntitlements, setProductEntitlements] = useState<ProductEntitlements>(DEFAULT_PRODUCT_ENTITLEMENTS)
     const [omniPermissions, setOmniPermissions] = useState<OmniPermission[]>([])
     // Plan states
-    const [planId, setPlanId] = useState<string>('starter')
+    const [planId, setPlanId] = useState<string>('')
     const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired'>('trial')
     const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
     // Module flags
@@ -152,6 +152,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const isPaidPlan = useMemo(() => PAID_PLANS.includes(planId.toLowerCase()), [planId])
     
     const { isTrialExpired, trialDaysLeft } = useMemo(() => {
+        // If planId is not yet loaded, don't compute trial state
+        if (!planId) {
+            return { isTrialExpired: false, trialDaysLeft: 0 }
+        }
+
         // If subscription is explicitly 'active' (and paid), then no trial
         if (subscriptionStatus === 'active' && isPaidPlan) {
             return { isTrialExpired: false, trialDaysLeft: 0 }
@@ -174,20 +179,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             isTrialExpired: diffDays <= 0,
             trialDaysLeft: Math.max(0, diffDays)
         }
-    }, [trialEndsAt, isPaidPlan, subscriptionStatus])
+    }, [planId, trialEndsAt, isPaidPlan, subscriptionStatus])
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         installAuthDebugDump()
         recordAuthDebug("auth_effect_start", { pathname })
 
-        // Skip auth for public widget routes
-        if (pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')) {
-            console.log("AuthProvider: Skipping auth for widget view")
-            recordAuthDebug("auth_effect_skip_public_widget", { pathname })
-            setLoading(false)
-            return
-        }
+        // For public widget/test routes, auth is still needed (user may navigate back)
+        // so we do NOT skip the auth listener. The widget routes themselves handle
+        // their own rendering without requiring auth context.
+        const isPublicWidgetRoute = pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')
 
         console.log("AuthProvider: Setting up auth listener")
         let unsubscribeSnapshot: (() => void) | null = null;
@@ -206,6 +208,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (currentUser) {
                 const userDocRef = doc(db, "users", currentUser.uid)
+
+                // For public widget routes, skip Firestore subscription (no console data needed)
+                if (isPublicWidgetRoute) {
+                    setLoading(false)
+                    return
+                }
 
                 unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
                     let userRole: UserRole = 'USER'
@@ -294,7 +302,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setUser(null)
                 setUserData(null)
                 setRole(null)
-                setPlanId('starter')
+                setPlanId('')
                 setSubscriptionStatus('trial')
                 setTrialEndsAt(null)
                 setProductEntitlements(DEFAULT_PRODUCT_ENTITLEMENTS)
