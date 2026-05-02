@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 
 export const dynamic = 'force-dynamic';
@@ -143,6 +144,22 @@ export async function GET(request: Request) {
             announcement
         });
     } catch (error: any) {
+        if (shouldUseFirebaseOfflineFallback(error)) {
+            console.warn("[Stats API] Firestore unavailable; returning development fallback.", error);
+            return NextResponse.json({
+                users: [],
+                stats: {
+                    totalTenants: 0,
+                    activeTenants: 0,
+                    totalChatbots: 0,
+                    totalChatSessions: 0
+                },
+                recentActivity: [],
+                announcement: { isActive: false, message: "" },
+                offline: true
+            });
+        }
+
         console.error("[Stats API] Internal Error:", error);
         return NextResponse.json({
             error: `Internal Server Error: ${error.message}`,

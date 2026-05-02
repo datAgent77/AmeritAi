@@ -11,6 +11,7 @@ export interface SurveyQuestion {
     description?: string
     required: boolean
     options?: string[]
+    optionLabels?: Record<string, string>
     allowOther?: boolean
     demographicKey?: string
 }
@@ -135,6 +136,7 @@ export interface PublicSurveyDefinition {
 
 export interface SurveyWidgetConfig {
     showCta: boolean
+    autoOpenOnLoad?: boolean
     widgetActiveSurveyId: string | null
     defaultConsentTitle: string
     defaultConsentText: string
@@ -144,6 +146,7 @@ export interface SurveyWidgetConfig {
 
 export interface SurveyModuleConfig {
     showCta: boolean
+    autoOpenOnLoad?: boolean
     widgetActiveSurveyId: string | null
     defaultConsentTitle: string
     defaultConsentText: string

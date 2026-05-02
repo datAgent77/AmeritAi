@@ -440,9 +440,9 @@ export default function SignUpForm() {
             {/* Header */}
             <header className="flex items-center justify-between p-4 md:p-6">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="relative w-8 h-8">
-                        <Image src="/vion-logo-icon-dark.png" alt="Vion" fill className="object-contain dark:hidden" />
-                        <Image src="/vion-logo-icon-white.png" alt="Vion" fill className="object-contain hidden dark:block" />
+                    <div className="w-8 h-8">
+                        <Image src="/vion-logo-icon-dark.png" alt="Vion" width={32} height={32} className="h-8 w-8 object-contain dark:hidden" />
+                        <Image src="/vion-logo-icon-white.png" alt="Vion" width={32} height={32} className="hidden h-8 w-8 object-contain dark:block" />
                     </div>
                     <span className="font-bold text-xl tracking-tight">Vion</span>
                 </Link>

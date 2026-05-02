@@ -8,6 +8,7 @@ function initAdmin() {
     if (adminAuth && adminDb) return; // Already initialized locally
 
     try {
+        let initializedApp = false;
         if (!admin.apps.length) {
             const privKey = process.env.FIREBASE_PRIVATE_KEY;
             const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -62,6 +63,7 @@ function initAdmin() {
                     }),
                     storageBucket: 'ai-assistant-22f53.firebasestorage.app',
                 });
+                initializedApp = true;
                 console.log("[Firebase Admin] Initialization successful");
             } else {
                 console.error("[Firebase Admin] Missing environment variables (FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY) during init.");
@@ -72,7 +74,9 @@ function initAdmin() {
         // Assign instances
         adminAuth = admin.auth();
         adminDb = admin.firestore();
-        adminDb.settings({ preferRest: true });
+        if (initializedApp) {
+            adminDb.settings({ preferRest: true });
+        }
         adminStorage = admin.storage();
 
     } catch (error) {

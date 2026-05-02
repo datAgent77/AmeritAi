@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { authorizeTargetAccess } from "@/lib/api-auth"
+import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
 import { getAdminDb } from "@/lib/firebase-admin"
 import {
     SURVEY_COLLECTION,
@@ -12,25 +13,35 @@ import {
 export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
-    const adminDb = getAdminDb()
-    if (!adminDb) {
-        return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 })
+    try {
+        const adminDb = getAdminDb()
+        if (!adminDb) {
+            return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 })
+        }
+
+        const { searchParams } = new URL(req.url)
+        const chatbotId = searchParams.get("chatbotId")
+
+        if (!chatbotId) {
+            return NextResponse.json({ error: "chatbotId is required" }, { status: 400 })
+        }
+
+        const authz = await authorizeTargetAccess(req, chatbotId)
+        if (!authz.ok) {
+            return authz.response
+        }
+
+        const surveys = await fetchSurveyList(adminDb, chatbotId)
+        return NextResponse.json({ surveys })
+    } catch (error) {
+        if (shouldUseFirebaseOfflineFallback(error)) {
+            console.warn("[Surveys API] Firestore unavailable; returning development fallback.", error)
+            return NextResponse.json({ surveys: [], offline: true })
+        }
+
+        console.error("[Surveys API] Internal Error:", error)
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
     }
-
-    const { searchParams } = new URL(req.url)
-    const chatbotId = searchParams.get("chatbotId")
-
-    if (!chatbotId) {
-        return NextResponse.json({ error: "chatbotId is required" }, { status: 400 })
-    }
-
-    const authz = await authorizeTargetAccess(req, chatbotId)
-    if (!authz.ok) {
-        return authz.response
-    }
-
-    const surveys = await fetchSurveyList(adminDb, chatbotId)
-    return NextResponse.json({ surveys })
 }
 
 export async function POST(req: Request) {

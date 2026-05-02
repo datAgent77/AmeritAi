@@ -7,6 +7,18 @@ import {
 } from "@/lib/surveys/service"
 import { SURVEY_OTHER_CHOICE_VALUE } from "@/lib/surveys/types"
 
+function containsUndefined(value: unknown): boolean {
+    if (Array.isArray(value)) {
+        return value.some((item) => containsUndefined(item))
+    }
+
+    if (value && typeof value === "object") {
+        return Object.values(value).some((item) => item === undefined || containsUndefined(item))
+    }
+
+    return false
+}
+
 describe("survey service", () => {
     test("does not emit undefined question fields for Firestore writes", () => {
         const survey = buildSurveyFromTemplate({
@@ -90,5 +102,27 @@ describe("survey service", () => {
         expect(aggregate.totalResponses).toBe(1)
         expect(aggregate.questionStats.recommendation.optionCounts?.["Cok yuksek"]).toBe(1)
         expect(aggregate.questionStats.overall_score.numericSummary?.average).toBe(9)
+        expect(containsUndefined(aggregate)).toBe(false)
+    })
+
+    test("does not emit undefined aggregate fields for unanswered questions", () => {
+        const survey = buildSurveyFromTemplate({
+            chatbotId: "tenant-1",
+            templateType: "market_research",
+            widgetDefaults: null,
+        })
+
+        const aggregate = applyResponseToAggregate(survey, null, [
+            {
+                questionId: "open_need",
+                questionTitle: "Bu alandaki en buyuk ihtiyaciniz veya probleminiz nedir?",
+                questionType: "longText",
+                value: "Daha hizli destek",
+            },
+        ])
+
+        expect(containsUndefined(aggregate)).toBe(false)
+        expect(aggregate.questionStats.usage_frequency).not.toHaveProperty("otherCount")
+        expect(aggregate.questionStats.usage_frequency).toHaveProperty("optionCounts")
     })
 })

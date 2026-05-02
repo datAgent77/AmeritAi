@@ -144,6 +144,7 @@ export function PublicFooter() {
                                     width={280} 
                                     height={28} 
                                     className="h-7 w-auto object-contain"
+                                    style={{ width: "auto", height: "28px" }}
                                 />
                             </div>
                             {/* Dark Mode Logo */}
@@ -154,6 +155,7 @@ export function PublicFooter() {
                                     width={280} 
                                     height={28} 
                                     className="h-7 w-auto object-contain opacity-90"
+                                    style={{ width: "auto", height: "28px" }}
                                 />
                             </div>
                         </div>

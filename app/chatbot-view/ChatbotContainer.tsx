@@ -119,6 +119,7 @@ export default function ChatbotContainer() {
     const [leadCollectionFlow, setLeadCollectionFlow] = useState<"lead" | "handoff">("lead")
     const [isSubmittingLead, setIsSubmittingLead] = useState(false)
     const [showSurvey, setShowSurvey] = useState(false)
+    const autoSurveyOpenedRef = useRef(false)
     const [isKvkkAccepted, setIsKvkkAccepted] = useState(false)
     const [isKvkkModalOpen, setIsKvkkModalOpen] = useState(false)
 
@@ -298,6 +299,25 @@ export default function ChatbotContainer() {
         setIsKvkkAccepted(accepted)
         setIsKvkkModalOpen(false)
     }, [chatbotId, isClient, kvkkEnabled, kvkkVersionHash])
+
+    useEffect(() => {
+        if (!isClient || isLoading || autoSurveyOpenedRef.current) return
+        if (settings.enableSurveyManager !== true) return
+        if (settings.surveyWidgetConfig?.autoOpenOnLoad !== true) return
+        if (!settings.surveyWidgetConfig?.activeSurvey) return
+        if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) return
+
+        autoSurveyOpenedRef.current = true
+        setShowSurvey(true)
+    }, [
+        isClient,
+        isKvkkAccepted,
+        isLoading,
+        settings.enableSurveyManager,
+        settings.kvkkConsent?.enabled,
+        settings.surveyWidgetConfig?.activeSurvey,
+        settings.surveyWidgetConfig?.autoOpenOnLoad,
+    ])
 
     useEffect(() => {
         const url = searchParams?.get("url")
@@ -735,6 +755,7 @@ export default function ChatbotContainer() {
             body: JSON.stringify({
                 ...payload,
                 source: "widget",
+                testMode: typeof window !== "undefined" && window.location.pathname === "/widget-test",
             }),
         })
 

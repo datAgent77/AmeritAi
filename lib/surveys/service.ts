@@ -136,6 +136,7 @@ export async function generateUniqueSurveySlug(
 export function buildDefaultSurveyWidgetConfig(config?: Partial<SurveyWidgetConfig> | null): SurveyWidgetConfig {
     return {
         showCta: config?.showCta !== false,
+        autoOpenOnLoad: config?.autoOpenOnLoad === true,
         widgetActiveSurveyId: typeof config?.widgetActiveSurveyId === "string" && config.widgetActiveSurveyId.trim()
             ? config.widgetActiveSurveyId
             : null,
@@ -151,6 +152,7 @@ export function buildSurveyModuleConfig(config?: Partial<SurveyWidgetConfig> | n
     const normalized = buildDefaultSurveyWidgetConfig(config)
     return {
         showCta: normalized.showCta,
+        autoOpenOnLoad: normalized.autoOpenOnLoad,
         widgetActiveSurveyId: normalized.widgetActiveSurveyId,
         defaultConsentTitle: normalized.defaultConsentTitle,
         defaultConsentText: normalized.defaultConsentText,
@@ -601,25 +603,32 @@ export function validateSurveySubmission(
 }
 
 function createEmptyQuestionAggregate(question: SurveyQuestion): SurveyQuestionAggregate {
-    return {
+    const aggregate: SurveyQuestionAggregate = {
         questionId: question.id,
         questionTitle: question.title,
         questionType: question.type,
         totalAnswered: 0,
-        optionCounts: question.type === "singleChoice" || question.type === "multiChoice"
-            ? Object.fromEntries((question.options || []).map((option) => [option, 0]))
-            : undefined,
-        otherCount: question.allowOther ? 0 : undefined,
-        numericSummary: question.type === "number"
-            ? {
-                count: 0,
-                sum: 0,
-                min: 0,
-                max: 0,
-                average: 0,
-            }
-            : undefined,
     }
+
+    if (question.type === "singleChoice" || question.type === "multiChoice") {
+        aggregate.optionCounts = Object.fromEntries((question.options || []).map((option) => [option, 0]))
+    }
+
+    if (question.allowOther) {
+        aggregate.otherCount = 0
+    }
+
+    if (question.type === "number") {
+        aggregate.numericSummary = {
+            count: 0,
+            sum: 0,
+            min: 0,
+            max: 0,
+            average: 0,
+        }
+    }
+
+    return aggregate
 }
 
 export function applyResponseToAggregate(

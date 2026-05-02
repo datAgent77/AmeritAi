@@ -29,6 +29,7 @@ type SurveyManagerFormProps = {
 
 const DEFAULT_MODULE_CONFIG: SurveyModuleConfig = {
     showCta: true,
+    autoOpenOnLoad: false,
     widgetActiveSurveyId: null,
     defaultConsentTitle: "Aydınlatma ve Açık Rıza",
     defaultConsentText: "Bu ankette paylaştığınız cevaplar istatistiksel raporlama amacıyla işlenecektir.",
@@ -419,37 +420,35 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
     }
 
     return (
-        <div className="mx-auto w-full max-w-[1400px] space-y-6 pb-12">
-            {/* Header Hero Section */}
+        <div className="mx-auto w-full max-w-[1400px] space-y-6 pt-8 pb-12">
+            {/* Page Header */}
             <motion.section
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-xl border bg-zinc-950 p-6 md:p-8 text-white shadow-md"
+                className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm md:p-6"
             >
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-zinc-800/40 via-zinc-950 to-zinc-950 opacity-80" />
-                <div className="absolute -right-10 -top-10 h-[200px] w-[200px] rounded-full bg-white/5 blur-3xl" />
-                <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-                    <div className="space-y-3">
-                        <div className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 backdrop-blur-md">
-                            <BarChart3 className="h-3.5 w-3.5" />
-                            <span className="tracking-widest uppercase">Survey Manager</span>
-                        </div>
+                <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-2">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-bold tracking-tight sm:text-4xl">Anket & Geri Bildirim</h2>
-                            <p className="max-w-2xl text-sm leading-relaxed text-zinc-400">
+                            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                                <BarChart3 className="h-3.5 w-3.5" />
+                                Survey Manager
+                            </div>
+                            <h2 className="text-2xl font-semibold tracking-tight text-zinc-950">Anket & Geri Bildirim</h2>
+                            <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
                                 Markanız için gelişmiş anketler oluşturun, public sayfalarda veya widget CTA ile yayınlayın ve değerli içgörüleri gerçek zamanlı olarak analiz edin.
                             </p>
                         </div>
                         {isSuperAdmin && (
-                            <div className="inline-block rounded-md bg-white/10 px-2 py-1 font-mono text-xs text-zinc-300 backdrop-blur-md">
+                            <div className="inline-block rounded-md bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-600">
                                 tenant: {targetUserId}
                             </div>
                         )}
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-3">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
                         <Button
                             variant="outline"
-                            className="rounded-md border-white/20 bg-white/5 px-5 text-white hover:bg-white/10 hover:text-white backdrop-blur-md transition-colors"
+                            className="rounded-md"
                             onClick={saveModuleSettings}
                             disabled={isSavingModule}
                         >
@@ -457,7 +456,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             Modül Ayarları
                         </Button>
                         <Button
-                            className="rounded-md bg-white px-5 text-zinc-950 hover:bg-zinc-200 transition-colors"
+                            className="rounded-md bg-zinc-900 text-white hover:bg-zinc-800"
                             onClick={saveSurvey}
                             disabled={!draftSurvey || isSavingSurvey}
                         >
@@ -471,25 +470,23 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
             <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
                 {/* Left Column: List & Settings */}
                 <div className="space-y-6">
-                    <Card className="rounded-xl border-zinc-200">
-                        <CardHeader className="bg-zinc-50/50 pb-4">
+                    <Card className="rounded-xl border-zinc-200 shadow-sm">
+                        <CardHeader className="pb-3">
                             <CardTitle className="text-base font-semibold">Anket Listesi</CardTitle>
                             <CardDescription className="text-xs">Şablonlardan oluşturun veya var olanları yönetin</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
-                            <div className="grid grid-cols-2 gap-3">
+                        <CardContent className="space-y-4 pt-4">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 {TEMPLATE_OPTIONS.map((template) => (
                                     <Button
                                         key={template.id}
                                         variant="outline"
                                         size="sm"
-                                        className="h-auto flex-col items-center justify-center gap-2 rounded-md border-zinc-200/60 py-3 text-xs font-medium text-zinc-600 transition-all hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
+                                        className="h-auto justify-start rounded-md border-zinc-200/70 px-3 py-2.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                                         onClick={() => createSurvey(template.id)}
                                         disabled={isSavingSurvey}
                                     >
-                                        <div className="rounded-md bg-zinc-100 p-2 text-zinc-500">
-                                            <LayoutTemplate className="h-4 w-4" />
-                                        </div>
+                                        <LayoutTemplate className="mr-2 h-3.5 w-3.5 text-zinc-400" />
                                         {template.label}
                                     </Button>
                                 ))}
@@ -523,9 +520,9 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         setDraftSurvey(cloneSurvey(survey))
                                                         void loadAnalytics(survey.id)
                                                     }}
-                                                    className={`group relative flex w-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors duration-200 ${
+                                                    className={`group relative flex w-full flex-col gap-2 rounded-md border p-3 text-left transition-colors duration-200 ${
                                                         isSelected
-                                                            ? "border-zinc-900 bg-zinc-50"
+                                                            ? "border-zinc-900 bg-white"
                                                             : "border-zinc-200/60 bg-white hover:border-zinc-300 hover:bg-zinc-50/50"
                                                     }`}
                                                 >
@@ -543,7 +540,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                     {survey.channels.length > 0 && (
                                                         <div className="flex flex-wrap items-center gap-1.5 opacity-70 transition-opacity group-hover:opacity-100">
                                                             {survey.channels.map(ch => (
-                                                                <span key={ch} className="rounded-md border border-zinc-200 bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600">
+                                                                <span key={ch} className="text-[10px] font-medium text-zinc-500">
                                                                     {ch}
                                                                 </span>
                                                             ))}
@@ -558,75 +555,137 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                         </CardContent>
                     </Card>
 
-                    <Card className="rounded-xl border-zinc-200">
-                        <CardHeader className="bg-zinc-50/50 pb-4">
-                            <CardTitle className="text-base font-semibold">Modül Ayarları</CardTitle>
-                            <CardDescription className="text-xs">Genel çalışma prensipleri ve widget entegrasyonu</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6 pt-6">
-                            <div className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50/50 p-4">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-zinc-900">Modül Durumu</p>
-                                    <p className="text-[11px] text-zinc-500">Ana anket modülü aktivasyonu</p>
+                    <Card className="overflow-hidden rounded-xl border-zinc-200 shadow-sm">
+                        <CardHeader className="border-b border-zinc-100 pb-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                    <CardTitle className="text-base font-semibold tracking-tight">Modül Ayarları</CardTitle>
+                                    <CardDescription className="text-xs leading-5">
+                                        Aktivasyon, widget CTA ve varsayılan anket onay metinleri.
+                                    </CardDescription>
                                 </div>
-                                <Switch checked={enableSurveyManager} onCheckedChange={setEnableSurveyManager} />
+                                <Badge variant={enableSurveyManager ? "default" : "secondary"} className="shrink-0 rounded-md text-[10px] uppercase tracking-wider">
+                                    {enableSurveyManager ? "Aktif" : "Pasif"}
+                                </Badge>
                             </div>
+                        </CardHeader>
+                        <CardContent className="divide-y divide-zinc-100 p-0">
+                            <section className="space-y-4 p-5">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="survey-module-enabled" className="text-sm font-medium text-zinc-900">
+                                            Modül Durumu
+                                        </Label>
+                                        <p className="text-xs leading-5 text-zinc-500">
+                                            Anket modülünü tenant paneli ve widget ayarları için kullanılabilir yapar.
+                                        </p>
+                                    </div>
+                                    <Switch id="survey-module-enabled" checked={enableSurveyManager} onCheckedChange={setEnableSurveyManager} />
+                                </div>
+                            </section>
 
-                            <div className="space-y-4 rounded-lg border border-zinc-100 p-4">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-sm font-medium text-zinc-700">Widget CTA Gösterimi</Label>
+                            <section className="space-y-4 p-5">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="survey-widget-cta" className="text-sm font-medium text-zinc-900">
+                                            Widget CTA Gösterimi
+                                        </Label>
+                                        <p className="text-xs leading-5 text-zinc-500">
+                                            Widget içinde giriş alanının üstünde “Ankete Katıl” hızlı aksiyonunu gösterir.
+                                        </p>
+                                    </div>
                                     <Switch
+                                        id="survey-widget-cta"
                                         checked={moduleConfig.showCta}
                                         onCheckedChange={(checked) => setModuleConfig((current) => ({ ...current, showCta: checked }))}
                                     />
                                 </div>
+
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="survey-widget-auto-open" className="text-sm font-medium text-zinc-900">
+                                            Sayfa Yüklenince Anketi Aç
+                                        </Label>
+                                        <p className="text-xs leading-5 text-zinc-500">
+                                            Widget sayfa yüklendiğinde otomatik açılır ve aktif anket doğrudan gösterilir.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="survey-widget-auto-open"
+                                        checked={moduleConfig.autoOpenOnLoad}
+                                        onCheckedChange={(checked) => setModuleConfig((current) => ({ ...current, autoOpenOnLoad: checked }))}
+                                    />
+                                </div>
+
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Aktif Widget Anketi</Label>
+                                    <Label htmlFor="survey-widget-active-survey" className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                                        Aktif Widget Anketi
+                                    </Label>
                                     <select
-                                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 transition-colors"
+                                        id="survey-widget-active-survey"
+                                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-800 outline-none transition-colors focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/10 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400"
                                         value={moduleConfig.widgetActiveSurveyId || "none"}
+                                        disabled={publishedWidgetSurveys.length === 0}
                                         onChange={(event) => setModuleConfig((current) => ({
                                             ...current,
                                             widgetActiveSurveyId: event.target.value === "none" ? null : event.target.value,
                                         }))}
                                     >
-                                        <option value="none">Seçili anket yok</option>
+                                        <option value="none">
+                                            {publishedWidgetSurveys.length === 0 ? "Yayında widget anketi yok" : "Seçili anket yok"}
+                                        </option>
                                         {publishedWidgetSurveys.map((survey) => (
                                             <option key={survey.id} value={survey.id}>{survey.title}</option>
                                         ))}
                                     </select>
+                                    <p className="text-[11px] leading-5 text-zinc-500">
+                                        Sadece yayında olan ve kanalında Chat Widget seçili anketler listelenir.
+                                    </p>
                                 </div>
-                            </div>
+                            </section>
 
-                            <div className="space-y-4 rounded-lg border border-zinc-100 bg-zinc-50/30 p-4">
-                                <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Varsayılan Aydınlatma (KVKK)</p>
+                            <section className="space-y-4 p-5">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-zinc-900">Varsayılan Aydınlatma</p>
+                                    <p className="text-xs leading-5 text-zinc-500">
+                                        Yeni oluşturulan anketlerde kullanılacak KVKK başlığı, açıklaması ve onay etiketi.
+                                    </p>
+                                </div>
+
                                 <div className="space-y-3">
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs text-zinc-600">Başlık</Label>
+                                        <Label htmlFor="survey-default-consent-title" className="text-xs font-medium text-zinc-600">Başlık</Label>
                                         <Input
+                                            id="survey-default-consent-title"
                                             className="rounded-md border-zinc-200 bg-white"
                                             value={moduleConfig.defaultConsentTitle}
                                             onChange={(event) => setModuleConfig((current) => ({ ...current, defaultConsentTitle: event.target.value }))}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs text-zinc-600">Metin</Label>
+                                        <Label htmlFor="survey-default-consent-text" className="text-xs font-medium text-zinc-600">Metin</Label>
                                         <Textarea
-                                            rows={3}
+                                            id="survey-default-consent-text"
+                                            rows={4}
                                             className="resize-none rounded-md border-zinc-200 bg-white"
                                             value={moduleConfig.defaultConsentText}
                                             onChange={(event) => setModuleConfig((current) => ({ ...current, defaultConsentText: event.target.value }))}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className="text-xs text-zinc-600">Onay Kutusu Etiketi</Label>
+                                        <Label htmlFor="survey-default-consent-checkbox" className="text-xs font-medium text-zinc-600">Onay Kutusu Etiketi</Label>
                                         <Input
+                                            id="survey-default-consent-checkbox"
                                             className="rounded-md border-zinc-200 bg-white"
                                             value={moduleConfig.defaultConsentCheckboxLabel}
                                             onChange={(event) => setModuleConfig((current) => ({ ...current, defaultConsentCheckboxLabel: event.target.value }))}
                                         />
                                     </div>
                                 </div>
+                            </section>
+
+                            <div className="bg-zinc-50/70 px-5 py-3 text-xs leading-5 text-zinc-500">
+                                Değişiklikleri yayınlamak için üstteki “Modül Ayarları” butonuyla kaydedin.
                             </div>
                         </CardContent>
                     </Card>
@@ -657,19 +716,19 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             className="space-y-6"
                         >
                             {/* Survey Context Bar */}
-                            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-zinc-200/60 bg-white p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline" className="rounded-md bg-zinc-50 px-2.5 py-1 font-mono text-[11px] text-zinc-600">
+                                    <Badge variant="outline" className="rounded-md px-2 py-0.5 font-mono text-[11px] text-zinc-600">
                                         {draftSurvey.templateType}
                                     </Badge>
-                                    <Badge className="rounded-md px-2.5 py-1 text-[11px]" variant={draftSurvey.status === "published" ? "default" : "secondary"}>
+                                    <Badge className="rounded-md px-2 py-0.5 text-[11px]" variant={draftSurvey.status === "published" ? "default" : "secondary"}>
                                         {draftSurvey.status === "published" ? "Yayında" : "Taslak"}
                                     </Badge>
                                     {draftSurvey.channels.includes("widget") && (
-                                        <Badge variant="outline" className="rounded-md border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] text-blue-700">widget</Badge>
+                                        <Badge variant="outline" className="rounded-md px-2 py-0.5 text-[11px] text-zinc-600">widget</Badge>
                                     )}
                                     {draftSurvey.channels.includes("publicPage") && (
-                                        <Badge variant="outline" className="rounded-md border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] text-emerald-700">public</Badge>
+                                        <Badge variant="outline" className="rounded-md px-2 py-0.5 text-[11px] text-zinc-600">public</Badge>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -683,7 +742,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                     <Button size="sm" className="rounded-md bg-zinc-900 text-white hover:bg-zinc-800" onClick={publishSurvey} disabled={isSavingSurvey || draftSurvey.status === "published"}>
                                         <Send className="mr-2 h-3.5 w-3.5" /> Yayınla
                                     </Button>
-                                    <Button variant="outline" size="sm" className="rounded-md border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100" onClick={closeSurvey} disabled={isSavingSurvey || draftSurvey.status !== "published"}>
+                                    <Button variant="outline" size="sm" className="rounded-md border-zinc-200 text-zinc-700 hover:bg-zinc-50" onClick={closeSurvey} disabled={isSavingSurvey || draftSurvey.status !== "published"}>
                                         Durdur
                                     </Button>
                                     <Button variant="destructive" size="sm" className="rounded-md" onClick={deleteSurvey} disabled={isSavingSurvey}>
@@ -692,26 +751,29 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 </div>
                             </div>
 
-                            <Tabs defaultValue="builder" className="w-full">
-                                <TabsList className="mb-6 inline-flex h-10 w-full items-center justify-start rounded-lg bg-zinc-100 p-1 text-zinc-500 md:w-auto">
-                                    <TabsTrigger value="builder" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-6 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-950 data-[state=active]:shadow-sm">
+                            <Tabs defaultValue="builder" className="space-y-4">
+                                <TabsList className="grid h-10 w-full grid-cols-4">
+                                    <TabsTrigger value="builder" className="rounded-md">
                                         <LayoutTemplate className="mr-2 h-4 w-4" /> Builder
                                     </TabsTrigger>
-                                    <TabsTrigger value="analytics" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-6 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-950 data-[state=active]:shadow-sm">
+                                    <TabsTrigger value="questions" className="rounded-md">
+                                        <LayoutTemplate className="mr-2 h-4 w-4" /> Sorular
+                                    </TabsTrigger>
+                                    <TabsTrigger value="analytics" className="rounded-md">
                                         <PieChart className="mr-2 h-4 w-4" /> İstatistikler
                                     </TabsTrigger>
-                                    <TabsTrigger value="responses" className="inline-flex h-8 items-center justify-center whitespace-nowrap rounded-md px-6 text-sm font-medium transition-all data-[state=active]:bg-white data-[state=active]:text-zinc-950 data-[state=active]:shadow-sm">
+                                    <TabsTrigger value="responses" className="rounded-md">
                                         <Users className="mr-2 h-4 w-4" /> Yanıtlar
                                     </TabsTrigger>
                                 </TabsList>
 
-                                <div className="rounded-xl border border-zinc-200/60 bg-white p-2">
-                                    <TabsContent value="builder" className="m-0 space-y-4 p-4 outline-none md:p-6">
+                                <div className="rounded-xl border border-zinc-200 bg-white">
+                                    <TabsContent value="builder" className="m-0 p-4 outline-none md:p-5">
                                         <div className="space-y-6">
                                             {/* General Settings */}
                                             <section className="space-y-4">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-zinc-900">Genel Bilgiler</h3>
+                                                    <h3 className="text-base font-semibold text-zinc-900">Genel Bilgiler</h3>
                                                     <p className="text-sm text-zinc-500">Anketinizin temel kimliği ve sunum kanalları.</p>
                                                 </div>
                                                 <div className="grid gap-4 md:grid-cols-2">
@@ -732,7 +794,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                             onChange={(event) => updateDraft("description", event.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-2 md:col-span-2">
                                                         <Label className="text-sm font-medium text-zinc-700">URL Slug</Label>
                                                         <Input
                                                             className="rounded-md font-mono text-sm focus-visible:ring-1 focus-visible:ring-zinc-400"
@@ -740,7 +802,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                             onChange={(event) => updateDraft("slug", event.target.value)}
                                                         />
                                                     </div>
-                                                    <div className="space-y-3 rounded-lg border border-zinc-100 bg-zinc-50/50 p-4">
+                                                    <div className="space-y-3 rounded-md border border-zinc-200 p-4 md:col-span-2">
                                                         <Label className="text-sm font-medium text-zinc-700">Yayın Kanalları</Label>
                                                         <div className="flex flex-wrap gap-4">
                                                             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700 transition-opacity hover:opacity-80">
@@ -779,13 +841,13 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             {/* Intro & Outro */}
                                             <section className="space-y-4">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-zinc-900">Karşılama ve Teşekkür</h3>
+                                                    <h3 className="text-base font-semibold text-zinc-900">Karşılama ve Teşekkür</h3>
                                                     <p className="text-sm text-zinc-500">Katılımcıların göreceği giriş ve bitiş ekranı metinleri.</p>
                                                 </div>
                                                 <div className="grid gap-4 md:grid-cols-2">
-                                                    <div className="space-y-4 rounded-lg border border-zinc-100 bg-white p-4">
+                                                    <div className="space-y-4 rounded-md border border-zinc-200 bg-white p-4">
                                                         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
-                                                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">1</span>
+                                                            <span className="font-mono text-xs font-semibold text-zinc-400">01</span>
                                                             <h4 className="text-sm font-medium text-zinc-900">Giriş Ekranı</h4>
                                                         </div>
                                                         <div className="space-y-3 pt-1">
@@ -809,9 +871,9 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-4 rounded-lg border border-zinc-100 bg-white p-4">
+                                                    <div className="space-y-4 rounded-md border border-zinc-200 bg-white p-4">
                                                         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
-                                                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">2</span>
+                                                            <span className="font-mono text-xs font-semibold text-zinc-400">02</span>
                                                             <h4 className="text-sm font-medium text-zinc-900">Bitiş Ekranı</h4>
                                                         </div>
                                                         <div className="space-y-3 pt-1">
@@ -842,12 +904,12 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             {/* Consent & Contact */}
                                             <section className="space-y-4">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-zinc-900">KVKK ve İletişim</h3>
+                                                    <h3 className="text-base font-semibold text-zinc-900">KVKK ve İletişim</h3>
                                                     <p className="text-sm text-zinc-500">Bu ankete özel aydınlatma metni ve iletişim toplama adımı.</p>
                                                 </div>
 
                                                 <div className="grid gap-6 md:grid-cols-2">
-                                                    <div className="space-y-4 rounded-lg border border-zinc-100 bg-zinc-50/50 p-4">
+                                                    <div className="space-y-4 rounded-md border border-zinc-200 p-4">
                                                         <h4 className="text-sm font-medium text-zinc-900">Aydınlatma Metni</h4>
                                                         <div className="space-y-3">
                                                             <div className="space-y-1.5">
@@ -878,7 +940,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-4 rounded-lg border border-zinc-100 bg-zinc-50/50 p-4">
+                                                    <div className="space-y-4 rounded-md border border-zinc-200 p-4">
                                                         <div className="flex items-center justify-between">
                                                             <h4 className="text-sm font-medium text-zinc-900">İletişim Bilgileri Toplama</h4>
                                                             <Switch
@@ -955,13 +1017,15 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                 </div>
                                             </section>
 
-                                            <div className="h-px w-full bg-zinc-100" />
+                                        </div>
+                                    </TabsContent>
 
-                                            {/* Questions */}
-                                            <section className="space-y-4">
+                                    <TabsContent value="questions" className="m-0 p-4 outline-none md:p-5">
+                                                {/* Questions */}
+                                                <section className="space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <div>
-                                                        <h3 className="text-lg font-semibold text-zinc-900">Sorular</h3>
+                                                        <h3 className="text-base font-semibold text-zinc-900">Sorular</h3>
                                                         <p className="text-sm text-zinc-500">Anket sorularını buradan yönetin.</p>
                                                     </div>
                                                     <Button
@@ -977,21 +1041,20 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         {draftSurvey.questions.map((question, index) => (
                                                             <motion.div
                                                                 layout
-                                                                initial={{ opacity: 0, y: 20 }}
+                                                                initial={{ opacity: 0, y: 8 }}
                                                                 animate={{ opacity: 1, y: 0 }}
                                                                 exit={{ opacity: 0, scale: 0.95 }}
                                                                 key={question.id}
-                                                                className="group relative overflow-hidden rounded-lg border border-zinc-200 bg-white"
+                                                                className="group rounded-md border border-zinc-200 bg-white"
                                                             >
-                                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-200 transition-colors group-hover:bg-zinc-900" />
-                                                                <div className="flex flex-col gap-4 p-4 pl-5 sm:flex-row sm:p-6 sm:pl-6">
+                                                                <div className="flex flex-col gap-4 p-4 sm:flex-row">
                                                                     <div className="flex flex-1 flex-col gap-4">
                                                                         <div className="flex items-center justify-between">
                                                                             <div className="flex items-center gap-3">
-                                                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 font-mono text-xs font-bold text-zinc-700">
+                                                                                <div className="font-mono text-xs font-semibold text-zinc-400">
                                                                                     {index + 1}
                                                                                 </div>
-                                                                                <Badge variant="secondary" className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-600 hover:bg-zinc-200">
+                                                                                <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-[10px] text-zinc-600">
                                                                                     {QUESTION_TYPE_OPTIONS.find(opt => opt.id === question.type)?.label || question.type}
                                                                                 </Badge>
                                                                             </div>
@@ -1011,7 +1074,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                         <div className="grid gap-4 md:grid-cols-2">
                                                                             <div className="space-y-2 md:col-span-2">
                                                                                 <Input
-                                                                                    className="h-10 border-0 border-b border-dashed border-zinc-300 px-0 text-base font-medium focus-visible:border-zinc-900 focus-visible:ring-0 rounded-none"
+                                                                                    className="h-10 rounded-md border-zinc-200 text-base font-medium focus-visible:ring-1 focus-visible:ring-zinc-400"
                                                                                     placeholder="Soru metni..."
                                                                                     value={question.title}
                                                                                     onChange={(event) => updateQuestion(question.id, (current) => ({ ...current, title: event.target.value }))}
@@ -1021,7 +1084,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             <div className="space-y-1.5">
                                                                                 <Label className="text-xs text-zinc-500 uppercase tracking-wide">Soru Tipi</Label>
                                                                                 <select
-                                                                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-zinc-50/50 px-3 py-1 text-sm font-medium outline-none transition-colors focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-900/5"
+                                                                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm font-medium outline-none transition-colors focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
                                                                                     value={question.type}
                                                                                     onChange={(event) => updateQuestion(question.id, (current) => ({
                                                                                         ...current,
@@ -1040,7 +1103,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             <div className="space-y-1.5">
                                                                                 <Label className="text-xs text-zinc-500 uppercase tracking-wide">Demografik Key (Opsiyonel)</Label>
                                                                                 <Input
-                                                                                    className="h-9 rounded-md bg-zinc-50/50 text-sm"
+                                                                                    className="h-9 rounded-md text-sm"
                                                                                     placeholder="örn: age, gender"
                                                                                     value={question.demographicKey || ""}
                                                                                     onChange={(event) => updateQuestion(question.id, (current) => ({ ...current, demographicKey: event.target.value }))}
@@ -1051,7 +1114,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                                 <Label className="text-xs text-zinc-500 uppercase tracking-wide">Alt Açıklama (Opsiyonel)</Label>
                                                                                 <Textarea
                                                                                     rows={1}
-                                                                                    className="min-h-[36px] resize-none rounded-md bg-zinc-50/50 py-2 text-sm"
+                                                                                    className="min-h-[36px] resize-none rounded-md py-2 text-sm"
                                                                                     placeholder="Soruyla ilgili ek bilgi..."
                                                                                     value={question.description || ""}
                                                                                     onChange={(event) => updateQuestion(question.id, (current) => ({ ...current, description: event.target.value }))}
@@ -1080,7 +1143,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             </div>
 
                                                                             {(question.type === "singleChoice" || question.type === "multiChoice") && (
-                                                                                <div className="space-y-2 rounded-lg border border-zinc-100 bg-zinc-50/50 p-3 md:col-span-2 mt-2">
+                                                                                <div className="space-y-2 rounded-md border border-zinc-200 p-3 md:col-span-2 mt-2">
                                                                                     <Label className="text-[10px] font-semibold text-zinc-700 uppercase tracking-wide flex items-center gap-1.5">
                                                                                         <GripVertical className="h-3 w-3 text-zinc-400" /> Seçenekler (Satır satır)
                                                                                     </Label>
@@ -1107,8 +1170,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         </div>
                                                     )}
                                                 </div>
-                                            </section>
-                                        </div>
+                                                </section>
                                     </TabsContent>
 
                                     <TabsContent value="analytics" className="m-0 p-4 outline-none md:p-6">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { authorizeTargetAccess } from "@/lib/api-auth";
+import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors";
 import { isAgentRole } from "@/lib/user-roles";
 
 export async function POST(req: Request) {
@@ -62,6 +63,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true });
 
     } catch (error) {
+        if (shouldUseFirebaseOfflineFallback(error)) {
+            console.warn("[Settings API] Firestore unavailable; skipping development write.", error);
+            return NextResponse.json({ success: true, offline: true });
+        }
+
         console.error("Error updating settings:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
@@ -111,6 +117,11 @@ export async function GET(req: Request) {
         return NextResponse.json(mergedData);
 
     } catch (error) {
+        if (shouldUseFirebaseOfflineFallback(error)) {
+            console.warn("[Settings API] Firestore unavailable; returning development fallback.", error);
+            return NextResponse.json({ offline: true });
+        }
+
         console.error("Error fetching settings:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

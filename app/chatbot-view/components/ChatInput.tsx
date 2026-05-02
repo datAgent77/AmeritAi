@@ -392,12 +392,23 @@ export function ChatInput({
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
-                className={`relative mx-auto ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "w-full max-w-none"}`}
+                className={`relative mx-auto min-w-0 ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "w-full max-w-none"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
-                    <div className={`${isSidecarMode ? "-mx-4 px-4" : "-mx-4 sm:-mx-8 px-4 sm:px-8"} mb-3 overflow-x-auto py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}>
-                        <div className="flex w-max min-w-full gap-2 flex-nowrap">
+                    <div className="relative mb-3 min-w-0">
+                        <div
+                            className="w-full min-w-0 overflow-x-auto overscroll-x-contain px-1 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            onWheel={(event) => {
+                                const container = event.currentTarget
+                                if (container.scrollWidth <= container.clientWidth) return
+                                if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+
+                                container.scrollLeft += event.deltaY
+                                event.preventDefault()
+                            }}
+                        >
+                            <div className="flex w-max min-w-max flex-nowrap gap-2 px-3">
                         {quickActions.buttons
                             .filter(b => b.visible)
                             .sort((a, b) => a.order - b.order)
@@ -432,7 +443,10 @@ export function ChatInput({
                                 )
                             })
                         }
+                            </div>
                         </div>
+                        <div className="pointer-events-none absolute inset-y-3 left-0 w-5 bg-gradient-to-r from-white to-transparent dark:from-zinc-950" />
+                        <div className="pointer-events-none absolute inset-y-3 right-0 w-5 bg-gradient-to-l from-white to-transparent dark:from-zinc-950" />
                     </div>
                 )}
 

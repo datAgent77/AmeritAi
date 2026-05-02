@@ -29,11 +29,15 @@ export function SiteHeader({
     showNotifications?: boolean
     forcePartnerBranding?: boolean
 }) {
-    const { user } = useAuth()
+    const { user, role, userData } = useAuth()
     const { t } = useLanguage()
     const pathname = usePathname()
     const showWidgetTest = pathname?.startsWith("/console") || pathname?.startsWith("/admin/tenant/")
-    const tenantWidgetTestId = pathname?.match(/^\/admin\/tenant\/([^/]+)/)?.[1] || user?.uid
+    const tenantIdFromPath = pathname?.match(/^\/admin\/tenant\/([^/]+)/)?.[1] || ""
+    const assignedTenantId = role === "AGENT" && typeof userData?.agentTenantId === "string"
+        ? userData.agentTenantId.trim()
+        : ""
+    const tenantWidgetTestId = tenantIdFromPath || assignedTenantId || user?.uid
     const widgetTestHref = tenantWidgetTestId ? `/widget-test?id=${encodeURIComponent(tenantWidgetTestId)}` : "/widget-test"
     const [partnerBranding, setPartnerBranding] = useState<HeaderBranding | null>(null)
 

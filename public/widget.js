@@ -4170,6 +4170,14 @@
       iframeSrc += `&previewAmbientThinking=1`;
     }
 
+    const shouldAutoOpenSurvey = settings.enableSurveyManager === true
+      && settings.surveyWidgetConfig
+      && settings.surveyWidgetConfig.autoOpenOnLoad === true
+      && settings.surveyWidgetConfig.activeSurvey;
+    if (shouldAutoOpenSurvey) {
+      iframeSrc += `&openSurvey=1`;
+    }
+
     iframe.src = iframeSrc;
     iframe.loading = 'eager';
     iframe.setAttribute('fetchpriority', 'high');
@@ -4486,6 +4494,12 @@
       }
       return false;
     };
+
+    if (shouldAutoOpenSurvey) {
+      setTimeout(() => {
+        toggleWidget(true);
+      }, 250);
+    }
 
     // Initial Trigger Check
     setTimeout(() => {

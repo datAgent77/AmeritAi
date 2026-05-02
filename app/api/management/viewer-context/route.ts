@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { authorizeTargetAccess } from "@/lib/api-auth"
+import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
 import { resolvePartnerBranding } from "@/lib/management/access"
 import { getLinkedPartnerForManagedAccount, resolveManagedAccountPartnerBranding } from "@/lib/management/accounts"
@@ -16,65 +17,81 @@ function resolveUserRole(role: unknown): UserRole {
 }
 
 export async function GET(req: Request) {
-    const adminAuth = getAdminAuth()
-    const adminDb = getAdminDb()
+    try {
+        const adminAuth = getAdminAuth()
+        const adminDb = getAdminDb()
 
-    if (!adminAuth || !adminDb) {
-        return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 })
-    }
-
-    const authHeader = req.headers.get("authorization")
-    if (!authHeader?.startsWith("Bearer ")) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const decoded = await adminAuth.verifyIdToken(authHeader.split("Bearer ")[1])
-    const callerDoc = await adminDb.collection("users").doc(decoded.uid).get()
-    const callerData = callerDoc.data() || {}
-    const viewerRole = resolveUserRole(callerData.role || (decoded as any)?.role)
-
-    const { searchParams } = new URL(req.url)
-    const accountId = searchParams.get("accountId")
-
-    if (accountId && accountId !== decoded.uid) {
-        const authz = await authorizeTargetAccess(req, accountId)
-        if (!authz.ok) {
-            return authz.response
+        if (!adminAuth || !adminDb) {
+            return NextResponse.json({ error: "Firebase Admin SDK not initialized" }, { status: 500 })
         }
-    }
 
-    const linkedAccountId =
-        typeof accountId === "string" && accountId.trim().length > 0
-            ? accountId
-            : viewerRole === "TENANT_ADMIN"
-              ? decoded.uid
+        const authHeader = req.headers.get("authorization")
+        if (!authHeader?.startsWith("Bearer ")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        }
+
+        const decoded = await adminAuth.verifyIdToken(authHeader.split("Bearer ")[1])
+        const callerDoc = await adminDb.collection("users").doc(decoded.uid).get()
+        const callerData = callerDoc.data() || {}
+        const viewerRole = resolveUserRole(callerData.role || (decoded as any)?.role)
+
+        const { searchParams } = new URL(req.url)
+        const accountId = searchParams.get("accountId")
+
+        if (accountId && accountId !== decoded.uid) {
+            const authz = await authorizeTargetAccess(req, accountId)
+            if (!authz.ok) {
+                return authz.response
+            }
+        }
+
+        const linkedAccountId =
+            typeof accountId === "string" && accountId.trim().length > 0
+                ? accountId
+                : viewerRole === "TENANT_ADMIN"
+                  ? decoded.uid
+                  : null
+
+        const partner = viewerRole === "AGENCY_ADMIN"
+            ? await getPartnerDoc(adminDb, decoded.uid)
+            : linkedAccountId
+              ? await getLinkedPartnerForManagedAccount(adminDb, linkedAccountId)
               : null
 
-    const partner = viewerRole === "AGENCY_ADMIN"
-        ? await getPartnerDoc(adminDb, decoded.uid)
-        : linkedAccountId
-          ? await getLinkedPartnerForManagedAccount(adminDb, linkedAccountId)
-          : null
+        let resolvedPartnerBranding = resolvePartnerBranding({
+            viewerRole,
+            viewerPartnerId: partner?.id,
+            viewerPartnerName: partner?.partnerName || null,
+            viewerPartnerLevel: partner?.partnerLevel || null,
+            viewerPartnerLogoUrl: partner?.partnerLogoUrl || null,
+        })
 
-    let resolvedPartnerBranding = resolvePartnerBranding({
-        viewerRole,
-        viewerPartnerId: partner?.id,
-        viewerPartnerName: partner?.partnerName || null,
-        viewerPartnerLevel: partner?.partnerLevel || null,
-        viewerPartnerLogoUrl: partner?.partnerLogoUrl || null,
-    })
-
-    if (!resolvedPartnerBranding.show && viewerRole !== "SUPER_ADMIN") {
-        const brandingAccountId = accountId || (viewerRole === "TENANT_ADMIN" ? decoded.uid : null)
-        if (brandingAccountId) {
-            resolvedPartnerBranding = await resolveManagedAccountPartnerBranding(adminDb, brandingAccountId)
+        if (!resolvedPartnerBranding.show && viewerRole !== "SUPER_ADMIN") {
+            const brandingAccountId = accountId || (viewerRole === "TENANT_ADMIN" ? decoded.uid : null)
+            if (brandingAccountId) {
+                resolvedPartnerBranding = await resolveManagedAccountPartnerBranding(adminDb, brandingAccountId)
+            }
         }
-    }
 
-    return NextResponse.json({
-        viewerRole,
-        partner,
-        partnerCapabilities: partner?.capabilities || null,
-        resolvedPartnerBranding,
-    })
+        return NextResponse.json({
+            viewerRole,
+            partner,
+            partnerCapabilities: partner?.capabilities || null,
+            resolvedPartnerBranding,
+        })
+    } catch (error) {
+        if (shouldUseFirebaseOfflineFallback(error)) {
+            console.warn("[Viewer Context API] Firestore unavailable; using development fallback.", error)
+            return NextResponse.json({
+                viewerRole: "USER",
+                partner: null,
+                partnerCapabilities: null,
+                resolvedPartnerBranding: { show: false, placement: "header-right" },
+                offline: true,
+            })
+        }
+
+        console.error("[Viewer Context API] Internal Error:", error)
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    }
 }

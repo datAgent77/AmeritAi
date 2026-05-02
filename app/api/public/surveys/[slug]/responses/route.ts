@@ -22,6 +22,21 @@ import type { SurveyChannel, SurveyResponseRecord } from "@/lib/surveys/types"
 
 export const dynamic = "force-dynamic"
 
+function isWidgetTestSubmission(req: Request, source: SurveyChannel, body: Record<string, any>) {
+    if (source !== "widget" || body?.testMode !== true) return false
+
+    const referer = req.headers.get("referer")
+    if (referer) {
+        try {
+            return new URL(referer).pathname === "/widget-test"
+        } catch {
+            return false
+        }
+    }
+
+    return process.env.NODE_ENV !== "production"
+}
+
 export async function POST(req: Request, { params }: { params: { slug: string } }) {
     const adminDb = getAdminDb()
     if (!adminDb) {
@@ -39,6 +54,30 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
 
     if (!survey.channels.includes(requiredChannel)) {
         return NextResponse.json({ error: "Survey is not available on this channel" }, { status: 400 })
+    }
+
+    if (isWidgetTestSubmission(req, source, body || {})) {
+        try {
+            validateSurveySubmission(buildPublicSurvey(survey), body || {})
+        } catch (error) {
+            return NextResponse.json(
+                { error: error instanceof Error ? error.message : "Invalid survey submission" },
+                { status: 400 }
+            )
+        }
+
+        return NextResponse.json(
+            {
+                ok: true,
+                testMode: true,
+                survey: {
+                    id: survey.id,
+                    thankYouTitle: survey.thankYouTitle,
+                    thankYouText: survey.thankYouText,
+                },
+            },
+            { status: 201 }
+        )
     }
 
     const cookieStore = cookies()
@@ -129,7 +168,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
         const message = error instanceof Error ? error.message : "Failed to submit survey"
         if (message === "duplicate_response") {
             return NextResponse.json(
-                { error: "This participant has already completed the survey." },
+                { code: "duplicate_response", error: "This participant has already completed the survey." },
                 {
                     status: 409,
                     headers: getSurveyRateLimitHeaders(rateLimitResult),

@@ -3,6 +3,7 @@
 import Script from "next/script"
 import { useEffect, useState } from "react"
 import { MessageSquare, Moon, Sun } from "lucide-react"
+import { cleanupVionWidgetRuntime } from "@/lib/widget-runtime-dom"
 
 type WidgetTestClientProps = {
     chatbotId: string | null
@@ -10,6 +11,7 @@ type WidgetTestClientProps = {
 
 export default function WidgetTestClient({ chatbotId }: WidgetTestClientProps) {
     const [scriptLoaded, setScriptLoaded] = useState(false)
+    const [scriptInstance, setScriptInstance] = useState(0)
     const [theme, setTheme] = useState<"light" | "dark">("light")
     const isDark = theme === "dark"
 
@@ -21,7 +23,10 @@ export default function WidgetTestClient({ chatbotId }: WidgetTestClientProps) {
     }, [])
 
     useEffect(() => {
+        cleanupVionWidgetRuntime()
         setScriptLoaded(false)
+        setScriptInstance((current) => current + 1)
+        return () => cleanupVionWidgetRuntime()
     }, [chatbotId])
 
     const handleThemeChange = (nextTheme: "light" | "dark") => {
@@ -43,7 +48,8 @@ export default function WidgetTestClient({ chatbotId }: WidgetTestClientProps) {
     return (
         <>
             <Script
-                id={`vion-widget-test-script-${chatbotId}`}
+                key={`vion-widget-test-script-${chatbotId}-${scriptInstance}`}
+                id={`vion-widget-test-script-${chatbotId}-${scriptInstance}`}
                 src="/widget.js"
                 strategy="afterInteractive"
                 data-chatbot-id={chatbotId}
