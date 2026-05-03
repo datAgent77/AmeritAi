@@ -515,9 +515,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'salesOptimization':
                     router.push(`${basePath}/modules/sales-optimization`)
                     break
-                case 'smartShopper':
-                    router.push(`${basePath}/modules/smart-shopper`)
-                    break
+
                 case 'dynamicContext':
                     router.push(`${basePath}/modules/dynamic-context`)
                     break
@@ -525,10 +523,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     router.push(`${basePath}/modules/voice`)
                     break
                 case 'kvkkConsent':
-                    router.push(`/console/modules/kvkk?userId=${targetUserId}`)
+                    router.push(`${basePath}/modules/kvkk`)
                     break
                 case 'humanHandoff':
-                    router.push(`/admin/tenant/${targetUserId}/modules/human-handoff`)
+                    router.push(`${basePath}/modules/human-handoff`)
                     break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
