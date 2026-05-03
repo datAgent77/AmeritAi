@@ -623,8 +623,8 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
         return !checkModuleIncluded(moduleId)
     }
 
-    // Admin view: super admin viewing a tenant's modules, or super admin on own console
-    const isAdminView = isSuperAdminViewingTenant || role === 'SUPER_ADMIN'
+    // Admin view: ONLY true when super admin is viewing a tenant's modules via the Admin Panel
+    const isAdminView = isSuperAdminViewingTenant
     const activeSectorFilter = selectedSectorFilter || defaultSectorFilter
 
     // Filter Logic
