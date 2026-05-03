@@ -396,9 +396,9 @@ export function ChatInput({
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
                 {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
-                    <div className="relative mb-3 min-w-0">
+                    <div className="relative mb-1 min-w-0">
                         <div
-                            className="w-full min-w-0 overflow-x-auto overscroll-x-contain px-1 py-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            className="w-full min-w-0 overflow-x-auto overscroll-x-contain px-1 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                             onWheel={(event) => {
                                 const container = event.currentTarget
                                 if (container.scrollWidth <= container.clientWidth) return
@@ -423,7 +423,7 @@ export function ChatInput({
                                         type="button"
                                         onClick={() => onTriggerAction ? onTriggerAction({ ...btn, label: displayLabel, triggerMessage }) : sendMessage(triggerMessage)}
                                         disabled={isChatLoading || disabled}
-                                        className="group inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-[0_8px_18px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:text-gray-950 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none dark:text-zinc-100 dark:hover:text-white"
+                                        className="group inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-[0_8px_18px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:text-gray-950 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none dark:text-zinc-100 dark:hover:text-white"
                                         style={{
                                             borderColor: quickActionBorder,
                                             background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
@@ -445,8 +445,8 @@ export function ChatInput({
                         }
                             </div>
                         </div>
-                        <div className="pointer-events-none absolute inset-y-3 left-0 w-5 bg-gradient-to-r from-white to-transparent dark:from-zinc-950" />
-                        <div className="pointer-events-none absolute inset-y-3 right-0 w-5 bg-gradient-to-l from-white to-transparent dark:from-zinc-950" />
+                        <div className="pointer-events-none absolute inset-y-4 left-0 w-5 bg-gradient-to-r from-white to-transparent dark:from-zinc-950" />
+                        <div className="pointer-events-none absolute inset-y-4 right-0 w-5 bg-gradient-to-l from-white to-transparent dark:from-zinc-950" />
                     </div>
                 )}
 
