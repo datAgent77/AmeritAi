@@ -23,28 +23,28 @@ function initAdmin() {
                 // 3. Remove surrounding quotes if user added them
                 let formattedPrivKey = privKey;
 
-                // Remove surrounding quotes if present
-                formattedPrivKey = formattedPrivKey.replace(/^"|"$/g, '');
+                // Step 1: Strip surrounding quotes (handles "value" and "value\" patterns)
+                formattedPrivKey = formattedPrivKey.trim();
+                formattedPrivKey = formattedPrivKey.replace(/^["']/, '');        // leading quote
+                formattedPrivKey = formattedPrivKey.replace(/[\\]?["']$/, ''); // trailing backslash+quote or just quote
 
-                // Replace literal "\n" with actual newlines
+                // Step 2: Replace literal \n sequences with actual newlines
                 formattedPrivKey = formattedPrivKey.replace(/\\n/g, '\n');
 
-                // ADVANCED FIX: Ensure strict PEM format
-                // 1. If it's a single line or missing internal newlines, we need to reformat the whole thing.
+                // Step 3: Reconstruct strict PEM format
+                // Strips ALL non-base64 chars from the body (handles \n, spaces, stray backslashes, quotes)
                 const hasHeader = formattedPrivKey.includes('-----BEGIN PRIVATE KEY-----');
                 const hasFooter = formattedPrivKey.includes('-----END PRIVATE KEY-----');
 
                 if (hasHeader && hasFooter) {
-                    // Strip headers to get just the body
-                    let body = formattedPrivKey
+                    // Extract only the base64 body — strip everything that is not a valid base64 character
+                    const body = formattedPrivKey
                         .replace('-----BEGIN PRIVATE KEY-----', '')
                         .replace('-----END PRIVATE KEY-----', '')
-                        .replace(/\s/g, ''); // Remove all whitespace/newlines from body
+                        .replace(/[^A-Za-z0-9+/=]/g, ''); // keep ONLY valid base64 chars
 
-                    // Split body into 64-char chunks
+                    // Split body into 64-char lines and reassemble PEM
                     const chunks = body.match(/.{1,64}/g) || [];
-
-                    // Reassemble
                     formattedPrivKey =
                         '-----BEGIN PRIVATE KEY-----\n' +
                         chunks.join('\n') +
