@@ -641,15 +641,24 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 return false
             }
 
-            // Tenant view:
-            // - Admin-granted modules are always visible (even if tenant turned them off)
-            //   so tenant can re-enable them at any time.
-            // - Non-granted modules are only visible when they're active.
-            // - Admins retain full module visibility to grant/revoke/configure.
+            // Tenant view visibility rules:
+            // 1. If admin explicitly CLOSED the module (adminGrantedModules[id] === false) → always hidden
+            // 2. If admin explicitly OPENED the module (adminGrantedModules[id] === true) → always visible
+            //    (tenant can toggle on/off but card stays — widget respects moduleStates)
+            // 3. If admin never touched it → only show when tenant has it active
+            // Admins always see everything.
             if (!isAdminView) {
-                const isAdminGranted = adminGrantedModules && adminGrantedModules[module.id] === true
-                const isActive = moduleStates[module.id] === true
-                if (!isAdminGranted && !isActive) {
+                const adminDecision = adminGrantedModules ? adminGrantedModules[module.id] : undefined
+                if (adminDecision === false) {
+                    // Admin explicitly revoked → hide from tenant
+                    return false
+                }
+                if (adminDecision === true) {
+                    // Admin granted → always visible regardless of tenant toggle
+                    return true
+                }
+                // Admin never set → only show if tenant has it active
+                if (moduleStates[module.id] !== true) {
                     return false
                 }
             }
