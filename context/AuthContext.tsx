@@ -32,7 +32,7 @@ interface AuthContextType {
     // Plan & Subscription
     planId: string
     planConfig: PlanConfig | null
-    subscriptionStatus: 'trial' | 'active' | 'cancelled' | 'expired'
+    subscriptionStatus: 'trial' | 'active' | 'cancelled' | 'expired' | null
     isTrialExpired: boolean
     trialDaysLeft: number
     trialEndsAt: string | null
@@ -70,7 +70,7 @@ const AuthContext = createContext<AuthContextType>({
     // Plan & Subscription defaults — intentionally empty to avoid flicker
     planId: '',
     planConfig: null,
-    subscriptionStatus: 'trial',
+    subscriptionStatus: null,
     isTrialExpired: false,
     trialDaysLeft: 0,
     trialEndsAt: null,
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [omniPermissions, setOmniPermissions] = useState<OmniPermission[]>([])
     // Plan states
     const [planId, setPlanId] = useState<string>('')
-    const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired'>('trial')
+    const [subscriptionStatus, setSubscriptionStatus] = useState<'trial' | 'active' | 'cancelled' | 'expired' | null>(null)
     const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null)
     // Module flags
     const [enablePersonalShopper, setEnablePersonalShopper] = useState(false)
@@ -152,8 +152,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const isPaidPlan = useMemo(() => PAID_PLANS.includes(planId.toLowerCase()), [planId])
     
     const { isTrialExpired, trialDaysLeft } = useMemo(() => {
-        // If planId is not yet loaded, don't compute trial state
-        if (!planId) {
+        // If planId or subscriptionStatus not yet loaded from Firestore, show nothing
+        if (!planId || subscriptionStatus === null) {
             return { isTrialExpired: false, trialDaysLeft: 0 }
         }
 
@@ -186,9 +186,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         installAuthDebugDump()
         recordAuthDebug("auth_effect_start", { pathname })
 
-        // For public widget/test routes, auth is still needed (user may navigate back)
-        // so we do NOT skip the auth listener. The widget routes themselves handle
-        // their own rendering without requiring auth context.
+        // For public widget/test routes, do NOT set up a Firestore snapshot
+        // (no console data needed). We only call setLoading(false) for those routes.
+        // NOTE: pathname is captured in closure — the effect re-runs when pathname changes.
         const isPublicWidgetRoute = pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')
 
         console.log("AuthProvider: Setting up auth listener")
@@ -321,7 +321,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 unsubscribeSnapshot();
             }
         }
-    }, [])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <AuthContext.Provider value={{
