@@ -904,9 +904,25 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                                                     Beta
                                                 </Badge>
                                             )}
-                                            {access.badge === 'included' && (
+                                            {access.badge === 'included' && !isSuperAdminViewingTenant && (
                                                 <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-xs font-medium">
                                                     {t('included') || 'Dahil'}
+                                                </Badge>
+                                            )}
+
+                                            {isSuperAdminViewingTenant && (
+                                                <Badge variant="secondary" className={`border-none px-2 py-0.5 text-xs font-medium ${
+                                                    adminGrantedModules?.[module.id] === false 
+                                                        ? 'bg-red-100 text-red-700 hover:bg-red-100' 
+                                                        : adminGrantedModules?.[module.id] === true
+                                                            ? 'bg-blue-100 text-blue-700 hover:bg-blue-100'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-100'
+                                                }`}>
+                                                    {adminGrantedModules?.[module.id] === false 
+                                                        ? (language === 'tr' ? 'Yetki: Kapalı' : 'Access: Denied')
+                                                        : adminGrantedModules?.[module.id] === true
+                                                            ? (language === 'tr' ? 'Yetki: Açık' : 'Access: Granted')
+                                                            : (language === 'tr' ? 'Yetki: Standart' : 'Access: Default')}
                                                 </Badge>
                                             )}
 
