@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             isTrialExpired: diffDays <= 0,
             trialDaysLeft: Math.max(0, diffDays)
         }
-    }, [planId, trialEndsAt, isPaidPlan, subscriptionStatus])
+    }, [planId, trialEndsAt, isPaidPlan, subscriptionStatus]) // eslint-disable-line
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
@@ -187,8 +187,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         recordAuthDebug("auth_effect_start", { pathname })
 
         // For public widget/test routes, do NOT set up a Firestore snapshot
-        // (no console data needed). We only call setLoading(false) for those routes.
-        // NOTE: pathname is captured in closure — the effect re-runs when pathname changes.
+        // (no console data needed). Widget routes handle their own rendering.
         const isPublicWidgetRoute = pathname?.startsWith('/chatbot-view') || pathname?.startsWith('/widget-test')
 
         console.log("AuthProvider: Setting up auth listener")
