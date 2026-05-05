@@ -221,18 +221,18 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     href: "/console/chatbot/chats",
                     active: isActive("/console/chatbot/chats")
                 },
-                {
+                ...(userData?.enableAppointments || role === 'SUPER_ADMIN' ? [{
                     title: t('appointments') || "Appointments",
                     icon: Calendar,
                     href: "/console/appointments",
                     active: isActive("/console/appointments")
-                },
-                {
+                }] : []),
+                ...(enableLeadCollection || role === 'SUPER_ADMIN' ? [{
                     title: t('leads') || "Müşteri Adayları",
                     icon: Users,
                     href: "/console/chatbot/leads",
                     active: isActive("/console/chatbot/leads")
-                },
+                }] : []),
                 {
                     title: t('reports') || "Analytics",
                     icon: BarChart3,
