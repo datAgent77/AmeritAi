@@ -30,4 +30,4 @@ const googleProvider = new GoogleAuthProvider();
 const microsoftProvider = new OAuthProvider('microsoft.com');
 const appleProvider = new OAuthProvider('apple.com');
 
-export { app, db, auth, storage, googleProvider, microsoftProvider, appleProvider };
+export { app, db, auth, storage, googleProvider, microsoftProvider, appleProvider, firebaseConfig };

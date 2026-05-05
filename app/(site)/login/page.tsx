@@ -4,9 +4,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, User, sendEmailVerification } from "firebase/auth"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, firebaseConfig } from "@/lib/firebase"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -18,12 +18,82 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { SocialAuthButtons } from "@/components/auth/social-auth-buttons"
 import { recordAuthDebug } from "@/lib/auth-debug"
 import { trackMarketingEvent } from "@/lib/marketing-tracking"
+import { useAuth } from "@/context/AuthContext"
 
 function getLoginFailureReason(error: unknown): string {
   if (!error || typeof error !== "object") return "unknown_error"
   const maybeCode = "code" in error ? String((error as { code?: string }).code || "") : ""
   if (!maybeCode) return "unknown_error"
   return maybeCode.replace(/^auth\//, "")
+}
+
+function isFirebaseAuthNetworkError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+  const maybeError = error as { code?: string }
+  return maybeError.code === "auth/network-request-failed"
+}
+
+function getAuthNetworkErrorMessage(language: string): string {
+  return language === "tr"
+    ? "Şu anda giriş yapılamıyor. Bağlantıda geçici bir sorun olabilir. Lütfen birkaç saniye sonra tekrar deneyin; sorun devam ederse destek ekibiyle iletişime geçin."
+    : "We can't sign you in right now. There may be a temporary connection issue. Please try again in a few seconds; if it continues, contact support."
+}
+
+function getAuthNetworkErrorTitle(language: string): string {
+  return language === "tr" ? "Giriş yapılamadı" : "Could not sign in"
+}
+
+async function probeFirebaseAuthNetwork() {
+  if (typeof window === "undefined") return
+
+  const startedAt = Date.now()
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const response = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        referrerPolicy: "no-referrer",
+        signal: controller.signal,
+        body: JSON.stringify({
+          email: "vion-auth-network-probe@example.invalid",
+          password: "not-a-real-password",
+          returnSecureToken: true,
+          clientType: "CLIENT_TYPE_WEB",
+        }),
+      }
+    )
+
+    recordAuthDebug("login_network_probe_result", {
+      ok: response.ok,
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+    })
+  } catch (probeError) {
+    recordAuthDebug("login_network_probe_failed", {
+      durationMs: Date.now() - startedAt,
+      message: probeError instanceof Error ? probeError.message : String(probeError),
+      name: probeError instanceof Error ? probeError.name : undefined,
+    })
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
+async function clearDifferentActiveSession(nextEmail: string) {
+  const activeEmail = auth.currentUser?.email?.trim().toLowerCase()
+  const targetEmail = nextEmail.trim().toLowerCase()
+
+  if (!activeEmail || !targetEmail || activeEmail === targetEmail) return
+
+  recordAuthDebug("login_clearing_different_active_session", {
+    activeEmail,
+    targetEmail,
+  })
+  await auth.signOut()
 }
 
 function resolvePostLoginPath(role: unknown, source?: Record<string, unknown>): string {
@@ -48,6 +118,12 @@ export default function LoginForm() {
   const router = useRouter()
   const { toast } = useToast()
   const { t, language } = useLanguage()
+  const { user, userData, role, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (authLoading || !user) return
+    router.replace(resolvePostLoginPath(role, userData || undefined))
+  }, [authLoading, role, router, user, userData])
 
   const signOutWithDebug = async (reason: string) => {
     recordAuthDebug("login_signout_triggered", { reason })
@@ -136,8 +212,10 @@ export default function LoginForm() {
 
     try {
       // Ensure persistence is set before signing in
+      const loginEmail = email.trim()
+      await clearDifferentActiveSession(loginEmail)
       await setPersistence(auth, browserLocalPersistence)
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password)
       await userCredential.user.reload()
 
       if (!userCredential.user.emailVerified) {
@@ -225,9 +303,13 @@ export default function LoginForm() {
       setShowResendVerificationButton(false)
 
       // Show more specific error messages
+      const isNetworkError = isFirebaseAuthNetworkError(error)
       let errorMessage = t('invalidEmailPassword')
 
-      if (error.code === 'auth/user-not-found') {
+      if (isNetworkError) {
+        errorMessage = getAuthNetworkErrorMessage(language)
+        void probeFirebaseAuthNetwork()
+      } else if (error.code === 'auth/user-not-found') {
         errorMessage = language === 'tr'
           ? 'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.'
           : 'No user found with this email address.'
@@ -256,7 +338,7 @@ export default function LoginForm() {
       })
       setError(errorMessage)
       toast({
-        title: t('error'),
+        title: isNetworkError ? getAuthNetworkErrorTitle(language) : t('error'),
         description: errorMessage,
         variant: "destructive",
       })
@@ -283,8 +365,10 @@ export default function LoginForm() {
     setError("")
 
     try {
+      const loginEmail = email.trim()
+      await clearDifferentActiveSession(loginEmail)
       await setPersistence(auth, browserLocalPersistence)
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password)
       await userCredential.user.reload()
 
       if (userCredential.user.emailVerified) {
@@ -319,8 +403,12 @@ export default function LoginForm() {
       let errorMessage = language === 'tr'
         ? 'Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin.'
         : 'Could not send verification email. Please try again.'
+      const isNetworkError = isFirebaseAuthNetworkError(error)
 
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+      if (isNetworkError) {
+        errorMessage = getAuthNetworkErrorMessage(language)
+        void probeFirebaseAuthNetwork()
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
         errorMessage = language === 'tr'
           ? 'Şifre hatalı olduğu için doğrulama e-postası gönderilemedi.'
           : 'Verification email could not be sent because the password is incorrect.'
@@ -336,7 +424,7 @@ export default function LoginForm() {
 
       setError(errorMessage)
       toast({
-        title: language === 'tr' ? 'Hata' : 'Error',
+        title: isNetworkError ? getAuthNetworkErrorTitle(language) : (language === 'tr' ? 'Hata' : 'Error'),
         description: errorMessage,
         variant: 'destructive',
       })
