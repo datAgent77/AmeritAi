@@ -568,12 +568,25 @@ export function getPublicRequestUrl(req: Request) {
 
 export function verifyMetaWebhookSignature(rawBody: string, signatureHeader: string | null, appSecret: string) {
     if (!signatureHeader?.startsWith("sha256=") || !appSecret) {
+        console.warn("[MetaWebhook] Missing signature header or app secret")
         return false
     }
 
     const providedSignature = signatureHeader.slice("sha256=".length)
     const expectedSignature = crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex")
-    return timingSafeEqualString(providedSignature, expectedSignature)
+    const match = timingSafeEqualString(providedSignature, expectedSignature)
+    
+    if (!match) {
+        console.error("[MetaWebhook] Signature mismatch!", { 
+            provided: providedSignature.slice(0, 10) + "...", 
+            expected: expectedSignature.slice(0, 10) + "...",
+            bodySample: rawBody.slice(0, 50) 
+        })
+    } else {
+        console.log("[MetaWebhook] Signature verified")
+    }
+    
+    return match
 }
 
 export function verifyTwilioWebhookSignature(params: {

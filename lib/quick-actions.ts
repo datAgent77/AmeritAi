@@ -274,6 +274,29 @@ const QUICK_ACTION_DEFINITIONS = {
             && data.surveyWidgetConfig?.showCta !== false
             && data.surveyWidgetConfig?.activeSurvey != null,
     },
+    custom: {
+        id: "custom",
+        label: "Özel Aksiyon",
+        moduleId: "custom",
+        triggerMessage: "özel aksiyon tetikleyici",
+        iconName: "Settings",
+        title: {
+            tr: "Özel",
+            en: "Custom",
+        },
+        localized: {
+            tr: {
+                label: "Özel Aksiyon",
+                triggerMessage: "özel aksiyon",
+            },
+            en: {
+                label: "Custom Action",
+                triggerMessage: "custom action",
+            },
+        },
+        inferenceTexts: [],
+        enabledWhen: (data) => false,
+    },
 } as const satisfies Record<QuickActionModuleId, QuickActionDefinition>
 
 export type QuickActionDefinitionMap = typeof QUICK_ACTION_DEFINITIONS

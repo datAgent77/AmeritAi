@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tag, Package, ShoppingCart, GitCompare, Loader2, Plus, Trash2 } from "lucide-react"
+import { Tag, Package, ShoppingCart, GitCompare, Loader2, Plus, Trash2, ArrowDownToLine, Target } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
@@ -40,6 +40,8 @@ interface SalesOptimizationConfig {
         offerDiscount: boolean
         discountPercent: number
     }
+    downSelling?: boolean
+    crossSellThreshold?: number
 }
 
 const DEFAULT_CONFIG: SalesOptimizationConfig = {
@@ -60,7 +62,9 @@ const DEFAULT_CONFIG: SalesOptimizationConfig = {
         triggerAfterSeconds: 60,
         offerDiscount: false,
         discountPercent: 10
-    }
+    },
+    downSelling: false,
+    crossSellThreshold: 0
 }
 
 interface SalesOptimizationSettingsFormProps {
@@ -593,6 +597,68 @@ export function SalesOptimizationSettingsForm({ targetUserId, isSuperAdmin = fal
                                 </div>
                             </CardContent>
                         )}
+                    </Card>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    {/* Down-Selling */}
+                    <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-secondary/50 rounded-xl">
+                                        <ArrowDownToLine className="h-5 w-5 text-foreground/80" />
+                                    </div>
+                                    <CardTitle className="text-xl font-semibold tracking-tight">
+                                        {language === "tr" ? "Alt Satış (Down-Selling)" : "Down-Selling Rules"}
+                                    </CardTitle>
+                                </div>
+                                <Switch
+                                    checked={config.downSelling || false}
+                                    onCheckedChange={(checked) => setConfig(prev => ({ ...prev, downSelling: checked }))}
+                                />
+                            </div>
+                            <CardDescription className="pt-2 pl-12">
+                                {language === "tr" 
+                                    ? "Kullanıcı bir ürünü pahalı bulursa, ona derhal daha uygun fiyatlı alternatifler sunulur." 
+                                    : "If a user finds a product too expensive, immediately suggest cheaper alternatives."}
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+
+                    {/* Conditional Cross-Selling */}
+                    <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-secondary/50 rounded-xl">
+                                        <Target className="h-5 w-5 text-foreground/80" />
+                                    </div>
+                                    <CardTitle className="text-xl font-semibold tracking-tight">
+                                        {language === "tr" ? "Koşullu Çapraz Satış" : "Conditional Cross-Selling"}
+                                    </CardTitle>
+                                </div>
+                            </div>
+                            <CardDescription className="pt-2 pl-12">
+                                {language === "tr" 
+                                    ? "Çapraz satış yapabilmek için gereken minimum sepet tutarını belirleyin." 
+                                    : "Set the minimum cart threshold to trigger cross-selling."}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-center justify-between border p-3 rounded-lg">
+                                <Label className="flex-1">{language === "tr" ? "Minimum Sepet Tutarı" : "Minimum Cart Value"}</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        value={config.crossSellThreshold || 0}
+                                        onChange={(e) => setConfig(prev => ({ ...prev, crossSellThreshold: parseInt(e.target.value) || 0 }))}
+                                        className="w-20 h-8 text-center"
+                                    />
+                                    <span className="text-sm text-muted-foreground">TL</span>
+                                </div>
+                            </div>
+                        </CardContent>
                     </Card>
                 </div>
 

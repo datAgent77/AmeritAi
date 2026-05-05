@@ -715,12 +715,14 @@ KURALLAR:
 1. Help users save products to their wishlist if they express interest without buying.
 2. Offer price/stock alerts for out-of-stock or high-price products: "I can notify you when it's back in stock or when the price drops."
 3. Use visitor history to personalize recommendations: refer to previously viewed products.
-4. Keep suggestions conversational and non-intrusive.`,
+4. If the user is looking for clothing/shoes, ask for and remember their size/fit preferences to filter future suggestions.
+5. Keep suggestions conversational and non-intrusive.`,
             tr: `AKILLI ALIŞVERİŞ ASISTANI AKTİF.
 1. Kullanıcı satın almadan ilgi gösterirse ürünü istek listesine eklemeyi teklif et.
 2. Stok dışı veya pahalı ürünler için fiyat/stok bildirimi öner: "Stoka girdiğinde veya fiyatı düştüğünde sizi haberdar edebilirim."
 3. Ziyaretçi geçmişini kullanarak önerileri kişiselleştir: önceki ürünlere atıfta bulun.
-4. Önerileri doğal ve rahatsız edici olmayan bir dille sun.`
+4. Giyim/ayakkabı gibi ürünler aranıyorsa, müşterinin beden/numara tercihlerini sor ve aklında tutarak sonraki önerileri buna göre yap.
+5. Önerileri doğal ve rahatsız edici olmayan bir dille sun.`
         },
         longDescription: {
             en: 'Transform casual browsers into loyal buyers. The AI remembers what visitors viewed, lets them save wishlists, and sends automatic notifications when prices drop or items come back in stock.',
@@ -770,13 +772,15 @@ KURALLAR:
         legacyFirestoreField: 'enableSalesOptimization',
         aiSystemInstruction: {
             en: `SALES OPTIMIZATION ACTIVE.
-1. Suggest complementary items (Cross-sell) when appropriate (e.g., "Would you like a case with that phone?").
+1. Suggest complementary items (Cross-sell) when appropriate. Consider conditional thresholds like free shipping limits if available.
 2. Highlight unique value propositions to encourage purchase.
-3. If user abandons a topic/cart, gently remind them of the benefits.`,
+3. Down-selling rule: If the user rejects a product because of price, immediately suggest a cheaper alternative.
+4. If user abandons a topic/cart, gently remind them of the benefits.`,
             tr: `SATIŞ OPTİMİZASYONU AKTİF.
-1. Uygun olduğunda tamamlayıcı ürünler (Çapraz Satış) öner (örn. "Bu telefonun yanına bir kılıf ister misiniz?").
+1. Uygun olduğunda tamamlayıcı ürünler (Çapraz Satış) öner. Mevcutsa ücretsiz kargo limiti gibi koşullara dikkat çekerek sepeti büyütmeye çalış.
 2. Satın almayı teşvik etmek için benzersiz değer önerilerini vurgula.
-3. Kullanıcı bir konuyu/sepeti terk ederse, avantajları nazikçe hatırlat.`
+3. Alt Satış (Down-selling) kuralı: Kullanıcı bir ürünü fiyatı yüzünden reddederse, derhal daha uygun fiyatlı bir alternatif öner.
+4. Kullanıcı bir konuyu/sepeti terk ederse, avantajları nazikçe hatırlat.`
         },
         longDescription: {
             en: 'Turn your AI into a top-performing sales agent. It uses proven psychological triggers, cross-selling techniques, and cart recovery strategies to maximize the value of every customer interaction.',
@@ -963,10 +967,20 @@ Görüntüleri analiz etme yeteneğine sahipsin. Kullanıcı gözle görülür b
         aiSystemInstruction: {
             en: `RESTAURANT & CAFE AI ACTIVE.
 Your role is to assist guests with the menu and service.
-Specific behavior (Waiter vs Barista) will be defined by the Service Mode settings.`,
+Specific behavior (Waiter vs Barista) is defined by the Service Mode settings.
+
+COMMANDS:
+1. If the user wants to call a waiter or needs assistance at the table -> output [CALL_STAFF]
+2. If the user wants to ask for the bill or payment -> output [REQUEST_BILL]
+3. If the user wants to see the menu -> output [SHOW_MENU_CAROUSEL] (if available)`,
             tr: `RESTORAN VE KAFE AI AKTİF.
 Göreviniz, menü ve servis konularında misafirlere yardımcı olmaktır.
-Özel davranışınız (Garson veya Barista), Servis Modu ayarlarına göre belirlenecektir.`
+Özel davranışınız (Garson veya Barista), Servis Modu ayarlarına göre belirlenecektir.
+
+KOMUTLAR:
+1. Kullanıcı garson çağırmak isterse veya masada yardıma ihtiyacı olursa -> [CALL_STAFF] komutunu üret.
+2. Kullanıcı hesabı isterse veya ödeme yapmak isterse -> [REQUEST_BILL] komutunu üret.
+3. Kullanıcı menüyü görmek isterse -> [SHOW_MENU_CAROUSEL] komutunu üret.`
         },
         features: [
             {

@@ -6,7 +6,7 @@ import type {
     GuidedSkillState,
 } from "@/lib/guided-skills/types"
 import { AI_GUIDED_SKILL_ID } from "@/lib/guided-ai"
-import { Sparkles, X } from "lucide-react"
+import { Sparkles, X, Utensils, Receipt, Check } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ProductCard } from "@/components/chatbot/product-card"
@@ -607,8 +607,34 @@ export function MessageList({
                                             remarkPlugins={[remarkGfm]}
                                             components={{
                                                 code: ({ node, inline, className, children, ...props }: any) => {
+                                                    const content = String(children).replace(/\n$/, '').trim()
+
+                                                    if (content === '[CALL_STAFF]' || content === '[REQUEST_BILL]') {
+                                                        return (
+                                                            <div className="mt-2 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-3 animate-in fade-in zoom-in duration-300">
+                                                                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                                                                    {content === '[CALL_STAFF]' ? (
+                                                                        <Utensils className="w-5 h-5 text-primary" />
+                                                                    ) : (
+                                                                        <Receipt className="w-5 h-5 text-primary" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1">
+                                                                    <div className="text-xs font-bold text-primary uppercase tracking-wider">
+                                                                        {content === '[CALL_STAFF]' ? 'Garson Çağrıldı' : 'Hesap İstendi'}
+                                                                    </div>
+                                                                    <div className="text-[11px] text-muted-foreground leading-tight">
+                                                                        {content === '[CALL_STAFF]' 
+                                                                            ? 'Personelimiz en kısa sürede masanıza gelecek.' 
+                                                                            : 'Hesabınız hazırlanıyor, birazdan masanıza getirilecek.'}
+                                                                    </div>
+                                                                </div>
+                                                                <Check className="w-5 h-5 text-green-500" />
+                                                            </div>
+                                                        )
+                                                    }
+
                                                     const match = /language-(\w+)/.exec(className || '')
-                                                    const content = String(children).replace(/\n$/, '')
 
                                                     if (content.trim().startsWith('[') && content.includes('"price"')) {
                                                         try {
@@ -672,7 +698,13 @@ export function MessageList({
                                                 ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-1" {...props} />,
                                             }}
                                         >
-                                            {messageContent.replace('[SHOW_LEAD_FORM]', '').replace('[SHOW_BOOKING_FORM]', '').replace('[SHOW_HANDOFF_FORM]', '')}
+                                            {messageContent
+                                                .replace('[SHOW_LEAD_FORM]', '')
+                                                .replace('[SHOW_BOOKING_FORM]', '')
+                                                .replace('[SHOW_HANDOFF_FORM]', '')
+                                                .replace('[CALL_STAFF]', '')
+                                                .replace('[REQUEST_BILL]', '')
+                                            }
                                         </ReactMarkdown>
 
                                         {/* Inline Lead Form */}

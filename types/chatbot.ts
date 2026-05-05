@@ -296,7 +296,8 @@ export type QuickActionModuleId =
     | "kvkkConsent"
     | "proactiveMessaging"
     | "digitalWaiter"
-    | "surveyManager";
+    | "surveyManager"
+    | "custom";
 
 export interface QuickActionButton {
     id: string;

@@ -28,6 +28,8 @@ function normalizeActionId(value?: string | null): OmniActionExecutionRequest["a
         case "create_lead":
         case "check_business_hours":
         case "handoff_to_human":
+        case "call_staff":
+        case "request_bill":
             return value
         default:
             throw new Error("Unsupported action")
@@ -260,6 +262,40 @@ export async function executeOmniAction(adminDb: any, request: OmniActionExecuti
                     recordType: "callback",
                     record: callback,
                     message: "Human handoff queued",
+                }
+            }
+            case "call_staff":
+            case "request_bill": {
+                const payload = request.payload || {}
+                const identity = await upsertActionContactIdentity(adminDb, request)
+                const masaNo = payload.masaNo || payload.tableNo || "QR"
+                
+                const record = await adminDb.collection("waiter_requests").add({
+                    chatbotId: request.chatbotId,
+                    masaNo,
+                    type: actionId,
+                    status: "pending",
+                    createdAt: new Date().toISOString(),
+                    sessionId: request.sourceSessionId || null,
+                    contactKey: identity.contactKey,
+                    canonicalContactId: identity.canonicalContactId,
+                    note: payload.note || null
+                })
+
+                await logOmniAuditEvent({
+                    chatbotId: request.chatbotId,
+                    channel: inferChannel(request.sourceChannel),
+                    eventType: `action.${actionId}`,
+                    result: "success",
+                    source: "omni_action_execute",
+                    metadata: { requestId: record.id, masaNo },
+                })
+
+                return {
+                    actionId,
+                    recordType: "waiter_request",
+                    record: { id: record.id, masaNo, type: actionId },
+                    message: actionId === "call_staff" ? "Garson çağrıldı" : "Hesap istendi",
                 }
             }
             case "check_business_hours": {

@@ -54,6 +54,8 @@ interface AuthContextType {
     visibleKnowledgeBase: boolean
     enableSalesOptimization: boolean
     visibleSalesOptimization: boolean
+    enableDigitalWaiter: boolean
+    visibleDigitalWaiter: boolean
     canManageModules: boolean
     loading: boolean
 }
@@ -92,6 +94,8 @@ const AuthContext = createContext<AuthContextType>({
     visibleKnowledgeBase: true,
     enableSalesOptimization: false,
     visibleSalesOptimization: true,
+    enableDigitalWaiter: false,
+    visibleDigitalWaiter: true,
     canManageModules: false,
     loading: true,
 })
@@ -143,6 +147,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [visibleKnowledgeBase, setVisibleKnowledgeBase] = useState(true)
     const [enableSalesOptimization, setEnableSalesOptimization] = useState(false)
     const [visibleSalesOptimization, setVisibleSalesOptimization] = useState(true)
+    const [enableDigitalWaiter, setEnableDigitalWaiter] = useState(false)
+    const [visibleDigitalWaiter, setVisibleDigitalWaiter] = useState(true)
     const [canManageModules, setCanManageModules] = useState(false)
     const [loading, setLoading] = useState(true)
     const pathname = usePathname()
@@ -282,6 +288,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setVisibleKnowledgeBase(data.visibleKnowledgeBase !== false)
                     setEnableSalesOptimization(data.enableSalesOptimization === true)
                     setVisibleSalesOptimization(data.visibleSalesOptimization !== false)
+                    setEnableDigitalWaiter(data.enableDigitalWaiter === true)
+                    setVisibleDigitalWaiter(data.visibleDigitalWaiter !== false)
                     setCanManageModules(data.canManageModules === true || userRole === 'SUPER_ADMIN')
 
                     setLoading(false)
@@ -356,6 +364,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             visibleKnowledgeBase,
             enableSalesOptimization,
             visibleSalesOptimization,
+            enableDigitalWaiter,
+            visibleDigitalWaiter,
             canManageModules
         }}>
             {children}

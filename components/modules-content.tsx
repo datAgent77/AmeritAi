@@ -519,6 +519,12 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'dynamicContext':
                     router.push(`${basePath}/modules/dynamic-context`)
                     break
+                case 'smartShopper':
+                    router.push(`${basePath}/modules/smart-shopper`)
+                    break
+                case 'campaignManager':
+                    router.push(`${basePath}/modules/campaigns`)
+                    break
                 case 'voiceAssistant':
                     router.push(`${basePath}/modules/voice`)
                     break
@@ -629,35 +635,23 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
     const filteredModules = useMemo(() => {
         const lang = language as 'en' | 'tr'
         return ORDERED_MODULES.filter(module => {
-            // Exclude core modules (they are always included, no need to show as separate modules)
-            if (module.isCore) {
-                return false
-            }
+            // Exclude core modules
+            if (module.isCore) return false
 
-            // Tenant view: only show ready modules (hide beta + coming_soon)
-            if (!isAdminView && module.status !== 'ready') {
-                return false
-            }
+            // Super Admin bypass for visibility
+            if (role === 'SUPER_ADMIN') return true
 
-            // Tenant view visibility rules:
-            // 1. If admin explicitly CLOSED the module (adminGrantedModules[id] === false) → always hidden
-            // 2. If admin explicitly OPENED the module (adminGrantedModules[id] === true) → always visible
-            //    (tenant can toggle on/off but card stays — widget respects moduleStates)
-            // 3. If admin never touched it → only show when tenant has it active
-            // Admins always see everything.
+            // Tenant view: only show ready modules
+            if (!isAdminView && module.status !== 'ready') return false
+
+            // Visibility rules
             if (!isAdminView) {
                 const adminDecision = adminGrantedModules ? adminGrantedModules[module.id] : undefined
-                if (adminDecision === false) {
-                    // Admin explicitly revoked → hide from tenant
-                    return false
-                }
-                if (adminDecision === true) {
-                    // Admin granted → always visible regardless of tenant toggle
-                    return true
-                }
-                // Admin never set → only show if tenant has it active
+                if (adminDecision === false) return false
+                
                 if (moduleStates[module.id] !== true) {
-                    return false
+                    const isIncluded = checkModuleIncluded(module.id)
+                    if (!isIncluded && adminDecision !== true) return false
                 }
             }
 
@@ -846,8 +840,25 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                     </Button>
                 </div>
             ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
-                    {filteredModules.map((module) => {
+                <div className="space-y-8 pt-2">
+                    {(() => {
+                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager'];
+                        const ecommerceModules = filteredModules.filter(m => ecommerceIds.includes(m.id));
+                        const otherModules = filteredModules.filter(m => !ecommerceIds.includes(m.id));
+                        const groups = [];
+                        if (ecommerceModules.length > 0) groups.push({ title: language === 'tr' ? 'E-Ticaret Modülleri' : 'E-Commerce Modules', modules: ecommerceModules });
+                        if (otherModules.length > 0) groups.push({ title: language === 'tr' ? 'Genel Modüller' : 'General Modules', modules: otherModules });
+
+                        return groups.map((group, idx) => (
+                            <div key={idx} className="space-y-4">
+                                <div className="flex items-center gap-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/50">
+                                    <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-md">
+                                        {group.title.includes('E-') ? <ShoppingBag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <LayoutGrid className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                                    </div>
+                                    <h3 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{group.title}</h3>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {group.modules.map((module) => {
                         // Get module access info - single source of truth
                         const baseAccess = getModuleAccess(
                             userPlanId,
@@ -1013,10 +1024,31 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             </Card>
                         )
                     })}
+                                </div>
+                            </div>
+                        ))
+                    })()}
                 </div>
             ) : (
-                <div className="flex flex-col gap-4 pt-2">
-                    {filteredModules.map((module) => {
+                <div className="space-y-8 pt-2">
+                    {(() => {
+                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager'];
+                        const ecommerceModules = filteredModules.filter(m => ecommerceIds.includes(m.id));
+                        const otherModules = filteredModules.filter(m => !ecommerceIds.includes(m.id));
+                        const groups = [];
+                        if (ecommerceModules.length > 0) groups.push({ title: language === 'tr' ? 'E-Ticaret Modülleri' : 'E-Commerce Modules', modules: ecommerceModules });
+                        if (otherModules.length > 0) groups.push({ title: language === 'tr' ? 'Genel Modüller' : 'General Modules', modules: otherModules });
+
+                        return groups.map((group, idx) => (
+                            <div key={idx} className="space-y-4">
+                                <div className="flex items-center gap-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/50">
+                                    <div className="p-1.5 bg-indigo-50 dark:bg-indigo-500/10 rounded-md">
+                                        {group.title.includes('E-') ? <ShoppingBag className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <LayoutGrid className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />}
+                                    </div>
+                                    <h3 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{group.title}</h3>
+                                </div>
+                                <div className="flex flex-col gap-4">
+                                    {group.modules.map((module) => {
                         // Get module access info - single source of truth
                         const baseAccess = getModuleAccess(
                             userPlanId,
@@ -1158,6 +1190,10 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                             </div>
                         )
                     })}
+                                </div>
+                            </div>
+                        ))
+                    })()}
                 </div>
             )}
 

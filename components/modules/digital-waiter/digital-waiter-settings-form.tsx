@@ -135,7 +135,7 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
     }
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500 max-w-5xl mx-auto">
+        <div className="flex-1 w-full space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <div className="flex-1">

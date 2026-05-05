@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Zap, CloudLightning, Clock, Loader2 } from "lucide-react"
+import { Zap, CloudLightning, Clock, Loader2, Key, Hourglass } from "lucide-react"
 
 interface CampaignConfig {
     rainyDay: {
@@ -25,12 +25,23 @@ interface CampaignConfig {
         enabled: boolean
         prompt: string
     }
+    dynamicCoupons?: {
+        enabled: boolean
+        apiEndpoint: string
+        discountPercent: number
+    }
+    fomoUrgency?: {
+        enabled: boolean
+        timerMinutes: number
+    }
 }
 
 const defaultConfig: CampaignConfig = {
     rainyDay: { enabled: false, discount: 20 },
     happyHour: { enabled: false, startTime: "16:00", endTime: "19:00" },
-    flashSale: { enabled: false, prompt: "" }
+    flashSale: { enabled: false, prompt: "" },
+    dynamicCoupons: { enabled: false, apiEndpoint: "", discountPercent: 10 },
+    fomoUrgency: { enabled: false, timerMinutes: 15 }
 }
 
 interface CampaignManagerFormProps {
@@ -270,6 +281,99 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                         </div>
                     </CardContent>
                 </Card>
+
+                <Card className={campaignCardClass(config.dynamicCoupons?.enabled || false)}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Key className="h-5 w-5 text-zinc-800" />
+                            {t('dynamicCoupons') || "Dynamic Unique Coupons"}
+                        </CardTitle>
+                        <CardDescription>
+                            Generate single-use discount codes dynamically via API.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+                                <Label>Enable</Label>
+                                <Switch
+                                    checked={config.dynamicCoupons?.enabled || false}
+                                    onCheckedChange={(checked) => setConfig(prev => ({
+                                        ...prev,
+                                        dynamicCoupons: { ...(prev.dynamicCoupons || defaultConfig.dynamicCoupons!), enabled: checked }
+                                    }))}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs">Webhook / API Endpoint</Label>
+                                <Input
+                                    placeholder='https://api.store.com/generate-code'
+                                    value={config.dynamicCoupons?.apiEndpoint || ""}
+                                    onChange={(e) => setConfig(prev => ({
+                                        ...prev,
+                                        dynamicCoupons: { ...(prev.dynamicCoupons || defaultConfig.dynamicCoupons!), apiEndpoint: e.target.value }
+                                    }))}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                                <Label className="text-sm">Discount Amount</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        className="w-16 h-8 text-center"
+                                        value={config.dynamicCoupons?.discountPercent || 10}
+                                        onChange={(e) => setConfig(prev => ({
+                                            ...prev,
+                                            dynamicCoupons: { ...(prev.dynamicCoupons || defaultConfig.dynamicCoupons!), discountPercent: parseInt(e.target.value) || 0 }
+                                        }))}
+                                    />
+                                    <span>%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className={campaignCardClass(config.fomoUrgency?.enabled || false)}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Hourglass className="h-5 w-5 text-zinc-800" />
+                            {t('fomoUrgency') || "FOMO & Urgency Timers"}
+                        </CardTitle>
+                        <CardDescription>
+                            Create urgency by offering time-limited deals during chat.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
+                                <Label>Enable</Label>
+                                <Switch
+                                    checked={config.fomoUrgency?.enabled || false}
+                                    onCheckedChange={(checked) => setConfig(prev => ({
+                                        ...prev,
+                                        fomoUrgency: { ...(prev.fomoUrgency || defaultConfig.fomoUrgency!), enabled: checked }
+                                    }))}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm">Timer Duration</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        className="w-16 h-8 text-center"
+                                        value={config.fomoUrgency?.timerMinutes || 15}
+                                        onChange={(e) => setConfig(prev => ({
+                                            ...prev,
+                                            fomoUrgency: { ...(prev.fomoUrgency || defaultConfig.fomoUrgency!), timerMinutes: parseInt(e.target.value) || 15 }
+                                        }))}
+                                    />
+                                    <span className="text-sm text-muted-foreground">mins</span>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <Card className="border-zinc-200 bg-white shadow-sm">
@@ -283,7 +387,9 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
   "activeCampaigns": [
     ${config.rainyDay.enabled ? '"Rainy Day",' : ''}
     ${config.happyHour.enabled ? '"Happy Hour",' : ''}
-    ${config.flashSale.enabled ? '"Flash Sale"' : ''}
+    ${config.flashSale.enabled ? '"Flash Sale",' : ''}
+    ${config.dynamicCoupons?.enabled ? '"Dynamic Coupons",' : ''}
+    ${config.fomoUrgency?.enabled ? '"FOMO Urgency"' : ''}
   ],
   "instructions": "${config.rainyDay.enabled
                                 ? `Suggest warm drinks and offer ${config.rainyDay.discount}% discount on coffee combos.`
@@ -291,7 +397,11 @@ export function CampaignManagerForm({ targetUserId, isSuperAdmin = false }: Camp
                                     ? `Current time is within Happy Hour (${config.happyHour.startTime}-${config.happyHour.endTime}). Offer 2-for-1 on all beverages.`
                                     : config.flashSale.enabled && config.flashSale.prompt
                                         ? config.flashSale.prompt
-                                        : "No active campaigns. Stick to standard menu."
+                                        : config.dynamicCoupons?.enabled
+                                            ? `Generate a unique session discount code for ${config.dynamicCoupons.discountPercent}% off if user is ready to buy.`
+                                            : config.fomoUrgency?.enabled
+                                                ? `Create urgency by stating this offer expires in ${config.fomoUrgency.timerMinutes} minutes.`
+                                                : "No active campaigns. Stick to standard menu."
                             }"
 }`}
                     </div>

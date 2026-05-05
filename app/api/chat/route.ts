@@ -25,6 +25,7 @@ import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appoint
 import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
 import { normalizePhoneNumber, upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils";
 import { resolveConversationLanguage, toCopyLanguage } from "@/lib/conversation-language";
+import { processWaiterRequestsFromAi } from "@/lib/waiter-request-server";
 
 export const runtime = 'nodejs';
 
@@ -937,11 +938,19 @@ export async function POST(req: Request) {
 
                         // Save assistant response after stream completes using PRE-GENERATED ID
                         if (activeSessionId && fullContent) {
-                            await saveMessageToSession(activeSessionId, chatbotId, {
-                                role: "assistant",
-                                content: fullContent,
-                                id: assistantMessageId // <--- USE THIS ID
-                            }, userId);
+                                await saveMessageToSession(activeSessionId, chatbotId, {
+                                    role: "assistant",
+                                    content: fullContent,
+                                    id: assistantMessageId // <--- USE THIS ID
+                                }, userId);
+
+                                // Process Digital Waiter requests if any
+                                await processWaiterRequestsFromAi({
+                                    chatbotId,
+                                    sessionId: activeSessionId,
+                                    content: fullContent,
+                                    context: safeContext
+                                });
 
                             // Check if this is an appointment confirmation and save it
                             if (isAppointmentConfirmation(fullContent)) {
@@ -1147,6 +1156,14 @@ export async function POST(req: Request) {
                             guidedUi: assistantGuidedUi || undefined,
                         },
                     })
+
+                    // Process Digital Waiter requests if any
+                    await processWaiterRequestsFromAi({
+                        chatbotId,
+                        sessionId: activeSessionId,
+                        content: parsedGuided.content,
+                        context: safeContext
+                    });
                 }
 
                 return NextResponse.json({

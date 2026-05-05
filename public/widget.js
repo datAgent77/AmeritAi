@@ -1417,7 +1417,7 @@
         const limit = settings.aiSmartBubbles.maxPerSession;
         maxPerSession = (limit === 0) ? 9999 : (limit || 5);
       } else {
-        maxPerSession = settings.bubble.maxShowCount || 10;
+        maxPerSession = settings.bubble?.maxShowCount || 10;
       }
 
       if (shownCount >= maxPerSession) {
@@ -2187,7 +2187,7 @@
 
     // NEW: Execute trigger action based on actionType
     executeTriggerAction(triggerId, triggerSource) {
-      const actionType = this.settings.triggers[`${triggerId}ActionType`] || 'bubble';
+      const actionType = this.settings.triggers?.[`${triggerId}ActionType`] || 'bubble';
 
       if (actionType === 'openWidget') {
         this.openWidget();
@@ -2199,7 +2199,7 @@
     }
 
     setupTriggers() {
-      const triggers = this.settings.triggers;
+      const triggers = this.settings.triggers || {};
       console.log('Engagement: Setting up triggers', triggers);
 
       // 1. Schedule Time-based Messages (Sequential)
@@ -2207,7 +2207,7 @@
         this.messageQueue.forEach(msg => {
           if (msg.delay !== undefined) {
             const timer = setTimeout(() => {
-              if (this.hasShown && !this.settings.bubble.autoDismiss) return; // Don't interrupt if already shown and persistent
+              if (this.hasShown && !this.settings.bubble?.autoDismiss) return; // Don't interrupt if already shown and persistent
               console.log(`Engagement: Delay trigger fired for message: "${msg.text}"`);
               this.showBubble(msg);
             }, (msg.delay || 0) * 1000);

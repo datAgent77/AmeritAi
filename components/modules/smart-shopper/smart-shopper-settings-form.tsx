@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Heart, Bell, User, Loader2 } from "lucide-react"
+import { Heart, Bell, User, Loader2, Ruler, Fingerprint } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
@@ -18,6 +18,8 @@ interface SmartShopperConfig {
     visitorProfiling: boolean
     notificationEmail: string
     lowStockThreshold: number
+    sizeAndFitProfile?: boolean
+    customerIdentity?: boolean
 }
 
 const DEFAULT_CONFIG: SmartShopperConfig = {
@@ -27,6 +29,8 @@ const DEFAULT_CONFIG: SmartShopperConfig = {
     visitorProfiling: true,
     notificationEmail: "",
     lowStockThreshold: 5,
+    sizeAndFitProfile: false,
+    customerIdentity: false,
 }
 
 interface SmartShopperSettingsFormProps {
@@ -243,6 +247,60 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                             <Switch
                                 checked={config.visitorProfiling}
                                 onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, visitorProfiling: checked }))}
+                            />
+                        </div>
+                    </CardHeader>
+                </Card>
+
+                {/* Size & Fit Profile */}
+                <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-secondary/50 rounded-xl">
+                                    <Ruler className="h-5 w-5 text-foreground/80" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-xl font-semibold tracking-tight">
+                                        {language === "tr" ? "Beden ve Tercih Profili" : "Size & Fit Profile"}
+                                    </CardTitle>
+                                    <CardDescription className="mt-1">
+                                        {language === "tr"
+                                            ? "Ziyaretçinin beden/numara tercihlerini hatırlayarak uygun stoktaki ürünleri önerir."
+                                            : "Remembers visitor's size/fit preferences and recommends products in stock."}
+                                    </CardDescription>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={config.sizeAndFitProfile || false}
+                                onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, sizeAndFitProfile: checked }))}
+                            />
+                        </div>
+                    </CardHeader>
+                </Card>
+
+                {/* Customer Identity */}
+                <Card className="border shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-secondary/50 rounded-xl">
+                                    <Fingerprint className="h-5 w-5 text-foreground/80" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-xl font-semibold tracking-tight">
+                                        {language === "tr" ? "Müşteri Hesabı Eşleştirme" : "Customer Identity Matching"}
+                                    </CardTitle>
+                                    <CardDescription className="mt-1">
+                                        {language === "tr"
+                                            ? "İstek listesini ve profil verilerini, sitenize giriş yapan müşterinin hesabıyla senkronize eder."
+                                            : "Synchronizes wishlist and profile data with the logged-in customer account on your site."}
+                                    </CardDescription>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={config.customerIdentity || false}
+                                onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, customerIdentity: checked }))}
                             />
                         </div>
                     </CardHeader>

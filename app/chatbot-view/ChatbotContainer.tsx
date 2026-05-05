@@ -84,6 +84,7 @@ export default function ChatbotContainer() {
         dynamicData?: Record<string, any>
         siteSessionContext?: Record<string, any>
         crawlStatus?: Record<string, any>
+        metadata?: Record<string, any>
     } | null>(null)
     const [isGuestReady, setIsGuestReady] = useState(false)
     const [isClient, setIsClient] = useState(false)
@@ -323,9 +324,15 @@ export default function ChatbotContainer() {
         const url = searchParams?.get("url")
         const title = searchParams?.get("title")
         const desc = searchParams?.get("desc")
+        const masa = searchParams?.get("masa")
         const mobileSession = searchParams?.get("mobileSession")
         if (url) {
-            setPageContext({ url, title: title || "", desc: desc || "" })
+            setPageContext({ 
+                url, 
+                title: title || "", 
+                desc: desc || "",
+                metadata: masa ? { masa } : undefined
+            })
         }
 
         if (mobileSession && chatbotId) {
@@ -351,7 +358,11 @@ export default function ChatbotContainer() {
 
         const handleMessage = (event: MessageEvent) => {
             if (event.data.type === 'USEREX_CONTEXT_UPDATE') {
-                setPageContext(event.data.context)
+                const masa = searchParams?.get("masa")
+                setPageContext({
+                    ...event.data.context,
+                    metadata: masa ? { masa } : event.data.context?.metadata
+                })
             }
             if (event.data.type === 'USEREX_SITE_SESSION_CONTEXT_UPDATE') {
                 setPageContext((prev) => prev ? { ...prev, siteSessionContext: event.data.siteSessionContext } : prev)
@@ -1121,6 +1132,36 @@ export default function ChatbotContainer() {
         ? { height: '100%', top: 0 }
         : viewportStyle
 
+    // Automatically inject Digital Waiter Quick Actions if enabled
+    const enhancedQuickActions = { 
+        enabled: effectiveSettings.quickActions?.enabled || false,
+        buttons: [...(effectiveSettings.quickActions?.buttons || [])]
+    }
+    
+    if (effectiveSettings.enableDigitalWaiter) {
+        enhancedQuickActions.enabled = true
+        // Add them to the beginning of the list
+        enhancedQuickActions.buttons = [
+            {
+                id: "dw_call_staff",
+                moduleId: "custom",
+                label: language === "tr" ? "Garson Çağır" : "Call Staff",
+                triggerMessage: language === "tr" ? "Lütfen masama bir garson yönlendirin. [CALL_STAFF]" : "Please send a waiter to my table. [CALL_STAFF]",
+                visible: true,
+                order: -2
+            },
+            {
+                id: "dw_request_bill",
+                moduleId: "custom",
+                label: language === "tr" ? "Hesap İste" : "Request Bill",
+                triggerMessage: language === "tr" ? "Hesabı alabilir miyim? [REQUEST_BILL]" : "Can I get the bill please? [REQUEST_BILL]",
+                visible: true,
+                order: -1
+            },
+            ...enhancedQuickActions.buttons
+        ]
+    }
+
     return (
         <div
             style={{
@@ -1311,7 +1352,7 @@ export default function ChatbotContainer() {
                         conversationMode={conversationMode}
                         onConversationModeChange={handleConversationModeChange}
                         disabled={requiresKvkkConsent}
-                        quickActions={effectiveSettings.quickActions}
+                        quickActions={enhancedQuickActions}
                         onTriggerAction={handleTriggerAction}
                     />
                 </div>

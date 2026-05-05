@@ -951,11 +951,23 @@ VOICE-SAFE RULES:
                 // Digital Waiter / Restaurant & Cafe AI Logic
                 if (mod.id === 'digitalWaiter') {
                     const waiterConfig = chatbotData?.digitalWaiter;
+                    const isTR = langKey === 'tr';
+                    let waiterPrompt = "";
+
+                    // Fetch extended menu config
+                    let extendedMenuConfig: any = null;
+                    try {
+                        const menuSnap = await adminDb.collection("digital_waiter_menu").doc(chatbotId).get();
+                        if (menuSnap.exists) {
+                            extendedMenuConfig = menuSnap.data();
+                        }
+                    } catch (e) {
+                        console.error("AI Service: Failed to fetch digital_waiter_menu", e);
+                    }
+
                     if (waiterConfig) {
                         const serviceMode = waiterConfig.serviceMode || 'table_service';
-                        const isTR = langKey === 'tr';
-                        let waiterPrompt = "";
-
+                        
                         if (serviceMode === 'table_service') {
                             waiterPrompt = isTR
                                 ? `\n\n🍽️ RESTORAN SERVİS MODU AKTİF:\n` +
@@ -987,7 +999,6 @@ VOICE-SAFE RULES:
                                 `2. Help guests choose their items.\n` +
                                 `3. When they want to order: Say "Please place your order at the counter."\n` +
                                 `4. NEVER say "we will bring it to your table.\n`
-                            // corrected quote 
                         }
 
                         // GLOBAL SMART RULES (Direct Answer + Clarification)
@@ -1003,8 +1014,20 @@ VOICE-SAFE RULES:
                             `3. Never say "check link for details"; YOU must explain the details.\n` +
                             `4. For pairing/recommendation questions (e.g., "What goes with my coffee?"), if the product isn't specified, DO NOT GUESS. Ask "Which coffee are you drinking?" or "For which item?" to clarify.\n`;
 
-                        // Shared Menu Info
-                        if (waiterConfig.menuUrl) {
+                        // Menu Information from extended config
+                        if (extendedMenuConfig) {
+                            if (extendedMenuConfig.type === 'url' && extendedMenuConfig.url) {
+                                waiterPrompt += isTR ? `📄 Dijital Menü Linki: ${extendedMenuConfig.url}\n` : `📄 Digital Menu Link: ${extendedMenuConfig.url}\n`;
+                            } else if (extendedMenuConfig.type === 'pdf' && extendedMenuConfig.pdfUrl) {
+                                waiterPrompt += isTR ? `📄 PDF Menü Linki: ${extendedMenuConfig.pdfUrl}\n` : `📄 PDF Menu Link: ${extendedMenuConfig.pdfUrl}\n`;
+                            } else if (extendedMenuConfig.type === 'manual' && extendedMenuConfig.items?.length > 0) {
+                                waiterPrompt += isTR ? `\n📋 MENÜ ÜRÜNLERİ:\n` : `\n📋 MENU ITEMS:\n`;
+                                extendedMenuConfig.items.forEach((item: any) => {
+                                    waiterPrompt += `- ${item.name}: ${item.price} (${item.category})${item.description ? ` - ${item.description}` : ""}\n`;
+                                });
+                            }
+                        } else if (waiterConfig.menuUrl) {
+                            // Fallback to legacy menuUrl
                             waiterPrompt += isTR ? `📄 Dijital Menü Linki: ${waiterConfig.menuUrl}\n` : `📄 Digital Menu Link: ${waiterConfig.menuUrl}\n`;
                         }
 
@@ -1014,6 +1037,17 @@ VOICE-SAFE RULES:
                                 ? `🌟 ÖNERİLECEK İMZA ÜRÜNLER (Israrla tavsiye et): ${dishes}\n`
                                 : `🌟 SIGNATURE ITEMS TO RECOMMEND (Strongly suggest these): ${dishes}\n`;
                         }
+
+                        // Special Commands for Digital Waiter
+                        waiterPrompt += isTR
+                            ? `\n\n🛠️ ÖZEL KOMUTLAR:\n` +
+                              `- Garson çağırmak için cevabının içinde mutlaka \`[CALL_STAFF]\` etiketini kullan.\n` +
+                              `- Hesap istemek için cevabının içinde mutlaka \`[REQUEST_BILL]\` etiketini kullan.\n` +
+                              `Önemli: Bu etiketler sistem tarafından algılanıp personelin paneline bildirim olarak düşecektir.`
+                            : `\n\n🛠️ SPECIAL COMMANDS:\n` +
+                              `- To call a waiter, you MUST include the \`[CALL_STAFF]\` tag in your response.\n` +
+                              `- To request the bill, you MUST include the \`[REQUEST_BILL]\` tag in your response.\n` +
+                              `Important: These tags are intercepted by the system to notify the staff.`;
 
                         instruction += waiterPrompt;
                     }
@@ -1227,14 +1261,35 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
 
                     const result = await chat.sendMessage(lastMsgContent);
                     const resultText = result.response.text();
+                    
+                    const finalResult = isVoice
+                        ? sanitizeVoiceAssistantContent({
+                            content: resultText,
+                            language: resolvedLanguage,
+                            userText: lastMsgContent,
+                        })
+                        : resultText;
+
+                    if (finalResult.includes('[CALL_STAFF]') || finalResult.includes('[REQUEST_BILL]')) {
+                        try {
+                            const type = finalResult.includes('[CALL_STAFF]') ? 'call_staff' : 'request_bill';
+                            const masaNo = (userContext as any)?.metadata?.masa || 'Bilinmiyor';
+                            
+                            await adminDb.collection("waiter_requests").add({
+                                chatbotId,
+                                type,
+                                status: 'pending',
+                                masaNo,
+                                createdAt: new Date().toISOString(),
+                                note: finalResult.replace(/\[CALL_STAFF\]|\[REQUEST_BILL\]/g, '').trim().substring(0, 200)
+                            });
+                        } catch (e) {
+                            console.error("AI Service: Failed to save waiter request", e);
+                        }
+                    }
+
                     return {
-                        content: isVoice
-                            ? sanitizeVoiceAssistantContent({
-                                content: resultText,
-                                language: resolvedLanguage,
-                                userText: lastMsgContent,
-                            })
-                            : resultText,
+                        content: finalResult,
                         isStream: false,
                         context,
                         modelUsed: attempt.model,
@@ -1257,7 +1312,8 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
                     messages: fullMessages as any,
                 });
                 const rawResultContent = response.choices[0].message.content || "";
-                const resultContent = isVoice
+                // Post-processing for Digital Waiter commands
+                const finalResult = isVoice
                     ? sanitizeVoiceAssistantContent({
                         content: rawResultContent,
                         language: resolvedLanguage,
@@ -1265,7 +1321,26 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
                     })
                     : rawResultContent;
 
-                return { content: resultContent, isStream: false, context, modelUsed: attempt.model };
+                if (finalResult.includes('[CALL_STAFF]') || finalResult.includes('[REQUEST_BILL]')) {
+                    try {
+                        const type = finalResult.includes('[CALL_STAFF]') ? 'call_staff' : 'request_bill';
+                        // Extract table number from user context or metadata if possible
+                        const masaNo = (userContext as any)?.metadata?.masa || 'Bilinmiyor';
+                        
+                        await adminDb.collection("waiter_requests").add({
+                            chatbotId,
+                            type,
+                            status: 'pending',
+                            masaNo,
+                            createdAt: new Date().toISOString(),
+                            note: finalResult.replace(/\[CALL_STAFF\]|\[REQUEST_BILL\]/g, '').trim().substring(0, 200)
+                        });
+                    } catch (e) {
+                        console.error("AI Service: Failed to save waiter request", e);
+                    }
+                }
+
+                return { content: finalResult, isStream: false, context, modelUsed: attempt.model };
             } catch (providerError) {
                 lastProviderError = providerError;
                 console.error(`AI Service: Provider ${attempt.provider} failed.`, providerError);

@@ -370,6 +370,8 @@ export type OmniActionId =
     | "create_lead"
     | "check_business_hours"
     | "handoff_to_human"
+    | "call_staff"
+    | "request_bill"
 
 /** Prompt-level action hints used in AI system instructions. Not executable via executeOmniAction. */
 export type OmniPromptActionHint =
@@ -405,7 +407,7 @@ export interface OmniActionExecutionRequest {
 
 export interface OmniActionExecutionResult {
     actionId: OmniActionId
-    recordType: "callback" | "appointment" | "lead" | "business_hours"
+    recordType: "callback" | "appointment" | "lead" | "business_hours" | "waiter_request"
     record: unknown
     message?: string
 }

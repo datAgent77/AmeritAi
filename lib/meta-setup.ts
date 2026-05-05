@@ -599,6 +599,7 @@ export async function discoverWhatsAppBusinesses(accessToken: string) {
 }
 
 export async function discoverMetaAssets(accessToken: string): Promise<MetaDiscoveryResult> {
+    console.log("[MetaDiscovery] Starting discovery with token sample:", accessToken.slice(0, 10) + "...")
     const [pageDiscovery, whatsapp] = await Promise.all([
         discoverMetaPages(accessToken),
         discoverWhatsAppBusinesses(accessToken),
@@ -810,6 +811,7 @@ export async function exchangeMetaCodeForAccessToken(params: {
 
     const response = await fetch(tokenUrl, { cache: "no-store" })
     const payload = await response.json().catch(() => null)
+    console.log("[MetaOAuth] Token exchange response:", { ok: response.ok, status: response.status, payload })
     if (!response.ok || !payload?.access_token) {
         throw new Error(payload?.error?.message || "Meta OAuth token exchange basarisiz.")
     }
@@ -883,6 +885,7 @@ async function retryableFetch(label: string, requestFn: () => Promise<Response>)
 }
 
 export async function subscribeMetaAppToPage(pageId: string, accessToken: string) {
+    console.log("[MetaSubscribe] Subscribing app to page:", pageId)
     await retryableFetch("Page subscribed_apps", () =>
         fetch(`https://graph.facebook.com/${META_API_VERSION}/${encodeURIComponent(pageId)}/subscribed_apps`, {
             method: "POST",
@@ -894,7 +897,8 @@ export async function subscribeMetaAppToPage(pageId: string, accessToken: string
                 subscribed_fields: ["messages", "messaging_postbacks", "message_reads", "message_deliveries"],
             }),
         })
-    )
+    ).then(res => console.log("[MetaSubscribe] Page subscription success:", res))
+    .catch(err => console.error("[MetaSubscribe] Page subscription failed:", err))
 }
 
 export async function subscribeMetaAppToWhatsAppBusiness(businessAccountId: string, accessToken: string) {

@@ -85,7 +85,8 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         user,
         role,
         userData,
-        enableLeadCollection
+        enableLeadCollection,
+        enableDigitalWaiter
     } = useAuth()
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
@@ -237,7 +238,13 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     icon: BarChart3,
                     href: "/console/chatbot/analytics",
                     active: isActive("/console/chatbot/analytics")
-                }
+                },
+                ...(enableDigitalWaiter || role === 'SUPER_ADMIN' ? [{
+                    title: t('modules.digitalWaiter') || "Dijital Garson",
+                    icon: Utensils,
+                    href: "/console/digital-waiter",
+                    active: isActive("/console/digital-waiter")
+                }] : [])
             ]
         },
         ...(canViewTenantSettings ? [{
