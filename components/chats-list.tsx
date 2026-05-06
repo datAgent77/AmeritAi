@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
@@ -40,7 +41,9 @@ interface ChatsListProps {
 export function ChatsList({ targetUserId, embedded = false }: ChatsListProps) {
     const { user } = useAuth()
     const { t } = useLanguage()
+    const searchParams = useSearchParams()
     const userId = targetUserId || user?.uid
+    const linkedSessionId = searchParams?.get("sessionId")
 
     const [sessions, setSessions] = useState<ChatSession[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -89,6 +92,14 @@ export function ChatsList({ targetUserId, embedded = false }: ChatsListProps) {
 
         fetchSessions()
     }, [userId])
+
+    useEffect(() => {
+        if (!linkedSessionId || sessions.length === 0 || selectedSession?.id === linkedSessionId) return
+        const linkedSession = sessions.find((session) => session.id === linkedSessionId)
+        if (linkedSession) {
+            setSelectedSession(linkedSession)
+        }
+    }, [linkedSessionId, selectedSession?.id, sessions])
 
     if (isLoading) {
         return (

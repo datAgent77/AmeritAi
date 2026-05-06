@@ -1,6 +1,5 @@
 import { Mic, MicOff, Loader2, Volume2, PhoneOff } from "lucide-react"
 import { ChatbotSettings } from "@/types/chatbot"
-import { ConversationModeSwitch } from "./ConversationModeSwitch"
 import type { VoiceStatus } from "../hooks/useVoiceInput"
 
 interface VoiceOverlayProps {
@@ -10,7 +9,6 @@ interface VoiceOverlayProps {
     isMuted: boolean
     settings: ChatbotSettings
     language: string
-    onConversationModeChange: (mode: "text" | "voice") => void
     onToggleMute: () => void
     onEndCall: () => void
     t: (key: string) => string
@@ -23,7 +21,6 @@ export function VoiceOverlay({
     isMuted,
     settings,
     language,
-    onConversationModeChange,
     onToggleMute,
     onEndCall,
     t,
@@ -31,8 +28,6 @@ export function VoiceOverlay({
     if (!isOpen) return null
 
     const accentColor = settings.headerBackgroundColor || settings.brandColor || "#111827"
-    const textLabel = language === "tr" ? "Yazı" : "Text"
-    const voiceLabel = language === "tr" ? "Ses" : "Voice"
     const muteLabel = isMuted
         ? (language === "tr" ? "Mikrofonu Aç" : "Unmute")
         : (language === "tr" ? "Sessize Al" : "Mute")
@@ -42,6 +37,7 @@ export function VoiceOverlay({
         if (isMuted) return language === "tr" ? "Mikrofon susturuldu" : "Microphone muted"
         if (voiceStatus === "listening") return t("listening")
         if (voiceStatus === "processing") return t("processing")
+        if (voiceStatus === "thinking") return language === "tr" ? "Yanıt hazırlanıyor..." : "Preparing response..."
         if (voiceStatus === "speaking") return t("answering")
         return t("voiceReady")
     })()
@@ -54,6 +50,11 @@ export function VoiceOverlay({
         }
         if (voiceStatus === "listening") return t("askQuestion")
         if (voiceStatus === "processing") return t("processingDesc")
+        if (voiceStatus === "thinking") {
+            return language === "tr"
+                ? "Sorunuz alındı. Asistan yanıtı hazırlanıyor."
+                : "Your question was received. The assistant is preparing a response."
+        }
         if (voiceStatus === "speaking") return t("speakingAnswer")
         return language === "tr" ? "Tarayıcınız üzerinden canlı sesli görüşme hazır." : "Your browser voice call is ready."
     })()
@@ -77,15 +78,6 @@ export function VoiceOverlay({
             <div className="absolute inset-0 dark:block hidden bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.06)_0%,_transparent_40%),linear-gradient(180deg,_rgba(9,9,11,0.98)_0%,_rgba(9,9,11,1)_100%)]" />
 
             <div className="relative flex h-full flex-col px-5 pb-6 pt-5">
-                <div className="flex justify-center">
-                    <ConversationModeSwitch
-                        value="voice"
-                        onChange={onConversationModeChange}
-                        textLabel={textLabel}
-                        voiceLabel={voiceLabel}
-                    />
-                </div>
-
                 <div className="flex flex-1 flex-col items-center justify-center text-center">
                     <div className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-zinc-500">
                         {settings.companyName}
@@ -115,7 +107,7 @@ export function VoiceOverlay({
                             <div className="absolute inset-[18px] rounded-full border border-white/20" />
                             {isMuted ? (
                                 <MicOff className="h-14 w-14 text-white" />
-                            ) : voiceStatus === "processing" ? (
+                            ) : voiceStatus === "processing" || voiceStatus === "thinking" ? (
                                 <Loader2 className="h-14 w-14 animate-spin text-white" />
                             ) : voiceStatus === "speaking" ? (
                                 <Volume2 className="h-14 w-14 text-white" />

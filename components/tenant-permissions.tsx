@@ -147,6 +147,7 @@ export function TenantPermissions({ tenant, userId, onUpdate }: TenantPermission
                 }).catch(e => console.log("Chatbot doc might not exist yet:", e))
             } else if (key === 'enableVoiceAssistant') {
                 await updateDoc(chatbotRef, {
+                    enableVoiceAssistant: newValue,
                     enableVoiceSupport: newValue
                 }).catch(e => console.log("Chatbot doc might not exist yet:", e))
             }

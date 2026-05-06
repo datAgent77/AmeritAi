@@ -4683,41 +4683,9 @@
     }
     */
 
-    // --- Triggers ---
-    if (isAvailable && usesLauncher) {
-      // Auto Open
-      if (settings.autoOpenDelay > 0) {
-        setTimeout(() => {
-          if (!isOpen) toggleWidget(true);
-        }, settings.autoOpenDelay * 1000);
-      }
-
-      // Exit Intent
-      if (settings.openOnExitIntent && window.innerWidth >= 1024) { // Desktop only
-        const onMouseLeave = (e) => {
-          if (e.clientY <= 0) {
-            if (!isOpen) toggleWidget(true);
-            document.removeEventListener('mouseleave', onMouseLeave); // Trigger once
-          }
-        };
-        document.addEventListener('mouseleave', onMouseLeave);
-      }
-
-      // Scroll
-      if (settings.openOnScroll > 0) {
-        const onScroll = () => {
-          const scrollTop = window.scrollY;
-          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-          const scrollPercent = (scrollTop / docHeight) * 100;
-
-          if (scrollPercent >= settings.openOnScroll) {
-            if (!isOpen) toggleWidget(true);
-            window.removeEventListener('scroll', onScroll); // Trigger once
-          }
-        };
-        window.addEventListener('scroll', onScroll);
-      }
-    }
+    // Widget auto-open behavior is owned by the Proactive Engagement module.
+    // Legacy root settings (autoOpenDelay/openOnExitIntent/openOnScroll) are ignored here
+    // to prevent Widget Settings from becoming a second control surface.
   }
 
 

@@ -27,4 +27,14 @@ describe("modules registry", () => {
             defaultEnabledBySector: [],
         })
     })
+
+    test("registers widget voice as an active configurable module", () => {
+        expect(getModule("voiceAssistant")).toMatchObject({
+            id: "voiceAssistant",
+            legacyFirestoreField: "enableVoiceAssistant",
+            isCore: false,
+            isPremium: true,
+            status: "ready",
+        })
+    })
 })

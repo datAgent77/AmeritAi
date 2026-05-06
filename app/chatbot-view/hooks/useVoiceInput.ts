@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { ChatbotSettings } from "@/types/chatbot"
 import {
     pickSpeechSynthesisVoice,
@@ -7,14 +7,15 @@ import {
     toVoiceLocale,
 } from "@/lib/voice-runtime"
 
-export type VoiceStatus = "idle" | "listening" | "processing" | "speaking"
+export type VoiceStatus = "idle" | "listening" | "processing" | "thinking" | "speaking"
 
-const SILENCE_THRESHOLD_MULTIPLIER = 1.6
-const MIN_SILENCE_THRESHOLD = 15
-const SILENCE_DURATION = 1200
-const MAX_RECORDING_DURATION = 18000
-const CALIBRATION_DURATION = 350
-const VAD_CHECK_INTERVAL = 80
+const DEFAULT_SILENCE_THRESHOLD_MULTIPLIER = 1.35
+const DEFAULT_MIN_SILENCE_THRESHOLD = 7
+const DEFAULT_SILENCE_DURATION = 750
+const DEFAULT_MAX_RECORDING_DURATION = 12000
+const DEFAULT_CALIBRATION_DURATION = 180
+const DEFAULT_VAD_CHECK_INTERVAL = 50
+const DEFAULT_RECORDER_TIMESLICE = 100
 
 type PlaySpeechOptions = {
     speakingKey: string
@@ -41,6 +42,20 @@ export function useVoiceInput(
     const [isVoiceSessionActive, setIsVoiceSessionActive] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
     const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle")
+    const voiceRuntimeConfig = useMemo(() => {
+        const sensitivity = settings.voiceInputSensitivity || "normal"
+        const lowLatency = settings.voiceLowLatencyMode !== false
+
+        return {
+            silenceThresholdMultiplier: sensitivity === "high" ? 1.18 : sensitivity === "low" ? 1.65 : DEFAULT_SILENCE_THRESHOLD_MULTIPLIER,
+            minSilenceThreshold: sensitivity === "high" ? 5 : sensitivity === "low" ? 11 : DEFAULT_MIN_SILENCE_THRESHOLD,
+            silenceDuration: lowLatency ? (sensitivity === "high" ? 560 : 650) : DEFAULT_SILENCE_DURATION,
+            maxRecordingDuration: lowLatency ? 10000 : DEFAULT_MAX_RECORDING_DURATION,
+            calibrationDuration: lowLatency ? 120 : DEFAULT_CALIBRATION_DURATION,
+            vadCheckInterval: lowLatency ? 40 : DEFAULT_VAD_CHECK_INTERVAL,
+            recorderTimeslice: lowLatency ? 80 : DEFAULT_RECORDER_TIMESLICE,
+        }
+    }, [settings.voiceInputSensitivity, settings.voiceLowLatencyMode])
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const audioChunksRef = useRef<Blob[]>([])
@@ -309,6 +324,17 @@ export function useVoiceInput(
         return Math.sqrt(sumSquares / dataArray.length) * 100
     }, [])
 
+    const resolveNoiseThreshold = useCallback((samples: number[]) => {
+        if (samples.length === 0) return voiceRuntimeConfig.minSilenceThreshold
+
+        const sortedSamples = [...samples].sort((a, b) => a - b)
+        const quietSampleCount = Math.max(1, Math.ceil(sortedSamples.length * 0.35))
+        const quietSamples = sortedSamples.slice(0, quietSampleCount)
+        const quietAverage = quietSamples.reduce((sum, current) => sum + current, 0) / quietSamples.length
+
+        return Math.max(quietAverage * voiceRuntimeConfig.silenceThresholdMultiplier, voiceRuntimeConfig.minSilenceThreshold)
+    }, [voiceRuntimeConfig.minSilenceThreshold, voiceRuntimeConfig.silenceThresholdMultiplier])
+
     const startRecording = useCallback(async () => {
         if (!isVoiceSessionActiveRef.current || isMutedRef.current || isListeningRef.current || isSpeakingRef.current) {
             return
@@ -405,7 +431,7 @@ export function useVoiceInput(
                     }
 
                     setLocalInput(text.trim())
-                    setVoiceStatus("processing")
+                    setVoiceStatus("thinking")
 
                     const responseText = await sendMessage(text.trim(), false, undefined, null, null, true)
                     if (!responseText) {
@@ -426,16 +452,17 @@ export function useVoiceInput(
                 }
             }
 
-            recorder.start(250)
+            recorder.start(voiceRuntimeConfig.recorderTimeslice)
             setIsListening(true)
             setVoiceStatus("listening")
+            setLocalInput(language === "tr" ? "Sizi dinliyorum..." : "Listening...")
 
             hasSpeechStartedRef.current = false
             silenceStartRef.current = 0
             isStoppingRef.current = false
 
             const calibrationSamples: number[] = []
-            const calibrationEnd = Date.now() + CALIBRATION_DURATION
+            const calibrationEnd = Date.now() + voiceRuntimeConfig.calibrationDuration
 
             vadTimerRef.current = setInterval(() => {
                 if (isStoppingRef.current) return
@@ -449,11 +476,10 @@ export function useVoiceInput(
                 }
 
                 if (calibrationSamples.length > 0 && baselineNoiseRef.current === 0) {
-                    const avgNoise = calibrationSamples.reduce((sum, current) => sum + current, 0) / calibrationSamples.length
-                    baselineNoiseRef.current = Math.max(avgNoise * SILENCE_THRESHOLD_MULTIPLIER, MIN_SILENCE_THRESHOLD)
+                    baselineNoiseRef.current = resolveNoiseThreshold(calibrationSamples)
                 }
 
-                const threshold = baselineNoiseRef.current || MIN_SILENCE_THRESHOLD
+                const threshold = baselineNoiseRef.current || voiceRuntimeConfig.minSilenceThreshold
 
                 if (level > threshold) {
                     if (!hasSpeechStartedRef.current) {
@@ -464,13 +490,13 @@ export function useVoiceInput(
                 } else if (hasSpeechStartedRef.current) {
                     if (silenceStartRef.current === 0) {
                         silenceStartRef.current = now
-                    } else if (now - silenceStartRef.current > SILENCE_DURATION) {
+                    } else if (now - silenceStartRef.current > voiceRuntimeConfig.silenceDuration) {
                         clearRecordingTimers()
                         isStoppingRef.current = true
                         recorder.stop()
                     }
                 }
-            }, VAD_CHECK_INTERVAL)
+            }, voiceRuntimeConfig.vadCheckInterval)
 
             maxTimerRef.current = setTimeout(() => {
                 if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -478,14 +504,14 @@ export function useVoiceInput(
                     isStoppingRef.current = true
                     mediaRecorderRef.current.stop()
                 }
-            }, MAX_RECORDING_DURATION)
+            }, voiceRuntimeConfig.maxRecordingDuration)
         } catch (error) {
             console.error("[Voice] Microphone error:", error)
             setIsVoiceSessionActive(false)
             setVoiceStatus("idle")
             setLocalInput(language === "tr" ? "Mikrofon erişimi sağlanamadı." : "Could not access microphone.")
         }
-    }, [clearRecordingTimers, clearResumeListeningTimer, getAudioLevel, language, playSpeechText, sendMessage, setLocalInput, teardownInputResources, transcribeAudio])
+    }, [clearRecordingTimers, clearResumeListeningTimer, getAudioLevel, language, playSpeechText, resolveNoiseThreshold, sendMessage, setLocalInput, teardownInputResources, transcribeAudio, voiceRuntimeConfig])
 
     useEffect(() => {
         startRecordingRef.current = startRecording

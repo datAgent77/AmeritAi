@@ -585,7 +585,7 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 49,
-        status: 'coming_soon', // TEMPORARILY DISABLED - re-enable when production-ready
+        status: 'ready',
         supportedSectors: [],
         defaultEnabledBySector: [], // Cleared - no sector gets this by default
         showOnLandingPage: false, // Hidden from landing page
@@ -1220,8 +1220,9 @@ export const ORDERED_MODULES: ModuleDefinition[] = [
     MODULES_REGISTRY.digitalWaiter,     // Digital Waiter (Ready)
     MODULES_REGISTRY.dynamicContext,    // Dynamic Data Context (Ready)
 
+    MODULES_REGISTRY.voiceAssistant,    // Widget Voice (Ready)
+
     // --- 2. COMING SOON MODULES ---
-    MODULES_REGISTRY.voiceAssistant,    // Voice & Appointments (Coming Soon - temporarily disabled)
     MODULES_REGISTRY.appointments,      // Coming Soon
     // MODULES_REGISTRY.emailMarketing,    // Coming Soon - Not yet implemented
     // MODULES_REGISTRY.reviewManagement,  // Coming Soon - Removed

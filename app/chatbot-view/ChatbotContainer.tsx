@@ -380,11 +380,25 @@ export default function ChatbotContainer() {
 
     // 5. Circular Dependency Resolution (Voice <-> Chat)
     // We create a mutable ref for sendMessage so Voice hook can use it before Chat hook is fully initialized
-    const sendMessageRef = useRef<((text: string, speakResponse?: boolean, visualContext?: string) => Promise<string>) | null>(null)
+    const sendMessageRef = useRef<((
+        text: string,
+        speakResponse?: boolean,
+        visualContext?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null,
+        isVoiceTurn?: boolean
+    ) => Promise<string>) | null>(null)
 
-    const proxySendMessage = async (text: string, speakResponse?: boolean, visualContext?: string) => {
+    const proxySendMessage = async (
+        text: string,
+        speakResponse?: boolean,
+        visualContext?: string,
+        guidedEvent?: GuidedSkillClientEvent | null,
+        mediaPayload?: UserMessageMediaPayload | null,
+        isVoiceTurn?: boolean
+    ) => {
         if (sendMessageRef.current) {
-            return sendMessageRef.current(text, speakResponse, visualContext)
+            return sendMessageRef.current(text, speakResponse, visualContext, guidedEvent, mediaPayload, isVoiceTurn)
         }
         return ""
     }
@@ -472,14 +486,15 @@ export default function ChatbotContainer() {
         speakResponse?: boolean,
         visualCtx?: string,
         guidedEvent?: GuidedSkillClientEvent | null,
-        mediaPayload?: UserMessageMediaPayload | null
+        mediaPayload?: UserMessageMediaPayload | null,
+        isVoiceTurn?: boolean
     ) => {
         if (requiresKvkkConsent) {
             // KVKK consent logic is handled via inline message in MessageList
             return ""
         }
 
-        return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload)
+        return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload, isVoiceTurn)
     }, [requiresKvkkConsent, sendMessage])
 
     const guardedSendGuidedMessage = useCallback(async (guidedEvent: GuidedSkillClientEvent) => {
@@ -493,7 +508,9 @@ export default function ChatbotContainer() {
 
     // Assign real sendMessage to ref
     useEffect(() => {
-        sendMessageRef.current = (text, speakResponse, visualCtx) => guardedSendMessage(text, speakResponse, visualCtx)
+        sendMessageRef.current = (text, speakResponse, visualCtx, guidedEvent, mediaPayload, isVoiceTurn) => (
+            guardedSendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload, isVoiceTurn)
+        )
     }, [guardedSendMessage])
 
     useEffect(() => {
@@ -1431,7 +1448,6 @@ export default function ChatbotContainer() {
                 isMuted={isMuted}
                 settings={effectiveSettings}
                 language={language}
-                onConversationModeChange={handleConversationModeChange}
                 onToggleMute={toggleMute}
                 onEndCall={() => handleConversationModeChange("text")}
                 t={t}

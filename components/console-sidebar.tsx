@@ -91,6 +91,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     const { isMobile } = useSidebar()
     const [showPricing, setShowPricing] = useState(false)
     const [isHumanHandoffEnabled, setIsHumanHandoffEnabled] = useState(false)
+    const [isLeadCollectionEnabled, setIsLeadCollectionEnabled] = useState(false)
     const isAgentUser = role === "AGENT"
     const isAgenciesAdminRoute =
         normalizedPathname === "/admin/agencies" ||
@@ -100,7 +101,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
         normalizedPathname.startsWith("/admin/tenant/")
 
     useEffect(() => {
-        const loadHumanHandoffStatus = async () => {
+        const loadTenantModuleStatus = async () => {
             if (!user) return
             try {
                 const assignedTenantId = typeof userData?.agentTenantId === "string" ? userData.agentTenantId.trim() : ""
@@ -113,12 +114,13 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 if (!response.ok) return
                 const data = await response.json()
                 setIsHumanHandoffEnabled(data.enableHumanHandoff === true)
+                setIsLeadCollectionEnabled(data.enableLeadCollection === true || data.enableLeadFinder === true || data.productEntitlements?.leadFinder === true)
             } catch (error) {
-                console.error("Failed to load human handoff status:", error)
+                console.error("Failed to load tenant module status:", error)
             }
         }
 
-        loadHumanHandoffStatus()
+        loadTenantModuleStatus()
     }, [targetUserId, user, userData, isAgentUser])
 
     // Build link based on whether we're in super admin mode (targetUserId provided)
@@ -168,6 +170,13 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     }
     const isAgentsActive = isActive("/console/agents")
     const isSkillsActive = isActive("/console/modules") && !isAgentsActive
+    const canShowLeadCollection =
+        enableLeadCollection ||
+        isLeadCollectionEnabled ||
+        userData?.enableLeadCollection === true ||
+        userData?.enableLeadFinder === true ||
+        userData?.productEntitlements?.leadFinder === true ||
+        role === 'SUPER_ADMIN'
 
     const tenantGroups = [
 // ... unchanged ...
@@ -227,7 +236,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     href: "/console/appointments",
                     active: isActive("/console/appointments")
                 }] : []),
-                ...(enableLeadCollection || role === 'SUPER_ADMIN' ? [{
+                ...(canShowLeadCollection ? [{
                     title: t('leads') || "Müşteri Adayları",
                     icon: Users,
                     href: "/console/chatbot/leads",

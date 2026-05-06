@@ -840,6 +840,27 @@ REMEMBER: Always think before responding. Quality > Speed.`;
 
         // Voice Mode
         if (isVoice) {
+            const rawVoiceResponseLength = chatbotData?.voiceResponseLength;
+            const rawVoiceProfile = chatbotData?.voiceProfile;
+            const voiceResponseLength = ["short", "balanced", "detailed"].includes(rawVoiceResponseLength)
+                ? rawVoiceResponseLength
+                : "short";
+            const voiceProfile = ["support", "sales", "appointments", "restaurant"].includes(rawVoiceProfile)
+                ? rawVoiceProfile
+                : "support";
+            const responseLengthRule = voiceResponseLength === "detailed"
+                ? "Give enough detail to be useful, but still speak in short paragraphs."
+                : voiceResponseLength === "balanced"
+                    ? "Use 2-4 short sentences."
+                    : "Use 1-2 short sentences.";
+            const profileRule = voiceProfile === "sales"
+                ? "Voice profile: sales. Qualify needs briefly, explain value clearly, and avoid pressure."
+                : voiceProfile === "appointments"
+                    ? "Voice profile: appointments. Guide the user toward a clear day, time, name, and phone confirmation."
+                    : voiceProfile === "restaurant"
+                        ? "Voice profile: restaurant. Be practical about menu, order, table, and service requests."
+                        : "Voice profile: support. Diagnose the need, answer directly, and offer the next simple step.";
+
             systemPrompt += `\n# VOICE MODE
 You are answering inside a live browser voice conversation.
 
@@ -852,7 +873,9 @@ VOICE-SAFE RULES:
 6. For appointments, guide the user conversationally: first preferred day/time, then name, then phone if needed, then confirm back clearly.
 7. Avoid bullet lists, markdown structure, and long disclaimers. Speak plainly.
 8. If the user asks about an action you can do, explain the next spoken step instead of referring to chat UI.
-9. When repeating dates, times, names, phone numbers, or codes, say them clearly and separately.`;
+9. When repeating dates, times, names, phone numbers, or codes, say them clearly and separately.
+10. ${responseLengthRule}
+11. ${profileRule}`;
         }
 
         // Visual Analysis Context (from image diagnosis)
@@ -1182,9 +1205,32 @@ When intents overlap, priority order: Appointments > Human Handoff > Lead Collec
         }
 
         if (isVoice) {
+            const rawVoiceResponseLength = chatbotData?.voiceResponseLength;
+            const rawVoiceProfile = chatbotData?.voiceProfile;
+            const voiceResponseLength = ["short", "balanced", "detailed"].includes(rawVoiceResponseLength)
+                ? rawVoiceResponseLength
+                : "short";
+            const voiceProfile = ["support", "sales", "appointments", "restaurant"].includes(rawVoiceProfile)
+                ? rawVoiceProfile
+                : "support";
+            const responseLengthRule = voiceResponseLength === "detailed"
+                ? "Give enough detail to be useful, but still speak in short paragraphs."
+                : voiceResponseLength === "balanced"
+                    ? "Use 2-4 short sentences."
+                    : "Use 1-2 short sentences.";
+            const profileRule = voiceProfile === "sales"
+                ? "Voice profile: sales. Qualify needs briefly, explain value clearly, and avoid pressure."
+                : voiceProfile === "appointments"
+                    ? "Voice profile: appointments. Guide the user toward a clear day, time, name, and phone confirmation."
+                    : voiceProfile === "restaurant"
+                        ? "Voice profile: restaurant. Be practical about menu, order, table, and service requests."
+                        : "Voice profile: support. Diagnose the need, answer directly, and offer the next simple step.";
+
             systemPrompt += `\n\n# FINAL VOICE OVERRIDE
 This is a voice turn. If any previous instruction suggests opening a form, showing a button, or asking the user to fill something in on screen, OVERRIDE it.
-In voice mode you must continue the flow verbally and ask only the next missing piece of information.`;
+In voice mode you must continue the flow verbally and ask only the next missing piece of information.
+${responseLengthRule}
+${profileRule}`;
         }
 
         // 4. Generate Response based on Provider

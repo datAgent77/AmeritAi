@@ -128,6 +128,10 @@ export interface ChatbotSettings {
     businessHoursEnd?: string;
     voiceProvider: string;
     elevenLabsVoiceId: string;
+    voiceLowLatencyMode?: boolean;
+    voiceInputSensitivity?: "low" | "normal" | "high";
+    voiceResponseLength?: "short" | "balanced" | "detailed";
+    voiceProfile?: "support" | "sales" | "appointments" | "restaurant";
     theme: string;
     enableIndustryGreeting: boolean;
     initialLanguage: "auto" | "en" | "tr" | "de" | "es";

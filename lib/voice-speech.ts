@@ -8,6 +8,8 @@ import {
 } from "@/lib/voice-runtime";
 
 const DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const ELEVENLABS_FAILURE_COOLDOWN_MS = 10 * 60 * 1000;
+const elevenLabsUnavailableUntil = new Map<string, number>();
 
 type VoiceProvider = "elevenlabs" | "openai" | "klassifier";
 
@@ -26,6 +28,7 @@ type SynthesizeSpeechParams = {
     preferredVoice?: string | null;
     provider?: string | null;
     language?: string | null;
+    disableFallback?: boolean;
 };
 
 function normalizeVoiceProvider(value?: string | null): VoiceProvider {
@@ -33,6 +36,28 @@ function normalizeVoiceProvider(value?: string | null): VoiceProvider {
     if (normalized === "elevenlabs") return "elevenlabs";
     if (normalized === "klassifier") return "klassifier";
     return "openai";
+}
+
+function getElevenLabsCacheKey(apiKey?: string | null, voiceId?: string | null) {
+    const keyTail = String(apiKey || "").trim().slice(-8) || "env";
+    const actualVoiceId = String(voiceId || DEFAULT_ELEVENLABS_VOICE_ID).trim() || DEFAULT_ELEVENLABS_VOICE_ID;
+    return `${keyTail}:${actualVoiceId}`;
+}
+
+function isElevenLabsCoolingDown(apiKey?: string | null, voiceId?: string | null) {
+    const unavailableUntil = elevenLabsUnavailableUntil.get(getElevenLabsCacheKey(apiKey, voiceId)) || 0;
+    return unavailableUntil > Date.now();
+}
+
+function markElevenLabsCoolingDown(apiKey?: string | null, voiceId?: string | null) {
+    elevenLabsUnavailableUntil.set(
+        getElevenLabsCacheKey(apiKey, voiceId),
+        Date.now() + ELEVENLABS_FAILURE_COOLDOWN_MS
+    );
+}
+
+function isElevenLabsPlanError(error: Error) {
+    return /paid_plan_required|payment_required/i.test(error.message);
 }
 
 async function readTenantVoiceConfig(chatbotId?: string | null): Promise<TenantVoiceConfig> {
@@ -132,12 +157,14 @@ export async function synthesizeSpeech(params: SynthesizeSpeechParams): Promise<
     const requestedProvider = normalizeVoiceProvider(params.provider || tenantConfig.voiceProvider);
     const preferredVoice = params.preferredVoice || tenantConfig.preferredVoice;
     const elevenLabsVoiceId = params.voiceId || tenantConfig.elevenLabsVoiceId;
-    const elevenLabsApiKey = tenantConfig.elevenLabsApiKey;
+    const elevenLabsApiKey = tenantConfig.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY;
+    const canTryElevenLabs = !isElevenLabsCoolingDown(elevenLabsApiKey, elevenLabsVoiceId);
 
-    const providers: VoiceProvider[] =
-        requestedProvider === "elevenlabs"
-            ? ["elevenlabs", "openai"]
-            : ["openai", "elevenlabs"];
+    const providers: VoiceProvider[] = params.disableFallback
+        ? [requestedProvider]
+        : requestedProvider === "elevenlabs"
+            ? (canTryElevenLabs ? ["elevenlabs", "openai"] : ["openai"])
+            : (canTryElevenLabs ? ["openai", "elevenlabs"] : ["openai"]);
 
     let lastError: Error | null = null;
 
@@ -159,6 +186,9 @@ export async function synthesizeSpeech(params: SynthesizeSpeechParams): Promise<
             });
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));
+            if (provider === "elevenlabs" && isElevenLabsPlanError(lastError)) {
+                markElevenLabsCoolingDown(elevenLabsApiKey, elevenLabsVoiceId);
+            }
             console.error(`[Voice] ${provider} synthesis failed:`, lastError);
         }
     }

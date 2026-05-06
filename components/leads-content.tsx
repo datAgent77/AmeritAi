@@ -1,12 +1,13 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2, Download, User, Mail, Phone, ChevronDown, ChevronUp, MessageSquare, X, Bot } from "lucide-react"
+import { Loader2, Download, User, Mail, Phone, ChevronDown, ChevronUp, MessageSquare, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import * as XLSX from 'xlsx';
@@ -37,6 +38,16 @@ interface LeadsContentProps {
 
 export function buildLeadChatHref(sessionId?: string | null) {
     return sessionId ? `/console/chatbot/chats?sessionId=${encodeURIComponent(sessionId)}` : null
+}
+
+export function buildTenantLeadChatHref(targetUserId: string | undefined, sessionId?: string | null) {
+    if (!sessionId) return null
+    if (!targetUserId) return buildLeadChatHref(sessionId)
+    return `/admin/tenant/${encodeURIComponent(targetUserId)}/chatbot/chats?sessionId=${encodeURIComponent(sessionId)}`
+}
+
+export function getLeadSessionId(lead: Pick<Lead, "sessionId" | "sourceSessionId">) {
+    return lead.sessionId || lead.sourceSessionId || null
 }
 
 export function leadHasExpandableDetails(lead: Lead) {
@@ -112,12 +123,13 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     }
 
     const openConversation = useCallback(async (lead: Lead) => {
-        if (!lead.sessionId) return
+        const sessionId = getLeadSessionId(lead)
+        if (!sessionId) return
         setConversationLead(lead)
         setConversationMessages([])
         setIsLoadingConversation(true)
         try {
-            const res = await fetch(`/api/chat-sessions?chatbotId=${effectiveUserId}&sessionId=${lead.sessionId}`)
+            const res = await fetch(`/api/chat-sessions?chatbotId=${effectiveUserId}&sessionId=${sessionId}`)
             if (res.ok) {
                 const data = await res.json()
                 setConversationMessages(data.messages || [])
@@ -132,7 +144,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
     useEffect(() => {
         const matchedLead =
             leads.find((lead) => lead.id === highlightedLeadId) ||
-            leads.find((lead) => highlightedSessionId && lead.sessionId === highlightedSessionId) ||
+            leads.find((lead) => highlightedSessionId && getLeadSessionId(lead) === highlightedSessionId) ||
             null
 
         if (!matchedLead) return
@@ -151,7 +163,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
             })
         }
 
-        if (matchedLead.sessionId && autoOpenedLeadRef.current !== matchedLead.id) {
+        if (getLeadSessionId(matchedLead) && autoOpenedLeadRef.current !== matchedLead.id) {
             autoOpenedLeadRef.current = matchedLead.id
             void openConversation(matchedLead)
         }
@@ -233,13 +245,19 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {leads.map((lead) => (
+                                {leads.map((lead) => {
+                                    const linkedSessionId = getLeadSessionId(lead)
+                                    const chatHref = targetUserId
+                                        ? buildTenantLeadChatHref(targetUserId, linkedSessionId)
+                                        : buildLeadChatHref(linkedSessionId)
+
+                                    return (
                                     <React.Fragment key={lead.id}>
                                         <TableRow
                                             id={`lead-row-${lead.id}`}
                                             className={cn(
                                                 "cursor-pointer hover:bg-muted/50",
-                                                (highlightedLeadId === lead.id || (highlightedSessionId && lead.sessionId === highlightedSessionId)) && "bg-primary/5"
+                                                (highlightedLeadId === lead.id || (highlightedSessionId && linkedSessionId === highlightedSessionId)) && "bg-primary/5"
                                             )}
                                             onClick={() => lead.customFields && Object.keys(lead.customFields).length > 0 && toggleRowExpansion(lead.id)}
                                         >
@@ -275,20 +293,19 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                                 {new Date(lead.createdAt).toLocaleString()}
                                             </TableCell>
                                             <TableCell onClick={(e) => e.stopPropagation()}>
-                                                {lead.sessionId && (
-                                                    <button
-                                                        onClick={() => openConversation(lead)}
-                                                        className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                                                        title="Konuşmayı Görüntüle"
-                                                    >
-                                                        <MessageSquare className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                                                    </button>
+                                                {chatHref && (
+                                                    <Button asChild variant="ghost" size="sm" className="h-8 gap-1.5 px-2">
+                                                        <Link href={chatHref} title="Sohbete git">
+                                                            <MessageSquare className="h-4 w-4" />
+                                                            <span className="hidden xl:inline">Sohbet</span>
+                                                        </Link>
+                                                    </Button>
                                                 )}
                                             </TableCell>
                                         </TableRow>
                                         {expandedRows.has(lead.id) && lead.customFields && Object.keys(lead.customFields).length > 0 && (
                                             <TableRow className="bg-muted/30">
-                                                <TableCell colSpan={6}>
+                                                <TableCell colSpan={7}>
                                                     <div className="py-2 px-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                                                         {Object.entries(lead.customFields).map(([fieldId, value]) => (
                                                             <div key={fieldId} className="text-sm">
@@ -303,7 +320,7 @@ export function LeadsContent({ targetUserId }: LeadsContentProps) {
                                             </TableRow>
                                         )}
                                     </React.Fragment>
-                                ))}
+                                )})}
                             </TableBody>
                         </Table>
                     )}

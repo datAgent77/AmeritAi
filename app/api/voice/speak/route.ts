@@ -3,6 +3,17 @@ import { synthesizeSpeech } from "@/lib/voice-speech";
 
 export const runtime = "nodejs";
 
+function resolveSpeechErrorStatus(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/paid_plan_required|payment_required|ElevenLabs API error: 402/i.test(message)) {
+        return 402;
+    }
+    if (/API key not configured|not configured/i.test(message)) {
+        return 503;
+    }
+    return 500;
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -13,6 +24,7 @@ export async function POST(req: Request) {
             preferredVoice,
             provider,
             language,
+            strictProvider,
         } = body || {};
 
         if (!text || typeof text !== "string") {
@@ -26,6 +38,7 @@ export async function POST(req: Request) {
             preferredVoice: typeof preferredVoice === "string" ? preferredVoice : null,
             provider: typeof provider === "string" ? provider : null,
             language: typeof language === "string" ? language : null,
+            disableFallback: strictProvider === true,
         });
 
         return new NextResponse(audioBuffer, {
@@ -39,6 +52,6 @@ export async function POST(req: Request) {
         return NextResponse.json({
             error: "Speech synthesis failed",
             details: error instanceof Error ? error.message : String(error),
-        }, { status: 500 });
+        }, { status: resolveSpeechErrorStatus(error) });
     }
 }

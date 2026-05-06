@@ -480,7 +480,7 @@ const SCENARIO_D: PlanConfig[] = [
         ],
         trialDays: 14,
         highlights_meta: {
-            coming_soon: ['Oyunlaştırma', 'Sesli Asistan', 'White Label', 'Takım Yönetimi']
+            coming_soon: ['Oyunlaştırma', 'White Label', 'Takım Yönetimi']
         }
     },
     {

@@ -816,9 +816,11 @@ export const translations = {
         updateFailedDesc: "Failed to update skill status.",
         settingsSavedDesc: "Your settings have been successfully updated.",
         skillUnderDevelopment: "This skill's settings page is currently under development.",
-        voiceAssistantSettingsDesc: "Configure your ElevenLabs API key and Voice ID.",
+        voiceAssistantSettingsDesc: "Enable browser voice input and spoken responses in the widget.",
 
         // Voice Settings Page
+        widgetVoiceSettingsTitle: "Widget Voice Settings",
+        widgetVoiceSettingsDesc: "Manage browser-based voice conversations for the web widget.",
         voiceSettingsTitle: "Voice Assistant Settings",
         voiceSettingsDesc: "Manage and configure AI voice engines.",
         klassifierTitle: "Klassifier",
@@ -834,6 +836,7 @@ export const translations = {
         configBothEngines: "Both voice engines are enabled. The system will use the most suitable engine based on the situation (ElevenLabs priority).",
         configKlassifierOnly: "Only Klassifier (Local) engine is active. It will be used for fast and economical responses.",
         configElevenLabsOnly: "Only ElevenLabs engine is active. It will be used for high-quality voice responses.",
+        configOpenAiVoice: "Voice assistant is active with the default OpenAI speech engine.",
         configNoEngine: "Both voice engines are disabled. Voice assistant feature will not be used.",
         freeLabel: "Free",
         unlimitedUsage: "Unlimited usage",
@@ -2595,8 +2598,11 @@ export const translations = {
         chatbotSkillDisabledDesc: "AI Chatbot devre dışı bırakıldı.",
         voiceSkillEnabledDesc: "Sesli Asistan artık etkin.",
         voiceSkillDisabledDesc: "Sesli Asistan devre dışı bırakıldı.",
+        voiceAssistantSettingsDesc: "Widget içinde tarayıcıdan sesli konuşmayı ve sesli yanıtları etkinleştirin.",
 
         // Voice Settings Page
+        widgetVoiceSettingsTitle: "Widget Ses Ayarları",
+        widgetVoiceSettingsDesc: "Web widget içindeki tarayıcı tabanlı sesli konuşmaları yönetin.",
         voiceSettingsTitle: "Sesli Asistan Ayarları",
         voiceSettingsDesc: "Yapay zeka ses motorlarını yönetin ve yapılandırın.",
         klassifierTitle: "Klassifier",
@@ -2611,6 +2617,7 @@ export const translations = {
         configBothEngines: "Her iki ses motoru da etkinleştirildi. Sistem, duruma göre en uygun motoru kullanacaktır (ElevenLabs öncelikli).",
         configKlassifierOnly: "Sadece Klassifier (Yerel) motoru aktif. Hızlı ve ekonomik yanıtlar için kullanılacak.",
         configElevenLabsOnly: "Sadece ElevenLabs motoru aktif. Yüksek kaliteli ses yanıtları için kullanılacak.",
+        configOpenAiVoice: "Sesli asistan varsayılan OpenAI ses motoruyla aktif.",
         configNoEngine: "Her iki ses motoru da devre dışı. Sesli asistan özelliği kullanılmayacak.",
         freeLabel: "Ücretsiz",
         unlimitedUsage: "Sınırsız kullanım",

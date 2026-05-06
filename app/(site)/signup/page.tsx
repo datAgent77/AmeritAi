@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useEffect, useRef, useState } from "react"
 import { createUserWithEmailAndPassword, sendEmailVerification, User } from "firebase/auth"
-import { auth, db } from "@/lib/firebase"
+import { auth, db, firebaseConfig } from "@/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
@@ -42,6 +42,58 @@ function getSignupFailureReason(error: unknown): string {
             return "too_many_requests"
         default:
             return maybeCode.replace(/^auth\//, "")
+    }
+}
+
+function isFirebaseAuthNetworkError(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false
+    const maybeError = error as { code?: string }
+    return maybeError.code === "auth/network-request-failed"
+}
+
+function getAuthNetworkErrorMessage(language: string): string {
+    return language === "tr"
+        ? "Şu anda hesap oluşturulamıyor. Firebase kimlik doğrulama servisine erişilemedi. Bağlantınızı, VPN/adblock ayarlarınızı kontrol edip tekrar deneyin; sorun devam ederse destek ekibiyle iletişime geçin."
+        : "We can't create your account right now because the Firebase authentication service could not be reached. Check your connection, VPN/ad blocker settings, and try again; if it continues, contact support."
+}
+
+async function probeFirebaseAuthNetwork() {
+    if (typeof window === "undefined") return
+
+    const startedAt = Date.now()
+    const controller = new AbortController()
+    const timeout = window.setTimeout(() => controller.abort(), 8000)
+
+    try {
+        const response = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                referrerPolicy: "no-referrer",
+                signal: controller.signal,
+                body: JSON.stringify({
+                    email: "vion-auth-network-probe@example.invalid",
+                    password: "not-a-real-password",
+                    returnSecureToken: true,
+                    clientType: "CLIENT_TYPE_WEB",
+                }),
+            }
+        )
+
+        recordAuthDebug("signup_network_probe_result", {
+            ok: response.ok,
+            status: response.status,
+            durationMs: Date.now() - startedAt,
+        })
+    } catch (probeError) {
+        recordAuthDebug("signup_network_probe_failed", {
+            durationMs: Date.now() - startedAt,
+            message: probeError instanceof Error ? probeError.message : String(probeError),
+            name: probeError instanceof Error ? probeError.name : undefined,
+        })
+    } finally {
+        window.clearTimeout(timeout)
     }
 }
 
@@ -371,6 +423,15 @@ export default function SignUpForm() {
                 errorMessage = language === 'tr'
                     ? "Bu e-posta adresi zaten kullanılıyor. Lütfen giriş yapın."
                     : "This email address is already in use. Please sign in instead."
+            } else if (isFirebaseAuthNetworkError(error)) {
+                errorMessage = getAuthNetworkErrorMessage(language)
+                recordAuthDebug("signup_network_request_failed", {
+                    online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+                    host: typeof window !== "undefined" ? window.location.host : undefined,
+                    authDomain: firebaseConfig.authDomain,
+                    projectId: firebaseConfig.projectId,
+                })
+                probeFirebaseAuthNetwork()
             }
 
             trackMarketingEvent("signup_submit_failed", {

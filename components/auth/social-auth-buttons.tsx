@@ -2,11 +2,18 @@
 
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
-import { useState } from "react"
-import { signInWithPopup } from "firebase/auth"
+import { useEffect, useRef, useState } from "react"
+import {
+    browserLocalPersistence,
+    getRedirectResult,
+    setPersistence,
+    signInWithPopup,
+    signInWithRedirect,
+} from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
+import { recordAuthDebug } from "@/lib/auth-debug"
 
 interface SocialAuthButtonsProps {
     mode: 'login' | 'signup'
@@ -18,16 +25,61 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
     const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
     const { toast } = useToast()
     const { t, language } = useLanguage()
+    const handledRedirectRef = useRef(false)
+
+    useEffect(() => {
+        if (handledRedirectRef.current) return
+        handledRedirectRef.current = true
+
+        let isMounted = true
+        getRedirectResult(auth)
+            .then((result) => {
+                if (!isMounted || !result?.user) return
+                const providerId = result.providerId || "google.com"
+                onSuccess?.(result.user, providerId)
+            })
+            .catch((error: any) => {
+                console.error("Social auth redirect error:", error)
+                recordAuthDebug("social_auth_redirect_failed", {
+                    code: error?.code,
+                    message: error?.message,
+                    mode,
+                    online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+                    host: typeof window !== "undefined" ? window.location.host : undefined,
+                })
+            })
+
+        return () => {
+            isMounted = false
+        }
+    }, [mode, onSuccess])
 
     const handleSocialAuth = async (provider: any, providerId: string) => {
         setLoadingProvider(providerId)
         try {
+            await setPersistence(auth, browserLocalPersistence)
             const result = await signInWithPopup(auth, provider)
             if (onSuccess) {
                 onSuccess(result.user, providerId)
             }
         } catch (error: any) {
             console.error("Social auth error:", error)
+
+            if (error.code === 'auth/popup-blocked') {
+                recordAuthDebug("social_auth_popup_blocked_redirect_fallback", {
+                    providerId,
+                    mode,
+                    online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+                    host: typeof window !== "undefined" ? window.location.host : undefined,
+                })
+                try {
+                    await signInWithRedirect(auth, provider)
+                    return
+                } catch (redirectError: any) {
+                    console.error("Social auth redirect start error:", redirectError)
+                    error = redirectError
+                }
+            }
 
             // Provide better error messages
             let errorMessage = error.message || (language === 'tr'
@@ -38,6 +90,10 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
                 errorMessage = language === 'tr'
                     ? "Pencere kapatıldı. Lütfen tekrar deneyin."
                     : "Popup was closed. Please try again."
+            } else if (error.code === 'auth/popup-blocked') {
+                errorMessage = language === 'tr'
+                    ? "Tarayıcı Google giriş penceresini engelledi. Popup izni verin veya sayfayı yenileyip tekrar deneyin."
+                    : "Your browser blocked the Google sign-in window. Allow popups or refresh the page and try again."
             } else if (error.code === 'auth/account-exists-with-different-credential') {
                 errorMessage = language === 'tr'
                     ? "Bu e-posta başka bir giriş yöntemiyle zaten kayıtlı."
@@ -50,6 +106,15 @@ export function SocialAuthButtons({ mode, onSuccess, disabled }: SocialAuthButto
                 errorMessage = language === 'tr'
                     ? "Bu alan adı Firebase yetkili alan adları listesinde değil. Firebase Console > Authentication > Settings > Authorized domains bölümüne bu domaini ekleyin."
                     : "This domain is not in Firebase authorized domains. Add it in Firebase Console > Authentication > Settings > Authorized domains."
+            } else if (error.code === 'auth/network-request-failed') {
+                errorMessage = language === 'tr'
+                    ? "Kimlik doğrulama servisine ulaşılamadı. Bağlantınızı, VPN/adblock ayarlarınızı kontrol edip tekrar deneyin."
+                    : "The authentication service could not be reached. Check your connection, VPN/ad blocker settings, and try again."
+                recordAuthDebug("social_auth_network_request_failed", {
+                    providerId,
+                    online: typeof navigator !== "undefined" ? navigator.onLine : undefined,
+                    host: typeof window !== "undefined" ? window.location.host : undefined,
+                })
             }
 
             toast({

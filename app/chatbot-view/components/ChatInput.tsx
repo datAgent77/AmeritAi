@@ -3,7 +3,7 @@ import { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
 import { getQuickActionDefinition, getQuickActionDisplayLabel, getQuickActionTriggerMessage } from "@/lib/quick-actions"
 import * as LucideIcons from "lucide-react"
-import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
+import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle, Phone } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
@@ -125,6 +125,7 @@ export function ChatInput({
     const sidecarSendButtonClass = "flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
     const textModeLabel = language === "tr" ? "Yazı" : "Text"
     const voiceModeLabel = language === "tr" ? "Ses" : "Voice"
+    const voiceButtonTitle = language === "tr" ? "Sesli görüşmeye geç" : "Switch to voice"
     const quickActionColor = settings.brandColor || "#7c3aed"
     const quickActionSurface = colorWithAlpha(quickActionColor, 0.08)
     const quickActionSurfaceStrong = colorWithAlpha(quickActionColor, 0.14)
@@ -450,17 +451,6 @@ export function ChatInput({
                     </div>
                 )}
 
-                {showConversationModeSwitch && !isAmbientMode && onConversationModeChange && (
-                    <div className="mb-3 flex justify-center">
-                        <ConversationModeSwitch
-                            value={conversationMode}
-                            onChange={onConversationModeChange}
-                            textLabel={textModeLabel}
-                            voiceLabel={voiceModeLabel}
-                        />
-                    </div>
-                )}
-
                 {/* Rainbow Border Style is now in globals.css */}
                 <div
                     className={ambientDockWrapperClassName}
@@ -510,17 +500,31 @@ export function ChatInput({
                             />
                         )}
 
+                        {!isAmbientMode && !isSidecarMode && showConversationModeSwitch && onConversationModeChange && (
+                            <button
+                                type="button"
+                                onClick={() => onConversationModeChange("voice")}
+                                disabled={isChatLoading || disabled}
+                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+                                title={voiceButtonTitle}
+                                aria-label={voiceButtonTitle}
+                            >
+                                <Phone className="h-5 w-5" />
+                            </button>
+                        )}
+
                         {!isAmbientMode && !isSidecarMode && settings.enableVisualDiagnosis && (
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
-                                className={`p-3 rounded-full transition-all shadow-sm ${selectedImage
+                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all shadow-sm hover:-translate-y-0.5 active:scale-95 ${selectedImage
                                     ? 'text-green-600 bg-green-50 border border-green-200'
                                     : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
+                                aria-label={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                             >
-                                <ImageIcon className="w-4 h-4" />
+                                <ImageIcon className="w-5 h-5" />
                             </button>
                         )}
 
@@ -602,6 +606,18 @@ export function ChatInput({
                         {isSidecarMode && (
                             <div className="flex items-center justify-between gap-2.5 pt-2">
                                 <div className="flex items-center gap-2">
+                                    {showConversationModeSwitch && onConversationModeChange && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onConversationModeChange("voice")}
+                                            disabled={isChatLoading || disabled}
+                                            className={sidecarActionButtonClass}
+                                            title={voiceButtonTitle}
+                                            aria-label={voiceButtonTitle}
+                                        >
+                                            <Phone className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
                                     {settings.enableVisualDiagnosis && (
                                         <button
                                             type="button"

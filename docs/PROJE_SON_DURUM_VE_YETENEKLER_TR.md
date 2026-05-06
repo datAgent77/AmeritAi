@@ -308,7 +308,7 @@ Kod tabanında voice fonksiyonları mevcuttur:
 - TTS/voice yanıt altyapısı (provider bazlı)
 - `useVoiceInput` hook ile kayıt/okuma kontrolü
 
-Not: `modules-registry` içinde `voiceAssistant` modülü “coming_soon” statüsünde işaretlidir; ancak altyapı ve bazı UI parçaları mevcuttur.
+Not: `modules-registry` içinde `voiceAssistant` modülü artık `ready` statüsündedir. Widget Voice, web widget içinde tarayıcı tabanlı sesli konuşma olarak aktif edilebilir; telefon hattı/Omni Voice Calls kanalından ayrıdır.
 
 ## 5.11 Visual Diagnosis / Görsel Analiz
 
@@ -394,7 +394,7 @@ Modül tanımları `lib/modules-registry.ts` içinde merkezi olarak tutulur. Bu 
 - `digitalWaiter` (ready)
 - `proactiveMessaging` (ready)
 - `dynamicContext` (ready)
-- `voiceAssistant` (coming_soon)
+- `voiceAssistant` (ready)
 - `appointments` (coming_soon)
 - `campaignManager` (coming_soon)
 - `gamification` (coming_soon)

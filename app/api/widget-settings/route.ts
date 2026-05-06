@@ -293,6 +293,11 @@ function hasConfiguredWebVoiceProvider(
     userData: Record<string, any> | null | undefined,
     mergedData: Record<string, any> | null | undefined
 ) {
+    const provider = typeof mergedData?.voiceProvider === "string" ? mergedData.voiceProvider.trim().toLowerCase() : "openai";
+    if (provider !== "elevenlabs") {
+        return true;
+    }
+
     const apiKey = typeof userData?.elevenLabsApiKey === "string" ? userData.elevenLabsApiKey.trim() : "";
     const voiceId = typeof mergedData?.elevenLabsVoiceId === "string" ? mergedData.elevenLabsVoiceId.trim() : "";
 
@@ -576,9 +581,13 @@ export async function GET(req: Request) {
                         // Web-only browser voice mode; no telephony/omni coupling here.
                         enableVoiceAssistant: isWebVoiceAssistantEnabled,
                         enableAutoSpeak: mergedData.enableAutoSpeak === true,
-                        voiceProvider: mergedData.voiceProvider || "klassifier",
+                        voiceProvider: mergedData.voiceProvider || "openai",
                         elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
                         preferredVoice: mergedData.preferredVoice || "",
+                        voiceLowLatencyMode: mergedData.voiceLowLatencyMode !== false,
+                        voiceInputSensitivity: ["low", "normal", "high"].includes(mergedData.voiceInputSensitivity) ? mergedData.voiceInputSensitivity : "normal",
+                        voiceResponseLength: ["short", "balanced", "detailed"].includes(mergedData.voiceResponseLength) ? mergedData.voiceResponseLength : "short",
+                        voiceProfile: ["support", "sales", "appointments", "restaurant"].includes(mergedData.voiceProfile) ? mergedData.voiceProfile : "support",
                         enablePersonalShopper: mergedData.enablePersonalShopper || false,
                         enableVisualDiagnosis: mergedData.enableVisualDiagnosis || false,
                         enableIndustryGreeting: mergedData.enableIndustryGreeting || false,
@@ -731,9 +740,13 @@ export async function GET(req: Request) {
                 digitalWaiter: null,
                 enableVoiceAssistant: false,
                 enableAutoSpeak: false,
-                voiceProvider: "klassifier",
+                voiceProvider: "openai",
                 elevenLabsVoiceId: "",
                 preferredVoice: "",
+                voiceLowLatencyMode: true,
+                voiceInputSensitivity: "normal",
+                voiceResponseLength: "short",
+                voiceProfile: "support",
                 enablePersonalShopper: false,
                 enableIndustryGreeting: false,
                 industry: "technology",
@@ -929,9 +942,13 @@ export async function GET(req: Request) {
             enableDigitalWaiter: false,
             enableVoiceAssistant: false,
             enableAutoSpeak: false,
-            voiceProvider: "klassifier",
+            voiceProvider: "openai",
             elevenLabsVoiceId: "",
             preferredVoice: "",
+            voiceLowLatencyMode: true,
+            voiceInputSensitivity: "normal",
+            voiceResponseLength: "short",
+            voiceProfile: "support",
             theme: "classic"
         }, {
             headers: {
