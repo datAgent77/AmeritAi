@@ -15,7 +15,7 @@ function OmniAppAccessGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const { loading, user, role, enableOmniChannel } = useAuth()
 
-    const canAccess = Boolean(user) && (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN" || role === "TENANT_ADMIN" || enableOmniChannel)
+    const canAccess = Boolean(user) && (role === "SUPER_ADMIN" || enableOmniChannel)
 
     useEffect(() => {
         if (!loading && !user) {

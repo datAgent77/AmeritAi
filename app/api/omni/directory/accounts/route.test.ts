@@ -28,9 +28,9 @@ function createAdminDb() {
             isActive: true,
             productEntitlements: {
                 chatbot: true,
-                omniChannel: false,
+                omniChannel: true,
             },
-            enableOmniChannel: false,
+            enableOmniChannel: true,
         }),
     ]
 

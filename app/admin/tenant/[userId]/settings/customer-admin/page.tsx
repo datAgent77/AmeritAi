@@ -35,7 +35,7 @@ import {
     AlertCircle,
     Check
 } from "lucide-react"
-import { getPlanConfig, formatPlanPrice } from "@/lib/pricing-config"
+import { getPlanConfig, getPublicPlansSorted, formatPlanPrice, normalizePlanId, shouldShowPlanPrices } from "@/lib/pricing-config"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
@@ -210,6 +210,11 @@ export default function CustomerAdminPage() {
     const handleSave = async () => {
         setIsSaving(true)
         try {
+            const normalizedSubscription = {
+                ...subscription,
+                planId: normalizePlanId(subscription.planId)
+            }
+
             const response = await fetch('/api/admin/customer-admin', {
                 method: 'PUT',
                 headers: { 
@@ -218,7 +223,7 @@ export default function CustomerAdminPage() {
                 },
                 body: JSON.stringify({
                     userId,
-                    subscription,
+                    subscription: normalizedSubscription,
                     billing: billingInfo
                 })
             })
@@ -253,14 +258,17 @@ export default function CustomerAdminPage() {
         })
     }
 
-    const planConfig = getPlanConfig(subscription.planId)
+    const normalizedSubscriptionPlanId = normalizePlanId(subscription.planId)
+    const planConfig = getPlanConfig(normalizedSubscriptionPlanId)
     const pricingLang = language === 'tr' ? 'tr' : 'en'
-    const monthlyPriceDisplay = formatPlanPrice(subscription.planId, 'monthly', pricingLang)
-    const annualPriceDisplay = formatPlanPrice(subscription.planId, 'annual', pricingLang)
+    const showPlanPrices = shouldShowPlanPrices()
+    const publicPlans = getPublicPlansSorted()
+    const monthlyPriceDisplay = formatPlanPrice(normalizedSubscriptionPlanId, 'monthly', pricingLang)
+    const annualPriceDisplay = formatPlanPrice(normalizedSubscriptionPlanId, 'annual', pricingLang)
     const currentPlanLabel = (() => {
-        const key = `plan${subscription.planId.charAt(0).toUpperCase() + subscription.planId.slice(1)}`
+        const key = `plan${normalizedSubscriptionPlanId.charAt(0).toUpperCase() + normalizedSubscriptionPlanId.slice(1)}`
         const translated = t(key)
-        return translated !== key ? translated : (planConfig?.displayName || subscription.planId)
+        return translated !== key ? translated : (planConfig?.displayName || normalizedSubscriptionPlanId)
     })()
 
     if (isLoading) {
@@ -353,11 +361,11 @@ export default function CustomerAdminPage() {
                                 </div>
                              </div>
                              <div className="text-right">
-                                    <div className="text-sm text-zinc-400">{language === 'tr' ? 'Aylık Tutar' : 'Monthly Price'}</div>
+                                    <div className="text-sm text-zinc-400">{language === 'tr' ? 'Fiyatlandırma' : 'Pricing'}</div>
                                     <div className="text-2xl font-bold">
                                         {monthlyPriceDisplay}
                                     </div>
-                                    {planConfig?.billing?.annual && !planConfig?.billing?.contact && (
+                                    {showPlanPrices && planConfig?.billing?.annual && !planConfig?.billing?.contact && (
                                         <div className="text-xs text-zinc-400 mt-1">
                                             {language === 'tr' ? 'Yıllık' : 'Annual'}: {annualPriceDisplay}
                                         </div>
@@ -375,7 +383,7 @@ export default function CustomerAdminPage() {
                                     {planConfig?.modules?.included?.map((module: string) => {
                                         const moduleTranslations: Record<string, string> = {
                                             generalChatbot: "Genel Chatbot",
-                                            knowledgeBase: "Bilgi Bankası",
+                                            knowledgeBase: "AI Eğitim Kaynakları",
                                             leadCollection: "Müşteri Bilgi Toplama",
                                             proactiveMessaging: "Proaktif Mesajlaşma",
                                             productCatalog: "Ürün Kataloğu",
@@ -447,7 +455,7 @@ export default function CustomerAdminPage() {
 
                                      <div className="space-y-1">
                                         <div className="flex justify-between text-xs">
-                                            <span className="text-zinc-400">Bilgi Bankası Döküman</span>
+                                            <span className="text-zinc-400">AI Eğitim Kaynağı Dökümanı</span>
                                             <span className="text-white font-medium">
                                                 {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} Adet
                                             </span>
@@ -537,17 +545,18 @@ export default function CustomerAdminPage() {
                                      <div className="space-y-2">
                                         <Label>Plan Seçimi</Label>
                                         <Select
-                                            value={subscription.planId}
+                                            value={normalizedSubscriptionPlanId}
                                             onValueChange={(value) => setSubscription({ ...subscription, planId: value })}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="starter">Başlangıç (Starter)</SelectItem>
-                                                <SelectItem value="growth">Büyüme (Growth)</SelectItem>
-                                                <SelectItem value="pro">Profesyonel (Pro)</SelectItem>
-                                                <SelectItem value="enterprise">Kurumsal (Enterprise)</SelectItem>
+                                                {publicPlans.map((plan) => (
+                                                    <SelectItem key={plan.planId} value={plan.planId}>
+                                                        {plan.displayName}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         <p className="text-xs text-muted-foreground">
@@ -744,9 +753,9 @@ export default function CustomerAdminPage() {
                                         <tbody className="divide-y divide-zinc-100">
                                             {/* Mock Data for Billing History */}
                                             {[
-                                                { date: '2024-01-01', amount: '799.00 TRY', status: 'Paid' },
-                                                { date: '2023-12-01', amount: '799.00 TRY', status: 'Paid' },
-                                                { date: '2023-11-01', amount: '299.00 TRY', status: 'Paid' },
+                                                { date: '2024-01-01', amount: 'Gizlendi', status: 'Paid' },
+                                                { date: '2023-12-01', amount: 'Gizlendi', status: 'Paid' },
+                                                { date: '2023-11-01', amount: 'Gizlendi', status: 'Paid' },
                                             ].map((invoice, i) => (
                                                 <tr key={i} className="hover:bg-zinc-50/50 transition-colors bg-white">
                                                     <td className="px-4 py-3 text-zinc-600 font-mono text-xs">{invoice.date}</td>

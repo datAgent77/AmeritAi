@@ -6,7 +6,6 @@ import { normalizeGuidedSkillState } from "@/lib/guided-skills";
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine";
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types";
 import { buildAiGeneratedGuidedUi, extractGuidedOptionsFromContent } from "@/lib/guided-ai";
-import { getPublishedContract } from "@/lib/contracts";
 import {
     getHumanHandoffAssistantMessage,
     getHumanHandoffContactPromptMessage,
@@ -18,7 +17,6 @@ import {
     resolveHumanHandoffSettings,
 } from "@/lib/human-handoff";
 import { createAndNotifyHumanHandoff } from "@/lib/human-handoff-server";
-import { isKvkkConsentSatisfied, resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
 import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
@@ -483,7 +481,6 @@ export async function POST(req: Request) {
             userId,
             visualAnalysisContext,
             assistantMessageId,
-            kvkkConsentVersion,
         } = body;
 
         if (!chatbotId || messages.length === 0) {
@@ -618,19 +615,12 @@ export async function POST(req: Request) {
         const hasPendingHumanHandoff = Boolean(sessionData.humanHandoffPending);
         const isSessionPaused = Boolean(sessionData.isPaused);
         const currentGuidedState = normalizeGuidedSkillState(sessionData.guidedSkillState);
-        const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null)
-        const kvkkConsent = resolveKvkkConsentPayload({
-            mergedData: mergedTenantData,
-            publishedKvkkContract,
-        })
         const humanHandoffSettings = resolveHumanHandoffSettings(mergedTenantData)
-        if (kvkkConsent.enabled && !isKvkkConsentSatisfied(kvkkConsent.versionHash, kvkkConsentVersion)) {
-            return NextResponse.json({
-                error: "kvkk_consent_required",
-                message: "Sohbete devam etmek icin guncel KVKK metnini kabul etmeniz gerekir.",
-                expectedVersionHash: kvkkConsent.versionHash,
-            }, { status: 409 })
-        }
+        // KVKK/GDPR now runs in hybrid mode for web chat: the basic chat is not
+        // blocked by a missing notice acknowledgement. The widget records
+        // `notice_acknowledged` or `continued_after_notice` events separately,
+        // while explicit-consent flows such as lead and appointment submit are
+        // guarded in their own UI/API paths.
 
         const userMessageSavePromise = (lastMessage.role === "user" && userContent)
             ? saveMessageToSession(

@@ -81,7 +81,7 @@ export function getFeatureModuleMapping(): Record<string, ModuleId | null> {
         'Cart Recovery': 'salesOptimization',
         'Appointment System': 'appointments',
         'Live Chat (Takeover)': 'generalChatbot', // Core feature
-        'Knowledge Base': 'knowledgeBase',
+        'AI Training Resources': 'knowledgeBase',
         'Lead Collection': 'leadCollection',
         'Omnichannel': 'generalChatbot', // Core feature
         'Satış Optimizasyonu': 'salesOptimization',

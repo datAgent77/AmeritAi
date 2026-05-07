@@ -106,7 +106,7 @@ export function SiteHeader({
                 />
             </div>
             <div className="ml-auto flex items-center gap-2">
-                {showProductLauncher ? <ProductLauncher /> : null}
+                {showProductLauncher ? <ProductLauncher targetUserId={tenantIdFromPath || undefined} /> : null}
                 {showNotifications ? <NotificationBell /> : null}
                 {showWidgetTest ? (
                     <Button

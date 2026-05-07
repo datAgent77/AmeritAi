@@ -3,6 +3,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
 import { pushLeadToZoho } from "@/lib/integrations/zoho/client";
+import { createNotification } from "@/lib/notification-service";
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -31,6 +32,21 @@ export async function POST(req: Request) {
             customFields: customFields || {},
             sessionId: sessionId || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        await createNotification({
+            userId: chatbotId,
+            type: "lead_created",
+            title: "Yeni lead kaydi",
+            message: `${name || "Anonim"}${email || phone ? ` - ${email || phone}` : ""}`,
+            metadata: {
+                leadId: docRef.id,
+                sessionId: sessionId || null,
+                name: name || "",
+                email: email || "",
+                phone: phone || "",
+                source: source || "Pre-chat Form",
+            },
         });
 
         // Send email notification if enabled

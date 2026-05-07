@@ -9,9 +9,15 @@ interface InlineLeadFormProps {
     settings: ChatbotSettings
     t: (key: string) => string
     variant?: "lead" | "handoff"
+    privacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+    }
 }
 
-export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: InlineLeadFormProps) {
+export function InlineLeadForm({ onSubmit, settings, t, variant = "lead", privacyConsent }: InlineLeadFormProps) {
     const { language } = useLanguage()
     const isHandoff = variant === "handoff"
     const defaultHandoffConfig = {
@@ -40,6 +46,7 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
     })
     
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
+    const [privacyChecked, setPrivacyChecked] = useState(false)
 
     const getIcon = (field: any) => {
         const label = (field.label || '').toLowerCase();
@@ -110,9 +117,18 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
         if (config.emailEnabled !== false && config.emailRequired !== false && !email) {
              setStatus('idle'); return
         }
+
+        if (privacyConsent?.required && !privacyChecked) {
+            setErrorMessage(privacyConsent.errorText)
+            setStatus('idle')
+            return
+        }
         
         try {
-            await onSubmit(formData, { source: "inline", flow: variant })
+            await onSubmit({
+                ...formData,
+                privacyConsentAccepted: privacyConsent?.required ? privacyChecked : undefined,
+            }, { source: "inline", flow: variant })
             setStatus('success')
         } catch (_error) {
             setStatus('idle')
@@ -238,6 +254,30 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead" }: Inli
             {errorMessage ? (
                 <p className="text-xs font-medium text-red-500">{errorMessage}</p>
             ) : null}
+
+            {privacyConsent?.required && (
+                <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-2.5">
+                    <label className="flex items-start gap-2 text-[11px] leading-4 text-gray-600">
+                        <input
+                            type="checkbox"
+                            checked={privacyChecked}
+                            onChange={(event) => {
+                                setPrivacyChecked(event.target.checked)
+                                if (errorMessage === privacyConsent.errorText) setErrorMessage("")
+                            }}
+                            className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300"
+                        />
+                        <span>{privacyConsent.checkboxLabel}</span>
+                    </label>
+                    <button
+                        type="button"
+                        onClick={privacyConsent.onReadNotice}
+                        className="text-[11px] font-medium text-gray-700 underline underline-offset-4"
+                    >
+                        {t("privacyNoticeOpen") === "privacyNoticeOpen" ? "Aydınlatma Metni" : t("privacyNoticeOpen")}
+                    </button>
+                </div>
+            )}
             
             <button
                 type="submit"

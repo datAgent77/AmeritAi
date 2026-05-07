@@ -82,6 +82,20 @@ export function resolveNotificationDestination(
         }
     }
 
+    if (notificationType === "lead_created") {
+        return {
+            category: "pipeline",
+            href: appendQueryParams("/console/chatbot/leads", {
+                leadId: notification.data?.leadId,
+                sessionId: notification.data?.sessionId,
+                name: notification.data?.name,
+                email: notification.data?.email,
+                phone: notification.data?.phone,
+            }),
+            kind: "lead",
+        }
+    }
+
     if (notificationType === "human_handoff_request") {
         return {
             category: "conversations",

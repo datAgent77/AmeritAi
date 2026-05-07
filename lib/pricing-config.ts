@@ -46,6 +46,37 @@ export const PRICING_CURRENCY_DISPLAY = {
     } as const
 };
 
+export const PRICING_PRICE_VISIBILITY = {
+    showPublicAmounts: false
+} as const;
+
+export type PublicPlanId = 'starter' | 'growth' | 'enterprise';
+
+export const LEGACY_PLAN_ALIASES: Record<string, PublicPlanId> = {
+    pro: 'growth',
+    professional: 'growth',
+    premium: 'growth'
+};
+
+export function normalizePlanId(planId: string | null | undefined): PublicPlanId {
+    const normalized = String(planId || '').trim().toLowerCase();
+    if (normalized === 'growth' || normalized === 'enterprise') return normalized;
+    if (LEGACY_PLAN_ALIASES[normalized]) return LEGACY_PLAN_ALIASES[normalized];
+    return 'starter';
+}
+
+export function shouldShowPlanPrices(): boolean {
+    return PRICING_PRICE_VISIBILITY.showPublicAmounts;
+}
+
+export function getHiddenPlanPriceLabel(lang: 'en' | 'tr' = 'tr'): string {
+    return lang === 'tr' ? 'Teklif Alın' : 'Get a Quote';
+}
+
+export function isPreferredPlanBadge(badge?: string): boolean {
+    return badge === 'preferred' || badge === 'recommended' || badge === 'Önerilen' || badge === 'Recommended';
+}
+
 export interface BillingOption {
     amount: number;
     currency: Currency;
@@ -350,10 +381,9 @@ const SCENARIO_C: PlanConfig[] = [
 
 /**
  * SCENARIO D: Vion AI New Pricing (USD)
- * - Starter: $19/mo (1,000 AI messages)
- * - Growth: $49/mo (5,000 AI messages)
- * - Pro: $99/mo (Unlimited)
- * - Enterprise: Contact
+ * - Starter: core chatbot and compliance modules
+ * - Scale: full self-serve growth stack, including legacy Pro features
+ * - Enterprise: all modules plus enterprise services
  */
 const SCENARIO_D: PlanConfig[] = [
     {
@@ -368,7 +398,7 @@ const SCENARIO_D: PlanConfig[] = [
         limits: {
             maxPremiumAddOns: 0,
             messageLimit: 1000,
-            // Custom limits for knowledge base
+            // Custom limits for AI training resources
             knowledge: { websites: '1', files: 1, text: 3 }
         } as any, // Using 'any' to bypass strict type check for now or update interface later
         modules: {
@@ -377,9 +407,9 @@ const SCENARIO_D: PlanConfig[] = [
                 'knowledgeBase',
                 'leadCollection',
                 'guided',
-                'proactiveMessaging',
                 'kvkkConsent',
-                'humanHandoff'
+                'humanHandoff',
+                'surveyManager'
                 // 'liveChat' implied as core feature
             ],
             defaultEnabled: ['generalChatbot', 'leadCollection'],
@@ -394,13 +424,17 @@ const SCENARIO_D: PlanConfig[] = [
             'featureGeneralAssistant',
             'featureLiveSupport',
             'featureLeadCollection',
-            'featureKnowledgeBase'
+            'featureKnowledgeBase',
+            'featureGuidedFlows',
+            'featurePrivacyCompliance',
+            'featureHumanHandoff',
+            'featureSurveyManager'
         ],
         trialDays: 14
     },
     {
         planId: 'growth',
-        displayName: 'Growth',
+        displayName: 'Scale',
         sortOrder: 2,
         availability: 'public',
         billing: {
@@ -410,17 +444,19 @@ const SCENARIO_D: PlanConfig[] = [
         limits: {
             maxPremiumAddOns: 0,
             messageLimit: 5000,
-            knowledge: { websites: '1', files: 10, text: 20 }
+            knowledge: { websites: '1', files: 100, text: 'unlimited' }
         } as any,
         modules: {
             included: [
                 'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
-                'productCatalog', 'digitalWaiter', 'kvkkConsent', 'humanHandoff'
+                'productCatalog', 'digitalWaiter', 'kvkkConsent', 'humanHandoff', 'surveyManager',
+                'salesOptimization', 'visualDiagnosis', 'dynamicContext', 'smartShopper'
             ],
-            defaultEnabled: ['generalChatbot', 'productCatalog'],
+            defaultEnabled: ['generalChatbot', 'productCatalog', 'salesOptimization'],
             premiumEligible: []
         },
         copy: {
+            badge: 'preferred',
             ctaLabel: 'ctaTryFree',
             subtitle: 'planGrowthDesc'
         },
@@ -429,64 +465,21 @@ const SCENARIO_D: PlanConfig[] = [
             'featureEverythingInStarter',
             'featureProductCatalog',
             'featureDigitalWaiter',
-            'featureKnowledgeBase',
-            'featureAdvancedReporting',
-            'featureCustomizableWidget'
-        ],
-        trialDays: 14,
-        highlights_meta: {
-            coming_soon: ['Kampanya Sihirbazı']
-        }
-    },
-    {
-        planId: 'pro',
-        displayName: 'Pro',
-        sortOrder: 3,
-        availability: 'public',
-        billing: {
-            monthly: { amount: 99, currency: 'USD' },
-            annual: { amount: 990, currency: 'USD', discountLabel: 'billingDiscountBadge' }
-        },
-        limits: {
-            maxPremiumAddOns: 0,
-            messageLimit: 'unlimited',
-            knowledge: { websites: '1', files: 100, text: 'unlimited' }
-        } as any,
-        modules: {
-            included: [
-                'generalChatbot', 'knowledgeBase', 'leadCollection', 'guided', 'proactiveMessaging',
-                'productCatalog', 'digitalWaiter', 'kvkkConsent', 'humanHandoff',
-                'salesOptimization', 'visualDiagnosis',
-                'dynamicContext'
-            ],
-            defaultEnabled: ['generalChatbot', 'salesOptimization'],
-            premiumEligible: []
-        },
-        copy: {
-            badge: 'recommended',
-            ctaLabel: 'ctaTryFree',
-            subtitle: 'planProDesc'
-        },
-        highlights: [
-            'featureUnlimitedMessagesNote',
-            'featureEverythingInGrowth',
+            'featureProactiveMessaging',
             'featureSalesOptimization',
             'featureVisualDiagnosis',
-            'featureMultiChannel',
-            'featurePrioritySupport',
+            'featureDynamicContext',
+            'featureSmartShopper',
             'featureKnowledgeBase',
             'featureAdvancedReporting',
             'featureCustomizableWidget'
         ],
-        trialDays: 14,
-        highlights_meta: {
-            coming_soon: ['Oyunlaştırma', 'White Label', 'Takım Yönetimi']
-        }
+        trialDays: 14
     },
     {
         planId: 'enterprise',
         displayName: 'Enterprise',
-        sortOrder: 4,
+        sortOrder: 3,
         availability: 'public',
         billing: { contact: true },
         limits: {
@@ -506,13 +499,22 @@ const SCENARIO_D: PlanConfig[] = [
         highlights: [
             'featureUnlimitedMessagesNote',
             'featureAllFeaturesUnlimited',
+            'featureCustomModuleDevelopment',
+            'featureVoiceAssistant',
+            'featureAppointments',
             'featureCustomIntegration',
             'featureSlaGuarantee',
             'featurePrioritySupport',
             'featureWhiteLabel',
+            'featureTeamSupport',
             'featureAdvancedReporting',
-            'featureCustomizableWidget'
-        ]
+            'featureCustomizableWidget',
+            'featureCampaignManager',
+            'featureGamification'
+        ],
+        highlights_meta: {
+            coming_soon: ['featureCampaignManager', 'featureGamification']
+        }
     }
 ];
 
@@ -562,7 +564,9 @@ export function getPublicPlansSorted(): PlanConfig[] {
  * Get a single plan by ID
  */
 export function getPlan(planId: string): PlanConfig | undefined {
-    return PRICING_PLANS.find(p => p.planId === planId);
+    const requestedPlanId = String(planId || '').trim().toLowerCase();
+    const effectivePlanId = LEGACY_PLAN_ALIASES[requestedPlanId] || requestedPlanId;
+    return PRICING_PLANS.find(p => p.planId === effectivePlanId);
 }
 
 // Alias for getPlan - used in AuthContext
@@ -572,7 +576,8 @@ export const getPlanConfig = getPlan;
  * Check if plan exists
  */
 export function planExists(planId: string): boolean {
-    return PRICING_PLANS.some(p => p.planId === planId);
+    const normalized = String(planId || '').trim().toLowerCase();
+    return Boolean(LEGACY_PLAN_ALIASES[normalized]) || PRICING_PLANS.some(p => p.planId === normalized);
 }
 
 /**
@@ -593,6 +598,10 @@ export function formatPlanPrice(
 ): string {
     const plan = getPlan(planId);
     if (!plan) return '';
+
+    if (!shouldShowPlanPrices()) {
+        return getHiddenPlanPriceLabel(lang);
+    }
 
     // Contact plan
     if (plan.billing.contact) {
@@ -733,6 +742,15 @@ export function getPlanBadge(planId: string): string | undefined {
 }
 
 /**
+ * Keep available features above coming-soon features across all pricing surfaces.
+ */
+export function getPlanHighlightsSorted(plan: PlanConfig): string[] {
+    const highlights = plan.highlights || [];
+    const comingSoon = new Set(plan.highlights_meta?.coming_soon || []);
+    return [...highlights].sort((a, b) => Number(comingSoon.has(a)) - Number(comingSoon.has(b)));
+}
+
+/**
  * Get trial days for a plan (0 if not a trial plan)
  */
 export function getPlanTrialDays(planId: string): number {
@@ -779,8 +797,13 @@ export function getModuleUpgradeTarget(
     currentPlanId: string,
     moduleId: string
 ): string | null {
-    const plans = ['starter', 'growth', 'pro', 'enterprise'];
-    const currentPlanIndex = plans.indexOf(currentPlanId);
+    if (isModuleIncludedInPlan(currentPlanId, moduleId)) {
+        return null;
+    }
+
+    const plans: PublicPlanId[] = ['starter', 'growth', 'enterprise'];
+    const normalizedCurrentPlanId = normalizePlanId(currentPlanId);
+    const currentPlanIndex = plans.indexOf(normalizedCurrentPlanId);
     
     // If current plan is enterprise, no upgrade needed
     if (currentPlanIndex === plans.length - 1) {

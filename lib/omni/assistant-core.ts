@@ -504,7 +504,7 @@ export async function generateOmniTextTurn(input: TextTurnGenerationInput): Prom
                 "General rules:",
                 "- If the customer asks for a person or callback, acknowledge it clearly.",
                 "- Avoid markdown-heavy formatting.",
-                "- Stay grounded in the tenant knowledge base and do not invent facts.",
+                "- Stay grounded in the tenant AI training resources and do not invent facts.",
             ].join("\n"),
         },
         ...history,

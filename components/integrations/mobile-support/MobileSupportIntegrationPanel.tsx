@@ -338,7 +338,7 @@ webView.loadUrl(hostedChatUrl)`
                                     <ul className="space-y-2 text-sm text-muted-foreground">
                                         <li>{isTr ? "Mobile App / API aktif edilir ve client token üretilir." : "Enable Mobile App / API and generate a client token."}</li>
                                         <li>{isTr ? "Gerekirse bundle/package id kısıtı girilir." : "Optionally restrict allowed bundle/package ids."}</li>
-                                        <li>{isTr ? "Bilgi tabanı, ürün kataloğu, dinamik context ve handoff modülleri aynı şekilde çalışır." : "Knowledge base, product catalog, dynamic context, and handoff modules continue to work."}</li>
+                                        <li>{isTr ? "AI eğitim kaynakları, ürün kataloğu, dinamik context ve handoff modülleri aynı şekilde çalışır." : "AI training resources, product catalog, dynamic context, and handoff modules continue to work."}</li>
                                         <li>{isTr ? "Ticket açılacaksa Ticket Webhook da aktif edilir." : "Enable Ticket Webhook when unresolved cases should create tickets."}</li>
                                     </ul>
                                 </div>

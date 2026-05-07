@@ -9,7 +9,12 @@ export function resolveOmniWorkspaceEnabled(data: any, userRole?: UserRole | nul
     if (userRole === "SUPER_ADMIN") return true
 
     const explicitEntitlements = data?.productEntitlements || {}
-    const legacyOmniEnabled = explicitEntitlements.omniChannel ?? data?.enableOmniChannel === true
+    return Boolean(explicitEntitlements.omniChannel === true || data?.enableOmniChannel === true)
+}
 
-    return Boolean(legacyOmniEnabled || resolveChatbotEnabled(data))
+export function resolveCookieConsentEnabled(data: any, userRole?: UserRole | null) {
+    if (userRole === "SUPER_ADMIN") return true
+
+    const explicitEntitlements = data?.productEntitlements || {}
+    return Boolean(explicitEntitlements.cookieConsent === true || data?.enableCookieConsent === true)
 }

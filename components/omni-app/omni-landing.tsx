@@ -284,7 +284,7 @@ export function OmniLanding() {
                                         content: "Launch voice, web, WhatsApp, and Instagram agents with one behavior layer and one operator workflow. Seamlessly maintain context across channels."
                                     },
                                     {
-                                        title: "Knowledge base integration",
+                                        title: "AI training resources integration",
                                         content: "Connect internal documents, FAQs, and URLs in just a few clicks. With built-in RAG, agents provide accurate answers grounded in your own content."
                                     }
                                 ]}

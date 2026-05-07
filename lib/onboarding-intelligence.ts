@@ -14,13 +14,13 @@
  * PLAN BEHAVIOR:
  * ┌─────────────────────────────────────────────────────────────┐
  * │ Starter   → Simplicity, core modules, growth mindset       │
- * │ Pro       → Customization, premium preselect, no upsell    │
+ * │ Growth    → Customization, premium preselect, no upsell    │
  * │ Enterprise→ Flexibility, scale, minimal guidance           │
  * └─────────────────────────────────────────────────────────────┘
  */
 
 import { SectorId, getDefaultModulesForSector } from './modules-registry';
-import { getPlan, getPlanIncludedModules, isModuleIncludedInPlan } from './pricing-config';
+import { getPlan, getPlanIncludedModules, isModuleIncludedInPlan, normalizePlanId } from './pricing-config';
 
 // =============================================================================
 // TYPES
@@ -85,8 +85,8 @@ const COPY = {
     },
     growth: {
         introTitle: {
-            en: 'Welcome to Vion Growth',
-            tr: 'Vion Growth\'a Hoş Geldiniz'
+            en: 'Welcome to Vion Scale',
+            tr: 'Vion Scale\'e Hoş Geldiniz'
         },
         introDescription: {
             en: 'Let\'s set up your AI assistant with enhanced features.',
@@ -103,28 +103,6 @@ const COPY = {
         launchHelper: {
             en: 'Deploy your AI assistant and start growing.',
             tr: 'AI asistanınızı dağıtın ve büyümeye başlayın.'
-        }
-    },
-    pro: {
-        introTitle: {
-            en: 'Welcome to Vion Pro',
-            tr: 'Vion Pro\'ya Hoş Geldiniz'
-        },
-        introDescription: {
-            en: 'Let\'s configure your AI assistant with full customization options.',
-            tr: 'AI asistanınızı tam özelleştirme seçenekleriyle yapılandıralım.'
-        },
-        moduleHelper: {
-            en: 'Choose from all available modules. You have access to premium features.',
-            tr: 'Tüm modüller arasından seçim yapın. Premium özelliklere erişiminiz var.'
-        },
-        widgetHelper: {
-            en: 'Create a branded experience that matches your business.',
-            tr: 'İşletmenize uygun markalı bir deneyim oluşturun.'
-        },
-        launchHelper: {
-            en: 'Deploy your AI assistant across all your channels.',
-            tr: 'AI asistanınızı tüm kanallarınıza dağıtın.'
         }
     },
     enterprise: {
@@ -207,13 +185,10 @@ export function getOnboardingConfig(context: OnboardingContext, lang: 'en' | 'tr
 // HELPER FUNCTIONS
 // =============================================================================
 
-type PlanType = 'starter' | 'growth' | 'pro' | 'enterprise';
+type PlanType = 'starter' | 'growth' | 'enterprise';
 
 function getPlanType(planId: string): PlanType {
-    if (planId === 'enterprise') return 'enterprise';
-    if (planId === 'pro') return 'pro';
-    if (planId === 'growth') return 'growth';
-    return 'starter'; // trial, starter, or unknown
+    return normalizePlanId(planId);
 }
 
 function buildDefaultModules(context: OnboardingContext, planType: PlanType): string[] {
@@ -248,10 +223,6 @@ function getSectorGuidance(planType: PlanType, lang: 'en' | 'tr'): string {
         growth: {
             en: 'Your industry helps us provide better AI recommendations.',
             tr: 'Sektörünüz daha iyi AI önerileri sunmamıza yardımcı olur.'
-        },
-        pro: {
-            en: 'Your industry selection helps us optimize AI responses.',
-            tr: 'Sektör seçiminiz AI yanıtlarını optimize etmemize yardımcı olur.'
         },
         enterprise: {
             en: 'Configure for your primary business vertical.',
@@ -318,6 +289,6 @@ export function isModuleLockedInOnboarding(
         return !sectorDefaults.includes(moduleId as any);
     }
 
-    // Pro/Enterprise: Nothing locked
+    // Scale/Enterprise: Nothing locked
     return false;
 }

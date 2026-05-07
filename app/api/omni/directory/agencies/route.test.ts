@@ -59,7 +59,7 @@ describe("GET /api/omni/directory/agencies", () => {
         const payload = await response.json()
         expect(payload.agencies).toHaveLength(1)
         expect(payload.agencies[0].customerCount).toBe(2)
-        expect(payload.agencies[0].omniEnabledAccounts).toBe(2)
+        expect(payload.agencies[0].omniEnabledAccounts).toBe(1)
         expect(payload.agencies[0].partnerLevel).toBe("solution_partner")
     })
 

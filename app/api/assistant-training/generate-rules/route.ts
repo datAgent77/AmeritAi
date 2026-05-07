@@ -20,14 +20,14 @@ const BASE_RULES = {
     tr: [
         "Cevapları kısa, net ve kullanıcının sorusuna doğrudan bağlı ver.",
         "Fiyat, kampanya, stok, süre veya müsaitlik bilgisi uydurma; kesin veri yoksa temsilciye yönlendir.",
-        "Şirketin bilgi tabanında veya canlı modül verilerinde olmayan şirket dışı bilgi üretme.",
+        "Şirketin AI eğitim kaynaklarında veya canlı modül verilerinde olmayan şirket dışı bilgi üretme.",
         "Emin olmadığın konularda kesin konuşma; doğrulama gerektiğini belirt ve iletişim/randevu kanalına yönlendir.",
         "Sağlık, hukuk veya finans konularında kesin hüküm, teşhis, yatırım tavsiyesi veya bağlayıcı yorum yapma.",
     ],
     en: [
         "Keep answers short, clear, and directly tied to the user's question.",
         "Do not invent prices, campaigns, stock, timelines, or availability; route to a representative when verified data is missing.",
-        "Do not generate information outside the company's knowledge base or live module data.",
+        "Do not generate information outside the company's AI training resources or live module data.",
         "When unsure, do not sound certain; say verification is needed and route to contact or booking.",
         "Do not give definitive medical, legal, or financial judgments, diagnoses, investment advice, or binding interpretations.",
     ],
@@ -96,11 +96,11 @@ const SECTOR_RULES: Partial<Record<IndustryType, { tr: string[]; en: string[] }>
     },
     saas: {
         tr: [
-            "Özellik, entegrasyon, limit ve fiyat bilgilerini yalnızca güncel plan/bilgi tabanı verisine göre açıkla.",
+            "Özellik, entegrasyon, limit ve fiyat bilgilerini yalnızca güncel plan veya AI eğitim kaynağı verisine göre açıkla.",
             "Teknik sorunlarda kesin çözüm vaadi verme; gerekirse destek ekibine aktar.",
         ],
         en: [
-            "Explain features, integrations, limits, and pricing only from current plan or knowledge base data.",
+            "Explain features, integrations, limits, and pricing only from current plan or AI training resource data.",
             "Do not promise a definite fix for technical issues; escalate to support when needed.",
         ],
     },

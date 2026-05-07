@@ -26,22 +26,37 @@ import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 
 function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
-    const { user, role, userData, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
+    const { user, role, userData, productEntitlements, loading: authLoading, isTrialExpired, isPaidPlan, trialDaysLeft, planId, subscriptionStatus } = useAuth()
     const { language, t } = useLanguage() // Get t function
     const router = useRouter()
     const pathname = usePathname()
     const [userContext, setUserContext] = useState<UserContext | null>(null)
     const [isInitializing, setIsInitializing] = useState(true)
     const [isTerminated, setIsTerminated] = useState(false)
+    const [hasNoEnabledProducts, setHasNoEnabledProducts] = useState(false)
 
     useEffect(() => {
         if (authLoading) return
+        setHasNoEnabledProducts(false)
         if (role === "SUPER_ADMIN") {
             router.replace("/admin")
             return
         }
         if (role === "AGENCY_ADMIN") {
             router.replace("/agency")
+            return
+        }
+        if (role !== "AGENT" && productEntitlements.chatbot === false) {
+            if (productEntitlements.omniChannel) {
+                router.replace("/omni")
+                return
+            }
+            if (productEntitlements.cookieConsent) {
+                router.replace("/cookie")
+                return
+            }
+            setHasNoEnabledProducts(true)
+            setIsInitializing(false)
             return
         }
         if (role === "AGENT") {
@@ -61,7 +76,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                 router.replace("/console/chatbot/chats")
             }
         }
-    }, [authLoading, role, router, pathname, userData])
+    }, [authLoading, productEntitlements, role, router, pathname, userData])
 
     // Fetch user data and build context
     useEffect(() => {
@@ -185,6 +200,27 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") {
         return null
+    }
+
+    if (hasNoEnabledProducts) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-[#f4f6f8] px-6">
+                <div className="max-w-lg rounded-2xl border bg-white p-8 text-center shadow-sm">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        {language === "tr" ? "Uygulama erişimi kapalı" : "Application access disabled"}
+                    </h1>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                        {language === "tr"
+                            ? "Bu hesap için açık bir Vion uygulaması bulunmuyor. Erişim için yöneticinizle iletişime geçin."
+                            : "No Vion application is enabled for this account. Contact your administrator for access."}
+                    </p>
+                    <Button onClick={handleLogout} variant="outline" className="mt-6">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        {language === "tr" ? "Çıkış Yap" : "Sign Out"}
+                    </Button>
+                </div>
+            </div>
+        )
     }
 
     // Show Termination Modal

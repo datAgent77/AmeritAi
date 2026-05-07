@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { PublicFooter } from '@/components/public-footer';
-import { getPublicPlansSorted } from '@/lib/pricing-config';
+import { getPublicPlansSorted, shouldShowPlanPrices } from '@/lib/pricing-config';
 import { BillingToggle } from '@/components/pricing/billing-toggle';
 import { PricingCard } from '@/components/pricing/pricing-card';
 import { ShieldCheck, Zap, Headphones } from 'lucide-react';
@@ -17,6 +17,7 @@ export default function PricingPage() {
     const { t, language } = useLanguage();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
     const plans = getPublicPlansSorted();
+    const showPlanPrices = shouldShowPlanPrices();
     const lastPricingViewSignatureRef = useRef<string>("");
     const baseUrl = "https://www.getvion.com";
 
@@ -24,19 +25,21 @@ export default function PricingPage() {
         const signature = `${billingCycle}-${language}-${plans.length}`;
         if (lastPricingViewSignatureRef.current === signature) return;
 
-        const items = plans
-            .filter((plan) => !plan.billing.contact)
-            .map((plan) => {
-                const selectedBilling = billingCycle === 'annual'
-                    ? plan.billing.annual ?? plan.billing.monthly
-                    : plan.billing.monthly;
+        const items = plans.map((plan) => {
+            if (!showPlanPrices || plan.billing.contact) {
+                return { planId: plan.planId };
+            }
 
-                return {
-                    planId: plan.planId,
-                    price: selectedBilling?.amount ?? 0,
-                    currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD')
-                };
-            });
+            const selectedBilling = billingCycle === 'annual'
+                ? plan.billing.annual ?? plan.billing.monthly
+                : plan.billing.monthly;
+
+            return {
+                planId: plan.planId,
+                price: selectedBilling?.amount ?? 0,
+                currency: selectedBilling?.currency ?? (language === 'tr' ? 'TRY' : 'USD')
+            };
+        });
 
         trackPricingView({
             billingCycle,
@@ -45,7 +48,7 @@ export default function PricingPage() {
         });
 
         lastPricingViewSignatureRef.current = signature;
-    }, [billingCycle, language, plans]);
+    }, [billingCycle, language, plans, showPlanPrices]);
 
     const handleBillingCycleChange = (nextCycle: 'monthly' | 'annual') => {
         if (nextCycle === billingCycle) return;
@@ -59,7 +62,7 @@ export default function PricingPage() {
         setBillingCycle(nextCycle);
     };
 
-    const offerCatalogJsonLd = {
+    const offerCatalogJsonLd = showPlanPrices ? {
         "@context": "https://schema.org",
         "@type": "OfferCatalog",
         "name": language === "tr" ? "Vion AI Fiyatlandırma Planları" : "Vion AI Pricing Plans",
@@ -83,7 +86,7 @@ export default function PricingPage() {
                     "category": "SaaS Subscription"
                 };
             })
-    };
+    } : null;
 
     const breadcrumbJsonLd = {
         "@context": "https://schema.org",
@@ -107,11 +110,11 @@ export default function PricingPage() {
     return (
         <div className="min-h-screen bg-slate-50/50 dark:bg-background relative selection:bg-primary/20 flex flex-col font-sans text-foreground">
             <PublicHeader />
-            
-            <PublicBreadcrumb 
+
+            <PublicBreadcrumb
                 items={[
                     { label: t('navPricing') }
-                ]} 
+                ]}
             />
 
             <main className="relative flex-1 pt-12 pb-24 px-6">
@@ -127,19 +130,21 @@ export default function PricingPage() {
                     </div>
 
                     {/* Billing Toggle */}
-                    <BillingToggle 
-                        billingCycle={billingCycle} 
-                        onChange={handleBillingCycleChange} 
-                    />
+                    {showPlanPrices && (
+                        <BillingToggle
+                            billingCycle={billingCycle}
+                            onChange={handleBillingCycleChange}
+                        />
+                    )}
 
                     {/* Pricing Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                         {plans.map((plan, index) => (
-                            <PricingCard 
-                                key={plan.planId} 
-                                plan={plan} 
-                                billingCycle={billingCycle} 
-                                index={index} 
+                            <PricingCard
+                                key={plan.planId}
+                                plan={plan}
+                                billingCycle={billingCycle}
+                                index={index}
                             />
                         ))}
                     </div>
@@ -184,10 +189,12 @@ export default function PricingPage() {
             </main>
 
             <div className="relative z-10">
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(offerCatalogJsonLd) }}
-                />
+                {offerCatalogJsonLd && (
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(offerCatalogJsonLd) }}
+                    />
+                )}
                 <script
                     type="application/ld+json"
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

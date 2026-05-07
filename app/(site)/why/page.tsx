@@ -45,7 +45,7 @@ export default function WhyPage() {
         'Randevu Sistemi': 'appointments',
         'Live Chat (Takeover)': 'core', // Core feature
         'Canlı Destek (Takeover)': 'core',
-        'Knowledge Base': 'knowledgeBase',
+        'AI Training Resources': 'knowledgeBase',
         'Lead Collection': 'leadCollection',
         'Lead Toplama': 'leadCollection',
         'Omnichannel': 'core', // Core feature
@@ -62,7 +62,7 @@ export default function WhyPage() {
         { featureKey: 'Cart Recovery', moduleId: 'salesOptimization' as ModuleId, tawkto: false, intercom: 'partial' as const, drift: true },
         { featureKey: 'Appointment System', moduleId: 'appointments' as ModuleId, tawkto: false, intercom: true, drift: true },
         { featureKey: 'Live Chat (Takeover)', moduleId: 'core' as const, tawkto: true, intercom: true, drift: true },
-        { featureKey: 'Knowledge Base', moduleId: 'knowledgeBase' as ModuleId, tawkto: true, intercom: true, drift: false },
+        { featureKey: 'AI Training Resources', moduleId: 'knowledgeBase' as ModuleId, tawkto: true, intercom: true, drift: false },
         { featureKey: 'Lead Collection', moduleId: 'leadCollection' as ModuleId, tawkto: true, intercom: true, drift: true },
         { featureKey: 'Omnichannel', moduleId: 'core' as const, tawkto: true, intercom: true, drift: true },
     ]
@@ -89,7 +89,7 @@ export default function WhyPage() {
                    item.featureKey === 'Cart Recovery' ? 'Sepet Kurtarma' :
                    item.featureKey === 'Appointment System' ? 'Randevu Sistemi' :
                    item.featureKey === 'Live Chat (Takeover)' ? 'Canlı Destek (Takeover)' :
-                   item.featureKey === 'Knowledge Base' ? 'Knowledge Base' :
+                   item.featureKey === 'AI Training Resources' ? 'AI Eğitim Kaynakları' :
                    item.featureKey === 'Lead Collection' ? 'Lead Toplama' :
                    item.featureKey === 'Omnichannel' ? 'Çok Kanallı' : item.featureKey)
                 : item.featureKey,

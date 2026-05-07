@@ -88,6 +88,7 @@ const HUMAN_HANDOFF_PATTERNS = [
     /\bgercek bir insanla\b/i,
     // "temsilciyle" patterns
     /\btemsilciyle\b/i,
+    /\btemsilci taleb/i,
     /\btemsilciye baglan/i,
     /\btemsilci ile\b/i,
     /\btemsilciye aktar/i,

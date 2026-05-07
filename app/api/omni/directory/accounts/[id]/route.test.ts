@@ -80,7 +80,7 @@ describe("PATCH /api/omni/directory/accounts/[id]", () => {
         expect(payload.account.omniEnabled).toBe(true)
     })
 
-    test("treats chatbot-enabled accounts as omni-enabled in the serialized response", async () => {
+    test("does not treat chatbot-enabled accounts as omni-enabled in the serialized response", async () => {
         const set = vi.fn().mockResolvedValue(undefined)
         const adminDb = {
             collection: vi.fn().mockReturnValue({
@@ -120,7 +120,7 @@ describe("PATCH /api/omni/directory/accounts/[id]", () => {
 
         expect(response.status).toBe(200)
         const payload = await response.json()
-        expect(payload.account.omniEnabled).toBe(true)
+        expect(payload.account.omniEnabled).toBe(false)
     })
 
     test("blocks agency admins from enabling accounts outside their agency", async () => {

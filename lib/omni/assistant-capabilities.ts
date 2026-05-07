@@ -20,8 +20,8 @@ export const ASSISTANT_CAPABILITIES: AssistantCapability[] = [
     },
     {
         id: "knowledgeBase",
-        title: "Knowledge Base",
-        description: "Tenant knowledge base, uploaded documents, FAQs, and policy content.",
+        title: "AI Training Resources",
+        description: "Tenant AI training resources, uploaded documents, FAQs, and policy content.",
         supportedChannels: OMNI_CHANNELS,
         defaultEnabledChannels: OMNI_CHANNELS,
         allowedActions: ["retrieve_knowledge", "cite_policy", "summarize"],

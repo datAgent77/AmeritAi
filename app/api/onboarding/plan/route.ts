@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { STEP_INDEX } from "@/lib/onboarding-config";
-import { planExists, getAllPlans } from "@/lib/pricing-config";
+import { getPlan, getPublicPlansSorted, normalizePlanId, planExists } from "@/lib/pricing-config";
 import { FieldValue } from "firebase-admin/firestore";
 import { buildActorFromRequest, logPlatformEvent } from "@/lib/server-event-log";
 
@@ -45,20 +45,21 @@ export async function POST(req: Request) {
 
         // Validate input
         const body = await req.json();
-        const { planId } = body;
+        const requestedPlanId = typeof body?.planId === "string" ? body.planId : "";
+        const planId = normalizePlanId(requestedPlanId);
 
         // Check if planId is valid
-        if (!planId || !planExists(planId)) {
+        if (!requestedPlanId || !planExists(requestedPlanId)) {
             await logPlatformEvent({
                 event_type: "onboarding_plan_select",
                 actor: buildActorFromRequest(req, { uid: decoded.uid }),
                 source_module: "onboarding_plan_api",
                 result: "error",
-                metadata: { reason: "invalid_plan", requested_plan_id: planId || null }
+                metadata: { reason: "invalid_plan", requested_plan_id: requestedPlanId || null }
             });
             return NextResponse.json({ 
                 error: "Invalid plan ID",
-                validPlans: getAllPlans().map(p => p.planId)
+                validPlans: getPublicPlansSorted().map(p => p.planId)
             }, { status: 400 });
         }
 
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
         const userData = userSnap.data() || {};
 
         // Get selected plan details
-        const selectedPlan = getAllPlans().find(p => p.planId === planId);
+        const selectedPlan = getPlan(planId);
         const defaultModules = (selectedPlan?.modules.defaultEnabled || []).filter(
             (moduleId): moduleId is string => typeof moduleId === "string"
         );
@@ -118,7 +119,8 @@ export async function POST(req: Request) {
             actor: buildActorFromRequest(req, { uid: decoded.uid }),
             source_module: "onboarding_plan_api",
             result: "success",
-            target: { plan_id: planId }
+            target: { plan_id: planId },
+            metadata: requestedPlanId !== planId ? { requested_plan_id: requestedPlanId } : undefined
         });
 
         return NextResponse.json({

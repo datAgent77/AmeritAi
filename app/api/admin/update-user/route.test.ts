@@ -92,4 +92,108 @@ describe("POST /api/admin/update-user", () => {
             agencyAssignedBy: null,
         }), { merge: true })
     })
+
+    test("updates tenant product access while keeping at least one application enabled", async () => {
+        const set = vi.fn().mockResolvedValue(undefined)
+
+        vi.mocked(getAdminAuth).mockReturnValue({
+            verifyIdToken: vi.fn().mockResolvedValue({ uid: "super-1", role: "SUPER_ADMIN" }),
+            updateUser: vi.fn(),
+        } as any)
+
+        vi.mocked(getAdminDb).mockReturnValue({
+            collection: vi.fn().mockReturnValue({
+                doc: vi.fn().mockImplementation((id: string) => ({
+                    get: vi.fn().mockResolvedValue({
+                        exists: true,
+                        data: () => (
+                            id === "super-1"
+                                ? { role: "SUPER_ADMIN" }
+                                : {
+                                    role: "TENANT_ADMIN",
+                                    productEntitlements: {
+                                        chatbot: true,
+                                        omniChannel: false,
+                                        cookieConsent: false,
+                                        copywriter: false,
+                                        leadFinder: false,
+                                    },
+                                }
+                        ),
+                    }),
+                    set,
+                })),
+            }),
+        } as any)
+
+        vi.mocked(authorizeTargetAccess).mockResolvedValue({
+            ok: true,
+            callerUid: "super-1",
+            isSuperAdmin: true,
+            isAgencyAdmin: false,
+        } as any)
+
+        const response = await POST(createRequest({
+            targetUserId: "tenant-1",
+            productEntitlements: {
+                chatbot: false,
+                omniChannel: true,
+                cookieConsent: true,
+            },
+        }) as any)
+
+        expect(response.status).toBe(200)
+        expect(set).toHaveBeenCalledWith(expect.objectContaining({
+            enableChatbot: false,
+            visibleChatbot: false,
+            enableOmniChannel: true,
+            visibleOmniChannel: true,
+            enableCookieConsent: true,
+            visibleCookieConsent: true,
+            productEntitlements: expect.objectContaining({
+                chatbot: false,
+                omniChannel: true,
+                cookieConsent: true,
+            }),
+        }), { merge: true })
+    })
+
+    test("rejects disabling every tenant application", async () => {
+        vi.mocked(getAdminAuth).mockReturnValue({
+            verifyIdToken: vi.fn().mockResolvedValue({ uid: "super-1", role: "SUPER_ADMIN" }),
+            updateUser: vi.fn(),
+        } as any)
+
+        vi.mocked(getAdminDb).mockReturnValue({
+            collection: vi.fn().mockReturnValue({
+                doc: vi.fn().mockImplementation((id: string) => ({
+                    get: vi.fn().mockResolvedValue({
+                        exists: true,
+                        data: () => id === "super-1" ? { role: "SUPER_ADMIN" } : { role: "TENANT_ADMIN" },
+                    }),
+                    set: vi.fn(),
+                })),
+            }),
+        } as any)
+
+        vi.mocked(authorizeTargetAccess).mockResolvedValue({
+            ok: true,
+            callerUid: "super-1",
+            isSuperAdmin: true,
+            isAgencyAdmin: false,
+        } as any)
+
+        const response = await POST(createRequest({
+            targetUserId: "tenant-1",
+            productEntitlements: {
+                chatbot: false,
+                omniChannel: false,
+                cookieConsent: false,
+            },
+        }) as any)
+
+        expect(response.status).toBe(400)
+        const payload = await response.json()
+        expect(payload.error).toContain("At least one application")
+    })
 })

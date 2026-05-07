@@ -25,7 +25,7 @@ export async function POST(req: Request) {
         const { tone, topics, language = 'tr' } = await req.json()
         const isTurkish = language === 'tr'
 
-        // Fetch knowledge base data
+        // Fetch AI training resources data
         const chatbotDoc = await adminDb.collection("chatbots").doc(userId).get()
         const chatbotData = chatbotDoc.data() || {}
 
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         // 3. Text knowledge
         const textSnapshot = await adminDb.collection("chatbots").doc(userId).collection("knowledge_text").limit(5).get()
         if (!textSnapshot.empty) {
-            knowledgeContext += `\n${isTurkish ? 'Bilgi Metinleri' : 'Knowledge Base'}:\n`
+            knowledgeContext += `\n${isTurkish ? 'AI Eğitim Metinleri' : 'AI Training Resources'}:\n`
             textSnapshot.docs.forEach(doc => {
                 const text = doc.data()
                 if (text.content) {
@@ -114,7 +114,7 @@ ${toneInstruction}
 
 ${topicFocus}
 
-Bilgi Tabanı:
+AI Eğitim Kaynakları:
 ${knowledgeContext}
 
 Kurallar:
@@ -138,7 +138,7 @@ ${toneInstruction}
 
 ${topicFocus}
 
-Knowledge Base:
+AI Training Resources:
 ${knowledgeContext}
 
 Rules:

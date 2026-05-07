@@ -164,7 +164,7 @@ function buildStaticPageDefinitions(t: OmniTranslate): OmniPageDefinition[] {
         },
         {
             path: "/omni/knowledge-base",
-            title: getOmniCopy(t, "omni.page.knowledge.title", "Knowledge Base"),
+            title: getOmniCopy(t, "omni.page.knowledge.title", "AI Training Resources"),
             description: getOmniCopy(t, "omni.page.knowledge.description", "Shared knowledge governance reused by every Omni agent and channel."),
             specialView: "knowledge-governance",
         },
@@ -351,7 +351,7 @@ export function getOmniNavGroups(t: OmniTranslate, permissions: OmniPermission[]
             title: getOmniCopy(t, "omni.nav.configure", "Configure"),
             items: [
                 { title: getOmniCopy(t, "omni.nav.agents", "Agents"), href: "/omni/agents", icon: Bot },
-                { title: getOmniCopy(t, "omni.nav.knowledgeBase", "Knowledge Base"), href: "/omni/knowledge-base", icon: BookOpen },
+                { title: getOmniCopy(t, "omni.nav.knowledgeBase", "AI Training Resources"), href: "/omni/knowledge-base", icon: BookOpen },
                 { title: getOmniCopy(t, "omni.nav.tools", "Tools"), href: "/omni/tools", icon: Wrench },
                 { title: getOmniCopy(t, "omni.nav.integrations", "Integrations"), href: "/omni/integrations", icon: LayoutPanelTop },
                 { title: getOmniCopy(t, "omni.nav.voices", "Voices"), href: "/omni/voices", icon: AudioLines },

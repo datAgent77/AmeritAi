@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useLanguage } from '@/context/LanguageContext'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
-import { getPublicPlansSorted, formatPlanPrice, PlanConfig } from '@/lib/pricing-config'
+import { getPublicPlansSorted, formatPlanPrice, PlanConfig, shouldShowPlanPrices, normalizePlanId, getPlanHighlightsSorted, isPreferredPlanBadge } from '@/lib/pricing-config'
 import { BillingToggle } from '@/components/pricing/billing-toggle'
-import { Check, Loader2, Zap } from 'lucide-react'
+import { Check, Info, Loader2, Sparkles, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
 
@@ -19,7 +19,8 @@ export default function SubscriptionPage() {
     const [requestedPlanId, setRequestedPlanId] = useState<string | null>(null)
 
     const allPlans = getPublicPlansSorted()
-    const currentPlanId = authPlanId || 'starter'
+    const showPlanPrices = shouldShowPlanPrices()
+    const currentPlanId = normalizePlanId(authPlanId || 'starter')
     const currentPlanConfig = allPlans.find(p => p.planId === currentPlanId)
     const profileRequestedPlanId = ((user as any)?.lastUpgradeRequest?.status === 'pending'
         ? (user as any)?.lastUpgradeRequest?.targetPlan
@@ -98,7 +99,7 @@ export default function SubscriptionPage() {
                     {language === 'tr' ? 'Planınızı Yönetin' : 'Manage Your Plan'}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                    {language === 'tr' 
+                    {language === 'tr'
                         ? 'Mevcut planınızı görüntüleyin veya yükseltin.'
                         : 'View or upgrade your current plan.'}
                 </p>
@@ -118,33 +119,35 @@ export default function SubscriptionPage() {
             )}
 
             {/* Billing Toggle */}
-            <div className="flex justify-center">
-                <BillingToggle 
-                    billingCycle={billingCycle} 
-                    onChange={setBillingCycle} 
-                />
-            </div>
+            {showPlanPrices && (
+                <div className="flex justify-center">
+                    <BillingToggle
+                        billingCycle={billingCycle}
+                        onChange={setBillingCycle}
+                    />
+                </div>
+            )}
 
             {/* Plans Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allPlans.map((plan) => {
                     const isCurrentPlan = plan.planId === currentPlanId
                     const isContact = plan.billing.contact
                     const price = formatPlanPrice(plan.planId, billingCycle, language as 'en' | 'tr')
-                    const isPopular = plan.copy.badge === 'recommended' || plan.copy.badge === 'Önerilen'
-                    const isUnlimitedMsg = (feature: string) => 
-                        feature === 'featureUnlimitedMessages' || 
-                        feature.includes('Sınırsız Mesajlaşma') || 
+                    const isPopular = isPreferredPlanBadge(plan.copy.badge)
+                    const isUnlimitedMsg = (feature: string) =>
+                        feature === 'featureUnlimitedMessages' ||
+                        feature.includes('Sınırsız Mesajlaşma') ||
                         feature.includes('Unlimited Messaging')
 
                     return (
-                        <div 
+                        <div
                             key={plan.planId}
                             className={cn(
-                                "relative flex flex-col p-5 rounded-xl border transition-all",
+                                "relative flex flex-col p-5 rounded-xl border transition-all shadow-lg shadow-slate-900/5",
                                 (isCurrentPlan || isPopular) && "pt-6",
-                                isCurrentPlan 
-                                    ? "border-primary/50 bg-primary/5" 
+                                isCurrentPlan
+                                    ? "border-primary/50 bg-primary/5"
                                     : isPopular
                                         ? "border-primary shadow-lg shadow-primary/10"
                                         : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
@@ -161,7 +164,7 @@ export default function SubscriptionPage() {
                             {isPopular && !isCurrentPlan && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                                     <span className="text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-800 px-2 py-1 rounded-full shadow-sm">
-                                        {language === 'tr' ? 'Önerilen' : 'Recommended'}
+                                        {t('preferredPlanTag') || (language === 'tr' ? 'Tercih Edilen' : 'Preferred')}
                                     </span>
                                 </div>
                             )}
@@ -172,15 +175,15 @@ export default function SubscriptionPage() {
                                 <p className="text-sm text-muted-foreground mb-3 h-10">{t(plan.copy.subtitle || '')}</p>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-2xl font-bold">
-                                        {isContact 
+                                        {isContact
                                             ? (language === 'tr' ? 'Özel Teklif' : 'Custom')
                                             : price.split('/')[0]}
                                     </span>
-                                    {!isContact && price.includes('/') && (
+                                    {showPlanPrices && !isContact && price.includes('/') && (
                                         <span className="text-sm text-muted-foreground">/{price.split('/')[1]}</span>
                                     )}
                                 </div>
-                                {billingCycle === 'annual' && plan.billing.annual?.discountLabel && (
+                                {showPlanPrices && billingCycle === 'annual' && plan.billing.annual?.discountLabel && (
                                     <p className="text-xs text-green-600 mt-1 font-medium">
                                         {t(plan.billing.annual.discountLabel)}
                                     </p>
@@ -188,7 +191,7 @@ export default function SubscriptionPage() {
                             </div>
 
                             {/* CTA Button */}
-                            <Button 
+                            <Button
                                 variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
                                 className={cn(
                                     "w-full mb-4",
@@ -204,7 +207,7 @@ export default function SubscriptionPage() {
                                 {submittingPlanId === plan.planId && (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 )}
-                                {isCurrentPlan 
+                                {isCurrentPlan
                                     ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
                                     : isContact
                                         ? (language === 'tr' ? 'İletişime Geç' : 'Contact Sales')
@@ -215,28 +218,48 @@ export default function SubscriptionPage() {
 
                             {/* Features List */}
                             <div className="flex-1 space-y-2">
-                                {plan.highlights?.map((feature, i) => (
-                                    <div key={i} className="flex items-start gap-2 text-sm">
-                                        {isUnlimitedMsg(feature) ? (
+                                {getPlanHighlightsSorted(plan).map((feature, i) => {
+                                    const isComingSoon = plan.highlights_meta?.coming_soon?.includes(feature)
+                                    const isCustomModuleDevelopment = feature === 'featureCustomModuleDevelopment'
+                                    return (
+                                    <div
+                                        key={i}
+                                        className={cn(
+                                            "flex items-start gap-2 text-sm",
+                                            isCustomModuleDevelopment && "rounded-lg border border-primary/20 bg-primary/5 px-2 py-1.5"
+                                        )}
+                                    >
+                                        {isCustomModuleDevelopment ? (
+                                            <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                        ) : isComingSoon ? (
+                                            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                        ) : isUnlimitedMsg(feature) ? (
                                             <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
                                         ) : (
                                             <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                                         )}
                                         <span className={cn(
                                             "text-muted-foreground",
-                                            isUnlimitedMsg(feature) && "font-semibold text-foreground"
+                                            isUnlimitedMsg(feature) && "font-semibold text-foreground",
+                                            isCustomModuleDevelopment && "font-semibold text-primary"
                                         )}>
                                             {t(feature)}
+                                            {isComingSoon && (
+                                                <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                    {language === 'tr' ? 'Yakında' : 'Soon'}
+                                                </span>
+                                            )}
                                         </span>
                                     </div>
-                                ))}
+                                    )
+                                })}
                             </div>
 
                             {/* Limits Section */}
                             {plan.limits.knowledge && (
                                 <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                        {t('limitKnowledgeTitle') || 'Bilgi Tabanı Limitleri'}
+                                        {t('limitKnowledgeTitle') || 'Eğitim Kaynağı Limitleri'}
                                     </p>
                                     <div className="grid grid-cols-2 gap-1.5 text-xs">
                                         <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">

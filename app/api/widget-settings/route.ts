@@ -4,6 +4,7 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { MODULES_REGISTRY } from "@/lib/modules-registry";
 import { resolveDynamicContextPresetSelection } from "@/lib/dynamic-context-presets";
 import { resolveKvkkConsentPayload } from "@/lib/kvkk-consent";
+import { resolvePrivacyCompliancePayload } from "@/lib/privacy-compliance";
 import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS, resolveHumanHandoffSettings } from "@/lib/human-handoff";
 import { resolveQuickActionsConfig } from "@/lib/quick-actions";
 import { getPublishedContract } from "@/lib/contracts";
@@ -332,6 +333,7 @@ export async function GET(req: Request) {
                     return NextResponse.json({
                         isEnabled: false,
                         companyName: userData?.companyName || "Vion AI",
+                        hideVionBranding: false,
                         theme: "classic"
                     }, {
                         headers: {
@@ -408,6 +410,11 @@ export async function GET(req: Request) {
 
                     const publishedKvkkContract = await getPublishedContract(adminDb, "kvkkDefault").catch(() => null);
                     const kvkkConsent = resolveKvkkConsentPayload({ mergedData, publishedKvkkContract });
+                    const privacyCompliance = resolvePrivacyCompliancePayload({
+                        mergedData,
+                        publishedKvkkContract,
+                        language: mergedData.initialLanguage,
+                    });
                     const humanHandoffSettings = resolveHumanHandoffSettings(mergedData);
                     const baseSurveyWidgetConfig = buildDefaultSurveyWidgetConfig(mergedData.surveyModuleConfig);
                     const activeWidgetSurvey = mergedData.enableSurveyManager === true && baseSurveyWidgetConfig.widgetActiveSurveyId
@@ -438,6 +445,7 @@ export async function GET(req: Request) {
                         welcomeMessageLocalized: mergedData.welcomeMessageLocalized || { tr: "", en: "" },
                         brandColor: mergedData.brandColor || "#000000",
                         brandLogo: mergedData.brandLogo || "",
+                        hideVionBranding: mergedData.hideVionBranding === true,
                         headerLogo: mergedData.headerLogo || "",
                         headerLogoWidth: mergedData.headerLogoWidth || 32,
                         headerLogoHeight: mergedData.headerLogoHeight || 32,
@@ -627,6 +635,7 @@ export async function GET(req: Request) {
                         guidedSkills,
                         theme: mergedData.theme || "classic",
                         kvkkConsent,
+                        privacyCompliance,
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',
@@ -644,6 +653,7 @@ export async function GET(req: Request) {
                 welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
                 brandColor: "#000000",
                 brandLogo: "", // Ensure this is a valid path if possible, or empty
+                hideVionBranding: false,
                 headerLogo: "",
                 headerBackgroundColor: "#000000",
                 headerTextColor: "#FFFFFF",
@@ -805,6 +815,7 @@ export async function GET(req: Request) {
                 companyName: "Vion AI",
                 welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
                 brandColor: "#000000",
+                hideVionBranding: false,
                 suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
                 enableGuided: false,
                 enableBusinessHours: false,
@@ -988,13 +999,12 @@ export async function POST(req: Request) {
         const { chatbotId } = body;
 
         let targetChatbotId = userId;
+        const callerUserDoc = await adminDb.collection("users").doc(userId).get();
+        const callerUserData = callerUserDoc.data();
+        const callerRole = callerUserData?.role;
 
         // If trying to edit another chatbot, check permissions properly
         if (chatbotId && chatbotId !== userId) {
-            const userDoc = await adminDb.collection("users").doc(userId).get();
-            const userData = userDoc.data();
-            const callerRole = userData?.role;
-
             if (callerRole === 'SUPER_ADMIN') {
                 // Super admin can edit any chatbot
                 targetChatbotId = chatbotId;
@@ -1016,6 +1026,9 @@ export async function POST(req: Request) {
 
         // Remove chatbotId from body before saving
         const { chatbotId: _, ...settingsToSave } = body;
+        if (callerRole !== "SUPER_ADMIN") {
+            delete settingsToSave.hideVionBranding;
+        }
 
         const saveKeys = Object.keys(settingsToSave);
         const isEngagementOnlySave =

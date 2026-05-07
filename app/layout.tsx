@@ -149,9 +149,7 @@ export default function RootLayout({
     operatingSystem: 'Web',
     offers: {
       '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-      description: '14-day free trial'
+      description: 'Contact Vion AI for current plan pricing and trial details'
     },
     brand: {
       '@id': 'https://www.getvion.com/#organization'

@@ -13,6 +13,13 @@ interface InlineBookingFormProps {
     settings: ChatbotSettings
     t: (key: string) => string
     onSuccess?: (appointmentId: string) => void
+    privacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+        onGrant?: () => Promise<void>
+    }
 }
 
 interface BookingFormData {
@@ -26,7 +33,7 @@ interface BookingFormData {
     phone: string
 }
 
-export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess }: InlineBookingFormProps) {
+export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess, privacyConsent }: InlineBookingFormProps) {
     const { language } = useLanguage()
     const isTr = language === "tr"
     const copy = {
@@ -108,6 +115,7 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
     const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
     const [, setAppointmentId] = useState("")
+    const [privacyChecked, setPrivacyChecked] = useState(false)
 
     const set = (key: keyof BookingFormData, value: string) =>
         setForm((prev) => ({ ...prev, [key]: value }))
@@ -168,11 +176,21 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
             return
         }
 
+        if (privacyConsent?.required && !privacyChecked) {
+            setErrorMsg(privacyConsent.errorText)
+            setStatus("error")
+            return
+        }
+
         persistContactDraft(trimmedName, trimmedEmail, trimmedPhone)
         setStatus("submitting")
         setErrorMsg("")
 
         try {
+            if (privacyConsent?.required) {
+                await privacyConsent.onGrant?.()
+            }
+
             const res = await fetch("/api/appointments", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -315,6 +333,33 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                 <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg">
                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     {errorMsg}
+                </div>
+            )}
+
+            {privacyConsent?.required && (
+                <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-2.5">
+                    <label className="flex items-start gap-2 text-[11px] leading-4 text-gray-600">
+                        <input
+                            type="checkbox"
+                            checked={privacyChecked}
+                            onChange={(event) => {
+                                setPrivacyChecked(event.target.checked)
+                                if (errorMsg === privacyConsent.errorText) {
+                                    setErrorMsg("")
+                                    setStatus("idle")
+                                }
+                            }}
+                            className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300"
+                        />
+                        <span>{privacyConsent.checkboxLabel}</span>
+                    </label>
+                    <button
+                        type="button"
+                        onClick={privacyConsent.onReadNotice}
+                        className="text-[11px] font-medium text-gray-700 underline underline-offset-4"
+                    >
+                        {t("privacyNoticeOpen") === "privacyNoticeOpen" ? "Aydınlatma Metni" : t("privacyNoticeOpen")}
+                    </button>
                 </div>
             )}
 

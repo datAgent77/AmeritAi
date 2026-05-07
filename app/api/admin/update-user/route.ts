@@ -4,6 +4,25 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { isPartnerLevel, resolvePartnerLevel } from '@/lib/management/access';
 import { isSuperAdminRole } from '@/lib/user-roles';
 import { authorizeTargetAccess } from '@/lib/api-auth';
+import type { ProductEntitlements } from '@/lib/omni/types';
+
+const PRODUCT_ACCESS_KEYS = ['chatbot', 'omniChannel', 'cookieConsent'] as const;
+
+function normalizeProductEntitlementPatch(value: unknown) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+
+    const patch: Partial<ProductEntitlements> = {};
+    for (const key of PRODUCT_ACCESS_KEYS) {
+        const rawValue = (value as Record<string, unknown>)[key];
+        if (typeof rawValue === 'boolean') {
+            patch[key] = rawValue;
+        }
+    }
+
+    return Object.keys(patch).length > 0 ? patch : null;
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -35,7 +54,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { targetUserId, email, password, role, isActive, partnerLevel, agencyName } = body;
+        const { targetUserId, email, password, role, isActive, partnerLevel, agencyName, productEntitlements } = body;
 
         if (!targetUserId) {
             return NextResponse.json({ error: 'Missing targetUserId' }, { status: 400 });
@@ -112,6 +131,38 @@ export async function POST(req: NextRequest) {
 
         if (typeof isActive === 'boolean') {
             firestoreUpdates.isActive = isActive;
+        }
+
+        const productEntitlementPatch = normalizeProductEntitlementPatch(productEntitlements);
+        if (productEntitlementPatch) {
+            const existingEntitlements = targetUserData.productEntitlements || {};
+            const nextProductEntitlements: ProductEntitlements = {
+                chatbot: existingEntitlements.chatbot ?? (targetUserData.enableChatbot !== false),
+                omniChannel: existingEntitlements.omniChannel ?? (targetUserData.enableOmniChannel === true),
+                cookieConsent: existingEntitlements.cookieConsent ?? (targetUserData.enableCookieConsent === true),
+                copywriter: existingEntitlements.copywriter === true,
+                leadFinder: existingEntitlements.leadFinder === true,
+                ...productEntitlementPatch,
+            };
+
+            const hasAtLeastOneProduct = PRODUCT_ACCESS_KEYS.some((key) => nextProductEntitlements[key] === true);
+            if (!hasAtLeastOneProduct) {
+                return NextResponse.json({ error: 'At least one application must remain enabled' }, { status: 400 });
+            }
+
+            firestoreUpdates.productEntitlements = nextProductEntitlements;
+            if (typeof productEntitlementPatch.chatbot === 'boolean') {
+                firestoreUpdates.enableChatbot = productEntitlementPatch.chatbot;
+                firestoreUpdates.visibleChatbot = productEntitlementPatch.chatbot;
+            }
+            if (typeof productEntitlementPatch.omniChannel === 'boolean') {
+                firestoreUpdates.enableOmniChannel = productEntitlementPatch.omniChannel;
+                firestoreUpdates.visibleOmniChannel = productEntitlementPatch.omniChannel;
+            }
+            if (typeof productEntitlementPatch.cookieConsent === 'boolean') {
+                firestoreUpdates.enableCookieConsent = productEntitlementPatch.cookieConsent;
+                firestoreUpdates.visibleCookieConsent = productEntitlementPatch.cookieConsent;
+            }
         }
 
         if (partnerLevel !== undefined && firestoreUpdates.role !== 'AGENCY_ADMIN') {

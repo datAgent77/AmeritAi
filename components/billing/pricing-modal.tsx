@@ -2,9 +2,9 @@
 
 import React, { useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Check, Info, Sparkles, Building2, Rocket, Zap } from "lucide-react"
+import { Check, Info, Sparkles, Building2, Rocket } from "lucide-react"
 import { ContactSalesForm } from "./contact-sales-form"
-import { getPublicPlansSorted, formatPlanPrice } from "@/lib/pricing-config"
+import { getPublicPlansSorted, formatPlanPrice, getPlanHighlightsSorted, isPreferredPlanBadge, normalizePlanId } from "@/lib/pricing-config"
 import { useLanguage } from "@/context/LanguageContext"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +17,6 @@ interface PricingModalProps {
 const PLAN_ICONS: Record<string, any> = {
     starter: Rocket,
     growth: Sparkles,
-    pro: Zap,
     enterprise: Building2
 }
 
@@ -26,6 +25,7 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
     const { language, t } = useLanguage()
     const lang = language === "tr" ? "tr" : "en"
     const plans = useMemo(() => getPublicPlansSorted(), [])
+    const normalizedCurrentPlan = normalizePlanId(currentPlan)
 
     const getPlanName = (planId: string, fallback: string) => {
         const key = `plan${planId.charAt(0).toUpperCase() + planId.slice(1)}`
@@ -71,10 +71,10 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto px-8 py-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {plans.map((plan) => {
                         const Icon = PLAN_ICONS[plan.planId] || Sparkles
-                        const isPopular = plan.copy.badge === "recommended" || plan.copy.badge === "Önerilen" || plan.copy.badge === "Recommended"
+                        const isPopular = isPreferredPlanBadge(plan.copy.badge)
                         const isContact = plan.billing.contact
                         const price = formatPlanPrice(plan.planId, "monthly", lang)
                         const translatedSubtitle = t(plan.copy.subtitle || "")
@@ -84,7 +84,7 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                             <div
                                 key={plan.planId}
                                 className={cn(
-                                    "relative rounded-2xl border p-6 flex flex-col",
+                                    "relative rounded-2xl border p-6 flex flex-col shadow-lg shadow-slate-900/5",
                                     isPopular
                                         ? "border-primary shadow-xl ring-2 ring-primary/30 bg-white dark:bg-zinc-900"
                                         : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/70"
@@ -92,7 +92,7 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                             >
                                 {isPopular && (
                                     <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-sm">
-                                        {t("recommended")}
+                                        {t("preferredPlanTag") || (language === "tr" ? "Tercih Edilen" : "Preferred")}
                                     </div>
                                 )}
 
@@ -116,17 +116,33 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
                                 </div>
 
                                 <div className="space-y-3 flex-1 mb-8">
-                                    {plan.highlights?.map((feature, i) => {
+                                    {getPlanHighlightsSorted(plan).map((feature, i) => {
                                         const isComingSoon = plan.highlights_meta?.coming_soon?.includes(feature)
+                                        const isCustomModuleDevelopment = feature === "featureCustomModuleDevelopment"
                                         const translatedFeature = t(feature) !== feature ? t(feature) : feature
                                         return (
-                                            <div key={i} className="flex items-start gap-3 text-sm">
-                                                {isComingSoon ? (
+                                            <div
+                                                key={i}
+                                                className={cn(
+                                                    "flex items-start gap-3 text-sm",
+                                                    isCustomModuleDevelopment && "rounded-lg border border-primary/20 bg-primary/5 px-2 py-1.5"
+                                                )}
+                                            >
+                                                {isCustomModuleDevelopment ? (
+                                                    <Sparkles className="w-5 h-5 flex-shrink-0 text-primary" />
+                                                ) : isComingSoon ? (
                                                     <Info className="w-5 h-5 flex-shrink-0 text-amber-500" />
                                                 ) : (
                                                     <Check className="w-5 h-5 flex-shrink-0 text-green-600" />
                                                 )}
-                                                <span className={cn(isComingSoon && "text-muted-foreground")}>{translatedFeature}</span>
+                                                <span className={cn(isComingSoon && "text-muted-foreground", isCustomModuleDevelopment && "font-semibold text-primary")}>
+                                                    {translatedFeature}
+                                                    {isComingSoon && (
+                                                        <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                            {language === "tr" ? "Yakında" : "Soon"}
+                                                        </span>
+                                                    )}
+                                                </span>
                                             </div>
                                         )
                                     })}
@@ -134,20 +150,20 @@ export function PricingModal({ isOpen, onClose, currentPlan = "starter" }: Prici
 
                                 <button
                                     onClick={() => {
-                                        if (plan.planId === currentPlan) return
+                                        if (plan.planId === normalizedCurrentPlan) return
                                         setSelectedPlan(plan.planId)
                                     }}
-                                    disabled={plan.planId === currentPlan}
+                                    disabled={plan.planId === normalizedCurrentPlan}
                                     className={cn(
                                         "w-full py-3 px-4 rounded-xl font-medium transition-all",
-                                        plan.planId === currentPlan
+                                        plan.planId === normalizedCurrentPlan
                                             ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-default"
                                             : isPopular
                                                 ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
                                                 : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                                     )}
                                 >
-                                    {plan.planId === currentPlan
+                                    {plan.planId === normalizedCurrentPlan
                                         ? (language === "tr" ? "Mevcut Plan" : "Current Plan")
                                         : isContact
                                             ? (language === "tr" ? "İletişime Geç" : "Contact Sales")

@@ -723,6 +723,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                         ) : (
                             filteredSessions.map((session) => {
                                 const isSelected = selectedSessionId === session.id
+                                const isLive = isLiveConversation(session)
                                 return (
                                     <button
                                         key={session.id}
@@ -736,11 +737,20 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                                 : "border-border/60 bg-white/80 hover:border-border hover:bg-muted/30"
                                         )}
                                     >
-                                        <Avatar className="h-9 w-9 flex-shrink-0 border bg-white">
-                                            <AvatarFallback className="bg-gray-100 text-gray-500">
-                                                <User className="h-4 w-4" />
-                                            </AvatarFallback>
-                                        </Avatar>
+                                        <div className="relative h-9 w-9 flex-shrink-0">
+                                            <Avatar className="h-9 w-9 border bg-white">
+                                                <AvatarFallback className="bg-gray-100 text-gray-500">
+                                                    <User className="h-4 w-4" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {isLive ? (
+                                                <span
+                                                    className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-sm"
+                                                    aria-label={language === "tr" ? "Aktif konuşma" : "Active conversation"}
+                                                    title={language === "tr" ? "Aktif konuşma" : "Active conversation"}
+                                                />
+                                            ) : null}
+                                        </div>
                                         <div className="min-w-0 flex-1 overflow-hidden">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
@@ -755,9 +765,10 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                                                 {t("omni.inbox.badge.paused")}
                                                             </Badge>
                                                         ) : null}
-                                                        {isLiveConversation(session) ? (
+                                                        {isLive ? (
                                                             <Badge variant="secondary" className="h-5 rounded-full bg-emerald-100 px-2 text-[10px] text-emerald-700 hover:bg-emerald-100">
-                                                                {language === "tr" ? "Canli" : "Live"}
+                                                                <span className="mr-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                                {language === "tr" ? "Aktif" : "Active"}
                                                             </Badge>
                                                         ) : null}
                                                     </div>

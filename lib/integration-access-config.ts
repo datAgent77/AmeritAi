@@ -13,46 +13,45 @@ export interface IntegrationAccessConfig {
  * Integration access map
  * Key: integration ID (matches integration-page.tsx)
  * Value: minimum plan required
- * 
+ *
  * Plan sort orders:
  * - starter: 1
  * - growth: 2
- * - pro: 3
- * - enterprise: 4
+ * - enterprise: 3
  */
 export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
     // Starter (All plans) - Basic web integrations
-    'website': { 
-        minSortOrder: 1, 
+    'website': {
+        minSortOrder: 1,
         minPlan: 'starter',
         displayName: { en: 'Website Widget', tr: 'Web Sitesi Widget' }
     },
-    'iframe': { 
-        minSortOrder: 1, 
+    'iframe': {
+        minSortOrder: 1,
         minPlan: 'starter',
         displayName: { en: 'iFrame Embed', tr: 'iFrame Gömme' }
     },
-    'direct-link': { 
-        minSortOrder: 1, 
+    'direct-link': {
+        minSortOrder: 1,
         minPlan: 'starter',
         displayName: { en: 'Direct Link', tr: 'Doğrudan Bağlantı' }
     },
-    'wordpress': { 
-        minSortOrder: 1, 
+    'wordpress': {
+        minSortOrder: 1,
         minPlan: 'starter',
         displayName: { en: 'WordPress', tr: 'WordPress' }
     },
     'mobile-app-api': {
-        minSortOrder: 3,
-        minPlan: 'pro',
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Mobile App / API', tr: 'Mobile App / API' }
     },
     'ticket-webhook': {
-        minSortOrder: 3,
-        minPlan: 'pro',
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Ticket Webhook', tr: 'Ticket Webhook' }
     },
-    
+
     // Growth+ - Messaging platforms
     'telegram': {
         minSortOrder: 2,
@@ -74,71 +73,71 @@ export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
         minPlan: 'growth',
         displayName: { en: 'Instagram DM', tr: 'Instagram DM' }
     },
-    'slack': { 
-        minSortOrder: 2, 
+    'slack': {
+        minSortOrder: 2,
         minPlan: 'growth',
         displayName: { en: 'Slack', tr: 'Slack' }
     },
-    
-    // Pro+ - CRM, Calendars, E-commerce, Email Marketing
-    'salesforce': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+
+    // Growth+ - CRM, Calendars, E-commerce, Email Marketing
+    'salesforce': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Salesforce', tr: 'Salesforce' }
     },
-    'google-calendar': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'google-calendar': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Google Calendar', tr: 'Google Calendar' }
     },
-    'outlook-calendar': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'outlook-calendar': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Outlook Calendar', tr: 'Outlook Calendar' }
     },
-    'shopify': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'shopify': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Shopify', tr: 'Shopify' }
     },
-    'ikas': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'ikas': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'İkas', tr: 'İkas' }
     },
-    'ideasoft': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'ideasoft': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'IdeaSoft', tr: 'IdeaSoft' }
     },
-    'ticimax': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'ticimax': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Ticimax', tr: 'Ticimax' }
     },
-    'tsoft': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'tsoft': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'T-Soft', tr: 'T-Soft' }
     },
-    'woocommerce': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'woocommerce': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'WooCommerce', tr: 'WooCommerce' }
     },
-    'mailchimp': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'mailchimp': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Mailchimp', tr: 'Mailchimp' }
     },
-    'sendgrid': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'sendgrid': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'SendGrid', tr: 'SendGrid' }
     },
-    'constant-contact': { 
-        minSortOrder: 3, 
-        minPlan: 'pro',
+    'constant-contact': {
+        minSortOrder: 2,
+        minPlan: 'growth',
         displayName: { en: 'Constant Contact', tr: 'Constant Contact' }
     },
 }
@@ -166,13 +165,12 @@ export function getIntegrationsByPlan() {
     const groups: Record<string, string[]> = {
         starter: [],
         growth: [],
-        pro: [],
         enterprise: []
     }
-    
+
     Object.entries(INTEGRATION_ACCESS).forEach(([id, config]) => {
         groups[config.minPlan]?.push(id)
     })
-    
+
     return groups
 }

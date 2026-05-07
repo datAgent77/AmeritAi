@@ -54,13 +54,13 @@ export function normalizePlanId(rawPlanId: any): string {
     const planMap: Record<string, string> = {
         'free': 'starter',
         'basic': 'starter',
-        'professional': 'pro',
-        'premium': 'pro',
+        'professional': 'growth',
+        'premium': 'growth',
         'business': 'enterprise',
         'trial': 'trial',
         'starter': 'starter',
         'growth': 'growth',
-        'pro': 'pro',
+        'pro': 'growth',
         'enterprise': 'enterprise'
     };
 

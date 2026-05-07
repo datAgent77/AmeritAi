@@ -64,6 +64,39 @@ function getAppointmentSuccessMessage(language: string) {
         : "Your appointment has been created successfully. We will contact you shortly."
 }
 
+const PRIVACY_LANGUAGE_CODES = ["tr", "en", "de", "es"] as const
+
+function resolvePrivacyLanguage(language: string) {
+    const normalized = String(language || "").toLowerCase().split("-")[0]
+    return PRIVACY_LANGUAGE_CODES.includes(normalized as any) ? normalized as "tr" | "en" | "de" | "es" : "en"
+}
+
+function getPrivacyDocument(settings: any, language: string, documentType: string) {
+    const privacyLanguage = resolvePrivacyLanguage(language)
+    const docsByLanguage = settings.privacyCompliance?.documentsByLanguage || {}
+    return docsByLanguage[privacyLanguage]?.[documentType]
+        || docsByLanguage.en?.[documentType]
+        || docsByLanguage.tr?.[documentType]
+        || null
+}
+
+function getPrivacyNoticeDocument(settings: any, language: string) {
+    return resolvePrivacyLanguage(language) === "tr"
+        ? getPrivacyDocument(settings, language, "kvkkNotice")
+        : getPrivacyDocument(settings, language, "gdprPrivacyNotice")
+}
+
+function getRequiredConsentLabel(settings: any, language: string, purpose: string) {
+    const privacyLanguage = resolvePrivacyLanguage(language)
+    const consent = Array.isArray(settings.privacyCompliance?.requiredConsents)
+        ? settings.privacyCompliance.requiredConsents.find((item: any) => item?.purpose === purpose)
+        : null
+    return consent?.checkboxLabelByLanguage?.[privacyLanguage]
+        || consent?.checkboxLabelByLanguage?.en
+        || consent?.checkboxLabelByLanguage?.tr
+        || ""
+}
+
 export default function ChatbotContainer() {
     // 1. Contexts & Params
     const searchParams = useSearchParams()
@@ -271,20 +304,27 @@ export default function ChatbotContainer() {
         return () => document.removeEventListener("mouseleave", handleMouseLeave)
     }, [chatbotId])
 
-    // INITIAL LEAD COLLECTION CHECK — gated on KVKK acceptance
+    // INITIAL LEAD COLLECTION CHECK — lead submit itself handles explicit consent.
     useEffect(() => {
         if (isLoading) return
         if (!settings.enableInitialLeadCollection) return
-        if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) return
 
         const hasSubmitted = localStorage.getItem(`vion_lead_submitted_${chatbotId}`)
         if (!hasSubmitted) {
             setShowLeadCollection(true)
         }
-    }, [isLoading, settings.enableInitialLeadCollection, settings.kvkkConsent?.enabled, isKvkkAccepted, chatbotId])
+    }, [isLoading, settings.enableInitialLeadCollection, chatbotId])
 
-    const kvkkEnabled = settings.kvkkConsent?.enabled === true
-    const kvkkVersionHash = settings.kvkkConsent?.versionHash || ""
+    const privacyComplianceEnabled = settings.privacyCompliance?.enabled === true
+    const privacyLanguage = resolvePrivacyLanguage(language)
+    const privacyNoticeDocument = getPrivacyNoticeDocument(settings, language)
+    const kvkkEnabled = privacyComplianceEnabled || settings.kvkkConsent?.enabled === true
+    const kvkkVersionHash = privacyNoticeDocument?.versionHash || settings.kvkkConsent?.versionHash || ""
+    const privacyTextHash = privacyNoticeDocument?.textHash || ""
+    const privacyShortNotice = settings.privacyCompliance?.shortNoticeByLanguage?.[privacyLanguage]
+        || settings.privacyCompliance?.shortNoticeByLanguage?.en
+        || settings.privacyCompliance?.shortNoticeByLanguage?.tr
+        || ""
 
     useEffect(() => {
         if (!isClient) return
@@ -296,7 +336,7 @@ export default function ChatbotContainer() {
         }
 
         const storageKey = `vion_kvkk_${chatbotId}_${kvkkVersionHash}`
-        const accepted = window.localStorage.getItem(storageKey) === "accepted"
+        const accepted = ["accepted", "acknowledged", "continued"].includes(window.localStorage.getItem(storageKey) || "")
         setIsKvkkAccepted(accepted)
         setIsKvkkModalOpen(false)
     }, [chatbotId, isClient, kvkkEnabled, kvkkVersionHash])
@@ -306,16 +346,13 @@ export default function ChatbotContainer() {
         if (settings.enableSurveyManager !== true) return
         if (settings.surveyWidgetConfig?.autoOpenOnLoad !== true) return
         if (!settings.surveyWidgetConfig?.activeSurvey) return
-        if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) return
 
         autoSurveyOpenedRef.current = true
         setShowSurvey(true)
     }, [
         isClient,
-        isKvkkAccepted,
         isLoading,
         settings.enableSurveyManager,
-        settings.kvkkConsent?.enabled,
         settings.surveyWidgetConfig?.activeSurvey,
         settings.surveyWidgetConfig?.autoOpenOnLoad,
     ])
@@ -439,35 +476,77 @@ export default function ChatbotContainer() {
         getImageFromCache: visualContext.getImageFromCache,
         findImageByContent: visualContext.findImageByContent,
         onShowLeadForm: () => {
-            if (settings.kvkkConsent?.enabled === true && !isKvkkAccepted) {
-                setIsKvkkModalOpen(true)
-                return
-            }
-
             setLeadCollectionFlow("lead")
             setShowLeadCollection(true)
         },
         onKvkkConsentRequired: () => setIsKvkkModalOpen(true),
     })
     const [isKvkkRejected, setIsKvkkRejected] = useState(false)
-    const requiresKvkkConsent = settings.kvkkConsent?.enabled === true && !isKvkkAccepted
+    const requiresKvkkConsent = false
+    const showPrivacyNotice = kvkkEnabled && !isKvkkAccepted && Boolean(kvkkVersionHash)
 
     useEffect(() => {
         setIsKvkkRejected(false)
     }, [chatbotId, kvkkEnabled, kvkkVersionHash])
 
-    useEffect(() => {
-        if (!requiresKvkkConsent) return
+    const recordPrivacyConsentEvent = useCallback(async (params: {
+        eventType: string
+        purpose: string
+        documentType?: string
+        documentVersionHash?: string
+        textHash?: string
+    }) => {
+        const activeSessionId = sessionId || (typeof window !== "undefined" ? localStorage.getItem(`chat_session_id_${chatbotId}`) || "" : "")
+        if (!privacyComplianceEnabled || !activeSessionId || !chatbotId) return false
 
-        setShowLeadCollection(false)
-        setShowBooking(false)
-        setLeadCollectionFlow("lead")
-    }, [requiresKvkkConsent])
-
-    const acceptKvkkConsent = () => {
-        if (kvkkVersionHash && typeof window !== "undefined") {
-            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${kvkkVersionHash}`, "accepted")
+        try {
+            const response = await fetch("/api/privacy/consent-events", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId,
+                    sessionId: activeSessionId,
+                    visitorId: activeSessionId,
+                    language: privacyLanguage,
+                    documentType: privacyNoticeDocument?.type,
+                    documentVersionHash: privacyNoticeDocument?.versionHash,
+                    textHash: privacyNoticeDocument?.textHash,
+                    ...params,
+                }),
+            })
+            return response.ok
+        } catch (error) {
+            console.warn("[privacy] consent event could not be recorded", error)
+            return false
         }
+    }, [chatbotId, privacyComplianceEnabled, privacyLanguage, privacyNoticeDocument?.textHash, privacyNoticeDocument?.type, privacyNoticeDocument?.versionHash, sessionId])
+
+    useEffect(() => {
+        if (!privacyComplianceEnabled || !sessionId || !kvkkVersionHash || typeof window === "undefined") return
+
+        const storageKey = `vion_kvkk_notice_shown_${chatbotId}_${sessionId}_${kvkkVersionHash}`
+        if (window.localStorage.getItem(storageKey) === "1") return
+        window.localStorage.setItem(storageKey, "1")
+        recordPrivacyConsentEvent({
+            eventType: "notice_shown",
+            purpose: "basic_chat",
+            documentType: privacyNoticeDocument?.type || "kvkkNotice",
+            documentVersionHash: kvkkVersionHash,
+            textHash: privacyTextHash,
+        })
+    }, [chatbotId, kvkkVersionHash, privacyComplianceEnabled, privacyNoticeDocument?.type, privacyTextHash, recordPrivacyConsentEvent, sessionId])
+
+    const acceptKvkkConsent = async () => {
+        if (kvkkVersionHash && typeof window !== "undefined") {
+            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${kvkkVersionHash}`, "acknowledged")
+        }
+        await recordPrivacyConsentEvent({
+            eventType: "notice_acknowledged",
+            purpose: "basic_chat",
+            documentType: privacyNoticeDocument?.type || "kvkkNotice",
+            documentVersionHash: kvkkVersionHash,
+            textHash: privacyTextHash,
+        })
         setIsKvkkRejected(false)
         setIsKvkkAccepted(true)
         setIsKvkkModalOpen(false)
@@ -481,6 +560,34 @@ export default function ChatbotContainer() {
         setIsKvkkModalOpen(true)
     }
 
+    const markContinuedAfterNotice = useCallback(async () => {
+        if (!showPrivacyNotice || !kvkkVersionHash) return
+
+        if (typeof window !== "undefined") {
+            window.localStorage.setItem(`vion_kvkk_${chatbotId}_${kvkkVersionHash}`, "continued")
+        }
+        setIsKvkkAccepted(true)
+        await recordPrivacyConsentEvent({
+            eventType: "continued_after_notice",
+            purpose: "basic_chat",
+            documentType: privacyNoticeDocument?.type || "kvkkNotice",
+            documentVersionHash: kvkkVersionHash,
+            textHash: privacyTextHash,
+        })
+    }, [chatbotId, kvkkVersionHash, privacyNoticeDocument?.type, privacyTextHash, recordPrivacyConsentEvent, showPrivacyNotice])
+
+    const recordExplicitPrivacyConsent = useCallback(async (purpose: "lead_capture" | "appointment_request") => {
+        const documentType = purpose === "appointment_request" ? "explicitConsentAppointment" : "explicitConsentLead"
+        const document = getPrivacyDocument(settings, language, documentType)
+        await recordPrivacyConsentEvent({
+            eventType: "explicit_consent_granted",
+            purpose,
+            documentType,
+            documentVersionHash: document?.versionHash || kvkkVersionHash,
+            textHash: document?.textHash || privacyTextHash,
+        })
+    }, [kvkkVersionHash, language, privacyTextHash, recordPrivacyConsentEvent, settings])
+
     const guardedSendMessage = useCallback(async (
         text: string,
         speakResponse?: boolean,
@@ -489,22 +596,16 @@ export default function ChatbotContainer() {
         mediaPayload?: UserMessageMediaPayload | null,
         isVoiceTurn?: boolean
     ) => {
-        if (requiresKvkkConsent) {
-            // KVKK consent logic is handled via inline message in MessageList
-            return ""
-        }
+        await markContinuedAfterNotice()
 
         return sendMessage(text, speakResponse, visualCtx, guidedEvent, mediaPayload, isVoiceTurn)
-    }, [requiresKvkkConsent, sendMessage])
+    }, [markContinuedAfterNotice, sendMessage])
 
     const guardedSendGuidedMessage = useCallback(async (guidedEvent: GuidedSkillClientEvent) => {
-        if (requiresKvkkConsent) {
-            setIsKvkkModalOpen(true)
-            return ""
-        }
+        await markContinuedAfterNotice()
 
         return sendGuidedMessage(guidedEvent)
-    }, [requiresKvkkConsent, sendGuidedMessage])
+    }, [markContinuedAfterNotice, sendGuidedMessage])
 
     // Assign real sendMessage to ref
     useEffect(() => {
@@ -521,12 +622,8 @@ export default function ChatbotContainer() {
     }, [endVoiceSession, settings.enableVoiceAssistant])
 
     const handleConversationModeChange = (nextMode: "text" | "voice") => {
-        if (nextMode === "voice" && requiresKvkkConsent) {
-            setIsKvkkModalOpen(true)
-            return
-        }
-
         if (nextMode === "voice") {
+            void markContinuedAfterNotice()
             setConversationMode("voice")
             startVoiceSession()
             return
@@ -817,19 +914,29 @@ export default function ChatbotContainer() {
         try {
             const flow = options?.flow || "lead"
             const submitSource = options?.source === "inline" ? "inline" : "overlay"
+            const { privacyConsentAccepted, ...leadPayload } = formData || {}
+
+            if (privacyComplianceEnabled && privacyConsentAccepted !== true) {
+                alert(t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"))
+                return
+            }
+
+            if (privacyComplianceEnabled) {
+                await recordExplicitPrivacyConsent("lead_capture")
+            }
 
             if (flow === "handoff") {
-                const leadName = String(formData?.name || "").trim()
-                const leadEmail = String(formData?.email || "").trim()
-                const leadPhone = String(formData?.phone || "").trim()
-                const customFields = formData?.customFields && typeof formData.customFields === "object"
-                    ? Object.entries(formData.customFields)
+                const leadName = String(leadPayload?.name || "").trim()
+                const leadEmail = String(leadPayload?.email || "").trim()
+                const leadPhone = String(leadPayload?.phone || "").trim()
+                const customFields = leadPayload?.customFields && typeof leadPayload.customFields === "object"
+                    ? Object.entries(leadPayload.customFields)
                         .map(([key, value]) => [String(key).trim(), String(value || "").trim()] as const)
                         .filter(([, value]) => value)
                     : []
 
                 try {
-                    localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
+                    localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(leadPayload))
                 } catch {
                     // Ignore storage errors during handoff capture.
                 }
@@ -849,7 +956,7 @@ export default function ChatbotContainer() {
                 await guardedSendMessage(
                     [
                         language === "tr"
-                            ? "Temsilci talebim için iletişim bilgilerimi paylaşıyorum."
+                            ? "Müşteri temsilcisi talebim için iletişim bilgilerimi paylaşıyorum."
                             : "I am sharing my contact details for the human handoff request.",
                         ...structuredDetails,
                     ].join(" "),
@@ -868,7 +975,7 @@ export default function ChatbotContainer() {
                     chatbotId,
                     sessionId,
                     sourceChannel: "web",
-                    ...formData,
+                    ...leadPayload,
                     source: submitSource === "inline" ? 'In-Chat Lead Form' : 'Initial Lead Form'
                 })
             })
@@ -884,7 +991,7 @@ export default function ChatbotContainer() {
                 })
 
                 // Save legacy format for compatibility with Booking Overlay
-                localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(formData))
+                localStorage.setItem(`lead_${chatbotId}`, JSON.stringify(leadPayload))
                 setShowLeadCollection(false)
 
                 if (submitSource === "inline") {
@@ -892,7 +999,7 @@ export default function ChatbotContainer() {
                     guardedSendMessage("İletişim bilgilerimi doldurdum.", false, undefined, undefined, null)
                 } else {
                     // Overlay formlar için mevcut statik teşekkür mesajı
-                    const leadName = String(formData?.name || "").trim()
+                    const leadName = String(leadPayload?.name || "").trim()
                     const translatedTemplate = t('leadThankYou')
                     const fallbackText = leadName
                         ? `Thank you ${leadName}, we received your information. Our team will contact you shortly.`
@@ -961,6 +1068,10 @@ export default function ChatbotContainer() {
 
         setIsSubmittingBooking(true)
         try {
+            if (privacyComplianceEnabled) {
+                await recordExplicitPrivacyConsent("appointment_request")
+            }
+
             try {
                 const storedLead = readStoredLeadData(chatbotId) || {}
                 localStorage.setItem(`lead_${chatbotId}`, JSON.stringify({
@@ -1269,16 +1380,37 @@ export default function ChatbotContainer() {
                                         sessionId={sessionId}
                                         onBookingSuccess={handleBookingSuccess}
                                         showClassicEntryOnboarding={showClassicEntryOnboarding}
+                                        leadPrivacyConsent={privacyComplianceEnabled ? {
+                                            required: true,
+                                            checkboxLabel: getRequiredConsentLabel(settings, language, "lead_capture")
+                                                || (language === "tr"
+                                                    ? "Iletisim bilgilerimin talebime donus yapilmasi amaciyla islenmesine acik riza veriyorum."
+                                                    : "I consent to the processing of my contact details to respond to my request."),
+                                            errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                                            onReadNotice: guiltyOpenKvkkModal,
+                                        } : undefined}
+                                        bookingPrivacyConsent={privacyComplianceEnabled ? {
+                                            required: true,
+                                            checkboxLabel: getRequiredConsentLabel(settings, language, "appointment_request")
+                                                || (language === "tr"
+                                                    ? "Randevu talebim icin kisisel verilerimin islenmesine acik riza veriyorum."
+                                                    : "I consent to the processing of my personal data for my appointment request."),
+                                            errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                                            onReadNotice: guiltyOpenKvkkModal,
+                                            onGrant: () => recordExplicitPrivacyConsent("appointment_request"),
+                                        } : undefined}
                                     />
                                 </div>
                                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
                                     <p className="text-[10px] text-gray-400 text-center text-balance">
                                         {t('aiDisclaimer')}
                                     </p>
-                                    <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                        <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
-                                        <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
-                                    </a>
+                                    {effectiveSettings.hideVionBranding !== true && (
+                                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                            <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
+                                            <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1312,7 +1444,7 @@ export default function ChatbotContainer() {
                                 showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
                                 conversationMode={conversationMode}
                                 onConversationModeChange={handleConversationModeChange}
-                                disabled={requiresKvkkConsent}
+                                disabled={false}
                             />
                         </div>
                     </div>
@@ -1352,6 +1484,25 @@ export default function ChatbotContainer() {
                         onBookingSuccess={handleBookingSuccess}
                         showClassicEntryOnboarding={showClassicEntryOnboarding}
                         onCloseWidget={handleCloseWidget}
+                        leadPrivacyConsent={privacyComplianceEnabled ? {
+                            required: true,
+                            checkboxLabel: getRequiredConsentLabel(settings, language, "lead_capture")
+                                || (language === "tr"
+                                    ? "Iletisim bilgilerimin talebime donus yapilmasi amaciyla islenmesine acik riza veriyorum."
+                                    : "I consent to the processing of my contact details to respond to my request."),
+                            errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                            onReadNotice: guiltyOpenKvkkModal,
+                        } : undefined}
+                        bookingPrivacyConsent={privacyComplianceEnabled ? {
+                            required: true,
+                            checkboxLabel: getRequiredConsentLabel(settings, language, "appointment_request")
+                                || (language === "tr"
+                                    ? "Randevu talebim icin kisisel verilerimin islenmesine acik riza veriyorum."
+                                    : "I consent to the processing of my personal data for my appointment request."),
+                            errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                            onReadNotice: guiltyOpenKvkkModal,
+                            onGrant: () => recordExplicitPrivacyConsent("appointment_request"),
+                        } : undefined}
                     />
 
                     <ChatInput
@@ -1368,7 +1519,7 @@ export default function ChatbotContainer() {
                         showConversationModeSwitch={effectiveSettings.enableVoiceAssistant}
                         conversationMode={conversationMode}
                         onConversationModeChange={handleConversationModeChange}
-                        disabled={requiresKvkkConsent}
+                        disabled={false}
                         quickActions={enhancedQuickActions}
                         onTriggerAction={handleTriggerAction}
                     />
@@ -1377,9 +1528,10 @@ export default function ChatbotContainer() {
 
             {/* Overlays */}
             <KvkkConsentOverlay
-                show={requiresKvkkConsent}
+                show={showPrivacyNotice}
                 isRejected={isKvkkRejected}
                 rejectionContactText={settings.kvkkConsent?.rejectionContactText || t("kvkkDefaultRejectionContact")}
+                shortNoticeText={privacyShortNotice}
                 onAccept={acceptKvkkConsent}
                 onReject={rejectKvkkConsent}
                 onReadFull={guiltyOpenKvkkModal}
@@ -1395,6 +1547,15 @@ export default function ChatbotContainer() {
                 t={t}
                 description={settings.leadFormConfig?.subtitle}
                 variant={leadCollectionFlow}
+                privacyConsent={privacyComplianceEnabled ? {
+                    required: true,
+                    checkboxLabel: getRequiredConsentLabel(settings, language, "lead_capture")
+                        || (language === "tr"
+                            ? "Iletisim bilgilerimin talebime donus yapilmasi amaciyla islenmesine acik riza veriyorum."
+                            : "I consent to the processing of my contact details to respond to my request."),
+                    errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                    onReadNotice: guiltyOpenKvkkModal,
+                } : undefined}
             />
 
             <SurveyWidgetOverlay
@@ -1432,6 +1593,15 @@ export default function ChatbotContainer() {
                 isSubmittingBooking={isSubmittingBooking}
                 settings={effectiveSettings}
                 t={t}
+                privacyConsent={privacyComplianceEnabled ? {
+                    required: true,
+                    checkboxLabel: getRequiredConsentLabel(settings, language, "appointment_request")
+                        || (language === "tr"
+                            ? "Randevu talebim icin kisisel verilerimin islenmesine acik riza veriyorum."
+                            : "I consent to the processing of my personal data for my appointment request."),
+                    errorText: t("privacyConsentRequired") === "privacyConsentRequired" ? "Devam etmek için gizlilik/onay kutusunu işaretleyin." : t("privacyConsentRequired"),
+                    onReadNotice: guiltyOpenKvkkModal,
+                } : undefined}
             />
 
             <ConfirmationModal
@@ -1455,7 +1625,7 @@ export default function ChatbotContainer() {
 
             <KvkkConsentModal
                 isOpen={isKvkkModalOpen}
-                text={settings.kvkkConsent?.text || ""}
+                text={privacyNoticeDocument?.text || settings.kvkkConsent?.text || ""}
                 onClose={() => setIsKvkkModalOpen(false)}
                 t={t}
                 language={language}

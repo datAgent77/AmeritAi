@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Rocket, Sparkles, Star, Zap } from "lucide-react"
+import { CheckCircle2, Rocket, Sparkles, Star } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { getPlanConfig } from "@/lib/pricing-config"
 import { useAuth } from "@/context/AuthContext"
@@ -43,7 +43,6 @@ export function PlanUpgradePrompt({
 
     // Icons mapping for visual flair
     const PlanIcon = requiredPlanId === 'enterprise' ? Sparkles : 
-                     requiredPlanId === 'pro' ? Zap :
                      requiredPlanId === 'growth' ? Rocket : Star
 
     const handleUpgrade = () => {

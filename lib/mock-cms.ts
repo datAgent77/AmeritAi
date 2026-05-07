@@ -139,8 +139,8 @@ const FAQS: FaqItem[] = [
             tr: "Chatbot halüsinasyon görür mü veya yanlış bilgi uydurur mu?"
         },
         answer: {
-            en: "No. Vion is designed with strict 'Guardrails'. If it doesn't find the answer in your provided Knowledge Base, it will honestly say 'I don't know' or redirect to a human agent.",
-            tr: "Hayır. Vion, katı 'Güvenlik Önlemleri' (Guardrails) ile tasarlanmıştır. Cevabı sağladığınız Bilgi Bankası'nda bulamazsa, dürüstçe 'Bilmiyorum' der veya bir insan temsilciye yönlendirir."
+            en: "No. Vion is designed with strict 'Guardrails'. If it doesn't find the answer in your provided AI Training Resources, it will honestly say 'I don't know' or redirect to a human agent.",
+            tr: "Hayır. Vion, katı 'Güvenlik Önlemleri' (Guardrails) ile tasarlanmıştır. Cevabı sağladığınız AI Eğitim Kaynakları'nda bulamazsa, dürüstçe 'Bilmiyorum' der veya bir insan temsilciye yönlendirir."
         }
     },
     {

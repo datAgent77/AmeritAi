@@ -2,15 +2,16 @@ import { resolvePartnerBranding } from "@/lib/management/access"
 import { getPartnerDoc, getPartnersByIds } from "@/lib/management/partners"
 import type { ManagementAccountRecord, ResolvedPartnerBranding } from "@/lib/management/types"
 import { toIsoOrNull } from "@/lib/omni/server-utils"
+import { normalizePlanId } from "@/lib/pricing-config"
 import type { UserRole } from "@/lib/user-roles"
 
 function resolveOmniEnabled(data: any) {
-    return data?.enableOmniChannel === true || data?.productEntitlements?.omniChannel === true || data?.productEntitlements?.chatbot === true
+    return data?.enableOmniChannel === true || data?.productEntitlements?.omniChannel === true
 }
 
 function resolvePlanId(data: any) {
     const value = data?.subscription?.planId || data?.planId || data?.plan || data?.entitlements?.planId
-    return typeof value === "string" && value.trim() ? value.trim() : null
+    return typeof value === "string" && value.trim() ? normalizePlanId(value) : null
 }
 
 function serializeManagedAccountDoc(doc: any, partnerMap: Map<string, any>): ManagementAccountRecord {

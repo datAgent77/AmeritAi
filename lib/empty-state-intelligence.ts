@@ -14,7 +14,7 @@
  * TONE BY PLAN:
  * ┌─────────────────────────────────────────────────────────────┐
  * │ Starter   → Encourage first success, celebrate potential   │
- * │ Pro       → Emphasize optimization & efficiency            │
+ * │ Scale     → Emphasize optimization & efficiency            │
  * │ Enterprise→ Minimal, neutral, professional                 │
  * └─────────────────────────────────────────────────────────────┘
  */
@@ -60,11 +60,11 @@ export interface EmptyStateConfig {
 // COPY LIBRARY
 // =============================================================================
 
-type PlanType = 'starter' | 'pro' | 'enterprise';
+type PlanType = 'starter' | 'growth' | 'enterprise';
 
 interface ModuleCopy {
     starter: { title: string; description: string; helperText?: string };
-    pro: { title: string; description: string; helperText?: string };
+    growth: { title: string; description: string; helperText?: string };
     enterprise: { title: string; description: string };
     suggestedAction: SuggestedAction;
     actionLabel?: string;
@@ -78,7 +78,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'İlk ziyaretçiniz geldiğinde burada görünecek.',
                 helperText: 'Widget\'ı sitenize ekleyin ve ilk konuşmayı başlatın.'
             },
-            pro: {
+            growth: {
                 title: 'Veriler yolda',
                 description: 'Widget aktif olduğunda istatistikler burada görünecek.'
             },
@@ -95,7 +95,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Stats will appear here when your first visitor arrives.',
                 helperText: 'Add the widget to your site to start your first conversation.'
             },
-            pro: {
+            growth: {
                 title: 'Data is on the way',
                 description: 'Analytics will appear here once the widget is active.'
             },
@@ -114,7 +114,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Müşterileriniz chatbot ile konuşmaya başladığında burada göreceksiniz.',
                 helperText: 'Her konuşma öğrenme fırsatı!'
             },
-            pro: {
+            growth: {
                 title: 'Konuşmalar burada görünecek',
                 description: 'Müşteri etkileşimlerinizi takip edebilirsiniz.'
             },
@@ -130,7 +130,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'You\'ll see chats here when customers start talking to your chatbot.',
                 helperText: 'Every conversation is a learning opportunity!'
             },
-            pro: {
+            growth: {
                 title: 'Conversations will appear here',
                 description: 'Track your customer interactions.'
             },
@@ -148,7 +148,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'İlk konuşmalarınız başladığında burada değerli içgörüler göreceksiniz.',
                 helperText: 'Widget\'ınızı etkinleştirerek veri toplamaya başlayın.'
             },
-            pro: {
+            growth: {
                 title: 'Analiz verileri hazırlanıyor',
                 description: 'Detaylı raporlar konuşmalar başladığında görünecek.'
             },
@@ -164,7 +164,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'You\'ll see valuable insights here once conversations begin.',
                 helperText: 'Activate your widget to start collecting data.'
             },
-            pro: {
+            growth: {
                 title: 'Analytics data is being prepared',
                 description: 'Detailed reports will appear when conversations start.'
             },
@@ -182,7 +182,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Chatbot ziyaretçilerden bilgi topladığında burada listelenecek.',
                 helperText: 'Lead toplama modülü aktif olduğunda veriler otomatik akar.'
             },
-            pro: {
+            growth: {
                 title: 'Lead veritabanınız hazır',
                 description: 'Toplanan müşteri bilgileri burada görünecek.'
             },
@@ -199,7 +199,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Leads will be listed when the chatbot collects visitor information.',
                 helperText: 'Data flows automatically when lead collection is active.'
             },
-            pro: {
+            growth: {
                 title: 'Your lead database is ready',
                 description: 'Collected customer information will appear here.'
             },
@@ -214,16 +214,16 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
     knowledge: {
         tr: {
             starter: {
-                title: 'Bilgi tabanınızı oluşturun',
+                title: 'AI eğitim kaynaklarınızı oluşturun',
                 description: 'SSS ve ürün bilgilerini ekleyerek chatbot\'unuzu daha akıllı yapın.',
                 helperText: 'Ne kadar bilgi eklerseniz, chatbot o kadar doğru yanıtlar verir.'
             },
-            pro: {
-                title: 'Bilgi tabanı merkezi',
+            growth: {
+                title: 'AI eğitim kaynakları merkezi',
                 description: 'Dökümanlar ve SSS\'ler ekleyerek AI\'ı eğitin.'
             },
             enterprise: {
-                title: 'Kurumsal bilgi tabanı',
+                title: 'Kurumsal AI eğitim kaynakları',
                 description: 'İçerik eklemek için başlayın.'
             },
             suggestedAction: 'configure',
@@ -231,16 +231,16 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
         },
         en: {
             starter: {
-                title: 'Build your knowledge base',
+                title: 'Build your AI training resources',
                 description: 'Make your chatbot smarter by adding FAQs and product info.',
                 helperText: 'The more info you add, the more accurate the responses.'
             },
-            pro: {
-                title: 'Knowledge base center',
+            growth: {
+                title: 'AI training resources center',
                 description: 'Train the AI by adding documents and FAQs.'
             },
             enterprise: {
-                title: 'Enterprise knowledge base',
+                title: 'Enterprise AI training resources',
                 description: 'Start by adding content.'
             },
             suggestedAction: 'configure',
@@ -254,7 +254,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Ürünlerinizi ekleyerek chatbot\'un satış yapmasını sağlayın.',
                 helperText: 'Ürünler eklendikten sonra müşterilerinize önerilecek.'
             },
-            pro: {
+            growth: {
                 title: 'Ürün yönetim merkezi',
                 description: 'Katalog ve envanter bilgilerinizi buradan yönetin.'
             },
@@ -271,7 +271,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Add products to let your chatbot make sales.',
                 helperText: 'Products will be recommended to customers after adding.'
             },
-            pro: {
+            growth: {
                 title: 'Product management center',
                 description: 'Manage catalog and inventory from here.'
             },
@@ -289,7 +289,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 title: 'Ayarlar',
                 description: 'Chatbot\'unuzu kişiselleştirin.'
             },
-            pro: {
+            growth: {
                 title: 'Yapılandırma merkezi',
                 description: 'Gelişmiş ayarları buradan yönetin.'
             },
@@ -304,7 +304,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 title: 'Settings',
                 description: 'Personalize your chatbot.'
             },
-            pro: {
+            growth: {
                 title: 'Configuration center',
                 description: 'Manage advanced settings here.'
             },
@@ -322,7 +322,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Diğer araçlarınızı Vion ile bağlayın.',
                 helperText: 'WhatsApp, Instagram ve daha fazlasıyla entegre olun.'
             },
-            pro: {
+            growth: {
                 title: 'Entegrasyon merkezi',
                 description: 'Tüm kanallarınızı tek yerden yönetin.'
             },
@@ -339,7 +339,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
                 description: 'Connect your other tools with Vion.',
                 helperText: 'Integrate with WhatsApp, Instagram, and more.'
             },
-            pro: {
+            growth: {
                 title: 'Integration center',
                 description: 'Manage all your channels in one place.'
             },
@@ -398,7 +398,7 @@ export function getEmptyState(
 
 function getPlanType(planId: string): PlanType {
     if (planId === 'enterprise') return 'enterprise';
-    if (planId === 'pro') return 'pro';
+    if (planId === 'growth' || planId === 'pro') return 'growth';
     return 'starter';
 }
 
@@ -420,12 +420,12 @@ function getGenericEmptyState(planType: PlanType, lang: 'en' | 'tr'): EmptyState
     const generic = {
         tr: {
             starter: { title: 'Hazır', description: 'Veriler yakında görünecek.' },
-            pro: { title: 'Hazır', description: 'Veriler burada görünecek.' },
+            growth: { title: 'Hazır', description: 'Veriler burada görünecek.' },
             enterprise: { title: 'Veri bekleniyor', description: '' }
         },
         en: {
             starter: { title: 'Ready', description: 'Data will appear soon.' },
-            pro: { title: 'Ready', description: 'Data will appear here.' },
+            growth: { title: 'Ready', description: 'Data will appear here.' },
             enterprise: { title: 'Awaiting data', description: '' }
         }
     };

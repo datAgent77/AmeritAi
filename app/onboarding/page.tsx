@@ -17,7 +17,7 @@ import {
     GraduationCap, BookOpen, Landmark, HelpCircle, Wrench,
     MessageSquare, UserPlus, Mic, PenTool, Lock,
     ExternalLink, TrendingUp, Share2, Mail, Info, Send, Bot,
-    ChefHat, Sprout, Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor
+    ChefHat, Sprout, Car, Shield, Truck, Sparkles, Scale, Dumbbell, Anchor, Zap
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
@@ -36,7 +36,7 @@ import {
     getCompletionPercentage
 } from "@/lib/onboarding-config"
 import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
-import { getPublicPlansSorted, formatPlanPrice, getPlanBadge, PlanConfig } from "@/lib/pricing-config"
+import { getPublicPlansSorted, formatPlanPrice, getPlanHighlightsSorted, isPreferredPlanBadge, shouldShowPlanPrices } from "@/lib/pricing-config"
 import { PricingModal } from "@/components/pricing-modal"
 import { LanguageSwitcher } from "@/components/language-switcher"
 
@@ -268,7 +268,7 @@ export default function OnboardingPage() {
             setUserPlanId(planId)
             setCompletedSteps(prev => [...prev, 'plan'])
             setCurrentStep('knowledge')
-            
+
             toast({
                 title: language === 'tr' ? "Plan Seçildi" : "Plan Selected",
                 description: language === 'tr' ? "Eğitim adımına yönlendiriliyorsunuz..." : "Redirecting to training step..."
@@ -436,7 +436,7 @@ export default function OnboardingPage() {
                 })
             })
 
-            if (!response.ok) throw new Error("Failed to save knowledge base preference")
+            if (!response.ok) throw new Error("Failed to save AI training resources preference")
 
             setCompletedSteps(prev => [...prev, 'knowledge'])
             setCurrentStep('widget')
@@ -455,14 +455,14 @@ export default function OnboardingPage() {
 
         try {
             const token = await getToken()
-            
+
             // Use default message if empty
-            const defaultWelcome = language === 'tr' 
-                ? "Merhaba! Size nasıl yardımcı olabilirim?" 
-                : "Hello! How can I help you?"; // Using 'Hello' to match English placeholder in UI if needed, or 'Hi' based on init state. 
-                // Wait, initial state said "Hi! How can I help you?". Placeholder in Step 301 says "Hello! How can I help you?". 
+            const defaultWelcome = language === 'tr'
+                ? "Merhaba! Size nasıl yardımcı olabilirim?"
+                : "Hello! How can I help you?"; // Using 'Hello' to match English placeholder in UI if needed, or 'Hi' based on init state.
+                // Wait, initial state said "Hi! How can I help you?". Placeholder in Step 301 says "Hello! How can I help you?".
                 // Checking line 986 in Step 259: "Hello! How can I help you?"
-            
+
             const payload = {
                 ...widget,
                 welcomeMessage: widget.welcomeMessage?.trim() ? widget.welcomeMessage.trim() : defaultWelcome
@@ -563,6 +563,11 @@ export default function OnboardingPage() {
         const translated = t(key)
         return translated !== key ? translated : fallback
     }
+    const showPlanPrices = shouldShowPlanPrices()
+    const isUnlimitedMessageFeature = (feature: string) =>
+        feature === 'featureUnlimitedMessages'
+        || feature.includes('Sınırsız Mesajlaşma')
+        || feature.includes('Unlimited Messaging')
 
     return (
         <div className="min-h-screen bg-white dark:bg-zinc-950">
@@ -641,7 +646,7 @@ export default function OnboardingPage() {
                 {/* STEP 1: SECTOR */}
                 {currentStep === 'sector' && (
                     <div className="space-y-6">
-                        <motion.div 
+                        <motion.div
                             variants={containerVariants}
                             initial="hidden"
                             animate="visible"
@@ -685,9 +690,9 @@ export default function OnboardingPage() {
                         </motion.div>
 
                         <div className="flex justify-end pt-4 gap-3">
-                            <Button 
+                            <Button
                                 type="button"
-                                variant="ghost" 
+                                variant="ghost"
                                 onClick={() => handleComplete('soft')}
                                 className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
                             >
@@ -709,16 +714,15 @@ export default function OnboardingPage() {
 
                 {/* STEP 2: PLAN */}
                 {currentStep === 'plan' && (
-                    <motion.div 
+                    <motion.div
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
                         className="space-y-6"
                     >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                             {getPublicPlansSorted().map((plan) => {
-                                const badge = getPlanBadge(plan.planId)
-                                const isPopular = badge === 'recommended' || badge === 'Önerilen'
+                                const isPopular = isPreferredPlanBadge(plan.copy.badge)
                                 const isContact = plan.billing.contact
                                 const price = formatPlanPrice(plan.planId, 'monthly', language === 'tr' ? 'tr' : 'en')
                                 const subtitle = t(plan.copy.subtitle || '')
@@ -730,43 +734,64 @@ export default function OnboardingPage() {
                                         variants={itemVariants}
                                         whileHover={{ y: -5 }}
                                         className={cn(
-                                            "relative flex flex-col p-6 bg-white dark:bg-zinc-900 rounded-2xl border-2 transition-all shadow-sm",
-                                            isPopular 
-                                                ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary/20" 
-                                                : "border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+                                            "relative flex flex-col p-5 rounded-xl border transition-all h-full shadow-lg shadow-slate-900/5 hover:shadow-xl hover:shadow-slate-900/10",
+                                            isPopular && "pt-6",
+                                            isPopular
+                                                ? "border-primary shadow-lg shadow-primary/10 bg-card"
+                                                : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
                                         )}
                                     >
                                         {isPopular && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold shadow-md">
-                                                {t('recommended')}
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                                                <span className="text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-800 px-2 py-1 rounded-full shadow-sm">
+                                                {t('preferredPlanTag') || (language === 'tr' ? 'Tercih Edilen' : 'Preferred')}
+                                                </span>
                                             </div>
                                         )}
 
-                                        <div className="mb-6 space-y-1 text-center">
-                                            <h3 className="text-xl font-bold">{getPlanDisplayName(plan.planId, plan.displayName)}</h3>
-                                            <p className="text-sm text-muted-foreground">{translatedSubtitle}</p>
-                                        </div>
-
-                                        <div className="mb-6 text-center">
-                                            <div className="flex items-baseline justify-center gap-1">
-                                                <span className="text-4xl font-bold tracking-tight">
-                                                    {isContact ? (language === 'tr' ? 'Özel Teklif' : 'Custom Quote') : price}
+                                        <div className="mb-4">
+                                            <h3 className="text-lg font-bold mb-1">{getPlanDisplayName(plan.planId, plan.displayName)}</h3>
+                                            <p className="text-sm text-muted-foreground mb-3 h-10">{translatedSubtitle}</p>
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-2xl font-bold">
+                                                    {isContact
+                                                        ? (language === 'tr' ? 'Özel Teklif' : 'Custom')
+                                                        : price.split('/')[0]}
                                                 </span>
+                                                {showPlanPrices && !isContact && price.includes('/') && (
+                                                    <span className="text-sm text-muted-foreground">/{price.split('/')[1]}</span>
+                                                )}
                                             </div>
                                         </div>
 
-                                        <ul className="space-y-3 mb-8 flex-1">
-                                            {plan.highlights?.map((highlight, idx) => {
+                                        <div className="flex-1 space-y-2">
+                                            {getPlanHighlightsSorted(plan).map((highlight, idx) => {
                                                 const isComingSoon = plan.highlights_meta?.coming_soon?.includes(highlight)
+                                                const isCustomModuleDevelopment = highlight === 'featureCustomModuleDevelopment'
                                                 const translatedText = t(highlight) !== highlight ? t(highlight) : highlight
                                                 return (
-                                                    <li key={idx} className="flex items-start gap-3 text-sm">
-                                                        {isComingSoon ? (
-                                                            <Info className="w-5 h-5 text-amber-500 shrink-0" />
-                                                        ) : (
-                                                            <Check className="w-5 h-5 text-green-500 shrink-0" />
+                                                    <div
+                                                        key={idx}
+                                                        className={cn(
+                                                            "flex items-start gap-2 text-sm",
+                                                            isCustomModuleDevelopment && "rounded-lg border border-primary/20 bg-primary/5 px-2 py-1.5"
                                                         )}
-                                                        <span className={cn(isComingSoon && "text-muted-foreground")}>
+                                                    >
+                                                        {isCustomModuleDevelopment ? (
+                                                            <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                        ) : isComingSoon ? (
+                                                            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                                        ) : isUnlimitedMessageFeature(highlight) ? (
+                                                            <Zap className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
+                                                        ) : (
+                                                            <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                        )}
+                                                        <span className={cn(
+                                                            "text-foreground",
+                                                            isUnlimitedMessageFeature(highlight) && "font-semibold",
+                                                            isComingSoon && "text-muted-foreground/80",
+                                                            isCustomModuleDevelopment && "font-semibold text-primary"
+                                                        )}>
                                                             {translatedText}
                                                             {isComingSoon && (
                                                                 <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
@@ -774,17 +799,39 @@ export default function OnboardingPage() {
                                                                 </span>
                                                             )}
                                                         </span>
-                                                    </li>
+                                                    </div>
                                                 )
                                             })}
-                                        </ul>
+                                        </div>
+
+                                        {plan.limits.knowledge && (
+                                            <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                                    {t('limitKnowledgeTitle') || (language === 'tr' ? 'Eğitim Kaynağı Limitleri' : 'Training Resource Limits')}
+                                                </p>
+                                                <div className="grid grid-cols-2 gap-1.5 text-xs">
+                                                    <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
+                                                        <span className="font-semibold block">
+                                                            {plan.limits.knowledge.websites === 'unlimited' ? (language === 'tr' ? 'Sınırsız' : 'Unlimited') : plan.limits.knowledge.websites}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-[10px]">{t('limitWebsitesLabel') || 'Web Sitesi Tarama'}</span>
+                                                    </div>
+                                                    <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">
+                                                        <span className="font-semibold block">
+                                                            {plan.limits.knowledge.files === 'unlimited' ? (language === 'tr' ? 'Sınırsız' : 'Unlimited') : plan.limits.knowledge.files}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-[10px]">{t('limitFilesLabel') || 'Dosya (PDF/Doc)'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         <Button
                                             onClick={() => handlePlanSubmit(plan.planId)}
                                             className={cn(
                                                 "w-full h-11 rounded-xl font-semibold shadow-sm",
-                                                isPopular 
-                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                                isPopular
+                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
                                                     : "bg-white dark:bg-zinc-800 text-foreground border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700"
                                             )}
                                             variant={isPopular ? "default" : "outline"}
@@ -797,10 +844,10 @@ export default function OnboardingPage() {
                                 )
                             })}
                         </div>
-                        
+
                         <div className="flex justify-start">
-                            <Button 
-                                variant="ghost" 
+                            <Button
+                                variant="ghost"
                                 onClick={() => goToStep('sector')}
                                 className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
                             >
@@ -987,9 +1034,9 @@ export default function OnboardingPage() {
                                 {language === 'tr' ? 'Geri' : 'Back'}
                             </Button>
                             <div className="flex items-center gap-3">
-                                <Button 
+                                <Button
                                     type="button"
-                                    variant="ghost" 
+                                    variant="ghost"
                                     onClick={() => handleComplete('soft')}
                                     className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
                                 >
@@ -1058,7 +1105,7 @@ export default function OnboardingPage() {
                                             </Label>
                                             <div className="flex gap-4 items-center p-4 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 bg-white/40 dark:bg-zinc-900/40">
                                                 <div className="relative w-12 h-12 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950 ring-zinc-100 dark:ring-zinc-800 overflow-hidden cursor-pointer hover:scale-105 transition-transform">
-                                                    <div 
+                                                    <div
                                                         className="absolute inset-0 w-full h-full"
                                                         style={{ backgroundColor: widget.brandColor || '#6366f1' }}
                                                     />
@@ -1088,8 +1135,8 @@ export default function OnboardingPage() {
                             </Card>
 
                             <div className="flex justify-between items-center pt-2">
-                                <Button 
-                                    variant="ghost" 
+                                <Button
+                                    variant="ghost"
                                     onClick={() => goToStep('knowledge')}
                                     className="h-12 px-6 text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors rounded-xl"
                                 >
@@ -1097,9 +1144,9 @@ export default function OnboardingPage() {
                                     {language === 'tr' ? 'Geri' : 'Back'}
                                 </Button>
                                 <div className="flex items-center gap-3">
-                                    <Button 
+                                    <Button
                                         type="button"
-                                        variant="ghost" 
+                                        variant="ghost"
                                         onClick={() => handleComplete('soft')}
                                         className="h-12 px-6 text-base font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl"
                                     >

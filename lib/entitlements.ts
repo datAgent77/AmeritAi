@@ -83,7 +83,7 @@ export const PLANS: Record<string, PlanDefinition> = {
     },
     pro: {
         id: 'pro',
-        name: { en: 'Professional', tr: 'Profesyonel' },
+        name: { en: 'Scale', tr: 'Scale' },
         messageLimit: Infinity,
         canAccessPremiumModules: true,
         maxAddOns: 3,
@@ -144,7 +144,7 @@ export interface TenantEntitlements {
 
         /**
          * Premium add-ons purchased or granted to this tenant.
-         * Only applicable for Pro+ plans.
+         * Only applicable for Scale+ plans.
          */
         addOns: ModuleId[];
     };
@@ -351,8 +351,8 @@ export function getUpgradeHint(moduleId: ModuleId, locale: 'en' | 'tr' = 'tr'): 
 
     if (mod.isPremium) {
         return locale === 'tr'
-            ? 'Premium modül - Pro planına yükseltin'
-            : 'Premium module - Upgrade to Pro plan';
+            ? 'Premium modül - Scale planına yükseltin'
+            : 'Premium module - Upgrade to Scale plan';
     }
 
     return locale === 'tr'

@@ -4,18 +4,17 @@ import { useState } from 'react'
 import { useLanguage } from '@/context/LanguageContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogHeader, 
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
     DialogTitle
 } from '@/components/ui/dialog'
-import { getPublicPlansSorted, getPlan, formatPlanPrice, PlanConfig } from '@/lib/pricing-config'
+import { getPublicPlansSorted, getPlan, formatPlanPrice, PlanConfig, shouldShowPlanPrices, normalizePlanId, getPlanHighlightsSorted, isPreferredPlanBadge } from '@/lib/pricing-config'
 import { BillingToggle } from '@/components/pricing/billing-toggle'
 import { ModuleId } from '@/lib/modules-registry'
 import { cn } from '@/lib/utils'
-import { Check, Crown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Check, Loader2, CheckCircle2, Info, Sparkles } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/hooks/use-toast'
 
@@ -42,7 +41,9 @@ export function PricingModal({
     const { toast } = useToast()
 
     const allPlans = getPublicPlansSorted()
-    const currentPlan = getPlan(currentPlanId)
+    const showPlanPrices = shouldShowPlanPrices()
+    const normalizedCurrentPlanId = normalizePlanId(currentPlanId)
+    const currentPlan = getPlan(normalizedCurrentPlanId)
     const currentSortOrder = currentPlan?.sortOrder ?? 0
 
     const handleUpgrade = async (planId: string) => {
@@ -117,8 +118,8 @@ export function PricingModal({
                             {language === 'tr' ? 'Talebiniz Alındı! 🚀' : 'Request Received!'}
                         </h2>
                         <p className="text-gray-500 max-w-md mb-8 text-lg">
-                            {language === 'tr' 
-                                ? 'Plan yükseltme talebiniz başarıyla bize ulaştı. Müşteri temsilcilerimiz en kısa sürede sizinle iletişime geçerek süreci tamamlayacaktır.' 
+                            {language === 'tr'
+                                ? 'Plan yükseltme talebiniz başarıyla bize ulaştı. Müşteri temsilcilerimiz en kısa sürede sizinle iletişime geçerek süreci tamamlayacaktır.'
                                 : 'Your upgrade request has been received successfully. Our customer representatives will contact you shortly to complete the process.'}
                         </p>
                         {requestedPlanId && (
@@ -147,31 +148,33 @@ export function PricingModal({
                         </DialogHeader>
 
                         <div className="p-6 space-y-6 overflow-y-auto w-full" style={{ width: '100%' }}>
-                    {/* Billing Toggle */}
-                    <div className="flex justify-center items-end">
-                        <BillingToggle 
-                            billingCycle={billingCycle} 
-                            onChange={setBillingCycle} 
-                        />
-                    </div>
+                            {/* Billing Toggle */}
+                            {showPlanPrices && (
+                                <div className="flex justify-center items-end">
+                                    <BillingToggle
+                                        billingCycle={billingCycle}
+                                        onChange={setBillingCycle}
+                                    />
+                                </div>
+                            )}
 
-                    {/* Plans - Horizontal Scroll */}
-                    <div className="flex gap-4 overflow-visible pb-4 -mx-2 px-2 snap-x">
+                            {/* Plans - Horizontal Scroll */}
+                            <div className="flex gap-4 overflow-visible pb-4 -mx-2 px-2 snap-x">
                         {allPlans.map((plan) => {
-                            const isCurrentPlan = plan.planId === currentPlanId
+                            const isCurrentPlan = plan.planId === normalizedCurrentPlanId
                             const isUpgrade = plan.sortOrder > currentSortOrder
                             const isContact = plan.billing.contact
                             const price = formatPlanPrice(plan.planId, billingCycle, language as 'en' | 'tr')
-                            const isPopular = plan.copy.badge === 'recommended' || plan.copy.badge === 'Önerilen'
+                            const isPopular = isPreferredPlanBadge(plan.copy.badge)
 
                             return (
-                                <div 
+                                <div
                                     key={plan.planId}
                                     className={cn(
-                                        "relative flex flex-col p-5 rounded-xl border transition-all min-w-[260px] flex-1 snap-center",
+                                        "relative flex flex-col p-5 rounded-xl border transition-all min-w-[260px] flex-1 snap-center shadow-lg shadow-slate-900/5",
                                         (isCurrentPlan || isPopular) && "pt-6",
-                                        isCurrentPlan 
-                                            ? "border-primary/50 bg-primary/5" 
+                                        isCurrentPlan
+                                            ? "border-primary/50 bg-primary/5"
                                             : isPopular
                                                 ? "border-primary shadow-lg shadow-primary/10"
                                                 : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
@@ -189,7 +192,7 @@ export function PricingModal({
                                     {isPopular && !isCurrentPlan && (
                                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                                             <span className="text-xs font-semibold text-white bg-zinc-900 dark:bg-zinc-800 px-2 py-1 rounded-full shadow-sm">
-                                                {language === 'tr' ? 'Önerilen' : 'Recommended'}
+                                                {t('preferredPlanTag') || (language === 'tr' ? 'Tercih Edilen' : 'Preferred')}
                                             </span>
                                         </div>
                                     )}
@@ -200,15 +203,15 @@ export function PricingModal({
                                         <p className="text-sm text-muted-foreground mb-3">{t(plan.copy.subtitle || '')}</p>
                                         <div className="flex items-baseline gap-1">
                                             <span className="text-2xl font-bold">
-                                                {isContact 
+                                                {isContact
                                                     ? (language === 'tr' ? 'Özel Teklif' : 'Custom')
                                                     : price.split('/')[0]}
                                             </span>
-                                            {!isContact && price.includes('/') && (
+                                            {showPlanPrices && !isContact && price.includes('/') && (
                                                 <span className="text-sm text-muted-foreground">/{price.split('/')[1]}</span>
                                             )}
                                         </div>
-                                        {billingCycle === 'annual' && plan.billing.annual?.discountLabel && (
+                                        {showPlanPrices && billingCycle === 'annual' && plan.billing.annual?.discountLabel && (
                                             <p className="text-xs text-green-600 mt-1 font-medium">
                                                 {t(plan.billing.annual.discountLabel)}
                                             </p>
@@ -216,7 +219,7 @@ export function PricingModal({
                                     </div>
 
                                     {/* CTA Button */}
-                                        <Button 
+                                        <Button
                                             variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
                                             className={cn(
                                                 "w-full mb-4",
@@ -228,8 +231,8 @@ export function PricingModal({
                                             {isLoading && !isContact && !isCurrentPlan ? (
                                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                             ) : null}
-                                            
-                                            {isCurrentPlan 
+
+                                            {isCurrentPlan
                                                 ? (language === 'tr' ? 'Mevcut Planınız' : 'Your Plan')
                                                 : isContact
                                                     ? (language === 'tr' ? 'İletişime Geç' : 'Contact Sales')
@@ -240,19 +243,42 @@ export function PricingModal({
 
                                     {/* Features List */}
                                     <div className="flex-1 space-y-2">
-                                        {plan.highlights?.map((feature, i) => (
-                                            <div key={i} className="flex items-start gap-2 text-sm">
-                                                <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                                                <span className="text-muted-foreground">{t(feature)}</span>
+                                        {getPlanHighlightsSorted(plan).map((feature, i) => {
+                                            const isComingSoon = plan.highlights_meta?.coming_soon?.includes(feature)
+                                            const isCustomModuleDevelopment = feature === 'featureCustomModuleDevelopment'
+                                            return (
+                                            <div
+                                                key={i}
+                                                className={cn(
+                                                    "flex items-start gap-2 text-sm",
+                                                    isCustomModuleDevelopment && "rounded-lg border border-primary/20 bg-primary/5 px-2 py-1.5"
+                                                )}
+                                            >
+                                                {isCustomModuleDevelopment ? (
+                                                    <Sparkles className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                ) : isComingSoon ? (
+                                                    <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                                                ) : (
+                                                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                                                )}
+                                                <span className={cn("text-muted-foreground", isCustomModuleDevelopment && "font-semibold text-primary")}>
+                                                    {t(feature)}
+                                                    {isComingSoon && (
+                                                        <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                                            {language === 'tr' ? 'Yakında' : 'Soon'}
+                                                        </span>
+                                                    )}
+                                                </span>
                                             </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
 
                                     {/* Limits Section */}
                                     {plan.limits.knowledge && (
                                         <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                                             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                                                {t('limitKnowledgeTitle') || 'Bilgi Tabanı Limitleri'}
+                                                {t('limitKnowledgeTitle') || 'Eğitim Kaynağı Limitleri'}
                                             </p>
                                             <div className="grid grid-cols-2 gap-1.5 text-xs">
                                                 <div className="bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded text-center">

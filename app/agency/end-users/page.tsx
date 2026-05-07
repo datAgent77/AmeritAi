@@ -5,7 +5,7 @@ import { Loader2, Plus, Search, Settings2 } from "lucide-react"
 import { auth } from "@/lib/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/context/LanguageContext"
-import { getAllPlans } from "@/lib/pricing-config"
+import { getPublicPlansSorted, normalizePlanId } from "@/lib/pricing-config"
 import type { PartnerCapabilities } from "@/lib/management/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -166,16 +166,18 @@ export default function AgencyEndUsersPage() {
     }, [fetchCustomers, showArchived])
 
     const planOptions = useMemo(() => {
-        const fromPricing = getAllPlans()
-            .filter((plan) => plan.planId !== "trial")
+        const fromPricing = getPublicPlansSorted()
             .map((plan) => ({
                 id: plan.planId,
                 label: plan.displayName || plan.planId,
             }))
 
         const dynamic = Array.from(
-            new Set(customers.map((customer) => customer.planId).filter((value): value is string => Boolean(value)))
-        ).map((id) => ({ id, label: id.charAt(0).toUpperCase() + id.slice(1) }))
+            new Set(customers.map((customer) => normalizePlanId(customer.planId || "starter")))
+        ).map((id) => {
+            const existing = fromPricing.find((plan) => plan.id === id)
+            return existing || { id, label: id.charAt(0).toUpperCase() + id.slice(1) }
+        })
 
         const merged = [...fromPricing]
         dynamic.forEach((item) => {
@@ -203,7 +205,7 @@ export default function AgencyEndUsersPage() {
                 (statusFilter === "active" && customer.isActive) ||
                 (statusFilter === "inactive" && !customer.isActive)
 
-            const normalizedPlanId = (customer.planId || "starter").toLowerCase()
+            const normalizedPlanId = normalizePlanId(customer.planId || "starter")
             const matchesPlan = planFilter === "all" || normalizedPlanId === planFilter
 
             return matchesSearch && matchesStatus && matchesPlan
@@ -333,14 +335,14 @@ export default function AgencyEndUsersPage() {
             setMembershipDraft({
                 ...DEFAULT_SUBSCRIPTION_DRAFT,
                 ...incoming,
-                planId: typeof incoming.planId === "string" && incoming.planId ? incoming.planId : customer.planId || "starter",
+                planId: normalizePlanId(typeof incoming.planId === "string" && incoming.planId ? incoming.planId : customer.planId || "starter"),
                 status: normalizeSubscriptionStatus(incoming.status || customer.subscriptionStatus),
                 billingPeriod: normalizeBillingPeriod(incoming.billingPeriod || customer.subscriptionBillingPeriod),
             })
         } catch (error: any) {
             setMembershipDraft({
                 ...DEFAULT_SUBSCRIPTION_DRAFT,
-                planId: customer.planId || "starter",
+                planId: normalizePlanId(customer.planId || "starter"),
                 status: normalizeSubscriptionStatus(customer.subscriptionStatus),
                 billingPeriod: normalizeBillingPeriod(customer.subscriptionBillingPeriod),
                 billingStatus: customer.subscriptionStatus === "active" ? "paid" : "free",
@@ -511,7 +513,7 @@ export default function AgencyEndUsersPage() {
                                             <TableCell>{customer.email}</TableCell>
                                             <TableCell>
                                                 <Badge variant="secondary">
-                                                    {(customer.planId || "starter").toUpperCase()}
+                                                    {planOptions.find((plan) => plan.id === normalizePlanId(customer.planId || "starter"))?.label || "Starter"}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
@@ -663,7 +665,7 @@ export default function AgencyEndUsersPage() {
                                         id="membership-plan"
                                         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                         value={membershipDraft.planId}
-                                        onChange={(event) => setMembershipDraft((prev) => ({ ...prev, planId: event.target.value }))}
+                                        onChange={(event) => setMembershipDraft((prev) => ({ ...prev, planId: normalizePlanId(event.target.value) }))}
                                     >
                                         {planOptions.map((plan) => (
                                             <option key={plan.id} value={plan.id}>

@@ -378,7 +378,7 @@ export function trackCtaClick(params: {
 export function trackPricingView(params: {
     billingCycle: "monthly" | "annual";
     language: string;
-    items: Array<{ planId: string; price: number; currency: string }>;
+    items: Array<{ planId: string; price?: number; currency?: string }>;
 }) {
     trackMarketingEvent("view_item_list", {
         item_list_name: "pricing_plans",
@@ -392,7 +392,7 @@ export function trackPricingView(params: {
                 price: item.price,
                 currency: item.currency,
                 quantity: 1,
-            })),
+            })).map(toCleanPayload),
         },
     });
 }
@@ -400,8 +400,8 @@ export function trackPricingView(params: {
 export function trackPricingPlanSelect(params: {
     planId: string;
     billingCycle: "monthly" | "annual";
-    price: number;
-    currency: string;
+    price?: number;
+    currency?: string;
     location?: string;
     language?: string;
 }) {
@@ -411,14 +411,14 @@ export function trackPricingPlanSelect(params: {
         language: params.language,
         ecommerce: {
             items: [
-                {
+                toCleanPayload({
                     item_id: params.planId,
                     item_name: params.planId,
                     item_category: "subscription",
                     price: params.price,
                     currency: params.currency,
                     quantity: 1,
-                },
+                }),
             ],
         },
     });

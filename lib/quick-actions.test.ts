@@ -238,7 +238,7 @@ test("compares quick action configs deeply", () => {
     })
 
     expect(areQuickActionsEqual(left, right)).toBe(true)
-    expect(getQuickActionModuleOptions("en").map((option) => option.moduleId)).toHaveLength(8)
+    expect(getQuickActionModuleOptions("en").map((option) => option.moduleId)).toHaveLength(9)
 })
 
 test("enables survey quick action only when widget survey CTA has an active survey", () => {

@@ -2,6 +2,10 @@ import { describe, expect, test } from "vitest"
 import { buildOverviewPayload, buildWorkspaceAgentSummaries } from "@/lib/omni/workspace-agents"
 
 describe("workspace agent adapters", () => {
+    const recentBaseAt = Date.now() - 24 * 60 * 60 * 1000
+    const recentCreatedAt = new Date(recentBaseAt).toISOString()
+    const recentUpdatedAt = new Date(recentBaseAt + 5 * 60 * 1000).toISOString()
+
     test("falls back to omni-default when assistantProfileId is missing", () => {
         const summaries = buildWorkspaceAgentSummaries({
             assistantCore: {
@@ -23,8 +27,8 @@ describe("workspace agent adapters", () => {
                 {
                     id: "session-1",
                     channel: "web",
-                    createdAt: "2026-04-01T10:00:00.000Z",
-                    updatedAt: "2026-04-01T10:05:00.000Z",
+                    createdAt: recentCreatedAt,
+                    updatedAt: recentUpdatedAt,
                 },
             ],
             callbacks: [],
@@ -61,8 +65,8 @@ describe("workspace agent adapters", () => {
                 {
                     id: "session-1",
                     channel: "web",
-                    createdAt: "2026-04-01T10:00:00.000Z",
-                    updatedAt: "2026-04-01T10:05:00.000Z",
+                    createdAt: recentCreatedAt,
+                    updatedAt: recentUpdatedAt,
                 },
             ],
             callbacks: [],

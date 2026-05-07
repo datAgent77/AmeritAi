@@ -3,7 +3,7 @@
  * Fiyatlandırma planları ve özellikleri
  */
 
-export type PlanId = 'starter' | 'professional' | 'enterprise';
+export type PlanId = 'starter' | 'growth' | 'enterprise';
 export type BillingCycle = 'monthly' | 'yearly';
 export type SubscriptionStatus = 'trial' | 'active' | 'cancelled' | 'expired' | 'past_due';
 
@@ -61,9 +61,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
             integrations: ['web']
         }
     },
-    professional: {
-        id: 'professional',
-        name: { en: 'Professional', tr: 'Profesyonel' },
+    growth: {
+        id: 'growth',
+        name: { en: 'Scale', tr: 'Scale' },
         description: {
             en: 'For growing businesses with advanced needs',
             tr: 'Gelişen işletmeler için gelişmiş özellikler'
@@ -169,5 +169,5 @@ export function calculateYearlySavings(planId: PlanId): number {
  * Tüm planları karşılaştırma için döndürür
  */
 export function getPlansForComparison(): PlanDefinition[] {
-    return [PLANS.starter, PLANS.professional, PLANS.enterprise];
+    return [PLANS.starter, PLANS.growth, PLANS.enterprise];
 }

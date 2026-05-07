@@ -214,12 +214,12 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     knowledgeBase: {
         id: 'knowledgeBase',
         name: {
-            en: 'Knowledge & Education',
-            tr: 'Bilgi Tabanı ve Eğitim'
+            en: 'AI Training Resources',
+            tr: 'AI Eğitim Kaynakları'
         },
         description: {
-            en: 'FAQ management, document upload, and knowledge base',
-            tr: 'SSS yönetimi, doküman yükleme ve bilgi tabanı'
+            en: 'FAQ management, document upload, and AI training resources',
+            tr: 'SSS yönetimi, doküman yükleme ve AI eğitim kaynakları'
         },
         icon: 'BookOpen',
         isCore: true,

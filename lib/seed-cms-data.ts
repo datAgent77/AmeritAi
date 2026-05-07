@@ -20,7 +20,7 @@ The practical difference is outcome ownership. A chatbot may answer "Do you have
 
 In Vion AI projects, teams get better results when they map flows by business goal, not by page. For example, a lead flow is designed around "qualified meeting booked", not "message replied". This single change improves quality of pipeline and team focus.
 
-A second difference is context depth. AI employee architectures combine knowledge base, user context, and intent tracking. This allows answers like "your order is in transit" instead of generic FAQ responses.
+A second difference is context depth. AI employee architectures combine AI training resources, user context, and intent tracking. This allows answers like "your order is in transit" instead of generic FAQ responses.
 
 Implementation should start with one measurable process: support deflection, lead qualification, or cart recovery. Measure baseline metrics, run one focused workflow, and expand after measurable gains.
 
@@ -31,7 +31,7 @@ Temel fark sonuç sahipliğidir. Chatbot "stok var mı?" sorusunu yanıtlayıp d
 
 Vion AI projelerinde ekipler, sayfa odaklı değil hedef odaklı akış tasarladığında daha iyi sonuç alır. Örneğin lead akışı "mesaj yanıtlandı" değil, "nitelikli görüşme planlandı" hedefiyle kurulur. Bu yaklaşım hem satış kalitesini hem ekip odağını artırır.
 
-İkinci fark bağlam derinliğidir. AI çalışanı mimarisi bilgi tabanı, kullanıcı bağlamı ve niyet takibini birlikte kullanır. Böylece genel SSS yanıtı yerine "siparişin dağıtıma çıktı" gibi kişisel ve doğru cevap üretebilir.
+İkinci fark bağlam derinliğidir. AI çalışanı mimarisi AI eğitim kaynakları, kullanıcı bağlamı ve niyet takibini birlikte kullanır. Böylece genel SSS yanıtı yerine "siparişin dağıtıma çıktı" gibi kişisel ve doğru cevap üretebilir.
 
 Uygulama tarafında tek bir ölçülebilir süreçle başlamak gerekir: destek yükü azaltma, lead kalitesi veya sepet kurtarma. Önce mevcut metriği ölçün, sonra tek bir akışta optimize edin, ardından ölçekleyin.
 
@@ -178,7 +178,7 @@ Vion AI Digital Waiter kullanan restoranlar yoğun saatlerde daha hızlı karar 
 
 RAG handles factual grounding from docs and site content. Dynamic Context brings per-user data like order state or account limits. Visual analysis extends the same experience to uploaded images.
 
-These layers should have explicit boundaries. RAG answers "what is true in knowledge base". Dynamic Context answers "what is true for this user". Visual analysis answers "what is visible in this image".
+These layers should have explicit boundaries. RAG answers "what is true in AI training resources". Dynamic Context answers "what is true for this user". Visual analysis answers "what is visible in this image".
 
 When teams blur these boundaries, response quality drops and debugging becomes hard. Clear ownership by layer keeps output explainable.
 
@@ -189,7 +189,7 @@ Vion AI module system is designed around this layered approach so teams can enab
 
 RAG katmanı doküman ve site bilgisini doğru şekilde getirir. Dynamic Context, sipariş durumu veya hesap limiti gibi kullanıcıya özel veriyi taşır. Görsel analiz ise yüklenen görseller üzerinden ön değerlendirme sağlar.
 
-Bu katmanların görev sınırları net olmalıdır. RAG "bilgi tabanında ne doğru?" sorusunu yanıtlar. Dynamic Context "bu kullanıcı için ne doğru?" sorusunu yanıtlar. Görsel analiz "görselde ne var?" sorusunu yanıtlar.
+Bu katmanların görev sınırları net olmalıdır. RAG "AI eğitim kaynaklarında ne doğru?" sorusunu yanıtlar. Dynamic Context "bu kullanıcı için ne doğru?" sorusunu yanıtlar. Görsel analiz "görselde ne var?" sorusunu yanıtlar.
 
 Sınırlar karıştığında cevap kalitesi düşer, hata ayıklama zorlaşır. Katman bazlı sahiplik modeli, çıktının açıklanabilirliğini artırır.
 
@@ -670,7 +670,7 @@ Before choosing any tool, answer these questions:
 - What information will it need access to?
 - How should it escalate to humans when needed?
 
-**Step 2: Prepare Your Knowledge Base**
+**Step 2: Prepare Your AI Training Resources**
 Gather:
 - FAQ documents
 - Product information
@@ -680,7 +680,7 @@ Gather:
 **Step 3: Choose Your Platform**
 Look for:
 - No-code setup options
-- Easy knowledge base training
+- Easy AI training resources training
 - Customizable appearance
 - Analytics dashboard
 - Human handoff capabilities
@@ -703,7 +703,7 @@ Herhangi bir araç seçmeden önce şu soruları yanıtlayın:
 - Hangi bilgilere erişmesi gerekecek?
 - Gerektiğinde insanlara nasıl yönlendirmeli?
 
-**Adım 2: Bilgi Tabanınızı Hazırlayın**
+**Adım 2: AI Eğitim Kaynaklarınızı Hazırlayın**
 Toplayın:
 - SSS belgeleri
 - Ürün bilgileri
@@ -713,7 +713,7 @@ Toplayın:
 **Adım 3: Platformunuzu Seçin**
 Arayın:
 - Kodsuz kurulum seçenekleri
-- Kolay bilgi tabanı eğitimi
+- Kolay AI eğitim kaynakları eğitimi
 - Özelleştirilebilir görünüm
 - Analitik paneli
 - İnsan aktarımı yetenekleri
@@ -847,7 +847,7 @@ Bunun yerine güvenli formlar kullanın veya doğrulanmış ödeme portallarına
 
 Weekly review:
 1. Identify most common unanswered questions
-2. Add this content to your knowledge base
+2. Add this content to your AI training resources
 3. Test improved responses
 4. Monitor impact
 
@@ -878,7 +878,7 @@ Monthly review:
 
 Haftalık inceleme:
 1. En yaygın yanıtsız soruları belirleyin
-2. Bu içeriği bilgi tabanınıza ekleyin
+2. Bu içeriği AI eğitim kaynaklarınıza ekleyin
 3. İyileştirilmiş yanıtları test edin
 4. Etkiyi izleyin
 
@@ -917,7 +917,7 @@ Simply translating responses isn't enough. Effective multilingual chatbots:
 **Technical Considerations**
 
 1. **Language Detection**: Automatically identify the user's preferred language
-2. **Knowledge Base per Language**: Some information may differ by region
+2. **AI Training Resources per Language**: Some information may differ by region
 3. **Agent Routing**: Escalate to agents who speak the customer's language
 4. **Character Support**: Ensure proper rendering of all character sets
 
@@ -942,7 +942,7 @@ Yanıtları basitçe çevirmek yeterli değil. Etkili çok dilli chatbotlar:
 **Teknik Hususlar**
 
 1. **Dil Algılama**: Kullanıcının tercih ettiği dili otomatik olarak belirleyin
-2. **Dil Başına Bilgi Tabanı**: Bazı bilgiler bölgeye göre farklılık gösterebilir
+2. **Dil Başına AI Eğitim Kaynakları**: Bazı bilgiler bölgeye göre farklılık gösterebilir
 3. **Temsilci Yönlendirme**: Müşterinin dilini konuşan temsilcilere yönlendirin
 4. **Karakter Desteği**: Tüm karakter setlerinin düzgün görüntülenmesini sağlayın
 
@@ -1343,7 +1343,7 @@ The first day at a new job is overwhelming. Instead of dumping a 100-page handbo
 
 The AI provides instant, accurate answers with links to the relevant forms, reducing the load on the HR team and making the new employee feel supported.
 
-**Internal Knowledge Base**
+**Internal AI Training Resources**
 
 For existing employees, the AI acts as a central brain. Instead of navigating a complex Intranet, they simple chat.
 - **Payroll:** "Why is my tax deduction higher this month?" (AI explains the tax bracket change).
@@ -1372,7 +1372,7 @@ Yeni bir işteki ilk gün bunaltıcıdır. Yeni bir çalışanın önüne 100 sa
 
 Yapay zeka, ilgili formlara bağlantılarla birlikte anında ve doğru yanıtlar vererek İK ekibinin yükünü azaltır ve yeni çalışanın desteklendiğini hissetmesini sağlar.
 
-**Dahili Bilgi Tabanı**
+**Dahili AI Eğitim Kaynakları**
 
 Mevcut çalışanlar için yapay zeka merkezi bir beyin görevi görür. Karmaşık bir İntranet'te gezinmek yerine, sadece sohbet ederler.
 - **Bordro:** "Vergi kesintim bu ay neden daha yüksek?" (Yapay zeka vergi dilimi değişikliğini açıklar).
@@ -1421,7 +1421,7 @@ This doesn't replace the lawyer's judgment but radically accelerates their abili
 
 **Financial Regulation Compliance**
 
-For financial advisors, keeping up with changing tax laws and banking regulations is a full-time job. An AI Knowledge Base fed with the latest regulatory PDFs allows an advisor to ask:
+For financial advisors, keeping up with changing tax laws and banking regulations is a full-time job. AI training resources fed with the latest regulatory PDFs allow an advisor to ask:
 "What are the new crypto asset reporting requirements for 2025 in Turkey?"
 And receive an exact citation from the official gazette in seconds.
 
@@ -1449,7 +1449,7 @@ Bu, avukatın muhakemesinin yerini almaz, ancak samanlıkta iğne bulma yetenekl
 
 **Finansal Düzenleme Uyumluluğu**
 
-Finansal danışmanlar için değişen vergi yasalarını ve bankacılık düzenlemelerini takip etmek tam zamanlı bir iştir. En son düzenleyici PDF'lerle beslenen bir Yapay Zeka Bilgi Tabanı, bir danışmanın şunları sormasına olanak tanır:
+Finansal danışmanlar için değişen vergi yasalarını ve bankacılık düzenlemelerini takip etmek tam zamanlı bir iştir. En son düzenleyici PDF'lerle beslenen AI eğitim kaynakları, bir danışmanın şunları sormasına olanak tanır:
 "Türkiye'de 2025 için yeni kripto varlık raporlama gereklilikleri nelerdir?"
 Ve saniyeler içinde resmi gazeteden kesin bir alıntı alır.
 
@@ -1486,7 +1486,7 @@ export const SEED_FAQS = [
         question: { en: "Which industries does Vion AI support?", tr: "Vion AI hangi sektörleri destekliyor?" },
         answer: {
             en: "We offer specialized modes for 15+ industries including E-Commerce, Real Estate, Healthcare, Tourism, SaaS, and Education. Each mode comes with pre-trained knowledge and industry-specific terminology.",
-            tr: "E-Ticaret, Emlak, Sağlık, Turizm, SaaS ve Eğitim dahil 15'ten fazla sektör için özelleşmiş modlar sunuyoruz. Her mod, önceden eğitilmiş bilgi tabanı ve sektöre özgü terminoloji ile gelir."
+            tr: "E-Ticaret, Emlak, Sağlık, Turizm, SaaS ve Eğitim dahil 15'ten fazla sektör için özelleşmiş modlar sunuyoruz. Her mod, önceden eğitilmiş AI eğitim kaynakları ve sektöre özgü terminoloji ile gelir."
         },
         category: "general"
     },
@@ -1501,8 +1501,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Can I manage multiple chatbots under one account?", tr: "Tek hesapta birden fazla chatbot yönetebilir miyim?" },
         answer: {
-            en: "Yes, you can create and manage separate chatbots for different websites, brands, or departments from a single dashboard. Each chatbot has its own independent settings and knowledge base.",
-            tr: "Evet, tek bir panelden farklı web siteleri, markalar veya departmanlar için ayrı chatbotlar oluşturup yönetebilirsiniz. Her chatbotun kendi bağımsız ayarları ve bilgi tabanı vardır."
+            en: "Yes, you can create and manage separate chatbots for different websites, brands, or departments from a single dashboard. Each chatbot has its own independent settings and AI training resources.",
+            tr: "Evet, tek bir panelden farklı web siteleri, markalar veya departmanlar için ayrı chatbotlar oluşturup yönetebilirsiniz. Her chatbotun kendi bağımsız ayarları ve AI eğitim kaynakları vardır."
         },
         category: "general"
     },
@@ -1561,8 +1561,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Is there an API for developers?", tr: "Geliştiriciler için API var mı?" },
         answer: {
-            en: "Yes, our REST API allows full programmatic control. You can send messages, manage knowledge bases, and retrieve chat history programmatically to build custom solutions.",
-            tr: "Evet, REST API'miz tam programsal kontrol sağlar. Özel çözümler üretmek için kod ile mesaj gönderebilir, bilgi tabanını yönetebilir ve sohbet geçmişini çekebilirsiniz."
+            en: "Yes, our REST API allows full programmatic control. You can send messages, manage AI training resources, and retrieve chat history programmatically to build custom solutions.",
+            tr: "Evet, REST API'miz tam programsal kontrol sağlar. Özel çözümler üretmek için kod ile mesaj gönderebilir, AI eğitim kaynaklarını yönetebilir ve sohbet geçmişini çekebilirsiniz."
         },
         category: "integration"
     },

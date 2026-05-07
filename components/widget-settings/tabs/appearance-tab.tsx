@@ -53,7 +53,7 @@ export function AppearanceTab({
     setAmbientPreviewThinking,
 }: AppearanceTabProps) {
     const { t, language } = useLanguage()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
     const { toast } = useToast()
     const [searchTerm, setSearchTerm] = useState("")
     const [activeDevice, setActiveDevice] = useState<'desktop' | 'mobile'>('desktop')
@@ -131,6 +131,7 @@ export function AppearanceTab({
             return nextRoot
         })
     }
+    const canManageVionBranding = role === "SUPER_ADMIN"
     const ambientPreviewStatus = ambientPreviewDockState === "auto"
         ? "auto"
         : (ambientPreviewDockState.startsWith("collapsed") ? "collapsed" : "open")
@@ -659,6 +660,26 @@ export function AppearanceTab({
                                         className="resize-none min-h-[100px]"
                                     />
                                 </div>
+
+                                {canManageVionBranding && (
+                                    <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="hide-vion-branding">
+                                                {language === 'tr' ? 'Vion brandingini gizle' : 'Hide Vion branding'}
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                {language === 'tr'
+                                                    ? 'Bu tenant için widget footerındaki "Destekleyen Vion" görünümünü kapatır. Bu ayarı yalnızca süper admin yönetebilir.'
+                                                    : 'Disables the "Powered by Vion" footer for this tenant. Only super admins can manage this setting.'}
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            id="hide-vion-branding"
+                                            checked={settings.hideVionBranding === true}
+                                            onCheckedChange={(checked) => setSettings(prev => ({ ...prev, hideVionBranding: checked }))}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </AccordionContent>
                     </AccordionItem>

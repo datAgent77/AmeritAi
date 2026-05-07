@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { authorizeTargetAccess } from "@/lib/api-auth";
+import { normalizePlanId } from "@/lib/pricing-config";
 
 // Default subscription values for new/existing users without subscription data
 const DEFAULT_SUBSCRIPTION = {
@@ -41,7 +42,7 @@ function normalizePlanIdFromUser(targetUserData: Record<string, any>, subscripti
 
     const resolved = candidates[0] || DEFAULT_SUBSCRIPTION.planId;
     // "trial" is a status, not a billable plan card; show underlying plan as Starter if no concrete plan was selected.
-    return resolved === "trial" ? "starter" : resolved;
+    return resolved === "trial" ? "starter" : normalizePlanId(resolved);
 }
 
 function normalizeSubscriptionStatus(targetUserData: Record<string, any>, subscription: Record<string, any>) {
@@ -252,9 +253,12 @@ export async function PUT(request: Request) {
              finalTrialEndsAt = null;
         }
 
+        const finalPlanId = normalizePlanId(subscription.planId || 'starter');
+
         // Prepare subscription update with timestamp
         const subscriptionUpdate = {
             ...subscription,
+            planId: finalPlanId,
             status: finalStatus,
             trialEndsAt: finalTrialEndsAt,
             updatedAt: new Date().toISOString(),
@@ -265,7 +269,7 @@ export async function PUT(request: Request) {
 
         // Create entitlements object (normalized)
         const entitlements = {
-            planId: subscription.planId || 'starter',
+            planId: finalPlanId,
             sectorId: targetUserData?.industry ? (targetUserData.industry.toLowerCase().includes('commerce') ? 'ecommerce' : targetUserData.industry.toLowerCase()) : 'ecommerce', // simple fallback
             trial: {
                 isActive: finalStatus === 'trial',
@@ -283,14 +287,14 @@ export async function PUT(request: Request) {
         await adminDb.collection("users").doc(userId).update({
             subscription: subscriptionUpdate,
             // Sync critical fields to root level as functionality relies on them
-            planId: subscription.planId || 'starter',
+            planId: finalPlanId,
             subscriptionStatus: finalStatus || 'trial',
             isFrozen: subscription.isFrozen ?? false,
             // Also update trial info if present
             trialEndsAt: finalTrialEndsAt || null,
             currentPeriodEnd: subscription.currentPeriodEnd || null,
             // FORCE UPDATE entitlements to ensure extractEntitlementsFromDoc works
-            "entitlements.planId": subscription.planId || 'starter',
+            "entitlements.planId": finalPlanId,
             "entitlements.updatedAt": new Date().toISOString(),
             "entitlements.trial.isActive": finalStatus === 'trial',
             "entitlements.trial.endAt": finalTrialEndsAt || null

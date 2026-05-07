@@ -13,7 +13,8 @@ import { useLanguage } from "@/context/LanguageContext"
 import { useOmniAccount } from "@/context/OmniAccountContext"
 import { useToast } from "@/hooks/use-toast"
 import { BillingToggle } from "@/components/pricing/billing-toggle"
-import { formatPlanPrice, getPublicPlansSorted, type PlanConfig } from "@/lib/pricing-config"
+import { formatPlanPrice, getPlanHighlightsSorted, getPublicPlansSorted, normalizePlanId, shouldShowPlanPrices, type PlanConfig } from "@/lib/pricing-config"
+import { cn } from "@/lib/utils"
 
 interface AccountCenterPayload {
     personal: {
@@ -98,7 +99,7 @@ function getIndustryLabel(value: string, language: "tr" | "en") {
 
 export function OmniAccountCenterPanel() {
     const { user } = useAuth()
-    const { language } = useLanguage()
+    const { language, t } = useLanguage()
     const { activeAccountId: chatbotId, activeAccount } = useOmniAccount()
     const { toast } = useToast()
     const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly")
@@ -116,6 +117,7 @@ export function OmniAccountCenterPanel() {
     const [emailEnabled, setEmailEnabled] = useState(true)
 
     const plans = useMemo(() => getPublicPlansSorted(), [])
+    const showPlanPrices = shouldShowPlanPrices()
 
     const load = async () => {
         if (!user || !chatbotId) return
@@ -372,8 +374,10 @@ export function OmniAccountCenterPanel() {
         )
     }
 
-    const currentPlanId = payload.subscription.planId || "starter"
-    const pendingPlanId = payload.subscription.lastUpgradeRequest?.status === "pending" ? payload.subscription.lastUpgradeRequest?.targetPlan || null : null
+    const currentPlanId = normalizePlanId(payload.subscription.planId || "starter")
+    const pendingPlanId = payload.subscription.lastUpgradeRequest?.status === "pending" && payload.subscription.lastUpgradeRequest?.targetPlan
+        ? normalizePlanId(payload.subscription.lastUpgradeRequest.targetPlan)
+        : null
 
     return (
         <Tabs defaultValue="profile" className="space-y-6">
@@ -619,28 +623,36 @@ export function OmniAccountCenterPanel() {
                             <span><strong>{language === "tr" ? "Durum:" : "Status:"}</strong> {payload.subscription.subscriptionStatus}</span>
                             {pendingPlanId ? <span><strong>{language === "tr" ? "Bekleyen talep:" : "Pending request:"}</strong> {pendingPlanId}</span> : null}
                         </div>
-                        <div className="flex justify-center">
-                            <BillingToggle billingCycle={billingCycle} onChange={setBillingCycle} />
-                        </div>
+                        {showPlanPrices && (
+                            <div className="flex justify-center">
+                                <BillingToggle billingCycle={billingCycle} onChange={setBillingCycle} />
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-4 lg:grid-cols-4">
+                <div className="grid gap-4 lg:grid-cols-3">
                     {plans.map((plan: PlanConfig) => {
                         const isCurrentPlan = plan.planId === currentPlanId
                         const isPending = pendingPlanId === plan.planId
                         const price = formatPlanPrice(plan.planId, billingCycle, language === "tr" ? "tr" : "en")
                         const isDowngrade = plan.sortOrder < (plans.find((item) => item.planId === currentPlanId)?.sortOrder || 0)
                         return (
-                            <Card key={plan.planId} className={isCurrentPlan ? "border-black" : ""}>
+                            <Card key={plan.planId} className={cn("shadow-lg shadow-slate-900/5", isCurrentPlan ? "border-black" : "")}>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">{plan.displayName}</CardTitle>
+                                    <CardTitle className="text-lg">
+                                        {(() => {
+                                            const key = `plan${plan.planId.charAt(0).toUpperCase() + plan.planId.slice(1)}`
+                                            const translated = t(key)
+                                            return translated !== key ? translated : plan.displayName
+                                        })()}
+                                    </CardTitle>
                                     <CardDescription>{price}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2 text-sm text-muted-foreground">
-                                        {plan.highlights?.slice(0, 4).map((feature) => (
-                                            <div key={feature}>• {feature}</div>
+                                        {getPlanHighlightsSorted(plan).slice(0, 4).map((feature) => (
+                                            <div key={feature}>• {t(feature) !== feature ? t(feature) : feature}</div>
                                         ))}
                                     </div>
                                     <Button

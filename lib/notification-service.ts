@@ -10,7 +10,7 @@ import { getAdminDb } from './firebase-admin';
 export interface Notification {
     id?: string;
     userId: string;
-    type: 'invoice_reminder' | 'payment_due' | 'payment_overdue' | 'general' | 'trial_expired' | 'upgrade_request' | 'human_handoff_request' | 'appointment_created';
+    type: 'invoice_reminder' | 'payment_due' | 'payment_overdue' | 'general' | 'trial_expired' | 'upgrade_request' | 'human_handoff_request' | 'appointment_created' | 'lead_created';
     title: string;
     message: string;
     isRead: boolean;
@@ -26,6 +26,11 @@ export interface Notification {
         targetPlan?: string;
         requestId?: string;
         callbackId?: string;
+        leadId?: string;
+        sessionId?: string | null;
+        name?: string;
+        email?: string;
+        phone?: string;
         source?: string;
         eventType?: string;
         triggerSource?: string;

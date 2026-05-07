@@ -135,8 +135,8 @@ const COPY = {
             tr: '{module} modülünü açın'
         },
         description: {
-            en: 'This feature helps you {benefit}. Available in Pro plan.',
-            tr: 'Bu özellik {benefit} sağlar. Pro planında mevcut.'
+            en: 'This feature helps you {benefit}. Available in Scale plan.',
+            tr: 'Bu özellik {benefit} sağlar. Scale planında mevcut.'
         },
         cta: {
             en: 'Learn More',
@@ -153,8 +153,8 @@ const COPY = {
             tr: 'Satışlarınızı ve etkileşiminizi artıracak güçlü AI araçlarını keşfedin.'
         },
         cta: {
-            en: 'Explore Pro',
-            tr: 'Pro\'yu Keşfet'
+            en: 'Explore Scale',
+            tr: 'Scale\'i Keşfet'
         }
     }
 };

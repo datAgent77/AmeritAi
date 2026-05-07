@@ -52,6 +52,27 @@ describe("resolveNotificationDestination", () => {
         })
     })
 
+    test("routes stored lead-created notifications into the matching lead detail seed", () => {
+        const destination = resolveNotificationDestination(
+            createNotification({
+                data: {
+                    notificationType: "lead_created",
+                    leadId: "lead-10",
+                    sessionId: "session-10",
+                    name: "Aylin Kaya",
+                    phone: "+905551112233",
+                },
+            }),
+            { isSuperAdmin: false }
+        )
+
+        expect(destination).toEqual({
+            category: "pipeline",
+            href: "/console/chatbot/leads?leadId=lead-10&sessionId=session-10&name=Aylin+Kaya&phone=%2B905551112233",
+            kind: "lead",
+        })
+    })
+
     test("routes human handoff system notifications back into the source chat", () => {
         const destination = resolveNotificationDestination(
             createNotification({

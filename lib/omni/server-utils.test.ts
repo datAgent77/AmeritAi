@@ -69,7 +69,7 @@ describe("authorizeOmniRequest", () => {
         }
     })
 
-    test("allows tenant requests when chatbot entitlement is enabled even without explicit omni entitlement", async () => {
+    test("denies tenant requests when only chatbot entitlement is enabled", async () => {
         authorizeTargetAccess.mockResolvedValue({
             ok: true,
             callerUid: "tenant-1",
@@ -89,7 +89,10 @@ describe("authorizeOmniRequest", () => {
 
         const result = await authorizeOmniRequest(new Request("https://example.com"), "tenant-1")
 
-        expect(result.ok).toBe(true)
+        expect(result.ok).toBe(false)
+        if (!result.ok) {
+            expect(result.response.status).toBe(403)
+        }
     })
 
     test("allows super admin requests even when omni entitlement is disabled", async () => {

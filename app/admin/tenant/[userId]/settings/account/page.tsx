@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label"
 import { Loader2, Save, AlertTriangle } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
+
+type ApplicationAccess = {
+    chatbot: boolean
+    omniChannel: boolean
+    cookieConsent: boolean
+}
 
 export default function TenantAccountSettingsPage() {
     const { user, role } = useAuth()
@@ -25,6 +32,11 @@ export default function TenantAccountSettingsPage() {
     const [email, setEmail] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [applicationAccess, setApplicationAccess] = useState<ApplicationAccess>({
+        chatbot: true,
+        omniChannel: false,
+        cookieConsent: false,
+    })
 
     useEffect(() => {
         if (!role) return
@@ -56,6 +68,11 @@ export default function TenantAccountSettingsPage() {
                 if (data.email) {
                     setEmail(data.email)
                 }
+                setApplicationAccess({
+                    chatbot: data.productEntitlements?.chatbot ?? (data.enableChatbot !== false),
+                    omniChannel: data.productEntitlements?.omniChannel === true || data.enableOmniChannel === true,
+                    cookieConsent: data.productEntitlements?.cookieConsent === true || data.enableCookieConsent === true,
+                })
             } catch (error) {
                 console.error("Error fetching user data:", error)
             } finally {
@@ -93,6 +110,14 @@ export default function TenantAccountSettingsPage() {
             })
             return
         }
+        if (!applicationAccess.chatbot && !applicationAccess.omniChannel && !applicationAccess.cookieConsent) {
+            toast({
+                title: "Hata",
+                description: "En az bir uygulama açık kalmalıdır.",
+                variant: "destructive"
+            })
+            return
+        }
 
         setIsSaving(true)
         try {
@@ -106,7 +131,8 @@ export default function TenantAccountSettingsPage() {
                 body: JSON.stringify({
                     targetUserId: tenantUserId,
                     email: email, // Always send email (it might be unchanged but we send it)
-                    password: newPassword || undefined
+                    password: newPassword || undefined,
+                    productEntitlements: applicationAccess,
                 })
             })
 
@@ -135,6 +161,19 @@ export default function TenantAccountSettingsPage() {
         } finally {
             setIsSaving(false)
         }
+    }
+
+    const updateApplicationAccess = (key: keyof ApplicationAccess, checked: boolean) => {
+        const next = { ...applicationAccess, [key]: checked }
+        if (!next.chatbot && !next.omniChannel && !next.cookieConsent) {
+            toast({
+                title: "Hata",
+                description: "En az bir uygulama açık kalmalıdır.",
+                variant: "destructive"
+            })
+            return
+        }
+        setApplicationAccess(next)
     }
 
     if (isLoading) {
@@ -213,6 +252,53 @@ export default function TenantAccountSettingsPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Uygulama Erişimleri</CardTitle>
+                    <CardDescription>
+                        Bu tenant hesabının Vion, Omni ve Cookie uygulamalarına erişimini yönetin.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {[
+                        {
+                            key: "chatbot" as const,
+                            title: "Vion",
+                            description: "Console, web widget ve chatbot yönetimi.",
+                        },
+                        {
+                            key: "omniChannel" as const,
+                            title: "Omni",
+                            description: "Omni kanal operasyonları ve çok kanallı AI workspace.",
+                        },
+                        {
+                            key: "cookieConsent" as const,
+                            title: "Cookie",
+                            description: "Çerez yönetimi, consent kayıtları ve CMP ayarları.",
+                        },
+                    ].map((item) => (
+                        <div key={item.key} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+                            <div>
+                                <div className="font-medium">{item.title}</div>
+                                <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                            </div>
+                            <Switch
+                                checked={applicationAccess[item.key]}
+                                onCheckedChange={(checked) => updateApplicationAccess(item.key, checked)}
+                            />
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <div className="flex justify-end">
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Save className="w-4 h-4 mr-2" />
+                    {t('saveChanges') || "Değişiklikleri Kaydet"}
+                </Button>
+            </div>
         </div>
     )
 }

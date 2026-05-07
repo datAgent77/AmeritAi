@@ -1,12 +1,13 @@
 import type { PartnerCapabilities, PartnerLevel, ResolvedPartnerBranding } from "@/lib/management/types"
 
-export type ProductEntitlementKey = "chatbot" | "omniChannel" | "copywriter" | "leadFinder"
+export type ProductEntitlementKey = "chatbot" | "omniChannel" | "cookieConsent" | "copywriter" | "leadFinder"
 
 export type ProductEntitlements = Record<ProductEntitlementKey, boolean>
 
 export const DEFAULT_PRODUCT_ENTITLEMENTS: ProductEntitlements = {
     chatbot: false,
     omniChannel: false,
+    cookieConsent: false,
     copywriter: false,
     leadFinder: false,
 }

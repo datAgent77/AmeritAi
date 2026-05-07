@@ -17,6 +17,7 @@ export interface WidgetSettings {
     welcomeMessage: string
     brandColor: string
     brandLogo: string
+    hideVionBranding: boolean
     headerLogo: string
     headerLogoWidth: number
     headerLogoHeight: number
@@ -143,6 +144,7 @@ const defaultSettings: WidgetSettings = {
     welcomeMessage: "Merhaba! Bugün size nasıl yardımcı olabilirim?",
     brandColor: "#000000",
     brandLogo: "",
+    hideVionBranding: false,
     headerLogo: "",
     headerLogoWidth: 32,
     headerLogoHeight: 32,
@@ -280,6 +282,7 @@ export function useWidgetSettings(userId?: string) {
                         welcomeMessage: data.welcomeMessage || prev.welcomeMessage,
                         brandColor: data.brandColor || prev.brandColor,
                         brandLogo: data.brandLogo || prev.brandLogo,
+                        hideVionBranding: data.hideVionBranding === true,
                         headerLogo: data.headerLogo || prev.headerLogo,
                         headerLogoWidth: data.headerLogoWidth || prev.headerLogoWidth,
                         headerLogoHeight: data.headerLogoHeight || prev.headerLogoHeight,

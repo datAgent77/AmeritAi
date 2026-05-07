@@ -703,10 +703,12 @@ export function ChatInput({
                         <p className="text-[10px] text-gray-400 text-center text-balance">
                             {t('aiDisclaimer')}
                         </p>
-                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                            <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
-                            <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
-                        </a>
+                        {settings.hideVionBranding !== true && (
+                            <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
+                                <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
+                            </a>
+                        )}
                     </div>
                 )}
             </div>

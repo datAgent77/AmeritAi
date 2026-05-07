@@ -8,6 +8,12 @@ describe("integration access configuration", () => {
         expect(getIntegrationMinPlan("instagram")).toBe("growth");
     });
 
+    test("maps legacy pro-level integrations to growth", () => {
+        expect(getIntegrationMinPlan("shopify")).toBe("growth");
+        expect(getIntegrationMinPlan("google-calendar")).toBe("growth");
+        expect(hasIntegrationAccess("shopify", 2)).toBe(true);
+    });
+
     test("blocks starter plans from growth+ messaging integrations", () => {
         expect(hasIntegrationAccess("telegram", 1)).toBe(false);
         expect(hasIntegrationAccess("whatsapp", 1)).toBe(false);

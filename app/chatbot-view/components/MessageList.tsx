@@ -40,6 +40,19 @@ interface MessageListProps {
     mode?: "classic" | "ambient"
     showClassicEntryOnboarding?: boolean
     onCloseWidget?: () => void
+    leadPrivacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+    }
+    bookingPrivacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+        onGrant?: () => Promise<void>
+    }
 }
 
 type RgbColor = { r: number; g: number; b: number }
@@ -317,6 +330,8 @@ export function MessageList({
     mode = "classic",
     showClassicEntryOnboarding = false,
     onCloseWidget,
+    leadPrivacyConsent,
+    bookingPrivacyConsent,
 }: MessageListProps) {
     const isAmbientMode = mode === "ambient"
     const isTransparentEmbed = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("embed") === "1"
@@ -714,6 +729,7 @@ export function MessageList({
                                                 settings={settings}
                                                 t={t}
                                                 variant="lead"
+                                                privacyConsent={leadPrivacyConsent}
                                             />
                                         )}
 
@@ -724,6 +740,7 @@ export function MessageList({
                                                 settings={settings}
                                                 t={t}
                                                 variant="handoff"
+                                                privacyConsent={leadPrivacyConsent}
                                             />
                                         )}
 
@@ -735,6 +752,7 @@ export function MessageList({
                                                 settings={settings}
                                                 t={t}
                                                 onSuccess={onBookingSuccess}
+                                                privacyConsent={bookingPrivacyConsent}
                                             />
                                         )}
                                         {isGuidedStep ? (

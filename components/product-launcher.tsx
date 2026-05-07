@@ -1,22 +1,76 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LayoutGrid } from "lucide-react"
 import { getVisibleProducts } from "@/lib/product-items"
+import type { ProductEntitlements } from "@/lib/omni/types"
 
 import { useAuth } from "@/context/AuthContext"
 
-export function ProductLauncher() {
+export function ProductLauncher({ targetUserId }: { targetUserId?: string }) {
     const router = useRouter()
-    const { productEntitlements, role } = useAuth()
-    const visibleProducts = getVisibleProducts(productEntitlements, {
-        includeAll: role === "SUPER_ADMIN",
+    const pathname = usePathname() || ""
+    const { productEntitlements, role, user } = useAuth()
+    const [targetEntitlements, setTargetEntitlements] = useState<ProductEntitlements | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+
+        const loadTargetEntitlements = async () => {
+            if (!targetUserId || !user || (role !== "SUPER_ADMIN" && role !== "AGENCY_ADMIN")) {
+                setTargetEntitlements(null)
+                return
+            }
+
+            try {
+                const token = await user.getIdToken()
+                const response = await fetch(`/api/console/settings?chatbotId=${encodeURIComponent(targetUserId)}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                })
+                if (!response.ok) throw new Error("Failed to load target product entitlements")
+                const data = await response.json()
+                if (cancelled) return
+                setTargetEntitlements({
+                    chatbot: data.productEntitlements?.chatbot ?? (data.enableChatbot !== false),
+                    omniChannel: data.productEntitlements?.omniChannel === true || data.enableOmniChannel === true,
+                    cookieConsent: data.productEntitlements?.cookieConsent === true || data.enableCookieConsent === true,
+                    copywriter: data.productEntitlements?.copywriter === true,
+                    leadFinder: data.productEntitlements?.leadFinder === true,
+                })
+            } catch (error) {
+                if (cancelled) return
+                console.error("Failed to load target product entitlements:", error)
+                setTargetEntitlements(null)
+            }
+        }
+
+        loadTargetEntitlements()
+
+        return () => {
+            cancelled = true
+        }
+    }, [role, targetUserId, user])
+
+    const activeProductId = useMemo(() => {
+        if (pathname.startsWith("/omni")) return "omni-channel"
+        if (pathname.startsWith("/cookie")) return "cookie-consent"
+        return "chatbot"
+    }, [pathname])
+
+    const shouldUseTargetEntitlements = Boolean(targetUserId && (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN"))
+    const effectiveEntitlements = shouldUseTargetEntitlements ? targetEntitlements : productEntitlements
+    if (!effectiveEntitlements) {
+        return null
+    }
+
+    const visibleProducts = getVisibleProducts(effectiveEntitlements, {
+        includeAll: role === "SUPER_ADMIN" && !targetUserId,
     })
 
-    // Keep the app switcher exclusive to super admins until omni access is finalized.
-    if (role !== "SUPER_ADMIN" || visibleProducts.length === 0) {
+    if (visibleProducts.length < 2) {
         return null
     }
 
@@ -34,10 +88,14 @@ export function ProductLauncher() {
                             key={product.id}
                             onClick={() => product.status === "active" && router.push(product.href)}
                             disabled={product.status !== "active"}
-                            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                            className={`flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors disabled:cursor-not-allowed disabled:opacity-50 group ${
+                                product.id === activeProductId
+                                    ? "border-foreground bg-muted"
+                                    : "border-transparent hover:border-border hover:bg-muted/60"
+                            }`}
                         >
-                            <div className={`p-3 rounded-xl ${product.bgColor} ${product.color}`}>
-                                <product.icon className="w-6 h-6" />
+                            <div className="rounded-xl bg-muted p-3 text-foreground">
+                                <product.icon className="h-6 w-6" />
                             </div>
                             <span className="text-xs font-medium text-center group-hover:text-primary">
                                 {product.title}

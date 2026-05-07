@@ -225,10 +225,10 @@ export default function CopywriterPage() {
                 </Card>
             </div>
 
-            {/* Brand Knowledge Base */}
+            {/* Brand AI Training Resources */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Brand Knowledge Base</CardTitle>
+                    <CardTitle>Brand AI Training Resources</CardTitle>
                     <CardDescription>
                         Add brand information and marketing resources to train your AI Copywriter.
                     </CardDescription>
@@ -237,7 +237,7 @@ export default function CopywriterPage() {
                     <Tabs defaultValue="brand" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="brand">Brand Information</TabsTrigger>
-                            <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+                            <TabsTrigger value="knowledge">AI Training Resources</TabsTrigger>
                         </TabsList>
                         <TabsContent value="brand" className="space-y-4">
                             <BrandKnowledge />
@@ -251,7 +251,7 @@ export default function CopywriterPage() {
                                 </p>
                                 <Link href="/console/knowledge">
                                     <Button variant="outline" size="sm">
-                                        View Knowledge Base
+                                        View Training Resources
                                     </Button>
                                 </Link>
                             </div>

@@ -67,6 +67,16 @@ export async function provisionTenantAccount(
         createdAt,
         isActive: true,
         isArchived: false,
+        productEntitlements: {
+            chatbot: true,
+            omniChannel: false,
+            cookieConsent: false,
+            copywriter: false,
+            leadFinder: false,
+        },
+        enableChatbot: true,
+        enableOmniChannel: false,
+        enableCookieConsent: false,
         enablePersonalShopper: input.enablePersonalShopper || false,
         industry: input.industry || "ecommerce"
     });

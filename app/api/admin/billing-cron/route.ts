@@ -11,7 +11,8 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "";
 const PLAN_NAMES: Record<string, string> = {
     trial: "Trial",
     starter: "Starter",
-    pro: "Pro",
+    growth: "Scale",
+    pro: "Scale",
     enterprise: "Enterprise"
 };
 

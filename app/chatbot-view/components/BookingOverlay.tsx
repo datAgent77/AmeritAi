@@ -1,6 +1,7 @@
 import { ChatbotSettings } from "@/types/chatbot"
 import { Calendar } from "lucide-react"
 import { AppointmentSlotPicker } from "@/components/appointments/appointment-slot-picker"
+import { useState } from "react"
 
 interface BookingOverlayProps {
     chatbotId: string
@@ -12,6 +13,12 @@ interface BookingOverlayProps {
     isSubmittingBooking: boolean
     settings: ChatbotSettings
     t: (key: string) => string
+    privacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+    }
 }
 
 export function BookingOverlay({
@@ -23,9 +30,24 @@ export function BookingOverlay({
     handleBookingSubmit,
     isSubmittingBooking,
     settings,
-    t
+    t,
+    privacyConsent
 }: BookingOverlayProps) {
+    const [privacyChecked, setPrivacyChecked] = useState(false)
+    const [privacyError, setPrivacyError] = useState("")
+
     if (!showBooking) return null
+
+    const onSubmit = (event: React.FormEvent) => {
+        if (privacyConsent?.required && !privacyChecked) {
+            event.preventDefault()
+            setPrivacyError(privacyConsent.errorText)
+            return
+        }
+
+        setPrivacyError("")
+        handleBookingSubmit(event)
+    }
 
     return (
         <div className="absolute inset-0 z-50 bg-white/95 dark:bg-zinc-950/98 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -41,7 +63,7 @@ export function BookingOverlay({
                     <p className="text-sm text-gray-500 dark:text-zinc-400">{t('bookAppointmentDesc') || "Please select a time that works for you."}</p>
                 </div>
 
-                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                <form onSubmit={onSubmit} className="space-y-4">
                     <div className="grid gap-3">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700 dark:text-zinc-300">{t('name') || "Name"}</label>
@@ -124,6 +146,31 @@ export function BookingOverlay({
                             rows={2}
                         />
                     </div>
+
+                    {privacyConsent?.required && (
+                        <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/70">
+                            <label className="flex items-start gap-3 text-xs leading-5 text-gray-600 dark:text-zinc-300">
+                                <input
+                                    type="checkbox"
+                                    checked={privacyChecked}
+                                    onChange={(event) => {
+                                        setPrivacyChecked(event.target.checked)
+                                        if (privacyError) setPrivacyError("")
+                                    }}
+                                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                                />
+                                <span>{privacyConsent.checkboxLabel}</span>
+                            </label>
+                            <button
+                                type="button"
+                                onClick={privacyConsent.onReadNotice}
+                                className="text-xs font-medium text-gray-700 underline underline-offset-4 dark:text-zinc-200"
+                            >
+                                {t("privacyNoticeOpen") === "privacyNoticeOpen" ? "Aydınlatma Metni" : t("privacyNoticeOpen")}
+                            </button>
+                            {privacyError && <p className="text-xs text-red-500">{privacyError}</p>}
+                        </div>
+                    )}
 
                     <div className="flex gap-3">
                         <button

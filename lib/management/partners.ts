@@ -77,7 +77,7 @@ async function getPartnerCounts(adminDb: any, partnerIds: string[]) {
 
         const current = counts.get(partnerId) || { customerCount: 0, omniEnabledAccounts: 0 }
         current.customerCount += 1
-        if (data.enableOmniChannel === true || data.productEntitlements?.omniChannel === true || data.productEntitlements?.chatbot === true) {
+        if (data.enableOmniChannel === true || data.productEntitlements?.omniChannel === true) {
             current.omniEnabledAccounts += 1
         }
         counts.set(partnerId, current)

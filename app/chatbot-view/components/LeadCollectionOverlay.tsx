@@ -11,6 +11,12 @@ interface LeadCollectionOverlayProps {
     t: (key: string) => string
     description?: string
     variant?: string
+    privacyConsent?: {
+        required: boolean
+        checkboxLabel: string
+        errorText: string
+        onReadNotice: () => void
+    }
 }
 
 export function LeadCollectionOverlay({
@@ -20,7 +26,8 @@ export function LeadCollectionOverlay({
     settings,
     t,
     description,
-    variant
+    variant,
+    privacyConsent
 }: LeadCollectionOverlayProps) {
     const { language } = useLanguage()
     const isHandoff = variant === "handoff"
@@ -36,6 +43,7 @@ export function LeadCollectionOverlay({
         customFields: {}
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [privacyChecked, setPrivacyChecked] = useState(false)
 
     if (!show) return null
 
@@ -115,13 +123,20 @@ export function LeadCollectionOverlay({
             })
         }
 
+        if (privacyConsent?.required && !privacyChecked) {
+            newErrors.privacyConsent = privacyConsent.errorText
+        }
+
         setErrors(newErrors)
 
         if (Object.keys(newErrors).length > 0) {
             return
         }
 
-        await onSubmit(formData)
+        await onSubmit({
+            ...formData,
+            privacyConsentAccepted: privacyConsent?.required ? privacyChecked : undefined,
+        })
     }
 
     const HeaderIcon = isHandoff ? Users : UserPlus
@@ -331,6 +346,35 @@ export function LeadCollectionOverlay({
                                 )
                             })}
                         </>
+                    )}
+
+                    {privacyConsent?.required && (
+                        <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/70">
+                            <label className="flex items-start gap-3 text-xs leading-5 text-gray-600 dark:text-zinc-300">
+                                <input
+                                    type="checkbox"
+                                    checked={privacyChecked}
+                                    onChange={(event) => {
+                                        setPrivacyChecked(event.target.checked)
+                                        if (errors.privacyConsent) {
+                                            const nextErrors = { ...errors }
+                                            delete nextErrors.privacyConsent
+                                            setErrors(nextErrors)
+                                        }
+                                    }}
+                                    className="mt-1 h-4 w-4 rounded border-gray-300"
+                                />
+                                <span>{privacyConsent.checkboxLabel}</span>
+                            </label>
+                            <button
+                                type="button"
+                                onClick={privacyConsent.onReadNotice}
+                                className="text-xs font-medium text-gray-700 underline underline-offset-4 dark:text-zinc-200"
+                            >
+                                {t("privacyNoticeOpen") === "privacyNoticeOpen" ? "Aydınlatma Metni" : t("privacyNoticeOpen")}
+                            </button>
+                            {errors.privacyConsent && <p className="text-xs text-red-500">{errors.privacyConsent}</p>}
+                        </div>
                     )}
 
                     <button

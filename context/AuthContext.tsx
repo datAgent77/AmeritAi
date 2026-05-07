@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation"
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, onSnapshot } from "firebase/firestore"
-import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
+import { getPlanConfig, normalizePlanId, PlanConfig } from "@/lib/pricing-config"
 import { installAuthDebugDump, recordAuthDebug } from "@/lib/auth-debug"
 import { UserRole } from "@/lib/user-roles"
 import { DEFAULT_PRODUCT_ENTITLEMENTS, ProductEntitlements } from "@/lib/omni/types"
 import { hasOmniPermission as hasOmniPermissionValue, resolveOmniPermissions, type OmniPermission } from "@/lib/omni/permissions"
-import { resolveChatbotEnabled, resolveOmniWorkspaceEnabled } from "@/lib/omni/workspace-access"
+import { resolveChatbotEnabled, resolveCookieConsentEnabled, resolveOmniWorkspaceEnabled } from "@/lib/omni/workspace-access"
 
 // Extended user data interface
 export interface UserData {
@@ -60,7 +60,7 @@ interface AuthContextType {
     loading: boolean
 }
 
-const PAID_PLANS = ['growth', 'pro', 'enterprise']
+const PAID_PLANS = ['growth', 'enterprise']
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
@@ -105,6 +105,7 @@ function resolveProductEntitlements(data: any, userRole: UserRole): ProductEntit
         return {
             chatbot: true,
             omniChannel: true,
+            cookieConsent: true,
             copywriter: false,
             leadFinder: false,
         }
@@ -115,6 +116,7 @@ function resolveProductEntitlements(data: any, userRole: UserRole): ProductEntit
     return {
         chatbot: resolveChatbotEnabled(data),
         omniChannel: resolveOmniWorkspaceEnabled(data, userRole),
+        cookieConsent: resolveCookieConsentEnabled(data, userRole),
         copywriter: explicitEntitlements.copywriter === true,
         leadFinder: explicitEntitlements.leadFinder === true,
     }
@@ -155,7 +157,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Computed values
     const planConfig = useMemo(() => getPlanConfig(planId) || null, [planId])
-    const isPaidPlan = useMemo(() => PAID_PLANS.includes(planId.toLowerCase()), [planId])
+    const isPaidPlan = useMemo(() => PAID_PLANS.includes(normalizePlanId(planId)), [planId])
     
     const { isTrialExpired, trialDaysLeft } = useMemo(() => {
         // If planId or subscriptionStatus not yet loaded from Firestore, show nothing
@@ -272,8 +274,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setTrialEndsAt(data.trialEndsAt || null)
 
                     // Set module flags (legacy support)
-                    setEnableChatbot(data.enableChatbot !== false)
-                    setVisibleChatbot(data.visibleChatbot !== false)
+                    setEnableChatbot(resolvedProductEntitlements.chatbot)
+                    setVisibleChatbot(data.visibleChatbot ?? resolvedProductEntitlements.chatbot)
                     setEnablePersonalShopper(data.enablePersonalShopper === true)
                     setVisiblePersonalShopper(data.visiblePersonalShopper !== false)
                     setEnableCopywriter(resolvedProductEntitlements.copywriter)
