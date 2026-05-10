@@ -38,6 +38,16 @@ export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const isEmbeddableWidgetPath = pathname.startsWith('/chatbot-view');
 
+    if (pathname === '/@vite/client') {
+        return new NextResponse('', {
+            status: 204,
+            headers: {
+                'Content-Type': 'application/javascript; charset=utf-8',
+                'Cache-Control': 'no-store, max-age=0',
+            },
+        });
+    }
+
     // === BLOCK DEBUG/TEST ROUTES ===
     if (blockedPaths.some(p => pathname.startsWith(p))) {
         return NextResponse.json({ error: 'Not Found' }, { status: 404 });

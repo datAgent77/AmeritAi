@@ -33,9 +33,11 @@ export async function GET(req: Request) {
     const authz = await authorizeTargetAccess(req, chatbotId)
     if (!authz.ok) return authz.response
 
-    let query: FirebaseFirestore.Query = adminDb
+    const baseQuery = adminDb
       .collection("privacy_consent_events")
       .where("chatbotId", "==", chatbotId)
+
+    let query: FirebaseFirestore.Query = baseQuery
 
     if (eventType) {
       query = query.where("eventType", "==", eventType)
@@ -45,7 +47,20 @@ export async function GET(req: Request) {
       query = query.where("purpose", "==", purpose)
     }
 
-    const snapshot = await query.orderBy("createdAt", "desc").limit(limit).get()
+    const fetchWithIndex = async () => query.orderBy("createdAt", "desc").limit(limit).get()
+
+    const snapshot = await (async () => {
+      try {
+        return await fetchWithIndex()
+      } catch (error: any) {
+        const msg = typeof error?.message === "string" ? error.message : ""
+        const isIndexError = msg.includes("requires an index") || error?.code === 9
+        if (!isIndexError) throw error
+
+        const fallbackSnapshot = await baseQuery.limit(Math.min(500, limit)).get()
+        return fallbackSnapshot
+      }
+    })()
 
     const events = snapshot.docs.map((doc) => {
       const data = doc.data() || {}
@@ -68,7 +83,13 @@ export async function GET(req: Request) {
       }
     })
 
-    return NextResponse.json({ events })
+    const filteredEvents = events
+      .filter((row) => (eventType ? row.eventType === eventType : true))
+      .filter((row) => (purpose ? row.purpose === purpose : true))
+      .sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0))
+      .slice(0, limit)
+
+    return NextResponse.json({ events: filteredEvents })
   } catch (error) {
     if (shouldUseFirebaseOfflineFallback(error)) {
       return NextResponse.json({ events: [], offline: true })

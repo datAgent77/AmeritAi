@@ -1529,6 +1529,7 @@ export const translations = {
         moduleUnderDevelopment: "This module settings page is currently under development.",
         redirectingToConfigure: "Redirecting you to configure settings...",
         noResults: "No results found.",
+        results: "Results",
 
         tenantCreated: "End user created successfully.",
         tenantDeleted: "Tenant data deleted successfully.",
@@ -3268,6 +3269,7 @@ export const translations = {
         redirectingToConfigure: "Ayarları yapılandırmak için yönlendiriliyorsunuz...",
 
         noResults: "Sonuç bulunamadı.",
+        results: "Sonuçlar",
         showArchivedTenants: "Arşivlenmiş kullanıcıları göster",
         addNewTenant: "Yeni Son Kullanıcı Ekle",
         addNewTenantDescription: "Yeni bir son kullanıcı oluşturun. TENANT_ADMIN rolü atanacaktır.",
