@@ -294,6 +294,11 @@ function hasConfiguredWebVoiceProvider(
     userData: Record<string, any> | null | undefined,
     mergedData: Record<string, any> | null | undefined
 ) {
+    const interactionMode = mergedData?.voiceInteractionMode === "realtime" ? "realtime" : "legacy";
+    if (interactionMode === "realtime") {
+        return true;
+    }
+
     const provider = typeof mergedData?.voiceProvider === "string" ? mergedData.voiceProvider.trim().toLowerCase() : "openai";
     if (provider !== "elevenlabs") {
         return true;
@@ -389,11 +394,15 @@ export async function GET(req: Request) {
                         };
                     })();
 
-                    // Only enable modules that are 'ready' in the registry
                     const isVoiceAssistantAvailable = MODULES_REGISTRY.voiceAssistant?.status === 'ready';
+                    const isVoiceAssistantAllowed = mergedData.adminGrantedModules?.voiceAssistant !== false;
+                    const isVoiceAssistantRequested = userData?.enableVoiceAssistant === true
+                        || data.enableVoiceAssistant === true
+                        || mergedData.enableVoiceAssistant === true;
                     const isWebVoiceAssistantEnabled = isVoiceAssistantAvailable
                         && isWebChannelEnabled
-                        && mergedData.enableVoiceAssistant === true
+                        && isVoiceAssistantAllowed
+                        && isVoiceAssistantRequested
                         && hasConfiguredWebVoiceProvider(userData, mergedData);
                     const isGuidedEnabled = MODULES_REGISTRY.guided?.status === "ready" && mergedData.enableGuided === true;
                     const guidedSkills: [] = [];
@@ -591,6 +600,10 @@ export async function GET(req: Request) {
                         enableAutoSpeak: mergedData.enableAutoSpeak === true,
                         voiceProvider: mergedData.voiceProvider || "openai",
                         elevenLabsVoiceId: mergedData.elevenLabsVoiceId || "",
+                        voiceInteractionMode: mergedData.voiceInteractionMode === "realtime" ? "realtime" : "legacy",
+                        realtimeVoiceProvider: "elevenlabs",
+                        elevenLabsAgentId: mergedData.elevenLabsAgentId || "",
+                        elevenLabsServerLocation: ["global", "eu-residency", "us", "in-residency"].includes(mergedData.elevenLabsServerLocation) ? mergedData.elevenLabsServerLocation : "global",
                         preferredVoice: mergedData.preferredVoice || "",
                         voiceLowLatencyMode: mergedData.voiceLowLatencyMode !== false,
                         voiceInputSensitivity: ["low", "normal", "high"].includes(mergedData.voiceInputSensitivity) ? mergedData.voiceInputSensitivity : "normal",
@@ -752,6 +765,10 @@ export async function GET(req: Request) {
                 enableAutoSpeak: false,
                 voiceProvider: "openai",
                 elevenLabsVoiceId: "",
+                voiceInteractionMode: "legacy",
+                realtimeVoiceProvider: "elevenlabs",
+                elevenLabsAgentId: "",
+                elevenLabsServerLocation: "global",
                 preferredVoice: "",
                 voiceLowLatencyMode: true,
                 voiceInputSensitivity: "normal",
@@ -955,6 +972,10 @@ export async function GET(req: Request) {
             enableAutoSpeak: false,
             voiceProvider: "openai",
             elevenLabsVoiceId: "",
+            voiceInteractionMode: "legacy",
+            realtimeVoiceProvider: "elevenlabs",
+            elevenLabsAgentId: "",
+            elevenLabsServerLocation: "global",
             preferredVoice: "",
             voiceLowLatencyMode: true,
             voiceInputSensitivity: "normal",

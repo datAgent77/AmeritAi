@@ -405,16 +405,34 @@ export function useVoiceInput(
                     return
                 }
 
+                // No speech captured — restart recording to keep session alive
                 if (chunks.length === 0) {
-                    setVoiceStatus("idle")
-                    setLocalInput("")
+                    if (isVoiceSessionActiveRef.current && !isMutedRef.current) {
+                        setVoiceStatus("listening")
+                        setLocalInput(language === "tr" ? "Sizi dinliyorum..." : "Listening...")
+                        resumeListeningTimerRef.current = setTimeout(() => {
+                            void startRecordingRef.current?.()
+                        }, 200)
+                    } else {
+                        setVoiceStatus("idle")
+                        setLocalInput("")
+                    }
                     return
                 }
 
                 const audioBlob = new Blob(chunks, { type: actualMimeType })
+                // Too short — likely silence, restart recording
                 if (audioBlob.size < 1000) {
-                    setVoiceStatus("idle")
-                    setLocalInput("")
+                    if (isVoiceSessionActiveRef.current && !isMutedRef.current) {
+                        setVoiceStatus("listening")
+                        setLocalInput(language === "tr" ? "Sizi dinliyorum..." : "Listening...")
+                        resumeListeningTimerRef.current = setTimeout(() => {
+                            void startRecordingRef.current?.()
+                        }, 200)
+                    } else {
+                        setVoiceStatus("idle")
+                        setLocalInput("")
+                    }
                     return
                 }
 
@@ -488,6 +506,7 @@ export function useVoiceInput(
                     }
                     silenceStartRef.current = 0
                 } else if (hasSpeechStartedRef.current) {
+                    // Only stop recording after silence if speech was already detected
                     if (silenceStartRef.current === 0) {
                         silenceStartRef.current = now
                     } else if (now - silenceStartRef.current > voiceRuntimeConfig.silenceDuration) {
@@ -496,6 +515,7 @@ export function useVoiceInput(
                         recorder.stop()
                     }
                 }
+                // If no speech started yet, never stop due to silence
             }, voiceRuntimeConfig.vadCheckInterval)
 
             maxTimerRef.current = setTimeout(() => {
@@ -556,13 +576,13 @@ export function useVoiceInput(
         clearResumeListeningTimer()
         setIsVoiceSessionActive(true)
         setIsMuted(false)
-        setVoiceStatus("idle")
-        setLocalInput("")
+        setVoiceStatus("processing")
+        setLocalInput(language === "tr" ? "Mikrofon hazırlanıyor..." : "Preparing microphone...")
 
         resumeListeningTimerRef.current = setTimeout(() => {
             void startRecording()
         }, 60)
-    }, [clearResumeListeningTimer, setLocalInput, startRecording])
+    }, [clearResumeListeningTimer, language, setLocalInput, startRecording])
 
     const toggleMute = useCallback(() => {
         if (!isVoiceSessionActiveRef.current) return

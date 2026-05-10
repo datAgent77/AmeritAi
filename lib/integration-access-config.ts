@@ -68,6 +68,11 @@ export const INTEGRATION_ACCESS: Record<string, IntegrationAccessConfig> = {
         minPlan: 'growth',
         displayName: { en: 'WhatsApp Business', tr: 'WhatsApp Business' }
     },
+    'evolution-api': {
+        minSortOrder: 2,
+        minPlan: 'growth',
+        displayName: { en: 'Evolution API WhatsApp', tr: 'Evolution API WhatsApp' }
+    },
     'instagram': {
         minSortOrder: 2,
         minPlan: 'growth',

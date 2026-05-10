@@ -126,6 +126,7 @@ function createAdminDb(options: AdminDbOptions = {}) {
 describe("GET /api/widget-settings", () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        vi.unstubAllEnvs()
     })
 
     test("disables the public widget when the Omni web channel is turned off", async () => {
@@ -213,6 +214,56 @@ describe("GET /api/widget-settings", () => {
         expect(payload.enableVoiceAssistant).toBe(false)
     })
 
+    test("does not auto-enable web voice just because the tenant has access to the voice module", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                elevenLabsApiKey: "sk-test",
+                adminGrantedModules: {
+                    voiceAssistant: true,
+                },
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: false,
+                elevenLabsVoiceId: "voice-123",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(false)
+    })
+
+    test("disables web voice when the tenant access is explicitly revoked", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                elevenLabsApiKey: "sk-test",
+                adminGrantedModules: {
+                    voiceAssistant: false,
+                },
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: true,
+                elevenLabsVoiceId: "voice-123",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(false)
+    })
+
     test("disables web voice when ElevenLabs is selected but not fully configured", async () => {
         vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
             userData: {
@@ -258,6 +309,116 @@ describe("GET /api/widget-settings", () => {
         const payload = await response.json()
         expect(payload.enableVoiceAssistant).toBe(true)
         expect(payload.voiceProvider).toBe("openai")
+    })
+
+    test("defaults widget voice interaction mode to legacy", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb() as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.voiceInteractionMode).toBe("legacy")
+        expect(payload.realtimeVoiceProvider).toBe("elevenlabs")
+        expect(payload.elevenLabsServerLocation).toBe("global")
+    })
+
+    test("enables realtime web voice when ElevenLabs agent config is ready", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                elevenLabsApiKey: "sk-test",
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: true,
+                voiceInteractionMode: "realtime",
+                elevenLabsAgentId: "agent-123",
+                elevenLabsServerLocation: "eu-residency",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(true)
+        expect(payload.voiceInteractionMode).toBe("realtime")
+        expect(payload.elevenLabsAgentId).toBe("agent-123")
+        expect(payload.elevenLabsServerLocation).toBe("eu-residency")
+    })
+
+    test("keeps realtime web voice visible when no ElevenLabs agent ID is configured", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                elevenLabsApiKey: "sk-test",
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: true,
+                voiceInteractionMode: "realtime",
+                elevenLabsAgentId: "",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(true)
+        expect(payload.voiceInteractionMode).toBe("realtime")
+    })
+
+    test("enables web voice when the user-level module flag is on and chatbot settings still contain an old false value", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                enableVoiceAssistant: true,
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: false,
+                voiceProvider: "openai",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(true)
+        expect(payload.voiceProvider).toBe("openai")
+    })
+
+    test("enables web voice when super admin granted the voice module and the tenant enabled it", async () => {
+        vi.mocked(getAdminDb).mockReturnValue(createAdminDb({
+            userData: {
+                companyName: "Userex",
+                enableChatbot: true,
+                isActive: true,
+                adminGrantedModules: {
+                    voiceAssistant: true,
+                },
+            },
+            chatbotData: {
+                companyName: "Userex",
+                enableVoiceAssistant: true,
+                voiceProvider: "openai",
+            },
+        }) as any)
+
+        const response = await GET(new Request("https://preview.example.com/api/widget-settings?chatbotId=tenant-1"))
+
+        expect(response.status).toBe(200)
+        const payload = await response.json()
+        expect(payload.enableVoiceAssistant).toBe(true)
     })
 
     test("enables web voice when the widget channel, module, and ElevenLabs config are ready", async () => {

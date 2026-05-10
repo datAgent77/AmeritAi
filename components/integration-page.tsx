@@ -19,6 +19,7 @@ import { PricingModal } from "@/components/pricing-modal"
 import { InstagramDMWizard } from "@/components/integrations/instagram-dm/InstagramDMWizard"
 import { WhatsAppBizWizard } from "@/components/integrations/whatsapp-business/WhatsAppBizWizard"
 import { MessengerWizard } from "@/components/integrations/messenger/MessengerWizard"
+import { EvolutionApiIntegrationPanel } from "@/components/integrations/evolution-api/EvolutionApiIntegrationPanel"
 import { EcommerceConnectionForm } from "@/components/integrations/ecommerce/EcommerceConnectionForm"
 import { EcommercePlatformCard } from "@/components/integrations/ecommerce/EcommercePlatformCard"
 import { MobileSupportIntegrationPanel } from "@/components/integrations/mobile-support/MobileSupportIntegrationPanel"
@@ -63,6 +64,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [metaWizardStatus, setMetaWizardStatus] = useState<any>(null)
+    const [evolutionApiStatus, setEvolutionApiStatus] = useState<any>(null)
     
     // Plan access state
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -282,6 +284,21 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             ]
         },
         {
+            id: "evolution-api",
+            name: "Evolution API WhatsApp",
+            description: "WhatsApp Business uygulamasını telefonda tutarak QR tabanlı hızlı bağlantı kurun.",
+            logo: "/integrations/whatsapp.svg",
+            iconBg: "bg-gray-100",
+            connected: evolutionApiStatus?.config?.enabled === true,
+            connectedInfo: evolutionApiStatus?.config?.connectionState === "open" ? "QR bağlı" : evolutionApiStatus?.config?.instanceName || undefined,
+            features: [
+                "QR ile bağlı cihaz deneyimi",
+                "Evolution instance ve webhook kurulumu",
+                "Vion sohbet ekranına inbound mesaj akışı",
+                "Resmi olmayan hızlı bağlantı modu",
+            ],
+        },
+        {
             id: "messenger",
             name: "Facebook Messenger",
             description: "Facebook sayfanıza gelen Messenger mesajlarını otomatik yanıtlayın.",
@@ -363,8 +380,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         },
         {
             id: "instagram",
-            name: "Instagram DM",
-            description: "Instagram DM kanalını ayrı kurulum sihirbazıyla bağlayın ve mesaj durumunu takip edin.",
+            name: "Instagram DM (Resmi Meta)",
+            description: "Instagram Professional hesabınızı resmi Meta OAuth, Page seçimi ve webhook akışıyla Vion'a bağlayın.",
             logo: "/integrations/instagram.svg",
             iconBg: "bg-gray-100",
             connected: metaWizardStatus?.instagramDM?.config?.state === "connected",
@@ -373,9 +390,11 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 metaWizardStatus?.instagramDM?.config?.pageName ||
                 undefined,
             features: [
-                "Ön kontrol ile eksik gereksinimleri görme",
-                "Facebook Sayfası ve Instagram hesabı seçimi",
-                "Test mesajı ve recovery banner desteği",
+                "Professional hesap ve Facebook Page ön kontrolü",
+                "Meta OAuth ile izin ve Page seçimi",
+                "Instagram Messaging API webhook akışı",
+                "Omni Inbox'a gelen DM kaydı",
+                "Panelden resmi API ile cevap gönderme",
             ],
         },
     ]
@@ -396,7 +415,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
 
     const allIntegrations = [...integrations, ...ecomIntegrations].map(i => {
         if (!i.category) {
-            if (["meta-channels", "telegram", "whatsapp", "instagram"].includes(i.id)) i.category = "messaging"
+            if (["meta-channels", "telegram", "whatsapp", "evolution-api", "instagram"].includes(i.id)) i.category = "messaging"
             else if (["website", "iframe", "direct-link", "wordpress"].includes(i.id)) i.category = "embed"
             else if (["mobile-app-api", "ticket-webhook"].includes(i.id)) i.category = "api"
             else if (["slack", "salesforce", "zoho-crm"].includes(i.id)) i.category = "crm"
@@ -908,7 +927,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     }
                 }
 
-                const [instagramStatusRes, whatsappStatusRes, messengerStatusRes] = await Promise.all([
+                const [instagramStatusRes, whatsappStatusRes, messengerStatusRes, evolutionStatusRes] = await Promise.all([
                     fetch(`/api/integrations/instagram-dm/status?chatbotId=${userId}`, {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -920,6 +939,11 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                         }
                     }),
                     fetch(`/api/integrations/messenger/status?chatbotId=${userId}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }),
+                    fetch(`/api/integrations/evolution-api/status?chatbotId=${userId}`, {
                         headers: {
                             Authorization: `Bearer ${token}`
                         }
@@ -937,6 +961,9 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     nextMetaWizardStatus.messengerDM = await messengerStatusRes.json()
                 }
                 setMetaWizardStatus(nextMetaWizardStatus)
+                if (evolutionStatusRes.ok) {
+                    setEvolutionApiStatus(await evolutionStatusRes.json())
+                }
             } catch (error) {
                 console.error("Error fetching settings:", error)
             }
@@ -1038,6 +1065,24 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                     </div>
 
                     <MessengerWizard chatbotId={userId} />
+                </div>
+            )
+        }
+
+        if (currentIntegration.id === "evolution-api") {
+            return (
+                <div className="flex-1 p-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <button
+                            onClick={() => setSelectedIntegration(null)}
+                            className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            {t('backToIntegrations')}
+                        </button>
+                    </div>
+
+                    <EvolutionApiIntegrationPanel chatbotId={userId} />
                 </div>
             )
         }
