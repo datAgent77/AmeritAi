@@ -1,3 +1,5 @@
+"use client"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useConversation } from "@elevenlabs/react"
 import type { ChatbotSettings } from "@/types/chatbot"
@@ -213,3 +215,5 @@ export function useRealtimeVoiceConversation(
         toggleMute,
     }
 }
+
+export default useRealtimeVoiceConversation

@@ -13,7 +13,7 @@ import { event as trackEvent } from "@/lib/gtag"
 import { useWidgetSettings } from "./hooks/useWidgetSettings"
 import { useVisualContext } from "./hooks/useVisualContext"
 import { useVoiceInput } from "./hooks/useVoiceInput"
-import { useRealtimeVoiceConversation } from "./hooks/useRealtimeVoiceConversation"
+import useRealtimeVoiceConversation from "./hooks/useRealtimeVoiceConversation"
 import { useChatCore, type UserMessageMediaPayload } from "./hooks/useChatCore"
 
 import { ChatHeader } from "./components/ChatHeader"
