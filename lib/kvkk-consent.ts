@@ -17,13 +17,6 @@ export function resolveKvkkConsentPayload(input: {
     publishedKvkkContract?: PublishedContractVersion | null
 }): KvkkConsentPayload {
     const mergedData = input.mergedData || {}
-    
-    console.log("[KVKK Consent] resolving payload from mergedData:", JSON.stringify({
-        kvkkConsentSettings: mergedData.kvkkConsentSettings,
-        kvkkRejectionContactText: mergedData.kvkkRejectionContactText,
-        rejectionContactText: mergedData.rejectionContactText,
-        kvkkCustomText: mergedData.kvkkCustomText
-    }))
 
     // Check both paths: new nested structure and old flat structure
     const customText = typeof mergedData.kvkkConsentSettings?.customText === "string"
