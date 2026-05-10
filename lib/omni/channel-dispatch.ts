@@ -1,5 +1,6 @@
 import { classifyOmniDeliveryError, recordOmniDeliveryAttempt } from "@/lib/omni/delivery-attempts"
 import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
+import { getEvolutionApiKey, normalizeEvolutionApiConfig, sendEvolutionText } from "@/lib/integrations/evolution-api/setup"
 
 const META_API_VERSION = "v23.0"
 
@@ -44,6 +45,17 @@ interface SendMessengerTextParams extends OmniDispatchOptions {
     text: string
     pageId?: string | null
     accessToken?: string | null
+    metadata?: Record<string, unknown>
+}
+
+interface SendEvolutionWhatsAppTextParams extends OmniDispatchOptions {
+    adminDb: any
+    chatbotId: string
+    to: string | null
+    text: string
+    baseUrl?: string | null
+    apiKey?: string | null
+    instanceName?: string | null
     metadata?: Record<string, unknown>
 }
 
@@ -350,6 +362,98 @@ export async function sendOmniMessengerText(
     }
 }
 
+export async function sendOmniEvolutionWhatsAppText(
+    params: SendEvolutionWhatsAppTextParams
+): Promise<OmniTextDispatchResult & { recipient: string; instanceName: string | null }> {
+    const recipient = params.to || null
+    const instanceName = params.instanceName || null
+    const baseUrl = params.baseUrl || null
+    const apiKey = params.apiKey || null
+
+    if (!recipient || !instanceName || !baseUrl || !apiKey) {
+        const errorMessage = "Evolution API WhatsApp configuration is incomplete"
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "whatsapp",
+            provider: "evolution-api",
+            direction: "outbound",
+            source: params.source,
+            status: "failed",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipient,
+            payloadText: params.text,
+            providerTargetId: instanceName,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            errorClass: "config",
+            errorMessage,
+            metadata: params.metadata,
+        })
+        const error = new Error(errorMessage) as Error & { deliveryAttemptId?: string | null }
+        error.deliveryAttemptId = attempt.id || null
+        throw error
+    }
+
+    try {
+        const data = await sendEvolutionText({
+            baseUrl,
+            apiKey,
+            instanceName,
+            to: recipient,
+            text: params.text,
+        })
+        const messageId = data?.key?.id || data?.messageId || data?.id || null
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "whatsapp",
+            provider: "evolution-api",
+            direction: "outbound",
+            source: params.source,
+            status: "success",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipient,
+            payloadText: params.text,
+            providerMessageId: messageId,
+            providerTargetId: instanceName,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            metadata: params.metadata,
+        })
+
+        return {
+            messageId,
+            recipient,
+            instanceName,
+            deliveryAttemptId: attempt.id || null,
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Evolution API WhatsApp delivery failed"
+        const attempt = await recordOmniDeliveryAttempt(params.adminDb, {
+            chatbotId: params.chatbotId,
+            channel: "whatsapp",
+            provider: "evolution-api",
+            direction: "outbound",
+            source: params.source,
+            status: "failed",
+            sessionId: params.sessionId || null,
+            callbackId: params.callbackId || null,
+            destination: recipient,
+            payloadText: params.text,
+            providerTargetId: instanceName,
+            retryOfAttemptId: params.retryOfAttemptId || null,
+            attemptNumber: params.attemptNumber,
+            errorClass: classifyOmniDeliveryError(error),
+            errorMessage,
+            metadata: params.metadata,
+        })
+        const nextError = error instanceof Error ? error : new Error(errorMessage)
+        ;(nextError as Error & { deliveryAttemptId?: string | null }).deliveryAttemptId = attempt.id || null
+        throw nextError
+    }
+}
+
 export async function dispatchOmniWhatsAppMessage(
     adminDb: any,
     chatbotId: string,
@@ -360,6 +464,32 @@ export async function dispatchOmniWhatsAppMessage(
     const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
     const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
     const omniWhatsapp = omniConfig.whatsapp || {}
+    const evolutionApi = normalizeEvolutionApiConfig(omniConfig.evolutionApi)
+    const evolutionApiKey = getEvolutionApiKey(evolutionApi)
+
+    if (
+        evolutionApi.enabled &&
+        (sessionData.channelMeta?.provider === "evolution-api" || omniWhatsapp.connectionMode === "evolution_api_qr")
+    ) {
+        return sendOmniEvolutionWhatsAppText({
+            adminDb,
+            chatbotId,
+            to: sessionData.contactKey || sessionData.channelMeta?.remoteJid || null,
+            text: content,
+            baseUrl: evolutionApi.baseUrl || null,
+            apiKey: evolutionApiKey,
+            instanceName: sessionData.channelMeta?.instanceName || evolutionApi.instanceName || null,
+            source: options.source,
+            sessionId: options.sessionId || null,
+            callbackId: options.callbackId || null,
+            retryOfAttemptId: options.retryOfAttemptId || null,
+            attemptNumber: options.attemptNumber,
+            metadata: {
+                channelMeta: sessionData.channelMeta || {},
+                ...(options.metadata || {}),
+            },
+        })
+    }
 
     const chatbotSnapshot = await adminDb.collection("chatbots").doc(chatbotId).get()
     const chatbotData = chatbotSnapshot.exists ? chatbotSnapshot.data() || {} : {}

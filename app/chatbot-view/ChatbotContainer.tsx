@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type PointerEvent as ReactPointerEvent } from "react"
 import { useSearchParams } from "next/navigation"
+import { ConversationProvider } from "@elevenlabs/react"
 import { useLanguage } from "@/context/LanguageContext"
 import { signInAsGuest } from "@/lib/firebase-guest"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
@@ -12,6 +13,7 @@ import { event as trackEvent } from "@/lib/gtag"
 import { useWidgetSettings } from "./hooks/useWidgetSettings"
 import { useVisualContext } from "./hooks/useVisualContext"
 import { useVoiceInput } from "./hooks/useVoiceInput"
+import { useRealtimeVoiceConversation } from "./hooks/useRealtimeVoiceConversation"
 import { useChatCore, type UserMessageMediaPayload } from "./hooks/useChatCore"
 
 import { ChatHeader } from "./components/ChatHeader"
@@ -97,7 +99,7 @@ function getRequiredConsentLabel(settings: any, language: string, purpose: strin
         || ""
 }
 
-export default function ChatbotContainer() {
+function ChatbotContainerContent() {
     // 1. Contexts & Params
     const searchParams = useSearchParams()
     const chatbotId = searchParams?.get("id") || "default"
@@ -441,14 +443,41 @@ export default function ChatbotContainer() {
     }
 
     // 6. Voice Hook (Uses proxySendMessage)
-    const {
-        speakText,
-        isMuted,
-        voiceStatus,
-        startVoiceSession,
-        endVoiceSession,
-        toggleMute
-    } = useVoiceInput(chatbotId, language, settings, setLocalInput, proxySendMessage)
+    const legacyVoice = useVoiceInput(chatbotId, language, settings, setLocalInput, proxySendMessage)
+    const realtimeVoice = useRealtimeVoiceConversation(chatbotId, language, settings, setLocalInput)
+    const [realtimeFailed, setRealtimeFailed] = useState(false)
+    const isRealtimeVoiceMode = settings.voiceInteractionMode === "realtime" && !realtimeFailed
+    const legacyEndVoiceSession = legacyVoice.endVoiceSession
+    const realtimeEndVoiceSession = realtimeVoice.endVoiceSession
+    const speakText = legacyVoice.speakText
+    const isMuted = isRealtimeVoiceMode ? realtimeVoice.isMuted : legacyVoice.isMuted
+    const voiceStatus = isRealtimeVoiceMode ? realtimeVoice.voiceStatus : legacyVoice.voiceStatus
+    const startVoiceSession = isRealtimeVoiceMode ? realtimeVoice.startVoiceSession : legacyVoice.startVoiceSession
+    const endVoiceSession = isRealtimeVoiceMode ? realtimeVoice.endVoiceSession : legacyVoice.endVoiceSession
+    const toggleMute = isRealtimeVoiceMode ? realtimeVoice.toggleMute : legacyVoice.toggleMute
+
+    // Automatic fallback: if realtime voice fails, switch to legacy mode and auto-start
+    const conversationModeRef = useRef(conversationMode)
+    useEffect(() => { conversationModeRef.current = conversationMode }, [conversationMode])
+
+    useEffect(() => {
+        if (
+            settings.voiceInteractionMode === "realtime" &&
+            !realtimeFailed &&
+            realtimeVoice.lastError &&
+            conversationMode === "voice"
+        ) {
+            console.warn("[Voice] Realtime failed, falling back to legacy mode:", realtimeVoice.lastError)
+            realtimeVoice.endVoiceSession()
+            setRealtimeFailed(true)
+            // Start legacy voice session after a short delay — but only if still in voice mode
+            setTimeout(() => {
+                if (conversationModeRef.current === "voice") {
+                    legacyVoice.startVoiceSession()
+                }
+            }, 150)
+        }
+    }, [realtimeVoice.lastError, realtimeFailed, settings.voiceInteractionMode, conversationMode, realtimeVoice, legacyVoice])
 
     // 7. Chat Core Hook (Uses speakText)
     const {
@@ -618,8 +647,59 @@ export default function ChatbotContainer() {
         if (settings.enableVoiceAssistant) return
 
         setConversationMode("text")
-        endVoiceSession()
-    }, [endVoiceSession, settings.enableVoiceAssistant])
+        legacyEndVoiceSession()
+        realtimeEndVoiceSession()
+    }, [legacyEndVoiceSession, realtimeEndVoiceSession, settings.enableVoiceAssistant])
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+
+        const shouldIgnore = (value: unknown) => {
+            const msg = typeof value === "string"
+                ? value
+                : value instanceof Error
+                    ? value.message
+                    : typeof (value as any)?.message === "string"
+                        ? String((value as any).message)
+                        : ""
+
+            const stack = value instanceof Error
+                ? (value.stack || "")
+                : typeof (value as any)?.stack === "string"
+                    ? String((value as any).stack)
+                    : ""
+
+            if (!msg) return false
+
+            const isClosedPeerConnection = msg.includes("RTCPeerConnection") && msg.includes("signalingState") && msg.includes("closed")
+            if (!isClosedPeerConnection) return false
+
+            const isNegotiationEdge = msg.includes("setRemoteDescription") || msg.includes("addIceCandidate")
+            if (!isNegotiationEdge) return false
+
+            return !stack || stack.includes("livekit-client") || stack.includes("@elevenlabs")
+        }
+
+        const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+            if (shouldIgnore(event.reason)) {
+                event.preventDefault()
+            }
+        }
+
+        const onError = (event: ErrorEvent) => {
+            if (shouldIgnore(event.error || event.message)) {
+                event.preventDefault()
+            }
+        }
+
+        window.addEventListener("unhandledrejection", onUnhandledRejection)
+        window.addEventListener("error", onError)
+
+        return () => {
+            window.removeEventListener("unhandledrejection", onUnhandledRejection)
+            window.removeEventListener("error", onError)
+        }
+    }, [])
 
     const handleConversationModeChange = (nextMode: "text" | "voice") => {
         if (nextMode === "voice") {
@@ -630,7 +710,8 @@ export default function ChatbotContainer() {
         }
 
         setConversationMode("text")
-        endVoiceSession()
+        legacyEndVoiceSession()
+        realtimeEndVoiceSession()
     }
 
     // 8. Scrolling Logic
@@ -654,17 +735,27 @@ export default function ChatbotContainer() {
     }
 
     // Instantly teleport to bottom when the widget transitions from hidden to visible
+    // and end any active voice session when the widget is hidden
     useEffect(() => {
         const handleVisibilityToggle = (event: MessageEvent) => {
-            if (event.data.type === 'USEREX_WIDGET_TOGGLED' && event.data.isOpen) {
-                scrollToBottom("auto")
-                // Fallback attempt in case layout takes a moment
-                setTimeout(() => scrollToBottom("auto"), 50)
+            if (event.data.type === 'USEREX_WIDGET_TOGGLED') {
+                if (event.data.isOpen) {
+                    scrollToBottom("auto")
+                    // Fallback attempt in case layout takes a moment
+                    setTimeout(() => scrollToBottom("auto"), 50)
+                } else {
+                    // Widget is being hidden — end any active voice session
+                    if (conversationModeRef.current === "voice") {
+                        setConversationMode("text")
+                        legacyEndVoiceSession()
+                        realtimeEndVoiceSession()
+                    }
+                }
             }
         }
         window.addEventListener('message', handleVisibilityToggle)
         return () => window.removeEventListener('message', handleVisibilityToggle)
-    }, [])
+    }, [legacyEndVoiceSession, realtimeEndVoiceSession])
 
     // Keep the latest message visible, including token-by-token streaming updates.
     useEffect(() => {
@@ -748,6 +839,12 @@ export default function ChatbotContainer() {
     }
 
     const handleCloseWidget = () => {
+        // End any active voice session before closing
+        if (conversationMode === "voice") {
+            setConversationMode("text")
+            legacyEndVoiceSession()
+            realtimeEndVoiceSession()
+        }
         window.parent.postMessage({ type: 'USEREX_CLOSE_WIDGET' }, '*')
     }
 
@@ -1632,5 +1729,13 @@ export default function ChatbotContainer() {
                 theme={effectiveSettings.theme}
             />
         </div>
+    )
+}
+
+export default function ChatbotContainer() {
+    return (
+        <ConversationProvider>
+            <ChatbotContainerContent />
+        </ConversationProvider>
     )
 }

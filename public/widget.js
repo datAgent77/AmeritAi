@@ -4125,6 +4125,9 @@
     // Create Iframe
     const iframe = document.createElement('iframe');
     let iframeSrc = `${baseUrl}/chatbot-view?id=${chatbotId}`;
+    if (widgetRuntimeMode === 'test') {
+      iframeSrc += `&runtimeMode=test`;
+    }
 
     // Append initial Context
     const context = getPageContext();

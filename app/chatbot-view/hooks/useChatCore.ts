@@ -477,6 +477,19 @@ export function useChatCore({
             console.error('Chat error:', error)
             setIsTyping(false)
             setChatStatus('idle')
+
+            // AbortError is expected during mode switches or component unmount — don't show to user
+            if (error?.name === 'AbortError' || (typeof error?.message === 'string' && error.message.includes('aborted'))) {
+                setMessages((prev: any) => {
+                    const last = prev[prev.length - 1]
+                    if (last && last.role === 'assistant' && !last.content) {
+                        return prev.slice(0, -1)
+                    }
+                    return prev
+                })
+                return ""
+            }
+
             setMessages((prev: any) => {
                 // Remove the stuck "empty" assistant message
                 const last = prev[prev.length - 1]

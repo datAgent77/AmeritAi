@@ -65,7 +65,10 @@ export function VoiceOverlay({
         && !localInput.startsWith("Sizi dinliyorum")
         && !localInput.startsWith("Listening")
         && !localInput.startsWith("Mikrofon")
+        && !localInput.startsWith("Preparing microphone")
         && !localInput.startsWith("Could not access")
+        && !localInput.startsWith("Canli sesli")
+        && !localInput.startsWith("Starting live")
 
     return (
         <div className="absolute inset-0 z-[120] overflow-hidden bg-white dark:bg-zinc-950">

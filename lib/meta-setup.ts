@@ -463,7 +463,10 @@ export function buildMetaSetupStatus(params: {
             hasStoredAccessToken: Boolean(draft.secrets?.accessToken),
             hasStoredAppSecret: Boolean(draft.secrets?.appSecret),
             appId: draft.secrets?.appId || instagram.appId || messenger.appId || null,
-            connectionMode: draft.oauth?.connectionMode || messenger.connectionMode || instagram.connectionMode || whatsapp.connectionMode || "tenant_meta_app",
+            connectionMode: normalizeConnectionMode(
+                draft.oauth?.connectionMode || messenger.connectionMode || instagram.connectionMode || whatsapp.connectionMode,
+                "tenant_meta_app"
+            ),
             discovery: {
                 pages: sanitizePagesForClient(draft.discovery?.pages || []),
                 whatsappBusinesses: draft.discovery?.whatsappBusinesses || [],

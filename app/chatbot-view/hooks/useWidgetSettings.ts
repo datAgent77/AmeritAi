@@ -5,7 +5,7 @@ import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS } from "@/lib/human-handoff"
 const SETTINGS_CACHE_TTL_MS = 15 * 60 * 1000
 
 function getIframeSettingsCacheKey(chatbotId: string) {
-    return `userex_iframe_widget_settings_v1:${chatbotId}`
+    return `userex_iframe_widget_settings_v2:${chatbotId}`
 }
 
 function readCachedSettings(chatbotId: string): ChatbotSettings | null {
@@ -122,6 +122,10 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     enableVoiceAssistant: false,
     voiceProvider: "openai",
     elevenLabsVoiceId: "",
+    voiceInteractionMode: "legacy",
+    realtimeVoiceProvider: "elevenlabs",
+    elevenLabsAgentId: "",
+    elevenLabsServerLocation: "global",
     voiceLowLatencyMode: true,
     voiceInputSensitivity: "normal",
     voiceResponseLength: "short",
@@ -215,6 +219,8 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
 
 export function useWidgetSettings(chatbotId: string, searchParams: any, setLanguage: any) {
     const previewDraftKey = searchParams?.get("previewDraftKey")
+    const runtimeMode = searchParams?.get("runtimeMode")
+    const isWidgetTestMode = searchParams?.get("testMode") === "1" || runtimeMode === "test"
     const initialPreviewSettings = typeof window !== "undefined" ? readPreviewDraftSettings(previewDraftKey) : null
     const initialCachedSettings = typeof window !== "undefined" ? readCachedSettings(chatbotId) : null
     const initialSettings = initialPreviewSettings
@@ -243,7 +249,11 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
             try {
                 const controller = new AbortController()
                 const timeoutId = setTimeout(() => controller.abort(), 8000)
-                const res = await fetch(`/api/widget-settings?chatbotId=${chatbotId}`, { signal: controller.signal, cache: "no-store" })
+                const params = new URLSearchParams({ chatbotId })
+                if (isWidgetTestMode) {
+                    params.set("testMode", "1")
+                }
+                const res = await fetch(`/api/widget-settings?${params.toString()}`, { signal: controller.signal, cache: "no-store" })
                 clearTimeout(timeoutId)
                 if (res.ok) {
                     const data = await res.json()
@@ -308,6 +318,10 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                         enableVoiceAssistant: data.enableVoiceAssistant || false,
                         voiceProvider: data.voiceProvider || "openai",
                         elevenLabsVoiceId: data.elevenLabsVoiceId || "",
+                        voiceInteractionMode: data.voiceInteractionMode === "realtime" ? "realtime" : "legacy",
+                        realtimeVoiceProvider: "elevenlabs",
+                        elevenLabsAgentId: typeof data.elevenLabsAgentId === "string" ? data.elevenLabsAgentId : "",
+                        elevenLabsServerLocation: ["global", "eu-residency", "us", "in-residency"].includes(data.elevenLabsServerLocation) ? data.elevenLabsServerLocation : "global",
                         voiceLowLatencyMode: data.voiceLowLatencyMode !== false,
                         voiceInputSensitivity: ["low", "normal", "high"].includes(data.voiceInputSensitivity) ? data.voiceInputSensitivity : "normal",
                         voiceResponseLength: ["short", "balanced", "detailed"].includes(data.voiceResponseLength) ? data.voiceResponseLength : "short",
@@ -447,7 +461,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
         return () => {
             isMounted = false
         }
-    }, [chatbotId, previewDraftKey])
+    }, [chatbotId, previewDraftKey, isWidgetTestMode])
 
     // Sync language with browser language for widget UI
     useEffect(() => {

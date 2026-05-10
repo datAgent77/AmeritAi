@@ -63,6 +63,13 @@ export function VoiceSettingsForm({
   const [apiKey, setApiKey] = useState("");
   const [voiceId, setVoiceId] = useState("");
   const [enableElevenLabs, setEnableElevenLabs] = useState(false);
+  const [voiceInteractionMode, setVoiceInteractionMode] = useState<
+    "legacy" | "realtime"
+  >("legacy");
+  const [elevenLabsAgentId, setElevenLabsAgentId] = useState("");
+  const [elevenLabsServerLocation, setElevenLabsServerLocation] = useState<
+    "global" | "eu-residency" | "us" | "in-residency"
+  >("global");
   const [preferredVoice, setPreferredVoice] = useState("sage");
   const [voiceLowLatencyMode, setVoiceLowLatencyMode] = useState(true);
   const [voiceInputSensitivity, setVoiceInputSensitivity] = useState<
@@ -123,6 +130,21 @@ export function VoiceSettingsForm({
         setEnableElevenLabs(
           data.enableElevenLabs ?? data.voiceProvider === "elevenlabs",
         );
+        setVoiceInteractionMode(
+          data.voiceInteractionMode === "realtime" ? "realtime" : "legacy",
+        );
+        setElevenLabsAgentId(
+          typeof data.elevenLabsAgentId === "string"
+            ? data.elevenLabsAgentId
+            : "",
+        );
+        setElevenLabsServerLocation(
+          ["global", "eu-residency", "us", "in-residency"].includes(
+            data.elevenLabsServerLocation,
+          )
+            ? data.elevenLabsServerLocation
+            : "global",
+        );
         setPreferredVoice(data.preferredVoice || "sage");
         setVoiceLowLatencyMode(data.voiceLowLatencyMode !== false);
         setVoiceInputSensitivity(
@@ -172,6 +194,10 @@ export function VoiceSettingsForm({
             enableElevenLabs,
             enableVoiceAssistant,
             voiceProvider,
+            voiceInteractionMode,
+            realtimeVoiceProvider: "elevenlabs",
+            elevenLabsAgentId,
+            elevenLabsServerLocation,
             preferredVoice,
             voiceLowLatencyMode,
             voiceInputSensitivity,
@@ -183,6 +209,10 @@ export function VoiceSettingsForm({
             voiceProvider,
             enableElevenLabs,
             elevenLabsVoiceId: voiceId,
+            voiceInteractionMode,
+            realtimeVoiceProvider: "elevenlabs",
+            elevenLabsAgentId,
+            elevenLabsServerLocation,
             preferredVoice,
             voiceLowLatencyMode,
             voiceInputSensitivity,
@@ -228,6 +258,7 @@ export function VoiceSettingsForm({
           enableElevenLabs,
           elevenLabsApiKey: apiKey,
           elevenLabsVoiceId: voiceId,
+          elevenLabsAgentId,
         }),
       });
       const payload = await response.json();
@@ -389,10 +420,12 @@ export function VoiceSettingsForm({
               </p>
               <p>
                 {enableVoiceAssistant
-                  ? enableElevenLabs
-                    ? t("configElevenLabsOnly")
-                    : t("configOpenAiVoice") ||
-                      "Voice assistant is active with the default OpenAI speech engine."
+                  ? voiceInteractionMode === "realtime"
+                    ? "Sesli asistan direkt ElevenLabs realtime agent ile yanit verecek."
+                    : enableElevenLabs
+                      ? t("configElevenLabsOnly")
+                      : t("configOpenAiVoice") ||
+                        "Voice assistant is active with the default OpenAI speech engine."
                   : t("configNoEngine")}
               </p>
             </div>
@@ -411,6 +444,26 @@ export function VoiceSettingsForm({
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="voiceInteractionMode">Sesli yanıt modu</Label>
+                <select
+                  id="voiceInteractionMode"
+                  value={voiceInteractionMode}
+                  onChange={(event) =>
+                    setVoiceInteractionMode(
+                      event.target.value === "realtime" ? "realtime" : "legacy",
+                    )
+                  }
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="legacy">Legacy - kayıt, chat ve TTS</option>
+                  <option value="realtime">Direkt realtime voice</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Realtime modda widget yanıtları ElevenLabs Conversational AI
+                  agent tarafından canlı sesle üretilir.
+                </p>
+              </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                   <Label>Düşük gecikme modu</Label>
@@ -523,9 +576,44 @@ export function VoiceSettingsForm({
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="sk_..."
-                  disabled={!enableElevenLabs}
-                  className={!enableElevenLabs ? "opacity-50" : ""}
+                  disabled={!enableElevenLabs && voiceInteractionMode !== "realtime"}
+                  className={!enableElevenLabs && voiceInteractionMode !== "realtime" ? "opacity-50" : ""}
                 />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="elevenLabsAgentId">ElevenLabs Agent ID</Label>
+                  <Input
+                    id="elevenLabsAgentId"
+                    value={elevenLabsAgentId}
+                    onChange={(e) => setElevenLabsAgentId(e.target.value)}
+                    placeholder="agent_..."
+                    disabled={voiceInteractionMode !== "realtime"}
+                    className={voiceInteractionMode !== "realtime" ? "opacity-50" : ""}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Direkt realtime voice için Conversational AI agent ID.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="elevenLabsServerLocation">Server location</Label>
+                  <select
+                    id="elevenLabsServerLocation"
+                    value={elevenLabsServerLocation}
+                    onChange={(event) =>
+                      setElevenLabsServerLocation(
+                        event.target.value as typeof elevenLabsServerLocation,
+                      )
+                    }
+                    disabled={voiceInteractionMode !== "realtime"}
+                    className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ${voiceInteractionMode !== "realtime" ? "opacity-50" : ""}`}
+                  >
+                    <option value="global">Global</option>
+                    <option value="eu-residency">EU residency</option>
+                    <option value="us">US</option>
+                    <option value="in-residency">India residency</option>
+                  </select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="voiceId">{t("voiceId")}</Label>

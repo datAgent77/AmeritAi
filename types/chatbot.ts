@@ -176,6 +176,10 @@ export interface ChatbotSettings {
     businessHoursEnd?: string;
     voiceProvider: string;
     elevenLabsVoiceId: string;
+    voiceInteractionMode?: "legacy" | "realtime";
+    realtimeVoiceProvider?: "elevenlabs";
+    elevenLabsAgentId?: string;
+    elevenLabsServerLocation?: "global" | "eu-residency" | "us" | "in-residency";
     voiceLowLatencyMode?: boolean;
     voiceInputSensitivity?: "low" | "normal" | "high";
     voiceResponseLength?: "short" | "balanced" | "detailed";

@@ -1,4 +1,5 @@
 import type { PartnerCapabilities, PartnerLevel, ResolvedPartnerBranding } from "@/lib/management/types"
+import type { EvolutionApiChannelConfig } from "@/lib/integrations/evolution-api/types"
 
 export type ProductEntitlementKey = "chatbot" | "omniChannel" | "cookieConsent" | "copywriter" | "leadFinder"
 
@@ -748,7 +749,7 @@ export interface InstagramChannelConfig {
     defaultReplyMode?: "assistant" | "human_review"
     setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
     setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
-    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app" | "evolution_api_qr"
     lastHealthCheckAt?: string | null
     lastSetupError?: string | null
 }
@@ -764,7 +765,7 @@ export interface MessengerChannelConfig {
     defaultReplyMode?: "assistant" | "human_review"
     setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
     setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
-    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app" | "evolution_api_qr"
     lastHealthCheckAt?: string | null
     lastSetupError?: string | null
 }
@@ -782,7 +783,7 @@ export interface WhatsAppChannelConfig {
     defaultReplyMode?: "assistant" | "human_review"
     setupStatus?: "not_started" | "draft" | "ready_for_live" | "live" | "error"
     setupStage?: "prerequisites" | "token" | "discovery" | "draft" | "go_live" | "live"
-    connectionMode?: "tenant_meta_app" | "platform_meta_app"
+    connectionMode?: "tenant_meta_app" | "platform_meta_app" | "evolution_api_qr"
     lastHealthCheckAt?: string | null
     lastSetupError?: string | null
 }
@@ -796,6 +797,7 @@ export interface OmniChannelConfigDocument {
     instagramDM?: InstagramDMChannelConfig
     whatsappBusiness?: WhatsAppBizChannelConfig
     messengerDM?: MessengerDMChannelConfig
+    evolutionApi?: EvolutionApiChannelConfig
     voiceIntegration?: VoiceIntegrationConfig
     assistantCore?: Partial<OmniAssistantCoreSettings> | Record<string, unknown>
     metaSetup?: Record<string, unknown>
