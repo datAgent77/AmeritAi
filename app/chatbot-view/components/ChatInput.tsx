@@ -414,10 +414,10 @@ export function ChatInput({
                             }}
                         >
                             <div className="flex w-max min-w-max flex-nowrap gap-2 px-1">
-                        {quickActions.buttons
-                            .filter(b => b.visible)
+                        {(quickActions?.buttons ?? [])
+                            .filter((b) => b.visible)
                             .sort((a, b) => a.order - b.order)
-                            .map(btn => {
+                            .map((btn) => {
                                 const iconName = getQuickActionDefinition(btn.moduleId).iconName
                                 const Icon = quickActionIconRegistry[iconName] || MessageCircle
                                 const displayLabel = getQuickActionDisplayLabel(btn, language)
