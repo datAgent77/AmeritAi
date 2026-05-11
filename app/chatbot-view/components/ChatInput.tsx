@@ -381,6 +381,10 @@ export function ChatInput({
         } as React.CSSProperties)
         : undefined
 
+    const hasQuickActions =
+        !isAmbientMode &&
+        Boolean(quickActions?.enabled && Array.isArray(quickActions?.buttons) && quickActions.buttons.some((b) => b.visible))
+
     return (
         <div
             className={isAmbientMode
@@ -389,17 +393,17 @@ export function ChatInput({
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : isSidecarMode
                     ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"
-                    : "px-4 sm:px-8 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"}
+                    : `px-4 sm:px-8 ${hasQuickActions ? "pt-3" : "pt-4"} pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800`}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
                 className={`relative mx-auto min-w-0 ${isAmbientMode ? "w-full bg-transparent" : isSidecarMode ? "w-full max-w-none" : "w-full max-w-none"}`}
                 style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
             >
-                {!isAmbientMode && quickActions?.enabled && quickActions.buttons.filter(b => b.visible).length > 0 && (
-                    <div className="relative mb-1 min-w-0">
+                {hasQuickActions && (
+                    <div className="relative mb-3 min-w-0">
                         <div
-                            className="w-full min-w-0 overflow-x-auto overscroll-x-contain px-1 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            className="w-full min-w-0 overflow-x-auto overscroll-x-contain px-0 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                             onWheel={(event) => {
                                 const container = event.currentTarget
                                 if (container.scrollWidth <= container.clientWidth) return
@@ -409,7 +413,7 @@ export function ChatInput({
                                 event.preventDefault()
                             }}
                         >
-                            <div className="flex w-max min-w-max flex-nowrap gap-2 px-3">
+                            <div className="flex w-max min-w-max flex-nowrap gap-2 px-1">
                         {quickActions.buttons
                             .filter(b => b.visible)
                             .sort((a, b) => a.order - b.order)
@@ -446,8 +450,8 @@ export function ChatInput({
                         }
                             </div>
                         </div>
-                        <div className="pointer-events-none absolute inset-y-4 left-0 w-5 bg-gradient-to-r from-white to-transparent dark:from-zinc-950" />
-                        <div className="pointer-events-none absolute inset-y-4 right-0 w-5 bg-gradient-to-l from-white to-transparent dark:from-zinc-950" />
+                        <div className="pointer-events-none absolute inset-y-2 left-0 w-5 bg-gradient-to-r from-white to-transparent dark:from-zinc-950" />
+                        <div className="pointer-events-none absolute inset-y-2 right-0 w-5 bg-gradient-to-l from-white to-transparent dark:from-zinc-950" />
                     </div>
                 )}
 
@@ -456,6 +460,31 @@ export function ChatInput({
                     className={ambientDockWrapperClassName}
                     style={ambientDockWrapperStyle}
                 >
+                    {selectedImage && (
+                        <div className={`${isAmbientMode ? "mb-2 px-1" : "mb-2"} animate-in fade-in slide-in-from-bottom-2`}>
+                            <div className="relative inline-flex items-start gap-3 rounded-xl border bg-white/90 p-2 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80">
+                                <div className="relative">
+                                    <img
+                                        src={`data:${selectedImageMimeType};base64,${selectedImage}`}
+                                        alt="Selected"
+                                        className="h-16 w-16 rounded-lg border-2 border-white object-cover shadow-sm ring-1 ring-gray-100 dark:border-white/10 dark:ring-white/10"
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 rounded-b-lg bg-black/60 p-1">
+                                        <p className="truncate px-1 text-center text-[9px] text-white">
+                                            {isAnalyzingImage ? "Analiz ediliyor..." : "Görsel seçildi"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={clearSelectedImage}
+                                    className="absolute -right-2 -top-2 rounded-full border bg-white p-1 text-gray-500 shadow-md transition-colors hover:text-red-500 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:text-white"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <form
                         onSubmit={handleSubmit}
                         className={isAmbientMode
@@ -465,31 +494,6 @@ export function ChatInput({
                                 : "relative flex items-center gap-2"}
                         style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || (settings.theme === 'dark' ? '#18181b' : '#f3f4f6') } : undefined}
                     >
-                        {/* Image Preview */}
-                        {selectedImage && (
-                            <div className="absolute bottom-full left-0 mb-4 ml-2 animate-in fade-in slide-in-from-bottom-2 z-20">
-                                <div className="relative group">
-                                    <img
-                                        src={`data:${selectedImageMimeType};base64,${selectedImage}`}
-                                        alt="Selected"
-                                        className={`h-20 w-20 object-cover rounded-lg shadow-lg border-2 ${isAmbientMode ? 'border-white/30 ring-1 ring-white/20' : 'border-white ring-1 ring-gray-100'}`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={clearSelectedImage}
-                                        className={`absolute -top-2 -right-2 p-1 rounded-full shadow-md transition-colors border ${isAmbientMode ? 'bg-black/60 border-white/20 text-white/80 hover:text-white' : 'bg-white border-gray-100 text-gray-500 hover:text-red-500'}`}
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                    <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-[1px] p-1 rounded-b-lg">
-                                        <p className="text-[9px] text-white truncate px-1 text-center">
-                                            {isAnalyzingImage ? "Analiz ediliyor..." : "Görsel seçildi"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {settings.enableVisualDiagnosis && (
                             <input
                                 type="file"
