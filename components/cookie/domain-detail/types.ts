@@ -35,6 +35,25 @@ export type PolicyRow = {
     title?: string
     bannerDescription?: string
     policyUrl?: string | null
+    controllerName?: string
+    controllerEmail?: string
+    controllerAddress?: string
+    controllerPhone?: string
+    dpoEmail?: string
+    purposesText?: string
+    legalBasesText?: string
+    recipientsText?: string
+    transfersText?: string
+    retentionText?: string
+    rightsText?: string
+    dsarText?: string
+    vendors?: Array<{
+      name: string
+      domain: string
+      category: "necessary" | "analytics" | "marketing" | "functional"
+      purpose: string
+      privacyUrl: string | null
+    }>
   }
 }
 

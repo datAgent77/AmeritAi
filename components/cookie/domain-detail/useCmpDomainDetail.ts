@@ -25,6 +25,20 @@ export function useCmpDomainDetail(domainId: string) {
   const [policyDraftUrl, setPolicyDraftUrl] = useState("")
   const [policyDraftLang, setPolicyDraftLang] = useState("tr")
 
+  const [policyControllerName, setPolicyControllerName] = useState("")
+  const [policyControllerEmail, setPolicyControllerEmail] = useState("")
+  const [policyControllerAddress, setPolicyControllerAddress] = useState("")
+  const [policyControllerPhone, setPolicyControllerPhone] = useState("")
+  const [policyDpoEmail, setPolicyDpoEmail] = useState("")
+  const [policyPurposesText, setPolicyPurposesText] = useState("")
+  const [policyLegalBasesText, setPolicyLegalBasesText] = useState("")
+  const [policyRecipientsText, setPolicyRecipientsText] = useState("")
+  const [policyTransfersText, setPolicyTransfersText] = useState("")
+  const [policyRetentionText, setPolicyRetentionText] = useState("")
+  const [policyRightsText, setPolicyRightsText] = useState("")
+  const [policyDsarText, setPolicyDsarText] = useState("")
+  const [policyVendorsJson, setPolicyVendorsJson] = useState("[]")
+
   const derivedConfig: DerivedConfig = useMemo(() => {
     const banner = config.bannerSettings || {}
     const pref = config.preferenceSettings || {}
@@ -65,6 +79,20 @@ export function useCmpDomainDetail(domainId: string) {
         setPolicyDraftDescription(draft.content?.bannerDescription || "")
         setPolicyDraftUrl(draft.content?.policyUrl || "")
         setPolicyDraftLang(draft.language || "tr")
+
+        setPolicyControllerName(draft.content?.controllerName || "")
+        setPolicyControllerEmail(draft.content?.controllerEmail || "")
+        setPolicyControllerAddress(draft.content?.controllerAddress || "")
+        setPolicyControllerPhone(draft.content?.controllerPhone || "")
+        setPolicyDpoEmail(draft.content?.dpoEmail || "")
+        setPolicyPurposesText(draft.content?.purposesText || "")
+        setPolicyLegalBasesText(draft.content?.legalBasesText || "")
+        setPolicyRecipientsText(draft.content?.recipientsText || "")
+        setPolicyTransfersText(draft.content?.transfersText || "")
+        setPolicyRetentionText(draft.content?.retentionText || "")
+        setPolicyRightsText(draft.content?.rightsText || "")
+        setPolicyDsarText(draft.content?.dsarText || "")
+        setPolicyVendorsJson(JSON.stringify(draft.content?.vendors || [], null, 2))
       }
     } catch (error: any) {
       toast({ title: "Hata", description: error?.message || "Yüklenemedi", variant: "destructive" })
@@ -147,6 +175,20 @@ export function useCmpDomainDetail(domainId: string) {
       setPolicyDraftDescription("")
       setPolicyDraftUrl("")
       setPolicyDraftLang("tr")
+
+      setPolicyControllerName("")
+      setPolicyControllerEmail("")
+      setPolicyControllerAddress("")
+      setPolicyControllerPhone("")
+      setPolicyDpoEmail("")
+      setPolicyPurposesText("")
+      setPolicyLegalBasesText("")
+      setPolicyRecipientsText("")
+      setPolicyTransfersText("")
+      setPolicyRetentionText("")
+      setPolicyRightsText("")
+      setPolicyDsarText("")
+      setPolicyVendorsJson("[]")
       await loadAll()
     } catch (error: any) {
       toast({ title: "Hata", description: error?.message || "Oluşturulamadı", variant: "destructive" })
@@ -162,12 +204,27 @@ export function useCmpDomainDetail(domainId: string) {
     setPolicyDraftDescription(policy.content?.bannerDescription || "")
     setPolicyDraftUrl(policy.content?.policyUrl || "")
     setPolicyDraftLang(policy.language || "tr")
+
+    setPolicyControllerName(policy.content?.controllerName || "")
+    setPolicyControllerEmail(policy.content?.controllerEmail || "")
+    setPolicyControllerAddress(policy.content?.controllerAddress || "")
+    setPolicyControllerPhone(policy.content?.controllerPhone || "")
+    setPolicyDpoEmail(policy.content?.dpoEmail || "")
+    setPolicyPurposesText(policy.content?.purposesText || "")
+    setPolicyLegalBasesText(policy.content?.legalBasesText || "")
+    setPolicyRecipientsText(policy.content?.recipientsText || "")
+    setPolicyTransfersText(policy.content?.transfersText || "")
+    setPolicyRetentionText(policy.content?.retentionText || "")
+    setPolicyRightsText(policy.content?.rightsText || "")
+    setPolicyDsarText(policy.content?.dsarText || "")
+    setPolicyVendorsJson(JSON.stringify(policy.content?.vendors || [], null, 2))
   }, [])
 
   const saveDraft = useCallback(async () => {
     if (!user || !selectedDraftId) return
     setSaving(true)
     try {
+      const parsedVendors = JSON.parse(policyVendorsJson || "[]")
       await cmpFetch(user, `/api/cmp/domains/${domainId}/policies/${selectedDraftId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -176,6 +233,19 @@ export function useCmpDomainDetail(domainId: string) {
           bannerDescription: policyDraftDescription,
           policyUrl: policyDraftUrl,
           language: policyDraftLang,
+          controllerName: policyControllerName,
+          controllerEmail: policyControllerEmail,
+          controllerAddress: policyControllerAddress,
+          controllerPhone: policyControllerPhone,
+          dpoEmail: policyDpoEmail,
+          purposesText: policyPurposesText,
+          legalBasesText: policyLegalBasesText,
+          recipientsText: policyRecipientsText,
+          transfersText: policyTransfersText,
+          retentionText: policyRetentionText,
+          rightsText: policyRightsText,
+          dsarText: policyDsarText,
+          vendors: parsedVendors,
         }),
       })
       toast({ title: "Kaydedildi", description: "Taslak güncellendi." })
@@ -185,7 +255,7 @@ export function useCmpDomainDetail(domainId: string) {
     } finally {
       setSaving(false)
     }
-  }, [domainId, loadAll, policyDraftDescription, policyDraftLang, policyDraftTitle, policyDraftUrl, selectedDraftId, toast, user])
+  }, [domainId, loadAll, policyControllerAddress, policyControllerEmail, policyControllerName, policyControllerPhone, policyDraftDescription, policyDraftLang, policyDraftTitle, policyDraftUrl, policyDsarText, policyDpoEmail, policyLegalBasesText, policyPurposesText, policyRecipientsText, policyRetentionText, policyRightsText, policyTransfersText, policyVendorsJson, selectedDraftId, toast, user])
 
   const publish = useCallback(
     async (policyId: string) => {
@@ -233,10 +303,36 @@ export function useCmpDomainDetail(domainId: string) {
     policyDraftDescription,
     policyDraftUrl,
     policyDraftLang,
+    policyControllerName,
+    policyControllerEmail,
+    policyControllerAddress,
+    policyControllerPhone,
+    policyDpoEmail,
+    policyPurposesText,
+    policyLegalBasesText,
+    policyRecipientsText,
+    policyTransfersText,
+    policyRetentionText,
+    policyRightsText,
+    policyDsarText,
+    policyVendorsJson,
     setPolicyDraftTitle,
     setPolicyDraftDescription,
     setPolicyDraftUrl,
     setPolicyDraftLang,
+    setPolicyControllerName,
+    setPolicyControllerEmail,
+    setPolicyControllerAddress,
+    setPolicyControllerPhone,
+    setPolicyDpoEmail,
+    setPolicyPurposesText,
+    setPolicyLegalBasesText,
+    setPolicyRecipientsText,
+    setPolicyTransfersText,
+    setPolicyRetentionText,
+    setPolicyRightsText,
+    setPolicyDsarText,
+    setPolicyVendorsJson,
     saveDomain,
     saveConfig,
     createDraft,

@@ -37,6 +37,17 @@ async function resolveFallbackTenantEmail(adminDb: FirebaseFirestore.Firestore, 
   return null
 }
 
+function cleanInt(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  const floored = Math.floor(parsed)
+  return Math.max(min, Math.min(max, floored))
+}
+
+function resolveDeliveryMethod(value: unknown) {
+  return value === "link" ? "link" : "attachment"
+}
+
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -82,6 +93,9 @@ export async function POST(req: Request) {
     const fallbackEmail = safeEmailCandidate(history?.recipientEmail) || (await resolveFallbackTenantEmail(authz.adminDb, tenantId))
     const recipientEmail = preferredEmail || fallbackEmail
 
+    const deliveryMethod = resolveDeliveryMethod(settings?.backupDeliveryMethod)
+    const ttlHours = cleanInt(settings?.backupLinkTtlHours, 72, 1, 168)
+
     if (!recipientEmail) {
       return NextResponse.json({ error: "Missing backup email" }, { status: 400 })
     }
@@ -93,16 +107,27 @@ export async function POST(req: Request) {
 
     const bucket = storage.bucket()
     const file = bucket.file(storedObjectPath)
-    const [buffer] = await file.download()
-    const csv = buffer.toString("utf8")
+
+    const downloadUrl = deliveryMethod === "link" ? ((await file.getSignedUrl({ action: "read", expires: Date.now() + ttlHours * 60 * 60 * 1000 }))?.[0] || null) : null
+    const effectiveDelivery = deliveryMethod === "link" && !downloadUrl ? "attachment" : deliveryMethod
+
+    const csv =
+      effectiveDelivery === "attachment"
+        ? (await (async () => {
+            const [buffer] = await file.download()
+            return buffer.toString("utf8")
+          })())
+        : null
 
     const ok = await sendCmpConsentsBackupEmail({
       recipientEmail,
       tenantId,
       fromDate,
       toDate,
+      deliveryMethod: effectiveDelivery,
       attachmentFilename,
-      attachmentCsv: csv,
+      attachmentCsv: effectiveDelivery === "attachment" ? (csv as string) : undefined,
+      downloadUrl: effectiveDelivery === "link" ? downloadUrl || undefined : undefined,
     })
 
     const now = nowIso()
@@ -118,6 +143,8 @@ export async function POST(req: Request) {
       storedObjectPath,
       attachmentFilename,
       sourceHistoryId: historyId,
+      deliveryMethod: effectiveDelivery,
+      downloadUrlTtlHours: effectiveDelivery === "link" ? ttlHours : null,
     })
 
     await authz.adminDb.collection("cmp_consent_backup_runs").doc(tenantId).set(
@@ -142,4 +169,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

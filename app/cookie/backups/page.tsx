@@ -10,10 +10,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 type TenantSettings = {
   backupEmail: string | null
+  backupDeliveryMethod?: "attachment" | "link"
+  backupLinkTtlHours?: number
+  retentionDaysConsents?: number
+  retentionDaysBackups?: number
 }
 
 type BackupHistoryItem = {
@@ -44,9 +49,31 @@ export default function CookieBackupsPage() {
   const [tenantId, setTenantId] = useState<string>("")
   const [settings, setSettings] = useState<TenantSettings>({ backupEmail: null })
   const [backupEmailInput, setBackupEmailInput] = useState<string>("")
+  const [backupDeliveryMethod, setBackupDeliveryMethod] = useState<"attachment" | "link">("attachment")
+  const [backupLinkTtlHours, setBackupLinkTtlHours] = useState<string>("72")
+  const [retentionDaysConsents, setRetentionDaysConsents] = useState<string>("365")
+  const [retentionDaysBackups, setRetentionDaysBackups] = useState<string>("365")
   const [items, setItems] = useState<BackupHistoryItem[]>([])
 
-  const backupEmailDirty = useMemo(() => (settings.backupEmail || "") !== backupEmailInput.trim(), [backupEmailInput, settings.backupEmail])
+  const settingsDirty = useMemo(() => {
+    const emailDirty = (settings.backupEmail || "") !== backupEmailInput.trim()
+    const deliveryDirty = (settings.backupDeliveryMethod || "attachment") !== backupDeliveryMethod
+    const ttlDirty = String(settings.backupLinkTtlHours || 72) !== String(backupLinkTtlHours)
+    const consentsDirty = String(settings.retentionDaysConsents || 365) !== String(retentionDaysConsents)
+    const backupsDirty = String(settings.retentionDaysBackups || 365) !== String(retentionDaysBackups)
+    return emailDirty || deliveryDirty || ttlDirty || consentsDirty || backupsDirty
+  }, [
+    backupDeliveryMethod,
+    backupEmailInput,
+    backupLinkTtlHours,
+    retentionDaysBackups,
+    retentionDaysConsents,
+    settings.backupDeliveryMethod,
+    settings.backupEmail,
+    settings.backupLinkTtlHours,
+    settings.retentionDaysBackups,
+    settings.retentionDaysConsents,
+  ])
 
   const load = useCallback(async () => {
     if (!user) return
@@ -56,6 +83,10 @@ export default function CookieBackupsPage() {
       setTenantId(s.tenantId)
       setSettings(s.settings)
       setBackupEmailInput(s.settings.backupEmail || "")
+      setBackupDeliveryMethod(s.settings.backupDeliveryMethod || "attachment")
+      setBackupLinkTtlHours(String(s.settings.backupLinkTtlHours || 72))
+      setRetentionDaysConsents(String(s.settings.retentionDaysConsents || 365))
+      setRetentionDaysBackups(String(s.settings.retentionDaysBackups || 365))
 
       const h = await cmpFetch<{ tenantId: string; items: BackupHistoryItem[] }>(user, "/api/cmp/backups/history?limit=50")
       setItems(Array.isArray(h.items) ? h.items : [])
@@ -74,7 +105,13 @@ export default function CookieBackupsPage() {
     if (!user) return
     setSaving(true)
     try {
-      const payload = { backupEmail: backupEmailInput.trim() }
+      const payload = {
+        backupEmail: backupEmailInput.trim(),
+        backupDeliveryMethod,
+        backupLinkTtlHours: Number(backupLinkTtlHours) || 72,
+        retentionDaysConsents: Number(retentionDaysConsents) || 365,
+        retentionDaysBackups: Number(retentionDaysBackups) || 365,
+      }
       const res = await cmpFetch<{ ok: boolean; settings: TenantSettings }>(user, "/api/cmp/tenant-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -137,8 +174,8 @@ export default function CookieBackupsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Backup e-posta</CardTitle>
-          <CardDescription>CSV kopyası bu adrese gönderilir. Boş bırakırsan kullanıcı e-postası kullanılır.</CardDescription>
+          <CardTitle>Backup ayarları</CardTitle>
+          <CardDescription>Gönderim yöntemi ve saklama sürelerini tenant bazında yapılandır.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -147,19 +184,50 @@ export default function CookieBackupsPage() {
               <Input translate="no" value={tenantId} readOnly />
             </div>
             <div className="space-y-2">
-              <Label>E-posta</Label>
+              <Label>Backup e-posta (opsiyonel)</Label>
               <Input
                 translate="no"
                 type="email"
                 value={backupEmailInput}
                 onChange={(e) => setBackupEmailInput(e.target.value)}
-                placeholder="ops@firma.com"
+                placeholder="privacy@firma.com"
               />
             </div>
           </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Gönderim yöntemi</Label>
+              <Select value={backupDeliveryMethod} onValueChange={(v) => setBackupDeliveryMethod(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seç" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attachment">E-posta eki (CSV)</SelectItem>
+                  <SelectItem value="link">İmzalı link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Link TTL (saat)</Label>
+              <Input type="number" min={1} max={168} value={backupLinkTtlHours} onChange={(e) => setBackupLinkTtlHours(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Consent saklama (gün)</Label>
+              <Input type="number" min={7} max={3650} value={retentionDaysConsents} onChange={(e) => setRetentionDaysConsents(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Backup saklama (gün)</Label>
+              <Input type="number" min={7} max={3650} value={retentionDaysBackups} onChange={(e) => setRetentionDaysBackups(e.target.value)} />
+            </div>
+          </div>
+
           <div className="flex justify-end">
-            <Button onClick={saveEmail} disabled={saving || !backupEmailDirty} className="gap-2">
+            <Button onClick={saveEmail} disabled={saving || !settingsDirty} className="gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Kaydet
             </Button>
@@ -227,4 +295,3 @@ export default function CookieBackupsPage() {
     </div>
   )
 }
-

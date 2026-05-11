@@ -2,8 +2,48 @@ import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { cleanHostname, cleanString, nowIso, parseIp, parseUserAgent, sha256Hex } from "@/lib/cmp/utils"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
+import crypto from "crypto"
 
 export const dynamic = "force-dynamic"
+
+function base64UrlDecode(input: string) {
+  const padded = input.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((input.length + 3) % 4)
+  return Buffer.from(padded, "base64").toString("utf8")
+}
+
+function sign(payload: string, secret: string) {
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+}
+
+function timingSafeEqual(a: string, b: string) {
+  const aBuf = Buffer.from(a)
+  const bBuf = Buffer.from(b)
+  if (aBuf.length !== bBuf.length) return false
+  return crypto.timingSafeEqual(aBuf, bBuf)
+}
+
+function verifyWriteToken(input: { token: string; hostname: string; policyVersionId: string }) {
+  const secret = process.env.CMP_PUBLIC_WRITE_SECRET
+  if (!secret) return { ok: false as const, reason: "missing_secret" }
+
+  const parts = input.token.split(".")
+  if (parts.length !== 2) return { ok: false as const, reason: "bad_format" }
+
+  const [payloadB64, sig] = parts
+  const expected = sign(payloadB64, secret)
+  if (!timingSafeEqual(sig, expected)) return { ok: false as const, reason: "bad_sig" }
+
+  const parsed = JSON.parse(base64UrlDecode(payloadB64))
+  const exp = typeof parsed?.exp === "number" ? parsed.exp : 0
+  const hostname = typeof parsed?.hostname === "string" ? parsed.hostname : ""
+  const policyVersionId = typeof parsed?.policyVersionId === "string" ? parsed.policyVersionId : ""
+
+  if (!exp || Date.now() > exp) return { ok: false as const, reason: "expired" }
+  if (hostname !== input.hostname) return { ok: false as const, reason: "hostname_mismatch" }
+  if (policyVersionId !== input.policyVersionId) return { ok: false as const, reason: "policy_mismatch" }
+
+  return { ok: true as const }
+}
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +58,20 @@ export async function POST(req: Request) {
     const choices = body?.choices && typeof body.choices === "object" ? body.choices : {}
     const policyVersionId = cleanString(body?.policyVersionId, 240)
     const deviceId = cleanString(body?.deviceId, 240)
+    const writeToken = cleanString(body?.writeToken, 1000)
 
     if (!hostname || !action || !policyVersionId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+    }
+
+    if (process.env.CMP_PUBLIC_WRITE_SECRET) {
+      if (!writeToken) {
+        return NextResponse.json({ error: "Missing write token" }, { status: 401 })
+      }
+      const verified = verifyWriteToken({ token: writeToken, hostname, policyVersionId })
+      if (!verified.ok) {
+        return NextResponse.json({ error: "Invalid write token" }, { status: 401 })
+      }
     }
 
     const domainSnapshot = await adminDb

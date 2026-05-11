@@ -21,12 +21,38 @@ export function TextsTab({
   draftDescription,
   draftUrl,
   draftLang,
+  controllerName,
+  controllerEmail,
+  controllerAddress,
+  controllerPhone,
+  dpoEmail,
+  purposesText,
+  legalBasesText,
+  recipientsText,
+  transfersText,
+  retentionText,
+  rightsText,
+  dsarText,
+  vendorsJson,
   onCreateDraft,
   onSelectDraft,
   onChangeTitle,
   onChangeDescription,
   onChangeUrl,
   onChangeLang,
+  onChangeControllerName,
+  onChangeControllerEmail,
+  onChangeControllerAddress,
+  onChangeControllerPhone,
+  onChangeDpoEmail,
+  onChangePurposesText,
+  onChangeLegalBasesText,
+  onChangeRecipientsText,
+  onChangeTransfersText,
+  onChangeRetentionText,
+  onChangeRightsText,
+  onChangeDsarText,
+  onChangeVendorsJson,
   onSaveDraft,
   onPublish,
 }: {
@@ -39,12 +65,38 @@ export function TextsTab({
   draftDescription: string
   draftUrl: string
   draftLang: string
+  controllerName: string
+  controllerEmail: string
+  controllerAddress: string
+  controllerPhone: string
+  dpoEmail: string
+  purposesText: string
+  legalBasesText: string
+  recipientsText: string
+  transfersText: string
+  retentionText: string
+  rightsText: string
+  dsarText: string
+  vendorsJson: string
   onCreateDraft: () => void
   onSelectDraft: (policy: PolicyRow) => void
   onChangeTitle: (value: string) => void
   onChangeDescription: (value: string) => void
   onChangeUrl: (value: string) => void
   onChangeLang: (value: string) => void
+  onChangeControllerName: (value: string) => void
+  onChangeControllerEmail: (value: string) => void
+  onChangeControllerAddress: (value: string) => void
+  onChangeControllerPhone: (value: string) => void
+  onChangeDpoEmail: (value: string) => void
+  onChangePurposesText: (value: string) => void
+  onChangeLegalBasesText: (value: string) => void
+  onChangeRecipientsText: (value: string) => void
+  onChangeTransfersText: (value: string) => void
+  onChangeRetentionText: (value: string) => void
+  onChangeRightsText: (value: string) => void
+  onChangeDsarText: (value: string) => void
+  onChangeVendorsJson: (value: string) => void
   onSaveDraft: () => void
   onPublish: (policyId: string) => void
 }) {
@@ -150,6 +202,70 @@ export function TextsTab({
               <Label>Banner açıklaması</Label>
               <Textarea value={draftDescription} onChange={(e) => onChangeDescription(e.target.value)} className="min-h-[120px]" placeholder="Sitenin çalışması için zorunlu çerezler kullanıyoruz..." />
             </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Veri sorumlusu adı</Label>
+                <Input value={controllerName} onChange={(e) => onChangeControllerName(e.target.value)} placeholder="Şirket Ünvanı" />
+              </div>
+              <div className="space-y-2">
+                <Label>İletişim e-postası</Label>
+                <Input translate="no" value={controllerEmail} onChange={(e) => onChangeControllerEmail(e.target.value)} placeholder="privacy@firma.com" />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Adres</Label>
+                <Textarea value={controllerAddress} onChange={(e) => onChangeControllerAddress(e.target.value)} className="min-h-[90px]" placeholder="Adres" />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefon</Label>
+                <Input translate="no" value={controllerPhone} onChange={(e) => onChangeControllerPhone(e.target.value)} placeholder="+90 ..." />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>DPO/İrtibat (opsiyonel)</Label>
+                <Input translate="no" value={dpoEmail} onChange={(e) => onChangeDpoEmail(e.target.value)} placeholder="dpo@firma.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>DSAR başvuru bilgisi</Label>
+                <Textarea value={dsarText} onChange={(e) => onChangeDsarText(e.target.value)} className="min-h-[90px]" placeholder="Başvurular için e-posta/posta adresi ve süreç" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>İşleme amaçları</Label>
+              <Textarea value={purposesText} onChange={(e) => onChangePurposesText(e.target.value)} className="min-h-[140px]" placeholder="Amaçlar" />
+            </div>
+            <div className="space-y-2">
+              <Label>Hukuki sebepler / dayanaklar</Label>
+              <Textarea value={legalBasesText} onChange={(e) => onChangeLegalBasesText(e.target.value)} className="min-h-[140px]" placeholder="KVKK/GDPR hukuki dayanaklar" />
+            </div>
+            <div className="space-y-2">
+              <Label>Alıcı grupları / üçüncü taraflar</Label>
+              <Textarea value={recipientsText} onChange={(e) => onChangeRecipientsText(e.target.value)} className="min-h-[120px]" placeholder="Alıcı grupları" />
+            </div>
+            <div className="space-y-2">
+              <Label>Yurt dışına aktarım</Label>
+              <Textarea value={transfersText} onChange={(e) => onChangeTransfersText(e.target.value)} className="min-h-[120px]" placeholder="Aktarım ülkeleri ve dayanak" />
+            </div>
+            <div className="space-y-2">
+              <Label>Saklama süresi</Label>
+              <Textarea value={retentionText} onChange={(e) => onChangeRetentionText(e.target.value)} className="min-h-[90px]" placeholder="Saklama süreleri ve kriter" />
+            </div>
+            <div className="space-y-2">
+              <Label>Kullanıcı hakları</Label>
+              <Textarea value={rightsText} onChange={(e) => onChangeRightsText(e.target.value)} className="min-h-[140px]" placeholder="KVKK/GDPR hakları" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vendor listesi (JSON)</Label>
+              <Textarea translate="no" value={vendorsJson} onChange={(e) => onChangeVendorsJson(e.target.value)} className="min-h-[180px]" placeholder='[{"name":"Google Analytics","domain":"google-analytics.com","category":"analytics","purpose":"Analytics","privacyUrl":"https://..."}]' />
+            </div>
+
             <div className="flex justify-end">
               <Button onClick={onSaveDraft} disabled={saving || !selectedDraftId} className="gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

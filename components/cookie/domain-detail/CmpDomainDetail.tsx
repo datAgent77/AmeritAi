@@ -122,6 +122,19 @@ export function CmpDomainDetail({ domainId }: { domainId: string }) {
             draftDescription={state.policyDraftDescription}
             draftUrl={state.policyDraftUrl}
             draftLang={state.policyDraftLang}
+            controllerName={state.policyControllerName}
+            controllerEmail={state.policyControllerEmail}
+            controllerAddress={state.policyControllerAddress}
+            controllerPhone={state.policyControllerPhone}
+            dpoEmail={state.policyDpoEmail}
+            purposesText={state.policyPurposesText}
+            legalBasesText={state.policyLegalBasesText}
+            recipientsText={state.policyRecipientsText}
+            transfersText={state.policyTransfersText}
+            retentionText={state.policyRetentionText}
+            rightsText={state.policyRightsText}
+            dsarText={state.policyDsarText}
+            vendorsJson={state.policyVendorsJson}
             onCreateDraft={() => {
               setActiveTab("texts")
               state.createDraft()
@@ -131,6 +144,19 @@ export function CmpDomainDetail({ domainId }: { domainId: string }) {
             onChangeDescription={state.setPolicyDraftDescription}
             onChangeUrl={state.setPolicyDraftUrl}
             onChangeLang={state.setPolicyDraftLang}
+            onChangeControllerName={state.setPolicyControllerName}
+            onChangeControllerEmail={state.setPolicyControllerEmail}
+            onChangeControllerAddress={state.setPolicyControllerAddress}
+            onChangeControllerPhone={state.setPolicyControllerPhone}
+            onChangeDpoEmail={state.setPolicyDpoEmail}
+            onChangePurposesText={state.setPolicyPurposesText}
+            onChangeLegalBasesText={state.setPolicyLegalBasesText}
+            onChangeRecipientsText={state.setPolicyRecipientsText}
+            onChangeTransfersText={state.setPolicyTransfersText}
+            onChangeRetentionText={state.setPolicyRetentionText}
+            onChangeRightsText={state.setPolicyRightsText}
+            onChangeDsarText={state.setPolicyDsarText}
+            onChangeVendorsJson={state.setPolicyVendorsJson}
             onSaveDraft={state.saveDraft}
             onPublish={state.publish}
           />

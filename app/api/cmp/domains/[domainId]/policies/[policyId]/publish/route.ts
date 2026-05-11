@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { authorizeCmpAccess } from "@/lib/cmp/server-auth"
 import { nowIso } from "@/lib/cmp/utils"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
+import { validatePolicyForPublish } from "@/lib/cmp/policy-content"
 
 export const dynamic = "force-dynamic"
 
@@ -29,6 +30,11 @@ export async function POST(req: Request, context: { params: Promise<{ domainId: 
 
     const policy = await loadPolicy(authz.adminDb, policyId)
     if (!policy || policy.domainId !== domainId) return NextResponse.json({ error: "Not Found" }, { status: 404 })
+
+    const validation = validatePolicyForPublish(policy?.content)
+    if (!validation.ok) {
+      return NextResponse.json({ error: "Policy incomplete", missing: validation.missing }, { status: 400 })
+    }
 
     const now = nowIso()
     await authz.adminDb.collection("cmp_policy_versions").doc(policyId).set(

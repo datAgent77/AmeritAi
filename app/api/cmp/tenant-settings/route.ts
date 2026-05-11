@@ -14,6 +14,18 @@ function cleanEmail(value: unknown) {
   return EMAIL_PATTERN.test(trimmed) ? trimmed : null
 }
 
+function cleanInt(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  const floored = Math.floor(parsed)
+  return Math.max(min, Math.min(max, floored))
+}
+
+function cleanDeliveryMethod(value: unknown) {
+  if (value === "attachment" || value === "link") return value
+  return null
+}
+
 export async function GET(req: Request) {
   const authz = await authorizeCmpAccess(req)
   if (!authz.ok) return authz.response
@@ -30,6 +42,10 @@ export async function GET(req: Request) {
       tenantId: effectiveTenantId,
       settings: {
         backupEmail: typeof data?.backupEmail === "string" ? data.backupEmail : null,
+        backupDeliveryMethod: typeof data?.backupDeliveryMethod === "string" ? data.backupDeliveryMethod : "attachment",
+        backupLinkTtlHours: typeof data?.backupLinkTtlHours === "number" ? data.backupLinkTtlHours : 72,
+        retentionDaysConsents: typeof data?.retentionDaysConsents === "number" ? data.retentionDaysConsents : 365,
+        retentionDaysBackups: typeof data?.retentionDaysBackups === "number" ? data.retentionDaysBackups : 365,
       },
     })
   } catch (error) {
@@ -52,6 +68,10 @@ export async function PUT(req: Request) {
 
     const body = await req.json().catch(() => ({}))
     const backupEmail = body?.backupEmail === "" ? null : cleanEmail(body?.backupEmail)
+    const backupDeliveryMethod = cleanDeliveryMethod(body?.backupDeliveryMethod) || "attachment"
+    const backupLinkTtlHours = cleanInt(body?.backupLinkTtlHours, 72, 1, 168)
+    const retentionDaysConsents = cleanInt(body?.retentionDaysConsents, 365, 7, 3650)
+    const retentionDaysBackups = cleanInt(body?.retentionDaysBackups, 365, 7, 3650)
 
     if (body?.backupEmail != null && body?.backupEmail !== "" && !backupEmail) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 })
@@ -62,12 +82,26 @@ export async function PUT(req: Request) {
       {
         tenantId: effectiveTenantId,
         backupEmail,
+        backupDeliveryMethod,
+        backupLinkTtlHours,
+        retentionDaysConsents,
+        retentionDaysBackups,
         updatedAt: now,
       },
       { merge: true }
     )
 
-    return NextResponse.json({ ok: true, tenantId: effectiveTenantId, settings: { backupEmail } })
+    return NextResponse.json({
+      ok: true,
+      tenantId: effectiveTenantId,
+      settings: {
+        backupEmail,
+        backupDeliveryMethod,
+        backupLinkTtlHours,
+        retentionDaysConsents,
+        retentionDaysBackups,
+      },
+    })
   } catch (error) {
     if (shouldUseFirebaseOfflineFallback(error)) {
       return NextResponse.json({ error: "Offline" }, { status: 503 })
@@ -76,4 +110,3 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

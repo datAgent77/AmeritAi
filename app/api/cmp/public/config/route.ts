@@ -2,8 +2,36 @@ import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { cleanHostname, cleanString } from "@/lib/cmp/utils"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
+import crypto from "crypto"
 
 export const dynamic = "force-dynamic"
+
+function base64UrlEncode(input: string) {
+  return Buffer.from(input, "utf8")
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "")
+}
+
+function sign(payload: string, secret: string) {
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")
+}
+
+function buildWriteToken(input: { hostname: string; policyVersionId: string | null }) {
+  const secret = process.env.CMP_PUBLIC_WRITE_SECRET
+  if (!secret || !input.policyVersionId) return null
+
+  const exp = Date.now() + 10 * 60 * 1000
+  const payloadObj = {
+    hostname: input.hostname,
+    policyVersionId: input.policyVersionId,
+    exp,
+  }
+  const payload = base64UrlEncode(JSON.stringify(payloadObj))
+  const sig = sign(payload, secret)
+  return `${payload}.${sig}`
+}
 
 export async function GET(req: Request) {
   try {
@@ -86,6 +114,7 @@ export async function GET(req: Request) {
         preferenceSettings: config?.preferenceSettings || null,
         publishedPolicyVersionId: config?.publishedPolicyVersionId || null,
       },
+      writeToken: buildWriteToken({ hostname, policyVersionId: config?.publishedPolicyVersionId || null }),
       policy: policy
         ? {
             id: policy.id,

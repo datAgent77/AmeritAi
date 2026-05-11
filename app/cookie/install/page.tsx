@@ -25,6 +25,9 @@ export default function CookieInstallPage() {
   const origin = useMemo(() => (typeof window === "undefined" ? "" : window.location.origin), [])
   const snippet = `<script defer src="${origin}/cmp/runtime.js"></script>`
 
+  const gatedAnalyticsExample = `<script type="text/plain" data-cmp-category="analytics" data-cmp-src="https://www.googletagmanager.com/gtag/js?id=G-XXXX"></script>`
+  const gatedInlineExample = `<script type="text/plain" data-cmp-category="marketing">\n  // marketing pixel code here\n</script>`
+
   const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value)
@@ -82,6 +85,25 @@ export default function CookieInstallPage() {
               <Copy className="h-4 w-4" />
               Kopyala
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Tag gating (önerilen)</CardTitle>
+          <CardDescription>
+            Analitik/Pazarlama/İşlevsel script’leri rıza gelene kadar çalıştırmamak için <code>type=&quot;text/plain&quot;</code> kullan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="rounded-lg border bg-muted/20 p-4">
+            <div className="mb-2 text-sm font-medium">Analytics (harici script)</div>
+            <pre translate="no" className="whitespace-pre-wrap text-xs text-muted-foreground">{gatedAnalyticsExample}</pre>
+          </div>
+          <div className="rounded-lg border bg-muted/20 p-4">
+            <div className="mb-2 text-sm font-medium">Marketing (inline script)</div>
+            <pre translate="no" className="whitespace-pre-wrap text-xs text-muted-foreground">{gatedInlineExample}</pre>
           </div>
         </CardContent>
       </Card>

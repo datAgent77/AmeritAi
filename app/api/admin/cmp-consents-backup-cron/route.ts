@@ -67,6 +67,31 @@ async function resolveTenantBackupEmail(adminDb: FirebaseFirestore.Firestore, te
   return preferred || (await resolveTenantEmail(adminDb, tenantId))
 }
 
+async function resolveTenantBackupPreferences(adminDb: FirebaseFirestore.Firestore, tenantId: string) {
+  const settingsSnap = await adminDb.collection("cmp_tenant_settings").doc(tenantId).get()
+  const settings = settingsSnap.exists ? (settingsSnap.data() as any) : null
+
+  const preferred = safeEmailCandidate(settings?.backupEmail)
+  const fallback = await resolveTenantEmail(adminDb, tenantId)
+  const email = preferred || fallback
+
+  const deliveryMethod = settings?.backupDeliveryMethod === "link" ? "link" : "attachment"
+  const ttl = typeof settings?.backupLinkTtlHours === "number" && Number.isFinite(settings.backupLinkTtlHours) ? settings.backupLinkTtlHours : 72
+  const ttlHours = Math.max(1, Math.min(168, Math.floor(ttl)))
+
+  return { email, deliveryMethod: deliveryMethod as "attachment" | "link", ttlHours }
+}
+
+async function createSignedDownloadUrl(objectPath: string, ttlHours: number) {
+  const storage = getAdminStorage()
+  if (!storage) return null
+  const bucket = storage.bucket()
+  const file = bucket.file(objectPath)
+  const expires = Date.now() + ttlHours * 60 * 60 * 1000
+  const [url] = await file.getSignedUrl({ action: "read", expires })
+  return url || null
+}
+
 async function listCmpTenants(adminDb: FirebaseFirestore.Firestore) {
   const snapshot = await adminDb.collection("cmp_domains").limit(2000).get()
   const tenantIds = new Set<string>()
@@ -166,7 +191,8 @@ export async function GET(request: Request) {
         continue
       }
 
-      const email = await resolveTenantBackupEmail(adminDb, tenantId)
+      const backupPrefs = await resolveTenantBackupPreferences(adminDb, tenantId)
+      const email = backupPrefs.email
       if (!email) {
         skipped++
         const attemptAt = new Date().toISOString()
@@ -230,13 +256,17 @@ export async function GET(request: Request) {
         if (storageResult.ok) stored++
 
         const filename = `cmp_consents_${fromDate}_${toDate}.csv`
+        const downloadUrl = storageResult.ok && backupPrefs.deliveryMethod === "link" ? await createSignedDownloadUrl(storageResult.objectPath, backupPrefs.ttlHours) : null
+        const effectiveDelivery = backupPrefs.deliveryMethod === "link" && !downloadUrl ? "attachment" : backupPrefs.deliveryMethod
         const ok = await sendCmpConsentsBackupEmail({
           recipientEmail: email,
           tenantId,
           fromDate,
           toDate,
+          deliveryMethod: effectiveDelivery,
           attachmentFilename: filename,
-          attachmentCsv: csv,
+          attachmentCsv: effectiveDelivery === "attachment" ? csv : undefined,
+          downloadUrl: effectiveDelivery === "link" ? downloadUrl || undefined : undefined,
         })
 
         const attemptAt = new Date().toISOString()
@@ -252,6 +282,8 @@ export async function GET(request: Request) {
           recipientEmail: email,
           storedObjectPath: storageResult.ok ? storageResult.objectPath : null,
           attachmentFilename: filename,
+          deliveryMethod: effectiveDelivery,
+          downloadUrlTtlHours: effectiveDelivery === "link" ? backupPrefs.ttlHours : null,
         })
 
         await adminDb.collection("cmp_consent_backup_runs").doc(tenantId).set(
@@ -266,6 +298,7 @@ export async function GET(request: Request) {
             consentCount: events.length,
             recipientEmail: email,
             attachmentFilename: filename,
+            deliveryMethod: effectiveDelivery,
           },
           { merge: true }
         )

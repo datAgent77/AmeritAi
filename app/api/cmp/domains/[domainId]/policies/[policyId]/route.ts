@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { authorizeCmpAccess } from "@/lib/cmp/server-auth"
 import { cleanString, nowIso, sha256Hex, stableStringify } from "@/lib/cmp/utils"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
+import { buildCmpPolicyContent } from "@/lib/cmp/policy-content"
 
 export const dynamic = "force-dynamic"
 
@@ -59,18 +60,13 @@ export async function PUT(req: Request, context: { params: Promise<{ domainId: s
     }
 
     const body = await req.json().catch(() => ({}))
-    const title = cleanString(body?.title, 120) || cleanString(policy?.content?.title, 120) || "Çerez Aydınlatma Metni"
-    const policyUrl = cleanString(body?.policyUrl, 500)
-    const content = {
-      title,
-      bannerDescription: cleanString(body?.bannerDescription, 800),
-      policyUrl: policyUrl || null,
-      categories: body?.categories || null,
-    }
+    const language = cleanString(body?.language, 8) || cleanString(policy?.language, 8) || "tr"
+    const content = buildCmpPolicyContent({ body, fallback: policy?.content || null })
 
     const update = {
       content,
       contentHash: sha256Hex(stableStringify(content)),
+      language,
       updatedAt: nowIso(),
     }
 

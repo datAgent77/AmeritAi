@@ -199,8 +199,10 @@ export async function sendCmpConsentsBackupEmail(input: {
     tenantId: string
     fromDate: string
     toDate: string
-    attachmentFilename: string
-    attachmentCsv: string
+    deliveryMethod?: "attachment" | "link"
+    attachmentFilename?: string
+    attachmentCsv?: string
+    downloadUrl?: string
 }): Promise<boolean> {
     const transporter = createTransporter()
 
@@ -209,9 +211,27 @@ export async function sendCmpConsentsBackupEmail(input: {
         fallbackName: "Vion Cookie",
     })
 
-    const subject = `CMP Rıza Kayıtları (CSV) — ${input.fromDate} → ${input.toDate}`
-    const text = `Merhaba,\n\nCMP rıza kayıtları yedeğiniz ektedir.\n\nTenant: ${input.tenantId}\nAralık: ${input.fromDate} - ${input.toDate}\n\nVion Cookie`
-    const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;"><tr><td style="padding:22px 22px;background:#0f172a;color:#ffffff;"><div style="font-size:14px;opacity:0.9;">Vion Cookie</div><div style="margin-top:6px;font-size:18px;font-weight:700;">CMP Rıza Kayıtları Yedeği</div></td></tr><tr><td style="padding:22px;"><p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#374151;">CMP rıza kayıtları yedeğiniz ektedir.</p><table cellpadding="0" cellspacing="0" style="font-size:13px;color:#111827;"><tr><td style="padding:4px 0;opacity:0.7;">Tenant</td><td style="padding:4px 0 4px 12px;" translate="no">${input.tenantId}</td></tr><tr><td style="padding:4px 0;opacity:0.7;">Aralık</td><td style="padding:4px 0 4px 12px;" translate="no">${input.fromDate} - ${input.toDate}</td></tr></table><p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Bu e-posta otomatik olarak oluşturulmuştur.</p></td></tr></table></td></tr></table></body></html>`
+    const subject = `CMP Rıza Kayıtları — ${input.fromDate} → ${input.toDate}`
+    const deliveryMethod = input.deliveryMethod || (input.downloadUrl ? "link" : "attachment")
+    const hasAttachment = Boolean(input.attachmentCsv && input.attachmentFilename)
+    const hasLink = Boolean(input.downloadUrl)
+
+    const mainLine =
+        deliveryMethod === "link" && hasLink
+            ? `CMP rıza kayıtları yedeğiniz hazır. İndirme bağlantısı: ${input.downloadUrl}`
+            : `CMP rıza kayıtları yedeğiniz ektedir.`
+
+    const text = `Merhaba,\n\n${mainLine}\n\nTenant: ${input.tenantId}\nAralık: ${input.fromDate} - ${input.toDate}\n\nVion Cookie`
+
+    const linkBlock = hasLink
+        ? `<div style="margin-top:16px;"><a href="${input.downloadUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;">CSV İndir</a></div><div style="margin-top:10px;font-size:12px;color:#6b7280;word-break:break-all;">${input.downloadUrl}</div>`
+        : ``
+
+    const attachmentNote = hasAttachment && deliveryMethod === "attachment"
+        ? `<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">CSV dosyası ektedir.</p>`
+        : ``
+
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;"><tr><td style="padding:22px 22px;background:#0f172a;color:#ffffff;"><div style="font-size:14px;opacity:0.9;">Vion Cookie</div><div style="margin-top:6px;font-size:18px;font-weight:700;">CMP Rıza Kayıtları Yedeği</div></td></tr><tr><td style="padding:22px;"><p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#374151;">${deliveryMethod === "link" && hasLink ? "Yedek dosyayı aşağıdaki bağlantıdan indirebilirsiniz." : "CMP rıza kayıtları yedeğiniz hazırlanmıştır."}</p><table cellpadding="0" cellspacing="0" style="font-size:13px;color:#111827;"><tr><td style="padding:4px 0;opacity:0.7;">Tenant</td><td style="padding:4px 0 4px 12px;" translate="no">${input.tenantId}</td></tr><tr><td style="padding:4px 0;opacity:0.7;">Aralık</td><td style="padding:4px 0 4px 12px;" translate="no">${input.fromDate} - ${input.toDate}</td></tr></table>${linkBlock}${attachmentNote}<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Bu e-posta otomatik olarak oluşturulmuştur.</p></td></tr></table></td></tr></table></body></html>`
 
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -219,13 +239,16 @@ export async function sendCmpConsentsBackupEmail(input: {
         subject,
         text,
         html,
-        attachments: [
-            {
-                filename: input.attachmentFilename,
-                content: input.attachmentCsv,
-                contentType: "text/csv; charset=utf-8",
-            },
-        ],
+        attachments:
+            deliveryMethod === "attachment" && hasAttachment
+                ? [
+                      {
+                          filename: input.attachmentFilename as string,
+                          content: input.attachmentCsv as string,
+                          contentType: "text/csv; charset=utf-8",
+                      },
+                  ]
+                : [],
     })
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { authorizeCmpAccess } from "@/lib/cmp/server-auth"
 import { cleanString, nowIso, newId, sha256Hex, stableStringify } from "@/lib/cmp/utils"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
+import { buildCmpPolicyContent } from "@/lib/cmp/policy-content"
 
 export const dynamic = "force-dynamic"
 
@@ -56,14 +57,7 @@ export async function POST(req: Request, context: { params: Promise<{ domainId: 
 
     const body = await req.json().catch(() => ({}))
     const language = cleanString(body?.language, 8) || "tr"
-    const title = cleanString(body?.title, 120) || "Çerez Aydınlatma Metni"
-    const policyUrl = cleanString(body?.policyUrl, 500)
-    const content = {
-      title,
-      bannerDescription: cleanString(body?.bannerDescription, 800),
-      policyUrl: policyUrl || null,
-      categories: body?.categories || null,
-    }
+    const content = buildCmpPolicyContent({ body })
 
     const id = newId("pol")
     const now = nowIso()

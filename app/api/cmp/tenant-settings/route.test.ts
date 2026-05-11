@@ -30,7 +30,15 @@ function createDoc(data: any) {
 }
 
 function createAdminDb(initialBackupEmail: string | null) {
-  const settingsData: any = initialBackupEmail ? { backupEmail: initialBackupEmail } : null
+  const settingsData: any = initialBackupEmail
+    ? {
+        backupEmail: initialBackupEmail,
+        backupDeliveryMethod: "link",
+        backupLinkTtlHours: 12,
+        retentionDaysConsents: 30,
+        retentionDaysBackups: 60,
+      }
+    : null
   const setMock = vi.fn().mockResolvedValue(undefined)
 
   return {
@@ -82,6 +90,10 @@ describe("/api/cmp/tenant-settings", () => {
     expect(res.status).toBe(200)
     const json = await res.json()
     expect(json.settings.backupEmail).toBe("ops@example.com")
+    expect(json.settings.backupDeliveryMethod).toBe("link")
+    expect(json.settings.backupLinkTtlHours).toBe(12)
+    expect(json.settings.retentionDaysConsents).toBe(30)
+    expect(json.settings.retentionDaysBackups).toBe(60)
   })
 
   test("PUT validates email and persists", async () => {
@@ -95,11 +107,16 @@ describe("/api/cmp/tenant-settings", () => {
     const req = new Request("http://localhost/api/cmp/tenant-settings", {
       method: "PUT",
       headers: { Authorization: "Bearer test", "Content-Type": "application/json" },
-      body: JSON.stringify({ backupEmail: "ops@example.com" }),
+      body: JSON.stringify({
+        backupEmail: "ops@example.com",
+        backupDeliveryMethod: "link",
+        backupLinkTtlHours: 48,
+        retentionDaysConsents: 90,
+        retentionDaysBackups: 180,
+      }),
     })
     const res = await PUT(req)
     expect(res.status).toBe(200)
     expect((db as any).__setMock).toHaveBeenCalled()
   })
 })
-
