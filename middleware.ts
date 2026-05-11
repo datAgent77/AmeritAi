@@ -39,7 +39,7 @@ export function middleware(request: NextRequest) {
     const isEmbeddableWidgetPath = pathname.startsWith('/chatbot-view');
 
     if (pathname === '/@vite/client') {
-        return new NextResponse('', {
+        return new NextResponse(null, {
             status: 204,
             headers: {
                 'Content-Type': 'application/javascript; charset=utf-8',

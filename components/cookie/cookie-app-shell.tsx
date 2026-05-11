@@ -2,10 +2,12 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Cookie, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { ProductLauncher } from "@/components/product-launcher"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/AuthContext"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { CookieSidebar } from "@/components/cookie/cookie-sidebar"
 
 function getFallbackHref(entitlements: { chatbot?: boolean; omniChannel?: boolean }) {
     if (entitlements.chatbot) return "/console/chatbot"
@@ -38,25 +40,27 @@ export function CookieAppShell({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-[#f4f6f8] text-foreground">
-            <header className="sticky top-0 z-40 flex h-16 items-center border-b bg-background px-6 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-muted">
-                        <Cookie className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-semibold leading-none">Cookie</div>
-                        <div className="mt-1 text-xs text-muted-foreground">Consent Management</div>
-                    </div>
+        <SidebarProvider>
+            <div className="flex min-h-screen w-full bg-[#f4f6f8] text-foreground">
+                <CookieSidebar />
+
+                <div className="flex flex-col flex-1 min-w-0">
+                    <header className="sticky top-0 z-40 flex h-16 items-center border-b bg-background px-4 shadow-sm">
+                        <SidebarTrigger />
+                        <div className="ml-2 text-sm font-semibold">Cookie</div>
+                        <div className="ml-auto flex items-center gap-2">
+                            <ProductLauncher />
+                            <Button asChild variant="outline" size="sm">
+                                <a href="/console/settings/account">Hesap</a>
+                            </Button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1">
+                        <div className="mx-auto w-full max-w-7xl px-6 py-6 lg:px-8 lg:py-8">{children}</div>
+                    </main>
                 </div>
-                <div className="ml-auto flex items-center gap-2">
-                    <ProductLauncher />
-                    <Button asChild variant="outline" size="sm">
-                        <a href="/console/settings/account">Hesap</a>
-                    </Button>
-                </div>
-            </header>
-            {children}
-        </div>
+            </div>
+        </SidebarProvider>
     )
 }

@@ -19,6 +19,10 @@
         {
             "path": "/api/admin/product-alerts-cron",
             "schedule": "0 9 * * *"
+        },
+        {
+            "path": "/api/admin/cmp-consents-backup-cron",
+            "schedule": "10 2 * * *"
         }
     ]
 }
