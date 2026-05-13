@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, type CSSProperties } from "react"
+import { useState } from "react"
 import { X, Gift, Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { getGamificationTheme } from "./gamification-theme"
 
 interface Prize {
     name: string
@@ -37,7 +36,6 @@ export function MysteryBoxOverlay({
     description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
     buttonText = "Devam Et"
 }: Props) {
-    const brandTheme = getGamificationTheme(themeColor)
     const [contactEmail, setContactEmail] = useState("")
     const [contactName, setContactName] = useState("")
     const [contactPhone, setContactPhone] = useState("")
@@ -98,12 +96,12 @@ export function MysteryBoxOverlay({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }} className="px-5 py-4 flex items-center justify-between">
+                <div style={{ backgroundColor: themeColor }} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Gift className="w-5 h-5" />
-                        <h2 className="font-bold text-base">Gizemli Kutuyu Seç!</h2>
+                        <Gift className="w-5 h-5 text-white" />
+                        <h2 className="text-white font-bold text-base">Gizemli Kutuyu Seç!</h2>
                     </div>
-                    <button onClick={onClose} className="opacity-80 hover:opacity-100 transition-opacity">
+                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -125,22 +123,15 @@ export function MysteryBoxOverlay({
                                         onClick={() => handleBoxClick(i)}
                                         disabled={openedBox !== null}
                                         className={`relative group w-24 h-24 rounded-xl border-4 transition-all duration-500 flex items-center justify-center
-                                            ${openedBox === i ? 'scale-110 border-transparent' : 'border-zinc-200 hover:scale-105 hover:border-[var(--game-primary)]'}
+                                            ${openedBox === i ? 'scale-110 border-transparent' : 'border-zinc-200 hover:scale-105 hover:border-violet-400'}
                                             ${openedBox !== null && openedBox !== i ? 'opacity-50 scale-95' : ''}
                                         `}
-                                        style={{
-                                            "--game-primary": brandTheme.primary,
-                                            backgroundColor: openedBox === i ? brandTheme.primary : undefined,
-                                            boxShadow: openedBox === i ? `0 16px 32px ${brandTheme.subtleShadow}` : undefined,
-                                        } as CSSProperties}
+                                        style={openedBox === i ? { backgroundColor: themeColor } : {}}
                                     >
                                         {openedBox === i && submitting ? (
                                             <Loader2 className="w-8 h-8 text-white animate-spin" />
                                         ) : (
-                                            <Gift
-                                                className={`w-10 h-10 ${openedBox === i ? '' : 'text-zinc-400 group-hover:text-[var(--game-primary)]'}`}
-                                                style={openedBox === i ? { color: brandTheme.textOnPrimary } : undefined}
-                                            />
+                                            <Gift className={`w-10 h-10 ${openedBox === i ? 'text-white' : 'text-zinc-400 group-hover:text-violet-500'}`} />
                                         )}
                                     </button>
                                 ))}
@@ -151,7 +142,7 @@ export function MysteryBoxOverlay({
                     {phase === "result" && wonPrize && (
                         <div className="text-center space-y-4 py-2 animate-in zoom-in duration-300">
                             <div className="space-y-1">
-                                <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: brandTheme.primary }} />
+                                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
                                 <h3 className="text-xl font-bold text-zinc-900">Tebrikler!</h3>
                                 <p className="text-zinc-600">
                                     <span className="font-bold text-zinc-900">{wonPrize}</span> kazandınız!
@@ -197,7 +188,7 @@ export function MysteryBoxOverlay({
                                 <Button 
                                     onClick={handleClaim}
                                     disabled={submitting || !contactName || !contactEmail || !contactPhone || !kvkkAccepted}
-                                    style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }}
+                                    style={{ backgroundColor: themeColor }}
                                     className="w-full h-9 text-sm hover:brightness-110 mt-2"
                                 >
                                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -209,8 +200,8 @@ export function MysteryBoxOverlay({
 
                     {phase === "final" && (
                         <div className="text-center space-y-5 py-4 animate-in fade-in zoom-in duration-500">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: brandTheme.primarySoft }}>
-                                <Gift className="w-8 h-8" style={{ color: brandTheme.primaryText }} />
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                                <Gift className="w-8 h-8 text-emerald-600" />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold text-zinc-900">Ödülünüz Hazır!</h3>
@@ -218,8 +209,8 @@ export function MysteryBoxOverlay({
                             </div>
                             
                             {couponCode ? (
-                                <div className="border-2 border-dashed p-4 rounded-xl" style={{ backgroundColor: brandTheme.primarySoft, borderColor: brandTheme.primaryBorder }}>
-                                    <span className="text-2xl font-mono font-bold tracking-wider" style={{ color: brandTheme.primaryText }}>
+                                <div className="bg-emerald-50 border-2 border-dashed border-emerald-200 p-4 rounded-xl">
+                                    <span className="text-2xl font-mono font-bold text-emerald-700 tracking-wider">
                                         {couponCode}
                                     </span>
                                 </div>
@@ -231,8 +222,7 @@ export function MysteryBoxOverlay({
 
                             <Button 
                                 onClick={onClose}
-                                className="w-full hover:brightness-110"
-                                style={{ backgroundColor: brandTheme.neutralAction, color: brandTheme.textOnNeutralAction }}
+                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
                             >
                                 Kapat
                             </Button>
