@@ -140,7 +140,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
         }
     }
 
-    const updatePrize = (index: number, field: keyof Prize, value: string | number) => {
+    const updatePrize = (index: number, field: keyof Prize, value: string | number | undefined) => {
         setConfig(prev => ({
             ...prev,
             prizes: prev.prizes.map((p, i) => i === index ? { ...p, [field]: value } : p)
@@ -436,7 +436,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-medium">Kaydırma (On Scroll)</div>
-                                        <div className="text-xs text-muted-foreground mt-1">Ziyaretçi sayfanın %X'ini kaydırdığında gösterir.</div>
+                                        <div className="text-xs text-muted-foreground mt-1">Ziyaretçi sayfanın %X&apos;ini kaydırdığında gösterir.</div>
                                         {config.triggers.onScroll && (
                                             <div className="mt-2 flex items-center gap-2">
                                                 <Label className="text-xs">Kaydırma (%):</Label>
