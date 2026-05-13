@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { isWinningPrize } from "@/lib/gamification/spin-engine"
 
 export const runtime = "nodejs"
 
@@ -28,16 +29,26 @@ export async function POST(req: Request) {
             .limit(1)
             .get()
 
-        if (!spinSnap.empty) {
-            const docId = spinSnap.docs[0].id
-            await adminDb.collection("gamification_spins").doc(docId).update({
-                contactName: name,
-                contactEmail: email,
-                contactPhone: phone,
-                kvkkAccepted: kvkk,
-                updatedAt: new Date().toISOString()
-            })
+        if (spinSnap.empty) {
+            return NextResponse.json({ error: "Spin record not found" }, { status: 404 })
         }
+
+        const spinData = spinSnap.docs[0].data()
+        const isWinner = typeof spinData.isWinner === "boolean"
+            ? spinData.isWinner
+            : isWinningPrize({ name: spinData.prizeWon || "" })
+        if (!isWinner) {
+            return NextResponse.json({ error: "Prize is not claimable" }, { status: 400 })
+        }
+
+        const spinDocId = spinSnap.docs[0].id
+        await adminDb.collection("gamification_spins").doc(spinDocId).update({
+            contactName: name,
+            contactEmail: email,
+            contactPhone: phone,
+            kvkkAccepted: kvkk,
+            updatedAt: new Date().toISOString()
+        })
 
         // Also update the winner record in the sub-collection
         const winnerSnap = await adminDb
@@ -62,7 +73,7 @@ export async function POST(req: Request) {
                 })
         } else {
             // If winner record doesn't exist (maybe different sessionId logic), create one
-            // This ensures the lead is captured regardless
+            // only after verifying the spin result is claimable.
              await adminDb.collection("chatbots").doc(chatbotId)
                 .collection("gamification_winners")
                 .add({
@@ -70,6 +81,9 @@ export async function POST(req: Request) {
                     email,
                     phone,
                     kvkkAccepted: kvkk,
+                    prize: spinData.prizeWon || "-",
+                    couponCode: spinData.couponCode || null,
+                    isWinner: true,
                     playedAt: new Date(),
                     sessionId: sessionId || null,
                     leadSource: "gamification_claim"

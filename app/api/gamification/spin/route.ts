@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
-import { pickPrize } from "@/lib/gamification/spin-engine"
+import { isWinningPrize, pickPrize } from "@/lib/gamification/spin-engine"
 import { sendGamificationWinnerNotification } from "@/lib/email-service"
 
 export const runtime = "nodejs"
@@ -40,10 +40,14 @@ export async function POST(req: Request) {
 
             if (!existing.empty) {
                 const prev = existing.docs[0].data()
+                const isWinner = typeof prev.isWinner === "boolean"
+                    ? prev.isWinner
+                    : isWinningPrize({ name: prev.prizeWon || "" })
                 return NextResponse.json({
                     alreadySpun: true,
                     prize: prev.prizeWon,
                     couponCode: prev.couponCode,
+                    isWinner,
                 })
             }
         }
@@ -68,34 +72,38 @@ export async function POST(req: Request) {
             prizeWon: result.prize.name,
             prizeIndex: result.prizeIndex,
             couponCode: result.couponCode || null,
+            isWinner: result.isWinner,
             contactEmail: playerEmail,
             contactName: contactName || null,
             claimedAt: new Date().toISOString(),
         })
 
-        // Save to per-chatbot sub-collection for winners page
-        await adminDb.collection("chatbots").doc(chatbotId)
-            .collection("gamification_winners")
-            .add({
-                email: playerEmail || "anonymous",
-                prize: result.prize.name,
-                couponCode: result.couponCode || null,
-                playedAt: new Date(),
-                sessionId: sessionId || null,
-            })
+        if (result.isWinner) {
+            // Save to per-chatbot sub-collection for winners page
+            await adminDb.collection("chatbots").doc(chatbotId)
+                .collection("gamification_winners")
+                .add({
+                    email: playerEmail || "anonymous",
+                    prize: result.prize.name,
+                    couponCode: result.couponCode || null,
+                    playedAt: new Date(),
+                    sessionId: sessionId || null,
+                    isWinner: true,
+                })
 
-        // Send tenant notification email (non-blocking)
-        const tenantEmail = chatbotData?.email || chatbotData?.ownerEmail || null
-        const businessName = chatbotData?.businessName || chatbotData?.name || "Vion AI"
-        if (tenantEmail) {
-            sendGamificationWinnerNotification({
-                tenantEmail,
-                businessName,
-                playerEmail: playerEmail || "Anonim",
-                prize: result.prize.name,
-                couponCode: result.couponCode,
-                gameType: gamification.gameType || "wheel",
-            }).catch((err) => console.error("Gamification email notification failed:", err))
+            // Send tenant notification email (non-blocking)
+            const tenantEmail = chatbotData?.email || chatbotData?.ownerEmail || null
+            const businessName = chatbotData?.businessName || chatbotData?.name || "Vion AI"
+            if (tenantEmail) {
+                sendGamificationWinnerNotification({
+                    tenantEmail,
+                    businessName,
+                    playerEmail: playerEmail || "Anonim",
+                    prize: result.prize.name,
+                    couponCode: result.couponCode,
+                    gameType: gamification.gameType || "wheel",
+                }).catch((err) => console.error("Gamification email notification failed:", err))
+            }
         }
 
         return NextResponse.json({
@@ -103,6 +111,7 @@ export async function POST(req: Request) {
             prizeIndex: result.prizeIndex,
             prize: result.prize.name,
             couponCode: result.couponCode,
+            isWinner: result.isWinner,
         })
     } catch (error: any) {
         console.error("gamification/spin POST:", error)

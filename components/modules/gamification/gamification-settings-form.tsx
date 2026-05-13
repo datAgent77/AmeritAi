@@ -16,6 +16,7 @@ interface Prize {
     name: string
     probability: number
     quantityLimit?: number
+    isWinning?: boolean
 }
 
 interface GamificationConfig {
@@ -49,9 +50,9 @@ const defaultConfig: GamificationConfig = {
     description: "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
     buttonText: "Hemen Oyna",
     prizes: [
-        { name: "10% OFF", probability: 50 },
-        { name: "Free Coffee", probability: 30 },
-        { name: "Try Again", probability: 20 }
+        { name: "10% OFF", probability: 50, isWinning: true },
+        { name: "Free Coffee", probability: 30, isWinning: true },
+        { name: "Try Again", probability: 20, isWinning: false }
     ],
     triggers: {
         exitIntent: true,
@@ -140,7 +141,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
         }
     }
 
-    const updatePrize = (index: number, field: keyof Prize, value: string | number | undefined) => {
+    const updatePrize = (index: number, field: keyof Prize, value: string | number | boolean | undefined) => {
         setConfig(prev => ({
             ...prev,
             prizes: prev.prizes.map((p, i) => i === index ? { ...p, [field]: value } : p)
@@ -150,7 +151,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
     const addPrize = () => {
         setConfig(prev => ({
             ...prev,
-            prizes: [...prev.prizes, { name: "", probability: 0 }]
+            prizes: [...prev.prizes, { name: "", probability: 0, isWinning: true }]
         }))
     }
 
@@ -296,6 +297,14 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         </div>
                                         <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800" />
                                         <div className="flex items-center gap-2 px-2">
+                                            <Label className="text-xs text-muted-foreground">Kazanım</Label>
+                                            <Switch
+                                                checked={prize.isWinning !== false}
+                                                onCheckedChange={(checked) => updatePrize(index, 'isWinning', checked)}
+                                            />
+                                        </div>
+                                        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800" />
+                                        <div className="flex items-center gap-2 px-2">
                                             <Label className="text-xs text-muted-foreground w-12 text-right">Limit:</Label>
                                             <Input
                                                 className="w-20 h-8 text-center"
@@ -316,7 +325,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-xs text-muted-foreground">Toplam olasılığın 100% olmasına dikkat edin. Limit alanını boş bırakırsanız ödül sınırsız sayıda verilebilir.</p>
+                            <p className="text-xs text-muted-foreground">Toplam olasılığın 100% olmasına dikkat edin. “Kazanım” kapalı olan seçenekler (ör. Try Again / Yeniden dene) kazanan listesine ve bildirim e-postasına düşmez.</p>
                         </div>
                     </CardContent>
                 </Card>

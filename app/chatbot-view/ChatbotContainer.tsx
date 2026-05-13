@@ -1798,6 +1798,11 @@ function ChatbotContainerContent() {
                                 localStorage.setItem(`spun_${chatbotId}_time`, new Date().toISOString())
                                 setSpinWheelShownThisSession(true)
                             }}
+                            onComplete={() => {
+                                localStorage.setItem(`spun_${chatbotId}`, "1")
+                                localStorage.setItem(`spun_${chatbotId}_time`, new Date().toISOString())
+                                setSpinWheelShownThisSession(true)
+                            }}
                             title={gamificationConfig.title}
                             description={gamificationConfig.description}
                             buttonText={gamificationConfig.buttonText}

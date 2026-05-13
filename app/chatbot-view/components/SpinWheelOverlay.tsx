@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, Gift, Loader2, CheckCircle2 } from "lucide-react"
+import { X, Gift, Loader2, CheckCircle2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -19,6 +19,7 @@ interface Props {
     themeColor?: string
     onClose: () => void
     onPrize?: (prize: string, couponCode?: string) => void
+    onComplete?: () => void
     title?: string
     description?: string
     buttonText?: string
@@ -37,6 +38,7 @@ export function SpinWheelOverlay({
     themeColor = "#8b5cf6", 
     onClose, 
     onPrize,
+    onComplete,
     title = "Şansını Dene!",
     description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
     buttonText = "Hemen Oyna"
@@ -51,7 +53,7 @@ export function SpinWheelOverlay({
     const [contactName, setContactName] = useState("")
     const [contactPhone, setContactPhone] = useState("")
     const [kvkkAccepted, setKvkkAccepted] = useState(false)
-    const [phase, setPhase] = useState<"start" | "spin" | "result" | "claim" | "final">("start")
+    const [phase, setPhase] = useState<"start" | "spin" | "result" | "lost" | "claim" | "final">("start")
     const [submitting, setSubmitting] = useState(false)
     const animRef = useRef<number | null>(null)
 
@@ -125,7 +127,7 @@ export function SpinWheelOverlay({
 
             if (data.error) {
                 setWonPrize("Bir hata oluştu")
-                setPhase("result")
+                setPhase("lost")
                 return
             }
 
@@ -134,7 +136,8 @@ export function SpinWheelOverlay({
                 // we skip the animation to instantly show their historical prize.
                 setWonPrize(data.prize)
                 setCouponCode(data.couponCode || null)
-                setPhase("result")
+                setPhase(data.isWinner === false ? "lost" : "result")
+                onComplete?.()
                 return
             }
 
@@ -165,15 +168,18 @@ export function SpinWheelOverlay({
                     setLanded(true)
                     setWonPrize(data.prize)
                     setCouponCode(data.couponCode || null)
-                    setPhase("result")
-                    onPrize?.(data.prize, data.couponCode)
+                    setPhase(data.isWinner === false ? "lost" : "result")
+                    onComplete?.()
+                    if (data.isWinner !== false) {
+                        onPrize?.(data.prize, data.couponCode)
+                    }
                 }
             }
             animRef.current = requestAnimationFrame(animate)
         } catch {
             setSubmitting(false)
             setWonPrize("Bağlantı hatası")
-            setPhase("result")
+            setPhase("lost")
         }
     }
 
@@ -216,7 +222,7 @@ export function SpinWheelOverlay({
                 </div>
 
                 <div className="p-5 space-y-4">
-                    {phase !== "result" && phase !== "final" && (
+                    {phase !== "result" && phase !== "lost" && phase !== "final" && (
                         <div className="relative flex justify-center">
                             {/* Arrow pointer */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
@@ -311,6 +317,26 @@ export function SpinWheelOverlay({
                                     Ödülü Tanımla
                                 </Button>
                             </div>
+                        </div>
+                    )}
+
+                    {phase === "lost" && wonPrize && (
+                        <div className="text-center space-y-4 py-4 animate-in zoom-in duration-300">
+                            <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto">
+                                <RotateCcw className="w-7 h-7 text-zinc-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-bold text-zinc-900">Bu kez olmadı</h3>
+                                <p className="text-sm text-zinc-600">
+                                    Sonuç: <span className="font-semibold text-zinc-900">{wonPrize}</span>. Bir sonraki denemede şansınız açık olsun.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={onClose}
+                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                            >
+                                Kapat
+                            </Button>
                         </div>
                     )}
 

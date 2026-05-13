@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin"
+import { isWinningPrize } from "@/lib/gamification/spin-engine"
 
 export const runtime = "nodejs"
 
@@ -52,8 +53,11 @@ export async function GET(req: Request) {
                 couponCode: data.couponCode || null,
                 playedAt: data.playedAt?.toDate ? data.playedAt.toDate().toISOString() : data.playedAt,
                 sessionId: data.sessionId || null,
+                isWinner: typeof data.isWinner === "boolean"
+                    ? data.isWinner
+                    : isWinningPrize({ name: data.prize || "" }),
             }
-        })
+        }).filter(winner => winner.isWinner)
 
         return NextResponse.json({ winners, total: winners.length })
     } catch (error: any) {

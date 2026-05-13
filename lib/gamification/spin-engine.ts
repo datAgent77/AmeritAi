@@ -5,12 +5,44 @@ export interface Prize {
     discountType?: "percent" | "fixed"
     discountValue?: number
     color?: string       // hex for wheel segment
+    isWinning?: boolean
 }
 
 export interface SpinResult {
     prizeIndex: number
     prize: Prize
     couponCode?: string
+    isWinner: boolean
+}
+
+const NON_WINNING_PRIZE_PATTERNS = [
+    "try again",
+    "retry",
+    "no prize",
+    "no win",
+    "better luck",
+    "yeniden dene",
+    "tekrar dene",
+    "sansini dene",
+    "şansını dene",
+    "kazanamad",
+    "olmadi",
+    "olmadı",
+]
+
+function normalizePrizeName(value: string): string {
+    return value
+        .trim()
+        .toLocaleLowerCase("tr-TR")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+}
+
+export function isWinningPrize(prize: Pick<Prize, "name" | "isWinning">): boolean {
+    if (typeof prize.isWinning === "boolean") return prize.isWinning
+
+    const normalizedName = normalizePrizeName(prize.name || "")
+    return !NON_WINNING_PRIZE_PATTERNS.some(pattern => normalizedName.includes(normalizePrizeName(pattern)))
 }
 
 export function pickPrize(prizes: Prize[]): SpinResult {
@@ -29,13 +61,14 @@ export function pickPrize(prizes: Prize[]): SpinResult {
                 prizeIndex: i,
                 prize: prizes[i],
                 couponCode: prizes[i].couponCode,
+                isWinner: isWinningPrize(prizes[i]),
             }
         }
     }
 
     // Fallback to last
     const last = prizes[prizes.length - 1]
-    return { prizeIndex: prizes.length - 1, prize: last, couponCode: last.couponCode }
+    return { prizeIndex: prizes.length - 1, prize: last, couponCode: last.couponCode, isWinner: isWinningPrize(last) }
 }
 
 export function normalizeProbabilities(prizes: Prize[]): Prize[] {
