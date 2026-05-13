@@ -4341,6 +4341,21 @@
       }
     });
 
+    // Propagate parent events to iframe for gamification triggers
+    window.addEventListener('scroll', () => {
+      if (iframe && iframe.contentWindow) {
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const percentage = scrollHeight > 0 ? Math.round((window.scrollY / scrollHeight) * 100) : 0;
+        iframe.contentWindow.postMessage({ type: 'USEREX_PARENT_SCROLL', percentage }, '*');
+      }
+    }, { passive: true });
+
+    document.addEventListener('mouseleave', (e) => {
+      if (e.clientY <= 0 && iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'USEREX_PARENT_EXIT_INTENT' }, '*');
+      }
+    });
+
     // Listen for messages from iframe
     window.addEventListener('message', (event) => {
       if (event.data.type === 'USEREX_CLOSE_WIDGET') {
@@ -4352,6 +4367,9 @@
         } else if (!isSidecarMode) {
           toggleWidget(false);
         }
+      }
+      if (event.data.type === 'USEREX_OPEN_WIDGET') {
+        toggleWidget(true);
       }
       if (event.data.type === 'USEREX_AMBIENT_FEED_VISIBILITY' && applyAmbientContainerSize) {
         ambientFeedVisible = !!event.data.hasFeed;

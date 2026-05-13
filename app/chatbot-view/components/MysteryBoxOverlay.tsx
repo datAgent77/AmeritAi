@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { X, Gift, Loader2, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 interface Prize {
     name: string
     probability: number
-    color?: string
+    quantityLimit?: number
 }
 
 interface Props {
@@ -24,12 +24,7 @@ interface Props {
     buttonText?: string
 }
 
-const DEFAULT_COLORS = [
-    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
-    "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
-]
-
-export function SpinWheelOverlay({ 
+export function MysteryBoxOverlay({ 
     chatbotId, 
     sessionId, 
     prizes, 
@@ -37,143 +32,39 @@ export function SpinWheelOverlay({
     themeColor = "#8b5cf6", 
     onClose, 
     onPrize,
-    title = "Şansını Dene!",
+    title = "Gizemli Kutuyu Seç!",
     description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
-    buttonText = "Hemen Oyna"
+    buttonText = "Devam Et"
 }: Props) {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const [spinning, setSpinning] = useState(false)
-    const [landed, setLanded] = useState(false)
-    const [wonPrize, setWonPrize] = useState<string | null>(null)
-    const [couponCode, setCouponCode] = useState<string | null>(null)
-    const [rotation, setRotation] = useState(0)
     const [contactEmail, setContactEmail] = useState("")
     const [contactName, setContactName] = useState("")
     const [contactPhone, setContactPhone] = useState("")
     const [kvkkAccepted, setKvkkAccepted] = useState(false)
-    const [phase, setPhase] = useState<"start" | "spin" | "result" | "claim" | "final">("start")
+    const [phase, setPhase] = useState<"play" | "result" | "final">("play")
     const [submitting, setSubmitting] = useState(false)
-    const animRef = useRef<number | null>(null)
+    const [wonPrize, setWonPrize] = useState<string | null>(null)
+    const [couponCode, setCouponCode] = useState<string | null>(null)
+    const [openedBox, setOpenedBox] = useState<number | null>(null)
 
-    // Draw wheel
-    useEffect(() => {
-        const canvas = canvasRef.current
-        if (!canvas || !prizes.length) return
-        const ctx = canvas.getContext("2d")
-        if (!ctx) return
-
-        const cx = canvas.width / 2
-        const cy = canvas.height / 2
-        const r = cx - 10
-        const arc = (2 * Math.PI) / prizes.length
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.save()
-        ctx.translate(cx, cy)
-        ctx.rotate((rotation * Math.PI) / 180)
-
-        prizes.forEach((prize, i) => {
-            const startAngle = i * arc - Math.PI / 2
-            const endAngle = startAngle + arc
-
-            ctx.beginPath()
-            ctx.moveTo(0, 0)
-            ctx.arc(0, 0, r, startAngle, endAngle)
-            ctx.fillStyle = prize.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]
-            ctx.fill()
-            ctx.strokeStyle = "#fff"
-            ctx.lineWidth = 2
-            ctx.stroke()
-
-            ctx.save()
-            ctx.rotate(startAngle + arc / 2)
-            ctx.textAlign = "right"
-            ctx.fillStyle = "#fff"
-            ctx.font = "bold 12px sans-serif"
-            ctx.shadowColor = "rgba(0,0,0,0.4)"
-            ctx.shadowBlur = 3
-            ctx.fillText(prize.name.slice(0, 18), r - 8, 4)
-            ctx.restore()
-        })
-        ctx.restore()
-
-        // Center circle
-        ctx.beginPath()
-        ctx.arc(cx, cy, 14, 0, 2 * Math.PI)
-        ctx.fillStyle = "#1e293b"
-        ctx.fill()
-    }, [prizes, rotation])
-
-    async function handleSpin() {
-        if (spinning || !prizes.length) return
+    const handleBoxClick = async (index: number) => {
+        if (openedBox !== null || submitting) return
+        setOpenedBox(index)
         setSubmitting(true)
-
         try {
             const res = await fetch("/api/gamification/spin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    chatbotId,
-                    sessionId,
-                    visitorId: typeof window !== "undefined"
-                        ? localStorage.getItem(`vid_${chatbotId}`) || undefined
-                        : undefined,
-                }),
+                body: JSON.stringify({ chatbotId, sessionId }),
             })
             const data = await res.json()
-            setSubmitting(false)
-
-            if (data.error) {
-                setWonPrize("Bir hata oluştu")
-                setPhase("result")
-                return
-            }
-
-            if (data.alreadySpun) {
-                // If the user already spun (e.g. testing again without clearing DB),
-                // we skip the animation to instantly show their historical prize.
-                setWonPrize(data.prize)
-                setCouponCode(data.couponCode || null)
-                setPhase("result")
-                return
-            }
-
-            const targetIndex = data.prizeIndex ?? 0
-            const arc = 360 / prizes.length
-            const targetDeg = 360 - targetIndex * arc - arc / 2
-            const spins = 5 * 360 + targetDeg
-            const startRot = rotation
-            const endRot = startRot + spins
-            const duration = 4000
             
-            let startTime: number | null = null
-
-            setSpinning(true)
-            setPhase("spin")
-
-            function animate(now: number) {
-                if (startTime === null) startTime = now
-                const elapsed = now - startTime
-                const t = Math.min(elapsed / duration, 1)
-                const ease = 1 - Math.pow(1 - t, 4)
-                setRotation(startRot + (endRot - startRot) * ease)
-                if (t < 1) {
-                    animRef.current = requestAnimationFrame(animate)
-                } else {
-                    setRotation(endRot % 360)
-                    setSpinning(false)
-                    setLanded(true)
-                    setWonPrize(data.prize)
-                    setCouponCode(data.couponCode || null)
-                    setPhase("result")
-                    onPrize?.(data.prize, data.couponCode)
-                }
-            }
-            animRef.current = requestAnimationFrame(animate)
-        } catch {
             setSubmitting(false)
-            setWonPrize("Bağlantı hatası")
+            setWonPrize(data.prize)
+            setCouponCode(data.couponCode || null)
             setPhase("result")
+            onPrize?.(data.prize, data.couponCode)
+        } catch (error) {
+            setSubmitting(false)
         }
     }
 
@@ -204,55 +95,48 @@ export function SpinWheelOverlay({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
                 <div style={{ backgroundColor: themeColor }} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Gift className="w-5 h-5 text-white" />
-                        <h2 className="text-white font-bold text-base">Çarkı Çevir, Kazan!</h2>
+                        <h2 className="text-white font-bold text-base">Gizemli Kutuyu Seç!</h2>
                     </div>
                     <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
-                    {phase !== "result" && phase !== "final" && (
-                        <div className="relative flex justify-center">
-                            {/* Arrow pointer */}
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
-                                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[18px] border-l-transparent border-r-transparent border-t-zinc-800" />
+                <div className="p-6 space-y-6">
+                    {phase === "play" && (
+                        <div className="space-y-6">
+                            <div className="space-y-2 text-center">
+                                <h2 className="text-xl font-bold text-zinc-900">{title}</h2>
+                                <p className="text-sm text-zinc-600">{description}</p>
                             </div>
-                            <canvas
-                                ref={canvasRef}
-                                width={260}
-                                height={260}
-                                className="rounded-full shadow-lg"
-                            />
-                        </div>
-                    )}
-
-                    {phase === "start" && (
-                        <div className="space-y-3">
-                            <h2 className="text-xl font-bold text-zinc-900 text-center">{title}</h2>
-                            <p className="text-sm text-zinc-600 text-center">
-                                {description}
+                            <p className="text-center text-sm font-medium text-zinc-600">
+                                Şanslı kutunu seç ve ödülünü gör!
                             </p>
-                            <Button
-                                onClick={handleSpin}
-                                disabled={submitting}
-                                style={{ backgroundColor: themeColor }}
-                                className="w-full hover:brightness-110"
-                            >
-                                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                {buttonText}
-                            </Button>
+                            <div className="flex justify-center gap-4">
+                                {[0, 1, 2].map((i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => handleBoxClick(i)}
+                                        disabled={openedBox !== null}
+                                        className={`relative group w-24 h-24 rounded-xl border-4 transition-all duration-500 flex items-center justify-center
+                                            ${openedBox === i ? 'scale-110 border-transparent' : 'border-zinc-200 hover:scale-105 hover:border-violet-400'}
+                                            ${openedBox !== null && openedBox !== i ? 'opacity-50 scale-95' : ''}
+                                        `}
+                                        style={openedBox === i ? { backgroundColor: themeColor } : {}}
+                                    >
+                                        {openedBox === i && submitting ? (
+                                            <Loader2 className="w-8 h-8 text-white animate-spin" />
+                                        ) : (
+                                            <Gift className={`w-10 h-10 ${openedBox === i ? 'text-white' : 'text-zinc-400 group-hover:text-violet-500'}`} />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    )}
-
-                    {phase === "spin" && (
-                        <p className="text-center text-sm font-medium text-violet-700 animate-pulse">
-                            Çevriliyor...
-                        </p>
                     )}
 
                     {phase === "result" && wonPrize && (
@@ -292,12 +176,12 @@ export function SpinWheelOverlay({
                                 <div className="flex items-start gap-2 pt-1">
                                     <input 
                                         type="checkbox" 
-                                        id="kvkk" 
+                                        id="kvkk_mystery" 
                                         className="mt-1"
                                         checked={kvkkAccepted}
                                         onChange={e => setKvkkAccepted(e.target.checked)}
                                     />
-                                    <label htmlFor="kvkk" className="text-[10px] leading-tight text-zinc-500">
+                                    <label htmlFor="kvkk_mystery" className="text-[10px] leading-tight text-zinc-500">
                                         Kişisel verilerimin işlenmesine ilişkin <span className="underline cursor-pointer">aydınlatma metnini</span> okudum ve kabul ediyorum.
                                     </label>
                                 </div>

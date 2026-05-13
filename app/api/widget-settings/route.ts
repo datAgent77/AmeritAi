@@ -649,6 +649,7 @@ export async function GET(req: Request) {
                         theme: mergedData.theme || "classic",
                         kvkkConsent,
                         privacyCompliance,
+                        gamification: mergedData.gamification || null,
                     }, {
                         headers: {
                             'Access-Control-Allow-Origin': '*',

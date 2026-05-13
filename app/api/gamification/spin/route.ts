@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { pickPrize } from "@/lib/gamification/spin-engine"
+import { sendGamificationWinnerNotification } from "@/lib/email-service"
 
 export const runtime = "nodejs"
 
@@ -10,13 +11,17 @@ export async function POST(req: Request) {
         if (!adminDb) return NextResponse.json({ error: "Service unavailable" }, { status: 503 })
 
         const body = await req.json()
-        const { chatbotId, sessionId, visitorId, contactEmail, contactName } = body as {
+        const { chatbotId, sessionId, visitorId, contactEmail, contactName, email } = body as {
             chatbotId: string
             sessionId?: string
             visitorId?: string
             contactEmail?: string
             contactName?: string
+            email?: string // alias from overlay
         }
+
+        // Support both contactEmail and email fields (from different overlays)
+        const playerEmail = contactEmail || email || null
 
         if (!chatbotId) return NextResponse.json({ error: "chatbotId zorunlu" }, { status: 400 })
 
@@ -44,7 +49,8 @@ export async function POST(req: Request) {
         }
 
         const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
-        const gamification = chatbotSnap.data()?.gamification
+        const chatbotData = chatbotSnap.data()
+        const gamification = chatbotData?.gamification
         if (!gamification?.enabled) {
             return NextResponse.json({ error: "Gamification disabled" }, { status: 400 })
         }
@@ -54,6 +60,7 @@ export async function POST(req: Request) {
 
         const result = pickPrize(prizes)
 
+        // Save to flat collection (dedup)
         await adminDb.collection("gamification_spins").add({
             chatbotId,
             sessionId: sessionId || null,
@@ -61,10 +68,35 @@ export async function POST(req: Request) {
             prizeWon: result.prize.name,
             prizeIndex: result.prizeIndex,
             couponCode: result.couponCode || null,
-            contactEmail: contactEmail || null,
+            contactEmail: playerEmail,
             contactName: contactName || null,
             claimedAt: new Date().toISOString(),
         })
+
+        // Save to per-chatbot sub-collection for winners page
+        await adminDb.collection("chatbots").doc(chatbotId)
+            .collection("gamification_winners")
+            .add({
+                email: playerEmail || "anonymous",
+                prize: result.prize.name,
+                couponCode: result.couponCode || null,
+                playedAt: new Date(),
+                sessionId: sessionId || null,
+            })
+
+        // Send tenant notification email (non-blocking)
+        const tenantEmail = chatbotData?.email || chatbotData?.ownerEmail || null
+        const businessName = chatbotData?.businessName || chatbotData?.name || "Vion AI"
+        if (tenantEmail) {
+            sendGamificationWinnerNotification({
+                tenantEmail,
+                businessName,
+                playerEmail: playerEmail || "Anonim",
+                prize: result.prize.name,
+                couponCode: result.couponCode,
+                gameType: gamification.gameType || "wheel",
+            }).catch((err) => console.error("Gamification email notification failed:", err))
+        }
 
         return NextResponse.json({
             alreadySpun: false,

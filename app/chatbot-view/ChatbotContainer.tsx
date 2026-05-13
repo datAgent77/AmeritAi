@@ -27,6 +27,8 @@ import { LeadCollectionOverlay } from "./components/LeadCollectionOverlay"
 import { KvkkConsentModal } from "./components/KvkkConsentModal"
 import { KvkkConsentOverlay } from "./components/KvkkConsentOverlay"
 import { SpinWheelOverlay } from "./components/SpinWheelOverlay"
+import { MysteryBoxOverlay } from "./components/MysteryBoxOverlay"
+import { ScratchCardOverlay } from "./components/ScratchCardOverlay"
 import { SurveyWidgetOverlay } from "@/components/surveys/survey-widget-overlay"
 import { resolveAmbientDeviceSettings } from "@/lib/ambient-device-settings"
 import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
@@ -148,6 +150,7 @@ function ChatbotContainerContent() {
     // Gamification spin wheel state
     const [showSpinWheel, setShowSpinWheel] = useState(false)
     const [spinWheelPrizes, setSpinWheelPrizes] = useState<any[]>([])
+    const [gamificationConfig, setGamificationConfig] = useState<any>(null)
     const [spinWheelShownThisSession, setSpinWheelShownThisSession] = useState(false)
 
     // Lead Collection State
@@ -265,25 +268,131 @@ function ChatbotContainerContent() {
 
     // GAMIFICATION — load config and register triggers
     useEffect(() => {
-        if (isLoading || spinWheelShownThisSession) return
-        fetch(`/api/gamification/config?chatbotId=${chatbotId}`)
+        if (!chatbotId || spinWheelShownThisSession) return
+        
+        console.log(`[Gamification] Fetching config for chatbotId: ${chatbotId}`);
+        fetch(`/api/gamification/config?chatbotId=${chatbotId}&t=${Date.now()}`)
             .then(r => r.ok ? r.json() : null)
             .then(data => {
-                if (!data?.enabled || !data.prizes?.length) return
-                setSpinWheelPrizes(data.prizes)
-                const { triggers } = data
-                // onEntry with delay
-                if (triggers?.onEntry) {
-                    const delay = (triggers.entryDelay ?? 5) * 1000
-                    const t = setTimeout(() => {
-                        const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
-                        if (!alreadySpun) setShowSpinWheel(true)
-                    }, delay)
-                    return () => clearTimeout(t)
+                if (!data) {
+                    console.log("[Gamification] No data returned from API.");
+                    return;
                 }
+                if (!data.enabled || !data.prizes?.length) {
+                    console.log(`[Gamification] Disabled or no prizes. Enabled: ${data.enabled}, Prizes: ${data.prizes?.length}`);
+                    return;
+                }
+                
+                // Cooldown check: respect cooldownHours setting
+                const cooldownHours = data.cooldownHours ?? 24
+                const lastPlayedStr = localStorage.getItem(`spun_${chatbotId}_time`)
+                if (cooldownHours > 0 && lastPlayedStr) {
+                    const lastPlayed = new Date(lastPlayedStr).getTime()
+                    const cooldownMs = cooldownHours * 60 * 60 * 1000
+                    if (Date.now() - lastPlayed < cooldownMs) {
+                        console.log(`[Gamification] Already played, in cooldown. Skipping. (Cooldown: ${cooldownHours}h)`);
+                        return;
+                    }
+                }
+
+                const alreadySpun = cooldownHours > 0 ? localStorage.getItem(`spun_${chatbotId}`) : null
+                if (alreadySpun) {
+                    console.log("[Gamification] Already played (localStorage flag present). Skipping.");
+                    return;
+                }
+
+                console.log("[Gamification] Config loaded and valid. Triggers:", data.triggers);
+                setGamificationConfig(data)
+                setSpinWheelPrizes(data.prizes)
             })
-            .catch(() => {})
+            .catch(err => console.error("[Gamification] Fetch error:", err))
     }, [isLoading, chatbotId, spinWheelShownThisSession])
+
+    useEffect(() => {
+        if (!gamificationConfig || !gamificationConfig.enabled || spinWheelShownThisSession) return
+
+        const triggers = gamificationConfig.triggers
+        console.log("[Gamification] Setting up triggers:", triggers);
+        
+        const showGame = (source: string) => {
+            if (spinWheelShownThisSession) return
+            console.log(`[Gamification] Triggered by: ${source}`);
+            // Signal parent to open the widget
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'USEREX_OPEN_WIDGET' }, '*')
+            }
+            setShowSpinWheel(true)
+        }
+
+        const cleanupFns: (() => void)[] = []
+
+        // onEntry with delay
+        if (triggers?.onEntry) {
+            const delay = (triggers.entryDelay || 5) * 1000
+            console.log(`[Gamification] Registering onEntry delay: ${delay}ms`);
+            const t = setTimeout(() => {
+                showGame("onEntry")
+            }, delay)
+            cleanupFns.push(() => clearTimeout(t))
+        }
+
+        // onScroll trigger (listen for parent message or local if full page)
+        const handleScroll = () => {
+            if (triggers?.onScroll) {
+                const scrollPct = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
+                if (scrollPct >= (triggers.scrollPercentage ?? 50)) {
+                    showGame("onScroll")
+                }
+            }
+        }
+        window.addEventListener('scroll', handleScroll)
+        cleanupFns.push(() => window.removeEventListener('scroll', handleScroll))
+
+        // onInactivity trigger
+        let inactivityTimer: NodeJS.Timeout
+        const resetInactivityTimer = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer)
+            if (triggers?.onInactivity) {
+                inactivityTimer = setTimeout(() => {
+                    showGame("onInactivity")
+                }, (triggers.inactivitySeconds ?? 30) * 1000)
+            }
+        }
+        
+        if (triggers?.onInactivity) {
+            resetInactivityTimer()
+            window.addEventListener('mousemove', resetInactivityTimer)
+            window.addEventListener('keydown', resetInactivityTimer)
+            window.addEventListener('touchstart', resetInactivityTimer)
+            cleanupFns.push(() => {
+                window.removeEventListener('mousemove', resetInactivityTimer)
+                window.removeEventListener('keydown', resetInactivityTimer)
+                window.removeEventListener('touchstart', resetInactivityTimer)
+                if (inactivityTimer) clearTimeout(inactivityTimer)
+            })
+        }
+
+        // Handle messages from parent for scroll and exit intent
+        const handleParentMessage = (event: MessageEvent) => {
+            if (event.data.type === 'USEREX_PARENT_SCROLL') {
+                const pct = event.data.percentage
+                if (triggers?.onScroll && pct >= (triggers.scrollPercentage ?? 50)) {
+                    showGame("parentScroll")
+                }
+            }
+            if (event.data.type === 'USEREX_PARENT_EXIT_INTENT') {
+                if (triggers?.exitIntent) {
+                    showGame("parentExitIntent")
+                }
+            }
+        }
+        window.addEventListener('message', handleParentMessage)
+        cleanupFns.push(() => window.removeEventListener('message', handleParentMessage))
+
+        return () => {
+            cleanupFns.forEach(fn => fn())
+        }
+    }, [isLoading, chatbotId, spinWheelShownThisSession, gamificationConfig])
 
     // Exit intent trigger for spin wheel — listener registered once per chatbotId
     // spinWheelPrizes and spinWheelShownThisSession read from closure via current ref
@@ -297,6 +406,10 @@ function ChatbotContainerContent() {
             if (e.clientY <= 0 && spinWheelPrizesRef.current.length > 0 && !spinWheelShownRef.current) {
                 const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
                 if (!alreadySpun) {
+                    // Signal parent to open the widget
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type: 'USEREX_OPEN_WIDGET' }, '*')
+                    }
                     setShowSpinWheel(true)
                     setSpinWheelShownThisSession(true)
                 }
@@ -566,19 +679,22 @@ function ChatbotContainerContent() {
     }, [chatbotId, kvkkVersionHash, privacyComplianceEnabled, privacyNoticeDocument?.type, privacyTextHash, recordPrivacyConsentEvent, sessionId])
 
     const acceptKvkkConsent = async () => {
+        setIsKvkkRejected(false)
+        setIsKvkkAccepted(true)
+        setIsKvkkModalOpen(false)
+
         if (kvkkVersionHash && typeof window !== "undefined") {
             window.localStorage.setItem(`vion_kvkk_${chatbotId}_${kvkkVersionHash}`, "acknowledged")
         }
-        await recordPrivacyConsentEvent({
+        
+        // Record event in background without blocking UI
+        recordPrivacyConsentEvent({
             eventType: "notice_acknowledged",
             purpose: "basic_chat",
             documentType: privacyNoticeDocument?.type || "kvkkNotice",
             documentVersionHash: kvkkVersionHash,
             textHash: privacyTextHash,
-        })
-        setIsKvkkRejected(false)
-        setIsKvkkAccepted(true)
-        setIsKvkkModalOpen(false)
+        }).catch(err => console.warn("[privacy] background recording failed", err))
     }
 
     const rejectKvkkConsent = () => {
@@ -1664,20 +1780,72 @@ function ChatbotContainerContent() {
                 onSubmit={handleSurveySubmit}
             />
 
-            {showSpinWheel && spinWheelPrizes.length > 0 && (
-                <SpinWheelOverlay
-                    chatbotId={chatbotId}
-                    sessionId={sessionId}
-                    prizes={spinWheelPrizes}
-                    onClose={() => {
-                        setShowSpinWheel(false)
-                        setSpinWheelShownThisSession(true)
-                    }}
-                    onPrize={(prize, code) => {
-                        localStorage.setItem(`spun_${chatbotId}`, "1")
-                        setSpinWheelShownThisSession(true)
-                    }}
-                />
+            {showSpinWheel && spinWheelPrizes.length > 0 && gamificationConfig && (
+                <>
+                    {(!gamificationConfig.gameType || gamificationConfig.gameType === "wheel" || gamificationConfig.gameType === "slot") && (
+                        <SpinWheelOverlay
+                            chatbotId={chatbotId}
+                            sessionId={sessionId}
+                            prizes={spinWheelPrizes}
+                            requireEmail={gamificationConfig?.requireEmail}
+                            themeColor={gamificationConfig?.themeColor}
+                            onClose={() => {
+                                setShowSpinWheel(false)
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            onPrize={(prize, code) => {
+                                localStorage.setItem(`spun_${chatbotId}`, "1")
+                                localStorage.setItem(`spun_${chatbotId}_time`, new Date().toISOString())
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            title={gamificationConfig.title}
+                            description={gamificationConfig.description}
+                            buttonText={gamificationConfig.buttonText}
+                        />
+                    )}
+                    {gamificationConfig.gameType === "mystery" && (
+                        <MysteryBoxOverlay
+                            chatbotId={chatbotId}
+                            sessionId={sessionId}
+                            prizes={spinWheelPrizes}
+                            requireEmail={gamificationConfig?.requireEmail}
+                            themeColor={gamificationConfig?.themeColor}
+                            onClose={() => {
+                                setShowSpinWheel(false)
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            onPrize={(prize, code) => {
+                                localStorage.setItem(`spun_${chatbotId}`, "1")
+                                localStorage.setItem(`spun_${chatbotId}_time`, new Date().toISOString())
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            title={gamificationConfig.title}
+                            description={gamificationConfig.description}
+                            buttonText={gamificationConfig.buttonText}
+                        />
+                    )}
+                    {gamificationConfig.gameType === "scratch" && (
+                        <ScratchCardOverlay
+                            chatbotId={chatbotId}
+                            sessionId={sessionId}
+                            prizes={spinWheelPrizes}
+                            requireEmail={gamificationConfig?.requireEmail}
+                            themeColor={gamificationConfig?.themeColor}
+                            onClose={() => {
+                                setShowSpinWheel(false)
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            onPrize={(prize, code) => {
+                                localStorage.setItem(`spun_${chatbotId}`, "1")
+                                localStorage.setItem(`spun_${chatbotId}_time`, new Date().toISOString())
+                                setSpinWheelShownThisSession(true)
+                            }}
+                            title={gamificationConfig.title}
+                            description={gamificationConfig.description}
+                            buttonText={gamificationConfig.buttonText}
+                        />
+                    )}
+                </>
             )}
 
             <BookingOverlay

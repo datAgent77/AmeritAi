@@ -21,7 +21,12 @@ export async function GET(req: Request) {
         }
 
         return NextResponse.json({
+            ...gamification,
             enabled: true,
+            gameType: gamification.gameType || "wheel",
+            requireEmail: gamification.requireEmail ?? true,
+            cooldownHours: gamification.cooldownHours ?? 24,
+            themeColor: gamification.themeColor || "#8b5cf6",
             prizes: gamification.prizes || [],
             triggers: gamification.triggers || {},
         })
