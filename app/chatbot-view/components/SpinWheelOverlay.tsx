@@ -53,6 +53,7 @@ export function SpinWheelOverlay({
     const [contactName, setContactName] = useState("")
     const [contactPhone, setContactPhone] = useState("")
     const [kvkkAccepted, setKvkkAccepted] = useState(false)
+    const [rewardEmailSent, setRewardEmailSent] = useState<boolean | null>(null)
     const [phase, setPhase] = useState<"start" | "spin" | "result" | "lost" | "claim" | "final">("start")
     const [submitting, setSubmitting] = useState(false)
     const animRef = useRef<number | null>(null)
@@ -209,7 +210,7 @@ export function SpinWheelOverlay({
         if (!contactName || !contactEmail || !contactPhone || !kvkkAccepted) return
         setSubmitting(true)
         try {
-            await fetch("/api/gamification/claim", {
+            const res = await fetch("/api/gamification/claim", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -222,9 +223,16 @@ export function SpinWheelOverlay({
                     kvkk: kvkkAccepted
                 })
             })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                throw new Error(data?.error || "Claim failed")
+            }
+            setRewardEmailSent(data.emailSent === true)
             setPhase("final")
         } catch (error) {
             console.error("Claim failed", error)
+            setWonPrize("Ödül tanımlanamadı")
+            setPhase("lost")
         } finally {
             setSubmitting(false)
         }
@@ -369,20 +377,23 @@ export function SpinWheelOverlay({
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold text-zinc-900">Ödülünüz Hazır!</h3>
-                                <p className="text-sm text-zinc-600">Bilgileriniz kaydedildi. Kupon kodunuzu aşağıda bulabilirsiniz:</p>
+                                <p className="text-sm text-zinc-600">
+                                    {rewardEmailSent === false
+                                        ? "Bilgileriniz kaydedildi ancak e-posta gönderimi şu anda tamamlanamadı. Ekibimiz ödülünüzü kayıtlı e-posta adresinizden takip edebilir."
+                                        : couponCode
+                                            ? "Bilgileriniz kaydedildi. Kupon kodunuz aşağıdaki e-posta adresine gönderildi."
+                                            : "Bilgileriniz kaydedildi. Ödül bilginiz aşağıdaki e-posta adresine gönderildi."}
+                                </p>
                             </div>
-                            
-                            {couponCode ? (
-                                <div className="bg-emerald-50 border-2 border-dashed border-emerald-200 p-4 rounded-xl">
-                                    <span className="text-2xl font-mono font-bold text-emerald-700 tracking-wider">
-                                        {couponCode}
-                                    </span>
+
+                            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1">
+                                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                                    {rewardEmailSent === false ? "E-posta kuyruğa alınamadı" : "Gönderilen e-posta"}
+                                </p>
+                                <div className="font-semibold text-emerald-900 break-all">
+                                    {contactEmail}
                                 </div>
-                            ) : (
-                                <div className="bg-zinc-50 p-4 rounded-xl italic text-zinc-500 text-sm">
-                                    Ödülünüz e-posta adresinize gönderilecektir.
-                                </div>
-                            )}
+                            </div>
 
                             <Button 
                                 onClick={onClose}
