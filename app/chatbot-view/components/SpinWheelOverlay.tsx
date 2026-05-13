@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { X, Gift, Loader2, CheckCircle2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { getGamificationTheme } from "./gamification-theme"
 
 interface Prize {
     name: string
@@ -25,11 +26,6 @@ interface Props {
     buttonText?: string
 }
 
-const DEFAULT_COLORS = [
-    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
-    "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
-]
-
 export function SpinWheelOverlay({ 
     chatbotId, 
     sessionId, 
@@ -43,6 +39,7 @@ export function SpinWheelOverlay({
     description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
     buttonText = "Hemen Oyna"
 }: Props) {
+    const brandTheme = getGamificationTheme(themeColor)
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [spinning, setSpinning] = useState(false)
     const [landed, setLanded] = useState(false)
@@ -83,7 +80,7 @@ export function SpinWheelOverlay({
             ctx.beginPath()
             ctx.moveTo(0, 0)
             ctx.arc(0, 0, r, startAngle, endAngle)
-            ctx.fillStyle = prize.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]
+            ctx.fillStyle = prize.color || brandTheme.wheelColors[i % brandTheme.wheelColors.length]
             ctx.fill()
             ctx.strokeStyle = "#fff"
             ctx.lineWidth = 2
@@ -104,9 +101,9 @@ export function SpinWheelOverlay({
         // Center circle
         ctx.beginPath()
         ctx.arc(cx, cy, 14, 0, 2 * Math.PI)
-        ctx.fillStyle = "#1e293b"
+        ctx.fillStyle = brandTheme.primaryDark
         ctx.fill()
-    }, [prizes, rotation])
+    }, [brandTheme.primaryDark, brandTheme.wheelColors, prizes, rotation])
 
     const setWheelRotation = (value: number) => {
         rotationRef.current = value
@@ -241,12 +238,12 @@ export function SpinWheelOverlay({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                <div style={{ backgroundColor: themeColor }} className="px-5 py-4 flex items-center justify-between">
+                <div style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-white" />
-                        <h2 className="text-white font-bold text-base">Çarkı Çevir, Kazan!</h2>
+                        <Gift className="w-5 h-5" />
+                        <h2 className="font-bold text-base">Çarkı Çevir, Kazan!</h2>
                     </div>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+                    <button onClick={onClose} className="opacity-80 hover:opacity-100 transition-opacity">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -256,7 +253,10 @@ export function SpinWheelOverlay({
                         <div className="relative flex justify-center">
                             {/* Arrow pointer */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
-                                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[18px] border-l-transparent border-r-transparent border-t-zinc-800" />
+                                <div
+                                    className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[18px] border-l-transparent border-r-transparent"
+                                    style={{ borderTopColor: brandTheme.primaryDark }}
+                                />
                             </div>
                             <canvas
                                 ref={canvasRef}
@@ -276,7 +276,7 @@ export function SpinWheelOverlay({
                             <Button
                                 onClick={handleSpin}
                                 disabled={submitting}
-                                style={{ backgroundColor: themeColor }}
+                                style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }}
                                 className="w-full hover:brightness-110"
                             >
                                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -286,7 +286,7 @@ export function SpinWheelOverlay({
                     )}
 
                     {phase === "spin" && (
-                        <p className="text-center text-sm font-medium text-violet-700 animate-pulse">
+                        <p className="text-center text-sm font-medium animate-pulse" style={{ color: brandTheme.primaryText }}>
                             Çevriliyor...
                         </p>
                     )}
@@ -294,7 +294,7 @@ export function SpinWheelOverlay({
                     {phase === "result" && wonPrize && (
                         <div className="text-center space-y-4 py-2 animate-in zoom-in duration-300">
                             <div className="space-y-1">
-                                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
+                                <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: brandTheme.primary }} />
                                 <h3 className="text-xl font-bold text-zinc-900">Tebrikler!</h3>
                                 <p className="text-zinc-600">
                                     <span className="font-bold text-zinc-900">{wonPrize}</span> kazandınız!
@@ -340,7 +340,7 @@ export function SpinWheelOverlay({
                                 <Button 
                                     onClick={handleClaim}
                                     disabled={submitting || !contactName || !contactEmail || !contactPhone || !kvkkAccepted}
-                                    style={{ backgroundColor: themeColor }}
+                                    style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }}
                                     className="w-full h-9 text-sm hover:brightness-110 mt-2"
                                 >
                                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -352,8 +352,8 @@ export function SpinWheelOverlay({
 
                     {phase === "lost" && wonPrize && (
                         <div className="text-center space-y-4 py-4 animate-in zoom-in duration-300">
-                            <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto">
-                                <RotateCcw className="w-7 h-7 text-zinc-500" />
+                            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: brandTheme.primarySoft }}>
+                                <RotateCcw className="w-7 h-7" style={{ color: brandTheme.primaryText }} />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold text-zinc-900">Bu kez olmadı</h3>
@@ -363,7 +363,8 @@ export function SpinWheelOverlay({
                             </div>
                             <Button
                                 onClick={onClose}
-                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                                className="w-full hover:brightness-110"
+                                style={{ backgroundColor: brandTheme.neutralAction, color: brandTheme.textOnNeutralAction }}
                             >
                                 Kapat
                             </Button>
@@ -372,8 +373,8 @@ export function SpinWheelOverlay({
 
                     {phase === "final" && (
                         <div className="text-center space-y-5 py-4 animate-in fade-in zoom-in duration-500">
-                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                                <Gift className="w-8 h-8 text-emerald-600" />
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: brandTheme.primarySoft }}>
+                                <Gift className="w-8 h-8" style={{ color: brandTheme.primaryText }} />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold text-zinc-900">Ödülünüz Hazır!</h3>
@@ -386,18 +387,22 @@ export function SpinWheelOverlay({
                                 </p>
                             </div>
 
-                            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1">
-                                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                            <div
+                                className="border p-4 rounded-xl space-y-1"
+                                style={{ backgroundColor: brandTheme.primarySoft, borderColor: brandTheme.primaryBorder }}
+                            >
+                                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: brandTheme.primaryText }}>
                                     {rewardEmailSent === false ? "E-posta kuyruğa alınamadı" : "Gönderilen e-posta"}
                                 </p>
-                                <div className="font-semibold text-emerald-900 break-all">
+                                <div className="font-semibold break-all" style={{ color: brandTheme.primaryDark }}>
                                     {contactEmail}
                                 </div>
                             </div>
 
                             <Button 
                                 onClick={onClose}
-                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                                className="w-full hover:brightness-110"
+                                style={{ backgroundColor: brandTheme.neutralAction, color: brandTheme.textOnNeutralAction }}
                             >
                                 Kapat
                             </Button>

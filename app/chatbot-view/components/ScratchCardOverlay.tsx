@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { X, Gift, Loader2, CheckCircle2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { getGamificationTheme } from "./gamification-theme"
 
 interface Prize {
     name: string
@@ -36,6 +37,7 @@ export function ScratchCardOverlay({
     description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
     buttonText = "Devam Et"
 }: Props) {
+    const brandTheme = getGamificationTheme(themeColor)
     const [contactEmail, setContactEmail] = useState("")
     const [contactName, setContactName] = useState("")
     const [contactPhone, setContactPhone] = useState("")
@@ -104,9 +106,9 @@ export function ScratchCardOverlay({
 
             // Fill background with elegant metallic pattern
             const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height)
-            gradient.addColorStop(0, '#e2e8f0')
-            gradient.addColorStop(0.5, '#cbd5e1')
-            gradient.addColorStop(1, '#e2e8f0')
+            gradient.addColorStop(0, brandTheme.primarySoft)
+            gradient.addColorStop(0.5, brandTheme.primarySoftStrong)
+            gradient.addColorStop(1, brandTheme.primarySoft)
             ctx.fillStyle = gradient
             ctx.fillRect(0, 0, rect.width, rect.height)
 
@@ -117,13 +119,13 @@ export function ScratchCardOverlay({
             }
 
             // Draw text
-            ctx.fillStyle = '#64748b'
+            ctx.fillStyle = brandTheme.primaryText
             ctx.font = '600 16px Inter, sans-serif'
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             ctx.fillText('Ödülü Görmek İçin Kazıyın', rect.width / 2, rect.height / 2)
         }
-    }, [phase])
+    }, [brandTheme.primarySoft, brandTheme.primarySoftStrong, brandTheme.primaryText, phase])
 
     useEffect(() => {
         if (isRevealed) {
@@ -231,12 +233,12 @@ export function ScratchCardOverlay({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                <div style={{ backgroundColor: themeColor }} className="px-5 py-4 flex items-center justify-between">
+                <div style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Gift className="w-5 h-5 text-white" />
-                        <h2 className="text-white font-bold text-base">Kazı Kazan!</h2>
+                        <Gift className="w-5 h-5" />
+                        <h2 className="font-bold text-base">Kazı Kazan!</h2>
                     </div>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+                    <button onClick={onClose} className="opacity-80 hover:opacity-100 transition-opacity">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -260,7 +262,7 @@ export function ScratchCardOverlay({
                             <Button
                                 onClick={handleStart}
                                 disabled={submitting || (requireEmail && !contactEmail.includes("@"))}
-                                style={{ backgroundColor: themeColor }}
+                                style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }}
                                 className="w-full hover:brightness-110"
                             >
                                 {buttonText}
@@ -285,12 +287,15 @@ export function ScratchCardOverlay({
                                         </div>
                                     ) : wonPrize ? (
                                         <div className="flex flex-col items-center gap-2 animate-in zoom-in duration-500">
-                                            <Sparkles className="w-8 h-8 text-amber-500" />
+                                            <Sparkles className="w-8 h-8" style={{ color: brandTheme.primary }} />
                                             <span className="text-lg font-black text-zinc-900 text-center uppercase tracking-wide">
                                                 {wonPrize}
                                             </span>
                                             {couponCode && (
-                                                <span className="text-xs font-mono font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                                                <span
+                                                    className="text-xs font-mono font-bold px-2 py-1 rounded"
+                                                    style={{ backgroundColor: brandTheme.primarySoft, color: brandTheme.primaryText }}
+                                                >
                                                     {couponCode}
                                                 </span>
                                             )}
@@ -317,7 +322,7 @@ export function ScratchCardOverlay({
                     {phase === "result" && wonPrize && (
                         <div className="text-center space-y-4 py-2 animate-in zoom-in duration-300">
                             <div className="space-y-1">
-                                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
+                                <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: brandTheme.primary }} />
                                 <h3 className="text-xl font-bold text-zinc-900">Tebrikler!</h3>
                                 <p className="text-zinc-600">
                                     <span className="font-bold text-zinc-900">{wonPrize}</span> kazandınız!
@@ -363,7 +368,7 @@ export function ScratchCardOverlay({
                                 <Button 
                                     onClick={handleClaim}
                                     disabled={submitting || !contactName || !contactEmail || !contactPhone || !kvkkAccepted}
-                                    style={{ backgroundColor: themeColor }}
+                                    style={{ backgroundColor: brandTheme.primary, color: brandTheme.textOnPrimary }}
                                     className="w-full h-9 text-sm hover:brightness-110 mt-2"
                                 >
                                     {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -375,8 +380,8 @@ export function ScratchCardOverlay({
 
                     {phase === "final" && (
                         <div className="text-center space-y-5 py-4 animate-in fade-in zoom-in duration-500">
-                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                                <Gift className="w-8 h-8 text-emerald-600" />
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ backgroundColor: brandTheme.primarySoft }}>
+                                <Gift className="w-8 h-8" style={{ color: brandTheme.primaryText }} />
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold text-zinc-900">Ödülünüz Hazır!</h3>
@@ -384,8 +389,8 @@ export function ScratchCardOverlay({
                             </div>
                             
                             {couponCode ? (
-                                <div className="bg-emerald-50 border-2 border-dashed border-emerald-200 p-4 rounded-xl">
-                                    <span className="text-2xl font-mono font-bold text-emerald-700 tracking-wider">
+                                <div className="border-2 border-dashed p-4 rounded-xl" style={{ backgroundColor: brandTheme.primarySoft, borderColor: brandTheme.primaryBorder }}>
+                                    <span className="text-2xl font-mono font-bold tracking-wider" style={{ color: brandTheme.primaryText }}>
                                         {couponCode}
                                     </span>
                                 </div>
@@ -397,7 +402,8 @@ export function ScratchCardOverlay({
 
                             <Button 
                                 onClick={onClose}
-                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                                className="w-full hover:brightness-110"
+                                style={{ backgroundColor: brandTheme.neutralAction, color: brandTheme.textOnNeutralAction }}
                             >
                                 Kapat
                             </Button>

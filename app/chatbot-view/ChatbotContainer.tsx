@@ -1780,7 +1780,14 @@ function ChatbotContainerContent() {
                 onSubmit={handleSurveySubmit}
             />
 
-            {showSpinWheel && spinWheelPrizes.length > 0 && gamificationConfig && (
+            {(() => {
+                const configuredGameColor = gamificationConfig?.themeColor?.trim()
+                const brandGameColor = settings.headerBackgroundColor || settings.brandColor
+                const gameThemeColor = configuredGameColor && configuredGameColor.toLowerCase() !== "#8b5cf6"
+                    ? configuredGameColor
+                    : brandGameColor || configuredGameColor
+
+                return showSpinWheel && spinWheelPrizes.length > 0 && gamificationConfig ? (
                 <>
                     {(!gamificationConfig.gameType || gamificationConfig.gameType === "wheel" || gamificationConfig.gameType === "slot") && (
                         <SpinWheelOverlay
@@ -1788,7 +1795,7 @@ function ChatbotContainerContent() {
                             sessionId={sessionId}
                             prizes={spinWheelPrizes}
                             requireEmail={gamificationConfig?.requireEmail}
-                            themeColor={gamificationConfig?.themeColor}
+                            themeColor={gameThemeColor}
                             onClose={() => {
                                 setShowSpinWheel(false)
                                 setSpinWheelShownThisSession(true)
@@ -1814,7 +1821,7 @@ function ChatbotContainerContent() {
                             sessionId={sessionId}
                             prizes={spinWheelPrizes}
                             requireEmail={gamificationConfig?.requireEmail}
-                            themeColor={gamificationConfig?.themeColor}
+                            themeColor={gameThemeColor}
                             onClose={() => {
                                 setShowSpinWheel(false)
                                 setSpinWheelShownThisSession(true)
@@ -1835,7 +1842,7 @@ function ChatbotContainerContent() {
                             sessionId={sessionId}
                             prizes={spinWheelPrizes}
                             requireEmail={gamificationConfig?.requireEmail}
-                            themeColor={gamificationConfig?.themeColor}
+                            themeColor={gameThemeColor}
                             onClose={() => {
                                 setShowSpinWheel(false)
                                 setSpinWheelShownThisSession(true)
@@ -1851,7 +1858,8 @@ function ChatbotContainerContent() {
                         />
                     )}
                 </>
-            )}
+                ) : null
+            })()}
 
             <BookingOverlay
                 chatbotId={chatbotId}
