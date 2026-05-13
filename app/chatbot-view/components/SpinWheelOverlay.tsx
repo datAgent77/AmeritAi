@@ -56,6 +56,7 @@ export function SpinWheelOverlay({
     const [phase, setPhase] = useState<"start" | "spin" | "result" | "lost" | "claim" | "final">("start")
     const [submitting, setSubmitting] = useState(false)
     const animRef = useRef<number | null>(null)
+    const rotationRef = useRef(0)
 
     // Draw wheel
     useEffect(() => {
@@ -106,9 +107,65 @@ export function SpinWheelOverlay({
         ctx.fill()
     }, [prizes, rotation])
 
+    const setWheelRotation = (value: number) => {
+        rotationRef.current = value
+        setRotation(value)
+    }
+
+    const finishSpin = (data: any, startRot: number) => {
+        const targetIndex = data.prizeIndex ?? 0
+        const arc = 360 / prizes.length
+        const normalizedStart = ((startRot % 360) + 360) % 360
+        const targetDeg = 360 - targetIndex * arc - arc / 2
+        const deltaToTarget = ((targetDeg - normalizedStart) % 360 + 360) % 360
+        const endRot = startRot + (3 * 360) + deltaToTarget
+        const duration = 2800
+        let startTime: number | null = null
+
+        function animate(now: number) {
+            if (startTime === null) startTime = now
+            const elapsed = now - startTime
+            const t = Math.min(elapsed / duration, 1)
+            const ease = 1 - Math.pow(1 - t, 4)
+            setWheelRotation(startRot + (endRot - startRot) * ease)
+            if (t < 1) {
+                animRef.current = requestAnimationFrame(animate)
+            } else {
+                setWheelRotation(endRot % 360)
+                setSpinning(false)
+                setLanded(true)
+                setWonPrize(data.prize)
+                setCouponCode(data.couponCode || null)
+                setPhase(data.isWinner === false ? "lost" : "result")
+                onComplete?.()
+                if (data.isWinner !== false) {
+                    onPrize?.(data.prize, data.couponCode)
+                }
+            }
+        }
+
+        animRef.current = requestAnimationFrame(animate)
+    }
+
     async function handleSpin() {
         if (spinning || !prizes.length) return
-        setSubmitting(true)
+        setSubmitting(false)
+        setSpinning(true)
+        setPhase("spin")
+
+        if (animRef.current) cancelAnimationFrame(animRef.current)
+
+        const spinStartedAt = performance.now()
+        const initialRot = rotationRef.current
+        const holdingSpeed = 720 // deg/sec while the API result is pending
+
+        function animatePending(now: number) {
+            const elapsedSeconds = (now - spinStartedAt) / 1000
+            setWheelRotation(initialRot + elapsedSeconds * holdingSpeed)
+            animRef.current = requestAnimationFrame(animatePending)
+        }
+
+        animRef.current = requestAnimationFrame(animatePending)
 
         try {
             const res = await fetch("/api/gamification/spin", {
@@ -123,61 +180,26 @@ export function SpinWheelOverlay({
                 }),
             })
             const data = await res.json()
-            setSubmitting(false)
 
             if (data.error) {
+                if (animRef.current) cancelAnimationFrame(animRef.current)
+                setSpinning(false)
                 setWonPrize("Bir hata oluştu")
                 setPhase("lost")
                 return
             }
 
             if (data.alreadySpun) {
-                // If the user already spun (e.g. testing again without clearing DB),
-                // we skip the animation to instantly show their historical prize.
-                setWonPrize(data.prize)
-                setCouponCode(data.couponCode || null)
-                setPhase(data.isWinner === false ? "lost" : "result")
-                onComplete?.()
+                if (animRef.current) cancelAnimationFrame(animRef.current)
+                finishSpin(data, rotationRef.current)
                 return
             }
 
-            const targetIndex = data.prizeIndex ?? 0
-            const arc = 360 / prizes.length
-            const targetDeg = 360 - targetIndex * arc - arc / 2
-            const spins = 5 * 360 + targetDeg
-            const startRot = rotation
-            const endRot = startRot + spins
-            const duration = 4000
-            
-            let startTime: number | null = null
-
-            setSpinning(true)
-            setPhase("spin")
-
-            function animate(now: number) {
-                if (startTime === null) startTime = now
-                const elapsed = now - startTime
-                const t = Math.min(elapsed / duration, 1)
-                const ease = 1 - Math.pow(1 - t, 4)
-                setRotation(startRot + (endRot - startRot) * ease)
-                if (t < 1) {
-                    animRef.current = requestAnimationFrame(animate)
-                } else {
-                    setRotation(endRot % 360)
-                    setSpinning(false)
-                    setLanded(true)
-                    setWonPrize(data.prize)
-                    setCouponCode(data.couponCode || null)
-                    setPhase(data.isWinner === false ? "lost" : "result")
-                    onComplete?.()
-                    if (data.isWinner !== false) {
-                        onPrize?.(data.prize, data.couponCode)
-                    }
-                }
-            }
-            animRef.current = requestAnimationFrame(animate)
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+            finishSpin(data, rotationRef.current)
         } catch {
-            setSubmitting(false)
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+            setSpinning(false)
             setWonPrize("Bağlantı hatası")
             setPhase("lost")
         }
