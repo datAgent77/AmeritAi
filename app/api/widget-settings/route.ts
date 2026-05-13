@@ -1076,6 +1076,14 @@ export async function POST(req: Request) {
             quickActions: normalizedQuickActions,
         };
 
+        if (
+            normalizedSettingsToSave.gamification
+            && typeof normalizedSettingsToSave.gamification === "object"
+            && typeof normalizedSettingsToSave.gamification.enabled === "boolean"
+        ) {
+            normalizedSettingsToSave.enableGamification = normalizedSettingsToSave.gamification.enabled;
+        }
+
         // If industry is being set, also update sector and sectorId to ensure AI uses correct sector
         // AI service prioritizes sector > sectorId > industry, so we must sync all three
         const dataToSave: Record<string, any> = stripUndefinedDeep({

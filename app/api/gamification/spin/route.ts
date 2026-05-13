@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { isWinningPrize, pickPrize } from "@/lib/gamification/spin-engine"
+import { resolveGamificationRuntimeAccess } from "@/lib/gamification/runtime-access"
 import { sendGamificationWinnerNotification } from "@/lib/email-service"
 
 export const runtime = "nodejs"
@@ -30,6 +31,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "visitorId veya sessionId zorunlu" }, { status: 400 })
         }
 
+        const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
+        const chatbotData = chatbotSnap.data()
+        const access = await resolveGamificationRuntimeAccess(adminDb, chatbotId, chatbotData)
+        const gamification = access.gamification
+        if (!access.enabled || !gamification) {
+            return NextResponse.json({ error: "Gamification disabled" }, { status: 400 })
+        }
+
         if (dedupKey) {
             const existing = await adminDb
                 .collection("gamification_spins")
@@ -50,13 +59,6 @@ export async function POST(req: Request) {
                     isWinner,
                 })
             }
-        }
-
-        const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
-        const chatbotData = chatbotSnap.data()
-        const gamification = chatbotData?.gamification
-        if (!gamification?.enabled) {
-            return NextResponse.json({ error: "Gamification disabled" }, { status: 400 })
         }
 
         const prizes = gamification.prizes || []
