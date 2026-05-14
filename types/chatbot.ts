@@ -119,6 +119,7 @@ export interface ClassicDeviceAppearanceSettings {
     launcherHoverEffect?: "scale" | "opacity" | "none";
     viewMode?: string;
     modalSize?: string;
+    classicInputVariant?: "default" | "artify";
 }
 
 export interface ChatbotSettings {
@@ -254,6 +255,9 @@ export interface ChatbotSettings {
     mobileLauncherAnimation: string;
     interactionMode?: "launcher" | "always_open";
     chatDisplayMode?: "classic" | "ambient" | "sidecar";
+    classicInputVariant?: "default" | "artify";
+    viewMode?: "classic" | "wide" | string;
+    modalSize?: string;
     sidecarWidth?: number;
     sidecarMinWidth?: number;
     sidecarMaxWidth?: number;

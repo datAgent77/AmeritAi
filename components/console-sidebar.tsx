@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { PricingModal } from "@/components/pricing-modal"
+import { isGamificationModuleEnabled } from "@/lib/gamification/access"
 import { useEffect, useState } from "react"
 import {
     Sidebar,
@@ -121,7 +122,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 setIsLeadCollectionEnabled(data.enableLeadCollection === true || data.enableLeadFinder === true || data.productEntitlements?.leadFinder === true)
                 setIsDigitalWaiterEnabled(data.enableDigitalWaiter === true)
                 setIsAppointmentsEnabled(data.enableAppointments === true)
-                setIsGamificationEnabled(data.enableGamification === true)
+                setIsGamificationEnabled(isGamificationModuleEnabled(data, data))
             } catch (error) {
                 console.error("Failed to load tenant module status:", error)
             }
@@ -187,7 +188,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
 
     const canShowAppointments = targetUserId ? isAppointmentsEnabled : (userData?.enableAppointments === true || isAppointmentsEnabled)
     const canShowDigitalWaiter = targetUserId ? isDigitalWaiterEnabled : (enableDigitalWaiter === true || isDigitalWaiterEnabled)
-    const canShowGamification = targetUserId ? isGamificationEnabled : (userData?.enableGamification === true || isGamificationEnabled)
+    const canShowGamification = targetUserId
+        ? isGamificationEnabled
+        : (isGamificationModuleEnabled(null, userData) || isGamificationEnabled)
 
     const tenantGroups = [
 // ... unchanged ...

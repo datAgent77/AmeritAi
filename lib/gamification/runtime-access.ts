@@ -1,19 +1,11 @@
 import type { Firestore } from "firebase-admin/firestore"
+import { isGamificationModuleEnabled } from "@/lib/gamification/access"
 
 type RuntimeAccessResult = {
     chatbotData: Record<string, any>
     gamification: Record<string, any> | null
     enabled: boolean
     reason?: "module_disabled" | "config_disabled"
-}
-
-function isAdminDenied(data?: Record<string, any> | null) {
-    return data?.adminGrantedModules?.gamification === false
-}
-
-function isModuleEnabled(chatbotData?: Record<string, any> | null, userData?: Record<string, any> | null) {
-    if (isAdminDenied(chatbotData) || isAdminDenied(userData)) return false
-    return chatbotData?.enableGamification === true || userData?.enableGamification === true
 }
 
 export async function resolveGamificationRuntimeAccess(
@@ -28,7 +20,7 @@ export async function resolveGamificationRuntimeAccess(
     const userData = userSnap?.data() || null
     const gamification = chatbotData.gamification || null
 
-    if (!isModuleEnabled(chatbotData, userData)) {
+    if (!isGamificationModuleEnabled(chatbotData, userData)) {
         return { chatbotData, gamification, enabled: false, reason: "module_disabled" }
     }
 

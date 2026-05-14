@@ -72,6 +72,7 @@ export interface WidgetSettings {
     mobileLauncherAnimation: string
     interactionMode: "launcher" | "always_open"
     chatDisplayMode: "classic" | "ambient" | "sidecar"
+    classicInputVariant: "default" | "artify"
     enableClassicEntryOnboarding: boolean
     ambientMaxHeight: number
     ambientOverlayOpacity: number
@@ -196,6 +197,7 @@ const defaultSettings: WidgetSettings = {
     mobileLauncherAnimation: "none",
     interactionMode: "launcher",
     chatDisplayMode: "classic",
+    classicInputVariant: "default",
     enableClassicEntryOnboarding: true,
     ambientMaxHeight: 260,
     ambientOverlayOpacity: 0.55,
@@ -337,6 +339,12 @@ export function useWidgetSettings(userId?: string) {
                                 ? "always_open"
                                 : (data.interactionMode === "always_open" ? "always_open" : "launcher"),
                         chatDisplayMode: ["ambient", "sidecar"].includes(data.chatDisplayMode) ? data.chatDisplayMode : "classic",
+                        classicInputVariant:
+                            data.classicInputVariant === "artify" ||
+                            data.classicDesktopSettings?.classicInputVariant === "artify" ||
+                            data.classicMobileSettings?.classicInputVariant === "artify"
+                                ? "artify"
+                                : "default",
                         enableClassicEntryOnboarding:
                             typeof data.enableClassicEntryOnboarding === "boolean"
                                 ? data.enableClassicEntryOnboarding

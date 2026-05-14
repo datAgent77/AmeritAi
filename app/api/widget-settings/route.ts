@@ -9,6 +9,7 @@ import { DEFAULT_HUMAN_HANDOFF_BUSINESS_DAYS, resolveHumanHandoffSettings } from
 import { resolveQuickActionsConfig } from "@/lib/quick-actions";
 import { getPublishedContract } from "@/lib/contracts";
 import { buildDefaultSurveyWidgetConfig, buildPublicSurvey, buildSurveyModuleConfig, fetchSurveyById } from "@/lib/surveys/service";
+import { isGamificationAdminDenied } from "@/lib/gamification/access";
 
 // Updated: 2026-01-01 - Added enableVisualDiagnosis support
 export const dynamic = 'force-dynamic';
@@ -518,6 +519,12 @@ export async function GET(req: Request) {
                                 ? "always_open"
                                 : (mergedData.interactionMode === "always_open" ? "always_open" : "launcher"),
                         chatDisplayMode: ["ambient", "sidecar"].includes(mergedData.chatDisplayMode) ? mergedData.chatDisplayMode : "classic",
+                        classicInputVariant:
+                            mergedData.classicInputVariant === "artify" ||
+                            mergedData.classicDesktopSettings?.classicInputVariant === "artify" ||
+                            mergedData.classicMobileSettings?.classicInputVariant === "artify"
+                                ? "artify"
+                                : "default",
                         enableClassicEntryOnboarding:
                             typeof mergedData.enableClassicEntryOnboarding === "boolean"
                                 ? mergedData.enableClassicEntryOnboarding
@@ -710,6 +717,7 @@ export async function GET(req: Request) {
                 launcherAnimation: "none",
                 interactionMode: "launcher",
                 chatDisplayMode: "classic",
+                classicInputVariant: "default",
                 enableClassicEntryOnboarding: true,
                 ambientMaxHeight: 260,
                 ambientOverlayOpacity: 0.55,
@@ -846,6 +854,7 @@ export async function GET(req: Request) {
                 initialLanguage: "tr",
                 interactionMode: "launcher",
                 chatDisplayMode: "classic",
+                classicInputVariant: "default",
                 enableClassicEntryOnboarding: true,
                 ambientMaxHeight: 260,
                 ambientOverlayOpacity: 0.55,
@@ -938,6 +947,7 @@ export async function GET(req: Request) {
             initialLanguage: "tr",
             interactionMode: "launcher",
             chatDisplayMode: "classic",
+            classicInputVariant: "default",
             enableClassicEntryOnboarding: true,
             ambientMaxHeight: 260,
             ambientOverlayOpacity: 0.55,
@@ -1081,6 +1091,20 @@ export async function POST(req: Request) {
             && typeof normalizedSettingsToSave.gamification === "object"
             && typeof normalizedSettingsToSave.gamification.enabled === "boolean"
         ) {
+            const [targetUserSnap, targetChatbotSnap] = await Promise.all([
+                adminDb.collection("users").doc(targetChatbotId).get(),
+                adminDb.collection("chatbots").doc(targetChatbotId).get(),
+            ]);
+            const targetUserData = targetUserSnap.data() || null;
+            const targetChatbotData = targetChatbotSnap.data() || null;
+
+            if (
+                normalizedSettingsToSave.gamification.enabled === true
+                && (isGamificationAdminDenied(targetUserData) || isGamificationAdminDenied(targetChatbotData))
+            ) {
+                return NextResponse.json({ error: "Gamification module is disabled for this tenant" }, { status: 403 });
+            }
+
             normalizedSettingsToSave.enableGamification = normalizedSettingsToSave.gamification.enabled;
         }
 

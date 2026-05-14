@@ -322,6 +322,7 @@ function ChatbotContainerContent() {
                 window.parent.postMessage({ type: 'USEREX_OPEN_WIDGET' }, '*')
             }
             setShowSpinWheel(true)
+            setSpinWheelShownThisSession(true)
         }
 
         const cleanupFns: (() => void)[] = []
@@ -400,10 +401,19 @@ function ChatbotContainerContent() {
     spinWheelPrizesRef.current = spinWheelPrizes
     const spinWheelShownRef = useRef(spinWheelShownThisSession)
     spinWheelShownRef.current = spinWheelShownThisSession
+    const gamificationConfigRef = useRef(gamificationConfig)
+    gamificationConfigRef.current = gamificationConfig
 
     useEffect(() => {
         const handleMouseLeave = (e: MouseEvent) => {
-            if (e.clientY <= 0 && spinWheelPrizesRef.current.length > 0 && !spinWheelShownRef.current) {
+            const currentGamificationConfig = gamificationConfigRef.current
+            if (
+                e.clientY <= 0
+                && currentGamificationConfig?.enabled === true
+                && currentGamificationConfig.triggers?.exitIntent === true
+                && spinWheelPrizesRef.current.length > 0
+                && !spinWheelShownRef.current
+            ) {
                 const alreadySpun = localStorage.getItem(`spun_${chatbotId}`)
                 if (!alreadySpun) {
                     // Signal parent to open the widget
@@ -1525,8 +1535,8 @@ function ChatbotContainerContent() {
                         color-scheme: ${effectiveSettings.theme === 'dark' ? 'dark' : 'light'};
                     } 
                     .vion-ambient-card { 
-                        background-color: ${effectiveSettings.theme === 'dark' ? '#18181b' : 'white'} !important; 
-                        background: ${effectiveSettings.theme === 'dark' ? '#18181b' : 'white'} !important; 
+                        background-color: ${effectiveSettings.theme === 'dark' ? '#18181b' : '#f3f4f6'} !important;
+                        background: ${effectiveSettings.theme === 'dark' ? '#18181b' : '#f3f4f6'} !important;
                     }
                 ` }} />
             )}
@@ -1554,7 +1564,7 @@ function ChatbotContainerContent() {
                             }}
                         >
                             <div
-                                className="vion-ambient-card flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
+                                className="vion-ambient-card flex-1 flex flex-col bg-gray-100 dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
                                 style={{ boxShadow: '0 8px 40px -4px rgba(0,0,0,0.20), 0 4px 20px -4px rgba(0,0,0,0.14)' }}
                             >
                                 {/* Ambient Card Header — same as Classic mode */}
@@ -1615,12 +1625,12 @@ function ChatbotContainerContent() {
                                     />
                                 </div>
                                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 px-2">
-                                    <p className="text-[10px] text-gray-400 text-center text-balance">
+                                    <p className="text-[11px] font-medium text-gray-500 text-center text-balance">
                                         {t('aiDisclaimer')}
                                     </p>
                                     {effectiveSettings.hideVionBranding !== true && (
                                         <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                            <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
+                                            <span className="text-[11px] font-medium text-gray-500">{t("poweredBy")}</span>
                                             <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
                                         </a>
                                     )}
@@ -1663,7 +1673,7 @@ function ChatbotContainerContent() {
                     </div>
                 </div>
             ) : (
-                <div className="flex h-full flex-col bg-white dark:bg-zinc-900 rounded-none md:rounded-[20px] overflow-hidden">
+                <div className="flex h-full flex-col bg-gray-100 dark:bg-zinc-900 rounded-none md:rounded-[20px] overflow-hidden">
                     {!showClassicEntryOnboarding && (
                         <ChatHeader
                             settings={effectiveSettings}

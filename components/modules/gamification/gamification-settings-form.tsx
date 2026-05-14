@@ -10,7 +10,8 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Gift, MousePointerClick, Loader2, Save, Wand2, Plus, Trash2, ArrowDown, Timer } from "lucide-react"
+import { isGamificationModuleEnabled } from "@/lib/gamification/access"
+import { AlertTriangle, Gift, MousePointerClick, Loader2, Save, Wand2, Plus, Trash2, ArrowDown, Timer } from "lucide-react"
 
 interface Prize {
     name: string
@@ -79,6 +80,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
     const [config, setConfig] = useState<GamificationConfig>(defaultConfig)
     const [isLoading, setIsLoading] = useState(true)
     const [isSaving, setIsSaving] = useState(false)
+    const [accessDenied, setAccessDenied] = useState(false)
 
     const loadConfig = useCallback(async () => {
         setIsLoading(true)
@@ -89,6 +91,11 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
             })
             if (res.ok) {
                 const data = await res.json()
+                if (!isSuperAdmin && !isGamificationModuleEnabled(data, data)) {
+                    setAccessDenied(true)
+                    return
+                }
+                setAccessDenied(false)
                 if (data.gamification) {
                     setConfig(prev => ({ ...prev, ...data.gamification }))
                 }
@@ -98,7 +105,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
         } finally {
             setIsLoading(false)
         }
-    }, [targetUserId, user])
+    }, [targetUserId, user, isSuperAdmin])
 
     useEffect(() => {
         if (targetUserId && user) {
@@ -174,6 +181,24 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
+
+    if (accessDenied) {
+        return (
+            <div className="flex-1 p-8 pt-6 max-w-3xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <AlertTriangle className="h-5 w-5 text-amber-600" />
+                            <CardTitle>{t('modules.gamification') || "Gamification"} modülü aktif değil</CardTitle>
+                        </div>
+                        <CardDescription>
+                            Bu tenant için Oyunlaştırma modülü kapalı olduğu için ayar sayfası kullanılamaz.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
             </div>
         )
     }

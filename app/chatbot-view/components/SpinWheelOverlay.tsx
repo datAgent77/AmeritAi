@@ -29,6 +29,7 @@ const DEFAULT_COLORS = [
     "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
     "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
 ]
+const SPIN_REQUEST_TIMEOUT_MS = 12000
 
 export function SpinWheelOverlay({ 
     chatbotId, 
@@ -108,6 +109,12 @@ export function SpinWheelOverlay({
         ctx.fill()
     }, [prizes, rotation])
 
+    useEffect(() => {
+        return () => {
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+        }
+    }, [])
+
     const setWheelRotation = (value: number) => {
         rotationRef.current = value
         setRotation(value)
@@ -168,10 +175,14 @@ export function SpinWheelOverlay({
 
         animRef.current = requestAnimationFrame(animatePending)
 
+        const controller = new AbortController()
+        const timeoutId = window.setTimeout(() => controller.abort(), SPIN_REQUEST_TIMEOUT_MS)
+
         try {
             const res = await fetch("/api/gamification/spin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
                     chatbotId,
                     sessionId,
@@ -180,12 +191,12 @@ export function SpinWheelOverlay({
                         : undefined,
                 }),
             })
-            const data = await res.json()
+            const data = await res.json().catch(() => ({}))
 
-            if (data.error) {
+            if (!res.ok || data.error) {
                 if (animRef.current) cancelAnimationFrame(animRef.current)
                 setSpinning(false)
-                setWonPrize("Bir hata oluştu")
+                setWonPrize(data.error || "Bir hata oluştu")
                 setPhase("lost")
                 return
             }
@@ -198,11 +209,13 @@ export function SpinWheelOverlay({
 
             if (animRef.current) cancelAnimationFrame(animRef.current)
             finishSpin(data, rotationRef.current)
-        } catch {
+        } catch (error: any) {
             if (animRef.current) cancelAnimationFrame(animRef.current)
             setSpinning(false)
-            setWonPrize("Bağlantı hatası")
+            setWonPrize(error?.name === "AbortError" ? "İstek zaman aşımına uğradı" : "Bağlantı hatası")
             setPhase("lost")
+        } finally {
+            window.clearTimeout(timeoutId)
         }
     }
 

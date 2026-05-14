@@ -125,7 +125,7 @@ const QUICK_ACTION_DEFINITIONS = {
         label: "Görsel Analiz",
         moduleId: "visualDiagnosis",
         triggerMessage: "görsel analizi başlatmak istiyorum",
-        iconName: "ImageIcon",
+        iconName: "Scan",
         title: {
             tr: "Görsel Tanı",
             en: "Visual Diagnosis",

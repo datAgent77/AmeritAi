@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { Sparkles, X, Send, MessageSquare } from "lucide-react"
+import { ArrowUp, Code2, ImagePlus, MessageSquare, MoreHorizontal, Send, Sparkles, X } from "lucide-react"
 import dynamic from "next/dynamic"
 import * as LucideIcons from "lucide-react"
 
@@ -23,6 +23,7 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
 
     // Sidecar mode: panel pinned to the right, but can collapse back to launcher
     const isSidecarMode = settings.chatDisplayMode === 'sidecar'
+    const isArtifyInput = settings.classicInputVariant === 'artify'
     const sidecarAlwaysOpen = settings.sidecarAlwaysOpen === true
     const isSidecarMobileHidden = isSidecarMode && settings.sidecarDesktopOnly !== false && previewMode === 'mobile'
     const showSidecar = isSidecarMode && !isSidecarMobileHidden && (sidecarAlwaysOpen || isPreviewOpen)
@@ -138,7 +139,7 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                             <div className="flex flex-col items-end gap-3 mb-6">
                                 {settings.suggestedQuestions.slice(0, 3).map((q: string, i: number) => (
                                     <button key={i}
-                                        className="bg-white hover:bg-gray-50 text-sm py-2.5 px-4 rounded-2xl shadow-sm border transition-all text-left max-w-full"
+                                        className="bg-white hover:bg-gray-50 text-sm py-2.5 pl-3 pr-4 rounded-2xl border transition-colors text-left max-w-full"
                                         style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}>
                                         {q}
                                     </button>
@@ -183,7 +184,7 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                                 {settings.suggestedQuestions?.filter((q: string) => q && q.trim() !== "").map((q: string, i: number) => (
                                     <button
                                         key={i}
-                                        className="rounded-xl border bg-white px-4 py-3 text-left text-xs leading-snug text-gray-700 shadow-sm transition-all hover:bg-gray-50 break-words whitespace-normal"
+                                        className="rounded-xl border bg-white py-3 pl-3 pr-4 text-left text-xs leading-snug text-gray-700 transition-colors hover:bg-gray-50 break-words whitespace-normal"
                                         style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40`, color: settings.headerBackgroundColor || settings.brandColor }}
                                     >
                                         {q}
@@ -192,10 +193,56 @@ export function PreviewClassic({ settings, previewMode, isPreviewOpen, setIsPrev
                             </div>
                         </div>
                         <div className="p-3 border-t bg-white dark:bg-gray-950">
-                            <div className="flex gap-2">
-                                <div className="flex-1 text-xs bg-gray-100 dark:bg-gray-900 rounded-full px-3 py-2 text-gray-500 flex items-center">Type a message...</div>
-                                <button className="p-2 rounded-full text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}><Send className="w-3 h-3" /></button>
-                            </div>
+                            {isArtifyInput ? (
+                                <div className="flex min-h-[104px] flex-col justify-between gap-3 rounded-[20px] border border-gray-200 bg-white p-3 shadow-[0_6px_18px_rgba(15,23,42,0.06)] dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-[0_6px_18px_rgba(0,0,0,0.22)]">
+                                    <div className="line-clamp-2 px-1 text-left text-xs font-normal leading-5 text-gray-400">
+                                        Type a message...
+                                    </div>
+                                    <div className="flex items-end justify-between gap-2">
+                                        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-visible">
+                                            {[0, 1].map((item) => (
+                                                <button
+                                                    key={item}
+                                                    className="inline-flex h-9 max-w-[112px] items-center gap-1.5 rounded-full border bg-white pl-1.5 pr-2.5 text-[10px] font-semibold text-gray-700"
+                                                    style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}33` }}
+                                                >
+                                                    <span
+                                                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                                                        style={{
+                                                            color: settings.headerBackgroundColor || settings.brandColor,
+                                                            backgroundColor: `${settings.headerBackgroundColor || settings.brandColor}1F`,
+                                                        }}
+                                                    >
+                                                        <Code2 className="h-3 w-3" />
+                                                    </span>
+                                                    <span className="truncate">Button</span>
+                                                </button>
+                                            ))}
+                                            <button
+                                                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-gray-700"
+                                                style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}33` }}
+                                            >
+                                                <MoreHorizontal className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-700" aria-hidden>
+                                                <ImagePlus className="h-4 w-4" />
+                                            </button>
+                                            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}>
+                                                <ArrowUp className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <div className="flex-1 text-xs bg-gray-100 dark:bg-gray-900 rounded-full px-3 py-2 text-gray-500 flex items-center">
+                                        Type a message...
+                                    </div>
+                                    <button className="p-2 rounded-full text-white" style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor }}><Send className="w-3 h-3" /></button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )

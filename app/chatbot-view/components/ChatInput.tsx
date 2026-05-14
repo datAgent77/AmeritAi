@@ -3,7 +3,7 @@ import { ChatbotSettings, QuickActionButton } from "@/types/chatbot"
 import type { GuidedSkillClientEvent } from "@/lib/guided-skills/types"
 import { getQuickActionDefinition, getQuickActionDisplayLabel, getQuickActionTriggerMessage } from "@/lib/quick-actions"
 import * as LucideIcons from "lucide-react"
-import { Send, ImageIcon, X, ChevronDown, ChevronUp, MessageCircle, Phone } from "lucide-react"
+import { ArrowUp, Code2, ImagePlus, Mic, MoreHorizontal, Send, X, ChevronDown, ChevronUp, MessageCircle, Phone } from "lucide-react"
 import { useVisualContext } from "../hooks/useVisualContext"
 import type { UserMessageMediaPayload } from "../hooks/useChatCore"
 import Image from "next/image"
@@ -17,6 +17,32 @@ type AmbientIconComponent = React.ComponentType<{ className?: string; color?: st
 const ambientIconRegistry = LucideIcons as unknown as Record<string, AmbientIconComponent>
 type QuickActionIconComponent = React.ComponentType<{ className?: string }>
 const quickActionIconRegistry = LucideIcons as unknown as Record<string, QuickActionIconComponent>
+
+const ARTIFY_PILL_GAP_PX = 12
+const ARTIFY_MORE_BTN_PX = 40
+const ARTIFY_MAX_INLINE_PILLS = 3
+
+function computeArtifyInlinePillCount(pillWidths: readonly number[], availableWidth: number): number {
+    const n = pillWidths.length
+    if (n === 0 || availableWidth <= 0) return 0
+    const maxK = Math.min(ARTIFY_MAX_INLINE_PILLS, n)
+    for (let k = maxK; k >= 0; k--) {
+        const needMore = n > k
+        let used = 0
+        for (let i = 0; i < k; i++) {
+            used += pillWidths[i]
+            if (i > 0) used += ARTIFY_PILL_GAP_PX
+        }
+        if (needMore) {
+            if (k > 0) used += ARTIFY_PILL_GAP_PX
+            used += ARTIFY_MORE_BTN_PX
+        } else if (k === 0 && n > 0) {
+            used = ARTIFY_MORE_BTN_PX
+        }
+        if (used <= availableWidth) return k
+    }
+    return 0
+}
 
 function colorWithAlpha(color: string | undefined, alpha: number) {
     const value = (color || "#7c3aed").trim()
@@ -109,6 +135,8 @@ export function ChatInput({
     const fileInputRef = React.useRef<HTMLInputElement>(null)
     const isAmbientMode = mode === "ambient"
     const isSidecarMode = mode === "sidecar"
+    const isClassicArtifyInput = !isAmbientMode && !isSidecarMode && settings.classicInputVariant === "artify"
+    const isWideView = settings.viewMode === "wide"
     const isAmbientInputOnly = isAmbientMode && ambientInputOnly
     const ambientPlaceholder = resolveLocalizedText(
         settings.ambientPlaceholderText,
@@ -122,7 +150,7 @@ export function ChatInput({
     const ambientActionButtonClass = `${sizeConfig.buttonSizeClass} rounded-full bg-white/90 backdrop-blur-sm text-gray-500 border border-gray-200/60 shadow-sm flex items-center justify-center transition-all hover:bg-white hover:shadow-md hover:text-gray-700 dark:bg-zinc-800/90 dark:text-zinc-300 dark:border-zinc-700/70 dark:hover:bg-zinc-700/95 dark:hover:text-zinc-100 dark:hover:border-zinc-600`
     const ambientSendButtonClass = `${sizeConfig.buttonSizeClass} rounded-full text-white shadow-sm flex items-center justify-center transition-all hover:brightness-90 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed`
     const sidecarActionButtonClass = "flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 shadow-sm transition-all hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-    const sidecarSendButtonClass = "flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+    const sidecarSendButtonClass = "flex h-9 w-9 items-center justify-center rounded-full text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
     const textModeLabel = language === "tr" ? "Yazı" : "Text"
     const voiceModeLabel = language === "tr" ? "Ses" : "Voice"
     const voiceButtonTitle = language === "tr" ? "Sesli görüşmeye geç" : "Switch to voice"
@@ -134,6 +162,10 @@ export function ChatInput({
 
     const [isInputFocused, setIsInputFocused] = React.useState(false)
     const [isMobileViewport, setIsMobileViewport] = React.useState(false)
+    const [isArtifyMoreOpen, setIsArtifyMoreOpen] = React.useState(false)
+    const [artifyInlineCount, setArtifyInlineCount] = React.useState(0)
+    const artifyLeftClusterRef = React.useRef<HTMLDivElement>(null)
+    const artifyMeasurePillsRef = React.useRef<HTMLDivElement>(null)
     const inputRef = React.useRef<HTMLInputElement | HTMLTextAreaElement>(null)
     const ambientDockStyles = isAmbientMode
         ? resolveAmbientDockStyle({
@@ -381,9 +413,88 @@ export function ChatInput({
         } as React.CSSProperties)
         : undefined
 
-    const hasQuickActions =
-        !isAmbientMode &&
-        Boolean(quickActions?.enabled && Array.isArray(quickActions?.buttons) && quickActions.buttons.some((b) => b.visible))
+    const visibleQuickActionButtons = quickActions?.enabled && Array.isArray(quickActions?.buttons)
+        ? quickActions.buttons.filter((button) => button.visible).sort((a, b) => a.order - b.order)
+        : []
+    const suggestedQuestionShortcuts = Array.isArray(settings.suggestedQuestions)
+        ? settings.suggestedQuestions
+            .filter((question): question is string => typeof question === "string" && question.trim().length > 0)
+            .slice(0, 3)
+            .map((question, index) => ({
+                id: `suggested-${index}`,
+                label: question,
+                Icon: Code2,
+                onClick: () => void sendMessage(question),
+            }))
+        : []
+    const artifyShortcutItems = visibleQuickActionButtons.length > 0
+        ? visibleQuickActionButtons.map((btn) => {
+            const iconName = getQuickActionDefinition(btn.moduleId).iconName
+            const Icon = quickActionIconRegistry[iconName] || Code2
+            const displayLabel = getQuickActionDisplayLabel(btn, language)
+            const triggerMessage = getQuickActionTriggerMessage(btn, language)
+            return {
+                id: btn.id,
+                label: displayLabel,
+                Icon,
+                onClick: () => {
+                    if (onTriggerAction) {
+                        onTriggerAction({ ...btn, label: displayLabel, triggerMessage })
+                    } else {
+                        void sendMessage(triggerMessage)
+                    }
+                },
+            }
+        })
+        : suggestedQuestionShortcuts
+
+    const artifyShortcutKey = artifyShortcutItems.map((it) => `${it.id}:${it.label}`).join("|")
+
+    const visibleArtifyShortcutItems = artifyShortcutItems.slice(0, artifyInlineCount)
+    const overflowArtifyShortcutItems = artifyShortcutItems.slice(artifyInlineCount)
+    const hasQuickActions = !isAmbientMode && !isClassicArtifyInput && visibleQuickActionButtons.length > 0
+
+    React.useLayoutEffect(() => {
+        if (!isClassicArtifyInput) return
+
+        const run = () => {
+            const left = artifyLeftClusterRef.current
+            const measure = artifyMeasurePillsRef.current
+            if (!left || !measure) return
+
+            const n = artifyShortcutItems.length
+            if (n === 0) {
+                setArtifyInlineCount((prev) => (prev === 0 ? prev : 0))
+                return
+            }
+
+            const els = measure.querySelectorAll<HTMLElement>("[data-artify-pill-measure]")
+            const widths: number[] = []
+            els.forEach((el) => widths.push(el.offsetWidth))
+
+            if (widths.length !== n) return
+
+            const available = Math.floor(left.getBoundingClientRect().width)
+            const next = computeArtifyInlinePillCount(widths, available)
+            setArtifyInlineCount((prev) => (prev === next ? prev : next))
+        }
+
+        run()
+
+        const left = artifyLeftClusterRef.current
+        if (!left || typeof ResizeObserver === "undefined") return
+
+        const ro = new ResizeObserver(() => run())
+        ro.observe(left)
+        return () => ro.disconnect()
+    }, [
+        isClassicArtifyInput,
+        artifyShortcutKey,
+        artifyShortcutItems.length,
+        settings.enableVisualDiagnosis,
+        showConversationModeSwitch,
+        language,
+    ])
 
     return (
         <div
@@ -392,8 +503,10 @@ export function ChatInput({
                     ? "pt-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-transparent"
                     : "pt-1 pb-[calc(0.85rem+env(safe-area-inset-bottom))] bg-transparent")
                 : isSidecarMode
-                    ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800"
-                    : `px-4 sm:px-8 ${hasQuickActions ? "pt-3" : "pt-4"} pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-800`}
+                    ? "px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gray-100 dark:bg-zinc-950 border-t border-gray-200 dark:border-zinc-800"
+                    : isWideView
+                        ? `px-0 ${hasQuickActions ? "pt-3" : "pt-4"} pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gray-100 dark:bg-zinc-950`
+                        : `px-2 sm:px-4 ${hasQuickActions ? "pt-3" : "pt-4"} pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gray-100 dark:bg-zinc-950`}
             style={{ backgroundColor: isAmbientMode ? 'transparent' : undefined }}
         >
             <div
@@ -414,10 +527,7 @@ export function ChatInput({
                             }}
                         >
                             <div className="flex w-max min-w-max flex-nowrap gap-2 px-1">
-                        {(quickActions?.buttons ?? [])
-                            .filter((b) => b.visible)
-                            .sort((a, b) => a.order - b.order)
-                            .map((btn) => {
+                        {visibleQuickActionButtons.map((btn) => {
                                 const iconName = getQuickActionDefinition(btn.moduleId).iconName
                                 const Icon = quickActionIconRegistry[iconName] || MessageCircle
                                 const displayLabel = getQuickActionDisplayLabel(btn, language)
@@ -428,7 +538,7 @@ export function ChatInput({
                                         type="button"
                                         onClick={() => onTriggerAction ? onTriggerAction({ ...btn, label: displayLabel, triggerMessage }) : sendMessage(triggerMessage)}
                                         disabled={isChatLoading || disabled}
-                                        className="group inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-[0_8px_18px_rgba(15,23,42,0.05)] backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 hover:text-gray-950 hover:shadow-[0_10px_22px_rgba(15,23,42,0.10)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none dark:text-zinc-100 dark:hover:text-white"
+                                        className="group inline-flex shrink-0 items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3.5 text-xs font-semibold text-gray-700 backdrop-blur-sm transition-[background-color,border-color,color,transform] duration-200 hover:text-gray-950 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 dark:text-zinc-100 dark:hover:text-white"
                                         style={{
                                             borderColor: quickActionBorder,
                                             background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
@@ -485,15 +595,190 @@ export function ChatInput({
                             </div>
                         </div>
                     )}
-                    <form
-                        onSubmit={handleSubmit}
-                        className={isAmbientMode
+                    {isClassicArtifyInput ? (
+                        <form
+                            onSubmit={handleSubmit}
+                            className="relative flex min-h-[124px] flex-col justify-between gap-3 rounded-[20px] border border-gray-200 bg-white px-2.5 py-3 shadow-[0_6px_18px_rgba(15,23,42,0.06)] transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-[0_6px_18px_rgba(0,0,0,0.22)]"
+                        >
+                            {artifyShortcutItems.length > 0 && (
+                                <div
+                                    ref={artifyMeasurePillsRef}
+                                    className="pointer-events-none fixed -left-[9999px] top-0 z-[-1] flex gap-3 opacity-0"
+                                    aria-hidden
+                                >
+                                    {artifyShortcutItems.map((item) => {
+                                        const Icon = item.Icon
+                                        return (
+                                            <button
+                                                key={`measure-${item.id}`}
+                                                type="button"
+                                                tabIndex={-1}
+                                                data-artify-pill-measure
+                                                className="group inline-flex h-9 max-w-[170px] shrink-0 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-xs font-semibold text-gray-700 backdrop-blur-sm dark:text-zinc-100"
+                                                style={{
+                                                    borderColor: quickActionBorder,
+                                                    background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
+                                                }}
+                                            >
+                                                <span
+                                                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                                                    style={{
+                                                        color: quickActionColor,
+                                                        backgroundColor: quickActionIconSurface,
+                                                    }}
+                                                >
+                                                    <Icon className="h-3.5 w-3.5" />
+                                                </span>
+                                                <span className="truncate leading-none">{item.label}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                            {settings.enableVisualDiagnosis && (
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    accept="image/png, image/jpeg, image/webp"
+                                    onChange={handleImageSelect}
+                                    className="hidden"
+                                />
+                            )}
+                            <textarea
+                                ref={(node) => {
+                                    inputRef.current = node
+                                }}
+                                value={localInput}
+                                onChange={(e) => setLocalInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                rows={1}
+                                disabled={isChatLoading}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                spellCheck={false}
+                                enterKeyHint="send"
+                                name="vion-chat-input"
+                                placeholder={selectedImage
+                                    ? (language === 'tr' ? 'Görsel hakkında soru sorun...' : 'Ask about the image...')
+                                    : t('messagePlaceholder')}
+                                className="min-h-[48px] w-full resize-none border-0 bg-transparent px-1 py-0 text-base font-normal leading-6 text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                                style={{ fontSize: isMobileViewport ? '16px' : undefined }}
+                            />
+                            <div className="flex items-end gap-3">
+                                <div ref={artifyLeftClusterRef} className="flex min-h-9 min-w-0 flex-1 flex-nowrap items-center gap-3 overflow-visible">
+                                    {visibleArtifyShortcutItems.map((item) => {
+                                        const Icon = item.Icon
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={item.onClick}
+                                                disabled={isChatLoading || disabled}
+                                                className="group inline-flex h-9 max-w-[170px] shrink-0 items-center gap-2 rounded-full border pl-1.5 pr-3.5 text-xs font-semibold text-gray-700 backdrop-blur-sm transition-[background-color,border-color,color,transform] duration-200 hover:text-gray-950 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 dark:text-zinc-100 dark:hover:text-white"
+                                                style={{
+                                                    borderColor: quickActionBorder,
+                                                    background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
+                                                }}
+                                            >
+                                                <span
+                                                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-colors duration-200 group-hover:text-white"
+                                                    style={{
+                                                        color: quickActionColor,
+                                                        backgroundColor: quickActionIconSurface,
+                                                    }}
+                                                >
+                                                    <Icon className="h-3.5 w-3.5" />
+                                                </span>
+                                                <span className="truncate leading-none">{item.label}</span>
+                                            </button>
+                                        )
+                                    })}
+                                    {overflowArtifyShortcutItems.length > 0 && (
+                                        <div className="relative shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsArtifyMoreOpen((current) => !current)}
+                                                disabled={isChatLoading || disabled}
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border text-gray-700 backdrop-blur-sm transition-[background-color,border-color,color,transform] hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-45 dark:text-zinc-100"
+                                                style={{
+                                                    borderColor: quickActionBorder,
+                                                    background: `linear-gradient(135deg, ${quickActionSurfaceStrong} 0%, rgba(255,255,255,0.94) 48%, ${quickActionSurface} 100%)`,
+                                                }}
+                                                aria-label={language === 'tr' ? 'Daha fazla aksiyon' : 'More actions'}
+                                                aria-expanded={isArtifyMoreOpen}
+                                            >
+                                                <MoreHorizontal className="h-5 w-5" />
+                                            </button>
+                                            {isArtifyMoreOpen && (
+                                                <div className="absolute bottom-12 left-1/2 z-50 w-max min-w-[230px] max-w-[calc(100vw-48px)] -translate-x-1/2 overflow-hidden rounded-xl border border-gray-200 bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.16)] ring-1 ring-black/5 dark:border-zinc-700 dark:bg-zinc-950 dark:shadow-[0_16px_36px_rgba(0,0,0,0.38)] dark:ring-white/10">
+                                                    {overflowArtifyShortcutItems.map((item) => {
+                                                        const Icon = item.Icon
+                                                        return (
+                                                            <button
+                                                                key={item.id}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setIsArtifyMoreOpen(false)
+                                                                    item.onClick()
+                                                                }}
+                                                                className="flex h-12 w-full items-center gap-3 rounded-lg py-0 pl-1.5 pr-3 text-left text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                                                            >
+                                                                <Icon className="h-5 w-5 shrink-0" style={{ color: quickActionColor }} />
+                                                                <span className="truncate">{item.label}</span>
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="ml-auto flex shrink-0 items-center gap-3">
+                                    {settings.enableVisualDiagnosis && (
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isAnalyzingImage}
+                                            className={`flex h-9 w-9 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45 dark:text-zinc-100 dark:hover:bg-zinc-900 ${selectedImage ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : ''}`}
+                                            title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
+                                        >
+                                            <ImagePlus className="h-5 w-5" />
+                                        </button>
+                                    )}
+                                    {showConversationModeSwitch && onConversationModeChange && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onConversationModeChange("voice")}
+                                            disabled={isChatLoading || disabled}
+                                            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-900 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                                            title={voiceButtonTitle}
+                                        >
+                                            <Mic className="h-6 w-6" />
+                                        </button>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
+                                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition-all hover:-translate-y-0.5 active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                        style={{ backgroundColor: settings.headerBackgroundColor || settings.brandColor || "#64748b" }}
+                                        aria-label={language === 'tr' ? 'Gönder' : 'Send'}
+                                    >
+                                        <ArrowUp className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    ) : (
+                        <form
+                            onSubmit={handleSubmit}
+                            className={isAmbientMode
                             ? `relative flex items-center ${sizeConfig.gapClass} rounded-[999px] ${sizeConfig.formPaddingClass} shadow-sm transition-all duration-300 border border-gray-200/50 ${!isAmbientInputOnly ? 'shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.18)]' : ''}`
                             : isSidecarMode
                                 ? "relative flex flex-col gap-2.5 rounded-[12px] border border-gray-200 bg-white px-3.5 py-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.07)] dark:border-zinc-700 dark:bg-zinc-950"
                                 : "relative flex items-center gap-2"}
-                        style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || (settings.theme === 'dark' ? '#18181b' : '#f3f4f6') } : undefined}
-                    >
+                            style={isAmbientMode ? { backgroundColor: ambientDockStyles?.formBackgroundColor || (settings.theme === 'dark' ? '#18181b' : '#f3f4f6') } : undefined}
+                        >
                         {settings.enableVisualDiagnosis && (
                             <input
                                 type="file"
@@ -509,7 +794,7 @@ export function ChatInput({
                                 type="button"
                                 onClick={() => onConversationModeChange("voice")}
                                 disabled={isChatLoading || disabled}
-                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-400 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-300 hover:bg-white hover:text-gray-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
                                 title={voiceButtonTitle}
                                 aria-label={voiceButtonTitle}
                             >
@@ -522,13 +807,13 @@ export function ChatInput({
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isAnalyzingImage}
-                                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-all shadow-sm hover:-translate-y-0.5 active:scale-95 ${selectedImage
+                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 ${selectedImage
                                     ? 'text-green-600 bg-green-50 border border-green-200'
                                     : 'text-gray-400 bg-gray-50 hover:bg-gray-100 hover:text-gray-600 border border-gray-200'} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                                 aria-label={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                             >
-                                <ImageIcon className="w-5 h-5" />
+                                <ImagePlus className="h-5 w-5" />
                             </button>
                         )}
 
@@ -632,7 +917,7 @@ export function ChatInput({
                                                 : ''}`}
                                             title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                                         >
-                                            <ImageIcon className="h-3.5 w-3.5" />
+                                            <ImagePlus className="h-3.5 w-3.5" />
                                         </button>
                                     )}
                                 </div>
@@ -681,7 +966,7 @@ export function ChatInput({
                                 className={`${ambientActionButtonClass} ${selectedImage ? '!bg-emerald-50 !text-emerald-700 !border-emerald-200 dark:!bg-emerald-950/60 dark:!text-emerald-300 dark:!border-emerald-800/70' : ''} ${isAnalyzingImage ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 title={language === 'tr' ? 'Görsel Ekle' : 'Add Image'}
                             >
-                                <ImageIcon className={sizeConfig.iconSizeClass} />
+                                <ImagePlus className={sizeConfig.iconSizeClass} />
                             </button>
                         )}
 
@@ -691,25 +976,26 @@ export function ChatInput({
                                 disabled={isChatLoading || (!localInput.trim() && !selectedImage)}
                                 className={isAmbientMode
                                     ? ambientSendButtonClass
-                                    : `p-3.5 rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
+                                    : `flex h-9 w-9 items-center justify-center rounded-full text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95 shadow-sm transform hover:-translate-y-0.5 ${isAnalyzingImage ? 'animate-pulse' : ''}`}
                                 style={isAmbientMode ? { backgroundColor: settings.ambientIconColor || settings.brandColor || '#1f2937' } : { backgroundColor: settings.headerBackgroundColor || settings.brandColor }}
                             >
                                 <Send className={isAmbientMode ? sizeConfig.iconSizeClass : "w-5 h-5"} />
                             </button>
                         )}
-                    </form>
+                        </form>
+                    )}
                 </div>
 
 
 
                 {!isAmbientMode && (
-                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 px-2">
-                        <p className="text-[10px] text-gray-400 text-center text-balance">
+                    <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 ${isWideView ? "px-0" : "px-2"}`}>
+                        <p className="text-[11px] font-medium text-gray-500 text-center text-balance">
                             {t('aiDisclaimer')}
                         </p>
                         {settings.hideVionBranding !== true && (
                             <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
-                                <span className="text-[10px] text-gray-400">{t("poweredBy")}</span>
+                                <span className="text-[11px] font-medium text-gray-500">{t("poweredBy")}</span>
                                 <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
                             </a>
                         )}
