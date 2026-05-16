@@ -66,6 +66,28 @@ export function normalizeChatSessionMessage(message: unknown): ChatSessionMessag
     })
 }
 
+export function appendChatSessionMessage<T extends Record<string, unknown>>(
+    existingMessages: T[],
+    message?: T | null
+) {
+    if (!message) return existingMessages
+
+    const externalId = message.externalId
+    const messageId = message.id
+
+    const alreadyExists = existingMessages.some((existingMessage: Record<string, unknown>) => {
+        if (externalId && existingMessage.externalId) {
+            return existingMessage.externalId === externalId
+        }
+        if (messageId && existingMessage.id) {
+            return existingMessage.id === messageId
+        }
+        return false
+    })
+
+    return alreadyExists ? existingMessages : [...existingMessages, message]
+}
+
 export function hydrateChatSessionMessage(message: unknown): HydratedChatSessionMessage | null {
     const normalized = normalizeChatSessionMessage(message)
     if (!normalized) return null

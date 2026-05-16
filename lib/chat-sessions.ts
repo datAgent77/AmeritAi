@@ -1,9 +1,9 @@
 import { getAdminDb } from "@/lib/firebase-admin"
 import {
+    appendChatSessionMessage,
     normalizeChatSessionMessage,
     type ChatSessionMessageRecord,
 } from "@/lib/chat-session-messages"
-import { appendMessage } from "@/lib/omni/server-utils"
 import type { GuidedSkillState } from "@/lib/guided-skills/types"
 
 export async function upsertChatSessionRecord(params: {
@@ -22,7 +22,9 @@ export async function upsertChatSessionRecord(params: {
     const existing = snapshot.exists ? snapshot.data() || {} : {}
     const existingMessages = Array.isArray(existing.messages) ? existing.messages : []
     const normalizedMessage = params.message ? normalizeChatSessionMessage(params.message) : null
-    const nextMessages = normalizedMessage ? appendMessage(existingMessages, normalizedMessage as unknown as Record<string, unknown>) : existingMessages
+    const nextMessages = normalizedMessage
+        ? appendChatSessionMessage(existingMessages, normalizedMessage as unknown as Record<string, unknown>)
+        : existingMessages
 
     await sessionRef.set(
         {

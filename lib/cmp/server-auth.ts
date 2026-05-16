@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
-import { resolveCookieConsentEnabled } from "@/lib/omni/workspace-access"
+import { resolveCookieConsentEnabled } from "@/lib/product-entitlements"
 import { isSuperAdminRole, type UserRole } from "@/lib/user-roles"
 
 type CmpAccessOk = {

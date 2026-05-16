@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { CompleteSchema, areMandatoryStepsComplete, OnboardingStep } from "@/lib/onboarding-config";
+import { CompleteSchema, MANDATORY_STEPS, areMandatoryStepsComplete, OnboardingStep } from "@/lib/onboarding-config";
 import { FieldValue } from "firebase-admin/firestore";
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         if (!areMandatoryStepsComplete(completedSteps)) {
             return NextResponse.json({
                 error: "Mandatory steps not completed",
-                requiredSteps: ['sector', 'widget'],
+                requiredSteps: MANDATORY_STEPS,
                 completedSteps
             }, { status: 403 });
         }

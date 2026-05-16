@@ -4,9 +4,9 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { isPartnerLevel, resolvePartnerLevel } from '@/lib/management/access';
 import { isSuperAdminRole } from '@/lib/user-roles';
 import { authorizeTargetAccess } from '@/lib/api-auth';
-import type { ProductEntitlements } from '@/lib/omni/types';
+import type { ProductEntitlements } from '@/lib/product-entitlements';
 
-const PRODUCT_ACCESS_KEYS = ['chatbot', 'omniChannel', 'cookieConsent'] as const;
+const PRODUCT_ACCESS_KEYS = ['chatbot'] as const;
 
 function normalizeProductEntitlementPatch(value: unknown) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -138,8 +138,8 @@ export async function POST(req: NextRequest) {
             const existingEntitlements = targetUserData.productEntitlements || {};
             const nextProductEntitlements: ProductEntitlements = {
                 chatbot: existingEntitlements.chatbot ?? (targetUserData.enableChatbot !== false),
-                omniChannel: existingEntitlements.omniChannel ?? (targetUserData.enableOmniChannel === true),
-                cookieConsent: existingEntitlements.cookieConsent ?? (targetUserData.enableCookieConsent === true),
+                omniChannel: false,
+                cookieConsent: false,
                 copywriter: existingEntitlements.copywriter === true,
                 leadFinder: existingEntitlements.leadFinder === true,
                 ...productEntitlementPatch,
@@ -154,14 +154,6 @@ export async function POST(req: NextRequest) {
             if (typeof productEntitlementPatch.chatbot === 'boolean') {
                 firestoreUpdates.enableChatbot = productEntitlementPatch.chatbot;
                 firestoreUpdates.visibleChatbot = productEntitlementPatch.chatbot;
-            }
-            if (typeof productEntitlementPatch.omniChannel === 'boolean') {
-                firestoreUpdates.enableOmniChannel = productEntitlementPatch.omniChannel;
-                firestoreUpdates.visibleOmniChannel = productEntitlementPatch.omniChannel;
-            }
-            if (typeof productEntitlementPatch.cookieConsent === 'boolean') {
-                firestoreUpdates.enableCookieConsent = productEntitlementPatch.cookieConsent;
-                firestoreUpdates.visibleCookieConsent = productEntitlementPatch.cookieConsent;
             }
         }
 

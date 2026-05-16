@@ -219,7 +219,6 @@ export async function PUT(request: Request) {
 
         // Parse request body
         const body = await request.json()
-        console.log("Admin Save Request Body:", JSON.stringify(body, null, 2))
         const { userId, subscription, billing } = body;
 
         if (!userId) {

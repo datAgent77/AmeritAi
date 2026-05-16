@@ -1,18 +1,17 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LayoutGrid } from "lucide-react"
 import { getVisibleProducts } from "@/lib/product-items"
-import type { ProductEntitlements } from "@/lib/omni/types"
+import type { ProductEntitlements } from "@/lib/product-entitlements"
 
 import { useAuth } from "@/context/AuthContext"
 
 export function ProductLauncher({ targetUserId }: { targetUserId?: string }) {
     const router = useRouter()
-    const pathname = usePathname() || ""
     const { productEntitlements, role, user } = useAuth()
     const [targetEntitlements, setTargetEntitlements] = useState<ProductEntitlements | null>(null)
 
@@ -35,8 +34,8 @@ export function ProductLauncher({ targetUserId }: { targetUserId?: string }) {
                 if (cancelled) return
                 setTargetEntitlements({
                     chatbot: data.productEntitlements?.chatbot ?? (data.enableChatbot !== false),
-                    omniChannel: data.productEntitlements?.omniChannel === true || data.enableOmniChannel === true,
-                    cookieConsent: data.productEntitlements?.cookieConsent === true || data.enableCookieConsent === true,
+                    omniChannel: false,
+                    cookieConsent: false,
                     copywriter: data.productEntitlements?.copywriter === true,
                     leadFinder: data.productEntitlements?.leadFinder === true,
                 })
@@ -54,11 +53,7 @@ export function ProductLauncher({ targetUserId }: { targetUserId?: string }) {
         }
     }, [role, targetUserId, user])
 
-    const activeProductId = useMemo(() => {
-        if (pathname.startsWith("/omni")) return "omni-channel"
-        if (pathname.startsWith("/cookie")) return "cookie-consent"
-        return "chatbot"
-    }, [pathname])
+    const activeProductId = "chatbot"
 
     const shouldUseTargetEntitlements = Boolean(targetUserId && (role === "SUPER_ADMIN" || role === "AGENCY_ADMIN"))
     const effectiveEntitlements = shouldUseTargetEntitlements ? targetEntitlements : productEntitlements

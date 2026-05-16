@@ -1,6 +1,13 @@
-import type { OmniActionId, OmniChannel } from "@/lib/omni/types"
+export type GuidedSkillChannel = "web" | "whatsapp" | "instagram"
 
-export type GuidedSkillChannel = Extract<OmniChannel, "web" | "whatsapp" | "instagram">
+export type GuidedSkillActionId =
+    | "create_callback_request"
+    | "create_appointment"
+    | "create_lead"
+    | "check_business_hours"
+    | "handoff_to_human"
+    | "call_staff"
+    | "request_bill"
 
 export type GuidedSkillStepPresentation = "chips" | "cards"
 
@@ -32,7 +39,7 @@ export interface GuidedSkillSubmitConfirmOnly {
 export interface GuidedSkillSubmitOmniAction {
     mode: "omni_action"
     label: string
-    actionId: OmniActionId
+    actionId: GuidedSkillActionId
     successMessage: string
     externalUrl?: string | null
 }

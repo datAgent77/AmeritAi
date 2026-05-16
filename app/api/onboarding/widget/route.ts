@@ -36,14 +36,12 @@ export async function POST(req: Request) {
         if (!canAccessStep('widget', completedSteps)) {
             return NextResponse.json({
                 error: "Please complete previous steps first",
-                requiredSteps: ['sector', 'modules']
+                requiredSteps: ['sector', 'plan', 'knowledge']
             }, { status: 403 });
         }
 
         // Validate input
         const rawBody = await req.json();
-        console.log("[Widget API] Received body:", JSON.stringify(rawBody, null, 2));
-
         const body = {
             ...rawBody,
             brandName: rawBody.brandName?.trim(),

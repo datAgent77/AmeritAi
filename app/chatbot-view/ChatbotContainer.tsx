@@ -263,7 +263,10 @@ function ChatbotContainerContent() {
         setIsClient(true)
         signInAsGuest()
             .then(() => setIsGuestReady(true))
-            .catch((error) => console.error("Guest login failed:", error))
+            .catch((error) => {
+                console.warn("Guest login unavailable; continuing without realtime session sync.", error)
+                setIsGuestReady(true)
+            })
     }, [])
 
     // GAMIFICATION — load config and register triggers

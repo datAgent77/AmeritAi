@@ -4,6 +4,7 @@ import {
     getHumanHandoffContactPromptMessage,
     isExplicitHumanHandoffRequest,
     isHumanHandoffWithinBusinessHours,
+    type HumanHandoffBusinessDayCode,
 } from "@/lib/human-handoff"
 
 describe("isExplicitHumanHandoffRequest", () => {
@@ -25,7 +26,7 @@ describe("isExplicitHumanHandoffRequest", () => {
         const settings = {
             enabled: true,
             businessHoursEnabled: true,
-            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] as const,
+            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] satisfies HumanHandoffBusinessDayCode[],
             businessHoursStart: "09:00",
             businessHoursEnd: "18:00",
             businessHoursTimezone: "Europe/Istanbul",
@@ -49,7 +50,7 @@ describe("isExplicitHumanHandoffRequest", () => {
             notifyInstagram: false,
             instagramAccountId: "",
             businessHoursEnabled: true,
-            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] as const,
+            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] satisfies HumanHandoffBusinessDayCode[],
             businessHoursStart: "09:00",
             businessHoursEnd: "18:00",
             businessHoursTimezone: "Europe/Istanbul",

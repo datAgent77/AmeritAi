@@ -12,6 +12,7 @@ type UserDoc = {
     agencyId?: string | null;
     partnerLevel?: string;
     agentTenantId?: string | null;
+    isActive?: boolean;
 };
 
 function createUsersDb(users: Record<string, UserDoc>) {

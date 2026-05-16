@@ -13,12 +13,50 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/context/AuthContext"
 import { useToast } from "@/hooks/use-toast"
-import { formatOmniDateTime, getOmniChannelLabel } from "@/lib/omni/i18n"
-import { OmniStateShell } from "@/components/omni/omni-ui"
 import { cn } from "@/lib/utils"
 import { db } from "@/lib/firebase"
 import { collection, onSnapshot, query, where } from "firebase/firestore"
 import { AssistantTrainingCorrectionDialog } from "@/components/knowledge/assistant-training-correction-dialog"
+
+function formatVionDateTime(value: Date, language: string, options?: Intl.DateTimeFormatOptions) {
+    return new Intl.DateTimeFormat(language === "tr" ? "tr-TR" : "en-US", options).format(value)
+}
+
+function getVionChannelLabel(language: string, channel: string) {
+    const labels = {
+        tr: {
+            all: "Tüm kanallar",
+            web: "Web",
+            telegram: "Telegram",
+            whatsapp: "WhatsApp",
+            instagram: "Instagram",
+            messenger: "Messenger",
+            voice: "Ses",
+        },
+        en: {
+            all: "All channels",
+            web: "Web",
+            telegram: "Telegram",
+            whatsapp: "WhatsApp",
+            instagram: "Instagram",
+            messenger: "Messenger",
+            voice: "Voice",
+        },
+    }
+    const copy = language === "tr" ? labels.tr : labels.en
+    return copy[channel as keyof typeof copy] || channel
+}
+
+function VionStateShell({ title, description }: { title: string; description?: string }) {
+    return (
+        <div className="flex h-full min-h-[320px] items-center justify-center rounded-lg border border-border/70 bg-card/95 p-8 text-center">
+            <div className="max-w-sm space-y-2">
+                <div className="text-sm font-semibold text-foreground">{title}</div>
+                {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+            </div>
+        </div>
+    )
+}
 
 interface ChatSession {
     id: string
@@ -178,7 +216,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
             const date = new Date(dateVal)
             if (!isValid(date)) return ""
             if (formatStr === "PP p" || formatStr === "HH:mm") {
-                return formatOmniDateTime(
+                return formatVionDateTime(
                     date,
                     language,
                     formatStr === "HH:mm"
@@ -215,7 +253,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     }
 
     const getChannelName = (session: ChatSession) => {
-        return getOmniChannelLabel(t, resolveSessionChannel(session))
+        return getVionChannelLabel(language, resolveSessionChannel(session))
     }
 
     const getSessionDisplayName = useCallback((session: ChatSession) => {
@@ -633,7 +671,12 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     }
 
     if (isLoading) {
-        return <OmniStateShell title={t("omni.common.loading")} description={t("omni.inbox.toast.loadFailed.description")} />
+        return (
+            <VionStateShell
+                title={language === "tr" ? "Yükleniyor" : "Loading"}
+                description={language === "tr" ? "Sohbetler hazırlanıyor." : "Preparing conversations."}
+            />
+        )
     }
 
     const selectedSessionMessageCount = selectedSession?.messages?.length ?? 0
@@ -652,7 +695,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                         <div className="min-w-0 space-y-1">
                             <div className="text-sm font-semibold text-foreground">{t("omni.inbox.sidebar.sessions")}</div>
                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? t("omni.inbox.filter.allChannels") : getOmniChannelLabel(t, channelFilter)}
+                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? getVionChannelLabel(language, "all") : getVionChannelLabel(language, channelFilter)}
                             </div>
                         </div>
                         <Badge variant="outline" className="h-6 rounded-full bg-white/80 px-2.5 text-[11px]">
@@ -690,11 +733,11 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                 onChange={(e) => setChannelFilter(e.target.value)}
                             >
                                 <option value="all">{t("omni.inbox.filter.allChannels")}</option>
-                                <option value="web">{getOmniChannelLabel(t, "web")}</option>
-                                <option value="telegram">{getOmniChannelLabel(t, "telegram")}</option>
-                                <option value="whatsapp">{getOmniChannelLabel(t, "whatsapp")}</option>
-                                <option value="instagram">{getOmniChannelLabel(t, "instagram")}</option>
-                                <option value="voice">{getOmniChannelLabel(t, "voice")}</option>
+                                <option value="web">{getVionChannelLabel(language, "web")}</option>
+                                <option value="telegram">{getVionChannelLabel(language, "telegram")}</option>
+                                <option value="whatsapp">{getVionChannelLabel(language, "whatsapp")}</option>
+                                <option value="instagram">{getVionChannelLabel(language, "instagram")}</option>
+                                <option value="voice">{getVionChannelLabel(language, "voice")}</option>
                             </select>
                         ) : (
                             <div className="flex h-9 min-w-0 items-center rounded-md border border-input bg-white px-3 py-2 text-sm text-muted-foreground">

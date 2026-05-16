@@ -3,6 +3,8 @@ import { getAdminDb } from "@/lib/firebase-admin"
 import { authorizeTargetAccess } from "@/lib/api-auth"
 import { shouldUseFirebaseOfflineFallback } from "@/lib/firebase-errors"
 
+export const dynamic = "force-dynamic"
+
 function cleanString(value: unknown, maxLength = 200) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : ""
 }

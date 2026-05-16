@@ -1,6 +1,6 @@
 import { MODULES_REGISTRY } from "@/lib/modules-registry"
-import type { OmniActionId } from "@/lib/omni/types"
 import type {
+    GuidedSkillActionId,
     GuidedSkillCard,
     GuidedSkillChannel,
     GuidedSkillClientEvent,
@@ -18,7 +18,7 @@ import type {
 const SUPPORTED_CHANNELS: GuidedSkillChannel[] = ["web", "whatsapp", "instagram"]
 const SUPPORTED_PRESENTATIONS = new Set(["chips", "cards"])
 const SUPPORTED_SUBMIT_MODES = new Set(["confirm_only", "omni_action"])
-const VALID_OMNI_ACTION_IDS = new Set<string>(["create_callback_request", "create_appointment", "create_lead", "check_business_hours", "handoff_to_human"])
+const VALID_GUIDED_ACTION_IDS = new Set<string>(["create_callback_request", "create_appointment", "create_lead", "check_business_hours", "handoff_to_human"])
 export type GuidedLanguage = "tr" | "en" | "de" | "es" | "fr"
 
 const LOCALE_MAP: Record<GuidedLanguage, string> = {
@@ -90,11 +90,11 @@ function normalizeSubmit(value: unknown): GuidedSkillSubmit | null {
 
     if (mode === "omni_action") {
         const actionId = String(record.actionId || "").trim()
-        if (!actionId || !VALID_OMNI_ACTION_IDS.has(actionId)) return null
+        if (!actionId || !VALID_GUIDED_ACTION_IDS.has(actionId)) return null
         return {
             mode: "omni_action",
             label,
-            actionId: actionId as OmniActionId,
+            actionId: actionId as GuidedSkillActionId,
             successMessage,
             externalUrl: typeof record.externalUrl === "string" ? record.externalUrl.trim() || null : null,
         }

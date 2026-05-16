@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation"
 import { User, onAuthStateChanged } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, onSnapshot } from "firebase/firestore"
-import { getPlanConfig, normalizePlanId, PlanConfig } from "@/lib/pricing-config"
+import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
 import { installAuthDebugDump, recordAuthDebug } from "@/lib/auth-debug"
 import { UserRole } from "@/lib/user-roles"
-import { DEFAULT_PRODUCT_ENTITLEMENTS, ProductEntitlements } from "@/lib/omni/types"
-import { hasOmniPermission as hasOmniPermissionValue, resolveOmniPermissions, type OmniPermission } from "@/lib/omni/permissions"
-import { resolveChatbotEnabled, resolveCookieConsentEnabled, resolveOmniWorkspaceEnabled } from "@/lib/omni/workspace-access"
+import { DEFAULT_PRODUCT_ENTITLEMENTS, ProductEntitlements, resolveChatbotEnabled, resolveCookieConsentEnabled, resolveOmniWorkspaceEnabled } from "@/lib/product-entitlements"
+import { resolveVionTrialState } from "@/lib/subscription-access"
+
+export type OmniPermission = string
 
 // Extended user data interface
 export interface UserData {
@@ -60,8 +61,6 @@ interface AuthContextType {
     loading: boolean
 }
 
-const PAID_PLANS = ['growth', 'enterprise']
-
 const AuthContext = createContext<AuthContextType>({
     user: null,
     userData: null,
@@ -104,8 +103,8 @@ function resolveProductEntitlements(data: any, userRole: UserRole): ProductEntit
     if (userRole === 'SUPER_ADMIN') {
         return {
             chatbot: true,
-            omniChannel: true,
-            cookieConsent: true,
+            omniChannel: false,
+            cookieConsent: false,
             copywriter: false,
             leadFinder: false,
         }
@@ -157,37 +156,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Computed values
     const planConfig = useMemo(() => getPlanConfig(planId) || null, [planId])
-    const isPaidPlan = useMemo(() => PAID_PLANS.includes(normalizePlanId(planId)), [planId])
     
-    const { isTrialExpired, trialDaysLeft } = useMemo(() => {
-        // If planId or subscriptionStatus not yet loaded from Firestore, show nothing
-        if (!planId || subscriptionStatus === null) {
-            return { isTrialExpired: false, trialDaysLeft: 0 }
-        }
-
-        // If subscription is explicitly 'active' (and paid), then no trial
-        if (subscriptionStatus === 'active' && isPaidPlan) {
-            return { isTrialExpired: false, trialDaysLeft: 0 }
-        }
-        
-        // If no trial end date, assume still in trial with default days ONLY if status is trial
-        if (!trialEndsAt) {
-             if (subscriptionStatus === 'trial') {
-                return { isTrialExpired: false, trialDaysLeft: 14 }
-             }
-             return { isTrialExpired: false, trialDaysLeft: 0 }
-        }
-        
-        const now = new Date()
-        const endDate = new Date(trialEndsAt)
-        const diffMs = endDate.getTime() - now.getTime()
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-        
-        return {
-            isTrialExpired: diffDays <= 0,
-            trialDaysLeft: Math.max(0, diffDays)
-        }
-    }, [planId, trialEndsAt, isPaidPlan, subscriptionStatus]) // eslint-disable-line
+    const { isPaidPlan, isTrialExpired, trialDaysLeft } = useMemo(() => resolveVionTrialState({
+        planId,
+        subscriptionStatus,
+        trialEndsAt,
+    }), [planId, subscriptionStatus, trialEndsAt])
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
@@ -264,9 +238,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     setRole(userRole)
 
                     const resolvedProductEntitlements = resolveProductEntitlements(data, userRole)
-                    const resolvedOmniPermissions = resolveOmniPermissions(userRole, data.omniPermissions, data.omniDeniedPermissions)
                     setProductEntitlements(resolvedProductEntitlements)
-                    setOmniPermissions(resolvedOmniPermissions)
+                    setOmniPermissions([])
 
                     // Set plan & subscription data
                     setPlanId(data.planId || 'starter')
@@ -339,7 +312,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             role,
             productEntitlements,
             omniPermissions,
-            hasOmniPermission: (permission: OmniPermission) => hasOmniPermissionValue(omniPermissions, permission),
+            hasOmniPermission: (permission: OmniPermission) => omniPermissions.includes(permission),
             // Plan & Subscription
             planId,
             planConfig,

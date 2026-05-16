@@ -93,7 +93,7 @@ describe("POST /api/admin/update-user", () => {
         }), { merge: true })
     })
 
-    test("updates tenant product access while keeping at least one application enabled", async () => {
+    test("updates Vion product access while ignoring retired product toggles", async () => {
         const set = vi.fn().mockResolvedValue(undefined)
 
         vi.mocked(getAdminAuth).mockReturnValue({
@@ -112,9 +112,9 @@ describe("POST /api/admin/update-user", () => {
                                 : {
                                     role: "TENANT_ADMIN",
                                     productEntitlements: {
-                                        chatbot: true,
-                                        omniChannel: false,
-                                        cookieConsent: false,
+                                        chatbot: false,
+                                        omniChannel: true,
+                                        cookieConsent: true,
                                         copywriter: false,
                                         leadFinder: false,
                                     },
@@ -136,7 +136,7 @@ describe("POST /api/admin/update-user", () => {
         const response = await POST(createRequest({
             targetUserId: "tenant-1",
             productEntitlements: {
-                chatbot: false,
+                chatbot: true,
                 omniChannel: true,
                 cookieConsent: true,
             },
@@ -144,16 +144,12 @@ describe("POST /api/admin/update-user", () => {
 
         expect(response.status).toBe(200)
         expect(set).toHaveBeenCalledWith(expect.objectContaining({
-            enableChatbot: false,
-            visibleChatbot: false,
-            enableOmniChannel: true,
-            visibleOmniChannel: true,
-            enableCookieConsent: true,
-            visibleCookieConsent: true,
+            enableChatbot: true,
+            visibleChatbot: true,
             productEntitlements: expect.objectContaining({
-                chatbot: false,
-                omniChannel: true,
-                cookieConsent: true,
+                chatbot: true,
+                omniChannel: false,
+                cookieConsent: false,
             }),
         }), { merge: true })
     })

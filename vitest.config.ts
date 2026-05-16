@@ -6,6 +6,8 @@ export default defineConfig({
         environment: "node",
         exclude: [
             "node_modules/**",
+            ".next/**",
+            ".next-build/**",
             "test-results/**",
             "tmp-widget-check.spec.ts",
         ],

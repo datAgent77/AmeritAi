@@ -39,8 +39,8 @@ describe("buildMessengerDMMergePayload", () => {
             pageAccessToken: "page-token",
         })
 
-        expect(payload.messenger.appId).toBe("884857684580168")
-        expect(payload.messenger.appSecretRef).toBe("tenant-secret")
+        expect(payload.messenger?.appId).toBe("884857684580168")
+        expect(payload.messenger?.appSecretRef).toBe("tenant-secret")
     })
 
     test("stores explicit tenant app credentials in both messenger and meta setup payloads", () => {
@@ -58,10 +58,10 @@ describe("buildMessengerDMMergePayload", () => {
             pageAccessToken: "page-token",
         })
 
-        expect(payload.messenger.appId).toBe("884857684580168")
-        expect(payload.messenger.appSecretRef).toBe("tenant-secret")
-        expect(payload.metaSetup.secrets.appId).toBe("884857684580168")
-        expect(payload.metaSetup.secrets.appSecret).toBe("tenant-secret")
+        expect(payload.messenger?.appId).toBe("884857684580168")
+        expect(payload.messenger?.appSecretRef).toBe("tenant-secret")
+        expect(payload.metaSetup?.secrets?.appId).toBe("884857684580168")
+        expect(payload.metaSetup?.secrets?.appSecret).toBe("tenant-secret")
     })
 
     test("prefers messenger DM page credentials for outbound delivery", () => {

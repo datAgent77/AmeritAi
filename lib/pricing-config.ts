@@ -434,7 +434,7 @@ const SCENARIO_D: PlanConfig[] = [
     },
     {
         planId: 'growth',
-        displayName: 'Pro',
+        displayName: 'Scale',
         sortOrder: 2,
         availability: 'public',
         billing: {
