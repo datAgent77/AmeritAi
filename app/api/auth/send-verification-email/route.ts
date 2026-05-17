@@ -34,6 +34,31 @@ function resolveSafeContinueUrl(req: Request, bodyContinueUrl?: string): string 
     }
 }
 
+function buildAppVerificationLink(firebaseVerificationLink: string, continueUrl: string, language?: string): string {
+    try {
+        const firebaseUrl = new URL(firebaseVerificationLink);
+        const appUrl = new URL("/auth/action", new URL(continueUrl).origin);
+        const passthroughParams = ["mode", "oobCode", "apiKey", "continueUrl", "lang"];
+
+        for (const param of passthroughParams) {
+            const value = firebaseUrl.searchParams.get(param);
+            if (value) appUrl.searchParams.set(param, value);
+        }
+
+        appUrl.searchParams.set("mode", "verifyEmail");
+        appUrl.searchParams.set("continueUrl", continueUrl);
+
+        if (language) {
+            appUrl.searchParams.set("lang", language);
+        }
+
+        return appUrl.toString();
+    } catch (error) {
+        console.warn("Send verification email: could not rewrite Firebase action link", error);
+        return firebaseVerificationLink;
+    }
+}
+
 export async function POST(req: Request) {
     try {
         if (process.env.AUTH_CUSTOM_VERIFICATION_EMAILS_ENABLED !== "true") {
@@ -65,16 +90,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User email not found" }, { status: 400 });
         }
 
+        const requestedLanguage = typeof body.language === "string" ? body.language : "en";
         const continueUrl = resolveSafeContinueUrl(req, typeof body.continueUrl === "string" ? body.continueUrl : undefined);
-        const verificationLink = await adminAuth.generateEmailVerificationLink(email, {
+        const firebaseVerificationLink = await adminAuth.generateEmailVerificationLink(email, {
             url: continueUrl,
         });
+        const verificationLink = buildAppVerificationLink(firebaseVerificationLink, continueUrl, requestedLanguage);
 
         const sent = await sendVerificationEmail({
             recipientEmail: email,
             recipientName: typeof body.name === "string" ? body.name : decodedToken.name,
             verificationLink,
-            language: typeof body.language === "string" ? body.language : "en",
+            language: requestedLanguage,
         });
 
         if (!sent) {

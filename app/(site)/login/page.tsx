@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, User, sendEmailVerification } from "firebase/auth"
 import { auth, db, firebaseConfig } from "@/lib/firebase"
 import { doc, getDoc, setDoc } from "firebase/firestore"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { VionLogo } from "@/components/vion-logo"
@@ -116,9 +116,46 @@ export default function LoginForm() {
   const [showResendVerificationButton, setShowResendVerificationButton] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { t, language } = useLanguage()
   const { user, userData, role, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    const verifiedStatus = searchParams.get("verified")
+    const shouldVerifyEmail = searchParams.get("verifyEmail") === "1"
+
+    if (verifiedStatus === "success" || verifiedStatus === "1") {
+      toast({
+        title: language === "tr" ? "E-posta doğrulandı" : "Email verified",
+        description: language === "tr"
+          ? "Hesabınız doğrulandı. Şimdi giriş yapabilirsiniz."
+          : "Your account has been verified. You can now sign in.",
+      })
+    } else if (verifiedStatus === "error") {
+      toast({
+        title: language === "tr" ? "Doğrulama bağlantısı geçersiz" : "Invalid verification link",
+        description: language === "tr"
+          ? "Bağlantı süresi dolmuş olabilir. Giriş yapmayı deneyin veya doğrulama e-postasını yeniden gönderin."
+          : "The link may have expired. Try signing in or resend the verification email.",
+        variant: "destructive",
+      })
+    } else if (shouldVerifyEmail) {
+      toast({
+        title: language === "tr" ? "Doğrulama e-postası gönderildi" : "Verification email sent",
+        description: language === "tr"
+          ? "Giriş yapmadan önce e-posta adresinizi doğrulayın."
+          : "Please verify your email address before signing in.",
+      })
+    } else {
+      return
+    }
+
+    const nextUrl = new URL(window.location.href)
+    nextUrl.searchParams.delete("verified")
+    nextUrl.searchParams.delete("verifyEmail")
+    router.replace(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`, { scroll: false })
+  }, [language, router, searchParams, toast])
 
   useEffect(() => {
     if (authLoading || !user) return
