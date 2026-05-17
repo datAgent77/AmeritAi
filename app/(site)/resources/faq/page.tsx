@@ -143,7 +143,7 @@ export default function FaqPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                             <button className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/80 border border-border transition-colors text-foreground">
-                                <Mail className="w-4 h-4" /> info@userex.com.tr
+                                <Mail className="w-4 h-4" /> info@getvion.com
                             </button>
                         </div>
                     </div>

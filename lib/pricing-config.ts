@@ -863,7 +863,7 @@ export function getModuleUpgradeMessage(
 export const PRICING_SETTINGS = {
     defaultBillingCycle: 'monthly' as BillingCycle,
     showAnnualToggle: true,
-    contactEmail: 'enterprise@vion.ai',
+    contactEmail: 'enterprise@getvion.com',
 
     unlimitedMessagesNote: {
         en: 'Unlimited messages on all plans',

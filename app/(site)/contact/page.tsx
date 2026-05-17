@@ -219,8 +219,8 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'E-posta' : 'Email'}</h3>
-                                            <a href="mailto:info@userex.com.tr" className="text-muted-foreground hover:text-foreground transition-colors">
-                                                info@userex.com.tr
+                                            <a href="mailto:info@getvion.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                                                info@getvion.com
                                             </a>
                                         </div>
                                     </div>

@@ -5,6 +5,7 @@ import {
     isExplicitHumanHandoffRequest,
     isHumanHandoffWithinBusinessHours,
 } from "@/lib/human-handoff"
+import type { HumanHandoffBusinessDayCode } from "@/lib/human-handoff"
 
 describe("isExplicitHumanHandoffRequest", () => {
     test("detects Turkish live support and customer service requests", () => {
@@ -22,10 +23,11 @@ describe("isExplicitHumanHandoffRequest", () => {
     })
 
     test("checks business hours using configured timezone and weekdays", () => {
+        const businessDays: HumanHandoffBusinessDayCode[] = ["Mon", "Tue", "Wed", "Thu", "Fri"]
         const settings = {
             enabled: true,
             businessHoursEnabled: true,
-            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] as const,
+            businessDays,
             businessHoursStart: "09:00",
             businessHoursEnd: "18:00",
             businessHoursTimezone: "Europe/Istanbul",
@@ -37,6 +39,7 @@ describe("isExplicitHumanHandoffRequest", () => {
     })
 
     test("builds outside-hours handoff prompt with schedule summary", () => {
+        const businessDays: HumanHandoffBusinessDayCode[] = ["Mon", "Tue", "Wed", "Thu", "Fri"]
         const settings = {
             enabled: true,
             notifyEmail: true,
@@ -49,7 +52,7 @@ describe("isExplicitHumanHandoffRequest", () => {
             notifyInstagram: false,
             instagramAccountId: "",
             businessHoursEnabled: true,
-            businessDays: ["Mon", "Tue", "Wed", "Thu", "Fri"] as const,
+            businessDays,
             businessHoursStart: "09:00",
             businessHoursEnd: "18:00",
             businessHoursTimezone: "Europe/Istanbul",

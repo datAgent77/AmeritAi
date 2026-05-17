@@ -1078,7 +1078,7 @@ export const translations = {
         privacy5Title: "5. GDPR & KVKK Rights",
         privacy5Content: "If you are a resident of the EEU or Turkey, you have the right to access, correct, update, or request deletion of your personal information. You also have the right to object to the processing of your personal information.",
         privacy6Title: "6. Contact Us",
-        privacy6Content: "If you have any questions about this Privacy Policy, please contact us at: support@vion.ai",
+        privacy6Content: "If you have any questions about this Privacy Policy, please contact us at: info@getvion.com",
 
         // Contact Page
         contactTitle: "Contact Us",
@@ -2826,7 +2826,7 @@ export const translations = {
         privacy5Title: "5. GDPR & KVKK Hakları",
         privacy5Content: "AEA veya Türkiye'de ikamet ediyorsanız, kişisel bilgilerinize erişme, düzeltme, güncelleme veya silinmesini talep etme hakkına sahipsiniz. Ayrıca kişisel bilgilerinizin işlenmesine itiraz etme hakkına da sahipsiniz.",
         privacy6Title: "6. Bize Ulaşın",
-        privacy6Content: "Bu Gizlilik Politikası hakkında herhangi bir sorunuz varsa, lütfen bizimle iletişime geçin: support@vion.ai",
+        privacy6Content: "Bu Gizlilik Politikası hakkında herhangi bir sorunuz varsa, lütfen bizimle iletişime geçin: info@getvion.com",
 
         // Contact Page
         contactTitle: "Bize Ulaşın",

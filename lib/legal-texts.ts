@@ -8,7 +8,7 @@ export const legalTexts = {
           <p><strong>1.1. SATICI (HİZMET SAĞLAYICI)</strong><br />
           <strong>Ünvan:</strong> Userex Design Studio (bundan sonra "SATICI" olarak anılacaktır)<br />
           <strong>Adres:</strong> Caferağa Mh. Şifa Sk. No:19, Kadıköy / İstanbul / Turkey<br />
-          <strong>E-Posta:</strong> info@userex.com.tr<br />
+          <strong>E-Posta:</strong> info@getvion.com<br />
           <strong>Web Sitesi:</strong> www.getvion.com</p>
 
           <p><strong>1.2. ALICI (MÜŞTERİ)</strong><br />
@@ -95,7 +95,7 @@ export const legalTexts = {
             <li>Kanuna uygun şartlar oluşmuşsa silinmesini veya yok edilmesini isteme.</li>
           </ul>
 
-          <p>Taleplerinizi info@userex.com.tr adresine e-posta yoluyla iletebilirsiniz.</p>
+          <p>Taleplerinizi info@getvion.com adresine e-posta yoluyla iletebilirsiniz.</p>
 
           <h3>7. ÇEREZ (COOKIE) POLİTİKASI</h3>
           <p>Web sitemizde kullanıcı deneyimini iyileştirmek, performansı takip etmek (Google Analytics, GTM) ve tercihlerinizi hatırlamak amacıyla çerezler kullanılmaktadır.</p>
@@ -147,7 +147,7 @@ export const legalTexts = {
           <h3>1. PARTIES</h3>
           <p><strong>Provider:</strong> Userex Design Studio ("Provider")<br />
           <strong>Address:</strong> Caferağa Mh. Şifa Sk. No:19, Kadıköy / Istanbul / Turkey<br />
-          <strong>Email:</strong> info@userex.com.tr</p>
+          <strong>Email:</strong> info@getvion.com</p>
           <p><strong>Subscriber:</strong> The individual or entity registering for the Service.</p>
 
           <h3>2. SERVICE DESCRIPTION</h3>

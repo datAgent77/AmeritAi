@@ -137,7 +137,7 @@ export function PartnerSupportCenterContent({
 
     const preview = useMemo(() => {
         const baseName = form.supportContactName || partner?.partnerName || partner?.agencyName || partner?.email || (isTr ? "Partner Destek Ekibi" : "Partner Support Team")
-        const email = form.supportEmail || partner?.supportEmail || partner?.email || "support@vion.ai"
+        const email = form.supportEmail || partner?.supportEmail || partner?.email || "info@getvion.com"
         const phone = form.supportPhone || partner?.supportPhone || partner?.phone || null
         const whatsapp = form.supportWhatsapp || partner?.supportWhatsapp || null
         const hours = form.supportHours || partner?.supportHours || (isTr ? "Hafta içi 09:00 - 18:00" : "Weekdays 09:00 - 18:00")

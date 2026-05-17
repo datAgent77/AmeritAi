@@ -1,5 +1,5 @@
 import { createNotification } from "@/lib/notification-service"
-import { sendHumanHandoffNotificationEmail } from "@/lib/email-service"
+import { getAppBaseUrl, sendHumanHandoffNotificationEmail } from "@/lib/email-service"
 import { upsertCallbackRequest } from "@/lib/omni/server-utils"
 import { decryptToken } from "@/lib/omni/token-cipher"
 import { type OmniChannel } from "@/lib/omni/types"
@@ -102,7 +102,7 @@ export async function dispatchHumanHandoffNotifications(input: {
         })
     }
 
-    const dashboardLink = `https://app.vion.ai/console/chatbot/chats?sessionId=${input.callbackId}`
+    const dashboardLink = `${getAppBaseUrl()}/console/chatbot/chats?sessionId=${input.callbackId}`
     const notificationMessage = `Yeni Müşteri Temsilcisi Talebi!\n\nKaynak: ${input.triggerSource === "assistant_trigger" ? "Asistan Yönlendirmesi" : "Kullanıcı Talebi"}\nMesaj: "${input.userText || "-"}"\n\nYanıtlamak için tıklayın: ${dashboardLink}`
 
     let omniConfig: any = {}

@@ -247,7 +247,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                         <Button 
                             variant="outline" 
                             className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => window.location.href = 'mailto:support@vion.ai'}
+                            onClick={() => window.location.href = 'mailto:info@getvion.com'}
                         >
                             <Mail className="w-4 h-4" />
                             {language === 'tr' ? 'Destek ile İletişime Geç' : 'Contact Support'}

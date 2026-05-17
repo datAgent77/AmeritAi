@@ -1,13 +1,9 @@
 /**
- * Email Service using Nodemailer with Gmail SMTP
- * 
- * SETUP REQUIREMENTS:
- * 1. Go to https://myaccount.google.com/security
- * 2. Enable 2-Step Verification
- * 3. Generate an "App Password" for this application
- * 4. Add to .env.local:
- *    - EMAIL_USER=your-email@gmail.com
- *    - EMAIL_PASSWORD=your-app-password
+ * Email Service using Nodemailer.
+ *
+ * Production should use a verified transactional sender domain such as
+ * getvion.com via SMTP. A mailbox/mail server is not required for outbound
+ * transactional delivery, but SPF, DKIM, and DMARC must be configured in DNS.
  */
 
 import nodemailer from 'nodemailer';
@@ -19,6 +15,10 @@ const parseBooleanEnv = (value?: string | null): boolean => {
 };
 
 const EMAIL_ADDRESS_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i;
+const DEFAULT_APP_URL = "https://www.getvion.com";
+const DEFAULT_FROM_EMAIL = "no-reply@getvion.com";
+const DEFAULT_ADMIN_EMAIL = "info@getvion.com";
+const DEFAULT_CONTACT_EMAIL = "info@getvion.com";
 
 const normalizeEmailAddress = (value?: string | null): string | null => {
     if (!value) return null;
@@ -34,6 +34,34 @@ const getEmailDomain = (email?: string | null): string | null => {
     const normalized = normalizeEmailAddress(email);
     return normalized ? normalized.split("@")[1] || null : null;
 };
+
+export function getAppBaseUrl(): string {
+    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || DEFAULT_APP_URL;
+
+    try {
+        return new URL(configuredUrl).origin;
+    } catch {
+        return DEFAULT_APP_URL;
+    }
+}
+
+export function getAdminNotificationEmail(): string {
+    return (
+        normalizeEmailAddress(process.env.VION_ADMIN_EMAIL) ||
+        normalizeEmailAddress(process.env.ADMIN_NOTIFICATION_EMAIL) ||
+        normalizeEmailAddress(process.env.SUPER_ADMIN_EMAIL) ||
+        DEFAULT_ADMIN_EMAIL
+    );
+}
+
+export function getContactInboxEmail(): string {
+    return (
+        normalizeEmailAddress(process.env.VION_CONTACT_EMAIL) ||
+        normalizeEmailAddress(process.env.CONTACT_EMAIL) ||
+        normalizeEmailAddress(process.env.SUPPORT_EMAIL) ||
+        DEFAULT_CONTACT_EMAIL
+    );
+}
 
 const isGmailLikeTransport = (smtpHost?: string | null): boolean => {
     const normalizedHost = smtpHost?.trim().toLowerCase();
@@ -103,7 +131,7 @@ export function resolveSenderIdentity(options: ResolveSenderIdentityOptions = {}
     }
 
     return {
-        fromEmail: normalizedAuthenticatedEmail || "no-reply@vion.ai",
+        fromEmail: normalizedAuthenticatedEmail || DEFAULT_FROM_EMAIL,
         fromName,
     };
 }
@@ -124,7 +152,7 @@ function buildMailSenderOptions(identity: ResolvedSenderIdentity): Pick<nodemail
 const createTransporter = () => {
     // Check for credentials (support both naming conventions)
     const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-    const emailPass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
+    const emailPass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || "").replace(/\s/g, "");
 
     // Development Mode / Missing Credentials Check
     if (!emailUser || !emailPass) {
@@ -173,7 +201,7 @@ const sendEmailOrMock = async (transporter: nodemailer.Transporter | null, mailO
         const textContent = typeof mailOptions.text === 'string' ? mailOptions.text : '[Non-text content]';
         console.log(textContent.substring(0, 200) + (textContent.length > 200 ? '...' : ''));
         console.log('--------------------------------------------------------------------------\n');
-        return true; // Pretend we sent it successfully
+        return process.env.NODE_ENV !== 'production';
     }
 
     try {
@@ -633,10 +661,13 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
     const textContent = `Randevunuz Onaylandı!\n\nSayın ${customerName},\n\nRandevunuz onaylanmıştır.\n\n📅 Tarih: ${formattedDate}\n⏰ Saat: ${time}${notes ? `\n📝 Not: ${notes}` : ''}\n\n${calendarLinksText}\n\n${companyName}`;
 
     const icsContent = generateICalContent(icalData);
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
 
     return sendEmailOrMock(transporter, {
-        from: `"${companyName}" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `✅ Randevunuz Onaylandı - ${formattedDate}`,
         text: textContent,
@@ -716,9 +747,12 @@ export async function sendAppointmentCancellationEmail(data: AppointmentEmailDat
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
     return sendEmailOrMock(transporter, {
-        from: `"${companyName}" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `❌ Randevunuz İptal Edildi - ${formattedDate}`,
         text: `Sayın ${customerName}, ${formattedDate} tarihli, saat ${time}'deki randevunuz iptal edilmiştir.`,
@@ -824,9 +858,12 @@ export async function sendAppointmentTenantAlertEmail(data: AppointmentTenantAle
 </body>
 </html>`;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: "Vion AI",
+    });
     return sendEmailOrMock(transporter, {
-        from: `"Vion AI" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: tenantEmail,
         subject: `🗓️ Yeni Randevu: ${customerName} — ${formattedDate} ${time}`,
         text: `Yeni randevu talebi\nMüşteri: ${customerName} (${customerEmail})\nTarih: ${formattedDate}\nSaat: ${time}${notes ? `\nNot: ${notes}` : ''}`,
@@ -909,9 +946,12 @@ export async function sendAppointmentReminderEmail(data: AppointmentEmailData): 
 </body>
 </html>`;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
     return sendEmailOrMock(transporter, {
-        from: `"${companyName}" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `⏰ Hatırlatma: Yarın ${time} randevunuz var — ${companyName}`,
         text: `Sayın ${customerName}, yarın ${formattedDate} saat ${time}'deki randevunuzu hatırlatmak istedik.`,
@@ -1044,9 +1084,12 @@ export async function sendInvoiceReminderToAdmin(data: InvoiceReminderData): Pro
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: "Vion AI",
+    });
     return sendEmailOrMock(transporter, {
-        from: `"Vion AI" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: adminEmail,
         subject: `📋 Fatura Kesim Hatırlatması - ${customerName || customerEmail}`,
         text: `Fatura Kesim Zamanı\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nFatura Tarihi: ${formattedDate}\nTutar: ${amountText}`,
@@ -1163,9 +1206,12 @@ export async function sendPaymentReminderToCustomer(data: PaymentReminderData): 
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: companyName,
+    });
     return sendEmailOrMock(transporter, {
-        from: `"${companyName}" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `💳 Ödeme Hatırlatması - ${formattedDate}`,
         text: `Ödeme Hatırlatması\n\nSayın ${customerName || 'Değerli Müşterimiz'},\n\n${planName} planınız için ödeme zamanı yaklaşıyor.\n\nSon Ödeme Tarihi: ${formattedDate}\n${amount ? `Tutar: ${amountText}` : ''}\n\nHizmetlerinizin kesintisiz devam etmesi için lütfen ödemenizi zamanında yapınız.\n\n${companyName}`,
@@ -1283,9 +1329,12 @@ export async function sendTrialExpiredAdminNotification(data: TrialExpiredNotifi
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: "Vion AI",
+    });
     return sendEmailOrMock(transporter, {
-        from: `"Vion AI" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: adminEmail,
         subject: `⏳ Deneme Süresi Bitti - ${customerName || customerEmail}`,
         text: `Deneme Süresi Sona Erdi\n\nMüşteri: ${customerName || customerEmail}\nE-posta: ${customerEmail}\nPlan: ${planName}\nBitiş Tarihi: ${formattedDate}`,
@@ -1311,6 +1360,7 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
         month: 'long',
         day: 'numeric'
     });
+    const settingsUrl = `${getAppBaseUrl()}/console/settings`;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -1347,7 +1397,7 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
                             
                             <!-- Action Button -->
                             <div style="text-align: center; margin-bottom: 30px;">
-                                <a href="https://app.getvion.com/console/settings" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+                                <a href="${settingsUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
                                     Planı Yükselt
                                 </a>
                             </div>
@@ -1375,18 +1425,21 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: "Vion AI",
+    });
     return sendEmailOrMock(transporter, {
-        from: `"Vion AI" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `🚀 Deneme Süreniz Sona Erdi - Paketinizi Yükseltin`,
-        text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: https://app.getvion.com/console/settings`,
+        text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: ${settingsUrl}`,
         html: htmlContent,
     });
 }
 
 export interface UpgradeRequestData {
-    adminEmail?: string; // Optional, defaults to env or info@userex.com.tr
+    adminEmail?: string; // Optional, defaults to Vion admin notification email.
     customerEmail: string;
     customerName: string;
     currentUserParams: {
@@ -1405,7 +1458,7 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
     // Transporter check handled in sendEmailOrMock
 
     const { adminEmail, customerEmail, customerName, currentUserParams, targetPlan } = data;
-    const recipientEmail = adminEmail || 'info@userex.com.tr';
+    const recipientEmail = adminEmail || getAdminNotificationEmail();
 
     const formattedDate = new Date().toLocaleDateString('tr-TR', {
         year: 'numeric',
@@ -1414,6 +1467,7 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
         hour: '2-digit',
         minute: '2-digit'
     });
+    const customerAdminUrl = `${getAppBaseUrl()}/admin/tenant/${currentUserParams.userId}/settings/customer-admin`;
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -1487,7 +1541,7 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
                             </p>
 
                             <div style="text-align: center; margin-top: 30px;">
-                                <a href="https://app.getvion.com/admin/tenant/${currentUserParams.userId}/settings/customer-admin" style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px;">
+                                <a href="${customerAdminUrl}" style="display: inline-block; background-color: #059669; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 30px; border-radius: 8px;">
                                     Müşteri Ayarlarına Git
                                 </a>
                             </div>
@@ -1510,9 +1564,12 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
 </html>
     `;
 
-    const emailUser = process.env.SMTP_USER || process.env.EMAIL_USER || 'mock@vion.ai';
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: process.env.SMTP_FROM_NAME,
+        fallbackName: "Vion AI",
+    });
     return sendEmailOrMock(transporter, {
-        from: `"Vion AI" <${emailUser}>`,
+        ...buildMailSenderOptions(senderIdentity),
         to: recipientEmail,
         subject: `🚀 Yeni Plan Yükseltme Talebi - ${customerName}`,
         text: `Yeni Plan Yükseltme Talebi\n\nMüşteri: ${customerName} (${customerEmail})\nMevcut Plan: ${currentUserParams.currentPlan}\nİstenen Plan: ${targetPlan}\nTarih: ${formattedDate}`,
@@ -1535,7 +1592,7 @@ export async function sendHumanHandoffNotificationEmail(data: HumanHandoffNotifi
         configuredFromName: companyName,
         fallbackName: companyName,
     })
-    const dashboardLink = `https://www.getvion.com/console/chatbot/chats?sessionId=${encodeURIComponent(data.callbackId)}`
+    const dashboardLink = `${getAppBaseUrl()}/console/chatbot/chats?sessionId=${encodeURIComponent(data.callbackId)}`
     const triggerLabel = data.triggerSource === "assistant_trigger" ? "Asistan yönlendirmesi" : "Kullanıcı talebi"
     const transcriptSnippet = (data.transcriptSnippet || "-").trim() || "-"
 
@@ -1603,16 +1660,23 @@ export async function sendHumanHandoffNotificationEmail(data: HumanHandoffNotifi
 export async function sendTransactionalEmail(data: {
     to: string
     subject: string
-    html: string
+    html?: string
     text: string
+    replyTo?: string
+    fromName?: string
 }): Promise<boolean> {
     const t = createTransporter()
-    const senderIdentity = resolveSenderIdentity()
+    const senderIdentity = resolveSenderIdentity({
+        configuredFromName: data.fromName || process.env.SMTP_FROM_NAME,
+        fallbackName: data.fromName || "Vion AI",
+    })
+    const senderOptions = buildMailSenderOptions(senderIdentity)
     return sendEmailOrMock(t, {
-        ...buildMailSenderOptions(senderIdentity),
+        ...senderOptions,
+        ...(data.replyTo ? { replyTo: data.replyTo } : {}),
         to: data.to,
         subject: data.subject,
-        html: data.html,
+        ...(data.html ? { html: data.html } : {}),
         text: data.text,
     })
 }
