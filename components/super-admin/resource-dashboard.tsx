@@ -20,6 +20,7 @@ interface Integration {
     icon: string;
     dashboardUrl?: string;
     isFree?: boolean;
+    freeLabel?: string;
 }
 
 export function ResourceDashboard() {
@@ -38,6 +39,7 @@ export function ResourceDashboard() {
         { name: 'Firebase Storage', description: 'Ürün görselleri, logolar ve dokümanlar', status: 'connected', creditsUsed: 245, totalCredits: 5000, lastSync: new Date().toLocaleString('tr-TR'), icon: '📦', dashboardUrl: 'https://console.firebase.google.com/' },
         { name: 'Firebase Auth', description: 'Kullanıcı kimlik doğrulama ve oturum yönetimi', status: 'connected', creditsUsed: stats?.totalTenants || 7, totalCredits: 10000, lastSync: new Date().toLocaleString('tr-TR'), icon: '🔐', dashboardUrl: 'https://console.firebase.google.com/' },
         { name: 'Resend', description: 'Doğrulama, iletişim formu, lead ve admin bildirimleri için transactional email sağlayıcısı', status: 'connected', creditsUsed: 0, totalCredits: 3000, lastSync: new Date().toLocaleString('tr-TR'), icon: '✉️', dashboardUrl: 'https://resend.com/emails' },
+        { name: 'ImprovMX', description: 'info@getvion.com gelen postalarını Gmail gelen kutusuna yönlendiren inbound mail forwarding servisi', status: 'connected', lastSync: new Date().toLocaleString('tr-TR'), icon: '📬', dashboardUrl: 'https://app.improvmx.com/', isFree: true, freeLabel: '✅ Ücretsiz Forwarding' },
         { name: 'Nodemailer SMTP Transport', description: 'Resend SMTP üzerinden uygulama içi e-posta gönderim katmanı', status: 'connected', icon: '📧', isFree: true },
         { name: 'Cheerio (Web Scraper)', description: 'URL ve sitemap tarama, içerik çıkarma', status: 'connected', icon: '🕷️', isFree: true },
         { name: 'PDF-Parse', description: 'PDF doküman içeriği okuma ve işleme', status: 'connected', icon: '📄', isFree: true },
@@ -242,7 +244,7 @@ export function ResourceDashboard() {
                                 <div className="flex items-center gap-4">
                                     {integration.isFree ? (
                                         <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                                            ✅ Ücretsiz Kütüphane
+                                            {integration.freeLabel || '✅ Ücretsiz Kütüphane'}
                                         </Badge>
                                     ) : (
                                         <div className="text-right">
