@@ -2,12 +2,14 @@ import { OpenAI } from "openai";
 import { NextResponse } from "next/server";
 import { trackAiUsage } from "@/lib/usage-tracker";
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
     try {
+        const apiKey = process.env.OPENAI_API_KEY?.trim();
+        if (!apiKey) {
+            return NextResponse.json({ error: "OpenAI API key is not configured" }, { status: 500 });
+        }
+
+        const openai = new OpenAI({ apiKey });
         const { topic, type, tone, language = "Turkish", audience } = await req.json();
 
         if (!topic || !type || !tone) {

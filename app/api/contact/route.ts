@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
+import { getContactInboxEmail, sendTransactionalEmail } from '@/lib/email-service'
+
+const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i
 
 export async function POST(req: NextRequest) {
     try {
         const { name, email, company, subject, message } = await req.json()
-        const smtpUser = process.env.SMTP_USER || process.env.EMAIL_USER
-        const smtpPass = (process.env.SMTP_PASS || process.env.EMAIL_PASSWORD || '').replace(/\s/g, '')
-        const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
-        const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10)
 
         // Validate required fields
         if (!name || !email || !message) {
@@ -17,12 +15,11 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // Check SMTP credentials
-        if (!smtpUser || !smtpPass) {
-            console.error('SMTP credentials not configured')
+        const normalizedEmail = String(email).trim().toLowerCase()
+        if (!EMAIL_PATTERN.test(normalizedEmail)) {
             return NextResponse.json(
-                { error: 'Email service not configured' },
-                { status: 500 }
+                { error: 'Valid email is required' },
+                { status: 400 }
             )
         }
 
@@ -33,17 +30,6 @@ export async function POST(req: NextRequest) {
             support: 'Teknik Destek',
             partnership: 'İş Ortaklığı'
         }
-
-        // Create email transporter
-        const transporter = nodemailer.createTransport({
-            host: smtpHost,
-            port: smtpPort,
-            secure: smtpPort === 465,
-            auth: {
-                user: smtpUser,
-                pass: smtpPass
-            }
-        })
 
         // Email content
         const emailContent = `
@@ -65,15 +51,21 @@ ${message}
 `
 
         // Send email
-        const result = await transporter.sendMail({
-            from: `"Vion İletişim Formu" <${smtpUser}>`,
-            to: 'info@userex.com.tr',
-            replyTo: email,
+        const emailSent = await sendTransactionalEmail({
+            to: getContactInboxEmail(),
+            replyTo: normalizedEmail,
+            fromName: 'Vion İletişim Formu',
             subject: `[Vion] ${subjectLabels[subject] || 'İletişim'} - ${name}`,
             text: emailContent
         })
 
-        console.log('Email sent successfully:', result.messageId)
+        if (!emailSent) {
+            return NextResponse.json(
+                { error: 'Failed to send message' },
+                { status: 502 }
+            )
+        }
+
         return NextResponse.json({ success: true })
     } catch (error: any) {
         console.error('Contact form error:', {
@@ -83,17 +75,8 @@ ${message}
             command: error?.command
         })
 
-        const isAuthError =
-            error?.responseCode === 535 ||
-            error?.code === 'EAUTH' ||
-            String(error?.message || '').includes('Invalid login')
-
         return NextResponse.json(
-            {
-                error: isAuthError
-                    ? 'Email service authentication failed'
-                    : 'Failed to send message'
-            },
+            { error: 'Failed to send message' },
             { status: 500 }
         )
     }

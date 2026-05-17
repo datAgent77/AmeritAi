@@ -11,13 +11,15 @@ import mammoth from 'mammoth';
 
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+function createOpenAIClient() {
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+    return apiKey ? new OpenAI({ apiKey }) : null;
+}
 
-const pinecone = new Pinecone({
-    apiKey: process.env.PINECONE_API_KEY!,
-});
+function createPineconeClient() {
+    const apiKey = process.env.PINECONE_API_KEY?.trim();
+    return apiKey ? new Pinecone({ apiKey }) : null;
+}
 
 export async function GET(req: Request) {
     try {
@@ -86,9 +88,12 @@ export async function POST(req: Request) {
         if (!adminDb) {
             return NextResponse.json({ error: "Firebase Admin not initialized" }, { status: 500 });
         }
-        if (!process.env.PINECONE_API_KEY || !process.env.OPENAI_API_KEY) {
+        const openai = createOpenAIClient();
+        const pinecone = createPineconeClient();
+        if (!pinecone || !openai) {
             return NextResponse.json({ error: "Missing API Configuration (Pinecone or OpenAI)" }, { status: 500 });
         }
+
         console.log("API: Received knowledge request");
         const body = await req.json();
 
@@ -450,6 +455,11 @@ export async function DELETE(req: Request) {
 
         console.log(`API: Deleting doc ${docId} for chatbot ${chatbotId}`);
 
+        const pinecone = createPineconeClient();
+        if (!pinecone) {
+            return NextResponse.json({ error: "Missing API Configuration (Pinecone)" }, { status: 500 });
+        }
+
         const index = pinecone.index("chatbot-knowledge");
 
         // Delete by metadata filter
@@ -510,6 +520,12 @@ export async function PUT(req: Request) {
 
         // For text/manual types, we can update content and re-embed
         if ((docType === 'text' || docType === 'manual') && content) {
+            const openai = createOpenAIClient();
+            const pinecone = createPineconeClient();
+            if (!pinecone || !openai) {
+                return NextResponse.json({ error: "Missing API Configuration (Pinecone or OpenAI)" }, { status: 500 });
+            }
+
             const index = pinecone.index("chatbot-knowledge");
 
             // Delete old vectors

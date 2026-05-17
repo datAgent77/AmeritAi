@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import * as admin from "firebase-admin";
-import nodemailer from "nodemailer";
+import { getAppBaseUrl, sendTransactionalEmail } from "@/lib/email-service";
 import { pushLeadToZoho } from "@/lib/integrations/zoho/client";
 import { createNotification } from "@/lib/notification-service";
+
+const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i;
 
 export async function POST(req: Request) {
     const adminDb = getAdminDb();
@@ -57,15 +59,6 @@ export async function POST(req: Request) {
                 const settings = chatbotSnap.data();
 
                 if (settings?.enableLeadNotifications && settings?.leadNotificationEmail) {
-                    const transporter = nodemailer.createTransport({
-                        host: process.env.SMTP_HOST,
-                        port: parseInt(process.env.SMTP_PORT || '587'),
-                        auth: {
-                            user: process.env.SMTP_USER,
-                            pass: process.env.SMTP_PASS?.replace(/\s/g, ''),
-                        },
-                    });
-
                     // Format custom fields for email
                     const customFieldsText = customFields && Object.keys(customFields).length > 0
                         ? Object.entries(customFields).map(([key, value]) => `${key}: ${value}`).join('\n')
@@ -74,11 +67,15 @@ export async function POST(req: Request) {
                     const customFieldsHtml = customFields && Object.keys(customFields).length > 0
                         ? Object.entries(customFields).map(([key, value]) => `<p><strong>${key}:</strong> ${value}</p>`).join('')
                         : '';
+                    const leadsUrl = `${getAppBaseUrl()}/console/chatbot/leads`;
+                    const replyTo = typeof email === "string" && EMAIL_PATTERN.test(email.trim())
+                        ? email.trim().toLowerCase()
+                        : undefined;
 
-                    const mailOptions = {
-                        from: process.env.SMTP_USER,
+                    await sendTransactionalEmail({
                         to: settings.leadNotificationEmail,
                         subject: `🎯 Yeni Lead: ${name || email || 'Anonim'}`,
+                        replyTo,
                         text: `
 Yeni bir lead chatbot'unuz aracılığıyla geldi!
 
@@ -88,7 +85,7 @@ Telefon: ${phone || 'Belirtilmedi'}
 Kaynak: ${source || 'Pre-chat Form'}
 ${customFieldsText ? '\nEk Bilgiler:\n' + customFieldsText : ''}
 
-Leadlerinizi yönetmek için paneli ziyaret edin.
+Leadlerinizi yönetmek için paneli ziyaret edin: ${leadsUrl}
                         `.trim(),
                         html: `
                             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -102,13 +99,11 @@ Leadlerinizi yönetmek için paneli ziyaret edin.
                                     ${customFieldsHtml}
                                 </div>
                                 <p style="color: #64748b; font-size: 14px;">
-                                    Leadlerinizi yönetmek için <a href="https://userex.com.tr/console/chatbot/leads" style="color: #6366f1;">paneli ziyaret edin</a>.
+                                    Leadlerinizi yönetmek için <a href="${leadsUrl}" style="color: #6366f1;">paneli ziyaret edin</a>.
                                 </p>
                             </div>
                         `
-                    };
-
-                    await transporter.sendMail(mailOptions);
+                    });
                 }
             }
         } catch (emailError) {

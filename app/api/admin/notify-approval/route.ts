@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { getAppBaseUrl, sendTransactionalEmail } from '@/lib/email-service';
 
 export async function POST(req: Request) {
     try {
@@ -46,17 +46,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
         }
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.SMTP_USER,
+        const loginUrl = `${getAppBaseUrl()}/login`;
+        const emailSent = await sendTransactionalEmail({
             to: normalizedEmail,
             subject: 'Your Vion Account has been Approved!',
             text: `
@@ -64,7 +55,7 @@ export async function POST(req: Request) {
                 
                 Your account for Vion has been approved!
                 
-                You can now log in to the platform at: https://app.userex.com.tr/login
+                You can now log in to the platform at: ${loginUrl}
                 
                 Best regards,
                 The Vion Team
@@ -73,14 +64,16 @@ export async function POST(req: Request) {
                 <h3>Welcome to Vion!</h3>
                 <p>Hello ${normalizedName},</p>
                 <p>Your account has been approved!</p>
-                <p>You can now log in to the platform at: <a href="https://app.userex.com.tr/login">https://app.userex.com.tr/login</a></p>
+                <p>You can now log in to the platform at: <a href="${loginUrl}">${loginUrl}</a></p>
                 <br/>
                 <p>Best regards,</p>
                 <p>The Vion Team</p>
             `
-        };
+        });
 
-        await transporter.sendMail(mailOptions);
+        if (!emailSent) {
+            return NextResponse.json({ error: 'Failed to send email' }, { status: 502 });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

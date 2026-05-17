@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
 import { getAdminAuth } from '@/lib/firebase-admin';
+import { getAdminNotificationEmail, sendTransactionalEmail } from '@/lib/email-service';
 
 interface RateLimitEntry {
     count: number;
@@ -72,18 +72,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Too many requests" }, { status: 429 });
         }
 
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.SMTP_USER,
-            to: 'info@userex.com.tr',
+        const emailSent = await sendTransactionalEmail({
+            to: getAdminNotificationEmail(),
             subject: `New User Signup: ${normalizedEmail}`,
             text: `
                 New user signup details:
@@ -101,9 +91,11 @@ export async function POST(req: Request) {
                 <p><strong>Company:</strong> ${normalizedCompany || 'N/A'}</p>
                 <p>Please review and approve in the admin panel.</p>
             `
-        };
+        });
 
-        await transporter.sendMail(mailOptions);
+        if (!emailSent) {
+            return NextResponse.json({ error: 'Failed to send email' }, { status: 502 });
+        }
 
         return NextResponse.json({
             success: true,

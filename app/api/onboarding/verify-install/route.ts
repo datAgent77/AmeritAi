@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
             const response = await fetch(websiteUrl, {
                 headers: {
-                    "User-Agent": "VionBot/1.0 (+https://vion.ai/bot)"
+                    "User-Agent": "VionBot/1.0 (+https://www.getvion.com/bot)"
                 },
                 signal: controller.signal
             });
