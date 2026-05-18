@@ -36,6 +36,7 @@ const CLASSIC_DEVICE_KEYS = [
   "launcherHoverEffect",
   "viewMode",
   "modalSize",
+  "classicInputVariant",
 ] as const
 
 type ClassicDeviceKey = (typeof CLASSIC_DEVICE_KEYS)[number]

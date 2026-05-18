@@ -90,4 +90,20 @@ describe("resolveClassicDeviceSettings", () => {
     expect(result.launcherWidth).toBe(96)
     expect(result.launcherShadow).toBe("heavy")
   })
+
+  test("resolves classic input appearance per device", () => {
+    const base = {
+      classicPerDeviceSettingsEnabled: true,
+      classicInputVariant: "artify",
+      classicDesktopSettings: {
+        classicInputVariant: "default",
+      },
+      classicMobileSettings: {
+        classicInputVariant: "artify",
+      },
+    } as const
+
+    expect(resolveClassicDeviceSettings(base, "desktop").classicInputVariant).toBe("default")
+    expect(resolveClassicDeviceSettings(base, "mobile").classicInputVariant).toBe("artify")
+  })
 })

@@ -6,6 +6,7 @@ import { WidgetSettings } from "@/hooks/use-widget-settings"
 import { PreviewAmbient } from "./preview-ambient"
 import { PreviewClassic } from "./preview-classic"
 import type { AmbientDockPreviewState } from "@/lib/ambient-dock-style"
+import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 
 interface WidgetLivePreviewProps {
     userId: string
@@ -146,7 +147,10 @@ export function WidgetLivePreview({
                 />
             ) : (
                 <PreviewClassic
-                    settings={settings}
+                    settings={{
+                        ...settings,
+                        ...resolveClassicDeviceSettings(settings, previewMode),
+                    }}
                     previewMode={previewMode}
                     isPreviewOpen={isPreviewOpen}
                     setIsPreviewOpen={setIsPreviewOpen}

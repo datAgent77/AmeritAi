@@ -1341,7 +1341,8 @@
       'launcherLottieUrl',
       'launcherHoverEffect',
       'viewMode',
-      'modalSize'
+      'modalSize',
+      'classicInputVariant'
     ].forEach((key) => {
       if (source[key] !== undefined) shared[key] = source[key];
     });
