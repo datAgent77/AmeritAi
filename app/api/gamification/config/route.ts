@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
+import { resolveGamificationRuntimeAccess } from "@/lib/gamification/runtime-access"
 
 export const runtime = "nodejs"
 
@@ -13,15 +14,20 @@ export async function GET(req: Request) {
 
         if (!chatbotId) return NextResponse.json({ error: "chatbotId zorunlu" }, { status: 400 })
 
-        const snap = await adminDb.collection("chatbots").doc(chatbotId).get()
-        const gamification = snap.data()?.gamification
+        const access = await resolveGamificationRuntimeAccess(adminDb, chatbotId)
+        const gamification = access.gamification
 
-        if (!gamification?.enabled) {
+        if (!access.enabled || !gamification) {
             return NextResponse.json({ enabled: false })
         }
 
         return NextResponse.json({
+            ...gamification,
             enabled: true,
+            gameType: gamification.gameType || "wheel",
+            requireEmail: gamification.requireEmail ?? true,
+            cooldownHours: gamification.cooldownHours ?? 24,
+            themeColor: gamification.themeColor || "#8b5cf6",
             prizes: gamification.prizes || [],
             triggers: gamification.triggers || {},
         })

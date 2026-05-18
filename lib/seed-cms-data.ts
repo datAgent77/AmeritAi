@@ -1,6 +1,8 @@
 
 // -- UNIQUE SEED DATA FOR VION AI --
 // 30 Real Blog Posts + 30 Unique FAQs
+import { LATEST_BLOG_POSTS } from './latest-blog-posts';
+
 
 const NEW_SEO_BLOG_POSTS = [
     {
@@ -406,6 +408,7 @@ Vion AI kurulumları bu kontroller etrafında yapılandırıldığında, KVKK ve
 ];
 
 export const SEED_BLOG_POSTS = [
+    ...LATEST_BLOG_POSTS,
     ...NEW_SEO_BLOG_POSTS,
     {
         slug: "ai-chatbot-musteri-hizmetleri-donusumu",

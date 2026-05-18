@@ -30,7 +30,8 @@ import {
     Utensils,
     FileText,
     Rocket,
-    LifeBuoy
+    LifeBuoy,
+    Gift
 } from "lucide-react"
 import { signOut } from "firebase/auth"
 import { auth } from "@/lib/firebase"
@@ -38,6 +39,7 @@ import { useRouter } from "next/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useAuth } from "@/context/AuthContext"
 import { PricingModal } from "@/components/pricing-modal"
+import { isGamificationModuleEnabled } from "@/lib/gamification/access"
 import { useEffect, useState } from "react"
 import {
     Sidebar,
@@ -92,6 +94,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     const [showPricing, setShowPricing] = useState(false)
     const [isHumanHandoffEnabled, setIsHumanHandoffEnabled] = useState(false)
     const [isLeadCollectionEnabled, setIsLeadCollectionEnabled] = useState(false)
+    const [isDigitalWaiterEnabled, setIsDigitalWaiterEnabled] = useState(false)
+    const [isAppointmentsEnabled, setIsAppointmentsEnabled] = useState(false)
+    const [isGamificationEnabled, setIsGamificationEnabled] = useState(false)
     const isAgentUser = role === "AGENT"
     const isAgenciesAdminRoute =
         normalizedPathname === "/admin/agencies" ||
@@ -115,6 +120,9 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 const data = await response.json()
                 setIsHumanHandoffEnabled(data.enableHumanHandoff === true)
                 setIsLeadCollectionEnabled(data.enableLeadCollection === true || data.enableLeadFinder === true || data.productEntitlements?.leadFinder === true)
+                setIsDigitalWaiterEnabled(data.enableDigitalWaiter === true)
+                setIsAppointmentsEnabled(data.enableAppointments === true)
+                setIsGamificationEnabled(isGamificationModuleEnabled(data, data))
             } catch (error) {
                 console.error("Failed to load tenant module status:", error)
             }
@@ -170,13 +178,19 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
     }
     const isAgentsActive = isActive("/console/agents")
     const isSkillsActive = isActive("/console/modules") && !isAgentsActive
-    const canShowLeadCollection =
-        enableLeadCollection ||
-        isLeadCollectionEnabled ||
-        userData?.enableLeadCollection === true ||
-        userData?.enableLeadFinder === true ||
-        userData?.productEntitlements?.leadFinder === true ||
-        role === 'SUPER_ADMIN'
+    const canShowLeadCollection = targetUserId
+        ? isLeadCollectionEnabled
+        : (enableLeadCollection ||
+            isLeadCollectionEnabled ||
+            userData?.enableLeadCollection === true ||
+            userData?.enableLeadFinder === true ||
+            userData?.productEntitlements?.leadFinder === true)
+
+    const canShowAppointments = targetUserId ? isAppointmentsEnabled : (userData?.enableAppointments === true || isAppointmentsEnabled)
+    const canShowDigitalWaiter = targetUserId ? isDigitalWaiterEnabled : (enableDigitalWaiter === true || isDigitalWaiterEnabled)
+    const canShowGamification = targetUserId
+        ? isGamificationEnabled
+        : (isGamificationModuleEnabled(null, userData) || isGamificationEnabled)
 
     const tenantGroups = [
 // ... unchanged ...
@@ -230,7 +244,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     href: "/console/chatbot/chats",
                     active: isActive("/console/chatbot/chats")
                 },
-                ...(userData?.enableAppointments || role === 'SUPER_ADMIN' ? [{
+                ...(canShowAppointments ? [{
                     title: t('appointments') || "Appointments",
                     icon: Calendar,
                     href: "/console/appointments",
@@ -242,13 +256,19 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     href: "/console/chatbot/leads",
                     active: isActive("/console/chatbot/leads")
                 }] : []),
+                ...(canShowGamification ? [{
+                    title: "Katılımcılar & Kazananlar",
+                    icon: Gift,
+                    href: "/console/gamification-winners",
+                    active: isActive("/console/gamification-winners")
+                }] : []),
                 {
                     title: t('reports') || "Analytics",
                     icon: BarChart3,
                     href: "/console/chatbot/analytics",
                     active: isActive("/console/chatbot/analytics")
                 },
-                ...(enableDigitalWaiter || role === 'SUPER_ADMIN' ? [{
+                ...(canShowDigitalWaiter ? [{
                     title: t('modules.digitalWaiter') || "Dijital Garson",
                     icon: Utensils,
                     href: "/console/digital-waiter",

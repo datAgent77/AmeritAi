@@ -1,5 +1,7 @@
 const { spawn } = require("node:child_process")
+const fs = require("node:fs")
 const net = require("node:net")
+const path = require("node:path")
 
 const nextBin = require.resolve("next/dist/bin/next")
 const env = {
@@ -7,6 +9,13 @@ const env = {
 }
 
 const args = process.argv.slice(2)
+
+function resetDevBuildCache() {
+  if (process.env.NEXT_PRESERVE_DEV_CACHE === "1") return
+
+  const nextDir = path.join(process.cwd(), ".next")
+  fs.rmSync(nextDir, { recursive: true, force: true })
+}
 
 function extractPort(argv) {
   for (let i = 0; i < argv.length; i++) {
@@ -51,6 +60,8 @@ async function pickPort(start, end) {
 }
 
 async function main() {
+  resetDevBuildCache()
+
   const existingPort = extractPort(args)
   let effectiveArgs = args
 

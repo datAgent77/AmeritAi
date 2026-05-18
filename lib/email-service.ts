@@ -1680,3 +1680,100 @@ export async function sendTransactionalEmail(data: {
         text: data.text,
     })
 }
+
+export interface GamificationWinnerNotificationData {
+    tenantEmail: string
+    businessName?: string
+    playerEmail: string
+    prize: string
+    couponCode?: string | null
+    gameType?: string
+}
+
+const GAME_TYPE_LABELS: Record<string, string> = {
+    wheel: "Çarkıfelek",
+    scratch: "Kazı Kazan",
+    mystery: "Gizemli Kutu",
+    slot: "Slot Makinesi",
+}
+
+export async function sendGamificationWinnerNotification(data: GamificationWinnerNotificationData): Promise<boolean> {
+    const transporter = createTransporter()
+
+    const {
+        tenantEmail,
+        businessName = "Vion AI",
+        playerEmail,
+        prize,
+        couponCode,
+        gameType = "wheel",
+    } = data
+
+    const gameLabel = GAME_TYPE_LABELS[gameType] || gameType
+    const now = new Date().toLocaleString("tr-TR", { dateStyle: "long", timeStyle: "short" })
+    const subject = `🎉 Yeni Oyun Kazananı — ${businessName}`
+
+    const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+        <tr>
+          <td style="padding:24px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;">
+            <div style="font-size:13px;opacity:0.85;">${businessName}</div>
+            <div style="margin-top:6px;font-size:20px;font-weight:700;">🎉 Yeni Oyun Kazananı!</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;">
+            <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#374151;">
+              Sitenizde oynanan <strong>${gameLabel}</strong> oyununda bir kullanıcı ödül kazandı.
+            </p>
+            <table cellpadding="0" cellspacing="0" style="font-size:13px;color:#111827;width:100%;border-collapse:collapse;">
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:10px 0;color:#6b7280;width:140px;">Kullanıcı</td>
+                <td style="padding:10px 0;font-weight:600;">${playerEmail}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:10px 0;color:#6b7280;">Oyun Türü</td>
+                <td style="padding:10px 0;">${gameLabel}</td>
+              </tr>
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:10px 0;color:#6b7280;">Kazanılan Ödül</td>
+                <td style="padding:10px 0;font-weight:700;color:#7c3aed;">${prize}</td>
+              </tr>
+              ${couponCode ? `
+              <tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:10px 0;color:#6b7280;">Kupon Kodu</td>
+                <td style="padding:10px 0;font-family:monospace;font-weight:700;font-size:15px;letter-spacing:2px;">${couponCode}</td>
+              </tr>` : ""}
+              <tr>
+                <td style="padding:10px 0;color:#6b7280;">Tarih &amp; Saat</td>
+                <td style="padding:10px 0;">${now}</td>
+              </tr>
+            </table>
+            <p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:#9ca3af;">
+              Tüm katılımcıları ve kazananları yönetim panelinizden görüntüleyebilirsiniz.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`
+
+    const text = `${businessName} — Yeni Oyun Kazananı\n\nOyun Türü: ${gameLabel}\nKullanıcı: ${playerEmail}\nKazanılan Ödül: ${prize}${couponCode ? `\nKupon Kodu: ${couponCode}` : ""}\nTarih: ${now}\n\nVion AI Gamification`
+
+    const senderIdentity = resolveSenderIdentity({ fallbackName: businessName })
+    return sendEmailOrMock(transporter, {
+        ...buildMailSenderOptions(senderIdentity),
+        to: tenantEmail,
+        subject,
+        html,
+        text,
+    })
+}
+

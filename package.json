@@ -6,7 +6,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "clean:build": "rm -rf .next .next-dev .next-build",
+    "clean:build": "node scripts/clean-next-build.js",
     "dev": "node scripts/run-next-dev.js",
     "messenger:dev": "node server.js",
     "messenger:start": "node server.js",

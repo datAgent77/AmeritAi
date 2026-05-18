@@ -178,7 +178,7 @@ function GuidedShortcutButtons({
                         <button
                             key={shortcut.id}
                             onClick={() => onSelect(shortcut)}
-                            className="w-[240px] shrink-0 snap-start rounded-xl border border-emerald-200/80 bg-white px-4 py-3 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-emerald-900/70 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
+                            className="w-[240px] shrink-0 snap-start rounded-xl border border-emerald-200/80 bg-white py-3 pl-3 pr-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-emerald-900/70 dark:bg-zinc-900/80 dark:hover:bg-zinc-800"
                         >
                             <div className="text-sm font-semibold text-gray-900 dark:text-zinc-100">{shortcut.title}</div>
                             {shortcut.description ? (
@@ -384,8 +384,8 @@ export function MessageList({
             className={isAmbientMode && !showClassicEntryOnboarding
                 ? "flex flex-col h-full overflow-hidden"
                 : (showClassicEntryOnboarding
-                    ? `flex flex-col h-full overflow-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`
-                    : (isTransparentEmbed ? "flex flex-col h-full overflow-hidden bg-transparent" : "flex flex-col h-full overflow-hidden bg-gray-50 dark:bg-zinc-900"))}
+                    ? `flex flex-col h-full overflow-hidden ${isAmbientMode ? 'bg-transparent' : 'bg-gray-100 dark:bg-zinc-900'}`
+                    : (isTransparentEmbed ? "flex flex-col h-full overflow-hidden bg-transparent" : "flex flex-col h-full overflow-hidden bg-gray-100 dark:bg-zinc-900"))}
         >
             {showClassicEntryOnboarding ? (
                 <div className="flex h-full w-full flex-col">
@@ -440,7 +440,7 @@ export function MessageList({
                     <div 
                         ref={messagesContainerRef}
                         onWheel={isAmbientMode && !showClassicEntryOnboarding ? handleWheelContain : undefined}
-                        className={`flex-1 px-5 py-4 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200/80 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-600 ${isAmbientMode ? 'bg-transparent' : 'bg-white dark:bg-zinc-900'}`}
+                        className={`flex-1 px-5 py-4 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200/80 dark:[&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-600 ${isAmbientMode ? 'bg-transparent' : 'bg-gray-100 dark:bg-zinc-900'}`}
                     >
                         <div className="space-y-5">
                             <GuidedShortcutButtons
@@ -460,7 +460,7 @@ export function MessageList({
                                         <button
                                             key={`${question}-${index}`}
                                             onClick={() => sendMessage(question)}
-                                            className="w-full rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-zinc-200 transition hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700"
+                                            className="w-full rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 py-3 pl-3 pr-4 text-left text-sm font-medium text-gray-700 dark:text-zinc-200 transition hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700"
                                         >
                                             {question}
                                         </button>
@@ -483,7 +483,7 @@ export function MessageList({
                 ) : (
                     <div 
                         ref={messagesContainerRef}
-                        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center text-center space-y-6 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards"
+                        className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center text-center space-y-6 bg-gray-100 p-8 animate-in fade-in duration-700 slide-in-from-bottom-4 fill-mode-forwards dark:bg-zinc-900"
                     >
                         <div
                             className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg mb-2 overflow-hidden shrink-0"
@@ -515,7 +515,7 @@ export function MessageList({
                                         onClick={() => {
                                             sendMessage(q)
                                         }}
-                                        className="text-xs text-left px-4 py-3 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-100 dark:border-zinc-700 rounded-xl transition-all hover:shadow-sm shadow-sm text-gray-700 dark:text-zinc-200"
+                                        className="text-xs text-left py-3 pl-3 pr-4 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-100 dark:border-zinc-700 rounded-xl transition-colors text-gray-700 dark:text-zinc-200"
                                         style={{ borderColor: `${settings.headerBackgroundColor || settings.brandColor}40` }}
                                     >
                                         {q}

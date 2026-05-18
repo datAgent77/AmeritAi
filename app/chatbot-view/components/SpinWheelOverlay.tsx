@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { X, Gift, Loader2, CheckCircle2 } from "lucide-react"
+import { X, Gift, Loader2, CheckCircle2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -15,16 +15,35 @@ interface Props {
     chatbotId: string
     sessionId?: string
     prizes: Prize[]
+    requireEmail?: boolean
+    themeColor?: string
     onClose: () => void
     onPrize?: (prize: string, couponCode?: string) => void
+    onComplete?: () => void
+    title?: string
+    description?: string
+    buttonText?: string
 }
 
 const DEFAULT_COLORS = [
     "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
     "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
 ]
+const SPIN_REQUEST_TIMEOUT_MS = 12000
 
-export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPrize }: Props) {
+export function SpinWheelOverlay({ 
+    chatbotId, 
+    sessionId, 
+    prizes, 
+    requireEmail = true, 
+    themeColor = "#8b5cf6", 
+    onClose, 
+    onPrize,
+    onComplete,
+    title = "Şansını Dene!",
+    description = "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
+    buttonText = "Hemen Oyna"
+}: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [spinning, setSpinning] = useState(false)
     const [landed, setLanded] = useState(false)
@@ -32,9 +51,14 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
     const [couponCode, setCouponCode] = useState<string | null>(null)
     const [rotation, setRotation] = useState(0)
     const [contactEmail, setContactEmail] = useState("")
-    const [phase, setPhase] = useState<"collect" | "spin" | "result">("collect")
+    const [contactName, setContactName] = useState("")
+    const [contactPhone, setContactPhone] = useState("")
+    const [kvkkAccepted, setKvkkAccepted] = useState(false)
+    const [rewardEmailSent, setRewardEmailSent] = useState<boolean | null>(null)
+    const [phase, setPhase] = useState<"start" | "spin" | "result" | "lost" | "claim" | "final">("start")
     const [submitting, setSubmitting] = useState(false)
     const animRef = useRef<number | null>(null)
+    const rotationRef = useRef(0)
 
     // Draw wheel
     useEffect(() => {
@@ -85,64 +109,144 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
         ctx.fill()
     }, [prizes, rotation])
 
+    useEffect(() => {
+        return () => {
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+        }
+    }, [])
+
+    const setWheelRotation = (value: number) => {
+        rotationRef.current = value
+        setRotation(value)
+    }
+
+    const finishSpin = (data: any, startRot: number) => {
+        const targetIndex = data.prizeIndex ?? 0
+        const arc = 360 / prizes.length
+        const normalizedStart = ((startRot % 360) + 360) % 360
+        const targetDeg = 360 - targetIndex * arc - arc / 2
+        const deltaToTarget = ((targetDeg - normalizedStart) % 360 + 360) % 360
+        const endRot = startRot + (3 * 360) + deltaToTarget
+        const duration = 2800
+        let startTime: number | null = null
+
+        function animate(now: number) {
+            if (startTime === null) startTime = now
+            const elapsed = now - startTime
+            const t = Math.min(elapsed / duration, 1)
+            const ease = 1 - Math.pow(1 - t, 4)
+            setWheelRotation(startRot + (endRot - startRot) * ease)
+            if (t < 1) {
+                animRef.current = requestAnimationFrame(animate)
+            } else {
+                setWheelRotation(endRot % 360)
+                setSpinning(false)
+                setLanded(true)
+                setWonPrize(data.prize)
+                setCouponCode(data.couponCode || null)
+                setPhase(data.isWinner === false ? "lost" : "result")
+                onComplete?.()
+                if (data.isWinner !== false) {
+                    onPrize?.(data.prize, data.couponCode)
+                }
+            }
+        }
+
+        animRef.current = requestAnimationFrame(animate)
+    }
+
     async function handleSpin() {
         if (spinning || !prizes.length) return
-        setSubmitting(true)
+        setSubmitting(false)
+        setSpinning(true)
+        setPhase("spin")
+
+        if (animRef.current) cancelAnimationFrame(animRef.current)
+
+        const spinStartedAt = performance.now()
+        const initialRot = rotationRef.current
+        const holdingSpeed = 720 // deg/sec while the API result is pending
+
+        function animatePending(now: number) {
+            const elapsedSeconds = (now - spinStartedAt) / 1000
+            setWheelRotation(initialRot + elapsedSeconds * holdingSpeed)
+            animRef.current = requestAnimationFrame(animatePending)
+        }
+
+        animRef.current = requestAnimationFrame(animatePending)
+
+        const controller = new AbortController()
+        const timeoutId = window.setTimeout(() => controller.abort(), SPIN_REQUEST_TIMEOUT_MS)
 
         try {
             const res = await fetch("/api/gamification/spin", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                signal: controller.signal,
                 body: JSON.stringify({
                     chatbotId,
                     sessionId,
                     visitorId: typeof window !== "undefined"
                         ? localStorage.getItem(`vid_${chatbotId}`) || undefined
                         : undefined,
-                    contactEmail: contactEmail || undefined,
                 }),
             })
-            const data = await res.json()
-            setSubmitting(false)
+            const data = await res.json().catch(() => ({}))
 
-            if (data.alreadySpun) {
-                setWonPrize(data.prize)
-                setCouponCode(data.couponCode || null)
-                setPhase("result")
+            if (!res.ok || data.error) {
+                if (animRef.current) cancelAnimationFrame(animRef.current)
+                setSpinning(false)
+                setWonPrize(data.error || "Bir hata oluştu")
+                setPhase("lost")
                 return
             }
 
-            const targetIndex = data.prizeIndex ?? 0
-            const arc = 360 / prizes.length
-            const targetDeg = 360 - targetIndex * arc - arc / 2
-            const spins = 5 * 360 + targetDeg
-            const startRot = rotation
-            const endRot = startRot + spins
-            const duration = 4000
-            const startTime = performance.now()
-
-            setSpinning(true)
-            setPhase("spin")
-
-            function animate(now: number) {
-                const elapsed = now - startTime
-                const t = Math.min(elapsed / duration, 1)
-                const ease = 1 - Math.pow(1 - t, 4)
-                setRotation(startRot + (endRot - startRot) * ease)
-                if (t < 1) {
-                    animRef.current = requestAnimationFrame(animate)
-                } else {
-                    setRotation(endRot % 360)
-                    setSpinning(false)
-                    setLanded(true)
-                    setWonPrize(data.prize)
-                    setCouponCode(data.couponCode || null)
-                    setPhase("result")
-                    onPrize?.(data.prize, data.couponCode)
-                }
+            if (data.alreadySpun) {
+                if (animRef.current) cancelAnimationFrame(animRef.current)
+                finishSpin(data, rotationRef.current)
+                return
             }
-            animRef.current = requestAnimationFrame(animate)
-        } catch {
+
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+            finishSpin(data, rotationRef.current)
+        } catch (error: any) {
+            if (animRef.current) cancelAnimationFrame(animRef.current)
+            setSpinning(false)
+            setWonPrize(error?.name === "AbortError" ? "İstek zaman aşımına uğradı" : "Bağlantı hatası")
+            setPhase("lost")
+        } finally {
+            window.clearTimeout(timeoutId)
+        }
+    }
+
+    const handleClaim = async () => {
+        if (!contactName || !contactEmail || !contactPhone || !kvkkAccepted) return
+        setSubmitting(true)
+        try {
+            const res = await fetch("/api/gamification/claim", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chatbotId,
+                    sessionId,
+                    visitorId: typeof window !== "undefined" ? localStorage.getItem(`vid_${chatbotId}`) : undefined,
+                    name: contactName,
+                    email: contactEmail,
+                    phone: contactPhone,
+                    kvkk: kvkkAccepted
+                })
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                throw new Error(data?.error || "Claim failed")
+            }
+            setRewardEmailSent(data.emailSent === true)
+            setPhase("final")
+        } catch (error) {
+            console.error("Claim failed", error)
+            setWonPrize("Ödül tanımlanamadı")
+            setPhase("lost")
+        } finally {
             setSubmitting(false)
         }
     }
@@ -150,7 +254,7 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-                <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-4 flex items-center justify-between">
+                <div style={{ backgroundColor: themeColor }} className="px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Gift className="w-5 h-5 text-white" />
                         <h2 className="text-white font-bold text-base">Çarkı Çevir, Kazan!</h2>
@@ -161,7 +265,7 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
                 </div>
 
                 <div className="p-5 space-y-4">
-                    {phase !== "result" && (
+                    {phase !== "result" && phase !== "lost" && phase !== "final" && (
                         <div className="relative flex justify-center">
                             {/* Arrow pointer */}
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10">
@@ -176,33 +280,21 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
                         </div>
                     )}
 
-                    {phase === "collect" && (
+                    {phase === "start" && (
                         <div className="space-y-3">
+                            <h2 className="text-xl font-bold text-zinc-900 text-center">{title}</h2>
                             <p className="text-sm text-zinc-600 text-center">
-                                E-posta adresinizi girin ve çarkı çevirerek şansınızı deneyin!
+                                {description}
                             </p>
-                            <Input
-                                type="email"
-                                placeholder="E-posta adresiniz"
-                                value={contactEmail}
-                                onChange={e => setContactEmail(e.target.value)}
-                                className="text-sm"
-                            />
                             <Button
                                 onClick={handleSpin}
-                                disabled={submitting || !contactEmail.includes("@")}
-                                className="w-full bg-violet-600 hover:bg-violet-700"
+                                disabled={submitting}
+                                style={{ backgroundColor: themeColor }}
+                                className="w-full hover:brightness-110"
                             >
                                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                Çarkı Çevir!
+                                {buttonText}
                             </Button>
-                            <button
-                                onClick={handleSpin}
-                                disabled={submitting}
-                                className="w-full text-xs text-zinc-400 hover:text-zinc-600"
-                            >
-                                E-posta vermeden devam et
-                            </button>
                         </div>
                     )}
 
@@ -213,22 +305,114 @@ export function SpinWheelOverlay({ chatbotId, sessionId, prizes, onClose, onPriz
                     )}
 
                     {phase === "result" && wonPrize && (
-                        <div className="text-center space-y-3 py-2">
-                            <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-                            <div>
-                                <p className="text-lg font-bold text-zinc-800">Tebrikler!</p>
-                                <p className="text-2xl font-extrabold text-violet-700 mt-1">{wonPrize}</p>
+                        <div className="text-center space-y-4 py-2 animate-in zoom-in duration-300">
+                            <div className="space-y-1">
+                                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
+                                <h3 className="text-xl font-bold text-zinc-900">Tebrikler!</h3>
+                                <p className="text-zinc-600">
+                                    <span className="font-bold text-zinc-900">{wonPrize}</span> kazandınız!
+                                </p>
                             </div>
-                            {couponCode && (
-                                <div className="bg-violet-50 border border-violet-200 rounded-lg px-4 py-2">
-                                    <p className="text-xs text-zinc-500 mb-1">Kupon Kodunuz</p>
-                                    <p className="font-mono font-bold text-violet-800 text-lg tracking-widest">
-                                        {couponCode}
-                                    </p>
+
+                            <div className="bg-zinc-50 p-4 rounded-xl space-y-3 text-left border border-zinc-100">
+                                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Ödülünüzü Almak İçin</p>
+                                <div className="space-y-2">
+                                    <Input 
+                                        placeholder="Ad Soyad" 
+                                        value={contactName}
+                                        onChange={e => setContactName(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
+                                    <Input 
+                                        placeholder="E-posta Adresi" 
+                                        type="email"
+                                        value={contactEmail}
+                                        onChange={e => setContactEmail(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
+                                    <Input 
+                                        placeholder="Telefon Numarası" 
+                                        type="tel"
+                                        value={contactPhone}
+                                        onChange={e => setContactPhone(e.target.value)}
+                                        className="h-9 text-sm"
+                                    />
                                 </div>
-                            )}
-                            <Button onClick={onClose} className="w-full">
-                                Alışverişe Devam Et
+                                <div className="flex items-start gap-2 pt-1">
+                                    <input 
+                                        type="checkbox" 
+                                        id="kvkk" 
+                                        className="mt-1"
+                                        checked={kvkkAccepted}
+                                        onChange={e => setKvkkAccepted(e.target.checked)}
+                                    />
+                                    <label htmlFor="kvkk" className="text-[10px] leading-tight text-zinc-500">
+                                        Kişisel verilerimin işlenmesine ilişkin <span className="underline cursor-pointer">aydınlatma metnini</span> okudum ve kabul ediyorum.
+                                    </label>
+                                </div>
+                                <Button 
+                                    onClick={handleClaim}
+                                    disabled={submitting || !contactName || !contactEmail || !contactPhone || !kvkkAccepted}
+                                    style={{ backgroundColor: themeColor }}
+                                    className="w-full h-9 text-sm hover:brightness-110 mt-2"
+                                >
+                                    {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                    Ödülü Tanımla
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {phase === "lost" && wonPrize && (
+                        <div className="text-center space-y-4 py-4 animate-in zoom-in duration-300">
+                            <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto">
+                                <RotateCcw className="w-7 h-7 text-zinc-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-bold text-zinc-900">Bu kez olmadı</h3>
+                                <p className="text-sm text-zinc-600">
+                                    Sonuç: <span className="font-semibold text-zinc-900">{wonPrize}</span>. Bir sonraki denemede şansınız açık olsun.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={onClose}
+                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                            >
+                                Kapat
+                            </Button>
+                        </div>
+                    )}
+
+                    {phase === "final" && (
+                        <div className="text-center space-y-5 py-4 animate-in fade-in zoom-in duration-500">
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                                <Gift className="w-8 h-8 text-emerald-600" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-xl font-bold text-zinc-900">Ödülünüz Hazır!</h3>
+                                <p className="text-sm text-zinc-600">
+                                    {rewardEmailSent === false
+                                        ? "Bilgileriniz kaydedildi ancak e-posta gönderimi şu anda tamamlanamadı. Ekibimiz ödülünüzü kayıtlı e-posta adresinizden takip edebilir."
+                                        : couponCode
+                                            ? "Bilgileriniz kaydedildi. Kupon kodunuz aşağıdaki e-posta adresine gönderildi."
+                                            : "Bilgileriniz kaydedildi. Ödül bilginiz aşağıdaki e-posta adresine gönderildi."}
+                                </p>
+                            </div>
+
+                            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl space-y-1">
+                                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">
+                                    {rewardEmailSent === false ? "E-posta kuyruğa alınamadı" : "Gönderilen e-posta"}
+                                </p>
+                                <div className="font-semibold text-emerald-900 break-all">
+                                    {contactEmail}
+                                </div>
+                            </div>
+
+                            <Button 
+                                onClick={onClose}
+                                className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+                            >
+                                Kapat
                             </Button>
                         </div>
                     )}

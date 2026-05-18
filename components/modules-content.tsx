@@ -534,6 +534,9 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
                 case 'humanHandoff':
                     router.push(`${basePath}/modules/human-handoff`)
                     break
+                case 'gamification':
+                    router.push(`${basePath}/modules/gamification`)
+                    break
                 default:
                     // For all other modules which don't have a dedicated Admin page yet
                     toast({
@@ -842,7 +845,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             ) : viewMode === 'grid' ? (
                 <div className="space-y-8 pt-2">
                     {(() => {
-                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager'];
+                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager', 'gamification'];
                         const ecommerceModules = filteredModules.filter(m => ecommerceIds.includes(m.id));
                         const otherModules = filteredModules.filter(m => !ecommerceIds.includes(m.id));
                         const groups = [];
@@ -1032,7 +1035,7 @@ export function ModulesContent({ targetUserId }: ModulesContentProps) {
             ) : (
                 <div className="space-y-8 pt-2">
                     {(() => {
-                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager'];
+                        const ecommerceIds = ['productCatalog', 'smartShopper', 'salesOptimization', 'campaignManager', 'gamification'];
                         const ecommerceModules = filteredModules.filter(m => ecommerceIds.includes(m.id));
                         const otherModules = filteredModules.filter(m => !ecommerceIds.includes(m.id));
                         const groups = [];

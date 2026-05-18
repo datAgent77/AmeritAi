@@ -523,6 +523,43 @@ export function AppearanceTab({
                         </div>
                     </div>
                 )}
+                {!isAmbientMode && !isSidecarMode && (
+                    <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4">
+                        <div className="mb-3">
+                            <Label className="text-sm font-medium">
+                                {language === "tr" ? "Klasik Input Görünümü" : "Classic Input Appearance"}
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {language === "tr"
+                                    ? "Klasik widget penceresi aynı kalır; sadece mesaj yazma alanının stili değişir."
+                                    : "The classic widget window stays the same; only the message input styling changes."}
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {[
+                                {
+                                    value: "default",
+                                    title: language === "tr" ? "Standart" : "Standard",
+                                },
+                                {
+                                    value: "artify",
+                                    title: language === "tr" ? "Geniş Input" : "Expanded Input",
+                                },
+                            ].map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => setSettings((prev) => ({ ...prev, classicInputVariant: option.value as any }))}
+                                    className={`rounded-xl border-2 p-4 text-left transition-all ${((settings.classicInputVariant || "default") === option.value)
+                                        ? "border-primary bg-primary/5 shadow-sm"
+                                        : "border-border bg-background hover:border-primary/30"}`}
+                                >
+                                    <span className="block text-sm font-semibold">{option.title}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 {isSidecarMode && (
                     <div className="mt-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-background p-4 space-y-4">
                         <div>

@@ -862,7 +862,7 @@ KURALLAR:
         isCore: false,
         isPremium: true,
         price: 39,
-        status: 'coming_soon',
+        status: 'ready',
         supportedSectors: ['ecommerce', 'restaurant'],
         defaultEnabledBySector: [],
         legacyFirestoreField: 'enableGamification',
