@@ -3,6 +3,7 @@ import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { IndustryType } from "@/lib/industry-config"
 import { useAuth } from "@/context/AuthContext"
+import { resolveClassicDeviceSettings } from "@/lib/classic-device-settings"
 import { areQuickActionsEqual, resolveQuickActionsConfig } from "@/lib/quick-actions"
 import type {
     AmbientDeviceAppearanceSettings,
@@ -258,6 +259,33 @@ const defaultSettings: WidgetSettings = {
     quickActions: { enabled: false, buttons: [] },
 }
 
+function normalizeWidgetSettingsForSave(settings: WidgetSettings): WidgetSettings {
+    if (settings.classicPerDeviceSettingsEnabled !== true) {
+        return settings
+    }
+
+    const desktopClassicInputVariant =
+        resolveClassicDeviceSettings(settings, "desktop").classicInputVariant ||
+        settings.classicInputVariant ||
+        "default"
+    const mobileClassicInputVariant =
+        resolveClassicDeviceSettings(settings, "mobile").classicInputVariant ||
+        settings.classicInputVariant ||
+        "default"
+
+    return {
+        ...settings,
+        classicDesktopSettings: {
+            ...(settings.classicDesktopSettings || {}),
+            classicInputVariant: desktopClassicInputVariant,
+        },
+        classicMobileSettings: {
+            ...(settings.classicMobileSettings || {}),
+            classicInputVariant: mobileClassicInputVariant,
+        },
+    }
+}
+
 export function useWidgetSettings(userId?: string) {
     const { user } = useAuth()
     const effectiveUserId = userId || user?.uid
@@ -475,6 +503,8 @@ export function useWidgetSettings(userId?: string) {
             const token = await user.getIdToken()
             if (!token) throw new Error('Not authenticated')
 
+            const settingsToSave = normalizeWidgetSettingsForSave(settings)
+
             const response = await fetch('/api/widget-settings', {
                 method: 'POST',
                 headers: {
@@ -482,7 +512,7 @@ export function useWidgetSettings(userId?: string) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    ...settings,
+                    ...settingsToSave,
                     chatbotId: effectiveUserId
                 })
             })
