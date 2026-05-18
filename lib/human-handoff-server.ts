@@ -1,9 +1,8 @@
 import { createNotification } from "@/lib/notification-service"
 import { getAppBaseUrl, sendHumanHandoffNotificationEmail } from "@/lib/email-service"
-import { upsertCallbackRequest } from "@/lib/omni/server-utils"
-import { decryptToken } from "@/lib/omni/token-cipher"
-import { type OmniChannel } from "@/lib/omni/types"
-import { sendOmniWhatsAppText, sendOmniInstagramText } from "@/lib/omni/channel-dispatch"
+import { upsertCallbackRequest, type VionChannel } from "@/lib/vion-callbacks"
+import { decryptToken } from "@/lib/vion-token-cipher"
+import { sendVionInstagramText, sendVionWhatsAppText } from "@/lib/vion-meta-dispatch"
 
 import type { HumanHandoffTriggerSource, HumanHandoffSettings } from "./human-handoff"
 
@@ -19,7 +18,7 @@ export async function upsertHumanHandoffRequest(input: {
     adminDb: any
     chatbotId: string
     sessionId: string
-    sourceChannel?: OmniChannel | null
+    sourceChannel?: VionChannel | null
     contactKey?: string | null
     canonicalContactId?: string | null
     displayName?: string | null
@@ -114,15 +113,11 @@ export async function dispatchHumanHandoffNotifications(input: {
     if (input.settings.notifyWhatsApp && input.settings.whatsappNumber) {
         const whatsappConfig = omniConfig.whatsapp || {}
         try {
-            await sendOmniWhatsAppText({
-                adminDb: input.adminDb,
-                chatbotId: input.chatbotId,
+            await sendVionWhatsAppText({
                 to: input.settings.whatsappNumber,
                 text: notificationMessage,
                 phoneNumberId: whatsappConfig.phoneNumberId || null,
                 accessToken: decryptToken(whatsappConfig.accessTokenRef) || null,
-                source: "human_handoff_notification",
-                callbackId: input.callbackId,
             })
             results.whatsappSent = true
         } catch (error) {
@@ -133,15 +128,11 @@ export async function dispatchHumanHandoffNotifications(input: {
     if (input.settings.notifyInstagram && input.settings.instagramAccountId) {
         const igConfig = omniConfig.instagram || {}
         try {
-            await sendOmniInstagramText({
-                adminDb: input.adminDb,
-                chatbotId: input.chatbotId,
+            await sendVionInstagramText({
                 recipientId: input.settings.instagramAccountId,
                 text: notificationMessage,
                 endpointTarget: igConfig.accountId || igConfig.pageId || null,
                 accessToken: decryptToken(igConfig.accessTokenRef) || null,
-                source: "human_handoff_notification",
-                callbackId: input.callbackId,
             })
             results.instagramSent = true
         } catch (error) {
@@ -156,7 +147,7 @@ export async function createAndNotifyHumanHandoff(input: {
     adminDb: any
     chatbotId: string
     sessionId: string
-    sourceChannel?: OmniChannel | null
+    sourceChannel?: VionChannel | null
     contactKey?: string | null
     canonicalContactId?: string | null
     displayName?: string | null

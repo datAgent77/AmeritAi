@@ -1,4 +1,4 @@
-import { executeOmniAction } from "@/lib/omni/action-execution"
+import { executeVionGuidedAction } from "@/lib/vion-guided-actions"
 import {
     buildGuidedSkillMessageUi,
     buildGuidedSkillStartMenu,
@@ -434,7 +434,7 @@ export async function resolveGuidedSkillTurn(input: GuidedSkillEngineInput): Pro
 
     if (step.submit.mode === "omni_action") {
         try {
-            const actionResult = await executeOmniAction(input.adminDb, {
+            const actionResult = await executeVionGuidedAction(input.adminDb, {
                 chatbotId: input.chatbotId,
                 actionId: step.submit.actionId,
                 sourceChannel: input.channel,

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from "vitest"
 import { resolveGuidedSkillTurn } from "./engine"
 import type { GuidedSkillRecord, GuidedSkillState } from "./types"
-import { executeOmniAction } from "@/lib/omni/action-execution"
+import { executeVionGuidedAction } from "@/lib/vion-guided-actions"
 
-vi.mock("@/lib/omni/action-execution", () => ({
-    executeOmniAction: vi.fn(),
+vi.mock("@/lib/vion-guided-actions", () => ({
+    executeVionGuidedAction: vi.fn(),
 }))
 
 function createAdminDb(skills: GuidedSkillRecord[], opts?: { enableGuided?: boolean }) {
@@ -244,7 +244,7 @@ describe("resolveGuidedSkillTurn", () => {
                 ],
             }),
         ])
-        vi.mocked(executeOmniAction).mockResolvedValue({
+        vi.mocked(executeVionGuidedAction).mockResolvedValue({
             actionId: "create_callback_request",
         } as any)
 
@@ -277,7 +277,7 @@ describe("resolveGuidedSkillTurn", () => {
         expect(result.handled).toBe(true)
         expect(result.assistantContent).toBe("Callback requested.")
         expect(result.handoffStatus).toBe("callback_requested")
-        expect(executeOmniAction).toHaveBeenCalledWith(
+        expect(executeVionGuidedAction).toHaveBeenCalledWith(
             expect.anything(),
             expect.objectContaining({
                 actionId: "create_callback_request",
@@ -438,7 +438,7 @@ describe("resolveGuidedSkillTurn", () => {
                 ],
             }),
         ])
-        vi.mocked(executeOmniAction).mockRejectedValue(new Error("Network failure"))
+        vi.mocked(executeVionGuidedAction).mockRejectedValue(new Error("Network failure"))
 
         const result = await resolveGuidedSkillTurn({
             adminDb,

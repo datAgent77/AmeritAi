@@ -4,8 +4,8 @@ import {
     getHumanHandoffContactPromptMessage,
     isExplicitHumanHandoffRequest,
     isHumanHandoffWithinBusinessHours,
+    type HumanHandoffBusinessDayCode,
 } from "@/lib/human-handoff"
-import type { HumanHandoffBusinessDayCode } from "@/lib/human-handoff"
 
 describe("isExplicitHumanHandoffRequest", () => {
     test("detects Turkish live support and customer service requests", () => {

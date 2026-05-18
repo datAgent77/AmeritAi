@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
-import { resolveCookieConsentEnabled } from "@/lib/omni/workspace-access"
+import { resolveCookieConsentEnabled } from "@/lib/product-entitlements"
 import { isSuperAdminRole } from "@/lib/user-roles"
 
 export const dynamic = "force-dynamic"

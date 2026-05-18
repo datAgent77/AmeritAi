@@ -41,6 +41,8 @@ export async function GET(req: Request) {
         return NextResponse.json({
             onboarding,
             sector: userData?.sector || null,
+            planId: userData?.planId || userData?.entitlements?.planId || null,
+            entitlements: userData?.entitlements || null,
             widget: userData?.widget || null,
             modules: userData?.modules || null,
             knowledgeUrl: userData?.knowledgeUrl || null

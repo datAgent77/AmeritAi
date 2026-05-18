@@ -53,7 +53,6 @@ function initAdmin() {
                         '\n-----END PRIVATE KEY-----\n';
                 }
 
-
                 admin.initializeApp({
                     credential: admin.credential.cert({
                         projectId: projectId || 'ai-assistant-22f53',
@@ -63,7 +62,6 @@ function initAdmin() {
                     storageBucket: 'ai-assistant-22f53.firebasestorage.app',
                 });
                 initializedApp = true;
-                console.log("[Firebase Admin] Initialization successful");
             } else {
                 return;
             }

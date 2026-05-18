@@ -3,6 +3,7 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin"
 import { isWinningPrize } from "@/lib/gamification/spin-engine"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
     try {

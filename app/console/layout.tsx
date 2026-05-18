@@ -19,6 +19,7 @@ import { getTrialDaysRemaining } from "@/lib/entitlements"
 import { ThemeProvider } from "next-themes"
 import { TrialExpiredOverlay } from "@/components/trial-expired-overlay"
 import { recordAuthDebug } from "@/lib/auth-debug"
+import { shouldShowTrialExpiredOverlay } from "@/lib/subscription-access"
 
 import { AlertTriangle, LogOut, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -47,14 +48,6 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
             return
         }
         if (role !== "AGENT" && productEntitlements.chatbot === false) {
-            if (productEntitlements.omniChannel) {
-                router.replace("/omni")
-                return
-            }
-            if (productEntitlements.cookieConsent) {
-                router.replace("/cookie")
-                return
-            }
             setHasNoEnabledProducts(true)
             setIsInitializing(false)
             return
@@ -311,22 +304,13 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                         {/* Main content */}
                         {/* Trial Expiration Guard */}
                         {(() => {
-                            // Show overlay if trial is expired AND subscription is not 'active' (paid)
-                            // subscriptionStatus should be 'trial' or 'expired' for trial users
-                            const shouldShowOverlay = isTrialExpired && subscriptionStatus !== 'active'
-                            
+                            const shouldShowOverlay = shouldShowTrialExpiredOverlay({
+                                isTrialExpired,
+                                subscriptionStatus,
+                                pathname,
+                            })
+
                             if (!shouldShowOverlay) return null
-                            
-                            // Define allowed paths that are NOT blocked
-                            const allowedPaths = [
-                                '/console/dashboard', 
-                                '/console/settings/subscription', 
-                                '/console/settings/account'
-                            ]
-                            
-                            const isAllowed = allowedPaths.some(path => pathname?.startsWith(path))
-                            
-                            if (isAllowed) return null
                             return <TrialExpiredOverlay />
                         })()}
                         

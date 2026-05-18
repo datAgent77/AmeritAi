@@ -21,7 +21,7 @@ import { trackAiUsage } from "@/lib/usage-tracker";
 import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
 import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
-import { normalizePhoneNumber, upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils";
+import { normalizePhoneNumber, upsertContactGraph, upsertWebChatSession } from "@/lib/vion-web-session";
 import { resolveConversationLanguage, toCopyLanguage } from "@/lib/conversation-language";
 import { processWaiterRequestsFromAi } from "@/lib/waiter-request-server";
 
@@ -242,7 +242,7 @@ async function syncWebSessionIdentity(adminDb: any, params: {
         notes: "Synced from web widget runtime context.",
     });
 
-    await upsertOmniSession(adminDb, {
+    await upsertWebChatSession(adminDb, {
         sessionId: params.sessionId,
         chatbotId: params.chatbotId,
         channel: "web",

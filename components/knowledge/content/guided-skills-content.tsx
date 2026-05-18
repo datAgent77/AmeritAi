@@ -11,12 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type {
+    GuidedSkillActionId,
     GuidedSkillChannel,
     GuidedSkillRecord,
     GuidedSkillStepPresentation,
     GuidedSkillSubmit,
 } from "@/lib/guided-skills/types"
-import type { OmniActionId } from "@/lib/omni/types"
 
 type GuidedSkillOptionDraft = {
     id: string
@@ -433,7 +433,7 @@ function draftToSkill(draft: GuidedSkillDraft, chatbotId: string): GuidedSkillRe
                 ? {
                     mode: "omni_action" as const,
                     label: step.submit.label.trim(),
-                    actionId: step.submit.actionId.trim() as OmniActionId,
+                    actionId: step.submit.actionId.trim() as GuidedSkillActionId,
                     successMessage: step.submit.successMessage.trim(),
                     externalUrl: step.submit.externalUrl.trim() || null,
                 }
@@ -530,7 +530,7 @@ export function GuidedSkillsContent({
         startAliases: isTr ? "Başlangıç alias'ları" : "Start aliases",
         channels: isTr ? "Kanallar" : "Channels",
         publishedLabel: isTr ? "Yayında" : "Published",
-        publishedDescription: isTr ? "Sadece aktif skill'ler widget ve omni menülerinde görünür." : "Only enabled skills appear in widget and omni menus.",
+        publishedDescription: isTr ? "Sadece aktif skill'ler widget menülerinde görünür." : "Only enabled skills appear in widget menus.",
         steps: isTr ? "Adımlar" : "Steps",
         stepsDescription: isTr ? "Akışı adım adım kurgulayın. Her adım chip veya kart gösterebilir." : "Build the flow step by step. Each step can show chips or cards.",
         addStep: isTr ? "Adım ekle" : "Add step",

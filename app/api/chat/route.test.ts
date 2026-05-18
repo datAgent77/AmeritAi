@@ -5,7 +5,7 @@ import { generateAIResponse, saveMessageToSession } from "@/lib/ai-service"
 import { upsertChatSessionRecord } from "@/lib/chat-sessions"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
 import { checkRateLimit } from "@/lib/rate-limiter"
-import { upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils"
+import { upsertContactGraph, upsertWebChatSession } from "@/lib/vion-web-session"
 
 vi.mock("@/lib/firebase-admin", () => ({
     getAdminDb: vi.fn(),
@@ -30,10 +30,10 @@ vi.mock("@/lib/rate-limiter", () => ({
     getRateLimitHeaders: vi.fn().mockReturnValue({}),
 }))
 
-vi.mock("@/lib/omni/server-utils", () => ({
+vi.mock("@/lib/vion-web-session", () => ({
     normalizePhoneNumber: vi.fn((value: string) => value),
     upsertContactGraph: vi.fn(),
-    upsertOmniSession: vi.fn(),
+    upsertWebChatSession: vi.fn(),
 }))
 
 function createAdminDb() {
@@ -295,6 +295,6 @@ describe("POST /api/chat", () => {
 
         expect(response.status).toBe(200)
         expect(upsertContactGraph).not.toHaveBeenCalled()
-        expect(upsertOmniSession).not.toHaveBeenCalled()
+        expect(upsertWebChatSession).not.toHaveBeenCalled()
     })
 })

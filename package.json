@@ -12,6 +12,7 @@
     "messenger:start": "node server.js",
     "test": "vitest run",
     "test:omni": "vitest run lib/omni app/api/omni app/api/admin",
+    "test:vion": "vitest run lib/pricing-config.test.ts lib/modules-registry.test.ts lib/module-access.test.ts lib/subscription-access.test.ts lib/api-auth.test.ts lib/human-handoff.test.ts lib/guided-skills/engine.test.ts lib/chat-session-messages.test.ts app/api/chat/route.test.ts app/api/widget-settings/route.test.ts app/api/admin/update-user/route.test.ts app/api/admin/customer-admin/route.test.ts app/api/onboarding/route.test.ts",
     "check:env:build": "node scripts/check-build-env.js",
     "check:mail": "node scripts/check-mail-config.js",
     "prebuild": "npm run clean:build",
