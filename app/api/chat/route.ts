@@ -663,15 +663,14 @@ export async function POST(req: Request) {
             })
         }
 
-        const syncedIdentity = await webIdentitySyncPromise;
-        await userMessageSavePromise;
-
         if (lastMessage.role === "user" && userContent) {
             const explicitHandoffRequest = isExplicitHumanHandoffRequest(userContent);
             const shouldProcessHandoff = explicitHandoffRequest || hasPendingHumanHandoff;
             const canStartExplicitHandoff = humanHandoffSettings.enabled && humanHandoffSettings.triggerOnUserRequest;
 
             if (explicitHandoffRequest && !hasPendingHumanHandoff && !canStartExplicitHandoff) {
+                await userMessageSavePromise;
+
                 const assistantContent = getHumanHandoffUnavailableMessage(resolvedLanguage);
                 const handoffAssistantMessageId = assistantMessageId || `assistant-handoff-unavailable-${Date.now()}`;
 
@@ -690,6 +689,9 @@ export async function POST(req: Request) {
             }
 
             if (shouldProcessHandoff) {
+                const syncedIdentity = await webIdentitySyncPromise;
+                await userMessageSavePromise;
+
                 const extractedLeadData = extractLeadData(normalizedMessages);
                 const resolvedEmail = extractedLeadData.email || syncedIdentity?.identity?.email || "";
                 const resolvedPhone = extractedLeadData.phone || syncedIdentity?.identity?.phone || "";
@@ -792,6 +794,8 @@ export async function POST(req: Request) {
                 const shopperResponse = await tryShopperFallback(body);
 
                 if (shopperResponse) {
+                    await userMessageSavePromise;
+
                     const shopperAssistantMessageId = assistantMessageId || `assistant-shopper-${Date.now()}`;
 
                     await saveMessageToSession(activeSessionId, chatbotId, {
@@ -816,22 +820,30 @@ export async function POST(req: Request) {
                     transcript: userContent,
                     guidedEvent: body.guidedEvent || null,
                     currentState: currentGuidedState,
-                    contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                    canonicalContactId: syncedIdentity?.contact?.id || null,
+                    contactKey: activeSessionId,
+                    canonicalContactId: null,
                     language: resolvedLanguage,
+                    guidedModuleEnabled: false,
                 })
                 : { handled: false as const };
 
                 if (guidedResult.handled) {
+                        await userMessageSavePromise;
+
                         const guidedAssistantMessageId = assistantMessageId || `assistant-guided-${Date.now()}`
-                        const hasContactInfo = Boolean(syncedIdentity?.identity?.email || syncedIdentity?.identity?.phone)
+                        const shouldNotifyAssistantHandoff =
+                            guidedResult.handoffStatus === "callback_requested" &&
+                            humanHandoffSettings.enabled &&
+                            humanHandoffSettings.triggerOnAssistantHandoff
+                        const guidedIdentity = shouldNotifyAssistantHandoff
+                            ? await webIdentitySyncPromise
+                            : null
+                        const hasContactInfo = Boolean(guidedIdentity?.identity?.email || guidedIdentity?.identity?.phone)
                         const assistantGuidedUi = guidedResult.assistantGuidedUi || undefined
                         let assistantContent = guidedResult.assistantContent || ""
 
                         if (
-                            guidedResult.handoffStatus === "callback_requested" &&
-                            humanHandoffSettings.enabled &&
-                            humanHandoffSettings.triggerOnAssistantHandoff &&
+                            shouldNotifyAssistantHandoff &&
                             !hasContactInfo
                         ) {
 
@@ -846,9 +858,9 @@ export async function POST(req: Request) {
                                 chatbotId,
                                 sessionId: activeSessionId,
                                 sourceChannel: "web",
-                                contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                                canonicalContactId: syncedIdentity?.contact?.id || null,
-                                displayName: syncedIdentity?.identity?.name || null,
+                                contactKey: guidedIdentity?.contact?.contactKey || activeSessionId,
+                                canonicalContactId: guidedIdentity?.contact?.id || null,
+                                displayName: guidedIdentity?.identity?.name || null,
                                 triggerSource: "assistant_trigger",
                                 userText: userContent,
                                 companyName: mergedTenantData.companyName || "Vion AI",
@@ -880,9 +892,7 @@ export async function POST(req: Request) {
                     })
 
                     if (
-                        guidedResult.handoffStatus === "callback_requested" &&
-                        humanHandoffSettings.enabled &&
-                        humanHandoffSettings.triggerOnAssistantHandoff &&
+                        shouldNotifyAssistantHandoff &&
                         hasContactInfo
                     ) {
                         const notificationEmail = resolveHumanHandoffNotificationEmail({
@@ -896,9 +906,9 @@ export async function POST(req: Request) {
                             chatbotId,
                             sessionId: activeSessionId,
                             sourceChannel: "web",
-                            contactKey: syncedIdentity?.contact?.contactKey || activeSessionId,
-                            canonicalContactId: syncedIdentity?.contact?.id || null,
-                            displayName: syncedIdentity?.identity?.name || null,
+                            contactKey: guidedIdentity?.contact?.contactKey || activeSessionId,
+                            canonicalContactId: guidedIdentity?.contact?.id || null,
+                            displayName: guidedIdentity?.identity?.name || null,
                             triggerSource: "assistant_trigger",
                             userText: userContent,
                             companyName: mergedTenantData.companyName || "Vion AI",
