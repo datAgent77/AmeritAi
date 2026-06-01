@@ -8,6 +8,7 @@ interface Product {
     currency?: string;
     imageUrl?: string;
     url?: string;
+    sourceUrl?: string;
     description?: string;
     stockQuantity?: number;
     inStock?: boolean;
@@ -80,7 +81,8 @@ function formatPrice(price: string | number | undefined, currency?: string): str
 export function ProductCard({ product, brandColor = "#000000", language }: ProductCardProps) {
     const lang = resolveLanguage(language);
     const copy = LABELS[lang];
-    const hasProductUrl = typeof product.url === "string" && product.url.trim().length > 0;
+    const productUrl = product.url || product.sourceUrl || "";
+    const hasProductUrl = typeof productUrl === "string" && productUrl.trim().length > 0;
 
     return (
         <div className="my-2 flex w-full max-w-[240px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-md transition-shadow duration-300 hover:shadow-lg">
@@ -132,7 +134,7 @@ export function ProductCard({ product, brandColor = "#000000", language }: Produ
                 <div className="mt-auto">
                     {hasProductUrl ? (
                         <a
-                            href={product.url}
+                            href={productUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium text-white transition-opacity hover:opacity-90 active:scale-95"

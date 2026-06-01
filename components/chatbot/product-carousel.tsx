@@ -7,6 +7,7 @@ type ProductItem = {
     currency?: string;
     imageUrl?: string;
     url?: string;
+    sourceUrl?: string;
     description?: string;
     stockQuantity?: number;
     inStock?: boolean;

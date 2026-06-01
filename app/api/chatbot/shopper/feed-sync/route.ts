@@ -109,6 +109,7 @@ export async function POST(request: Request) {
 
             const pImage = item['g:image_link'] || item.image_link || item.listing_images?.image?.[0] || item.image || "";
             const pDesc = item['g:description'] || item.description || "";
+            const pUrl = item['g:link'] || item.link || item.url || item.product_url || "";
 
             // Stock/Quantity parsing - Support multiple feed formats
             // Google Merchant: g:quantity, Shopify: inventory_quantity, Generic: stock, quantity
@@ -143,6 +144,7 @@ export async function POST(request: Request) {
                 currency: pCurrency,
                 description: String(pDesc).slice(0, 1000),
                 imageUrl: pImage,
+                url: String(pUrl),
                 sku: String(pSku),
                 stockQuantity: pStock, // NEW: Actual stock count from feed (null if unknown)
                 inStock: pInStock,      // Boolean: is product available

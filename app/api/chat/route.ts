@@ -269,10 +269,12 @@ type ShopperProduct = {
     currency?: string;
     imageUrl?: string;
     url?: string;
+    sourceUrl?: string;
     category?: string;
     inStock?: boolean;
     stockQuantity?: number;
     lowStockThreshold?: number;
+    source?: string;
 };
 
 const TR_STOPWORDS = new Set([
@@ -378,6 +380,31 @@ function rankProducts(products: ShopperProduct[], userQuery: string): ShopperPro
     return scored.map((entry) => entry.product);
 }
 
+function hasPositivePrice(price: ShopperProduct["price"]): boolean {
+    if (typeof price === "number") return Number.isFinite(price) && price > 0;
+    if (typeof price !== "string") return false;
+
+    const normalized = price.replace(",", ".").replace(/[^0-9.]/g, "");
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) && parsed > 0;
+}
+
+function isValidShopperProduct(product: ShopperProduct): boolean {
+    if (typeof product.name !== "string" || product.name.trim().length < 2) return false;
+    if (!hasPositivePrice(product.price)) return false;
+
+    const url = typeof product.url === "string" ? product.url.trim() : "";
+    const sourceUrl = typeof product.sourceUrl === "string" ? product.sourceUrl.trim() : "";
+    const imageUrl = typeof product.imageUrl === "string" ? product.imageUrl.trim() : "";
+    const source = typeof product.source === "string" ? product.source.trim() : "";
+
+    // Site crawls can see generic policy/about pages. Require a real destination or image
+    // so non-product content does not render as a product card.
+    if (source === "site-crawl" && !sourceUrl && !url) return false;
+
+    return Boolean(url || sourceUrl || imageUrl || source === "file-upload" || source === "xml-feed");
+}
+
 function isShopperCatalogCardRequest(userText: string): boolean {
     const normalized = normalizeText(userText);
     if (!normalized) return false;
@@ -403,8 +430,9 @@ function toCardPayload(product: ShopperProduct): Record<string, string | number 
     };
 
     if (description) payload.description = description;
+    const productUrl = product.url || product.sourceUrl || "";
     if (product.imageUrl) payload.imageUrl = product.imageUrl;
-    if (product.url) payload.url = product.url;
+    if (productUrl) payload.url = productUrl;
     if (typeof product.inStock === "boolean") payload.inStock = product.inStock;
     if (typeof product.stockQuantity === "number") payload.stockQuantity = product.stockQuantity;
     if (typeof product.lowStockThreshold === "number") payload.lowStockThreshold = product.lowStockThreshold;
@@ -451,7 +479,7 @@ async function tryShopperFallback(body: ChatRequestBody | null | undefined): Pro
 
     const products = productSnap.docs
         .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<ShopperProduct, "id">) }))
-        .filter((product) => typeof product.name === "string" && product.name.trim().length > 0)
+        .filter(isValidShopperProduct)
         .filter((product) => product.inStock !== false);
 
     const userMessage = [...(body.messages || [])]

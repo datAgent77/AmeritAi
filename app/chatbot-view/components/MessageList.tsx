@@ -153,6 +153,19 @@ function isGuidedUiInteractive(guidedUi: GuidedSkillMessageUi | undefined, guide
     )
 }
 
+function hasRenderableProductPrice(price: unknown) {
+    if (typeof price === "number") return Number.isFinite(price) && price > 0
+    if (typeof price !== "string") return false
+
+    const parsed = Number.parseFloat(price.replace(",", ".").replace(/[^0-9.]/g, ""))
+    return Number.isFinite(parsed) && parsed > 0
+}
+
+function isRenderableProductCardPayload(product: any) {
+    if (!product?.name || typeof product.name !== "string") return false
+    return hasRenderableProductPrice(product.price)
+}
+
 function GuidedShortcutButtons({
     shortcuts,
     onSelect,
@@ -655,7 +668,7 @@ export function MessageList({
                                                         try {
                                                             const products = JSON.parse(content)
                                                             if (Array.isArray(products) && products.length > 0) {
-                                                                const validProducts = products.filter((p: any) => p?.name && (p?.price !== undefined && p?.price !== null))
+                                                                const validProducts = products.filter(isRenderableProductCardPayload)
                                                                 if (validProducts.length > 0) {
                                                                     return <ProductCarousel products={validProducts} brandColor={settings.brandColor} language={language} />
                                                                 }
@@ -668,7 +681,7 @@ export function MessageList({
                                                         try {
                                                             const payload = JSON.parse(content)
                                                             if (payload?.type === 'product-carousel' && Array.isArray(payload?.items)) {
-                                                                const validProducts = payload.items.filter((p: any) => p?.name && (p?.price !== undefined && p?.price !== null))
+                                                                const validProducts = payload.items.filter(isRenderableProductCardPayload)
                                                                 if (validProducts.length > 0) {
                                                                     return <ProductCarousel products={validProducts} brandColor={settings.brandColor} language={language} />
                                                                 }
@@ -680,7 +693,7 @@ export function MessageList({
                                                     if (content.trim().startsWith('{') && content.includes('"price"')) {
                                                         try {
                                                             const product = JSON.parse(content)
-                                                            if (product.name && (product.price !== undefined && product.price !== null)) {
+                                                            if (isRenderableProductCardPayload(product)) {
                                                                 return <ProductCard product={product} brandColor={settings.brandColor} language={language} />
                                                             }
                                                         } catch (e) {

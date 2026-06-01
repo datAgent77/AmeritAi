@@ -64,6 +64,7 @@ export async function POST(request: Request) {
             const pCurrency = getVal(['currency', 'para_birimi']) || "TRY";
             const pDesc = getVal(['description', 'aciklama', 'desc']) || "";
             const pImage = getVal(['image', 'image_url', 'gorsel', 'img']) || "";
+            const pUrl = getVal(['url', 'link', 'product_url', 'urun_linki']) || "";
 
             const pStock = getVal(['stock', 'quantity', 'stok', 'adet']);
             const stockNum = pStock !== undefined ? parseInt(String(pStock)) : null;
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
                 currency: String(pCurrency).toUpperCase(),
                 description: String(pDesc).slice(0, 1000),
                 imageUrl: String(pImage),
+                url: String(pUrl),
                 sku: String(pSku),
                 stockQuantity: stockNum,
                 inStock: pInStock,

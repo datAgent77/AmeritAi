@@ -51,6 +51,15 @@ function normalizeLocalizedLabelValue(value: unknown) {
     return typeof value === "string" ? value.trim() : "";
 }
 
+function isLikelyTurkishText(value: string) {
+    const text = normalizeLocalizedLabelValue(value);
+    if (!text) return false;
+    if (/[çğıöşüÇĞİÖŞÜ]/.test(text)) return true;
+
+    const lower = text.toLocaleLowerCase("tr");
+    return /\b(nerede|nedir|nasıl|mı|mi|mu|mü|var|yok|iade|kargo|sipariş|ürün|yardım|indirim|seçenek)\b/.test(lower);
+}
+
 function normalizeLocalizedTextMap(value: unknown) {
     const map = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
     return {
@@ -176,7 +185,9 @@ async function enrichWidgetLocalizedCopy(settings: Record<string, any>) {
         for (let index = 0; index < suggestedQuestions.length; index += 1) {
             const source = suggestedQuestions[index];
             const translated = translations.get(`suggestedQuestions.${index}`);
-            nextSuggestedTr[index] = nextSuggestedTr[index] || translated?.tr || source;
+            nextSuggestedTr[index] = isLikelyTurkishText(source)
+                ? source
+                : nextSuggestedTr[index] || translated?.tr || source;
             nextSuggestedEn[index] = nextSuggestedEn[index] || translated?.en || source;
         }
 
@@ -444,6 +455,22 @@ export async function GET(req: Request) {
                         enableSurveyManager: mergedData.enableSurveyManager === true,
                         surveyWidgetConfig,
                     });
+                    const suggestedQuestions = Array.isArray(mergedData.suggestedQuestions)
+                        ? mergedData.suggestedQuestions.map((question: unknown) => normalizeLocalizedLabelValue(question)).filter(Boolean)
+                        : ["What are your pricing plans?", "How do I get started?", "Contact support"];
+                    const rawSuggestedLocalized = mergedData.suggestedQuestionsLocalized && typeof mergedData.suggestedQuestionsLocalized === "object"
+                        ? mergedData.suggestedQuestionsLocalized
+                        : {};
+                    const suggestedQuestionsLocalized = {
+                        tr: suggestedQuestions.map((question: string, index: number) => (
+                            isLikelyTurkishText(question)
+                                ? question
+                                : normalizeLocalizedLabelValue(rawSuggestedLocalized.tr?.[index]) || question
+                        )),
+                        en: suggestedQuestions.map((question: string, index: number) => (
+                            normalizeLocalizedLabelValue(rawSuggestedLocalized.en?.[index]) || question
+                        )),
+                    };
 
                     // Return only public settings
                     return NextResponse.json({
@@ -461,8 +488,8 @@ export async function GET(req: Request) {
                         headerLogoHeight: mergedData.headerLogoHeight || 32,
                         headerBackgroundColor: mergedData.headerBackgroundColor || "",
                         headerTextColor: mergedData.headerTextColor || "#FFFFFF",
-                        suggestedQuestions: mergedData.suggestedQuestions || ["What are your pricing plans?", "How do I get started?", "Contact support"],
-                        suggestedQuestionsLocalized: mergedData.suggestedQuestionsLocalized || { tr: [], en: [] },
+                        suggestedQuestions,
+                        suggestedQuestionsLocalized,
                         enableLeadCollection: mergedData.enableLeadCollection || false,
                         enableSurveyManager: mergedData.enableSurveyManager === true,
                         enableHumanHandoff: mergedData.enableHumanHandoff || false,
