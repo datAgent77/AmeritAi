@@ -936,7 +936,7 @@ export async function POST(req: Request) {
                 }
         }
 
-        const effectiveShouldStream = shouldStream && !isGuidedAiModeEnabled;
+        const effectiveShouldStream = shouldStream && !isVoice;
         const result = await generateAIResponse(
             chatbotId,
             normalizedMessages,
@@ -973,17 +973,31 @@ export async function POST(req: Request) {
 
                         // Save assistant response after stream completes using PRE-GENERATED ID
                         if (activeSessionId && fullContent) {
+                                const parsedGuidedStream = isGuidedAiModeEnabled && !isVoice
+                                    ? extractGuidedOptionsFromContent(fullContent)
+                                    : null;
+                                const persistedAssistantContent = parsedGuidedStream?.content || fullContent;
+                                const persistedGuidedUi = parsedGuidedStream
+                                    ? buildAiGeneratedGuidedUi({
+                                        assistantMessageId: assistantMessageId || `assistant-guided-ai-${Date.now()}`,
+                                        content: persistedAssistantContent,
+                                        options: parsedGuidedStream.options,
+                                        language: resolvedLanguage,
+                                    }) || undefined
+                                    : undefined;
+
                                 await saveMessageToSession(activeSessionId, chatbotId, {
                                     role: "assistant",
-                                    content: fullContent,
-                                    id: assistantMessageId // <--- USE THIS ID
+                                    content: persistedAssistantContent,
+                                    id: assistantMessageId, // <--- USE THIS ID
+                                    guidedUi: persistedGuidedUi,
                                 }, userId);
 
                                 // Process Digital Waiter requests if any
                                 await processWaiterRequestsFromAi({
                                     chatbotId,
                                     sessionId: activeSessionId,
-                                    content: fullContent,
+                                    content: persistedAssistantContent,
                                     context: safeContext
                                 });
 

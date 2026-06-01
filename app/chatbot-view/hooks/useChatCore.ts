@@ -6,6 +6,11 @@ import { INDUSTRY_CONFIG, IndustryType, DEFAULT_INDUSTRY } from "@/lib/industry-
 import { hydrateChatSessionMessage } from "@/lib/chat-session-messages"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import type { GuidedSkillClientEvent, GuidedSkillState } from "@/lib/guided-skills/types"
+import {
+    buildAiGeneratedGuidedUi,
+    extractGuidedOptionsFromContent,
+    GUIDED_OPTIONS_START_MARKER,
+} from "@/lib/guided-ai"
 import { resolveLocalizedText } from "../utils/localized-copy"
 
 export interface UseChatCoreProps {
@@ -34,6 +39,15 @@ function getImageFingerprint(message: any) {
     if (!image.trim()) return null
     const mimeType = typeof message.imageMimeType === "string" ? message.imageMimeType : ""
     return `${mimeType}:${image.length}:${image.slice(0, 32)}`
+}
+
+function getVisibleStreamingContent(content: string, guidedEnabled: boolean) {
+    if (!guidedEnabled) return content
+
+    const markerIndex = content.indexOf(GUIDED_OPTIONS_START_MARKER)
+    if (markerIndex === -1) return content
+
+    return content.slice(0, markerIndex).trimEnd()
 }
 
 export function useChatCore({
@@ -341,7 +355,7 @@ export function useChatCore({
                         context: pageContext,
                         language,
                         isVoice: isVoiceTurn,
-                        shouldStream: isVoiceTurn ? false : settings.enableGuided !== true,
+                        shouldStream: !isVoiceTurn,
                         userId: guestAuth.currentUser?.uid,
                         industry: settings.industry,
                         visualAnalysisContext, // Pass dynamic context
@@ -425,6 +439,7 @@ export function useChatCore({
             const reader = response.body?.getReader()
             const decoder = new TextDecoder()
             let assistantContent = ''
+            const guidedStreamEnabled = settings.enableGuided === true && !isVoiceTurn
             let hasReceivedFirstChunk = false
 
             setMessages((prev: any) => [...prev, { id: assistantMsgId, role: 'assistant', content: '', createdAt: new Date() }])
@@ -434,28 +449,48 @@ export function useChatCore({
                 if (done) break
                 const chunk = decoder.decode(value, { stream: true })
                 assistantContent += chunk
+                const visibleAssistantContent = getVisibleStreamingContent(assistantContent, guidedStreamEnabled)
                 
                 // Only stop typing indicator if we have enough visible content or a significant chunk
-                if (!hasReceivedFirstChunk && chunk.trim().length > 0) {
+                if (!hasReceivedFirstChunk && visibleAssistantContent.trim().length > 0) {
                     hasReceivedFirstChunk = true
                     // Small delay to ensure render catches up?
                     // actually, let's keep it simple: just set it false
                     setIsTyping(false)
                 }
                 
-                setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: assistantContent } : m))
+                setMessages((prev: any) => prev.map((m: any) => m.id === assistantMsgId ? { ...m, content: visibleAssistantContent } : m))
             }
 
             setIsTyping(false)
             setChatStatus('idle')
 
-            if (!assistantContent.trim()) {
+            const finalGuided = guidedStreamEnabled
+                ? extractGuidedOptionsFromContent(assistantContent)
+                : null
+            const finalAssistantContent = (finalGuided?.content || assistantContent).trim()
+            const finalGuidedUi = finalGuided
+                ? buildAiGeneratedGuidedUi({
+                    assistantMessageId: assistantMsgId,
+                    content: finalAssistantContent,
+                    options: finalGuided.options,
+                    language,
+                })
+                : null
+
+            if (!finalAssistantContent.trim()) {
                 setMessages((prev: any) => prev.filter((m: any) => m.id !== assistantMsgId))
                 return ""
             }
 
-            if (!isVoiceTurn && (shouldSpeakResponse || settings.enableAutoSpeak) && assistantContent && speakText) {
-                speakText(assistantContent, assistantMsgId)
+            setMessages((prev: any) => prev.map((m: any) => (
+                m.id === assistantMsgId
+                    ? { ...m, content: finalAssistantContent, guidedUi: finalGuidedUi || undefined }
+                    : m
+            )))
+
+            if (!isVoiceTurn && (shouldSpeakResponse || settings.enableAutoSpeak) && finalAssistantContent && speakText) {
+                speakText(finalAssistantContent, assistantMsgId)
             }
 
             // Force listener update
@@ -471,7 +506,7 @@ export function useChatCore({
                 // UI should handle special messages
             }
 
-            return assistantContent
+            return finalAssistantContent
 
         } catch (error: any) {
             console.error('Chat error:', error)
