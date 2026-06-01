@@ -416,6 +416,14 @@ function isShopperCatalogCardRequest(userText: string): boolean {
     return mentionsCatalogItem && asksToShow && asksForCount;
 }
 
+function isGeneralBrandInfoQuestion(userText: string): boolean {
+    const normalized = normalizeText(userText);
+    if (!normalized) return false;
+
+    return /\b(nedir|ne demek|kimdir|hakkinda|hakkında|what is|who is|tell me about|about)\b/u.test(normalized)
+        && !/(urun|ürün|product|catalog|katalog|shopper|sepete|fiyat|price|öner|oner|recommend|tavsiye|hangisi|en iyi|populer|popüler|tercih|kategori|category|satın|satin|buy|purchase|order|sipariş|siparis)/u.test(normalized);
+}
+
 function isShopperRecommendationRequest(messages: NormalizedChatMessage[], userText: string): boolean {
     const normalized = normalizeText(userText);
     if (!normalized) return false;
@@ -424,9 +432,13 @@ function isShopperRecommendationRequest(messages: NormalizedChatMessage[], userT
         return false;
     }
 
+    if (isGeneralBrandInfoQuestion(userText)) {
+        return false;
+    }
+
     const directRecommendationIntent =
         isShopperCatalogCardRequest(userText)
-        || /(urun|ürün|product|catalog|katalog|shopper|sepete|fiyat|price|öner|oner|recommend|tavsiye|hangisi|en iyi|populer|popüler|tercih|kategori|category|kadın|kadin|erkek|çocuk|cocuk|cilt|bakim|bakım|maske|atistirmalik|atıştırmalık|ic giyim|iç giyim|get pretty|daily nuuds|gigi)/u.test(normalized);
+        || /(urun|ürün|product|catalog|katalog|shopper|sepete|fiyat|price|öner|oner|recommend|tavsiye|hangisi|en iyi|populer|popüler|tercih|kategori|category|kadın|kadin|erkek|çocuk|cocuk|cilt|bakim|bakım|maske|atistirmalik|atıştırmalık|ic giyim|iç giyim|get pretty|daily nuuds)/u.test(normalized);
 
     if (directRecommendationIntent) return true;
 
@@ -495,6 +507,27 @@ function buildShopperFallbackMessage(products: ShopperProduct[], uiLang: UILang)
 async function tryShopperFallback(body: ChatRequestBody | null | undefined): Promise<string | null> {
     if (!body?.chatbotId) return null;
 
+    const messages = (body.messages || [])
+        .filter((message): message is ChatMessage => {
+            const validRole = message?.role === "user" || message?.role === "assistant" || message?.role === "system";
+            const validContent = typeof message?.content === "string";
+            return validRole && validContent;
+        })
+        .map((message) => ({
+            id: message.id,
+            role: message.role as AIMessage["role"],
+            content: message.content as string
+        }));
+
+    const userMessage = [...messages]
+        .reverse()
+        .find((message) => message?.role === "user" && typeof message.content === "string");
+    const userText = userMessage?.content || "";
+
+    if (!isShopperRecommendationRequest(messages, userText)) {
+        return null;
+    }
+
     const adminDb = getAdminDb();
     if (!adminDb) return null;
 
@@ -515,10 +548,6 @@ async function tryShopperFallback(body: ChatRequestBody | null | undefined): Pro
         .filter(isValidShopperProduct)
         .filter((product) => product.inStock !== false);
 
-    const userMessage = [...(body.messages || [])]
-        .reverse()
-        .find((message) => message?.role === "user" && typeof message.content === "string");
-    const userText = userMessage?.content || "";
     const uiLang = resolveUiLanguage(body.language, userText);
 
     if (!products.length) {
