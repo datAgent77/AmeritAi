@@ -416,6 +416,39 @@ function isShopperCatalogCardRequest(userText: string): boolean {
     return mentionsCatalogItem && asksToShow && asksForCount;
 }
 
+function isShopperRecommendationRequest(messages: NormalizedChatMessage[], userText: string): boolean {
+    const normalized = normalizeText(userText);
+    if (!normalized) return false;
+
+    if (/^(tesekkur|teşekkür|thanks|thank you|tamam|ok|okay|hayir|hayır|yok|no)$/u.test(normalized)) {
+        return false;
+    }
+
+    const directRecommendationIntent =
+        isShopperCatalogCardRequest(userText)
+        || /(urun|ürün|product|catalog|katalog|shopper|sepete|fiyat|price|öner|oner|recommend|tavsiye|hangisi|en iyi|populer|popüler|tercih|kategori|category|kadın|kadin|erkek|çocuk|cocuk|cilt|bakim|bakım|maske|atistirmalik|atıştırmalık|ic giyim|iç giyim|get pretty|daily nuuds|gigi)/u.test(normalized);
+
+    if (directRecommendationIntent) return true;
+
+    const previousMessages = messages.slice(0, -1).reverse();
+    const previousAssistantText = previousMessages
+        .find((message) => message.role === "assistant" && typeof message.content === "string")
+        ?.content || "";
+    const previousUserText = previousMessages
+        .find((message) => message.role === "user" && typeof message.content === "string")
+        ?.content || "";
+    const normalizedPreviousAssistant = normalizeText(previousAssistantText);
+
+    const previousShopperContext =
+        isShopperCatalogCardRequest(previousUserText)
+        || /product carousel|urun|ürün|product|katalog|catalog|öner|oner|recommend|sepete|fiyat|price|shopper/u.test(normalizedPreviousAssistant);
+    const latestLooksLikeRefinement =
+        normalized.split(" ").length <= 4
+        || /(kadın|kadin|erkek|çocuk|cocuk|butce|bütçe|kategori|category|cilt|bakim|bakım|maske|hediye|gift)/u.test(normalized);
+
+    return previousShopperContext && latestLooksLikeRefinement;
+}
+
 function toCardPayload(product: ShopperProduct): Record<string, string | number | boolean> {
     const description = typeof product.description === "string"
         ? product.description.trim().slice(0, 180)
@@ -818,7 +851,7 @@ export async function POST(req: Request) {
                 });
             }
 
-            if (!body.guidedEvent && !isVoice && isShopperCatalogCardRequest(userContent)) {
+            if (!body.guidedEvent && !isVoice && isShopperRecommendationRequest(normalizedMessages, userContent)) {
                 const shopperResponse = await tryShopperFallback(body);
 
                 if (shopperResponse) {
