@@ -271,6 +271,8 @@ type ShopperProduct = {
     url?: string;
     category?: string;
     inStock?: boolean;
+    stockQuantity?: number;
+    lowStockThreshold?: number;
 };
 
 const TR_STOPWORDS = new Set([
@@ -293,31 +295,31 @@ type UILang = "tr" | "en" | "de" | "fr" | "es";
 
 const FALLBACK_COPY: Record<UILang, { intro: string; closing: string; noPrice: string; noCatalog: string }> = {
     tr: {
-        intro: "AI anahtarı yerelde eksik olduğu için katalogdan hızlı öneri hazırladım:",
+        intro: "Elbette, katalogdaki öne çıkan ürünleri kart olarak gösteriyorum:",
         closing: "İstersen bütçe, kişi (kadın/erkek/çocuk) ve kategori yaz; daha nokta atışı öneri yapayım.",
         noPrice: "Fiyat bilgisi yok",
         noCatalog: "Shopper modülü aktif görünüyor ama katalogda henüz ürün yok. Konsoldan ürün ekledikten sonra tekrar deneyin."
     },
     en: {
-        intro: "AI key is missing locally, so I prepared quick recommendations from your catalog:",
+        intro: "Sure, here are featured products from the catalog as product cards:",
         closing: "Share budget, recipient (woman/man/kid), and category, and I will refine the suggestions.",
         noPrice: "Price unavailable",
         noCatalog: "Shopper is enabled, but there are no products in the catalog yet. Add products from console and try again."
     },
     de: {
-        intro: "Da der AI-Schlüssel lokal fehlt, habe ich schnelle Empfehlungen aus deinem Katalog vorbereitet:",
+        intro: "Gerne, hier sind ausgewählte Produkte aus dem Katalog als Produktkarten:",
         closing: "Nenne Budget, Empfänger (Frau/Mann/Kind) und Kategorie, dann verfeinere ich die Vorschläge.",
         noPrice: "Preis nicht verfügbar",
         noCatalog: "Shopper ist aktiv, aber im Katalog sind noch keine Produkte vorhanden."
     },
     fr: {
-        intro: "La clé AI n'étant pas disponible en local, j'ai préparé des recommandations rapides depuis votre catalogue :",
+        intro: "Bien sûr, voici des produits du catalogue sous forme de cartes :",
         closing: "Indiquez le budget, le destinataire (femme/homme/enfant) et la catégorie pour des recommandations plus précises.",
         noPrice: "Prix indisponible",
         noCatalog: "Le module Shopper est actif, mais aucun produit n'est encore présent dans le catalogue."
     },
     es: {
-        intro: "Como falta la clave de AI en local, preparé recomendaciones rápidas desde tu catálogo:",
+        intro: "Claro, aquí tienes productos destacados del catálogo en tarjetas:",
         closing: "Comparte presupuesto, destinatario (mujer/hombre/niño) y categoría para afinar las recomendaciones.",
         noPrice: "Precio no disponible",
         noCatalog: "Shopper está activo, pero aún no hay productos en el catálogo."
@@ -376,12 +378,23 @@ function rankProducts(products: ShopperProduct[], userQuery: string): ShopperPro
     return scored.map((entry) => entry.product);
 }
 
-function toCardPayload(product: ShopperProduct): Record<string, string | number> {
+function isShopperCatalogCardRequest(userText: string): boolean {
+    const normalized = normalizeText(userText);
+    if (!normalized) return false;
+
+    const mentionsCatalogItem = /(urun|ürün|product|catalog|katalog|item|sku)/u.test(normalized);
+    const asksToShow = /(goster|göster|listele|list|show|oner|öner|recommend|featured|one cikan|öne çıkan|kayitli|kayıtlı)/u.test(normalized);
+    const asksForCount = /\b(3|uc|üç|three|ilk|top|öne çıkan|one cikan)\b/u.test(normalized);
+
+    return mentionsCatalogItem && asksToShow && asksForCount;
+}
+
+function toCardPayload(product: ShopperProduct): Record<string, string | number | boolean> {
     const description = typeof product.description === "string"
         ? product.description.trim().slice(0, 180)
         : "";
 
-    const payload: Record<string, string | number> = {
+    const payload: Record<string, string | number | boolean> = {
         name: product.name || "Product",
         price: typeof product.price === "number"
             ? product.price
@@ -392,6 +405,9 @@ function toCardPayload(product: ShopperProduct): Record<string, string | number>
     if (description) payload.description = description;
     if (product.imageUrl) payload.imageUrl = product.imageUrl;
     if (product.url) payload.url = product.url;
+    if (typeof product.inStock === "boolean") payload.inStock = product.inStock;
+    if (typeof product.stockQuantity === "number") payload.stockQuantity = product.stockQuantity;
+    if (typeof product.lowStockThreshold === "number") payload.lowStockThreshold = product.lowStockThreshold;
 
     return payload;
 }
@@ -770,6 +786,25 @@ export async function POST(req: Request) {
                     handoffRequested: true,
                     callbackId: callbackOutcome.callback.id || activeSessionId,
                 });
+            }
+
+            if (!body.guidedEvent && !isVoice && isShopperCatalogCardRequest(userContent)) {
+                const shopperResponse = await tryShopperFallback(body);
+
+                if (shopperResponse) {
+                    const shopperAssistantMessageId = assistantMessageId || `assistant-shopper-${Date.now()}`;
+
+                    await saveMessageToSession(activeSessionId, chatbotId, {
+                        id: shopperAssistantMessageId,
+                        role: "assistant",
+                        content: shopperResponse,
+                    }, userId);
+
+                    return new Response(shopperResponse, {
+                        status: 200,
+                        headers: { "Content-Type": "text/plain; charset=utf-8" },
+                    });
+                }
             }
 
             const guidedResult = !isGuidedAiModeEnabled

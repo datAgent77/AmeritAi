@@ -8,6 +8,9 @@ type ProductItem = {
     imageUrl?: string;
     url?: string;
     description?: string;
+    stockQuantity?: number;
+    inStock?: boolean;
+    lowStockThreshold?: number;
 };
 
 interface ProductCarouselProps {

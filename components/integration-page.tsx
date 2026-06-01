@@ -65,6 +65,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [metaWizardStatus, setMetaWizardStatus] = useState<any>(null)
     const [evolutionApiStatus, setEvolutionApiStatus] = useState<any>(null)
+    const [directShortCode, setDirectShortCode] = useState("")
+    const [isDirectShortLinkLoading, setIsDirectShortLinkLoading] = useState(false)
     
     // Plan access state
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -972,6 +974,40 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         loadEcomConnections()
     }, [userId, user, loadEcomConnections])
 
+    useEffect(() => {
+        if (!user || !userId) return
+
+        let cancelled = false
+        const loadShortLink = async () => {
+            setIsDirectShortLinkLoading(true)
+            try {
+                const token = await user.getIdToken()
+                const res = await fetch("/api/short-links/direct-chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ chatbotId: userId }),
+                })
+                if (!res.ok) return
+                const data = await res.json()
+                if (!cancelled && typeof data.code === "string") {
+                    setDirectShortCode(data.code)
+                }
+            } catch (error) {
+                console.error("Error loading short link:", error)
+            } finally {
+                if (!cancelled) setIsDirectShortLinkLoading(false)
+            }
+        }
+
+        loadShortLink()
+        return () => {
+            cancelled = true
+        }
+    }, [user, userId])
+
     const copyToClipboard = (text: string, key: string) => {
         navigator.clipboard.writeText(text)
         setCopied(key)
@@ -980,8 +1016,10 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     }
 
     const scriptCode = `<script src="${origin}/widget.js?v=2.0" data-chatbot-id="${userId}" data-color="${brandColor}"></script>`
-    const iframeCode = `<iframe src="${origin}/chatbot-view?id=${userId}" width="100%" height="600" frameborder="0" allowtransparency="true" style="background-color: transparent; border: none;"></iframe>`
-    const directLink = `${origin}/chatbot-view?id=${userId}`
+    const encodedUserId = encodeURIComponent(userId)
+    const iframeCode = `<iframe src="${origin}/chatbot-view?id=${encodedUserId}" width="100%" height="600" frameborder="0" allowtransparency="true" style="background-color: transparent; border: none;"></iframe>`
+    const directLink = `${origin}/chatbot-view?id=${encodedUserId}`
+    const shortDirectLink = directShortCode ? `${origin}/c/${directShortCode}` : `${origin}/c/${encodedUserId}`
     const whatsappWebhookUrl = waWebhookSecret
         ? `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}&secret=${encodeURIComponent(waWebhookSecret)}`
         : `${origin}/api/integrations/whatsapp/webhook?chatbotId=${userId}`
@@ -1204,14 +1242,32 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                             {currentIntegration.id === "direct-link" && (
                                 <div className="space-y-4">
                                     <h3 className="font-medium">{t('directLink')}</h3>
-                                    <div className="flex gap-2">
-                                        <Input value={directLink} readOnly className="font-mono text-sm" />
-                                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(directLink, "link")}>
-                                            {copied === "link" ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                        </Button>
-                                        <Button variant="outline" size="icon" onClick={() => window.open(directLink, "_blank")}>
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Button>
+                                    <div className="space-y-3">
+                                        <div className="space-y-2">
+                                            <Label className="text-sm text-muted-foreground">Tam bağlantı</Label>
+                                            <div className="flex gap-2">
+                                                <Input value={directLink} readOnly className="font-mono text-sm" />
+                                                <Button variant="outline" size="icon" onClick={() => copyToClipboard(directLink, "link")}>
+                                                    {copied === "link" ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </Button>
+                                                <Button variant="outline" size="icon" onClick={() => window.open(directLink, "_blank")}>
+                                                    <ExternalLink className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-sm text-muted-foreground">Kısa bağlantı (alternatif)</Label>
+                                            <div className="flex gap-2">
+                                                <Input value={isDirectShortLinkLoading && !directShortCode ? "Kısa bağlantı oluşturuluyor..." : shortDirectLink} readOnly className="font-mono text-sm" />
+                                                <Button variant="outline" size="icon" disabled={isDirectShortLinkLoading && !directShortCode} onClick={() => copyToClipboard(shortDirectLink, "short-link")}>
+                                                    {copied === "short-link" ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </Button>
+                                                <Button variant="outline" size="icon" disabled={isDirectShortLinkLoading && !directShortCode} onClick={() => window.open(shortDirectLink, "_blank")}>
+                                                    <ExternalLink className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
