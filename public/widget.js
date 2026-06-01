@@ -3968,18 +3968,34 @@
 
     const applyWideModalStyles = (sizeMode = settings.modalSize) => {
       const isMedium = sizeMode === 'medium';
+      const launcherOffset = usesLauncher ? (settings.launcherHeight || 52) + 16 : 0;
+      const verticalAnchorStyle = isTop
+        ? {
+            top: `${verticalSpacing + launcherOffset}px`,
+            bottom: 'auto',
+            transform: 'translateX(-50%)',
+          }
+        : isBottom
+          ? {
+              top: 'auto',
+              bottom: `${verticalSpacing + launcherOffset}px`,
+              transform: 'translateX(-50%)',
+            }
+          : {
+              top: '50%',
+              bottom: 'auto',
+              transform: 'translate(-50%, -50%)',
+            };
 
       Object.assign(iframeContainer.style, {
-        top: '50%',
         left: '50%',
-        transform: 'translate(-50%, -50%)',
         width: isMedium ? '760px' : '1000px',
         maxWidth: isMedium ? '92%' : '95%',
         height: isMedium ? '640px' : '700px',
         maxHeight: isMedium ? '88vh' : '90vh',
-        bottom: 'auto',
         right: 'auto',
-        borderRadius: '24px'
+        borderRadius: '24px',
+        ...verticalAnchorStyle
       });
     };
 
