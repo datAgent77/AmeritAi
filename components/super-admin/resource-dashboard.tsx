@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { getSystemStats, getResourceUsageOverTime, getAiConsumptionStats, SystemStats, ResourceUsageData, AiConsumptionStats } from "@/lib/super-admin-service";
 import { Users, Bot, MessageSquare, Database, Activity, TrendingUp, Cpu, Zap, DollarSign, CheckCircle2, XCircle, Clock, Server, HardDrive, Gauge, ExternalLink } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -25,28 +26,36 @@ interface Integration {
 
 export function ResourceDashboard() {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [stats, setStats] = useState<SystemStats | null>(null);
     const [chartData, setChartData] = useState<ResourceUsageData[]>([]);
     const [aiStats, setAiStats] = useState<AiConsumptionStats | null>(null);
+    const [cfg, setCfg] = useState<Record<string, boolean> | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Actual integrations data based on system analysis
+    // Real connection status: derived from server-side config (see
+    // /api/admin/integration-status). 'pending' shows until the check returns.
+    const st = (ok?: boolean): Integration['status'] =>
+        ok === undefined ? 'pending' : ok ? 'connected' : 'disconnected';
+
+    // Integrations. External/paid services reflect actual credential presence;
+    // bundled libraries (always shipped with the app) are shown as connected.
     const integrations: Integration[] = [
-        { name: 'OpenAI GPT-4', description: 'AI sohbet, metin üretimi ve embedding vektörleri', status: 'connected', creditsUsed: aiStats?.totalApiCalls || 33, totalCredits: 10000, lastSync: new Date().toLocaleString('tr-TR'), icon: '🤖', dashboardUrl: 'https://platform.openai.com/usage' },
-        { name: 'Google Gemini 1.5', description: 'Görsel analizi ve UI/UX denetimi', status: 'connected', creditsUsed: 12, totalCredits: 5000, lastSync: new Date().toLocaleString('tr-TR'), icon: '✨', dashboardUrl: 'https://aistudio.google.com/' },
-        { name: 'Pinecone (Vector DB)', description: 'RAG için vektör veritabanı, bilgi arama', status: 'connected', creditsUsed: stats?.totalConversations || 0, totalCredits: 100000, lastSync: new Date().toLocaleString('tr-TR'), icon: '🌲', dashboardUrl: 'https://app.pinecone.io/' },
-        { name: 'Firebase Firestore', description: 'Ana veritabanı: kullanıcılar, sohbetler, ayarlar', status: 'connected', creditsUsed: (stats?.totalConversations || 0) * 5, totalCredits: 50000, lastSync: new Date().toLocaleString('tr-TR'), icon: '🔥', dashboardUrl: 'https://console.firebase.google.com/' },
-        { name: 'Firebase Storage', description: 'Ürün görselleri, logolar ve dokümanlar', status: 'connected', creditsUsed: 245, totalCredits: 5000, lastSync: new Date().toLocaleString('tr-TR'), icon: '📦', dashboardUrl: 'https://console.firebase.google.com/' },
-        { name: 'Firebase Auth', description: 'Kullanıcı kimlik doğrulama ve oturum yönetimi', status: 'connected', creditsUsed: stats?.totalTenants || 7, totalCredits: 10000, lastSync: new Date().toLocaleString('tr-TR'), icon: '🔐', dashboardUrl: 'https://console.firebase.google.com/' },
-        { name: 'Resend', description: 'Doğrulama, iletişim formu, lead ve admin bildirimleri için transactional email sağlayıcısı', status: 'connected', creditsUsed: 0, totalCredits: 3000, lastSync: new Date().toLocaleString('tr-TR'), icon: '✉️', dashboardUrl: 'https://resend.com/emails' },
-        { name: 'ImprovMX', description: 'info@getvion.com gelen postalarını Gmail gelen kutusuna yönlendiren inbound mail forwarding servisi', status: 'connected', lastSync: new Date().toLocaleString('tr-TR'), icon: '📬', dashboardUrl: 'https://app.improvmx.com/', isFree: true, freeLabel: '✅ Ücretsiz Forwarding' },
-        { name: 'Nodemailer SMTP Transport', description: 'Resend SMTP üzerinden uygulama içi e-posta gönderim katmanı', status: 'connected', icon: '📧', isFree: true },
+        { name: 'OpenAI GPT-4', description: 'AI sohbet, metin üretimi ve embedding vektörleri', status: st(cfg?.openai), creditsUsed: aiStats?.totalApiCalls, icon: '🤖', dashboardUrl: 'https://platform.openai.com/usage' },
+        { name: 'Anthropic (Claude)', description: 'AI sohbet sağlayıcısı (Claude modelleri)', status: st(cfg?.anthropic), icon: '🧠', dashboardUrl: 'https://console.anthropic.com/' },
+        { name: 'Google Gemini', description: 'Görsel analizi ve UI/UX denetimi', status: st(cfg?.gemini), icon: '✨', dashboardUrl: 'https://aistudio.google.com/' },
+        { name: 'Pinecone (Vector DB)', description: 'RAG için vektör veritabanı, bilgi arama', status: st(cfg?.pinecone), icon: '🌲', dashboardUrl: 'https://app.pinecone.io/' },
+        { name: 'ElevenLabs (Voice)', description: 'Sesli asistan: konuşma sentezi ve gerçek zamanlı ses', status: st(cfg?.elevenlabs), icon: '🎙️', dashboardUrl: 'https://elevenlabs.io/' },
+        { name: 'Firebase Firestore', description: 'Ana veritabanı: kullanıcılar, sohbetler, ayarlar', status: st(cfg?.firebase), icon: '🔥', dashboardUrl: 'https://console.firebase.google.com/' },
+        { name: 'Firebase Auth', description: 'Kullanıcı kimlik doğrulama ve oturum yönetimi', status: st(cfg?.firebase), icon: '🔐', dashboardUrl: 'https://console.firebase.google.com/' },
+        { name: 'Firebase Storage', description: 'Ürün görselleri, logolar ve dokümanlar', status: st(cfg?.firebaseStorage), icon: '📦', dashboardUrl: 'https://console.firebase.google.com/' },
+        { name: 'E-posta (Resend / SMTP)', description: 'Doğrulama, iletişim formu, lead ve admin bildirimleri için transactional e-posta', status: st(cfg?.email), icon: '✉️', dashboardUrl: 'https://resend.com/emails' },
+        { name: 'Stripe (Ödeme)', description: 'Abonelik ve ödeme altyapısı', status: st(cfg?.stripe), icon: '💳', dashboardUrl: 'https://dashboard.stripe.com/' },
+        { name: 'Upstash Redis (Rate limit)', description: 'Dağıtık hız sınırlama (serverless paylaşımlı sayaç)', status: st(cfg?.upstash), icon: '⚡', dashboardUrl: 'https://console.upstash.com/' },
         { name: 'Cheerio (Web Scraper)', description: 'URL ve sitemap tarama, içerik çıkarma', status: 'connected', icon: '🕷️', isFree: true },
         { name: 'PDF-Parse', description: 'PDF doküman içeriği okuma ve işleme', status: 'connected', icon: '📄', isFree: true },
         { name: 'Mammoth (DOCX)', description: 'Word dokümanlarından metin çıkarma', status: 'connected', icon: '📝', isFree: true },
         { name: 'Lottie Animations', description: 'Widget launcher animasyonları', status: 'connected', icon: '🎬', isFree: true },
-        { name: 'Vercel (Hosting)', description: 'Frontend deployment, serverless functions ve Edge Network', status: 'connected', icon: '▲', dashboardUrl: 'https://vercel.com/dashboard', isFree: true },
-        { name: 'GitHub (Repo)', description: 'Kaynak kod yönetimi, versiyon kontrolü ve CI/CD pipeline', status: 'connected', icon: '🐙', dashboardUrl: 'https://github.com/', isFree: true },
     ];
 
     useEffect(() => {
@@ -69,6 +78,23 @@ export function ResourceDashboard() {
 
         fetchData();
     }, []);
+
+    // Fetch REAL integration connection status (super-admin endpoint).
+    useEffect(() => {
+        if (!user) return;
+        (async () => {
+            try {
+                const token = await user.getIdToken();
+                const res = await fetch('/api/admin/integration-status', {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                });
+                if (res.ok) setCfg(await res.json());
+            } catch (error) {
+                console.error('Failed to fetch integration status', error);
+            }
+        })();
+    }, [user]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -246,13 +272,13 @@ export function ResourceDashboard() {
                                         <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
                                             {integration.freeLabel || '✅ Ücretsiz Kütüphane'}
                                         </Badge>
-                                    ) : (
+                                    ) : (integration.creditsUsed !== undefined && integration.totalCredits !== undefined) ? (
                                         <div className="text-right">
-                                            <p className="text-sm font-medium">{(integration.creditsUsed || 0).toLocaleString()} / {(integration.totalCredits || 0).toLocaleString()}</p>
+                                            <p className="text-sm font-medium">{integration.creditsUsed.toLocaleString()} / {integration.totalCredits.toLocaleString()}</p>
                                             <p className="text-xs text-muted-foreground">{t('creditsUsed') || 'Kullanılan Kredi'}</p>
-                                            <Progress value={((integration.creditsUsed || 0) / (integration.totalCredits || 1)) * 100} className="w-24 h-1 mt-1" />
+                                            <Progress value={(integration.creditsUsed / (integration.totalCredits || 1)) * 100} className="w-24 h-1 mt-1" />
                                         </div>
-                                    )}
+                                    ) : null}
                                     {getStatusBadge(integration.status)}
                                 </div>
                             </div>

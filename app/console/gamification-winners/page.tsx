@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Gift, Mail, Calendar, Trophy, Users, RefreshCw } from "lucide-react"
@@ -18,6 +19,7 @@ interface Winner {
 
 export default function GamificationWinnersPage() {
     const { user } = useAuth()
+    const { t, language } = useLanguage()
     const [winners, setWinners] = useState<Winner[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -59,13 +61,13 @@ export default function GamificationWinnersPage() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                         <Trophy className="w-8 h-8 text-violet-500" />
-                        Oyun Katılımcıları ve Kazananlar
+                        {t('gw_title')}
                     </h2>
-                    <p className="text-muted-foreground mt-1">Oyunu oynayan ve ödül kazanan kullanıcıların listesi</p>
+                    <p className="text-muted-foreground mt-1">{t('gw_subtitle')}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={fetchWinners}>
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Yenile
+                    {t('gw_refresh')}
                 </Button>
             </div>
 
@@ -79,7 +81,7 @@ export default function GamificationWinnersPage() {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold">{totalWinners}</div>
-                                <div className="text-sm text-muted-foreground">Toplam Katılım</div>
+                                <div className="text-sm text-muted-foreground">{t('gw_totalParticipation')}</div>
                             </div>
                         </div>
                     </CardContent>
@@ -92,7 +94,7 @@ export default function GamificationWinnersPage() {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold">{uniqueEmails}</div>
-                                <div className="text-sm text-muted-foreground">Benzersiz Kullanıcı</div>
+                                <div className="text-sm text-muted-foreground">{t('gw_uniqueUsers')}</div>
                             </div>
                         </div>
                     </CardContent>
@@ -105,7 +107,7 @@ export default function GamificationWinnersPage() {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold">{winners.filter(w => w.couponCode).length}</div>
-                                <div className="text-sm text-muted-foreground">Kupon Verildi</div>
+                                <div className="text-sm text-muted-foreground">{t('gw_couponsGiven')}</div>
                             </div>
                         </div>
                     </CardContent>
@@ -114,20 +116,18 @@ export default function GamificationWinnersPage() {
 
             <Card className="shadow-sm">
                 <CardHeader>
-                    <CardTitle>Katılımcı Listesi</CardTitle>
+                    <CardTitle>{t('gw_listTitle')}</CardTitle>
                     <CardDescription>
-                        E-posta zorunluluğu açık oyunlarda iletişim bilgilerini bırakan ve ödül kazanan kullanıcılar. 
-                        Bu bilgiler otomatik olarak kayıt altına alınır.
+                        {t('gw_listDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {winners.length === 0 ? (
                         <div className="text-center py-16 space-y-3">
                             <Gift className="w-12 h-12 text-zinc-300 mx-auto" />
-                            <div className="text-lg font-medium text-zinc-500">Henüz katılımcı yok</div>
+                            <div className="text-lg font-medium text-zinc-500">{t('gw_empty')}</div>
                             <div className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                Oyunlaştırma modülünü aktifleştirip ziyaretçilerin oynamasını bekleyin. 
-                                Kazananlar burada görünecektir.
+                                {t('gw_emptyDesc')}
                             </div>
                         </div>
                     ) : (
@@ -135,10 +135,10 @@ export default function GamificationWinnersPage() {
                             <Table>
                                 <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
                                     <TableRow>
-                                        <TableHead className="pl-4">E-posta</TableHead>
-                                        <TableHead>Kazanılan Ödül</TableHead>
-                                        <TableHead>Kupon Kodu</TableHead>
-                                        <TableHead>Tarih</TableHead>
+                                        <TableHead className="pl-4">{t('gw_email')}</TableHead>
+                                        <TableHead>{t('gw_prize')}</TableHead>
+                                        <TableHead>{t('gw_couponCode')}</TableHead>
+                                        <TableHead>{t('gw_date')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -170,7 +170,7 @@ export default function GamificationWinnersPage() {
                                             <TableCell>
                                                 <div className="flex items-center gap-1.5 text-zinc-500 text-sm">
                                                     <Calendar className="w-3.5 h-3.5" />
-                                                    {new Date(winner.playedAt).toLocaleDateString("tr-TR", {
+                                                    {new Date(winner.playedAt).toLocaleDateString(language === "tr" ? "tr-TR" : "en-US", {
                                                         day: "2-digit",
                                                         month: "short",
                                                         year: "numeric",

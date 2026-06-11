@@ -1,9 +1,20 @@
 import { OpenAI } from "openai";
 import { NextResponse } from "next/server";
 import { trackAiUsage } from "@/lib/usage-tracker";
+import { checkRateLimitAsync, getClientIp, getRateLimitHeaders } from "@/lib/rate-limiter";
 
 export async function POST(req: Request) {
     try {
+        // Public AI endpoint -> throttle per IP to prevent cost abuse / DoS.
+        const ip = getClientIp(req);
+        const rl = await checkRateLimitAsync(`ai:copywriter:${ip}`, 10, 60_000);
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: "Too many requests" },
+                { status: 429, headers: getRateLimitHeaders(rl) }
+            );
+        }
+
         const apiKey = process.env.OPENAI_API_KEY?.trim();
         if (!apiKey) {
             return NextResponse.json({ error: "OpenAI API key is not configured" }, { status: 500 });

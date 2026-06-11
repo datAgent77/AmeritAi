@@ -124,8 +124,17 @@ export default function LoginForm() {
   useEffect(() => {
     const verifiedStatus = searchParams.get("verified")
     const shouldVerifyEmail = searchParams.get("verifyEmail") === "1"
+    const verifyRequired = searchParams.get("verify") === "required"
 
-    if (verifiedStatus === "success" || verifiedStatus === "1") {
+    if (verifyRequired) {
+      toast({
+        title: language === "tr" ? "E-posta doğrulaması gerekli" : "Email verification required",
+        description: language === "tr"
+          ? "Hesabınıza erişmek için önce e-posta adresinizi doğrulamanız gerekiyor."
+          : "You must verify your email address before accessing your account.",
+        variant: "destructive",
+      })
+    } else if (verifiedStatus === "success" || verifiedStatus === "1") {
       toast({
         title: language === "tr" ? "E-posta doğrulandı" : "Email verified",
         description: language === "tr"
@@ -154,6 +163,7 @@ export default function LoginForm() {
     const nextUrl = new URL(window.location.href)
     nextUrl.searchParams.delete("verified")
     nextUrl.searchParams.delete("verifyEmail")
+    nextUrl.searchParams.delete("verify")
     router.replace(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`, { scroll: false })
   }, [language, router, searchParams, toast])
 

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useMemo } from "react"
 import { usePathname } from "next/navigation"
-import { User, onAuthStateChanged } from "firebase/auth"
+import { User, onAuthStateChanged, signOut } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, onSnapshot } from "firebase/firestore"
 import { getPlanConfig, PlanConfig } from "@/lib/pricing-config"
@@ -208,8 +208,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             : "USER"
                     }
 
-                    // Super admin override
-                    if (currentUser.email?.toLowerCase() === 'yasincelenkk@gmail.com') {
+                    // Super admin override (client-side convenience). Configure via
+                    // NEXT_PUBLIC_SUPER_ADMIN_EMAILS (comma-separated). The authoritative
+                    // role still comes from the Firestore user doc (honored server-side).
+                    const superAdminEmails = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAILS || '')
+                        .split(',')
+                        .map((e) => e.trim().toLowerCase())
+                        .filter(Boolean)
+                    if (currentUser.email && superAdminEmails.includes(currentUser.email.toLowerCase())) {
                         userRole = 'SUPER_ADMIN'
                     }
 
@@ -304,6 +310,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         }
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // === EMAIL VERIFICATION GATE ===
+    // Block console/admin access for accounts whose email is not verified. This
+    // runs on every navigation + auth/userData change so it cannot be bypassed by
+    // signup auto-login, the partner login form, or an existing session (the
+    // previous gap). "Verified" stays consistent with the login page's own logic:
+    // Firebase emailVerified, OR a Firestore mirror/bypass marker, OR the global
+    // signup-bypass env flag. emailVerified is read from auth.currentUser (the
+    // authoritative source) because the merged context user can lose the getter.
+    useEffect(() => {
+        if (loading || !user) return
+
+        const isProtectedAppRoute =
+            !!pathname && (pathname.startsWith("/console") || pathname.startsWith("/admin"))
+        if (!isProtectedAppRoute) return
+
+        const bypassEnv =
+            process.env.NEXT_PUBLIC_AUTH_EMAIL_VERIFICATION_BYPASS_NEW_SIGNUPS === "true"
+        const fbUser = auth.currentUser
+        const isEmailVerified =
+            fbUser?.emailVerified === true ||
+            (userData as any)?.emailVerified === true ||
+            (userData as any)?.emailVerificationBypass?.enabled === true ||
+            bypassEnv
+
+        if (!isEmailVerified) {
+            recordAuthDebug("auth_block_unverified_email", { uid: fbUser?.uid || null })
+            void signOut(auth).finally(() => {
+                if (typeof window !== "undefined") {
+                    window.location.replace("/login?verify=required")
+                }
+            })
+        }
+    }, [user, userData, pathname, loading])
 
     return (
         <AuthContext.Provider value={{

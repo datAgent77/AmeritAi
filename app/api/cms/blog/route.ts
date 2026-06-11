@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { requireSuperAdmin } from "@/lib/api-auth";
 import { SEED_BLOG_POSTS } from "@/lib/seed-cms-data";
 
 export async function GET(req: NextRequest) {
@@ -14,25 +15,16 @@ export async function GET(req: NextRequest) {
 
         let posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const { searchParams } = new URL(req.url);
-        const forceReset = searchParams.get("reset") === "true";
-
-        // Auto-seed if empty or forced reset
-        if (posts.length === 0 || forceReset) {
-            console.log("Seeding or Re-seeding Blog Posts...");
-            if (posts.length > 0) {
-                const deleteBatch = db.batch();
-                snapshot.docs.forEach(doc => deleteBatch.delete(doc.ref));
-                await deleteBatch.commit();
-            }
-
+        // Auto-seed only when the collection is empty (first run). The previous
+        // `?reset=true` branch allowed UNAUTHENTICATED deletion of all blog
+        // content via a GET request and has been removed.
+        if (posts.length === 0) {
             const batch = db.batch();
             SEED_BLOG_POSTS.forEach(post => {
                 const docRef = db.collection("cms_blog").doc();
                 batch.set(docRef, post);
             });
             await batch.commit();
-            // Fetch again
             const newSnapshot = await db.collection("cms_blog").orderBy("date", "desc").get();
             posts = newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
@@ -46,6 +38,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
+        const authz = await requireSuperAdmin(req);
+        if (!authz.ok) return authz.response;
+
         const db = getAdminDb();
         if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
 

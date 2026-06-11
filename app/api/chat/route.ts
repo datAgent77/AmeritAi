@@ -18,7 +18,10 @@ import {
 } from "@/lib/human-handoff";
 import { createAndNotifyHumanHandoff } from "@/lib/human-handoff-server";
 import { trackAiUsage } from "@/lib/usage-tracker";
-import { checkRateLimit, getRateLimitHeaders } from "@/lib/rate-limiter";
+import { checkRateLimitAsync, getRateLimitHeaders } from "@/lib/rate-limiter";
+import { captureError } from "@/lib/error-reporting";
+import { getPlan } from "@/lib/pricing-config";
+import { getMonthlyMessageCount, incrementMonthlyMessageCount } from "@/lib/usage-quota";
 import { isAppointmentConfirmation, extractAppointmentData } from "@/lib/appointment-extractor";
 import { isLeadConfirmation, extractLeadData } from "@/lib/lead-extractor";
 import { normalizePhoneNumber, upsertContactGraph, upsertWebChatSession } from "@/lib/vion-web-session";
@@ -618,6 +621,19 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+
+        // Input guardrails (cost/abuse protection): cap message size and history.
+        const MAX_MESSAGE_CHARS = 8000;
+        const MAX_MESSAGES = 100;
+        if (normalizedMessages.some((m) => m.content.length > MAX_MESSAGE_CHARS)) {
+            return NextResponse.json(
+                { error: "Message too long." },
+                { status: 413 }
+            );
+        }
+        if (normalizedMessages.length > MAX_MESSAGES) {
+            normalizedMessages.splice(0, normalizedMessages.length - MAX_MESSAGES);
+        }
         const latestUserText = [...normalizedMessages]
             .reverse()
             .find((message) => message.role === "user" && message.content.trim())
@@ -647,11 +663,15 @@ export async function POST(req: Request) {
                 })
                 : Promise.resolve(null);
 
-        // Rate limiting check
-        const rateLimitResult = checkRateLimit(ip, activeSessionId);
+        // Rate limiting check (distributed via Upstash when configured, else in-memory).
+        // Per-IP 30/min and per-session 50/min.
+        const ipLimit = await checkRateLimitAsync(`chat:ip:${ip}`, 30, 60_000);
+        const rateLimitResult = ipLimit.allowed
+            ? await checkRateLimitAsync(`chat:sess:${activeSessionId}`, 50, 60_000)
+            : ipLimit;
         if (!rateLimitResult.allowed) {
             return new Response(
-                JSON.stringify({ error: "Too many requests", reason: rateLimitResult.reason }),
+                JSON.stringify({ error: "Too many requests" }),
                 { status: 429, headers: { ...getRateLimitHeaders(rateLimitResult), 'Content-Type': 'application/json' } }
             );
         }
@@ -705,6 +725,32 @@ export async function POST(req: Request) {
             console.error('[CHAT API] Error checking trial status:', trialCheckError);
         }
         // === END TRIAL EXPIRATION CHECK ===
+
+        // === PER-CHATBOT MONTHLY MESSAGE QUOTA ===
+        // Zero overhead while the plan's messageLimit is 'unlimited' (no DB read).
+        // Activates automatically once a plan defines a numeric monthly cap.
+        try {
+            const planForQuota = getPlan(tenantUserData?.planId || "starter");
+            const messageLimit = planForQuota?.limits?.messageLimit;
+            if (typeof messageLimit === "number" && messageLimit > 0) {
+                const used = await getMonthlyMessageCount(chatbotId);
+                if (used >= messageLimit) {
+                    const quotaLang = (typeof language === "string" && language.toLowerCase().startsWith("tr")) ? "tr" : "en";
+                    const quotaMsg = quotaLang === "tr"
+                        ? "Bu ay için mesaj limitine ulaşıldı. Lütfen daha sonra tekrar deneyin."
+                        : "This month's message limit has been reached. Please try again later.";
+                    return new Response(
+                        JSON.stringify({ error: "quota_exceeded", message: quotaMsg, shouldUpgrade: true }),
+                        { status: 429, headers: { "Content-Type": "application/json" } }
+                    );
+                }
+                // Count this accepted request (fire-and-forget; fail-open).
+                void incrementMonthlyMessageCount(chatbotId);
+            }
+        } catch (quotaError) {
+            captureError(quotaError, { route: "/api/chat", phase: "quota", chatbotId });
+        }
+        // === END QUOTA CHECK ===
 
         // ... existing rate limit codes ...
 
@@ -1318,7 +1364,7 @@ export async function POST(req: Request) {
         }
 
     } catch (error) {
-        console.error("Chat API Error:", error);
+        captureError(error, { route: "/api/chat", chatbotId: body?.chatbotId, sessionId: activeSessionId });
         const rawMessage = error instanceof Error ? error.message : String(error);
         const lowered = rawMessage.toLowerCase();
         const isConfigError = lowered.includes("no ai provider is configured") || lowered.includes("api key");
@@ -1356,11 +1402,18 @@ export async function POST(req: Request) {
             }
         }
 
-        const message = isConfigError
-            ? "AI service configuration is incomplete. Please contact support."
-            : shouldExposeGuidedError
-                ? rawMessage
-                : "AI service is temporarily unavailable. Please try again.";
+        // Friendly, localized fallback shown to the visitor in the widget bubble.
+        const errLang = (typeof body?.language === "string" && body.language.toLowerCase().startsWith("tr")) ? "tr" : "en";
+        const friendlyByLang = isConfigError
+            ? {
+                tr: "Yapay zeka asistanı şu an yapılandırılmamış. Lütfen site yöneticisiyle iletişime geçin.",
+                en: "The AI assistant isn't set up yet. Please contact the site owner.",
+            }
+            : {
+                tr: "Şu an yanıt veremiyorum, lütfen birazdan tekrar deneyin. 🙏",
+                en: "I'm having trouble responding right now. Please try again in a moment. 🙏",
+            };
+        const message = shouldExposeGuidedError ? rawMessage : friendlyByLang[errLang];
 
         return new Response(
             JSON.stringify({

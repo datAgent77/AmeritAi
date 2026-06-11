@@ -29,8 +29,9 @@ export async function GET(request: Request) {
         try {
             decodedToken = await adminAuth.verifyIdToken(token);
         } catch (e: any) {
+            // Log details server-side only; do not leak token/internal error details to the client.
             console.error("[Stats API] Token verification failed:", e);
-            return NextResponse.json({ error: `Token Verification Failed: ${e.message}` }, { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         // Check if user exists

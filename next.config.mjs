@@ -35,16 +35,11 @@ export default function nextConfig(phase) {
     },
     async headers() {
         return [
-            {
-                // matching all API routes
-                source: "/api/:path*",
-                headers: [
-                    { key: "Access-Control-Allow-Credentials", value: "true" },
-                    { key: "Access-Control-Allow-Origin", value: "*" },
-                    { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
-                    { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-                ]
-            },
+            // NOTE: API CORS is intentionally handled in middleware.ts, path-segmented:
+            // privileged admin/console/agency APIs are locked to allow-listed origins,
+            // while public widget APIs are open WITHOUT credentials. A global "*" +
+            // "credentials: true" header here previously applied to every /api route
+            // and overrode that segmentation (an invalid + unsafe combination).
             {
                 // Prevent Vercel CDN from caching widget.js so settings changes reflect immediately
                 source: "/widget.js",

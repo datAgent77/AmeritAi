@@ -17,7 +17,7 @@ describe("assistant capability resolution", () => {
         expect(ids).toEqual(["generalChatbot", "knowledgeBase"])
     })
 
-    test("honors explicit channel overrides including empty arrays while filtering unavailable modules", () => {
+    test("honors explicit channel overrides including empty arrays", () => {
         const voiceIds = resolveCapabilityIdsForChannel("voice", {
             enabledCapabilityIds: ["generalChatbot", "knowledgeBase"],
             channelCapabilityOverrides: {
@@ -32,7 +32,11 @@ describe("assistant capability resolution", () => {
             },
         })
 
+        // An explicit empty override disables every capability on that channel.
         expect(voiceIds).toEqual([])
-        expect(webCapabilities.map((capability) => capability.id)).toEqual(["generalChatbot"])
+        // gamification is supported on web and its module is now "ready", so the
+        // explicit web override resolves to both capabilities. (When a capability's
+        // module is not ready/beta, isCapabilityModuleReady() filters it out.)
+        expect(webCapabilities.map((capability) => capability.id)).toEqual(["generalChatbot", "gamification"])
     })
 })

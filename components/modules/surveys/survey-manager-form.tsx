@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { BarChart3, Download, Loader2, Plus, Save, Send, Trash2, GripVertical, FileText, Settings, LayoutTemplate, PieChart, Users } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -68,6 +69,7 @@ function createQuestion(): SurveyQuestion {
 
 export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: SurveyManagerFormProps) {
     const { user } = useAuth()
+    const { t } = useLanguage()
     const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(true)
     const [isSavingSurvey, setIsSavingSurvey] = useState(false)
@@ -414,7 +416,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
         return (
             <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-zinc-400">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <p className="text-sm tracking-wide">Modül Yükleniyor...</p>
+                <p className="text-sm tracking-wide">{t('survey_moduleLoading')}</p>
             </div>
         )
     }
@@ -473,7 +475,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                     <Card className="rounded-xl border-zinc-200 shadow-sm">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-base font-semibold">Anket Listesi</CardTitle>
-                            <CardDescription className="text-xs">Şablonlardan oluşturun veya var olanları yönetin</CardDescription>
+                            <CardDescription className="text-xs">{t('survey_subtitle')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
                             <div className="grid grid-cols-2 gap-2.5">
@@ -500,7 +502,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 {surveys.length === 0 && (
                                     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50 py-8 text-center text-sm text-zinc-500">
                                         <FileText className="mb-2 h-6 w-6 text-zinc-300" />
-                                        <p>Henüz anket oluşturulmadı</p>
+                                        <p>{t('survey_empty')}</p>
                                     </div>
                                 )}
                                 <div className="space-y-2">
@@ -559,7 +561,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                         <CardHeader className="border-b border-zinc-100 pb-4">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0 space-y-1">
-                                    <CardTitle className="text-base font-semibold tracking-tight">Modül Ayarları</CardTitle>
+                                    <CardTitle className="text-base font-semibold tracking-tight">{t('survey_moduleSettings')}</CardTitle>
                                     <CardDescription className="text-xs leading-5">
                                         Aktivasyon, widget CTA ve varsayılan anket onay metinleri.
                                     </CardDescription>
@@ -646,7 +648,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
 
                             <section className="space-y-4 p-5">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-zinc-900">Varsayılan Aydınlatma</p>
+                                    <p className="text-sm font-medium text-zinc-900">{t('survey_defaultConsent')}</p>
                                     <p className="text-xs leading-5 text-zinc-500">
                                         Yeni oluşturulan anketlerde kullanılacak KVKK başlığı, açıklaması ve onay etiketi.
                                     </p>
@@ -654,7 +656,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
 
                                 <div className="space-y-3">
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="survey-default-consent-title" className="text-xs font-medium text-zinc-600">Başlık</Label>
+                                        <Label htmlFor="survey-default-consent-title" className="text-xs font-medium text-zinc-600">{t('survey_titleLabel')}</Label>
                                         <Input
                                             id="survey-default-consent-title"
                                             className="rounded-md border-zinc-200 bg-white"
@@ -703,7 +705,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <LayoutTemplate className="h-6 w-6 text-zinc-300" />
                             </div>
                             <div className="space-y-1">
-                                <h3 className="text-base font-medium text-zinc-900">Anket Düzenleyici</h3>
+                                <h3 className="text-base font-medium text-zinc-900">{t('survey_editor')}</h3>
                                 <p className="max-w-sm text-sm text-zinc-500">
                                     Düzenlemek için soldaki listeden bir anket seçin veya yeni bir şablon ile başlayın.
                                 </p>
@@ -774,11 +776,11 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             <section className="space-y-4">
                                                 <div>
                                                     <h3 className="text-base font-semibold text-zinc-900">Genel Bilgiler</h3>
-                                                    <p className="text-sm text-zinc-500">Anketinizin temel kimliği ve sunum kanalları.</p>
+                                                    <p className="text-sm text-zinc-500">{t('survey_identityDesc')}</p>
                                                 </div>
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <div className="space-y-2 md:col-span-2">
-                                                        <Label className="text-sm font-medium text-zinc-700">Anket Başlığı</Label>
+                                                        <Label className="text-sm font-medium text-zinc-700">{t('survey_surveyTitle')}</Label>
                                                         <Input
                                                             className="rounded-md focus-visible:ring-1 focus-visible:ring-zinc-400"
                                                             value={draftSurvey.title}
@@ -786,7 +788,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         />
                                                     </div>
                                                     <div className="space-y-2 md:col-span-2">
-                                                        <Label className="text-sm font-medium text-zinc-700">İç Açıklama (Size Özel)</Label>
+                                                        <Label className="text-sm font-medium text-zinc-700">{t('survey_internalDesc')}</Label>
                                                         <Textarea
                                                             rows={2}
                                                             className="resize-none rounded-md focus-visible:ring-1 focus-visible:ring-zinc-400"
@@ -803,7 +805,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                         />
                                                     </div>
                                                     <div className="space-y-3 rounded-md border border-zinc-200 p-4 md:col-span-2">
-                                                        <Label className="text-sm font-medium text-zinc-700">Yayın Kanalları</Label>
+                                                        <Label className="text-sm font-medium text-zinc-700">{t('survey_channels')}</Label>
                                                         <div className="flex flex-wrap gap-4">
                                                             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700 transition-opacity hover:opacity-80">
                                                                 <Checkbox
@@ -841,18 +843,18 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             {/* Intro & Outro */}
                                             <section className="space-y-4">
                                                 <div>
-                                                    <h3 className="text-base font-semibold text-zinc-900">Karşılama ve Teşekkür</h3>
-                                                    <p className="text-sm text-zinc-500">Katılımcıların göreceği giriş ve bitiş ekranı metinleri.</p>
+                                                    <h3 className="text-base font-semibold text-zinc-900">{t('survey_welcomeThanks')}</h3>
+                                                    <p className="text-sm text-zinc-500">{t('survey_welcomeThanksDesc')}</p>
                                                 </div>
                                                 <div className="grid gap-4 md:grid-cols-2">
                                                     <div className="space-y-4 rounded-md border border-zinc-200 bg-white p-4">
                                                         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                                                             <span className="font-mono text-xs font-semibold text-zinc-400">01</span>
-                                                            <h4 className="text-sm font-medium text-zinc-900">Giriş Ekranı</h4>
+                                                            <h4 className="text-sm font-medium text-zinc-900">{t('survey_introScreen')}</h4>
                                                         </div>
                                                         <div className="space-y-3 pt-1">
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">Başlık</Label>
+                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('survey_titleLabel')}</Label>
                                                                 <Input
                                                                     className="rounded-md"
                                                                     value={draftSurvey.introTitle}
@@ -874,11 +876,11 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                     <div className="space-y-4 rounded-md border border-zinc-200 bg-white p-4">
                                                         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                                                             <span className="font-mono text-xs font-semibold text-zinc-400">02</span>
-                                                            <h4 className="text-sm font-medium text-zinc-900">Bitiş Ekranı</h4>
+                                                            <h4 className="text-sm font-medium text-zinc-900">{t('survey_endScreen')}</h4>
                                                         </div>
                                                         <div className="space-y-3 pt-1">
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">Başlık</Label>
+                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('survey_titleLabel')}</Label>
                                                                 <Input
                                                                     className="rounded-md"
                                                                     value={draftSurvey.thankYouTitle}
@@ -904,16 +906,16 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             {/* Consent & Contact */}
                                             <section className="space-y-4">
                                                 <div>
-                                                    <h3 className="text-base font-semibold text-zinc-900">KVKK ve İletişim</h3>
-                                                    <p className="text-sm text-zinc-500">Bu ankete özel aydınlatma metni ve iletişim toplama adımı.</p>
+                                                    <h3 className="text-base font-semibold text-zinc-900">{t('survey_kvkkContact')}</h3>
+                                                    <p className="text-sm text-zinc-500">{t('survey_kvkkContactDesc')}</p>
                                                 </div>
 
                                                 <div className="grid gap-6 md:grid-cols-2">
                                                     <div className="space-y-4 rounded-md border border-zinc-200 p-4">
-                                                        <h4 className="text-sm font-medium text-zinc-900">Aydınlatma Metni</h4>
+                                                        <h4 className="text-sm font-medium text-zinc-900">{t('survey_consentText')}</h4>
                                                         <div className="space-y-3">
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-xs text-zinc-500">Başlık</Label>
+                                                                <Label className="text-xs text-zinc-500">{t('survey_titleLabel')}</Label>
                                                                 <Input
                                                                     className="rounded-md bg-white"
                                                                     value={draftSurvey.consent.title}
@@ -942,7 +944,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
 
                                                     <div className="space-y-4 rounded-md border border-zinc-200 p-4">
                                                         <div className="flex items-center justify-between">
-                                                            <h4 className="text-sm font-medium text-zinc-900">İletişim Bilgileri Toplama</h4>
+                                                            <h4 className="text-sm font-medium text-zinc-900">{t('survey_contactCollection')}</h4>
                                                             <Switch
                                                                 checked={draftSurvey.contactCapture.enabled}
                                                                 onCheckedChange={(checked) => updateDraft("contactCapture", { ...draftSurvey.contactCapture, enabled: checked })}
@@ -959,7 +961,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                 >
                                                                     <div className="space-y-3 pt-2">
                                                                         <div className="space-y-1.5">
-                                                                            <Label className="text-xs text-zinc-500">Giriş Başlığı</Label>
+                                                                            <Label className="text-xs text-zinc-500">{t('survey_introTitle')}</Label>
                                                                             <Input
                                                                                 className="rounded-md bg-white"
                                                                                 value={draftSurvey.contactCapture.title || ""}
@@ -967,7 +969,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             />
                                                                         </div>
                                                                         <div className="space-y-1.5">
-                                                                            <Label className="text-xs text-zinc-500">Açıklama</Label>
+                                                                            <Label className="text-xs text-zinc-500">{t('survey_descriptionLabel')}</Label>
                                                                             <Input
                                                                                 className="rounded-md bg-white"
                                                                                 value={draftSurvey.contactCapture.description || ""}
@@ -1026,7 +1028,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="text-base font-semibold text-zinc-900">Sorular</h3>
-                                                        <p className="text-sm text-zinc-500">Anket sorularını buradan yönetin.</p>
+                                                        <p className="text-sm text-zinc-500">{t('survey_questionsDesc')}</p>
                                                     </div>
                                                     <Button
                                                         className="rounded-md bg-zinc-900 text-white hover:bg-zinc-800"
@@ -1111,7 +1113,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             </div>
 
                                                                             <div className="space-y-1.5 md:col-span-2">
-                                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">Alt Açıklama (Opsiyonel)</Label>
+                                                                                <Label className="text-xs text-zinc-500 uppercase tracking-wide">{t('survey_subDesc')}</Label>
                                                                                 <Textarea
                                                                                     rows={1}
                                                                                     className="min-h-[36px] resize-none rounded-md py-2 text-sm"
@@ -1177,8 +1179,8 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                         <div className="space-y-6">
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <h3 className="text-lg font-semibold text-zinc-900">İstatistikler</h3>
-                                                    <p className="text-sm text-zinc-500">Toplanan yanıtların analizi.</p>
+                                                    <h3 className="text-lg font-semibold text-zinc-900">{t('survey_stats')}</h3>
+                                                    <p className="text-sm text-zinc-500">{t('survey_statsDesc')}</p>
                                                 </div>
                                                 <Button variant="outline" size="sm" className="rounded-md" onClick={() => loadAnalytics(selectedSurveyId)} disabled={isLoadingAnalytics}>
                                                     {isLoadingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -1199,7 +1201,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                             <BarChart3 className="h-6 w-6" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">Toplam Katılım</p>
+                                                            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{t('survey_totalParticipation')}</p>
                                                             <p className="text-3xl font-bold tracking-tight text-zinc-900">{analytics.aggregate.totalResponses}</p>
                                                         </div>
                                                     </div>
@@ -1247,15 +1249,15 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                                     <p className="mt-1 text-xl font-bold text-zinc-900">{stat.numericSummary.average.toFixed(1)}</p>
                                                                                 </div>
                                                                                 <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">Yanıt Adedi</p>
+                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">{t('survey_responseCount')}</p>
                                                                                     <p className="mt-1 text-xl font-bold text-zinc-900">{stat.numericSummary.count}</p>
                                                                                 </div>
                                                                                 <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">En Düşük</p>
+                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">{t('survey_min')}</p>
                                                                                     <p className="mt-1 text-base font-semibold text-zinc-700">{stat.numericSummary.min}</p>
                                                                                 </div>
                                                                                 <div className="rounded-lg bg-zinc-50 p-3 text-center">
-                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">En Yüksek</p>
+                                                                                    <p className="text-[10px] text-zinc-500 uppercase tracking-wide">{t('survey_max')}</p>
                                                                                     <p className="mt-1 text-base font-semibold text-zinc-700">{stat.numericSummary.max}</p>
                                                                                 </div>
                                                                             </div>
@@ -1277,8 +1279,8 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                     <TabsContent value="responses" className="m-0 p-4 outline-none md:p-6">
                                         <div className="space-y-6">
                                             <div>
-                                                <h3 className="text-lg font-semibold text-zinc-900">Ham Yanıtlar</h3>
-                                                <p className="text-sm text-zinc-500">Katılımcı bazlı bireysel kayıtlar.</p>
+                                                <h3 className="text-lg font-semibold text-zinc-900">{t('survey_rawResponses')}</h3>
+                                                <p className="text-sm text-zinc-500">{t('survey_rawResponsesDesc')}</p>
                                             </div>
 
                                             {analytics?.responses?.length ? (
@@ -1321,7 +1323,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 py-12 text-center text-sm text-zinc-500">
                                                     <Users className="mb-2 h-8 w-8 text-zinc-300" />
-                                                    <p>Henüz yanıt bulunmuyor.</p>
+                                                    <p>{t('survey_noResponses')}</p>
                                                 </div>
                                             )}
                                         </div>

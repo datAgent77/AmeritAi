@@ -4,6 +4,7 @@ import * as admin from "firebase-admin";
 import { getAppBaseUrl, sendTransactionalEmail } from "@/lib/email-service";
 import { pushLeadToZoho } from "@/lib/integrations/zoho/client";
 import { createNotification } from "@/lib/notification-service";
+import { authorizeTargetAccess } from "@/lib/api-auth";
 
 const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i;
 
@@ -155,6 +156,11 @@ export async function GET(req: Request) {
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
         }
+
+        // Leads contain PII. Only the owning tenant (chatbotId === owner uid) or a
+        // super/agency admin may read them. Prevents IDOR via guessed chatbotId.
+        const access = await authorizeTargetAccess(req, chatbotId);
+        if (!access.ok) return access.response;
 
         const querySnapshot = await adminDb.collection("leads")
             .where("chatbotId", "==", chatbotId)

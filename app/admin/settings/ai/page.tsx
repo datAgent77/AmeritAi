@@ -106,6 +106,13 @@ export default function AISettingsPage() {
                 { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (High Volume/Speed)' }
             ]
         }
+        if (p === 'anthropic') {
+            return [
+                { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6 (Recommended)' },
+                { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5 (Fast/Value)' },
+                { id: 'claude-opus-4-6', name: 'Claude Opus 4.6 (Most Capable)' }
+            ]
+        }
         return []
     }
 
@@ -132,7 +139,7 @@ export default function AISettingsPage() {
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
                             <Label className="text-base">AI Provider</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div
                                     onClick={() => setProvider("openai")}
                                     className={`cursor-pointer flex flex-col items-center justify-between rounded-md border-2 p-4 hover:bg-accent hover:text-accent-foreground ${provider === 'openai' ? 'border-primary bg-accent' : 'border-muted bg-popover'}`}
@@ -143,6 +150,18 @@ export default function AISettingsPage() {
                                     </div>
                                     <span className="text-sm text-center text-muted-foreground">
                                         Industry standard. Powers GPT-4 and GPT-3.5 models.
+                                    </span>
+                                </div>
+                                <div
+                                    onClick={() => setProvider("anthropic")}
+                                    className={`cursor-pointer flex flex-col items-center justify-between rounded-md border-2 p-4 hover:bg-accent hover:text-accent-foreground ${provider === 'anthropic' ? 'border-primary bg-accent' : 'border-muted bg-popover'}`}
+                                >
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className={`w-4 h-4 rounded-full border border-primary ${provider === 'anthropic' ? 'bg-primary' : ''}`} />
+                                        <span className="text-lg font-semibold">Anthropic (Claude)</span>
+                                    </div>
+                                    <span className="text-sm text-center text-muted-foreground">
+                                        Claude models. Strong reasoning and instruction-following.
                                     </span>
                                 </div>
                                 <div

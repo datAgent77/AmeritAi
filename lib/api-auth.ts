@@ -119,3 +119,89 @@ export async function authorizeTargetAccess(
         response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
     };
 }
+
+type AuthenticatedCaller = {
+    ok: true;
+    callerUid: string;
+    email: string | null;
+};
+
+/**
+ * Requires any authenticated user (valid Firebase ID token). Returns the
+ * caller's uid and email. Use for self-service actions like starting checkout.
+ */
+export async function requireAuth(req: Request): Promise<AuthenticatedCaller | AccessDenied> {
+    const adminAuth = getAdminAuth();
+    if (!adminAuth) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 })
+        };
+    }
+
+    const token = getBearerToken(req);
+    if (!token) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+
+    try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        return { ok: true, callerUid: decodedToken.uid, email: decodedToken.email ?? null };
+    } catch {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+}
+
+/**
+ * Requires the caller to be authenticated AND hold a SUPER_ADMIN role.
+ * Use for company-owned/global resources (e.g. CMS marketing content).
+ */
+export async function requireSuperAdmin(req: Request): Promise<AccessResult> {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+
+    if (!adminAuth || !adminDb) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 })
+        };
+    }
+
+    const token = getBearerToken(req);
+    if (!token) {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+
+    let decodedToken;
+    try {
+        decodedToken = await adminAuth.verifyIdToken(token);
+    } catch {
+        return {
+            ok: false,
+            response: new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 })
+        };
+    }
+
+    const callerUid = decodedToken.uid;
+    const callerDoc = await adminDb.collection("users").doc(callerUid).get();
+    const callerRole = callerDoc.data()?.role;
+    const decodedRole = (decodedToken as any).role;
+
+    if (isSuperAdminRole(callerRole) || isSuperAdminRole(decodedRole)) {
+        return { ok: true, callerUid, isSuperAdmin: true, isAgencyAdmin: false };
+    }
+
+    return {
+        ok: false,
+        response: new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 })
+    };
+}

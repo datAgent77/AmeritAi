@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { checkRateLimitAsync, getClientIp, getRateLimitHeaders } from "@/lib/rate-limiter"
 
 export async function POST(req: Request) {
+    // Public AI endpoint -> throttle per IP to prevent cost abuse / DoS.
+    const ip = getClientIp(req)
+    const rl = await checkRateLimitAsync(`ai:context-bubble:${ip}`, 15, 60_000)
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: "Too many requests" },
+            { status: 429, headers: getRateLimitHeaders(rl) }
+        )
+    }
+
     const adminAuth = getAdminAuth()
     const adminDb = getAdminDb()
 

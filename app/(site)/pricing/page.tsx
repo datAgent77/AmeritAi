@@ -167,22 +167,22 @@ export default function PricingPage() {
                             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 text-blue-500">
                                 <Zap className="w-6 h-6" />
                             </div>
-                            <h3 className="font-semibold mb-2">Hızlı Kurulum</h3>
-                            <p className="text-sm text-muted-foreground">Dakikalar içinde kendi verilerinizle eğitin ve sitenize ekleyin.</p>
+                            <h3 className="font-semibold mb-2">{t('pricing_trust_fastTitle')}</h3>
+                            <p className="text-sm text-muted-foreground">{t('pricing_trust_fastDesc')}</p>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center mb-4 text-green-500">
                                 <ShieldCheck className="w-6 h-6" />
                             </div>
-                            <h3 className="font-semibold mb-2">Kurumsal Güvenlik</h3>
-                            <p className="text-sm text-muted-foreground">Verileriniz şifrelenir ve izniniz olmadan asla kullanılmaz.</p>
+                            <h3 className="font-semibold mb-2">{t('pricing_trust_securityTitle')}</h3>
+                            <p className="text-sm text-muted-foreground">{t('pricing_trust_securityDesc')}</p>
                         </div>
                         <div className="flex flex-col items-center">
                             <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 text-purple-500">
                                 <Headphones className="w-6 h-6" />
                             </div>
-                            <h3 className="font-semibold mb-2">7/24 Destek</h3>
-                            <p className="text-sm text-muted-foreground">Uzman ekibimiz her adımda yanınızda.</p>
+                            <h3 className="font-semibold mb-2">{t('pricing_trust_supportTitle')}</h3>
+                            <p className="text-sm text-muted-foreground">{t('pricing_trust_supportDesc')}</p>
                         </div>
                     </div>
                 </div>

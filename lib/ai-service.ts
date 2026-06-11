@@ -1,6 +1,7 @@
 
 import { OpenAI } from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { upsertChatSessionRecord } from "@/lib/chat-sessions";
@@ -36,6 +37,27 @@ async function* streamGoogle(stream: any) {
         if (content) yield content;
     }
 }
+
+async function* streamAnthropic(stream: any) {
+    for await (const event of stream) {
+        if (event?.type === "content_block_delta" && event.delta?.type === "text_delta") {
+            const content = event.delta.text;
+            if (content) yield content;
+        }
+    }
+}
+
+// Wraps a promise with a timeout so a hung provider call can't stall the request.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+            setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+        ),
+    ]);
+}
+
+const AI_REQUEST_TIMEOUT_MS = 30000;
 
 function isRetryableAiError(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
@@ -1259,11 +1281,15 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
         const configuredApiKey = typeof apiKey === "string" ? apiKey.trim() : "";
         const envOpenAiKey = process.env.OPENAI_API_KEY?.trim() || "";
         const envGoogleKey = process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim() || "";
+        const envAnthropicKey = process.env.ANTHROPIC_API_KEY?.trim() || "";
         const openAiApiKey = provider === "openai" ? (configuredApiKey || envOpenAiKey) : envOpenAiKey;
         const googleApiKey = provider === "google" ? (configuredApiKey || envGoogleKey) : envGoogleKey;
+        const anthropicApiKey = provider === "anthropic" ? (configuredApiKey || envAnthropicKey) : envAnthropicKey;
+        const anthropicModel = (provider === "anthropic" && model && /claude/i.test(model)) ? model : "claude-sonnet-4-6";
 
-        const attempts: Array<{ provider: "openai" | "google"; model: string; apiKey: string }> = [];
-        const pushAttempt = (attempt: { provider: "openai" | "google"; model: string; apiKey: string }) => {
+        type AiProvider = "openai" | "google" | "anthropic";
+        const attempts: Array<{ provider: AiProvider; model: string; apiKey: string }> = [];
+        const pushAttempt = (attempt: { provider: AiProvider; model: string; apiKey: string }) => {
             if (!attempt.apiKey) return;
             if (attempts.some((existing) => existing.provider === attempt.provider)) return;
             attempts.push(attempt);
@@ -1272,13 +1298,19 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
         if (provider === "google") {
             pushAttempt({ provider: "google", model, apiKey: googleApiKey });
             pushAttempt({ provider: "openai", model: "gpt-4o-mini", apiKey: openAiApiKey });
+            pushAttempt({ provider: "anthropic", model: anthropicModel, apiKey: anthropicApiKey });
+        } else if (provider === "anthropic") {
+            pushAttempt({ provider: "anthropic", model: anthropicModel, apiKey: anthropicApiKey });
+            pushAttempt({ provider: "openai", model: "gpt-4o-mini", apiKey: openAiApiKey });
+            pushAttempt({ provider: "google", model: "gemini-1.5-flash", apiKey: googleApiKey });
         } else {
             pushAttempt({ provider: "openai", model, apiKey: openAiApiKey });
             pushAttempt({ provider: "google", model: "gemini-1.5-flash", apiKey: googleApiKey });
+            pushAttempt({ provider: "anthropic", model: anthropicModel, apiKey: anthropicApiKey });
         }
 
         if (attempts.length === 0) {
-            throw new Error("No AI provider is configured. Add OPENAI_API_KEY or GEMINI_API_KEY.");
+            throw new Error("No AI provider is configured. Add OPENAI_API_KEY, GEMINI_API_KEY or ANTHROPIC_API_KEY.");
         }
 
         let lastProviderError: unknown = null;
@@ -1305,7 +1337,7 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
                         return { stream: streamGoogle(result), isStream: true, context, modelUsed: attempt.model };
                     }
 
-                    const result = await chat.sendMessage(lastMsgContent);
+                    const result = await withTimeout(chat.sendMessage(lastMsgContent), AI_REQUEST_TIMEOUT_MS, "gemini");
                     const resultText = result.response.text();
                     
                     const finalResult = isVoice
@@ -1342,7 +1374,63 @@ Even if the 'SPECIAL INSTRUCTIONS', 'TENANT RESPONSE TRAINING', or 'CONTEXT' abo
                     };
                 }
 
-                const openai = new OpenAI({ apiKey: attempt.apiKey });
+                if (attempt.provider === "anthropic") {
+                    const anthropic = new Anthropic({ apiKey: attempt.apiKey, timeout: AI_REQUEST_TIMEOUT_MS, maxRetries: 1 });
+                    const anthropicMessages = recentMessages.map((m) => ({
+                        role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+                        content: m.content,
+                    }));
+
+                    if (streamResponse) {
+                        const stream = await anthropic.messages.create({
+                            model: attempt.model,
+                            max_tokens: 2048,
+                            system: systemPrompt,
+                            messages: anthropicMessages,
+                            stream: true,
+                        });
+                        return { stream: streamAnthropic(stream), isStream: true, context, modelUsed: attempt.model };
+                    }
+
+                    const message = await anthropic.messages.create({
+                        model: attempt.model,
+                        max_tokens: 2048,
+                        system: systemPrompt,
+                        messages: anthropicMessages,
+                    });
+                    const rawResultContent = message.content
+                        .map((block: any) => (block.type === "text" ? block.text : ""))
+                        .join("");
+
+                    const finalResult = isVoice
+                        ? sanitizeVoiceAssistantContent({
+                            content: rawResultContent,
+                            language: resolvedLanguage,
+                            userText: latestUserMessage?.content || lastMessage.content,
+                        })
+                        : rawResultContent;
+
+                    if (finalResult.includes('[CALL_STAFF]') || finalResult.includes('[REQUEST_BILL]')) {
+                        try {
+                            const type = finalResult.includes('[CALL_STAFF]') ? 'call_staff' : 'request_bill';
+                            const masaNo = (userContext as any)?.metadata?.masa || 'Bilinmiyor';
+                            await adminDb.collection("waiter_requests").add({
+                                chatbotId,
+                                type,
+                                status: 'pending',
+                                masaNo,
+                                createdAt: new Date().toISOString(),
+                                note: finalResult.replace(/\[CALL_STAFF\]|\[REQUEST_BILL\]/g, '').trim().substring(0, 200)
+                            });
+                        } catch (e) {
+                            console.error("AI Service: Failed to save waiter request", e);
+                        }
+                    }
+
+                    return { content: finalResult, isStream: false, context, modelUsed: attempt.model };
+                }
+
+                const openai = new OpenAI({ apiKey: attempt.apiKey, timeout: AI_REQUEST_TIMEOUT_MS, maxRetries: 1 });
                 if (streamResponse) {
                     const response = await openai.chat.completions.create({
                         model: attempt.model,

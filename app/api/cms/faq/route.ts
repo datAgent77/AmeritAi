@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { requireSuperAdmin } from "@/lib/api-auth";
 import { SEED_FAQS } from "@/lib/seed-cms-data";
 
 export async function GET(req: NextRequest) {
@@ -11,22 +12,9 @@ export async function GET(req: NextRequest) {
         const snapshot = await db.collection("cms_faq").get();
         let faqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        const { searchParams } = new URL(req.url);
-        const forceReset = searchParams.get("reset") === "true";
-
-        // Re-seed if empty or forced
-        if (faqs.length === 0 || forceReset) {
-            console.log("Seeding or Re-seeding FAQs...");
-
-            // Optional: You might want to delete existing ones first to avoid duplicates if you didn't have ID checks
-            // But for now we just add. In a real scenario, we'd upsert or clean.
-            // Let's clean the old ones if they are few, to ensure fresh categories.
-            if (faqs.length > 0) {
-                const deleteBatch = db.batch();
-                snapshot.docs.forEach(doc => deleteBatch.delete(doc.ref));
-                await deleteBatch.commit();
-            }
-
+        // Auto-seed only when empty (first run). The previous `?reset=true` path
+        // allowed UNAUTHENTICATED deletion of all FAQs and has been removed.
+        if (faqs.length === 0) {
             const batch = db.batch();
             SEED_FAQS.forEach(faq => {
                 const docRef = db.collection("cms_faq").doc();
@@ -47,6 +35,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
+        const authz = await requireSuperAdmin(req);
+        if (!authz.ok) return authz.response;
+
         const db = getAdminDb();
         if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 500 });
 

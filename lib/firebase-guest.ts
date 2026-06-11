@@ -13,13 +13,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth, setPersistence, inMemoryPersistence, signInAnonymously, Auth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCUwSlqGfisUtejDfF8Snv-EzI374vcuus",
-    authDomain: "ai-assistant-22f53.firebaseapp.com",
-    projectId: "ai-assistant-22f53",
-    storageBucket: "ai-assistant-22f53.firebasestorage.app",
-    messagingSenderId: "249932268224",
-    appId: "1:249932268224:web:559d39b570c1dc18082325",
-    measurementId: "G-97SQS8BW2W"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Find existing guest app or create it

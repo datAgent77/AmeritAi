@@ -4,7 +4,7 @@ import { getAdminDb } from "@/lib/firebase-admin"
 import { generateAIResponse, saveMessageToSession } from "@/lib/ai-service"
 import { upsertChatSessionRecord } from "@/lib/chat-sessions"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
-import { checkRateLimit } from "@/lib/rate-limiter"
+import { checkRateLimitAsync } from "@/lib/rate-limiter"
 import { upsertContactGraph, upsertWebChatSession } from "@/lib/vion-web-session"
 
 vi.mock("@/lib/firebase-admin", () => ({
@@ -26,7 +26,7 @@ vi.mock("@/lib/guided-skills/engine", () => ({
 }))
 
 vi.mock("@/lib/rate-limiter", () => ({
-    checkRateLimit: vi.fn(),
+    checkRateLimitAsync: vi.fn(),
     getRateLimitHeaders: vi.fn().mockReturnValue({}),
 }))
 
@@ -71,11 +71,10 @@ function createAdminDb() {
 beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getAdminDb).mockReturnValue(createAdminDb() as any)
-    vi.mocked(checkRateLimit).mockReturnValue({
+    vi.mocked(checkRateLimitAsync).mockResolvedValue({
         allowed: true,
-        reason: null,
         remaining: 10,
-        resetAt: Date.now() + 60_000,
+        resetIn: 60_000,
     } as any)
     vi.mocked(saveMessageToSession).mockResolvedValue(undefined as any)
     vi.mocked(upsertChatSessionRecord).mockResolvedValue(undefined as any)

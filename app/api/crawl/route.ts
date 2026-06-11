@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { isSafeUrl } from "@/lib/security";
+import { checkRateLimitAsync, getClientIp, getRateLimitHeaders } from "@/lib/rate-limiter";
 
 export async function POST(req: Request) {
     try {
+        // Public endpoint -> throttle per IP to prevent abuse / SSRF-scan fan-out.
+        const ip = getClientIp(req);
+        const rl = await checkRateLimitAsync(`crawl:${ip}`, 10, 60_000);
+        if (!rl.allowed) {
+            return NextResponse.json(
+                { error: "Too many requests" },
+                { status: 429, headers: getRateLimitHeaders(rl) }
+            );
+        }
+
         const { url, selector } = await req.json();
 
         if (!url) {

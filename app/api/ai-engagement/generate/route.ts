@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getAdminDb } from "@/lib/firebase-admin"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { checkRateLimitAsync, getClientIp, getRateLimitHeaders } from "@/lib/rate-limiter"
 
 // Intent types the AI can detect
 type Intent = 'browsing' | 'high_interest' | 'comparison' | 'support_needed' | 'exit_intent' | 'unknown'
@@ -41,6 +42,16 @@ interface GenerateResponse {
 }
 
 export async function POST(req: Request) {
+    // Public AI endpoint -> throttle per IP to prevent cost abuse / DoS.
+    const ip = getClientIp(req)
+    const rl = await checkRateLimitAsync(`ai:engagement:${ip}`, 10, 60_000)
+    if (!rl.allowed) {
+        return NextResponse.json(
+            { error: "Too many requests" },
+            { status: 429, headers: getRateLimitHeaders(rl) }
+        )
+    }
+
     const adminDb = getAdminDb()
 
     if (!adminDb) {

@@ -55,11 +55,11 @@ function initAdmin() {
 
                 admin.initializeApp({
                     credential: admin.credential.cert({
-                        projectId: projectId || 'ai-assistant-22f53',
+                        projectId: projectId,
                         clientEmail: clientEmail,
                         privateKey: formattedPrivKey,
                     }),
-                    storageBucket: 'ai-assistant-22f53.firebasestorage.app',
+                    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
                 });
                 initializedApp = true;
             } else {
