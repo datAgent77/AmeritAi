@@ -49,7 +49,7 @@ export interface PrivacyRequiredConsent {
 export interface PrivacyCompliancePayload {
     enabled: boolean
     mode: "hybrid"
-    frameworks: Array<"kvkk" | "gdpr">
+    frameworks: Array<"kvkk" | "gdpr" | "ccpa" | "tcpa">
     language: PrivacyLanguage
     shortNoticeByLanguage: Record<PrivacyLanguage, string>
     documentsByLanguage: Record<PrivacyLanguage, Record<PrivacyDocumentType, PrivacyComplianceDocument>>
@@ -280,7 +280,8 @@ export function resolvePrivacyCompliancePayload(input: {
     return {
         enabled,
         mode: "hybrid",
-        frameworks: ["kvkk", "gdpr"],
+        // US-first default. TR tenants can switch to ["kvkk", "gdpr"] in settings.
+        frameworks: ["ccpa", "gdpr"],
         language,
         shortNoticeByLanguage,
         documentsByLanguage,

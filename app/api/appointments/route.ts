@@ -187,6 +187,8 @@ export async function POST(req: Request) {
             sessionId,
             source,
             status,
+            tcpaOptIn,
+            tcpaConsentText,
         } = body
 
         if (!chatbotId || !date || !time) {
@@ -385,6 +387,14 @@ export async function POST(req: Request) {
             createdAt,
             updatedAt: createdAt,
             confirmedAt: appointmentStatus === "confirmed" ? createdAt : null,
+            // TCPA messaging consent record (US) — auditable opt-in snapshot for SMS/WhatsApp reminders.
+            tcpaConsent: typeof tcpaOptIn === "boolean"
+                ? {
+                    optIn: tcpaOptIn,
+                    text: typeof tcpaConsentText === "string" ? tcpaConsentText : "",
+                    at: createdAt,
+                }
+                : null,
         }
 
         const docRef = await adminDb.collection("appointments").add(appointmentData)

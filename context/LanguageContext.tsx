@@ -15,7 +15,7 @@ const LANGUAGE_COOKIE_NAME = 'language';
 const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 function isSupportedLanguage(value: string | null | undefined): value is Language {
-    return value === 'en' || value === 'tr';
+    return value === 'en' || value === 'tr' || value === 'es';
 }
 
 function getCookieLanguage(): Language | null {

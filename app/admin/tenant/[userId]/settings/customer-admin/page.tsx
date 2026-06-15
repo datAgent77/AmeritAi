@@ -279,9 +279,9 @@ export default function CustomerAdminPage() {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Plan ve Abonelik Yönetimi</h1>
+                <h1 className="text-3xl font-bold tracking-tight text-zinc-900">{t('caTitle')}</h1>
                 <p className="text-muted-foreground mt-2">
-                    Müşterinin abonelik, plan ve fatura süreçlerini yönetin.
+                    {t('caSubtitle')}
                 </p>
             </div>
 
@@ -292,7 +292,7 @@ export default function CustomerAdminPage() {
                 <Card className="lg:col-span-1 border border-gray-200 shadow-sm bg-white overflow-hidden relative">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wide text-xs">
-                            Müşteri Bilgileri
+                            {t('customerInfo')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6 relative z-10">
@@ -301,7 +301,7 @@ export default function CustomerAdminPage() {
                                 {userInfo?.displayName?.[0] || userInfo?.email?.[0]?.toUpperCase() || 'U'}
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-lg text-zinc-900">{userInfo?.displayName || 'İsimsiz Kullanıcı'}</span>
+                                <span className="font-bold text-lg text-zinc-900">{userInfo?.displayName || t('unnamedUser')}</span>
                                 <span className="text-sm text-muted-foreground">{userInfo?.email}</span>
                             </div>
                         </div>
@@ -312,7 +312,7 @@ export default function CustomerAdminPage() {
                                     <Calendar size={16} />
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground">Kayıt Tarihi</div>
+                                    <div className="text-xs text-muted-foreground">{t('registrationDate')}</div>
                                     <div className="font-medium text-zinc-900">{formatDate(userInfo?.createdAt)}</div>
                                 </div>
                             </div>
@@ -322,9 +322,9 @@ export default function CustomerAdminPage() {
                                     <CheckCircle2 size={16} />
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground">Durum</div>
+                                    <div className="text-xs text-muted-foreground">{t('status')}</div>
                                     <Badge variant="outline" className={cn("mt-0.5 font-medium border-0 px-2 py-0.5 bg-green-100 text-green-700", subscription.isFrozen && "bg-red-100 text-red-700")}>
-                                        {subscription.isFrozen ? "Dondurulmuş" : "Aktif"}
+                                        {subscription.isFrozen ? t('frozen') : t('active')}
                                     </Badge>
                                 </div>
                             </div>
@@ -334,7 +334,7 @@ export default function CustomerAdminPage() {
                                     <Hash size={16} />
                                 </div>
                                 <div>
-                                    <div className="text-xs text-muted-foreground">Kullanıcı ID</div>
+                                    <div className="text-xs text-muted-foreground">{t('userIdLabel')}</div>
                                     <div className="font-mono text-xs text-zinc-600 truncate max-w-[180px]" title={userId}>{userId}</div>
                                 </div>
                             </div>
@@ -348,15 +348,15 @@ export default function CustomerAdminPage() {
                          <div className="flex justify-between items-start">
                              <div>
                                 <CardTitle className="text-base font-medium text-zinc-400 uppercase tracking-wide text-xs mb-1">
-                                    Aktif Paket
+                                    {t('activePackage')}
                                 </CardTitle>
                                 <div className="flex items-end gap-3">
                                     <h2 className="text-4xl font-bold text-white capitalize">{currentPlanLabel}</h2>
                                     {subscription.status === 'trial' && (
-                                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 mb-1.5 hover:bg-blue-500/30">Deneme Sürümü</Badge>
+                                        <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/50 mb-1.5 hover:bg-blue-500/30">{t('trialVersion')}</Badge>
                                     )}
                                     {subscription.prioritySupport && (
-                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/50 mb-1.5">Öncelikli Destek</Badge>
+                                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/50 mb-1.5">{t('prioritySupport')}</Badge>
                                     )}
                                 </div>
                              </div>
@@ -378,25 +378,25 @@ export default function CustomerAdminPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                              {/* Features List */}
                              <div className="space-y-4">
-                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Paket Özellikleri</h3>
+                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">{t('planFeatures')}</h3>
                                 <ul className="space-y-2">
                                     {planConfig?.modules?.included?.map((module: string) => {
                                         const moduleTranslations: Record<string, string> = {
-                                            generalChatbot: "Genel Chatbot",
-                                            knowledgeBase: "AI Eğitim Kaynakları",
-                                            leadCollection: "Müşteri Bilgi Toplama",
-                                            proactiveMessaging: "Proaktif Mesajlaşma",
-                                            productCatalog: "Ürün Kataloğu",
-                                            digitalWaiter: "Dijital Garson",
-                                            salesOptimization: "Satış Optimizasyonu",
-                                            visualDiagnosis: "Görsel Teşhis",
-                                            generalAssistant: "Genel Asistan",
-                                            knowledgeEducation: "Bilgi Eğitimi",
-                                            salesCatalog: "Satış Kataloğu",
-                                            voiceAppointments: "Sesli Randevu",
-                                            aiCopywriter: "AI Metin Yazarı",
-                                            emailMarketing: "E-posta Pazarlama",
-                                            all: "Tüm Özellikler"
+                                            generalChatbot: t('featGeneralChatbot'),
+                                            knowledgeBase: t('featKnowledgeBase'),
+                                            leadCollection: t('featLeadCollection'),
+                                            proactiveMessaging: t('featProactiveMessaging'),
+                                            productCatalog: t('featProductCatalog'),
+                                            digitalWaiter: t('featDigitalWaiter'),
+                                            salesOptimization: t('featSalesOptimization'),
+                                            visualDiagnosis: t('featVisualDiagnosis'),
+                                            generalAssistant: t('featGeneralAssistant'),
+                                            knowledgeEducation: t('featKnowledgeEducation'),
+                                            salesCatalog: t('featSalesCatalog'),
+                                            voiceAppointments: t('featVoiceAppointments'),
+                                            aiCopywriter: t('featAiCopywriter'),
+                                            emailMarketing: t('featEmailMarketing'),
+                                            all: t('allFeatures')
                                         }
 
                                         if (module === 'all') return (
@@ -404,7 +404,7 @@ export default function CustomerAdminPage() {
                                                 <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
                                                     <Check size={10} className="text-white" />
                                                 </div>
-                                                <span className="capitalize">Tüm Özellikler</span>
+                                                <span className="capitalize">{t('allFeatures')}</span>
                                             </li>
                                         )
                                         return (
@@ -419,14 +419,14 @@ export default function CustomerAdminPage() {
                                         )
                                     })}
                                     {(!planConfig?.modules?.included || planConfig.modules.included.length === 0) && (
-                                        <li className="text-sm text-zinc-500">Özel özellik tanımlanmamış.</li>
+                                        <li className="text-sm text-zinc-500">{t('noCustomFeature')}</li>
                                     )}
                                 </ul>
                              </div>
 
                              {/* Limits Summary */}
                              <div className="space-y-4">
-                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Kullanım Limitleri</h3>
+                                <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">{t('usageLimits')}</h3>
                                 
                                 <div className="space-y-3">
                                     <div className="space-y-1">
@@ -434,7 +434,7 @@ export default function CustomerAdminPage() {
                                             <span className="text-zinc-400">Mesaj Limiti</span>
                                             <span className="text-white font-medium">
                                                 {(subscription.messageLimitOverride || planConfig?.limits.messageLimit) === 'unlimited' 
-                                                    ? `${resourceUsage.messageCount} / Sınırsız` 
+                                                    ? `${resourceUsage.messageCount} / ${t('unlimited')}`
                                                     : `${resourceUsage.messageCount} / ${subscription.messageLimitOverride || planConfig?.limits.messageLimit || 0}`}
                                             </span>
                                         </div>
@@ -449,13 +449,13 @@ export default function CustomerAdminPage() {
                                             className="h-1.5 bg-white/10 [&>div]:bg-indigo-500" 
                                         />
                                         <div className="text-[10px] text-zinc-500 text-right">
-                                            {resourceUsage.messageCount} mesaj gönderildi
+                                            {resourceUsage.messageCount} {t('messagesSent')}
                                         </div>
                                     </div>
 
                                      <div className="space-y-1">
                                         <div className="flex justify-between text-xs">
-                                            <span className="text-zinc-400">AI Eğitim Kaynağı Dökümanı</span>
+                                            <span className="text-zinc-400">{t('aiTrainingDocs')}</span>
                                             <span className="text-white font-medium">
                                                 {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} Adet
                                             </span>
@@ -470,13 +470,13 @@ export default function CustomerAdminPage() {
                                             className="h-1.5 bg-white/10 [&>div]:bg-emerald-500" 
                                         />
                                         <div className="text-[10px] text-zinc-500 text-right">
-                                            {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} kullanıldı
+                                            {resourceUsage.knowledgeFiles} / {planConfig?.limits.knowledge?.files || 0} {t('used')}
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs">
-                                            <span className="text-zinc-400">Web Sayfası Tarama</span>
+                                            <span className="text-zinc-400">{t('webPageCrawl')}</span>
                                             <span className="text-white font-medium">
                                                 {resourceUsage.knowledgeWebsites} / {planConfig?.limits.knowledge?.websites || 0} Sayfa
                                             </span>
@@ -491,7 +491,7 @@ export default function CustomerAdminPage() {
                                             className="h-1.5 bg-white/10 [&>div]:bg-amber-500" 
                                         />
                                         <div className="text-[10px] text-zinc-500 text-right">
-                                            {resourceUsage.knowledgeWebsites} / {planConfig?.limits.knowledge?.websites || 0} kullanıldı
+                                            {resourceUsage.knowledgeWebsites} / {planConfig?.limits.knowledge?.websites || 0} {t('used')}
                                         </div>
                                     </div>
                                 </div>
@@ -508,21 +508,21 @@ export default function CustomerAdminPage() {
                         value="plan" 
                         className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
                     >
-                        Plan ve Ücretlendirme
+                        {t('planAndPricing')}
                     </TabsTrigger>
                     {SHOW_BILLING && (
                         <TabsTrigger 
                             value="billing" 
                             className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
                         >
-                            Faturalama Bilgileri
+                            {t('billingInfoTab')}
                         </TabsTrigger>
                     )}
                     <TabsTrigger 
                         value="admin" 
                         className="rounded-full border-b-2 border-transparent data-[state=active]:border-black data-[state=active]:bg-transparent data-[state=active]:shadow-none px-6 py-3 font-medium"
                     >
-                        Yönetici Ayarları
+                        {t('adminSettings')}
                     </TabsTrigger>
                 </TabsList>
 
@@ -532,10 +532,10 @@ export default function CustomerAdminPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Zap className="w-5 h-5" />
-                                Plan Durumu
+                                {t('planStatus')}
                             </CardTitle>
                             <CardDescription>
-                                Müşterinin aktif planını ve deneme süresi detaylarını buradan yönetebilirsiniz.
+                                {t('caPlanManageDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-8">
@@ -543,7 +543,7 @@ export default function CustomerAdminPage() {
                                 {/* Plan Selection */}
                                 <div className="space-y-4">
                                      <div className="space-y-2">
-                                        <Label>Plan Seçimi</Label>
+                                        <Label>{t('planSelection')}</Label>
                                         <Select
                                             value={normalizedSubscriptionPlanId}
                                             onValueChange={(value) => setSubscription({ ...subscription, planId: value })}
@@ -560,12 +560,12 @@ export default function CustomerAdminPage() {
                                             </SelectContent>
                                         </Select>
                                         <p className="text-xs text-muted-foreground">
-                                            Plan değişikliği anında uygulanır ve limitler güncellenir.
+                                            {t('planChangeImmediate')}
                                         </p>
                                      </div>
 
                                      <div className="space-y-2">
-                                        <Label>Faturalama Durumu</Label>
+                                        <Label>{t('billingStatusLabel')}</Label>
                                         <Select
                                             value={subscription.billingStatus}
                                             onValueChange={(value) => {
@@ -600,12 +600,12 @@ export default function CustomerAdminPage() {
                                 <div className="p-6 bg-zinc-50 rounded-xl space-y-4 border border-zinc-100">
                                     <div className="flex items-center gap-2 mb-2">
                                         <Clock className="w-4 h-4 text-zinc-500" />
-                                        <h4 className="font-semibold text-sm text-zinc-700">Deneme Süresi Ayarları</h4>
+                                        <h4 className="font-semibold text-sm text-zinc-700">{t('trialSettings')}</h4>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs">Deneme Süresi (Gün)</Label>
+                                            <Label className="text-xs">{t('trialDurationDays')}</Label>
                                             <Input 
                                                 type="number" 
                                                 value={subscription.trialDays} 
@@ -614,7 +614,7 @@ export default function CustomerAdminPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-xs">Bitiş Tarihi</Label>
+                                            <Label className="text-xs">{t('endDate')}</Label>
                                             <Input 
                                                 type="date" 
                                                 value={subscription.trialEndsAt?.split('T')[0] || ''} 
@@ -626,9 +626,9 @@ export default function CustomerAdminPage() {
                                     
                                     <div className="flex items-center justify-between pt-2 border-t border-zinc-200 mt-4">
                                         <div className="space-y-0.5">
-                                            <div className="text-sm font-medium text-zinc-900">Deneme Modu (Trial Mode)</div>
+                                            <div className="text-sm font-medium text-zinc-900">{t('trialMode')}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                {`Aktif edildiğinde abonelik durumu 'trial' olarak ayarlanır.`}
+                                                {t('trialStatusNote')}
                                             </div>
                                         </div>
                                         <Switch 
@@ -668,32 +668,32 @@ export default function CustomerAdminPage() {
                         <CardHeader>
                              <CardTitle className="flex items-center gap-2">
                                 <CreditCard className="w-5 h-5" />
-                                Fatura Detayları
+                                {t('billingDetails')}
                             </CardTitle>
                             <CardDescription>
-                                Müşterinin fatura adres ve ödeme bilgilerini düzenleyin.
+                                {t('caBillingDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label>Fatura Adresi</Label>
-                                    <Input  
-                                        value={billingInfo.billingAddress || ''} 
+                                    <Label>{t('billingAddress')}</Label>
+                                    <Input
+                                        value={billingInfo.billingAddress || ''}
                                         onChange={(e) => setBillingInfo({ ...billingInfo, billingAddress: e.target.value })}
-                                        placeholder="Açık adres giriniz..."
+                                        placeholder={t('enterFullAddress')}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Vergi Numarası / T.C.</Label>
-                                    <Input 
-                                        value={billingInfo.taxId || ''} 
+                                    <Label>{t('taxNumber')}</Label>
+                                    <Input
+                                        value={billingInfo.taxId || ''}
                                         onChange={(e) => setBillingInfo({ ...billingInfo, taxId: e.target.value })}
-                                        placeholder="Vergi No veya T.C. Kimlik No"
+                                        placeholder={t('taxIdPlaceholder')}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Ödeme Yöntemi</Label>
+                                    <Label>{t('paymentMethod')}</Label>
                                     <Select
                                         value={billingInfo.paymentMethod || 'credit_card'}
                                         onValueChange={(value) => setBillingInfo({ ...billingInfo, paymentMethod: value })}
@@ -702,9 +702,9 @@ export default function CustomerAdminPage() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="credit_card">Kredi Kartı (Stripe)</SelectItem>
-                                            <SelectItem value="bank_transfer">Banka Havalesi</SelectItem>
-                                            <SelectItem value="other">Diğer</SelectItem>
+                                            <SelectItem value="credit_card">{t('creditCardStripe')}</SelectItem>
+                                            <SelectItem value="bank_transfer">{t('bankTransfer')}</SelectItem>
+                                            <SelectItem value="other">{t('other')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -713,11 +713,11 @@ export default function CustomerAdminPage() {
                             <Separator />
 
                             <div className="space-y-4">
-                                <h4 className="font-medium text-sm text-zinc-900">Otomatik Yenileme ve Döngü</h4>
+                                <h4 className="font-medium text-sm text-zinc-900">{t('autoRenewalCycle')}</h4>
                                 <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-lg border border-zinc-100">
                                     <div className="space-y-0.5">
-                                        <div className="text-sm font-medium text-zinc-900">Otomatik Yenileme</div>
-                                        <div className="text-xs text-muted-foreground">Periyot sonunda abonelik otomatik yenilenir.</div>
+                                        <div className="text-sm font-medium text-zinc-900">{t('autoRenewal')}</div>
+                                        <div className="text-xs text-muted-foreground">{t('autoRenewalDesc')}</div>
                                     </div>
                                     <Switch 
                                         checked={!subscription.cancelAtPeriodEnd} 
@@ -732,11 +732,11 @@ export default function CustomerAdminPage() {
                                 <div className="flex items-center justify-between">
                                     <h4 className="font-medium text-sm text-zinc-900 flex items-center gap-2">
                                         <History className="w-4 h-4 text-muted-foreground" />
-                                        Fatura Geçmişi
+                                        {t('billingHistory')}
                                     </h4>
                                     <Button variant="outline" size="sm" className="h-8 text-xs">
                                         <ArrowUpRight className="w-3 h-3 mr-1" />
-                                        Tümünü İndir
+                                        {t('downloadAll')}
                                     </Button>
                                 </div>
                                 
@@ -744,25 +744,25 @@ export default function CustomerAdminPage() {
                                     <table className="w-full text-sm text-left">
                                         <thead className="bg-zinc-50 border-b border-zinc-200 text-xs uppercase text-zinc-500 font-medium">
                                             <tr>
-                                                <th className="px-4 py-3">Tarih</th>
-                                                <th className="px-4 py-3">Tutar</th>
-                                                <th className="px-4 py-3">Durum</th>
-                                                <th className="px-4 py-3 text-right">İşlem</th>
+                                                <th className="px-4 py-3">{t('date')}</th>
+                                                <th className="px-4 py-3">{t('amount')}</th>
+                                                <th className="px-4 py-3">{t('status')}</th>
+                                                <th className="px-4 py-3 text-right">{t('action')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-100">
                                             {/* Mock Data for Billing History */}
                                             {[
-                                                { date: '2024-01-01', amount: 'Gizlendi', status: 'Paid' },
-                                                { date: '2023-12-01', amount: 'Gizlendi', status: 'Paid' },
-                                                { date: '2023-11-01', amount: 'Gizlendi', status: 'Paid' },
+                                                { date: '2024-01-01', amount: t('hidden'), status: 'Paid' },
+                                                { date: '2023-12-01', amount: t('hidden'), status: 'Paid' },
+                                                { date: '2023-11-01', amount: t('hidden'), status: 'Paid' },
                                             ].map((invoice, i) => (
                                                 <tr key={i} className="hover:bg-zinc-50/50 transition-colors bg-white">
                                                     <td className="px-4 py-3 text-zinc-600 font-mono text-xs">{invoice.date}</td>
                                                     <td className="px-4 py-3 font-medium text-zinc-900">{invoice.amount}</td>
                                                     <td className="px-4 py-3">
                                                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-normal">
-                                                            {invoice.status === 'Paid' ? 'Ödendi' : invoice.status}
+                                                            {invoice.status === 'Paid' ? t('paid') : invoice.status}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
@@ -787,32 +787,32 @@ export default function CustomerAdminPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Shield className="w-5 h-5" />
-                                Yönetici Kontrolleri
+                                {t('adminControls')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label>Mesaj Limiti (Override)</Label>
+                                        <Label>{t('messageLimitOverride')}</Label>
                                         <div className="flex gap-2">
                                             <Input 
                                                 type="number" 
                                                 value={subscription.messageLimitOverride || ''} 
                                                 onChange={(e) => setSubscription({ ...subscription, messageLimitOverride: e.target.value ? parseInt(e.target.value) : undefined })}
-                                                placeholder={`Varsayılan: ${planConfig?.limits.messageLimit || 0}`}
+                                                placeholder={`${t('defaultPrefix')}${planConfig?.limits.messageLimit || 0}`}
                                             />
                                         </div>
-                                        <p className="text-xs text-muted-foreground">Boş bırakılırsa plan varsayılanı kullanılır.</p>
+                                        <p className="text-xs text-muted-foreground">{t('emptyUsesPlanDefault')}</p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Yönetici Notları</Label>
+                                        <Label>{t('adminNotes')}</Label>
                                         <textarea 
                                             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                             value={subscription.adminNotes || ''} 
                                             onChange={(e) => setSubscription({ ...subscription, adminNotes: e.target.value })}
-                                            placeholder="Bu müşteri hakkında özel notlar..."
+                                            placeholder={t('adminNotesPlaceholder')}
                                         />
                                     </div>
                                 </div>
@@ -820,8 +820,8 @@ export default function CustomerAdminPage() {
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-100">
                                         <div className="space-y-0.5">
-                                            <div className="text-sm font-medium text-red-900">Hesabı Dondur</div>
-                                            <div className="text-xs text-red-600/80">Giriş ve API erişimini geçici olarak durdurur.</div>
+                                            <div className="text-sm font-medium text-red-900">{t('freezeAccount')}</div>
+                                            <div className="text-xs text-red-600/80">{t('freezeAccountDesc')}</div>
                                         </div>
                                         <Switch 
                                             checked={subscription.isFrozen || false} 
@@ -831,8 +831,8 @@ export default function CustomerAdminPage() {
 
                                     <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-100">
                                         <div className="space-y-0.5">
-                                            <div className="text-sm font-medium text-amber-900">Öncelikli Destek</div>
-                                            <div className="text-xs text-amber-700/80">Müşteri ticketlarına öncelik tanınır.</div>
+                                            <div className="text-sm font-medium text-amber-900">{t('prioritySupport')}</div>
+                                            <div className="text-xs text-amber-700/80">{t('prioritySupportDesc')}</div>
                                         </div>
                                         <Switch 
                                             checked={subscription.prioritySupport || false} 
@@ -857,10 +857,10 @@ export default function CustomerAdminPage() {
                     {isSaving ? (
                         <>
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                            Kaydediliyor...
+                            {t('saving')}
                         </>
                     ) : (
-                        "Ayarları Kaydet"
+                        t('saveSettings')
                     )}
                 </Button>
             </div>

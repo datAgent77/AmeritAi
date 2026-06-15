@@ -207,6 +207,36 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
             agentEmail: "E-posta",
             existingAgents: "Mevcut Agentlar",
             save: "Kaydet",
+            waitMessageTitle: "Bekleme Mesajı",
+            waitMessageDescription: "Kullanıcı canlı desteğe aktarıldığında chat ekranında görünecek olan bilgilendirme mesajı.",
+            customWaitMessageLabel: "Özel Bekleme Mesajı",
+            customWaitMessagePlaceholder: "Örn: Talebinizi aldık, ekibimiz birazdan sizinle iletişime geçecek.",
+            customWaitMessageHint: "Boş bırakılırsa sistemin varsayılan standart mesajı gösterilir.",
+            businessHoursTitle: "Mesai Saatleri",
+            businessHoursDescription: "Temsilciye aktarma talebi geldiğinde mesai saati dışında olup olmadığını kontrol et.",
+            businessHoursToggleLabel: "Mesai saati kontrolü",
+            businessHoursToggleNote: "Aktif olduğunda widget, temsilci taleplerinde mesai dışı bilgisini kullanıcıya söyler.",
+            startLabel: "Başlangıç",
+            endLabel: "Bitiş",
+            timezoneLabel: "Saat Dilimi",
+            activeDaysLabel: "Aktif Günler",
+            notificationSettingsTitle: "Bildirim ayarları",
+            notificationSettingsDescription: "E-posta belirtilmezse Omni escalation email, lead notification email veya tenant e-postası sırayla fallback olarak kullanılır.",
+            notificationEmailLabel: "Bildirim e-postası",
+            emailNotificationLabel: "E-posta bildirimi",
+            emailNotificationNote: "Callback oluştuğunda e-posta gönder.",
+            inAppNotificationLabel: "Uygulama içi bildirim",
+            inAppNotificationNote: "Tenant panelinde okunabilir bildirim oluştur.",
+            triggerUserLabel: "Kullanıcı temsilci isterse",
+            triggerUserNote: "Açık temsilci taleplerini otomatik yakala.",
+            triggerAssistantNote: "Guided veya assistant handoff aksiyonlarını işle.",
+            whatsappNotificationLabel: "WhatsApp Bildirimi",
+            whatsappNotificationNote: "Aktarım taleplerini WhatsApp'a linkli bildirim olarak gönder.",
+            whatsappNumberPlaceholder: "WhatsApp Numaranız (+90...)",
+            instagramNotificationLabel: "Instagram Bildirimi",
+            instagramNotificationNote: "Aktarım taleplerini Instagram DM olarak gönder.",
+            instagramPlaceholder: "Instagram Kullanıcı Adı/ID",
+            days: { Mon: "Pazartesi", Tue: "Salı", Wed: "Çarşamba", Thu: "Perşembe", Fri: "Cuma", Sat: "Cumartesi", Sun: "Pazar" } as Record<string, string>,
         }
         : {
             pageTitle: "Agent and Handoff Management",
@@ -253,6 +283,36 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
             agentEmail: "Email",
             existingAgents: "Current Agents",
             save: "Save",
+            waitMessageTitle: "Wait Message",
+            waitMessageDescription: "The informational message shown on the chat screen when the user is transferred to live support.",
+            customWaitMessageLabel: "Custom Wait Message",
+            customWaitMessagePlaceholder: "e.g. We received your request, our team will contact you shortly.",
+            customWaitMessageHint: "If left empty, the system's default standard message is shown.",
+            businessHoursTitle: "Business Hours",
+            businessHoursDescription: "When a handoff request arrives, check whether it is outside business hours.",
+            businessHoursToggleLabel: "Business hours check",
+            businessHoursToggleNote: "When enabled, the widget tells the user about out-of-hours status on agent requests.",
+            startLabel: "Start",
+            endLabel: "End",
+            timezoneLabel: "Time Zone",
+            activeDaysLabel: "Active Days",
+            notificationSettingsTitle: "Notification settings",
+            notificationSettingsDescription: "If no email is specified, the Omni escalation email, lead notification email, or tenant email are used as fallback in order.",
+            notificationEmailLabel: "Notification email",
+            emailNotificationLabel: "Email notification",
+            emailNotificationNote: "Send an email when a callback is created.",
+            inAppNotificationLabel: "In-app notification",
+            inAppNotificationNote: "Create a readable notification in the tenant panel.",
+            triggerUserLabel: "When the user requests an agent",
+            triggerUserNote: "Automatically capture explicit agent requests.",
+            triggerAssistantNote: "Process guided or assistant handoff actions.",
+            whatsappNotificationLabel: "WhatsApp Notification",
+            whatsappNotificationNote: "Send handoff requests as a linked notification to WhatsApp.",
+            whatsappNumberPlaceholder: "Your WhatsApp Number",
+            instagramNotificationLabel: "Instagram Notification",
+            instagramNotificationNote: "Send handoff requests as an Instagram DM.",
+            instagramPlaceholder: "Instagram Username/ID",
+            days: { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" } as Record<string, string>,
         }
 
     useEffect(() => {
@@ -853,39 +913,39 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Bekleme Mesajı</CardTitle>
+                            <CardTitle>{i18n.waitMessageTitle}</CardTitle>
                             <CardDescription>
-                                Kullanıcı canlı desteğe aktarıldığında chat ekranında görünecek olan bilgilendirme mesajı.
+                                {i18n.waitMessageDescription}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-2">
-                                <Label htmlFor="custom-wait-message">Özel Bekleme Mesajı</Label>
+                                <Label htmlFor="custom-wait-message">{i18n.customWaitMessageLabel}</Label>
                                 <Textarea
                                     id="custom-wait-message"
                                     value={state.customWaitMessage}
                                     onChange={(event) => setState((prev) => ({ ...prev, customWaitMessage: event.target.value }))}
-                                    placeholder="Örn: Talebinizi aldık, ekibimiz birazdan sizinle iletişime geçecek."
+                                    placeholder={i18n.customWaitMessagePlaceholder}
                                     className="min-h-[100px]"
                                 />
-                                <p className="text-sm text-muted-foreground">Boş bırakılırsa sistemin varsayılan standart mesajı gösterilir.</p>
+                                <p className="text-sm text-muted-foreground">{i18n.customWaitMessageHint}</p>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Mesai Saatleri</CardTitle>
+                            <CardTitle>{i18n.businessHoursTitle}</CardTitle>
                             <CardDescription>
-                                Temsilciye aktarma talebi geldiğinde mesai saati dışında olup olmadığını kontrol et.
+                                {i18n.businessHoursDescription}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="flex items-center justify-between rounded-xl border p-4">
                                 <div>
-                                    <Label htmlFor="handoff-business-hours" className="text-base font-medium">Mesai saati kontrolü</Label>
+                                    <Label htmlFor="handoff-business-hours" className="text-base font-medium">{i18n.businessHoursToggleLabel}</Label>
                                     <p className="mt-1 text-sm text-muted-foreground">
-                                        Aktif olduğunda widget, temsilci taleplerinde mesai dışı bilgisini kullanıcıya söyler.
+                                        {i18n.businessHoursToggleNote}
                                     </p>
                                 </div>
                                 <Switch
@@ -897,7 +957,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
 
                             <div className="grid gap-4 md:grid-cols-3">
                                 <div className="space-y-2">
-                                    <Label htmlFor="handoff-business-start">Başlangıç</Label>
+                                    <Label htmlFor="handoff-business-start">{i18n.startLabel}</Label>
                                     <Input
                                         id="handoff-business-start"
                                         type="time"
@@ -907,7 +967,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="handoff-business-end">Bitiş</Label>
+                                    <Label htmlFor="handoff-business-end">{i18n.endLabel}</Label>
                                     <Input
                                         id="handoff-business-end"
                                         type="time"
@@ -917,7 +977,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="handoff-business-timezone">Saat Dilimi</Label>
+                                    <Label htmlFor="handoff-business-timezone">{i18n.timezoneLabel}</Label>
                                     <Input
                                         id="handoff-business-timezone"
                                         value={state.businessHoursTimezone}
@@ -929,7 +989,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                             </div>
 
                             <div className="space-y-3">
-                                <Label>Aktif Günler</Label>
+                                <Label>{i18n.activeDaysLabel}</Label>
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                     {DAY_OPTIONS.map((day) => {
                                         const checked = state.businessDays.includes(day.code)
@@ -947,7 +1007,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                                         }))
                                                     }}
                                                 />
-                                                <span className="text-sm">{day.label}</span>
+                                                <span className="text-sm">{i18n.days[day.code] || day.label}</span>
                                             </label>
                                         )
                                     })}
@@ -958,14 +1018,14 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Bildirim ayarlari</CardTitle>
+                            <CardTitle>{i18n.notificationSettingsTitle}</CardTitle>
                             <CardDescription>
-                                E-posta belirtilmezse Omni escalation email, lead notification email veya tenant e-postasi sirayla fallback olarak kullanilir.
+                                {i18n.notificationSettingsDescription}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor="handoff-email">Bildirim e-postasi</Label>
+                                <Label htmlFor="handoff-email">{i18n.notificationEmailLabel}</Label>
                                 <Input
                                     id="handoff-email"
                                     value={state.notificationEmail}
@@ -977,8 +1037,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
-                                        <Label htmlFor="notify-email">E-posta bildirimi</Label>
-                                        <p className="mt-1 text-sm text-muted-foreground">Callback olustugunda e-posta gonder.</p>
+                                        <Label htmlFor="notify-email">{i18n.emailNotificationLabel}</Label>
+                                        <p className="mt-1 text-sm text-muted-foreground">{i18n.emailNotificationNote}</p>
                                     </div>
                                     <Switch
                                         id="notify-email"
@@ -989,8 +1049,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
 
                                 <div className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
-                                        <Label htmlFor="notify-inapp">Uygulama ici bildirim</Label>
-                                        <p className="mt-1 text-sm text-muted-foreground">Tenant panelinde okunabilir bildirim olustur.</p>
+                                        <Label htmlFor="notify-inapp">{i18n.inAppNotificationLabel}</Label>
+                                        <p className="mt-1 text-sm text-muted-foreground">{i18n.inAppNotificationNote}</p>
                                     </div>
                                     <Switch
                                         id="notify-inapp"
@@ -1001,8 +1061,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
 
                                 <div className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
-                                        <Label htmlFor="trigger-user">Kullanici temsilci isterse</Label>
-                                        <p className="mt-1 text-sm text-muted-foreground">Acik temsilci taleplerini otomatik yakala.</p>
+                                        <Label htmlFor="trigger-user">{i18n.triggerUserLabel}</Label>
+                                        <p className="mt-1 text-sm text-muted-foreground">{i18n.triggerUserNote}</p>
                                     </div>
                                     <Switch
                                         id="trigger-user"
@@ -1014,7 +1074,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                 <div className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <Label htmlFor="trigger-assistant">Assistant escalation</Label>
-                                        <p className="mt-1 text-sm text-muted-foreground">Guided veya assistant handoff aksiyonlarini isle.</p>
+                                        <p className="mt-1 text-sm text-muted-foreground">{i18n.triggerAssistantNote}</p>
                                     </div>
                                     <Switch
                                         id="trigger-assistant"
@@ -1028,8 +1088,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                 <div className="flex flex-col gap-4 rounded-xl border p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="notify-wa">WhatsApp Bildirimi</Label>
-                                            <p className="mt-1 text-sm text-muted-foreground">Aktarım taleplerini WhatsApp&apos;a linkli bildirim olarak gönder.</p>
+                                            <Label htmlFor="notify-wa">{i18n.whatsappNotificationLabel}</Label>
+                                            <p className="mt-1 text-sm text-muted-foreground">{i18n.whatsappNotificationNote}</p>
                                         </div>
                                         <Switch
                                             id="notify-wa"
@@ -1039,7 +1099,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                     </div>
                                     {state.notifyWhatsApp && (
                                         <Input
-                                            placeholder="WhatsApp Numaranız (+90...)"
+                                            placeholder={i18n.whatsappNumberPlaceholder}
                                             value={state.whatsappNumber}
                                             onChange={(event) => setState((prev) => ({ ...prev, whatsappNumber: event.target.value }))}
                                         />
@@ -1049,8 +1109,8 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                 <div className="flex flex-col gap-4 rounded-xl border p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="notify-ig">Instagram Bildirimi</Label>
-                                            <p className="mt-1 text-sm text-muted-foreground">Aktarım taleplerini Instagram DM olarak gönder.</p>
+                                            <Label htmlFor="notify-ig">{i18n.instagramNotificationLabel}</Label>
+                                            <p className="mt-1 text-sm text-muted-foreground">{i18n.instagramNotificationNote}</p>
                                         </div>
                                         <Switch
                                             id="notify-ig"
@@ -1060,7 +1120,7 @@ export function HumanHandoffSettingsForm({ targetUserId, mode = "combined" }: Hu
                                     </div>
                                     {state.notifyInstagram && (
                                         <Input
-                                            placeholder="Instagram Kullanıcı Adı/ID"
+                                            placeholder={i18n.instagramPlaceholder}
                                             value={state.instagramAccountId}
                                             onChange={(event) => setState((prev) => ({ ...prev, instagramAccountId: event.target.value }))}
                                         />

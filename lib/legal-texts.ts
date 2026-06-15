@@ -167,17 +167,20 @@ export const legalTexts = {
       `
     },
     privacy: {
-      title: "Privacy Policy (GDPR Compliant)",
+      title: "Privacy Policy (GDPR & CCPA)",
       lead: "Your privacy rights regarding personal data processing.",
       content: `
+          <!-- LEGAL REVIEW REQUIRED: This document is a structural placeholder.
+               US (CCPA/CPRA) and TCPA wording below MUST be reviewed and finalized
+               by a qualified US attorney before go-live. Do not treat as legal advice. -->
           <h3>1. DATA CONTROLLER</h3>
           <p><strong>Userex Design Studio</strong> is the Controller of your personal data.<br/>Address: Caferağa Mh. Şifa Sk. No:19, Kadıköy / Istanbul / Turkey</p>
 
           <h3>2. DATA WE COLLECT</h3>
-          <p>We collect Identity Data (Name), Contact Data (Email), and Technical Data (IP, Browser Info) to provide the service and improve user experience.</p>
+          <p>We collect Identity Data (Name), Contact Data (Email, Phone), and Technical Data (IP, Browser Info) to provide the service and improve user experience.</p>
 
           <h3>3. COMPLIANCE WITH GDPR</h3>
-          <p>If you are a resident of the EEU, you have the following rights under the General Data Protection Regulation (GDPR):</p>
+          <p>If you are a resident of the EEA, you have the following rights under the General Data Protection Regulation (GDPR):</p>
           <ul>
             <li><strong>Right to Access:</strong> Ask for a copy of your data.</li>
             <li><strong>Right to Rectification:</strong> Ask us to fix wrong data.</li>
@@ -185,6 +188,20 @@ export const legalTexts = {
             <li><strong>Right to Data Portability:</strong> Get your data in a readable format.</li>
             <li><strong>Right to Object:</strong> Object to processing of your personal data.</li>
           </ul>
+
+          <h3>3a. CALIFORNIA PRIVACY RIGHTS (CCPA / CPRA)</h3>
+          <p><!-- LEGAL REVIEW REQUIRED --> If you are a California resident, you have the following rights under the California Consumer Privacy Act (CCPA), as amended by the CPRA:</p>
+          <ul>
+            <li><strong>Right to Know:</strong> Request the categories and specific pieces of personal information we have collected.</li>
+            <li><strong>Right to Delete:</strong> Request deletion of personal information we collected.</li>
+            <li><strong>Right to Correct:</strong> Request correction of inaccurate personal information.</li>
+            <li><strong>Right to Opt-Out:</strong> Opt out of the "sale" or "sharing" of your personal information. We do <strong>not</strong> sell your personal information. <em>[Confirm with counsel; add a "Do Not Sell or Share My Personal Information" link if applicable.]</em></li>
+            <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of these rights.</li>
+          </ul>
+          <p><!-- LEGAL REVIEW REQUIRED --> To exercise these rights, contact us at info@getvion.com. <em>[Add verifiable-request process and response timelines per CCPA.]</em></p>
+
+          <h3>3b. SMS / MESSAGING CONSENT (TCPA)</h3>
+          <p><!-- LEGAL REVIEW REQUIRED --> By providing your phone number and opting in, you consent to receive messages (SMS/WhatsApp) related to your request. Message and data rates may apply. Consent is not a condition of purchase. You can opt out at any time by replying STOP. <em>[Final TCPA opt-in/opt-out wording must be confirmed by counsel.]</em></p>
 
           <h3>4. DATA RETENTION</h3>
           <p>We retain your personal data only for as long as necessary to fulfill the purposes we collected it for, including for the purposes of satisfying any legal, accounting, or reporting requirements.</p>

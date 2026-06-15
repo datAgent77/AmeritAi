@@ -257,11 +257,11 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
     kvkkConsent: {
         id: 'kvkkConsent',
         name: {
-            en: 'Data Privacy & KVKK',
+            en: 'Data Privacy & Consent',
             tr: 'KVKK ve Veri Gizliliği'
         },
         description: {
-            en: 'Require data privacy consent before starting a chat',
+            en: 'Require a data privacy consent before starting a chat',
             tr: 'Sohbet başlamadan önce KVKK ve veri gizliliği onayı isteyin'
         },
         icon: 'ShieldCheck',
@@ -276,7 +276,7 @@ export const MODULES_REGISTRY: Record<ModuleId, ModuleDefinition> = {
         ],
         legacyFirestoreField: 'enableKvkkConsent',
         longDescription: {
-            en: 'Ensure your chat widget complies with data protection regulations. The KVKK module prompts users to review and accept your privacy policy before they can send their first message. You can customize the consent text or use the global default.',
+            en: 'Ensure your chat widget complies with data protection regulations (e.g. CCPA/CPRA, GDPR). This module prompts users to review and accept your privacy policy before they can send their first message. You can customize the consent text or use the global default.',
             tr: 'Sohbet widget\'ınızın veri koruma düzenlemelerine uygun olduğundan emin olun. KVKK modülü, kullanıcıların ilk mesajlarını göndermeden önce gizlilik politikanızı incelemesini ve kabul etmesini sağlar. Onay metnini özelleştirebilir veya global varsayılanı kullanabilirsiniz.'
         },
         features: [

@@ -1323,6 +1323,8 @@ function ChatbotContainerContent() {
                     time: bookingData.time,
                     type: bookingData.type,
                     notes: bookingData.notes,
+                    tcpaOptIn: trimmedPhone ? bookingData.tcpaOptIn === true : undefined,
+                    tcpaConsentText: trimmedPhone && bookingData.tcpaOptIn === true ? t('tcpaConsentLabel') : undefined,
                 }),
             })
 

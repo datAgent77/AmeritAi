@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { chatbotId, name, email, phone, source, customFields, sessionId } = body;
+        const { chatbotId, name, email, phone, source, customFields, sessionId, tcpaOptIn, tcpaConsentText } = body;
 
         if (!chatbotId) {
             return NextResponse.json({ error: "Chatbot ID is required" }, { status: 400 });
@@ -34,6 +34,14 @@ export async function POST(req: Request) {
             source: source || "Pre-chat Form",
             customFields: customFields || {},
             sessionId: sessionId || null,
+            // TCPA messaging consent record (US). Stored as an auditable opt-in snapshot.
+            tcpaConsent: typeof tcpaOptIn === "boolean"
+                ? {
+                    optIn: tcpaOptIn,
+                    text: typeof tcpaConsentText === "string" ? tcpaConsentText : "",
+                    at: new Date().toISOString(),
+                }
+                : null,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 

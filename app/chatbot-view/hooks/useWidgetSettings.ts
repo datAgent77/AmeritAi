@@ -96,8 +96,8 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     privacyCompliance: {
         enabled: false,
         mode: "hybrid",
-        frameworks: ["kvkk", "gdpr"],
-        language: "tr",
+        frameworks: ["ccpa", "gdpr"],
+        language: "en",
         shortNoticeByLanguage: {
             tr: "",
             en: "",
@@ -297,7 +297,7 @@ export function useWidgetSettings(chatbotId: string, searchParams: any, setLangu
                             : {
                                 enabled: false,
                                 mode: "hybrid",
-                                frameworks: ["kvkk", "gdpr"],
+                                frameworks: ["ccpa", "gdpr"],
                                 language: "en",
                                 shortNoticeByLanguage: { tr: "", en: "", de: "", es: "" },
                                 documentsByLanguage: { tr: {}, en: {}, de: {}, es: {} } as any,

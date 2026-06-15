@@ -56,10 +56,13 @@ function applyApiCors(request: NextRequest, response: NextResponse, pathname: st
     response.headers.set('Access-Control-Allow-Headers', CORS_HEADERS);
 }
 
-function isSupportedLanguage(value: string | undefined): value is 'en' | 'tr' {
-    return value === 'en' || value === 'tr';
+function isSupportedLanguage(value: string | undefined): value is 'en' | 'tr' | 'es' {
+    return value === 'en' || value === 'tr' || value === 'es';
 }
 
+// Geo only auto-assigns en/tr (TR => tr, otherwise en). Spanish is opt-in via
+// explicit user selection (large US Hispanic base can't be geo-detected reliably),
+// and a persisted 'es' cookie is respected by isSupportedLanguage above.
 function resolveGeoLanguage(request: NextRequest): 'en' | 'tr' {
     const country = (request.headers.get('x-vercel-ip-country') || '').toUpperCase();
     return country === 'TR' ? 'tr' : 'en';
@@ -131,7 +134,7 @@ export function middleware(request: NextRequest) {
             });
         }
 
-        response.headers.set('Content-Language', resolvedLanguage === 'tr' ? 'tr-TR' : 'en-US');
+        response.headers.set('Content-Language', resolvedLanguage === 'tr' ? 'tr-TR' : resolvedLanguage === 'es' ? 'es-US' : 'en-US');
     }
 
     // === CORS SEGMENTATION ===

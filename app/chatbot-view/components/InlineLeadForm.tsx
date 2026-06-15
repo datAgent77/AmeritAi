@@ -47,6 +47,11 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead", privac
     
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle')
     const [privacyChecked, setPrivacyChecked] = useState(false)
+    // TCPA opt-in: shown when a phone number is collected. Voluntary (consent
+    // cannot be a condition of service), default unchecked, recorded with the lead.
+    const phoneCollected = config.phoneEnabled !== false
+    const [tcpaChecked, setTcpaChecked] = useState(false)
+    const tcpaConsentLabel = t('tcpaConsentLabel')
 
     const getIcon = (field: any) => {
         const label = (field.label || '').toLowerCase();
@@ -128,6 +133,9 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead", privac
             await onSubmit({
                 ...formData,
                 privacyConsentAccepted: privacyConsent?.required ? privacyChecked : undefined,
+                // TCPA messaging consent — only meaningful when a phone number was collected.
+                tcpaOptIn: phoneCollected && phone ? tcpaChecked : undefined,
+                tcpaConsentText: phoneCollected && phone && tcpaChecked ? tcpaConsentLabel : undefined,
             }, { source: "inline", flow: variant })
             setStatus('success')
         } catch (_error) {
@@ -278,7 +286,19 @@ export function InlineLeadForm({ onSubmit, settings, t, variant = "lead", privac
                     </button>
                 </div>
             )}
-            
+
+            {phoneCollected && tcpaConsentLabel !== 'tcpaConsentLabel' && (
+                <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-2.5 text-[11px] leading-4 text-gray-600">
+                    <input
+                        type="checkbox"
+                        checked={tcpaChecked}
+                        onChange={(event) => setTcpaChecked(event.target.checked)}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300"
+                    />
+                    <span>{tcpaConsentLabel}</span>
+                </label>
+            )}
+
             <button
                 type="submit"
                 disabled={status === 'submitting'}

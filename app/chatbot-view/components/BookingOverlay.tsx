@@ -172,6 +172,18 @@ export function BookingOverlay({
                         </div>
                     )}
 
+                    {t('tcpaConsentLabel') !== 'tcpaConsentLabel' && (
+                        <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs leading-5 text-gray-600 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300">
+                            <input
+                                type="checkbox"
+                                checked={bookingData.tcpaOptIn === true}
+                                onChange={(event) => setBookingData({ ...bookingData, tcpaOptIn: event.target.checked })}
+                                className="mt-1 h-4 w-4 rounded border-gray-300"
+                            />
+                            <span>{t('tcpaConsentLabel')}</span>
+                        </label>
+                    )}
+
                     <div className="flex gap-3">
                         <button
                             type="button"

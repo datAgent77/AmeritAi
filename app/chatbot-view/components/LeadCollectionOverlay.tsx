@@ -44,6 +44,9 @@ export function LeadCollectionOverlay({
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [privacyChecked, setPrivacyChecked] = useState(false)
+    // TCPA opt-in (US messaging consent) — shown when a phone number is collected.
+    const [tcpaChecked, setTcpaChecked] = useState(false)
+    const tcpaConsentLabel = t('tcpaConsentLabel')
 
     if (!show) return null
 
@@ -136,6 +139,8 @@ export function LeadCollectionOverlay({
         await onSubmit({
             ...formData,
             privacyConsentAccepted: privacyConsent?.required ? privacyChecked : undefined,
+            tcpaOptIn: phoneEnabled && formData.phone ? tcpaChecked : undefined,
+            tcpaConsentText: phoneEnabled && formData.phone && tcpaChecked ? tcpaConsentLabel : undefined,
         })
     }
 
@@ -375,6 +380,18 @@ export function LeadCollectionOverlay({
                             </button>
                             {errors.privacyConsent && <p className="text-xs text-red-500">{errors.privacyConsent}</p>}
                         </div>
+                    )}
+
+                    {phoneEnabled && tcpaConsentLabel !== 'tcpaConsentLabel' && (
+                        <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs leading-5 text-gray-600 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300">
+                            <input
+                                type="checkbox"
+                                checked={tcpaChecked}
+                                onChange={(event) => setTcpaChecked(event.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-gray-300"
+                            />
+                            <span>{tcpaConsentLabel}</span>
+                        </label>
                     )}
 
                     <button

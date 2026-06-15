@@ -116,6 +116,9 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
     const [errorMsg, setErrorMsg] = useState("")
     const [, setAppointmentId] = useState("")
     const [privacyChecked, setPrivacyChecked] = useState(false)
+    // TCPA opt-in (US messaging consent) — appointment reminders via SMS/WhatsApp.
+    const [tcpaChecked, setTcpaChecked] = useState(false)
+    const tcpaConsentLabel = t('tcpaConsentLabel')
 
     const set = (key: keyof BookingFormData, value: string) =>
         setForm((prev) => ({ ...prev, [key]: value }))
@@ -204,6 +207,8 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                     time: form.time,
                     type: form.type,
                     notes: form.notes,
+                    tcpaOptIn: trimmedPhone ? tcpaChecked : undefined,
+                    tcpaConsentText: trimmedPhone && tcpaChecked ? tcpaConsentLabel : undefined,
                 }),
             })
 
@@ -361,6 +366,18 @@ export function InlineBookingForm({ chatbotId, sessionId, settings, t, onSuccess
                         {t("privacyNoticeOpen") === "privacyNoticeOpen" ? "Aydınlatma Metni" : t("privacyNoticeOpen")}
                     </button>
                 </div>
+            )}
+
+            {tcpaConsentLabel !== 'tcpaConsentLabel' && (
+                <label className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-2.5 text-[11px] leading-4 text-gray-600">
+                    <input
+                        type="checkbox"
+                        checked={tcpaChecked}
+                        onChange={(event) => setTcpaChecked(event.target.checked)}
+                        className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300"
+                    />
+                    <span>{tcpaConsentLabel}</span>
+                </label>
             )}
 
             <button

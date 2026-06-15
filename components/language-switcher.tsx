@@ -13,6 +13,7 @@ import { Globe } from "lucide-react"
 
 const languages = [
     { value: "en", label: "English" },
+    { value: "es", label: "Español" },
     { value: "tr", label: "Türkçe" },
 ]
 
