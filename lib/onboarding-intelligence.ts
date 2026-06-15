@@ -19,8 +19,8 @@
  * └─────────────────────────────────────────────────────────────┘
  */
 
-import { SectorId, getDefaultModulesForSector } from './modules-registry';
-import { getPlan, getPlanIncludedModules, isModuleIncludedInPlan, normalizePlanId } from './pricing-config';
+import { SectorId, getDefaultModulesForSector, isModuleAvailableForSector } from './modules-registry';
+import { getPlan, getPlanDefaultModules, isModuleIncludedInPlan, normalizePlanId } from './pricing-config';
 
 // =============================================================================
 // TYPES
@@ -193,25 +193,27 @@ function getPlanType(planId: string): PlanType {
 
 function buildDefaultModules(context: OnboardingContext, planType: PlanType): string[] {
     const plan = getPlan(context.planId);
+
+    // Sector defaults are only seeded when the plan actually includes them.
+    // This prevents enabling premium/out-of-plan modules by default
+    // (e.g. Starter + restaurant should NOT auto-enable the premium digitalWaiter).
+    const sectorDefaults = getDefaultModulesForSector(context.sectorId)
+        .filter(moduleId => isModuleIncludedInPlan(context.planId, moduleId));
+
     if (!plan) {
-        // Fallback to sector defaults if plan not found
-        return getDefaultModulesForSector(context.sectorId);
+        // Plan not found: fall back to sector defaults, still filtered for sector compatibility.
+        return getDefaultModulesForSector(context.sectorId)
+            .filter(moduleId => isModuleAvailableForSector(moduleId, context.sectorId));
     }
 
-    // Get modules included in the plan
-    const planIncludedModules = getPlanIncludedModules(context.planId);
-    
-    // Get sector default modules
-    const sectorDefaults = getDefaultModulesForSector(context.sectorId);
-    
-    // Combine: plan included modules + sector defaults that are compatible
-    // Remove duplicates and return
-    const allModules = new Set<string>([
-        ...planIncludedModules,
-        ...sectorDefaults
-    ]);
+    // Use the plan's curated default-enabled set (NOT the full `included` list).
+    // `included` only means "available in this plan"; `defaultEnabled` is what should be ON.
+    const planDefaults = getPlanDefaultModules(context.planId);
 
-    return Array.from(allModules);
+    // Combine plan defaults + in-plan sector defaults, dedupe, then drop anything
+    // that the tenant's sector does not support.
+    return Array.from(new Set<string>([...planDefaults, ...sectorDefaults]))
+        .filter(moduleId => isModuleAvailableForSector(moduleId as any, context.sectorId));
 }
 
 function getSectorGuidance(planType: PlanType, lang: 'en' | 'tr'): string {
