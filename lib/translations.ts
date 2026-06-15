@@ -773,6 +773,7 @@ export const translations = {
         sending: "Sending...",
         infoReceived: "Your information has been received. Thank you!",
         leadThankYou: "Thank you {name}, we received your information. Our team will contact you shortly.",
+        leadFormFilled: "I've filled in my contact details.",
         
         // Lead Collection Overlay
         getStarted: "Let's Get Started",
@@ -2538,6 +2539,7 @@ export const translations = {
         sending: "Gönderiliyor...",
         infoReceived: "Bilgileriniz alındı, teşekkürler!",
         leadThankYou: "Teşekkürler {name}, bilgilerinizi aldım. Ekibimiz sizinle en kısa sürede iletişime geçecektir.",
+        leadFormFilled: "İletişim bilgilerimi doldurdum.",
 
         // Lead Collection Overlay
         getStarted: "Hoş Geldiniz",

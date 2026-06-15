@@ -1222,7 +1222,9 @@ function ChatbotContainerContent() {
 
                 if (submitSource === "inline") {
                     // Inline form submit finalizes a pending handoff on backend if one exists.
-                    guardedSendMessage("İletişim bilgilerimi doldurdum.", false, undefined, undefined, null)
+                    // Localize the trigger message to the active conversation language so the
+                    // assistant keeps replying in that language (was hardcoded Turkish before).
+                    guardedSendMessage(t('leadFormFilled'), false, undefined, undefined, null)
                 } else {
                     // Overlay formlar için mevcut statik teşekkür mesajı
                     const leadName = String(leadPayload?.name || "").trim()
