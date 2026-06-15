@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { NotificationBell } from "@/components/notification-bell"
 import { useLanguage } from "@/context/LanguageContext"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { ProductLauncher } from "@/components/product-launcher"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -106,6 +107,7 @@ export function SiteHeader({
                 />
             </div>
             <div className="ml-auto flex items-center gap-2">
+                <LanguageSwitcher />
                 {showProductLauncher ? <ProductLauncher targetUserId={tenantIdFromPath || undefined} /> : null}
                 {showNotifications ? <NotificationBell /> : null}
                 {showWidgetTest ? (
