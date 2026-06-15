@@ -112,8 +112,8 @@ export default function TenantAccountSettingsPage() {
         }
         if (!applicationAccess.chatbot && !applicationAccess.omniChannel && !applicationAccess.cookieConsent) {
             toast({
-                title: "Hata",
-                description: "En az bir uygulama açık kalmalıdır.",
+                title: t('error'),
+                description: t('atLeastOneAppRequired'),
                 variant: "destructive"
             })
             return
@@ -167,8 +167,8 @@ export default function TenantAccountSettingsPage() {
         const next = { ...applicationAccess, [key]: checked }
         if (!next.chatbot && !next.omniChannel && !next.cookieConsent) {
             toast({
-                title: "Hata",
-                description: "En az bir uygulama açık kalmalıdır.",
+                title: t('error'),
+                description: t('atLeastOneAppRequired'),
                 variant: "destructive"
             })
             return
@@ -255,9 +255,9 @@ export default function TenantAccountSettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Uygulama Erişimleri</CardTitle>
+                    <CardTitle>{t('appAccess')}</CardTitle>
                     <CardDescription>
-                        Bu tenant hesabının Vion, Omni ve Cookie uygulamalarına erişimini yönetin.
+                        {t('appAccessDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -265,17 +265,17 @@ export default function TenantAccountSettingsPage() {
                         {
                             key: "chatbot" as const,
                             title: "Vion",
-                            description: "Console, web widget ve chatbot yönetimi.",
+                            description: t('appAccessChatbotDesc'),
                         },
                         {
                             key: "omniChannel" as const,
                             title: "Omni",
-                            description: "Omni kanal operasyonları ve çok kanallı AI workspace.",
+                            description: t('appAccessOmniDesc'),
                         },
                         {
                             key: "cookieConsent" as const,
                             title: "Cookie",
-                            description: "Çerez yönetimi, consent kayıtları ve CMP ayarları.",
+                            description: t('appAccessCookieDesc'),
                         },
                     ].map((item) => (
                         <div key={item.key} className="flex items-center justify-between gap-4 rounded-lg border p-4">

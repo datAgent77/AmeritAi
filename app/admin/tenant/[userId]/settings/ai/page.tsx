@@ -13,6 +13,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, Bot, Settings2, Sparkles, Zap, DollarSign, Globe } from "lucide-react"
 
@@ -26,23 +27,24 @@ interface ModelOption {
 
 const MODELS: Record<string, ModelOption[]> = {
     openai: [
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', inputCost: '$0.15', outputCost: '$0.60', badge: '🏆 En Ekonomik' },
-        { id: 'gpt-4o', name: 'GPT-4o', inputCost: '$3.00', outputCost: '$10.00', badge: 'Dengeli' },
-        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', inputCost: '$0.50', outputCost: '$1.50', badge: 'Klasik' },
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', inputCost: '$0.15', outputCost: '$0.60', badge: 'badgeMostEconomical' },
+        { id: 'gpt-4o', name: 'GPT-4o', inputCost: '$3.00', outputCost: '$10.00', badge: 'badgeBalanced' },
+        { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', inputCost: '$0.50', outputCost: '$1.50', badge: 'badgeClassic' },
     ],
     google: [
-        { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash-8B', inputCost: '$0.0375', outputCost: '$0.15', badge: '🏆 En Ucuz' },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', inputCost: '$0.075', outputCost: '$0.30', badge: 'Hızlı' },
+        { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash-8B', inputCost: '$0.0375', outputCost: '$0.15', badge: 'badgeCheapest' },
+        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', inputCost: '$0.075', outputCost: '$0.30', badge: 'fast' },
     ]
 }
 
 const PROVIDERS = [
-    { id: 'openai', name: 'OpenAI', description: 'GPT-4o modelleri' },
-    { id: 'google', name: 'Google Gemini', description: 'En düşük maliyetli' },
+    { id: 'openai', name: 'OpenAI', description: 'providerOpenaiDesc' },
+    { id: 'google', name: 'Google Gemini', description: 'lowestCost' },
 ]
 
 export default function TenantAISettingsPage() {
     const { user } = useAuth()
+    const { t } = useLanguage()
     const { toast } = useToast()
     const params = useParams()
     const chatbotId = params.userId as string
@@ -117,12 +119,12 @@ export default function TenantAISettingsPage() {
             })
 
             if (res.ok) {
-                toast({ title: "Kaydedildi", description: "AI yapılandırması başarıyla güncellendi." })
+                toast({ title: t('saved'), description: t('aiConfigSaved') })
             } else {
                 throw new Error("Failed to save")
             }
         } catch (error) {
-            toast({ title: "Hata", description: "Ayarlar kaydedilemedi.", variant: "destructive" })
+            toast({ title: t('error'), description: t('settingsSaveFailed'), variant: "destructive" })
         } finally {
             setIsSaving(false)
         }
@@ -153,8 +155,8 @@ export default function TenantAISettingsPage() {
                     <Bot className="w-8 h-8 text-primary" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">AI Yapılandırması</h1>
-                    <p className="text-muted-foreground">Bu kiracı için özel yapay zeka ayarları.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">{t('aiConfiguration')}</h1>
+                    <p className="text-muted-foreground">{t('aiConfigPageDesc')}</p>
                 </div>
             </div>
 
@@ -163,18 +165,18 @@ export default function TenantAISettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Settings2 className="w-5 h-5" />
-                            Model Seçimi
+                            {t('modelSelection')}
                         </CardTitle>
                         <CardDescription>
-                            Bu kiracı için hangi AI sağlayıcı ve modelinin kullanılacağını seçin.
+                            {t('modelSelectionDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
-                                <Label className="text-base">Global Varsayılanları Kullan</Label>
+                                <Label className="text-base">{t('useGlobalDefaults')}</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Açık olduğunda, sistem genelindeki AI ayarları kullanılır.
+                                    {t('useGlobalDefaultsDesc')}
                                 </p>
                             </div>
                             <Switch
@@ -188,24 +190,24 @@ export default function TenantAISettingsPage() {
                             <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <Globe className="w-5 h-5 text-primary" />
-                                    <span className="font-semibold text-primary">Aktif Global Ayar</span>
+                                    <span className="font-semibold text-primary">{t('activeGlobalSetting')}</span>
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">Sağlayıcı</p>
+                                        <p className="text-sm text-muted-foreground">{t('providerLabel')}</p>
                                         <p className="font-medium">{globalProviderInfo?.name || globalConfig.provider}</p>
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm text-muted-foreground">Model</p>
+                                        <p className="text-sm text-muted-foreground">{t('modelLabel')}</p>
                                         <p className="font-medium">{globalModelInfo?.name || globalConfig.model}</p>
                                     </div>
                                     {globalModelInfo && (
                                         <div className="flex-1">
-                                            <p className="text-sm text-muted-foreground">Maliyet</p>
+                                            <p className="text-sm text-muted-foreground">{t('cost')}</p>
                                             <p className="font-medium text-sm">
-                                                <span className="text-green-600">Giriş: {globalModelInfo.inputCost}</span>
+                                                <span className="text-green-600">{t('inputLabel')} {globalModelInfo.inputCost}</span>
                                                 {' / '}
-                                                <span className="text-blue-600">Çıkış: {globalModelInfo.outputCost}</span>
+                                                <span className="text-blue-600">{t('outputLabel')} {globalModelInfo.outputCost}</span>
                                             </p>
                                         </div>
                                     )}
@@ -217,7 +219,7 @@ export default function TenantAISettingsPage() {
                             <div className="space-y-6 pt-4 border-t">
                                 {/* Provider Selection */}
                                 <div className="space-y-4">
-                                    <Label className="text-base">AI Sağlayıcısı</Label>
+                                    <Label className="text-base">{t('aiProvider')}</Label>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         {PROVIDERS.map(p => (
                                             <div
@@ -233,7 +235,7 @@ export default function TenantAISettingsPage() {
                                                     <span className="text-lg font-semibold">{p.name}</span>
                                                 </div>
                                                 <span className="text-sm text-center text-muted-foreground">
-                                                    {p.description}
+                                                    {t(p.description)}
                                                 </span>
                                             </div>
                                         ))}
@@ -242,7 +244,7 @@ export default function TenantAISettingsPage() {
 
                                 {/* Model Selection with Pricing */}
                                 <div className="space-y-4">
-                                    <Label className="text-base">Model Seçimi</Label>
+                                    <Label className="text-base">{t('modelSelection')}</Label>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {MODELS[provider]?.map(m => (
                                             <div
@@ -257,19 +259,19 @@ export default function TenantAISettingsPage() {
                                                     </div>
                                                     {m.badge && (
                                                         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                                            {m.badge}
+                                                            {t(m.badge)}
                                                         </span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-4 mt-3 text-sm">
                                                     <div className="flex items-center gap-1 text-muted-foreground">
                                                         <Zap className="w-3 h-3" />
-                                                        <span>Giriş:</span>
+                                                        <span>{t('inputLabel')}</span>
                                                         <span className="font-medium text-foreground">{m.inputCost}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1 text-muted-foreground">
                                                         <Sparkles className="w-3 h-3" />
-                                                        <span>Çıkış:</span>
+                                                        <span>{t('outputLabel')}</span>
                                                         <span className="font-medium text-foreground">{m.outputCost}</span>
                                                     </div>
                                                 </div>
@@ -286,11 +288,11 @@ export default function TenantAISettingsPage() {
                                     <div className="rounded-lg bg-muted/50 p-4">
                                         <div className="flex items-center gap-2 text-sm">
                                             <DollarSign className="w-4 h-4 text-green-600" />
-                                            <span className="font-medium">Seçili Model:</span>
+                                            <span className="font-medium">{t('selectedModelLabel')}</span>
                                             <span>{selectedModel.name}</span>
                                             <span className="text-muted-foreground">•</span>
                                             <span className="text-muted-foreground">
-                                                Giriş {selectedModel.inputCost} / Çıkış {selectedModel.outputCost} per 1M token
+                                                {t('inputLabel')} {selectedModel.inputCost} / {t('outputLabel')} {selectedModel.outputCost} per 1M token
                                             </span>
                                         </div>
                                     </div>
@@ -302,7 +304,7 @@ export default function TenantAISettingsPage() {
                         <Button type="submit" disabled={isSaving}>
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             <Save className="mr-2 h-4 w-4" />
-                            Kaydet
+                            {t('save')}
                         </Button>
                     </div>
                 </Card>

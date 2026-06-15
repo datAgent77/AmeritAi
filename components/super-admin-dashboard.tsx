@@ -153,20 +153,22 @@ export function SuperAdminDashboard() {
 
     const actionItems = [
         {
-            title: "Pasif hesapları gözden geçir",
-            description: `${inactiveTenants} tenant şu anda pasif görünüyor.`,
+            title: t('actionReviewInactiveTitle'),
+            description: t('actionReviewInactiveDesc').replace('{count}', String(inactiveTenants)),
             href: "/admin/end-users",
             tone: inactiveTenants > 0 ? "warning" : "success",
         },
         {
-            title: "Chatbot kapsamını artır",
-            description: `${stats.totalTenants} tenant için ${stats.totalChatbots} chatbot kayıtlı.`,
+            title: t('actionIncreaseCoverageTitle'),
+            description: t('actionIncreaseCoverageDesc')
+                .replace('{bots}', String(stats.totalChatbots))
+                .replace('{tenants}', String(stats.totalTenants)),
             href: "/admin/end-users",
             tone: chatbotCoverage >= 100 ? "success" : "neutral",
         },
         {
-            title: "Partner kanalını kontrol et",
-            description: `${agencyAdmins} aktif partner yöneticisi listeleniyor.`,
+            title: t('actionCheckPartnerTitle'),
+            description: t('actionCheckPartnerDesc').replace('{count}', String(agencyAdmins)),
             href: "/admin/agencies",
             tone: "neutral",
         },
@@ -236,8 +238,8 @@ export function SuperAdminDashboard() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle className="text-base">Hesap Sağlığı</CardTitle>
-                                <CardDescription>Tenant aktivasyon durumu</CardDescription>
+                                <CardTitle className="text-base">{t('accountHealth')}</CardTitle>
+                                <CardDescription>{t('tenantActivationStatus')}</CardDescription>
                             </div>
                             <Gauge className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -245,7 +247,7 @@ export function SuperAdminDashboard() {
                     <CardContent className="space-y-5">
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Aktivasyon oranı</span>
+                                <span className="text-muted-foreground">{t('activationRate')}</span>
                                 <span className="font-medium">{activationRate}%</span>
                             </div>
                             <Progress value={activationRate} className="h-2" />
@@ -254,14 +256,14 @@ export function SuperAdminDashboard() {
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <UserCheck className="h-4 w-4 text-emerald-600" />
-                                    Aktif
+                                    {t('active')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{stats.activeTenants}</div>
                             </div>
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <UserX className="h-4 w-4 text-amber-600" />
-                                    Pasif
+                                    {t('inactive')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{inactiveTenants}</div>
                             </div>
@@ -273,8 +275,8 @@ export function SuperAdminDashboard() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle className="text-base">Kullanım Kapsamı</CardTitle>
-                                <CardDescription>Chatbot ve konuşma yoğunluğu</CardDescription>
+                                <CardTitle className="text-base">{t('usageScope')}</CardTitle>
+                                <CardDescription>{t('chatbotConversationDensity')}</CardDescription>
                             </div>
                             <TrendingUp className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -283,20 +285,20 @@ export function SuperAdminDashboard() {
                         <div className="flex items-center justify-between rounded-md border p-3">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Bot className="h-4 w-4" />
-                                Tenant başına chatbot
+                                {t('chatbotsPerTenant')}
                             </div>
                             <span className="text-lg font-semibold">{formatRatio(stats.totalChatbots / Math.max(stats.totalTenants, 1))}</span>
                         </div>
                         <div className="flex items-center justify-between rounded-md border p-3">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <MessageCircle className="h-4 w-4" />
-                                Chatbot başına sohbet
+                                {t('chatsPerChatbot')}
                             </div>
                             <span className="text-lg font-semibold">{formatRatio(conversationsPerBot)}</span>
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Chatbot kapsamı</span>
+                                <span className="text-muted-foreground">{t('chatbotCoverage')}</span>
                                 <span className="font-medium">{chatbotCoverageLabel}</span>
                             </div>
                             <Progress value={Math.min(chatbotCoverage, 100)} className="h-2" />
@@ -308,8 +310,8 @@ export function SuperAdminDashboard() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle className="text-base">Yönetim Kısayolları</CardTitle>
-                                <CardDescription>Sık kullanılan süper admin alanları</CardDescription>
+                                <CardTitle className="text-base">{t('managementShortcuts')}</CardTitle>
+                                <CardDescription>{t('frequentlyUsedAdminAreas')}</CardDescription>
                             </div>
                             <ShieldCheck className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -317,25 +319,25 @@ export function SuperAdminDashboard() {
                     <CardContent className="grid gap-2">
                         <Button variant="outline" className="justify-between" asChild>
                             <Link href="/admin/end-users">
-                                Son kullanıcılar
+                                {t('endUsers')}
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                         </Button>
                         <Button variant="outline" className="justify-between" asChild>
                             <Link href="/admin/agencies">
-                                Partner ajanslar
+                                {t('partnerAgencies')}
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                         </Button>
                         <Button variant="outline" className="justify-between" asChild>
                             <Link href="/admin/appointments">
-                                Randevular
+                                {t('appointments')}
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                         </Button>
                         <Button variant="outline" className="justify-between" asChild>
                             <Link href="/admin/contracts">
-                                Sözleşmeler
+                                {t('contracts')}
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                         </Button>
@@ -350,8 +352,8 @@ export function SuperAdminDashboard() {
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
-                                <CardTitle>Operasyon Özeti</CardTitle>
-                                <CardDescription>Takip edilecek başlıklar ve sistem dağılımı</CardDescription>
+                                <CardTitle>{t('operationSummary')}</CardTitle>
+                                <CardDescription>{t('topicsAndSystemDistribution')}</CardDescription>
                             </div>
                             <ClipboardList className="h-5 w-5 text-muted-foreground" />
                         </div>
@@ -361,28 +363,28 @@ export function SuperAdminDashboard() {
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Building2 className="h-4 w-4" />
-                                    Partner Admin
+                                    {t('partnerAdmin')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{agencyAdmins}</div>
                             </div>
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <ShieldCheck className="h-4 w-4" />
-                                    Süper Admin
+                                    {t('superAdminRole')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{superAdmins}</div>
                             </div>
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <CalendarClock className="h-4 w-4" />
-                                    Bu hafta yeni
+                                    {t('newThisWeek')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{newUsersThisWeek}</div>
                             </div>
                             <div className="rounded-md border p-3">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <FileText className="h-4 w-4" />
-                                    Arşivli kayıt
+                                    {t('archivedRecords')}
                                 </div>
                                 <div className="mt-2 text-2xl font-semibold">{archivedUsers}</div>
                             </div>
@@ -401,7 +403,7 @@ export function SuperAdminDashboard() {
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm font-medium leading-none">{item.title}</p>
                                             <Badge variant={item.tone === "warning" ? "destructive" : "secondary"}>
-                                                {item.tone === "success" ? "İyi" : item.tone === "warning" ? "Takip" : "Bilgi"}
+                                                {item.tone === "success" ? t('statusGood') : item.tone === "warning" ? t('statusFollow') : t('statusInfo')}
                                             </Badge>
                                         </div>
                                         <p className="text-sm text-muted-foreground">{item.description}</p>

@@ -110,7 +110,7 @@ export default function ContentManagement() {
     }
 
     const handleDelete = async (id: string, type: string) => {
-        if (!confirm("Bu öğeyi silmek istediğinizden emin misiniz?")) return
+        if (!confirm(t('confirmDeleteItem'))) return
 
         // Optimistic update
         if (type === 'blog') {
@@ -122,22 +122,22 @@ export default function ContentManagement() {
         }
 
         toast({
-            title: "Silindi",
-            description: "Öğe başarıyla silindi.",
+            title: t('deleted'),
+            description: t('itemDeletedSuccess'),
         })
     }
 
     const handleEdit = (id: string) => {
         toast({
-            title: "Düzenleme",
-            description: `${id} için düzenleme modalı açılacak.`,
+            title: t('edit'),
+            description: t('editModalWillOpen').replace('{id}', id),
         })
     }
 
     const handleNew = () => {
         toast({
-            title: "Yeni Oluştur",
-            description: `Yeni ${activeTab} öğesi oluşturma modalı açılacak.`,
+            title: t('createNew'),
+            description: t('createModalWillOpen').replace('{type}', activeTab),
         })
     }
 
@@ -145,19 +145,19 @@ export default function ContentManagement() {
     const menuItems = [
         {
             id: 'blog',
-            label: 'Blog Yazıları',
+            label: t('cmsBlogPosts'),
             icon: <FileText className="w-4 h-4" />,
             count: blogPosts.length
         },
         {
             id: 'faq',
-            label: 'SSS (FAQ)',
+            label: t('cmsFaqShort'),
             icon: <HelpCircle className="w-4 h-4" />,
             count: faqItems.length
         },
         {
             id: 'education',
-            label: 'Eğitim İçerikleri',
+            label: t('cmsEducation'),
             icon: <GraduationCap className="w-4 h-4" />,
             count: educationItems.length
         },
@@ -168,21 +168,21 @@ export default function ContentManagement() {
         switch (activeTab) {
             case 'blog':
                 return {
-                    title: 'Blog Yazıları',
-                    desc: 'Web sitenizdeki blog yazılarını yönetin ve düzenleyin.'
+                    title: t('cmsBlogPosts'),
+                    desc: t('cmsBlogDesc')
                 }
             case 'faq':
                 return {
-                    title: 'Sıkça Sorulan Sorular',
-                    desc: 'Müşterilerinizin sık sorduğu soruları ve cevaplarını yönetin.'
+                    title: t('cmsFaqTitle'),
+                    desc: t('cmsFaqDesc')
                 }
             case 'education':
                 return {
-                    title: 'Eğitim İçerikleri',
-                    desc: 'Video, makale ve rehberlerinizi düzenleyin.'
+                    title: t('cmsEducation'),
+                    desc: t('cmsEducationDesc')
                 }
             default:
-                return { title: 'İçerik Yönetimi', desc: 'Web sitesi içeriklerinizi yönetin.' }
+                return { title: t('contentManagement'), desc: t('cmsDefaultDesc') }
         }
     }
 
@@ -208,7 +208,7 @@ export default function ContentManagement() {
         <div className="flex h-full bg-white">
             {/* Sidebar Menu */}
             <div className="w-56 border-r bg-muted/30 p-4 flex-shrink-0">
-                <h2 className="font-semibold mb-4 px-2">İçerik Yönetimi</h2>
+                <h2 className="font-semibold mb-4 px-2">{t('contentManagement')}</h2>
                 <nav className="space-y-1">
                     {menuItems.map((item) => (
                         <button
@@ -246,7 +246,7 @@ export default function ContentManagement() {
                     </div>
                     <Button onClick={handleNew} className="gap-2">
                         <Plus className="w-4 h-4" />
-                        Yeni Ekle
+                        {t('addNew')}
                     </Button>
                 </div>
 
@@ -255,7 +255,7 @@ export default function ContentManagement() {
                     <div className="relative w-72">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Ara..."
+                            placeholder={t('search')}
                             className="pl-9"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -290,12 +290,12 @@ export default function ContentManagement() {
                                                     {post.published !== false ? (
                                                         <>
                                                             <Eye className="w-3 h-3" />
-                                                            <span className="text-green-600">Yayında</span>
+                                                            <span className="text-green-600">{t('published')}</span>
                                                         </>
                                                     ) : (
                                                         <>
                                                             <EyeOff className="w-3 h-3" />
-                                                            <span className="text-amber-600">Taslak</span>
+                                                            <span className="text-amber-600">{t('draft')}</span>
                                                         </>
                                                     )}
                                                 </span>
@@ -313,7 +313,7 @@ export default function ContentManagement() {
                                 ))}
                                 {filteredBlogPosts.length === 0 && (
                                     <div className="text-center py-12 text-muted-foreground">
-                                        {search ? 'Sonuç bulunamadı.' : 'Henüz blog yazısı yok.'}
+                                        {search ? t('noResults') : t('noBlogPostsYet')}
                                     </div>
                                 )}
                             </>
@@ -348,7 +348,7 @@ export default function ContentManagement() {
                                 ))}
                                 {filteredFaqItems.length === 0 && (
                                     <div className="text-center py-12 text-muted-foreground">
-                                        {search ? 'Sonuç bulunamadı.' : 'Henüz SSS öğesi yok.'}
+                                        {search ? t('noResults') : t('noFaqYet')}
                                     </div>
                                 )}
                             </>
@@ -390,7 +390,7 @@ export default function ContentManagement() {
                                 ))}
                                 {filteredEducationItems.length === 0 && (
                                     <div className="text-center py-12 text-muted-foreground">
-                                        {search ? 'Sonuç bulunamadı.' : 'Henüz eğitim içeriği yok.'}
+                                        {search ? t('noResults') : t('noEducationYet')}
                                     </div>
                                 )}
                             </>

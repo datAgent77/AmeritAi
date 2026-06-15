@@ -56,6 +56,7 @@ export function Breadcrumbs() {
                     // Better labels for common routes
                     const labelMap: Record<string, string> = {
                         "omni": "Omni",
+                        "content": t('content') || "Content",
                         "chatbot": "AI Chatbot",
                         "shopper": "AI Personal Shopper",
                         "copywriter": "AI Copywriter",

@@ -210,7 +210,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     active: isSkillsActive
                 },
                 ...((isHumanHandoffEnabled || isAgentsActive) ? [{
-                    title: "Agents",
+                    title: t('agents') || "Agents",
                     icon: Users,
                     href: "/console/agents",
                     active: isAgentsActive
@@ -257,7 +257,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                     active: isActive("/console/chatbot/leads")
                 }] : []),
                 ...(canShowGamification ? [{
-                    title: "Katılımcılar & Kazananlar",
+                    title: t('participantsWinners') || "Katılımcılar & Kazananlar",
                     icon: Gift,
                     href: "/console/gamification-winners",
                     active: isActive("/console/gamification-winners")
@@ -604,7 +604,7 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                                 <div className="flex items-center gap-2 mb-2">
                                     <Rocket className="w-4 h-4 text-violet-400" />
                                     <span className="text-xs font-semibold text-white">
-                                        {planId ? `${planId.charAt(0).toUpperCase() + planId.slice(1)} Deneme` : (t('freeTrial') || 'Ücretsiz Deneme')}
+                                        {planId ? `${planId.charAt(0).toUpperCase() + planId.slice(1)} ${t('trial') || 'Deneme'}` : (t('freeTrial') || 'Ücretsiz Deneme')}
                                     </span>
                                 </div>
                                 
