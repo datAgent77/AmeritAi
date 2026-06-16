@@ -28,26 +28,26 @@ interface EngagementSettingsFormProps {
 // Sector Templates
 const sectorTemplates: Record<string, BubbleMessage[]> = {
     'e-commerce': [
-        { id: 'ec1', text: '👀 Bu ürüne bakanlar şunları da inceledi...', delay: 5, isActive: true },
-        { id: 'ec2', text: '⚡️ Sadece bugüne özel %10 indirim kodunuz: VION10', delay: 30, isActive: true },
-        { id: 'ec3', text: '📦 Kargo bedava fırsatını kaçırmayın!', delay: 60, isActive: true }
+        { id: 'ec1', text: '👀 People who viewed this product also checked out...', delay: 5, isActive: true },
+        { id: 'ec2', text: '⚡️ Today only — here is your 10% discount code: VION10', delay: 30, isActive: true },
+        { id: 'ec3', text: '📦 Don\'t miss out on free shipping!', delay: 60, isActive: true }
     ],
     'health': [
-        { id: 'h1', text: '👋 Merhaba, randevu almak ister misiniz?', delay: 3, isActive: true },
-        { id: 'h2', text: '🩺 Uzman doktorlarımız sorularınızı bekliyor.', delay: 20, isActive: true },
-        { id: 'h3', text: '🚑 Acil bir durum mu var? Bize hemen ulaşın.', delay: 45, isActive: true }
+        { id: 'h1', text: '👋 Hi! Would you like to book an appointment?', delay: 3, isActive: true },
+        { id: 'h2', text: '🩺 Our specialists are ready to answer your questions.', delay: 20, isActive: true },
+        { id: 'h3', text: '🚑 Is it an emergency? Reach us right away.', delay: 45, isActive: true }
     ],
     'education': [
-        { id: 'ed1', text: '🎓 Hangi eğitim programı size uygun? Testi çözün.', delay: 5, isActive: true },
-        { id: 'ed2', text: '📚 Ücretsiz deneme dersi almak için tıklayın.', delay: 25, isActive: true }
+        { id: 'ed1', text: '🎓 Which program is right for you? Take the quiz.', delay: 5, isActive: true },
+        { id: 'ed2', text: '📚 Click to get a free trial lesson.', delay: 25, isActive: true }
     ],
     'corporate': [
-        { id: 'c1', text: '🤝 Projeniz için fiyat teklifi almak ister misiniz?', delay: 5, isActive: true },
-        { id: 'c2', text: '💼 Referanslarımızı incelediniz mi?', delay: 20, isActive: true }
+        { id: 'c1', text: '🤝 Would you like a quote for your project?', delay: 5, isActive: true },
+        { id: 'c2', text: '💼 Have you seen our case studies?', delay: 20, isActive: true }
     ],
     'booking': [ // Travel/Tourism
-        { id: 'b1', text: '🌴 Erken rezervasyon fırsatlarını gördünüz mü?', delay: 5, isActive: true },
-        { id: 'b2', text: '✈️ Uçak bileti aramalarında yardımcı olabilirim.', delay: 15, isActive: true }
+        { id: 'b1', text: '🌴 Have you seen our early-booking deals?', delay: 5, isActive: true },
+        { id: 'b2', text: '✈️ I can help you search for flights.', delay: 15, isActive: true }
     ]
 }
 
@@ -233,7 +233,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
 
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
-                description: "Proaktif etkileşim ayarlarınız güncellendi."
+                description: t('engagementSavedDesc')
             })
         } catch (error) {
             console.error("Failed to save engagement settings:", error)
@@ -297,7 +297,7 @@ export function EngagementSettingsForm({ targetUserId, isSuperAdmin = false }: E
                             {t('modules.proactiveMessaging') || 'Etkileşim Tasarımcısı'}
                         </h1>
                         <p className="text-muted-foreground text-xs mt-1">
-                            Ziyaretçi balonlarını özelleştirin.
+                            {t('customizeBubbles')}
                         </p>
                     </div>
                     <div className="shrink-0 sm:pt-1">

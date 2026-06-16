@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { WhatsAppBusinessOption } from "@/lib/integrations/whatsapp-business/types"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function WhatsAppBizNumberSelectStep(props: {
     businesses: WhatsAppBusinessOption[]
@@ -15,6 +16,7 @@ export function WhatsAppBizNumberSelectStep(props: {
     onSave: () => void
     saving?: boolean
 }) {
+    const { t } = useLanguage()
     const currentBusiness = props.businesses.find((item) => item.id === props.selectedBusinessId) || null
 
     return (
@@ -22,10 +24,10 @@ export function WhatsAppBizNumberSelectStep(props: {
             <CardHeader className="bg-slate-50/50 pb-4 border-b border-border/40">
                 <CardTitle className="text-base flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold">2</span>
-                    WhatsApp İşletme Numaranızı Seçin
+                    {t('waSelectNumber')}
                 </CardTitle>
                 <CardDescription className="text-xs">
-                    Müşterilerinizle iletişim kuracağınız ve Vion AI&apos;ın yanıt vereceği işletme hesabını ve telefon numarasını belirleyin.
+                    {t('waSelectNumberDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-5">
@@ -55,7 +57,7 @@ export function WhatsAppBizNumberSelectStep(props: {
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{business.name}</p>
                                     <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                        {business.phoneNumbers.length} telefon numarası bulundu
+                                        {t('phoneNumbersFound').replace('{n}', String(business.phoneNumbers.length))}
                                     </p>
                                 </div>
                             </div>
@@ -68,7 +70,7 @@ export function WhatsAppBizNumberSelectStep(props: {
 
                 {currentBusiness && currentBusiness.phoneNumbers.length > 0 ? (
                     <div className="space-y-3 mt-6">
-                        <h4 className="text-sm font-medium text-foreground">Bağlanacak Numarayı Seçin</h4>
+                        <h4 className="text-sm font-medium text-foreground">{t('selectNumberToConnect')}</h4>
                         <div className="grid gap-3 sm:grid-cols-2">
                             {currentBusiness.phoneNumbers.map((phone) => (
                                 <button
@@ -83,8 +85,8 @@ export function WhatsAppBizNumberSelectStep(props: {
                                     )}
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground truncate">{phone.displayNumber || "Numara adı yok"}</p>
-                                        <p className="mt-1 text-xs text-muted-foreground truncate">{phone.verifiedName || "Doğrulanmış ad bulunamadı"}</p>
+                                        <p className="text-sm font-semibold text-foreground truncate">{phone.displayNumber || t('noNumberName')}</p>
+                                        <p className="mt-1 text-xs text-muted-foreground truncate">{phone.verifiedName || t('noVerifiedName')}</p>
                                     </div>
                                     {props.selectedPhoneNumberId === phone.id && (
                                         <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
@@ -103,7 +105,7 @@ export function WhatsAppBizNumberSelectStep(props: {
                         className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
                     >
                         {props.saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Seçimi Kaydet ve Devam Et
+                        {t('saveAndContinue')}
                     </Button>
                 </div>
             </CardContent>

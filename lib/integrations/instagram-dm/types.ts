@@ -35,32 +35,46 @@ export interface InstagramDMStatusPayload {
     }
 }
 
-export const INSTAGRAM_DM_PREFLIGHT_MESSAGES = {
+const INSTAGRAM_DM_PREFLIGHT_MESSAGES_I18N = {
     hasFacebookPage: {
-        ok: "Facebook Sayfanız bulundu.",
-        fail: "Hesabınıza bağlı bir Facebook Sayfası bulunamadı.",
+        ok: { tr: "Facebook Sayfanız bulundu.", en: "Your Facebook Page was found.", es: "Se encontró tu página de Facebook." },
+        fail: { tr: "Hesabınıza bağlı bir Facebook Sayfası bulunamadı.", en: "No Facebook Page linked to your account was found.", es: "No se encontró ninguna página de Facebook vinculada a tu cuenta." },
     },
     instagramLinkedToPage: {
-        ok: "Instagram hesabı Facebook Sayfanıza bağlı.",
-        fail: "Instagram hesabınız bu sayfaya bağlı değil.",
+        ok: { tr: "Instagram hesabı Facebook Sayfanıza bağlı.", en: "Instagram account is linked to your Facebook Page.", es: "La cuenta de Instagram está vinculada a tu página de Facebook." },
+        fail: { tr: "Instagram hesabınız bu sayfaya bağlı değil.", en: "Your Instagram account is not linked to this page.", es: "Tu cuenta de Instagram no está vinculada a esta página." },
     },
     instagramIsProfessional: {
-        ok: "Instagram hesabınız işletme hesabı.",
-        fail: "Instagram hesabınız kişisel. İşletme hesabına geçiş gerekli.",
+        ok: { tr: "Instagram hesabınız işletme hesabı.", en: "Your Instagram account is a business account.", es: "Tu cuenta de Instagram es una cuenta de empresa." },
+        fail: { tr: "Instagram hesabınız kişisel. İşletme hesabına geçiş gerekli.", en: "Your Instagram account is personal. Switching to a business account is required.", es: "Tu cuenta de Instagram es personal. Se requiere cambiar a una cuenta de empresa." },
     },
     messageAccessEnabled: {
-        ok: "Mesaj erişimi açık.",
-        fail: "Instagram'da 'Mesajlara Erişime İzin Ver' seçeneği kapalı.",
+        ok: { tr: "Mesaj erişimi açık.", en: "Message access is enabled.", es: "El acceso a los mensajes está activado." },
+        fail: { tr: "Instagram'da 'Mesajlara Erişime İzin Ver' seçeneği kapalı.", en: "The 'Allow Access to Messages' option is off in Instagram.", es: "La opción 'Permitir acceso a los mensajes' está desactivada en Instagram." },
     },
     tokenPresent: {
-        ok: "Bağlantı bilgileri kayıtlı.",
-        fail: "Bağlantı bilgisi bulunamadı, yeniden bağlanın.",
+        ok: { tr: "Bağlantı bilgileri kayıtlı.", en: "Connection details are saved.", es: "Los datos de conexión están guardados." },
+        fail: { tr: "Bağlantı bilgisi bulunamadı, yeniden bağlanın.", en: "No connection details found, please reconnect.", es: "No se encontraron datos de conexión, vuelve a conectar." },
     },
     webhookActive: {
-        ok: "Mesaj akışı aktif.",
-        fail: "Mesaj akışı şu anda aktif görünmüyor.",
+        ok: { tr: "Mesaj akışı aktif.", en: "Message flow is active.", es: "El flujo de mensajes está activo." },
+        fail: { tr: "Mesaj akışı şu anda aktif görünmüyor.", en: "The message flow does not appear active right now.", es: "El flujo de mensajes no parece estar activo en este momento." },
     },
 } as const
+
+type IgPreflightMessagePair = { ok: string; fail: string }
+
+export function getInstagramDmPreflightMessages(language: string): Record<keyof typeof INSTAGRAM_DM_PREFLIGHT_MESSAGES_I18N, IgPreflightMessagePair> {
+    const lang = (language === "tr" || language === "es") ? language : "en"
+    const out = {} as Record<string, IgPreflightMessagePair>
+    for (const [key, val] of Object.entries(INSTAGRAM_DM_PREFLIGHT_MESSAGES_I18N)) {
+        out[key] = { ok: val.ok[lang] ?? val.ok.en, fail: val.fail[lang] ?? val.fail.en }
+    }
+    return out as Record<keyof typeof INSTAGRAM_DM_PREFLIGHT_MESSAGES_I18N, IgPreflightMessagePair>
+}
+
+// Backward-compatible default (English) for non-UI callers.
+export const INSTAGRAM_DM_PREFLIGHT_MESSAGES = getInstagramDmPreflightMessages("en")
 
 export const CHANNEL_ERROR_MESSAGES = {
     login_cancelled: "Giriş iptal edildi. Meta hesabınıza tekrar giriş yapın.",

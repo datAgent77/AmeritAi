@@ -44,15 +44,15 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
     const [notificationEmail, setNotificationEmail] = useState("")
 
     // Form Customization
-    const [formTitle, setFormTitle] = useState("Hoş Geldiniz")
-    const [formSubtitle, setFormSubtitle] = useState("Lütfen bilgilerinizi girerek sohbete başlayın.")
-    const [nameLabel, setNameLabel] = useState("Ad Soyad")
-    const [namePlaceholder, setNamePlaceholder] = useState("Ad Soyad")
-    const [emailLabel, setEmailLabel] = useState("E-posta")
-    const [emailPlaceholder, setEmailPlaceholder] = useState("E-posta")
-    const [phoneLabel, setPhoneLabel] = useState("Telefon")
-    const [phonePlaceholder, setPhonePlaceholder] = useState("Telefon (Opsiyonel)")
-    const [submitButtonText, setSubmitButtonText] = useState("Sohbete Başla")
+    const [formTitle, setFormTitle] = useState(t('welcome'))
+    const [formSubtitle, setFormSubtitle] = useState(t('leadFormSubtitle'))
+    const [nameLabel, setNameLabel] = useState(t('fullName'))
+    const [namePlaceholder, setNamePlaceholder] = useState(t('fullName'))
+    const [emailLabel, setEmailLabel] = useState(t('email'))
+    const [emailPlaceholder, setEmailPlaceholder] = useState(t('email'))
+    const [phoneLabel, setPhoneLabel] = useState(t('phone'))
+    const [phonePlaceholder, setPhonePlaceholder] = useState(t('phoneOptional'))
+    const [submitButtonText, setSubmitButtonText] = useState(t('startChat'))
 
     // Default Field Configuration
     const [nameEnabled, setNameEnabled] = useState(true)
@@ -93,15 +93,15 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
 
                 // Form Customization
                 if (data.leadFormConfig) {
-                    setFormTitle(data.leadFormConfig.title || "Hoş Geldiniz")
-                    setFormSubtitle(data.leadFormConfig.subtitle || "Lütfen bilgilerinizi girerek sohbete başlayın.")
-                    setNameLabel(data.leadFormConfig.nameLabel || "Ad Soyad")
-                    setNamePlaceholder(data.leadFormConfig.namePlaceholder || "Ad Soyad")
-                    setEmailLabel(data.leadFormConfig.emailLabel || "E-posta")
-                    setEmailPlaceholder(data.leadFormConfig.emailPlaceholder || "E-posta")
-                    setPhoneLabel(data.leadFormConfig.phoneLabel || "Telefon (Opsiyonel)")
-                    setPhonePlaceholder(data.leadFormConfig.phonePlaceholder || "Telefon (Opsiyonel)")
-                    setSubmitButtonText(data.leadFormConfig.submitButtonText || "Sohbete Başla")
+                    setFormTitle(data.leadFormConfig.title || t('welcome'))
+                    setFormSubtitle(data.leadFormConfig.subtitle || t('leadFormSubtitle'))
+                    setNameLabel(data.leadFormConfig.nameLabel || t('fullName'))
+                    setNamePlaceholder(data.leadFormConfig.namePlaceholder || t('fullName'))
+                    setEmailLabel(data.leadFormConfig.emailLabel || t('email'))
+                    setEmailPlaceholder(data.leadFormConfig.emailPlaceholder || t('email'))
+                    setPhoneLabel(data.leadFormConfig.phoneLabel || t('phoneOptional'))
+                    setPhonePlaceholder(data.leadFormConfig.phonePlaceholder || t('phoneOptional'))
+                    setSubmitButtonText(data.leadFormConfig.submitButtonText || t('startChat'))
 
                     // Default Fields Config
                     setNameEnabled(data.leadFormConfig.nameEnabled !== false)
@@ -303,7 +303,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                     <Input
                                         value={formTitle}
                                         onChange={(e) => setFormTitle(e.target.value)}
-                                        placeholder="Hoş Geldiniz"
+                                        placeholder={t('welcome')}
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -311,7 +311,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                     <Input
                                         value={submitButtonText}
                                         onChange={(e) => setSubmitButtonText(e.target.value)}
-                                        placeholder="Sohbete Başla"
+                                        placeholder={t('startChat')}
                                     />
                                 </div>
                             </div>
@@ -320,7 +320,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                 <Input
                                     value={formSubtitle}
                                     onChange={(e) => setFormSubtitle(e.target.value)}
-                                    placeholder="Lütfen bilgilerinizi girerek sohbete başlayın."
+                                    placeholder={t('leadFormSubtitle')}
                                 />
                             </div>
                         </CardContent>
@@ -410,7 +410,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={nameLabel}
                                             onChange={(e) => setNameLabel(e.target.value)}
-                                            placeholder="Ad Soyad"
+                                            placeholder={t('fullName')}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -418,7 +418,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={namePlaceholder}
                                             onChange={(e) => setNamePlaceholder(e.target.value)}
-                                            placeholder="Ad Soyad"
+                                            placeholder={t('fullName')}
                                         />
                                     </div>
                                 </div>
@@ -451,7 +451,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={emailLabel}
                                             onChange={(e) => setEmailLabel(e.target.value)}
-                                            placeholder="E-posta"
+                                            placeholder={t('email')}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -459,7 +459,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={emailPlaceholder}
                                             onChange={(e) => setEmailPlaceholder(e.target.value)}
-                                            placeholder="E-posta"
+                                            placeholder={t('email')}
                                         />
                                     </div>
                                 </div>
@@ -492,7 +492,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={phoneLabel}
                                             onChange={(e) => setPhoneLabel(e.target.value)}
-                                            placeholder="Telefon (Opsiyonel)"
+                                            placeholder={t('phoneOptional')}
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -500,7 +500,7 @@ export function LeadCollectionSettingsForm({ targetUserId, isSuperAdmin = false 
                                         <Input
                                             value={phonePlaceholder}
                                             onChange={(e) => setPhonePlaceholder(e.target.value)}
-                                            placeholder="Telefon (Opsiyonel)"
+                                            placeholder={t('phoneOptional')}
                                         />
                                     </div>
                                 </div>

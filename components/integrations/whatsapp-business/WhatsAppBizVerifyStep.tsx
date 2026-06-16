@@ -1,6 +1,7 @@
 "use client"
 
 import { TestMessageCard } from "@/components/integrations/shared/TestMessageCard"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function WhatsAppBizVerifyStep(props: {
     phone: string
@@ -10,12 +11,13 @@ export function WhatsAppBizVerifyStep(props: {
     onSend: () => void
     sending?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <TestMessageCard
-            title="Test mesajı gönderin"
-            description="Kendi numaranıza test mesajı göndererek kurulumun çalıştığını doğrulayın."
-            recipientLabel="Alıcı telefon numarası"
-            recipientPlaceholder="Örn. +905551234567"
+            title={t('waTestTitle')}
+            description={t('waTestDesc')}
+            recipientLabel={t('recipientPhone')}
+            recipientPlaceholder={t('recipientPhonePlaceholder')}
             recipientValue={props.phone}
             onRecipientChange={props.onPhoneChange}
             messageValue={props.message}

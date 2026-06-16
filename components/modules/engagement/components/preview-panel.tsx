@@ -1,6 +1,7 @@
 import { Eye, MessageCircle } from "lucide-react"
 import { EngagementSettings } from "../types"
 import { getPreviewBubbleConfig, getPreviewStyle, type EngagementPreviewVariantMode } from "../utils"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface EngagementPreviewProps {
     settings: EngagementSettings
@@ -8,10 +9,11 @@ interface EngagementPreviewProps {
 }
 
 export function EngagementPreview({ settings, chatDisplayMode }: EngagementPreviewProps) {
+    const { t } = useLanguage()
     const previewMode: EngagementPreviewVariantMode = chatDisplayMode === "ambient" ? "ambient" : "classic"
     const previewStyle = getPreviewStyle(settings, previewMode)
     const previewConfig = getPreviewBubbleConfig(settings, previewMode)
-    const bubbleText = settings.bubble.messages[0]?.text || "Merhaba! Size özel bir teklifimiz var, incelemek ister misiniz?"
+    const bubbleText = settings.bubble.messages[0]?.text || t('engPreviewBubble')
     const typewriterEnabled = previewMode === "ambient" && previewConfig.renderStyle === "ambient_ai_bubble_typewriter"
 
     return (
@@ -20,10 +22,10 @@ export function EngagementPreview({ settings, chatDisplayMode }: EngagementPrevi
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <Eye className="w-4 h-4" />
-                        Canlı Önizleme
+                        {t('livePreview')}
                     </div>
                     <div className="inline-flex rounded-full border bg-background px-2 py-1 text-[11px] text-muted-foreground">
-                        {previewMode === "ambient" ? "Ambient görünüm" : "Classic görünüm"}
+                        {previewMode === "ambient" ? t('ambientView') : t('classicView')}
                     </div>
                 </div>
             </div>

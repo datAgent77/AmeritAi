@@ -687,6 +687,12 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                                                         {language === 'en' && <Check className="size-4" />}
                                                     </div>
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setLanguage('es')} className="cursor-pointer">
+                                                    <div className="flex items-center justify-between w-full">
+                                                        <span>Español</span>
+                                                        {language === 'es' && <Check className="size-4" />}
+                                                    </div>
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => setLanguage('tr')} className="cursor-pointer">
                                                     <div className="flex items-center justify-between w-full">
                                                         <span>Türkçe</span>

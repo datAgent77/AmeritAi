@@ -14,7 +14,8 @@ describe("privacy compliance payload", () => {
 
         expect(payload.enabled).toBe(true)
         expect(payload.mode).toBe("hybrid")
-        expect(payload.frameworks).toEqual(["kvkk", "gdpr"])
+        // US-first default: CCPA/CPRA + GDPR (KVKK removed from default frameworks for the US launch).
+        expect(payload.frameworks).toEqual(["ccpa", "gdpr"])
         expect(payload.shortNoticeByLanguage.tr).toContain("Sohbete devam ederek")
         expect(payload.documentsByLanguage.tr.kvkkNotice.text).toContain("Fara Dental")
         expect(payload.requiredConsents.find((item) => item.purpose === "lead_capture")?.checkboxLabelByLanguage.tr).toContain("lead")

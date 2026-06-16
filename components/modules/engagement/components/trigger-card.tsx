@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Clock, Layout, MessageCircle, Trash2, Plus } from "lucide-react"
 import { EngagementSettings, BubbleMessage, EngagementTriggerTargetingMode } from "../types"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface TriggerCardProps {
     id: keyof EngagementSettings['triggers'] & string
@@ -23,13 +24,14 @@ const numericTriggerDefaults: Record<string, number> = {
     clickCount: 3,
 }
 
-const targetingOptions: Array<{ value: EngagementTriggerTargetingMode; label: string }> = [
-    { value: 'all', label: 'Tüm sayfalar' },
-    { value: 'homepage', label: 'Ana sayfa' },
-    { value: 'custom', label: 'Özel URL' },
+const targetingOptions: Array<{ value: EngagementTriggerTargetingMode; labelKey: string }> = [
+    { value: 'all', labelKey: 'allPages' },
+    { value: 'homepage', labelKey: 'homepage' },
+    { value: 'custom', labelKey: 'customUrl' },
 ]
 
 export function TriggerCard({ id, label, description, configInput, messageListKey, settings, setSettings }: TriggerCardProps) {
+    const { t } = useLanguage()
     const messages = (settings.triggers[messageListKey] as BubbleMessage[]) || [];
     const rawTriggerValue = (settings.triggers as Record<string, unknown>)[id]
     const numericDefault = numericTriggerDefaults[id]
@@ -175,7 +177,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${currentActionType === 'openWidget' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 <Layout className="w-3 h-3 inline-block mr-1.5" />
-                                Widget Aç
+                                {t('openWidget')}
                             </button>
                         </div>
                     </div>
@@ -190,7 +192,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                     onClick={() => setTargetingMode(option.value)}
                                     className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${currentTargeting.mode === option.value ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
-                                    {option.label}
+                                    {t(option.labelKey)}
                                 </button>
                             ))}
                         </div>
@@ -216,7 +218,7 @@ export function TriggerCard({ id, label, description, configInput, messageListKe
                                         <Textarea
                                             value={msg.text}
                                             onChange={(e) => updateMessage(msg.id, e.target.value)}
-                                            placeholder="Ziyaretçiye ne söylemek istersiniz?"
+                                            placeholder={t('triggerMessagePlaceholder')}
                                             className="min-h-[60px] text-sm resize-none bg-background/50 focus:bg-background flex-1"
                                         />
                                         <div className="flex flex-col gap-2">

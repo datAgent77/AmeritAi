@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { EngagementSettings } from "../types"
 import { TriggerCard } from "../components/trigger-card"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface EngagementTriggersTabProps {
     settings: EngagementSettings
@@ -16,6 +17,7 @@ const numericTriggerDefaults = {
 }
 
 export function EngagementTriggersTab({ settings, setSettings }: EngagementTriggersTabProps) {
+    const { t } = useLanguage()
     const getTriggerNumber = (key: 'scrollDepth' | 'inactivity' | 'timeOnPage' | 'clickCount') => {
         const value = (settings.triggers as Record<string, unknown>)[key]
         if (value === true) return numericTriggerDefaults[key]
@@ -29,8 +31,8 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
 
                     <TriggerCard
                         id="exitIntent"
-                        label="Exit Intent (Çıkış Niyeti)"
-                        description="Kullanıcı fareyi pencere dışına çıkardığında."
+                        label={t('trigExitIntent')}
+                        description={t('trigExitIntentDesc')}
                         messageListKey="exitIntentMessages"
                         settings={settings}
                         setSettings={setSettings}
@@ -38,8 +40,8 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
 
                     <TriggerCard
                         id="scrollDepth"
-                        label="Scroll Derinliği"
-                        description={`Sayfanın belirli bir kısmına inildiğinde (%${getTriggerNumber('scrollDepth')})`}
+                        label={t('trigScrollDepth')}
+                        description={t('trigScrollDepthDesc').replace('{n}', String(getTriggerNumber('scrollDepth')))}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
@@ -57,8 +59,8 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
 
                     <TriggerCard
                         id="inactivity"
-                        label="Hareketsizlik (Idle)"
-                        description={`Kullanıcı ${getTriggerNumber('inactivity')} saniye işlem yapmazsa`}
+                        label={t('trigInactivity')}
+                        description={t('trigInactivityDesc').replace('{n}', String(getTriggerNumber('inactivity')))}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
@@ -66,7 +68,7 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                                     value={getTriggerNumber('inactivity')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, inactivity: parseInt(e.target.value) || 0 } }))}
                                 />
-                                <span className="text-xs text-muted-foreground">sn</span>
+                                <span className="text-xs text-muted-foreground">{t('unitSeconds')}</span>
                             </div>
                         }
                         messageListKey="inactivityMessages"
@@ -76,8 +78,8 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
 
                     <TriggerCard
                         id="timeOnPage"
-                        label="Sayfada Geçirilen Süre"
-                        description={`${getTriggerNumber('timeOnPage')} saniye sonra (Hareketsizlikten bağımsız)`}
+                        label={t('trigTimeOnPage')}
+                        description={t('trigTimeOnPageDesc').replace('{n}', String(getTriggerNumber('timeOnPage')))}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
@@ -85,7 +87,7 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                                     value={getTriggerNumber('timeOnPage')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, timeOnPage: parseInt(e.target.value) || 0 } }))}
                                 />
-                                <span className="text-xs text-muted-foreground">sn</span>
+                                <span className="text-xs text-muted-foreground">{t('unitSeconds')}</span>
                             </div>
                         }
                         messageListKey="timeOnPageMessages"
@@ -95,8 +97,8 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
 
                     <TriggerCard
                         id="clickCount"
-                        label="Tıklama Sayısı"
-                        description={`${getTriggerNumber('clickCount')} tıklamadan sonra`}
+                        label={t('trigClickCount')}
+                        description={t('trigClickCountDesc').replace('{n}', String(getTriggerNumber('clickCount')))}
                         configInput={
                             <div className="flex items-center gap-2">
                                 <Input
@@ -104,7 +106,7 @@ export function EngagementTriggersTab({ settings, setSettings }: EngagementTrigg
                                     value={getTriggerNumber('clickCount')}
                                     onChange={(e) => setSettings(p => ({ ...p, triggers: { ...p.triggers, clickCount: parseInt(e.target.value) || 0 } }))}
                                 />
-                                <span className="text-xs text-muted-foreground">tık</span>
+                                <span className="text-xs text-muted-foreground">{t('unitClicks')}</span>
                             </div>
                         }
                         messageListKey="clickCountMessages"

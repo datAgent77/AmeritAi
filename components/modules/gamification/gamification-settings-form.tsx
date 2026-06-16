@@ -47,9 +47,9 @@ const defaultConfig: GamificationConfig = {
     requireEmail: true,
     cooldownHours: 24,
     themeColor: "#8b5cf6",
-    title: "Şansını Dene!",
-    description: "Hemen oyna ve sürpriz ödüllerden birini kazanma şansı yakala.",
-    buttonText: "Hemen Oyna",
+    title: "Try Your Luck!",
+    description: "Play now and get a chance to win one of the surprise prizes.",
+    buttonText: "Play Now",
     prizes: [
         { name: "10% OFF", probability: 50, isWinning: true },
         { name: "Free Coffee", probability: 30, isWinning: true },
@@ -134,13 +134,13 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
 
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
-                description: "Gamification ayarlarınız güncellendi."
+                description: t('gamSavedDesc')
             })
         } catch (error) {
             console.error("Failed to save gamification config:", error)
             toast({
                 title: t('error') || "Hata",
-                description: "Ayarlar kaydedilemedi.",
+                description: t('settingsSaveFailed'),
                 variant: "destructive"
             })
         } finally {
@@ -165,8 +165,8 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
     const removePrize = (index: number) => {
         if (config.prizes.length <= 2) {
             toast({
-                title: "Uyarı",
-                description: "En az 2 ödül bulunmalıdır.",
+                title: t('warning'),
+                description: t('minTwoRewards'),
                 variant: "destructive"
             })
             return
@@ -192,10 +192,10 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                     <CardHeader>
                         <div className="flex items-center gap-3">
                             <AlertTriangle className="h-5 w-5 text-amber-600" />
-                            <CardTitle>{t('modules.gamification') || "Gamification"} modülü aktif değil</CardTitle>
+                            <CardTitle>{t('gamModuleInactiveTitle')}</CardTitle>
                         </div>
                         <CardDescription>
-                            Bu tenant için Oyunlaştırma modülü kapalı olduğu için ayar sayfası kullanılamaz.
+                            {t('gamModuleInactiveDesc')}
                         </CardDescription>
                     </CardHeader>
                 </Card>
@@ -212,13 +212,13 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                             {t('modules.gamification') || "Gamification & Wheel"}
                         </h2>
                         <p className="text-muted-foreground">
-                            Özelleştirilebilir çarkıfelek, kazı kazan, gizemli kutu ve slot makinesi oyunlarıyla ziyaretçilerinizi etkileşime teşvik edin.
+                            {t('gamModuleDesc')}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 border px-3 py-2 rounded-lg">
-                        <Label htmlFor="game-enable" className="text-sm font-medium cursor-pointer">Oyunu Etkinleştir</Label>
+                        <Label htmlFor="game-enable" className="text-sm font-medium cursor-pointer">{t('enableGame')}</Label>
                         <Switch
                             id="game-enable"
                             checked={config.enabled}
@@ -243,57 +243,57 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                         <Wand2 className="w-48 h-48" />
                     </div>
                     <CardHeader>
-                        <CardTitle>Oyun Ayarları & Ödüller</CardTitle>
+                        <CardTitle>{t('gameSettingsRewards')}</CardTitle>
                         <CardDescription>
-                            {config.gameType === "wheel" && "Çarkıfelek dilimlerinde yer alacak ödülleri ve kazanma olasılıklarını belirleyin."}
-                            {config.gameType === "scratch" && "Ziyaretçilerin kazıdıklarında karşılarına çıkacak ödülleri ve olasılıkları belirleyin."}
-                            {config.gameType === "mystery" && "Kutulardan çıkabilecek ödülleri ve kazanma olasılıklarını belirleyin."}
-                            {config.gameType === "slot" && "Slot makinesi eşleştiğinde verilecek ödülleri ve kazanma olasılıklarını belirleyin."}
+                            {config.gameType === "wheel" && t('gameTypeWheelDesc')}
+                            {config.gameType === "scratch" && t('gameTypeScratchDesc')}
+                            {config.gameType === "mystery" && t('gameTypeMysteryDesc')}
+                            {config.gameType === "slot" && t('gameTypeSlotDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 relative z-10">
                         <div className="flex justify-center -mt-2 mb-4">
                             <TabsList className="grid w-full grid-cols-4 h-11 bg-zinc-100/80 dark:bg-zinc-800/80 p-1">
-                                <TabsTrigger value="wheel" className="text-xs sm:text-sm">Çarkıfelek</TabsTrigger>
-                                <TabsTrigger value="scratch" className="text-xs sm:text-sm">Kazı Kazan</TabsTrigger>
-                                <TabsTrigger value="mystery" className="text-xs sm:text-sm">Gizemli Kutu</TabsTrigger>
-                                <TabsTrigger value="slot" className="text-xs sm:text-sm">Slot Makinesi</TabsTrigger>
+                                <TabsTrigger value="wheel" className="text-xs sm:text-sm">{t('gameWheel')}</TabsTrigger>
+                                <TabsTrigger value="scratch" className="text-xs sm:text-sm">{t('gameScratch')}</TabsTrigger>
+                                <TabsTrigger value="mystery" className="text-xs sm:text-sm">{t('gameMystery')}</TabsTrigger>
+                                <TabsTrigger value="slot" className="text-xs sm:text-sm">{t('gameSlot')}</TabsTrigger>
                             </TabsList>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>Oyun Başlığı</Label>
+                                <Label>{t('gameTitle')}</Label>
                                 <Input 
                                     value={config.title} 
                                     onChange={e => setConfig(prev => ({ ...prev, title: e.target.value }))}
-                                    placeholder="Örn: Şansını Dene!"
+                                    placeholder={t('gameTitlePlaceholder')}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Buton Metni</Label>
+                                <Label>{t('buttonText')}</Label>
                                 <Input 
                                     value={config.buttonText} 
                                     onChange={e => setConfig(prev => ({ ...prev, buttonText: e.target.value }))}
-                                    placeholder="Örn: Hemen Oyna"
+                                    placeholder={t('buttonTextPlaceholder')}
                                 />
                             </div>
                             <div className="space-y-2 md:col-span-2">
-                                <Label>Açıklama Metni</Label>
+                                <Label>{t('descriptionText')}</Label>
                                 <Input 
                                     value={config.description} 
                                     onChange={e => setConfig(prev => ({ ...prev, description: e.target.value }))}
-                                    placeholder="Örn: Hemen oyna ve sürpriz ödüllerden birini kazan..."
+                                    placeholder={t('gameDescPlaceholder')}
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <Label className="text-base">Ödüller (Olasılık & Limit)</Label>
+                                <Label className="text-base">{t('rewardsLabel')}</Label>
                                 <Button variant="outline" size="sm" onClick={addPrize} className="h-8 gap-2">
                                     <Plus className="w-4 h-4" />
-                                    Ödül Ekle
+                                    {t('addReward')}
                                 </Button>
                             </div>
                             
@@ -302,7 +302,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                     <div key={index} className="flex gap-3 items-center bg-white dark:bg-zinc-950 p-2 rounded-lg border shadow-sm group">
                                         <div className="flex-1">
                                             <Input
-                                                placeholder="Ödül adı (Örn: %10 İndirim)"
+                                                placeholder={t('rewardNamePlaceholder')}
                                                 value={prize.name}
                                                 onChange={(e) => updatePrize(index, 'name', e.target.value)}
                                                 className="border-0 shadow-none focus-visible:ring-0 px-2"
@@ -310,7 +310,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         </div>
                                         <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800" />
                                         <div className="flex items-center gap-2 px-2">
-                                            <Label className="text-xs text-muted-foreground w-12 text-right">Şans:</Label>
+                                            <Label className="text-xs text-muted-foreground w-12 text-right">{t('chance')}</Label>
                                             <Input
                                                 className="w-16 h-8 text-center"
                                                 placeholder="%"
@@ -322,7 +322,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         </div>
                                         <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800" />
                                         <div className="flex items-center gap-2 px-2">
-                                            <Label className="text-xs text-muted-foreground">Kazanım</Label>
+                                            <Label className="text-xs text-muted-foreground">{t('win')}</Label>
                                             <Switch
                                                 checked={prize.isWinning !== false}
                                                 onCheckedChange={(checked) => updatePrize(index, 'isWinning', checked)}
@@ -333,7 +333,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                             <Label className="text-xs text-muted-foreground w-12 text-right">Limit:</Label>
                                             <Input
                                                 className="w-20 h-8 text-center"
-                                                placeholder="Sınırsız"
+                                                placeholder={t('unlimited')}
                                                 type="number"
                                                 value={prize.quantityLimit || ''}
                                                 onChange={(e) => updatePrize(index, 'quantityLimit', parseInt(e.target.value) || undefined)}
@@ -350,7 +350,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-xs text-muted-foreground">Toplam olasılığın 100% olmasına dikkat edin. “Kazanım” kapalı olan seçenekler (ör. Try Again / Yeniden dene) kazanan listesine ve bildirim e-postasına düşmez.</p>
+                            <p className="text-xs text-muted-foreground">{t('rewardsNote')}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -359,14 +359,14 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                 <div className="grid gap-6 md:grid-cols-2">
                     <Card className="shadow-sm">
                         <CardHeader>
-                            <CardTitle>Genel Ayarlar ve Tasarım</CardTitle>
-                            <CardDescription>Oyunun çalışma kurallarını ve görsel temasını belirleyin.</CardDescription>
+                            <CardTitle>{t('generalSettingsDesign')}</CardTitle>
+                            <CardDescription>{t('gamGeneralDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex items-center justify-between p-4 border rounded-xl bg-zinc-50 dark:bg-zinc-900/50">
                                 <div>
-                                    <div className="font-medium">E-posta Zorunluluğu</div>
-                                    <div className="text-xs text-muted-foreground mt-1">Kullanıcılar oynamadan önce e-posta adresi girmek zorunda kalsın. (Lead toplamak için önerilir)</div>
+                                    <div className="font-medium">{t('emailRequirement')}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">{t('emailRequirementDesc')}</div>
                                 </div>
                                 <Switch
                                     checked={config.requireEmail ?? true}
@@ -375,14 +375,14 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                             </div>
 
                             <div className="space-y-3 p-4 border rounded-xl">
-                                <Label className="font-medium">Yeniden Oynama Süresi (Saat)</Label>
+                                <Label className="font-medium">{t('replayCooldown')}</Label>
                                 <Input 
                                     type="number" 
                                     value={config.cooldownHours ?? 24} 
                                     onChange={e => setConfig(prev => ({ ...prev, cooldownHours: parseInt(e.target.value) || 0 }))} 
                                     className="max-w-[200px]"
                                 />
-                                <div className="text-xs text-muted-foreground">Aynı kullanıcının tekrar oynayabilmesi için geçmesi gereken süre. Her zaman oynayabilmesi için 0 yapın.</div>
+                                <div className="text-xs text-muted-foreground">{t('replayCooldownDesc')}</div>
                             </div>
 
                             <div className="space-y-3 p-4 border rounded-xl">
@@ -403,7 +403,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         className="font-mono text-sm max-w-[140px]"
                                     />
                                 </div>
-                                <div className="text-xs text-muted-foreground">Oyun pencerelerinin üst çubuğu ve ana butonlarında bu renk kullanılır.</div>
+                                <div className="text-xs text-muted-foreground">{t('brandColorDesc')}</div>
                             </div>
                         </CardContent>
                     </Card>
@@ -411,7 +411,7 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                     <Card className="shadow-sm">
                         <CardHeader>
                             <CardTitle>Tetikleyiciler (Triggers)</CardTitle>
-                            <CardDescription>Oyun penceresinin ziyaretçilere hangi durumlarda gösterileceğini seçin.</CardDescription>
+                            <CardDescription>{t('visibilityDesc')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between p-4 border rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
@@ -420,8 +420,8 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         <MousePointerClick className="h-5 w-5 text-blue-500" />
                                     </div>
                                     <div>
-                                        <div className="font-medium">Çıkış Niyeti (Exit Intent)</div>
-                                        <div className="text-xs text-muted-foreground mt-1">Ziyaretçi faresiyle sekmeyi kapatmaya veya sayfadan ayrılmaya yöneldiğinde oyunu gösterir.</div>
+                                        <div className="font-medium">{t('trigExitIntent')}</div>
+                                        <div className="text-xs text-muted-foreground mt-1">{t('gamExitIntentDesc')}</div>
                                     </div>
                                 </div>
                                 <Switch
@@ -439,8 +439,8 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         <Gift className="h-5 w-5 text-purple-500" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="font-medium">Girişte (On Entry)</div>
-                                        <div className="text-xs text-muted-foreground mt-1">Sayfa yüklendikten sonra otomatik gösterir.</div>
+                                        <div className="font-medium">{t('onEntry')}</div>
+                                        <div className="text-xs text-muted-foreground mt-1">{t('onEntryDesc')}</div>
                                         {config.triggers.onEntry && (
                                             <div className="mt-2 flex items-center gap-2">
                                                 <Label className="text-xs">Gecikme (sn):</Label>
@@ -469,8 +469,8 @@ export function GamificationSettingsForm({ targetUserId, isSuperAdmin = false }:
                                         <ArrowDown className="h-5 w-5 text-emerald-500" />
                                     </div>
                                     <div className="flex-1">
-                                        <div className="font-medium">Kaydırma (On Scroll)</div>
-                                        <div className="text-xs text-muted-foreground mt-1">Ziyaretçi sayfanın %X&apos;ini kaydırdığında gösterir.</div>
+                                        <div className="font-medium">{t('onScroll')}</div>
+                                        <div className="text-xs text-muted-foreground mt-1">{t('onScrollDesc')}</div>
                                         {config.triggers.onScroll && (
                                             <div className="mt-2 flex items-center gap-2">
                                                 <Label className="text-xs">Kaydırma (%):</Label>

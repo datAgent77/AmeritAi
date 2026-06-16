@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Bell, Check, Clock, User, Utensils, Receipt, XCircle, Loader2 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import { tr } from "date-fns/locale"
+import { tr, enUS, es } from "date-fns/locale"
 import { useToast } from "@/hooks/use-toast"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface WaiterRequest {
     id: string
@@ -25,6 +26,8 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
     const [requests, setRequests] = useState<WaiterRequest[]>([])
     const [loading, setLoading] = useState(true)
     const { toast } = useToast()
+    const { t, language } = useLanguage()
+    const dateLocale = language === "tr" ? tr : language === "es" ? es : enUS
 
     useEffect(() => {
         if (!chatbotId) return
@@ -51,8 +54,8 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                 const audio = new Audio('/sound/notification.mp3')
                 audio.play().catch(e => console.warn("Audio play failed", e))
                 toast({
-                    title: "Yeni İstek!",
-                    description: "Yeni bir masa isteği geldi.",
+                    title: t('newRequest'),
+                    description: t('newTableRequest'),
                 })
             }
         }, (error) => {
@@ -94,7 +97,7 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                     pending.map((req) => (
                         <Card key={req.id} className="border-l-4 border-l-red-500 shadow-lg animate-pulse-subtle">
                             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                                <CardTitle className="text-xl font-bold">Masa {req.masaNo}</CardTitle>
+                                <CardTitle className="text-xl font-bold">{t('tableWord')} {req.masaNo}</CardTitle>
                                 {req.type === 'call_staff' ? (
                                     <Utensils className="w-5 h-5 text-red-500" />
                                 ) : (
@@ -105,11 +108,11 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-2 text-sm font-medium">
                                         <Badge variant={req.type === 'call_staff' ? 'destructive' : 'secondary'}>
-                                            {req.type === 'call_staff' ? 'Garson Çağırıyor' : 'Hesap İstiyor'}
+                                            {req.type === 'call_staff' ? t('callStaff') : t('requestBill')}
                                         </Badge>
                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
-                                            {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true, locale: tr })}
+                                            {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true, locale: dateLocale })}
                                         </span>
                                     </div>
                                     {req.note && (
@@ -121,14 +124,14 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                                             size="sm"
                                             onClick={() => updateStatus(req.id, 'done')}
                                         >
-                                            <Check className="w-4 h-4 mr-1" /> Tamamla
+                                            <Check className="w-4 h-4 mr-1" /> {t('complete')}
                                         </Button>
                                         <Button 
                                             variant="outline" 
                                             size="sm"
                                             onClick={() => updateStatus(req.id, 'in_progress')}
                                         >
-                                            İşleme Al
+                                            {t('markInProgress')}
                                         </Button>
                                     </div>
                                 </div>
@@ -138,8 +141,8 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                 ) : (
                     <div className="col-span-full py-12 text-center bg-muted/20 border-2 border-dashed rounded-xl">
                         <Bell className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                        <h3 className="text-lg font-medium">Aktif istek bulunmuyor</h3>
-                        <p className="text-sm text-muted-foreground">Tüm masalar şu an mutlu görünüyor.</p>
+                        <h3 className="text-lg font-medium">{t('noActiveRequests')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('allTablesHappy')}</p>
                     </div>
                 )}
             </div>
@@ -148,7 +151,7 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
             {others.length > 0 && (
                 <div className="mt-12">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-muted-foreground" /> Son Hareketler
+                        <Clock className="w-5 h-5 text-muted-foreground" /> {t('recentActivity')}
                     </h3>
                     <Card>
                         <div className="divide-y">
@@ -163,14 +166,14 @@ export function WaiterRequestsList({ chatbotId }: { chatbotId: string }) {
                                             )}
                                         </div>
                                         <div>
-                                            <div className="font-medium">Masa {req.masaNo} - {req.type === 'call_staff' ? 'Garson' : 'Hesap'}</div>
+                                            <div className="font-medium">{t('tableWord')} {req.masaNo} - {req.type === 'call_staff' ? t('staff') : t('bill')}</div>
                                             <div className="text-xs text-muted-foreground">
-                                                {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true, locale: tr })}
+                                                {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true, locale: dateLocale })}
                                             </div>
                                         </div>
                                     </div>
                                     <Badge variant={req.status === 'done' ? 'outline' : 'secondary'}>
-                                        {req.status === 'done' ? 'Tamamlandı' : 'İşlemde'}
+                                        {req.status === 'done' ? t('completed') : t('inProgress')}
                                     </Badge>
                                 </div>
                             ))}

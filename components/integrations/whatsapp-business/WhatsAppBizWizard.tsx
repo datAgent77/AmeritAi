@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Loader2, MessageCircleMore, RefreshCw } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +20,7 @@ import type { WhatsAppBizStatusPayload } from "@/lib/integrations/whatsapp-busin
 
 export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
     const { user, role } = useAuth()
+    const { t } = useLanguage()
     const { toast } = useToast()
     const [status, setStatus] = useState<WhatsAppBizStatusPayload | null>(null)
     const [loading, setLoading] = useState(true)
@@ -30,7 +32,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
     const [selectedBusinessId, setSelectedBusinessId] = useState("")
     const [selectedPhoneId, setSelectedPhoneId] = useState("")
     const [testPhone, setTestPhone] = useState("")
-    const [message, setMessage] = useState("Merhaba, bu Vion kurulum test mesajıdır.")
+    const [message, setMessage] = useState(t('testMessagePlaceholder'))
     const [customAppId, setCustomAppId] = useState("")
     const [customAppSecret, setCustomAppSecret] = useState("")
 
@@ -57,15 +59,15 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             if (event.data?.ok && event.data?.status) {
                 setStatus(event.data.status as WhatsAppBizStatusPayload)
                 toast({
-                    title: "WhatsApp Business hesabı bağlandı",
-                    description: "Ön kontrolleri tekrar çalıştırarak kuruluma devam edin.",
+                    title: t('waConnectedTitle'),
+                    description: t('waContinueSetup'),
                 })
                 return
             }
 
             toast({
-                title: "WhatsApp bağlantısı tamamlanamadı",
-                description: event.data?.error || "Meta girişi tamamlanamadı.",
+                title: t('waConnectFailedTitle'),
+                description: event.data?.error || t('metaLoginFailed'),
                 variant: "destructive",
             })
         }
@@ -82,7 +84,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
 
     const getAuthHeaders = async () => {
         if (!user) {
-            throw new Error("Oturum bulunamadı.")
+            throw new Error(t('sessionNotFound'))
         }
         const token = await user.getIdToken()
         return {
@@ -101,13 +103,13 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "WhatsApp durumu alınamadı.")
+                throw new Error(payload?.error || t('waStatusFailedMsg'))
             }
             setStatus(payload as WhatsAppBizStatusPayload)
         } catch (error) {
             toast({
-                title: "WhatsApp durumu alınamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('waStatusFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -122,7 +124,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
         const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2)
         const popup = window.open(url, "whatsapp-business-oauth", `width=${width},height=${height},left=${left},top=${top}`)
         if (!popup) {
-            throw new Error("Açılır pencere engellendi. Lütfen tarayıcı iznini açın.")
+            throw new Error(t('popupBlocked'))
         }
     }
 
@@ -141,14 +143,14 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok || !payload?.authUrl) {
-                throw new Error(payload?.error || "WhatsApp bağlantısı başlatılamadı.")
+                throw new Error(payload?.error || t('waConnectStartFailedMsg'))
             }
             openPopup(payload.authUrl)
         } catch (error) {
             setConnecting(false)
             toast({
-                title: "WhatsApp bağlantısı başlatılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('waConnectStartFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         }
@@ -164,13 +166,13 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Ön kontrol çalıştırılamadı.")
+                throw new Error(payload?.error || t('preflightRunFailedMsg'))
             }
             setStatus(payload as WhatsAppBizStatusPayload)
         } catch (error) {
             toast({
-                title: "Ön kontrol çalıştırılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('preflightRunFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -208,18 +210,18 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const subscribePayload = await subscribeResponse.json()
             if (!subscribeResponse.ok) {
-                throw new Error(subscribePayload?.error || "Bağlantı etkinleştirilemedi.")
+                throw new Error(subscribePayload?.error || t('connectionActivateFailed'))
             }
 
             setStatus(subscribePayload as WhatsAppBizStatusPayload)
             toast({
-                title: "WhatsApp numarası kaydedildi",
-                description: "Bağlantı etkinleştirildi. İsterseniz şimdi test mesajı gönderebilirsiniz.",
+                title: t('waNumberSavedTitle'),
+                description: t('waNumberSavedDesc'),
             })
         } catch (error) {
             toast({
-                title: "WhatsApp kurulumu tamamlanamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('waSetupFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -241,17 +243,17 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Test mesajı gönderilemedi.")
+                throw new Error(payload?.error || t('testMsgSendFailedMsg'))
             }
             toast({
-                title: "Test mesajı gönderildi",
-                description: "WhatsApp tarafında mesajın ulaşıp ulaşmadığını kontrol edin.",
+                title: t('testMsgSentTitle'),
+                description: t('testMsgSentDesc'),
             })
             await fetchStatus()
         } catch (error) {
             toast({
-                title: "Test mesajı gönderilemedi",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('testMsgSendFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -269,13 +271,13 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Bağlantı kaldırılamadı.")
+                throw new Error(payload?.error || t('removeConnFailedMsg'))
             }
             setStatus(payload as WhatsAppBizStatusPayload)
         } catch (error) {
             toast({
-                title: "Bağlantı kaldırılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('removeConnFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -288,7 +290,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
             <Card className="border-border/70">
                 <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    WhatsApp Business durumu yükleniyor...
+                    {t('waStatusLoading')}
                 </CardContent>
             </Card>
         )
@@ -305,7 +307,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                             </div>
                             <div>
                                 <CardTitle className="text-lg">WhatsApp Business</CardTitle>
-                                <CardDescription>WhatsApp mesajlarınızı ayrı bir kurulum akışıyla bağlayın.</CardDescription>
+                                <CardDescription>{t('waWizardSubtitle')}</CardDescription>
                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground pl-[57px]">{status.stateMessage}</p>
@@ -313,7 +315,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                     <div className="flex items-center gap-2">
                         <ChannelStatusBadge state={status.config.state} />
                         {(role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") && status.diagnostics ? (
-                            <SupportDiagnosticDrawer title="WhatsApp Business Tanı Bilgisi" diagnostics={status.diagnostics} />
+                            <SupportDiagnosticDrawer title={t('waDiagnosticsTitle')} diagnostics={status.diagnostics} />
                         ) : null}
                         <Button type="button" variant="outline" size="icon" onClick={fetchStatus}>
                             <RefreshCw className="h-4 w-4" />
@@ -326,9 +328,9 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                 {!status.platformAppAvailable ? (
                     <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
                         <div className="mb-4">
-                            <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
+                            <p className="text-sm font-medium">{t('metaAppInfoRequired')}</p>
                             <p className="text-xs text-muted-foreground">
-                                Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
+                                {t('metaAppRequired')}
                             </p>
                         </div>
                         <div className="grid gap-3">
@@ -340,7 +342,7 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                                     id="wa-custom-app-id"
                                     value={customAppId}
                                     onChange={(event) => setCustomAppId(event.target.value)}
-                                    placeholder="Örn. 123456789012345"
+                                    placeholder={t('appIdPlaceholder')}
                                 />
                             </div>
                             <div className="grid gap-1.5">
@@ -352,11 +354,11 @@ export function WhatsAppBizWizard({ chatbotId }: { chatbotId: string }) {
                                     type="password"
                                     value={customAppSecret}
                                     onChange={(event) => setCustomAppSecret(event.target.value)}
-                                    placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
+                                    placeholder={t('appSecretPlaceholder')}
                                 />
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
+                                {t('appCredsSavedHint')}
                             </p>
                         </div>
                     </div>

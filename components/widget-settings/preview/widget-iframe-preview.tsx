@@ -131,14 +131,14 @@ export function WidgetIframePreview({ userId, isSaving = false, t }: WidgetIfram
                     </Button>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={refresh} title="Önizlemeyi yenile">
+                    <Button variant="outline" size="sm" onClick={refresh} title={t('refreshPreview')}>
                         <RefreshCw className="w-3.5 h-3.5" />
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => window.open(`/widget-test?id=${userId}`, '_blank')}
-                        title="Tam ekranda aç"
+                        title={t('openFullscreen')}
                     >
                         <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
@@ -151,7 +151,7 @@ export function WidgetIframePreview({ userId, isSaving = false, t }: WidgetIfram
             </div>
 
             <p className="text-[11px] text-muted-foreground text-center shrink-0 mt-auto">
-                Kaydet&apos;e bastıktan sonra önizleme otomatik güncellenir
+                {t('previewAutoUpdates')}
             </p>
         </div>
     )

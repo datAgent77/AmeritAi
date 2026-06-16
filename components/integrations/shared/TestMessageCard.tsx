@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function TestMessageCard(props: {
     title: string
@@ -19,12 +20,13 @@ export function TestMessageCard(props: {
     onSend: () => void
     sending?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardHeader className="bg-slate-50/50 pb-4 border-b border-border/40">
                 <CardTitle className="text-base flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold">✓</span>
-                    Test Mesajı Gönder
+                    {t('sendTestMessage')}
                 </CardTitle>
                 <CardDescription className="text-xs">
                     {props.description}
@@ -42,12 +44,12 @@ export function TestMessageCard(props: {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Test mesajı</Label>
+                        <Label className="text-sm font-medium">{t('testMessageLabel')}</Label>
                         <Textarea
                             rows={3}
                             value={props.messageValue}
                             onChange={(event) => props.onMessageChange(event.target.value)}
-                            placeholder="Merhaba, bu Vion kurulum test mesajıdır."
+                            placeholder={t('testMessagePlaceholder')}
                             className="bg-muted/30 resize-none"
                         />
                     </div>
@@ -60,7 +62,7 @@ export function TestMessageCard(props: {
                         className="w-full sm:w-auto bg-primary hover:bg-primary/90"
                     >
                         {props.sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                        Mesajı Gönder ve Doğrula
+                        {t('sendAndVerify')}
                     </Button>
                 </div>
             </CardContent>

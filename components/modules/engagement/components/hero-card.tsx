@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { EngagementSettings } from "../types"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface EngagementHeroCardProps {
     settings: EngagementSettings
@@ -8,6 +9,7 @@ interface EngagementHeroCardProps {
 }
 
 export function EngagementHeroCard({ settings, setSettings }: EngagementHeroCardProps) {
+    const { t } = useLanguage()
     return (
         <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex gap-4">
@@ -15,9 +17,9 @@ export function EngagementHeroCard({ settings, setSettings }: EngagementHeroCard
                     <Sparkles className="w-6 h-6 text-zinc-900 dark:text-zinc-100" />
                 </div>
                 <div>
-                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">AI Oto-Pilot</h3>
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{t('engAutoPilot')}</h3>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-md">
-                        Ziyaretçi davranışlarını analiz ederek en doğru anda, en doğru mesajı otomatik olarak gösterir.
+                        {t('engAutoPilotDesc')}
                     </p>
                 </div>
             </div>

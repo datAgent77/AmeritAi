@@ -6,6 +6,7 @@ import { Send, ChevronDown, ChevronUp, MessageCircle } from "lucide-react"
 import { getAmbientDockStateKey, resolveAmbientDockStyle, type AmbientDockPreviewState } from "@/lib/ambient-dock-style"
 import { resolveAmbientInputSizeConfig, resolveAmbientSurfaceLayout } from "@/lib/ambient-layout"
 import { ThinkingIndicatorBubble } from "@/components/chatbot/thinking-indicator-bubble"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface PreviewAmbientProps {
     settings: any
@@ -24,6 +25,7 @@ export function PreviewAmbient({
     previewAmbientDockState = "auto",
     previewAmbientThinking = false,
 }: PreviewAmbientProps) {
+    const { t } = useLanguage()
     const viewport = previewMode === "mobile" ? "mobile" : "desktop"
     const sizeConfig = resolveAmbientInputSizeConfig(settings.ambientInputSize)
     const ambientLayout = resolveAmbientSurfaceLayout(settings, viewport)
@@ -162,13 +164,13 @@ export function PreviewAmbient({
                                         className="w-fit max-w-[85%] rounded-2xl px-4 py-3 text-sm text-white shadow-sm"
                                         style={{ backgroundColor: settings.ambientAiBubbleColor || settings.brandColor || "#3b82f6" }}
                                     >
-                                        Merhaba! Nasıl yardımcı olabilirim?
+                                        {t('previewBotMsg')}
                                     </div>
                                     <div
                                         className="ml-auto w-fit max-w-[75%] rounded-2xl rounded-br-md border border-white/70 bg-white/80 px-4 py-3 text-sm text-gray-800 shadow-sm"
                                         style={settings.ambientUserBubbleColor ? { backgroundColor: settings.ambientUserBubbleColor } : undefined}
                                     >
-                                        Demo kullanıcı mesajı
+                                        {t('previewUserMsg')}
                                     </div>
                                     {previewAmbientThinking ? (
                                         <ThinkingIndicatorBubble

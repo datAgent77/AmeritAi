@@ -370,10 +370,10 @@ export function VoiceSettingsForm({
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="general">Genel</TabsTrigger>
-          <TabsTrigger value="performance">Performans</TabsTrigger>
-          <TabsTrigger value="engine">Ses Motoru</TabsTrigger>
-          <TabsTrigger value="test">Test</TabsTrigger>
+          <TabsTrigger value="general">{t('vTabGeneral')}</TabsTrigger>
+          <TabsTrigger value="performance">{t('vTabPerformance')}</TabsTrigger>
+          <TabsTrigger value="engine">{t('vTabEngine')}</TabsTrigger>
+          <TabsTrigger value="test">{t('vTabTest')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6">
@@ -394,11 +394,10 @@ export function VoiceSettingsForm({
                   htmlFor="voice-assistant-enabled"
                   className="text-base font-medium"
                 >
-                  Sesli asistanı aktif et
+                  {t('enableVoiceAssistant')}
                 </Label>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Aktif olduğunda widget içinde mikrofonla konuşma ve sesli
-                  yanıt deneyimi açılır.
+                  {t('enableVoiceAssistantDesc')}
                 </p>
               </div>
               <Switch
@@ -421,7 +420,7 @@ export function VoiceSettingsForm({
               <p>
                 {enableVoiceAssistant
                   ? voiceInteractionMode === "realtime"
-                    ? "Sesli asistan direkt ElevenLabs realtime agent ile yanit verecek."
+                    ? t('configRealtime')
                     : enableElevenLabs
                       ? t("configElevenLabsOnly")
                       : t("configOpenAiVoice") ||
@@ -437,15 +436,15 @@ export function VoiceSettingsForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Gauge className="h-5 w-5" />
-                Konuşma Performansı
+                {t('speechPerformance')}
               </CardTitle>
               <CardDescription>
-                Algılama hızı, yanıt uzunluğu ve konuşma profili.
+                {t('speechPerformanceDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="voiceInteractionMode">Sesli yanıt modu</Label>
+                <Label htmlFor="voiceInteractionMode">{t('voiceResponseMode')}</Label>
                 <select
                   id="voiceInteractionMode"
                   value={voiceInteractionMode}
@@ -456,20 +455,18 @@ export function VoiceSettingsForm({
                   }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="legacy">Legacy - kayıt, chat ve TTS</option>
-                  <option value="realtime">Direkt realtime voice</option>
+                  <option value="legacy">{t('voiceModeLegacy')}</option>
+                  <option value="realtime">{t('voiceModeRealtime')}</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  Realtime modda widget yanıtları ElevenLabs Conversational AI
-                  agent tarafından canlı sesle üretilir.
+                  {t('voiceModeRealtimeDesc')}
                 </p>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
-                  <Label>Düşük gecikme modu</Label>
+                  <Label>{t('lowLatencyMode')}</Label>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Daha kısa sessizlik bekleme ve hızlı kayıt parçaları
-                    kullanır.
+                    {t('lowLatencyModeDesc')}
                   </p>
                 </div>
                 <Switch
@@ -479,7 +476,7 @@ export function VoiceSettingsForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="voiceSensitivity">
-                  Konuşma algılama hassasiyeti
+                  {t('speechSensitivity')}
                 </Label>
                 <select
                   id="voiceSensitivity"
@@ -491,14 +488,14 @@ export function VoiceSettingsForm({
                   }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="low">Düşük - gürültülü ortam</option>
+                  <option value="low">{t('sensitivityLow')}</option>
                   <option value="normal">Normal</option>
-                  <option value="high">Yüksek - sesi erken yakala</option>
+                  <option value="high">{t('sensitivityHigh')}</option>
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="voiceResponseLength">
-                  Varsayılan yanıt uzunluğu
+                  {t('defaultResponseLength')}
                 </Label>
                 <select
                   id="voiceResponseLength"
@@ -510,13 +507,13 @@ export function VoiceSettingsForm({
                   }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="short">Kısa</option>
-                  <option value="balanced">Dengeli</option>
-                  <option value="detailed">Detaylı</option>
+                  <option value="short">{t('lengthShort')}</option>
+                  <option value="balanced">{t('lengthBalanced')}</option>
+                  <option value="detailed">{t('lengthDetailed')}</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="voiceProfile">Hazır ses profili</Label>
+                <Label htmlFor="voiceProfile">{t('presetVoiceProfile')}</Label>
                 <select
                   id="voiceProfile"
                   value={voiceProfile}
@@ -525,10 +522,10 @@ export function VoiceSettingsForm({
                   }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="support">Destek Asistanı</option>
-                  <option value="sales">Satış Asistanı</option>
-                  <option value="appointments">Randevu Asistanı</option>
-                  <option value="restaurant">Restoran Asistanı</option>
+                  <option value="support">{t('profileSupport')}</option>
+                  <option value="sales">{t('profileSales')}</option>
+                  <option value="appointments">{t('profileAppointments')}</option>
+                  <option value="restaurant">{t('profileRestaurant')}</option>
                 </select>
               </div>
             </CardContent>
@@ -544,8 +541,7 @@ export function VoiceSettingsForm({
                 {t("elevenLabsTitle")}
               </CardTitle>
               <CardDescription>
-                {t("elevenLabsDesc")} Turkce web voice varsayilan olarak daha
-                dusuk gecikmeli konusma preset&apos;i kullanir.
+                {t("elevenLabsDesc")} {t('elevenLabsDescSuffix')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -555,11 +551,10 @@ export function VoiceSettingsForm({
                     htmlFor="elevenlabs-enabled"
                     className="text-base font-medium"
                   >
-                    ElevenLabs motorunu kullan
+                    {t('useElevenLabsEngine')}
                   </Label>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Kapalıysa sesli yanıtlar varsayılan OpenAI ses motoruyla
-                    üretilir.
+                    {t('useElevenLabsEngineDesc')}
                   </p>
                 </div>
                 <Switch
@@ -592,7 +587,7 @@ export function VoiceSettingsForm({
                     className={voiceInteractionMode !== "realtime" ? "opacity-50" : ""}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Direkt realtime voice için Conversational AI agent ID.
+                    {t('agentIdDesc')}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -627,7 +622,7 @@ export function VoiceSettingsForm({
                 />
                 {enableElevenLabs && (
                   <p className="text-xs text-muted-foreground">
-                    Örnek: Rachel (21m00Tcm4TlvDq8ikWAM)
+                    {t('voiceIdExample')}
                   </p>
                 )}
               </div>
@@ -665,10 +660,10 @@ export function VoiceSettingsForm({
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
-                    Test ve Sağlık Kontrolü
+                    {t('testHealthCheck')}
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Provider bağlantısını kontrol edin ve seçili sesi dinleyin.
+                    {t('testHealthCheckDesc')}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -683,7 +678,7 @@ export function VoiceSettingsForm({
                     ) : (
                       <Activity className="mr-2 h-4 w-4" />
                     )}
-                    Kontrol Et
+                    {t('checkBtn')}
                   </Button>
                   <Button
                     type="button"
@@ -695,7 +690,7 @@ export function VoiceSettingsForm({
                     ) : (
                       <Play className="mr-2 h-4 w-4" />
                     )}
-                    Sesi Test Et
+                    {t('testVoiceBtn')}
                   </Button>
                 </div>
               </div>
@@ -722,7 +717,7 @@ export function VoiceSettingsForm({
                   {typeof healthPayload.selected.details?.latencyMs ===
                     "number" && (
                     <p className="mt-1 text-xs opacity-80">
-                      Bağlantı süresi:{" "}
+                      {t('connectionTime')}{" "}
                       {healthPayload.selected.details.latencyMs} ms
                     </p>
                   )}
@@ -733,7 +728,7 @@ export function VoiceSettingsForm({
                   className={`rounded-lg border p-4 text-sm ${lastPerf.error ? "border-red-200 bg-red-50 text-red-800" : "border-blue-200 bg-blue-50 text-blue-800"}`}
                 >
                   <div className="font-medium">
-                    {lastPerf.error ? "Ses testi başarısız" : lastPerf.message}
+                    {lastPerf.error ? t('voiceTestFailed') : lastPerf.message}
                   </div>
                   <p className="mt-1 text-xs opacity-80">
                     Provider: {lastPerf.provider}{" "}
@@ -746,9 +741,7 @@ export function VoiceSettingsForm({
               )}
               {enableElevenLabs && (
                 <p className="text-xs text-muted-foreground">
-                  Not: Normal widget kullanımında ElevenLabs hata verirse OpenAI
-                  fallback devreye girer. Sağlık kontrolü ElevenLabs
-                  bağlantısını doğrudan doğrular.
+                  {t('elevenLabsFallbackNote')}
                 </p>
               )}
             </CardContent>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Instagram, Loader2, RefreshCw } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,7 @@ import type { InstagramDMStatusPayload } from "@/lib/integrations/instagram-dm/t
 
 export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
     const { user, role } = useAuth()
+    const { t } = useLanguage()
     const { toast } = useToast()
     const [status, setStatus] = useState<InstagramDMStatusPayload | null>(null)
     const [loading, setLoading] = useState(true)
@@ -28,7 +30,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
     const [disconnecting, setDisconnecting] = useState(false)
     const [selectedPageId, setSelectedPageId] = useState("")
     const [recipientId, setRecipientId] = useState("")
-    const [message, setMessage] = useState("Merhaba, bu Vion kurulum test mesajıdır.")
+    const [message, setMessage] = useState(t('testMessagePlaceholder'))
     const [customAppId, setCustomAppId] = useState("")
     const [customAppSecret, setCustomAppSecret] = useState("")
 
@@ -43,23 +45,23 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
         const items: string[] = []
 
         if (preflight.hasFacebookPage === false) {
-            items.push("Instagram hesabınızın bağlı olduğu doğru Facebook Sayfasını oluşturun veya bu hesabın erişebildiği işletme altında görünür hale getirin.")
+            items.push(t('igGuide1'))
         }
 
         if (preflight.instagramLinkedToPage === false) {
-            items.push("Instagram hesabını doğru Facebook Sayfasına bağlayın. Hesap başka bir işletmeye bağlıysa sayfa listesi boş kalır ve kurulum ilerlemez.")
+            items.push(t('igGuide2'))
         }
 
         if (preflight.instagramIsProfessional === false) {
-            items.push("Instagram hesabını Profesyonel hesaba çevirin. Kişisel hesaplarla mesaj entegrasyonu tamamlanmaz.")
+            items.push(t('igGuide3'))
         }
 
         if (preflight.messageAccessEnabled === false) {
-            items.push("Instagram uygulamasında mesaj erişimini açın. Mesaj izinleri kapalıysa bağlantı tamamlanmış görünse bile DM akışı aktif olmaz.")
+            items.push(t('igGuide4'))
         }
 
         if ((preflight.hasFacebookPage === false || preflight.instagramLinkedToPage === false) && preflight.tokenPresent === true) {
-            items.push("Yanlış Facebook/Meta hesabıyla giriş yaptıysanız mevcut bağlantıyı sıfırlayıp doğru hesapla yeniden giriş yapın.")
+            items.push(t('igGuide5'))
         }
 
         if (items.length === 0 && preflight.failureReason) {
@@ -84,15 +86,15 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             if (event.data?.ok && event.data?.status) {
                 setStatus(event.data.status as InstagramDMStatusPayload)
                 toast({
-                    title: "Instagram hesabı bağlandı",
-                    description: "Ön kontrolleri tekrar çalıştırarak kuruluma devam edin.",
+                    title: t('igConnectedTitle'),
+                    description: t('waContinueSetup'),
                 })
                 return
             }
 
             toast({
-                title: "Instagram bağlantısı tamamlanamadı",
-                description: event.data?.error || "Meta girişi tamamlanamadı.",
+                title: t('igConnectFailedTitle'),
+                description: event.data?.error || t('metaLoginFailed'),
                 variant: "destructive",
             })
         }
@@ -109,7 +111,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
 
     const getAuthHeaders = async () => {
         if (!user) {
-            throw new Error("Oturum bulunamadı.")
+            throw new Error(t('sessionNotFound'))
         }
         const token = await user.getIdToken()
         return {
@@ -128,13 +130,13 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Instagram durumu alınamadı.")
+                throw new Error(payload?.error || t('igStatusFailedMsg'))
             }
             setStatus(payload as InstagramDMStatusPayload)
         } catch (error) {
             toast({
-                title: "Instagram durumu alınamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('igStatusFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -149,7 +151,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
         const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2)
         const popup = window.open(url, "instagram-dm-oauth", `width=${width},height=${height},left=${left},top=${top}`)
         if (!popup) {
-            throw new Error("Açılır pencere engellendi. Lütfen tarayıcı iznini açın.")
+            throw new Error(t('popupBlocked'))
         }
     }
 
@@ -168,14 +170,14 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok || !payload?.authUrl) {
-                throw new Error(payload?.error || "Instagram bağlantısı başlatılamadı.")
+                throw new Error(payload?.error || t('igConnectStartFailedMsg'))
             }
             openPopup(payload.authUrl)
         } catch (error) {
             setConnecting(false)
             toast({
-                title: "Instagram bağlantısı başlatılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('igConnectStartFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         }
@@ -191,13 +193,13 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Ön kontrol çalıştırılamadı.")
+                throw new Error(payload?.error || t('preflightRunFailedMsg'))
             }
             setStatus(payload as InstagramDMStatusPayload)
         } catch (error) {
             toast({
-                title: "Ön kontrol çalıştırılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('preflightRunFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -235,18 +237,18 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             })
             const subscribePayload = await subscribeResponse.json()
             if (!subscribeResponse.ok) {
-                throw new Error(subscribePayload?.error || "Bağlantı etkinleştirilemedi.")
+                throw new Error(subscribePayload?.error || t('connectionActivateFailed'))
             }
 
             setStatus(subscribePayload as InstagramDMStatusPayload)
             toast({
-                title: "Instagram sayfası kaydedildi",
-                description: "Bağlantı etkinleştirildi. İsterseniz şimdi test mesajı gönderebilirsiniz.",
+                title: t('igPageSavedTitle'),
+                description: t('waNumberSavedDesc'),
             })
         } catch (error) {
             toast({
-                title: "Instagram kurulumu tamamlanamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('igSetupFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -277,17 +279,17 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                   })()
                 : null
             if (!response.ok) {
-                throw new Error(payload?.error || rawPayload || "Test mesajı gönderilemedi.")
+                throw new Error(payload?.error || rawPayload || t('testMsgSendFailedMsg'))
             }
             toast({
-                title: "Test mesajı gönderildi",
-                description: "Instagram tarafında mesajın ulaşıp ulaşmadığını kontrol edin.",
+                title: t('testMsgSentTitle'),
+                description: t('igTestSentDesc'),
             })
             await fetchStatus()
         } catch (error) {
             toast({
-                title: "Test mesajı gönderilemedi",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('testMsgSendFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -305,13 +307,13 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             })
             const payload = await response.json()
             if (!response.ok) {
-                throw new Error(payload?.error || "Bağlantı kaldırılamadı.")
+                throw new Error(payload?.error || t('removeConnFailedMsg'))
             }
             setStatus(payload as InstagramDMStatusPayload)
         } catch (error) {
             toast({
-                title: "Bağlantı kaldırılamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('removeConnFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -324,7 +326,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
             <Card className="border-border/70">
                 <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Instagram DM durumu yükleniyor...
+                    {t('igStatusLoading')}
                 </CardContent>
             </Card>
         )
@@ -346,7 +348,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                             </div>
                             <div>
                                 <CardTitle className="text-lg">Instagram DM</CardTitle>
-                                <CardDescription>Instagram mesajlarınızı ayrı bir kurulum akışıyla bağlayın.</CardDescription>
+                                <CardDescription>{t('igWizardSubtitle')}</CardDescription>
                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground">{status.stateMessage}</p>
@@ -354,7 +356,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                     <div className="flex items-center gap-2">
                         <ChannelStatusBadge state={status.config.state} />
                         {(role === "SUPER_ADMIN" || role === "AGENCY_ADMIN") && status.diagnostics ? (
-                            <SupportDiagnosticDrawer title="Instagram DM Tanı Bilgisi" diagnostics={status.diagnostics} />
+                            <SupportDiagnosticDrawer title={t('igDiagnosticsTitle')} diagnostics={status.diagnostics} />
                         ) : null}
                         <Button type="button" variant="outline" size="icon" onClick={fetchStatus}>
                             <RefreshCw className="h-4 w-4" />
@@ -367,9 +369,9 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                 {!status.platformAppAvailable ? (
                     <div className="rounded-xl border border-border/70 bg-muted/20 p-4">
                         <div className="mb-4">
-                            <p className="text-sm font-medium">Meta Uygulama Bilgileri (Zorunlu)</p>
+                            <p className="text-sm font-medium">{t('metaAppInfoRequired')}</p>
                             <p className="text-xs text-muted-foreground">
-                                Bu chatbot için Meta App ID ve Secret zorunludur. Kendi Meta uygulamanızın bilgilerini girin.
+                                {t('metaAppRequired')}
                             </p>
                         </div>
                         <div className="grid gap-3">
@@ -381,7 +383,7 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                                     id="ig-custom-app-id"
                                     value={customAppId}
                                     onChange={(event) => setCustomAppId(event.target.value)}
-                                    placeholder="Örn. 123456789012345"
+                                    placeholder={t('appIdPlaceholder')}
                                 />
                             </div>
                             <div className="grid gap-1.5">
@@ -393,11 +395,11 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                                     type="password"
                                     value={customAppSecret}
                                     onChange={(event) => setCustomAppSecret(event.target.value)}
-                                    placeholder="Örn. xxxxxxxxxxxxxxxxxxxxxxxx"
+                                    placeholder={t('appSecretPlaceholder')}
                                 />
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Bu alanları kaydettiğinizde bir sonraki bağlantılarda aynı chatbot için tekrar kullanılır.
+                                {t('appCredsSavedHint')}
                             </p>
                         </div>
                     </div>
@@ -407,9 +409,9 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                 {shouldShowRecoveryPanel ? (
                     <Card className="border-amber-200 bg-amber-50/60 shadow-sm">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-base">Kurulum burada beklemesin</CardTitle>
+                            <CardTitle className="text-base">{t('dontLetSetupWait')}</CardTitle>
                             <CardDescription>
-                                Eksik Meta varlıklarını tamamladıktan sonra aynı ekrandan devam edebilirsiniz. Yanlış hesap bağlandıysa bağlantıyı sıfırlayın.
+                                {t('igRecoveryPanelDesc')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -425,16 +427,16 @@ export function InstagramDMWizard({ chatbotId }: { chatbotId: string }) {
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <Button type="button" onClick={handleConnect} disabled={connecting}>
                                     {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                    Meta ile yeniden giriş yap
+                                    {t('reLoginWithMeta')}
                                 </Button>
                                 <Button type="button" variant="outline" onClick={runPreflight} disabled={checking}>
                                     {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                                    Kontrolü tekrar çalıştır
+                                    {t('rerunCheck')}
                                 </Button>
                                 {canResetConnection ? (
                                     <Button type="button" variant="outline" onClick={handleDisconnect} disabled={disconnecting}>
                                         {disconnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                        Bağlantıyı sıfırla
+                                        {t('resetConnection')}
                                     </Button>
                                 ) : null}
                             </div>

@@ -2,6 +2,7 @@
 
 import { CheckCircle2, CircleDashed, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/context/LanguageContext"
 
 type ChecklistItem = {
     id: string
@@ -12,6 +13,8 @@ type ChecklistItem = {
 }
 
 export function PreflightChecklist({ items }: { items: ChecklistItem[] }) {
+    const { language } = useLanguage()
+    const notCheckedYet = language === "tr" ? "Henüz kontrol edilmedi." : language === "es" ? "Aún no se ha comprobado." : "Not checked yet."
     return (
         <div className="space-y-2">
             {items.map((item) => {
@@ -39,7 +42,7 @@ export function PreflightChecklist({ items }: { items: ChecklistItem[] }) {
                         )}
                         <div className="space-y-0.5">
                             <p className="text-sm font-medium text-foreground">{item.title}</p>
-                            <p className="text-xs text-muted-foreground">{isOk ? item.okMessage : isUnknown ? "Henüz kontrol edilmedi." : item.failMessage}</p>
+                            <p className="text-xs text-muted-foreground">{isOk ? item.okMessage : isUnknown ? notCheckedYet : item.failMessage}</p>
                         </div>
                     </div>
                 )

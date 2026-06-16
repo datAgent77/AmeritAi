@@ -11,6 +11,7 @@ import { Globe, FileText, List, Save, Loader2, Plus, Trash2, ExternalLink } from
 import { db } from "@/lib/firebase"
 import { doc, getDoc, setDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface MenuConfig {
     type: 'url' | 'pdf' | 'manual'
@@ -33,6 +34,7 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const { toast } = useToast()
+    const { t } = useLanguage()
 
     useEffect(() => {
         if (!chatbotId) return
@@ -58,13 +60,13 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
         try {
             await setDoc(doc(db, "digital_waiter_menu", chatbotId), config)
             toast({
-                title: "Başarılı",
-                description: "Menü ayarları kaydedildi.",
+                title: t('success'),
+                description: t('menuSettingsSaved'),
             })
         } catch (error) {
             toast({
-                title: "Hata",
-                description: "Kaydedilirken bir sorun oluştu.",
+                title: t('error'),
+                description: t('settingsSaveFailed'),
                 variant: "destructive"
             })
         } finally {
@@ -80,9 +82,9 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Menü Kaynağı</CardTitle>
+                    <CardTitle>{t('menuSource')}</CardTitle>
                     <CardDescription>
-                        Müşterilerinizin menüye nasıl erişeceğini seçin.
+                        {t('menuSourceDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -101,7 +103,7 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
                             onClick={() => setConfig({ ...config, type: 'pdf' })}
                         >
                             <FileText className="w-6 h-6" />
-                            <span>PDF Menü</span>
+                            <span>{t('pdfMenu')}</span>
                         </Button>
                         <Button 
                             variant={config.type === 'manual' ? 'default' : 'outline'} 
@@ -109,14 +111,14 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
                             onClick={() => setConfig({ ...config, type: 'manual' })}
                         >
                             <List className="w-6 h-6" />
-                            <span>Manuel Liste</span>
+                            <span>{t('manualList')}</span>
                         </Button>
                     </div>
 
                     <div className="pt-4 border-t">
                         {config.type === 'url' && (
                             <div className="space-y-2">
-                                <Label>Menü Web Adresi (URL)</Label>
+                                <Label>{t('menuUrl')}</Label>
                                 <div className="flex gap-2">
                                     <Input 
                                         placeholder="https://restoran.com/menu" 
@@ -130,21 +132,21 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
                                     </Button>
                                 </div>
                                 <p className="text-xs text-muted-foreground italic">
-                                    Mevcut dijital menünüzün linkini buraya yapıştırın. AI bu sayfayı tarayarak müşterilere bilgi verebilir.
+                                    {t('menuUrlDesc')}
                                 </p>
                             </div>
                         )}
 
                         {config.type === 'pdf' && (
                             <div className="space-y-2">
-                                <Label>PDF Dosyası URL</Label>
+                                <Label>{t('pdfFileUrl')}</Label>
                                 <Input 
                                     placeholder="https://restoran.com/menu.pdf" 
                                     value={config.pdfUrl || ""}
                                     onChange={(e) => setConfig({ ...config, pdfUrl: e.target.value })}
                                 />
                                 <p className="text-xs text-muted-foreground italic">
-                                    Yüklediğiniz menü dosyasının linkini girin. Yakında direkt dosya yükleme eklenecektir.
+                                    {t('pdfFileUrlDesc')}
                                 </p>
                             </div>
                         )}
@@ -152,9 +154,9 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
                         {config.type === 'manual' && (
                             <div className="py-8 text-center bg-muted/20 rounded-lg border-2 border-dashed">
                                 <List className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground">Manuel ürün yönetimi yakında aktif edilecek.</p>
+                                <p className="text-sm text-muted-foreground">{t('manualProductSoon')}</p>
                                 <Button variant="link" size="sm" onClick={() => setConfig({ ...config, type: 'url' })}>
-                                    Şimdilik URL kullanın
+                                    {t('useUrlForNow')}
                                 </Button>
                             </div>
                         )}
@@ -164,7 +166,7 @@ export function MenuManagement({ chatbotId }: { chatbotId: string }) {
                         <Button onClick={saveMenu} disabled={saving}>
                             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             <Save className="w-4 h-4 mr-2" />
-                            Değişiklikleri Kaydet
+                            {t('saveChanges')}
                         </Button>
                     </div>
                 </CardContent>

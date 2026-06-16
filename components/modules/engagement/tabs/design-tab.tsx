@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useLanguage } from "@/context/LanguageContext"
 import {
     EngagementLanguage,
     EngagementSettings,
@@ -31,6 +32,7 @@ const DEFAULT_AMBIENT_TYPEWRITER = {
 } as const
 
 export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: EngagementDesignTabProps) {
+    const { t } = useLanguage()
     const ambientVariant = (() => {
         const saved = (settings.bubble.ambientVariant || {}) as Partial<NonNullable<EngagementSettings["bubble"]["ambientVariant"]>>
         return {
@@ -169,7 +171,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                             <div className="grid gap-4 rounded-xl border bg-background/60 p-5">
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <Label className="text-sm font-medium">Ambient modda farklı balon</Label>
+                                        <Label className="text-sm font-medium">{t('ambientDiffBubble')}</Label>
                                     </div>
                                     <Switch
                                         checked={!!ambientVariant.enabled}
@@ -179,15 +181,13 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
 
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <Badge variant="secondary" className="text-[10px]">
-                                        Aktif görünüm: {isAmbientEditor ? "Ambient" : "Classic"}
+                                        {t('activeView')} {isAmbientEditor ? "Ambient" : "Classic"}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
-                                        {isAmbientEditor
-                                            ? "Bu chatbot ambient modda. Aşağıdaki ayarlar ambient balon görünümüne uygulanır."
-                                            : "Bu chatbot classic modda. Aşağıdaki ayarlar classic balon görünümüne uygulanır."}
+                                        {isAmbientEditor ? t('ambientModeNote') : t('classicModeNote')}
                                     </span>
                                     {isAmbientEditor && !ambientVariant.enabled && (
-                                        <Badge variant="outline" className="text-[10px]">Override kapalı (fallback classic)</Badge>
+                                        <Badge variant="outline" className="text-[10px]">{t('overrideOffFallback')}</Badge>
                                     )}
                                 </div>
 
@@ -229,15 +229,15 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                     )}
 
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-medium text-muted-foreground">Konum</Label>
+                                        <Label className="text-xs font-medium text-muted-foreground">{t('position')}</Label>
                                         <Select value={currentPosition} onValueChange={(val: EngagementBubblePosition) => updatePosition(val)}>
                                             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="top">Üst (Top)</SelectItem>
-                                                <SelectItem value="left">Sol (Left)</SelectItem>
-                                                <SelectItem value="right">Sağ (Right)</SelectItem>
-                                                <SelectItem value="bottom-left">Alt Sol</SelectItem>
-                                                <SelectItem value="bottom-right">Alt Sağ</SelectItem>
+                                                <SelectItem value="top">{t('posTop')}</SelectItem>
+                                                <SelectItem value="left">{t('posLeft')}</SelectItem>
+                                                <SelectItem value="right">{t('posRight')}</SelectItem>
+                                                <SelectItem value="bottom-left">{t('posBottomLeft')}</SelectItem>
+                                                <SelectItem value="bottom-right">{t('posBottomRight')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -263,13 +263,13 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
 
                     <AccordionItem value="style" className="border-b">
                         <AccordionTrigger className="py-4 hover:no-underline">
-                            <div className="text-sm font-semibold text-left">Görsel Stil</div>
+                            <div className="text-sm font-semibold text-left">{t('visualStyle')}</div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <div className="grid gap-6">
                                 <div className="space-y-3">
                                     <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                                        Efekt Tipi {isAmbientEditor ? "(Ambient varyantı)" : "(Classic)"}
+                                        {t('effectType')} {isAmbientEditor ? t('ambientVariant') : t('classicVariant')}
                                     </Label>
                                     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
                                         {[
@@ -298,26 +298,26 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                 <div className="grid gap-6 p-5 rounded-xl border bg-background/60">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium text-muted-foreground">Şekil</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground">{t('shape')}</Label>
                                             <Select value={currentStyle.shape} onValueChange={(val: any) => updateStyle('shape', val)}>
                                                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="rounded">Köşeli (Rounded)</SelectItem>
-                                                    <SelectItem value="pill">Hap (Pill)</SelectItem>
-                                                    <SelectItem value="square">Kare (Square)</SelectItem>
-                                                    <SelectItem value="speech">Konuşma Balonu</SelectItem>
+                                                    <SelectItem value="rounded">{t('shapeRounded')}</SelectItem>
+                                                    <SelectItem value="pill">{t('shapePill')}</SelectItem>
+                                                    <SelectItem value="square">{t('shapeSquare')}</SelectItem>
+                                                    <SelectItem value="speech">{t('shapeSpeech')}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-medium text-muted-foreground">Balon Dili</Label>
+                                            <Label className="text-xs font-medium text-muted-foreground">{t('bubbleLanguage')}</Label>
                                             <Select
                                                 value={settings.language}
                                                 onValueChange={(val: EngagementLanguage) => setSettings(p => ({ ...p, language: val }))}
                                             >
                                                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="auto">Otomatik Algıla (Tarayıcı Dili)</SelectItem>
+                                                    <SelectItem value="auto">{t('autoDetectBrowser')}</SelectItem>
                                                     <SelectItem value="tr">Türkçe</SelectItem>
                                                     <SelectItem value="en">English</SelectItem>
                                                     <SelectItem value="es">Español</SelectItem>
@@ -373,13 +373,13 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
 
                     <AccordionItem value="advanced" className="border-none">
                         <AccordionTrigger className="py-4 hover:no-underline">
-                            <div className="text-sm font-semibold text-left">Gelişmiş</div>
+                            <div className="text-sm font-semibold text-left">{t('advanced')}</div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <div className="space-y-6 pt-1">
                                 {isAmbientEditor && (
                                     <div className="grid gap-4 rounded-lg border bg-background/60 p-4">
-                                        <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Ambient Yerleşim</Label>
+                                        <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{t('ambientPlacement')}</Label>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-medium text-muted-foreground">Max Width</Label>
@@ -421,8 +421,8 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                     <div className="grid gap-4 rounded-lg border bg-background/60 p-4">
                                         <div className="flex items-center justify-between gap-4">
                                             <div>
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Daktilo Görünümü</Label>
-                                                <p className="text-xs text-muted-foreground mt-1">Yeni metinlerde çalışır.</p>
+                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{t('typewriterLook')}</Label>
+                                                <p className="text-xs text-muted-foreground mt-1">{t('typewriterNote')}</p>
                                             </div>
                                             <Switch
                                                 checked={ambientVariant.typewriter?.cursorVisible ?? true}
@@ -431,7 +431,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-muted-foreground">Karakter Hızı (ms)</Label>
+                                                <Label className="text-xs font-medium text-muted-foreground">{t('charSpeed')}</Label>
                                                 <Input
                                                     type="number"
                                                     min={5}
@@ -442,7 +442,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-muted-foreground">Başlangıç Gecikmesi (ms)</Label>
+                                                <Label className="text-xs font-medium text-muted-foreground">{t('startDelay')}</Label>
                                                 <Input
                                                     type="number"
                                                     min={0}
@@ -461,7 +461,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-muted-foreground">Yazım Sonrası Bekleme (ms)</Label>
+                                                <Label className="text-xs font-medium text-muted-foreground">{t('postTypeWait')}</Label>
                                                 <Input
                                                     type="number"
                                                     min={0}
@@ -478,7 +478,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                 <div className="grid gap-6 rounded-xl border bg-background/60 p-5">
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center">
-                                            <Label className="text-sm font-medium">Yuvarlaklık (Border Radius)</Label>
+                                            <Label className="text-sm font-medium">{t('borderRadiusLabel')}</Label>
                                             <Badge variant="outline" className="font-mono text-[10px] h-5">{currentStyle.borderRadius}px</Badge>
                                         </div>
                                         <Slider
@@ -493,7 +493,7 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                     {currentStyle.effect === 'glass' && (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-left-2">
                                             <div className="flex justify-between items-center">
-                                                <Label className="text-sm font-medium">Bulanıklık (Blur)</Label>
+                                                <Label className="text-sm font-medium">{t('blurLabel')}</Label>
                                                 <Badge variant="outline" className="font-mono text-[10px] h-5">{currentStyle.backdropBlur || 0}px</Badge>
                                             </div>
                                             <Slider
@@ -506,15 +506,15 @@ export function EngagementDesignTab({ settings, setSettings, chatDisplayMode }: 
                                     )}
 
                                     <div className="space-y-2 pt-2">
-                                        <Label className="text-sm font-medium">Gölge (Shadow)</Label>
+                                        <Label className="text-sm font-medium">{t('shadow')}</Label>
                                         <Select value={currentStyle.shadow} onValueChange={(val: any) => updateStyle('shadow', val)}>
                                             <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="none">Yok (None)</SelectItem>
-                                                <SelectItem value="small">Küçük (Small)</SelectItem>
-                                                <SelectItem value="medium">Orta (Medium)</SelectItem>
-                                                <SelectItem value="large">Büyük (Large)</SelectItem>
-                                                <SelectItem value="glow">Neon Parlama (Glow)</SelectItem>
+                                                <SelectItem value="none">{t('sizeNone')}</SelectItem>
+                                                <SelectItem value="small">{t('sizeSmall')}</SelectItem>
+                                                <SelectItem value="medium">{t('sizeMedium')}</SelectItem>
+                                                <SelectItem value="large">{t('sizeLarge')}</SelectItem>
+                                                <SelectItem value="glow">{t('shadowGlow')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

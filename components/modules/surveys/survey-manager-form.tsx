@@ -60,9 +60,9 @@ function createQuestion(): SurveyQuestion {
     return {
         id: `question_${Date.now()}`,
         type: "singleChoice",
-        title: "Yeni Soru",
+        title: "New Question",
         required: true,
-        options: ["Seçenek 1", "Seçenek 2"],
+        options: ["Option 1", "Option 2"],
         allowOther: false,
     }
 }
@@ -357,7 +357,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
     }
 
     const deleteSurvey = async () => {
-        if (!selectedSurveyId || !user || !confirm("Bu anketi kalıcı olarak silmek istediğinize emin misiniz?")) return
+        if (!selectedSurveyId || !user || !confirm(t('confirmDeleteSurvey'))) return
         setIsSavingSurvey(true)
         try {
             const headers = await getAuthHeaders()
@@ -438,7 +438,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             </div>
                             <h2 className="text-2xl font-semibold tracking-tight text-zinc-950">Anket & Geri Bildirim</h2>
                             <p className="max-w-2xl text-sm leading-relaxed text-zinc-500">
-                                Markanız için gelişmiş anketler oluşturun, public sayfalarda veya widget CTA ile yayınlayın ve değerli içgörüleri gerçek zamanlı olarak analiz edin.
+                                {t('srvModuleDesc')}
                             </p>
                         </div>
                         {isSuperAdmin && (
@@ -455,7 +455,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             disabled={isSavingModule}
                         >
                             {isSavingModule ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Settings className="mr-2 h-4 w-4" />}
-                            Modül Ayarları
+                            {t('srvModuleSettings')}
                         </Button>
                         <Button
                             className="rounded-md bg-zinc-900 text-white hover:bg-zinc-800"
@@ -563,7 +563,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <div className="min-w-0 space-y-1">
                                     <CardTitle className="text-base font-semibold tracking-tight">{t('survey_moduleSettings')}</CardTitle>
                                     <CardDescription className="text-xs leading-5">
-                                        Aktivasyon, widget CTA ve varsayılan anket onay metinleri.
+                                        {t('srvActivationDesc')}
                                     </CardDescription>
                                 </div>
                                 <Badge variant={enableSurveyManager ? "default" : "secondary"} className="shrink-0 rounded-md text-[10px] uppercase tracking-wider">
@@ -576,10 +576,10 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
                                         <Label htmlFor="survey-module-enabled" className="text-sm font-medium text-zinc-900">
-                                            Modül Durumu
+                                            {t('srvModuleStatus')}
                                         </Label>
                                         <p className="text-xs leading-5 text-zinc-500">
-                                            Anket modülünü tenant paneli ve widget ayarları için kullanılabilir yapar.
+                                            {t('srvModuleStatusDesc')}
                                         </p>
                                     </div>
                                     <Switch id="survey-module-enabled" checked={enableSurveyManager} onCheckedChange={setEnableSurveyManager} />
@@ -590,10 +590,10 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
                                         <Label htmlFor="survey-widget-cta" className="text-sm font-medium text-zinc-900">
-                                            Widget CTA Gösterimi
+                                            {t('srvWidgetCta')}
                                         </Label>
                                         <p className="text-xs leading-5 text-zinc-500">
-                                            Widget içinde giriş alanının üstünde “Ankete Katıl” hızlı aksiyonunu gösterir.
+                                            {t('srvWidgetCtaDesc')}
                                         </p>
                                     </div>
                                     <Switch
@@ -606,10 +606,10 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="space-y-1">
                                         <Label htmlFor="survey-widget-auto-open" className="text-sm font-medium text-zinc-900">
-                                            Sayfa Yüklenince Anketi Aç
+                                            {t('srvOpenOnLoad')}
                                         </Label>
                                         <p className="text-xs leading-5 text-zinc-500">
-                                            Widget sayfa yüklendiğinde otomatik açılır ve aktif anket doğrudan gösterilir.
+                                            {t('srvOpenOnLoadDesc')}
                                         </p>
                                     </div>
                                     <Switch
@@ -641,7 +641,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                         ))}
                                     </select>
                                     <p className="text-[11px] leading-5 text-zinc-500">
-                                        Sadece yayında olan ve kanalında Chat Widget seçili anketler listelenir.
+                                        {t('srvOnlyPublished')}
                                     </p>
                                 </div>
                             </section>
@@ -650,7 +650,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-zinc-900">{t('survey_defaultConsent')}</p>
                                     <p className="text-xs leading-5 text-zinc-500">
-                                        Yeni oluşturulan anketlerde kullanılacak KVKK başlığı, açıklaması ve onay etiketi.
+                                        {t('srvDefaultConsentDesc')}
                                     </p>
                                 </div>
 
@@ -687,7 +687,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             </section>
 
                             <div className="bg-zinc-50/70 px-5 py-3 text-xs leading-5 text-zinc-500">
-                                Değişiklikleri yayınlamak için üstteki “Modül Ayarları” butonuyla kaydedin.
+                                {t('srvSaveHint')}
                             </div>
                         </CardContent>
                     </Card>
@@ -707,7 +707,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                             <div className="space-y-1">
                                 <h3 className="text-base font-medium text-zinc-900">{t('survey_editor')}</h3>
                                 <p className="max-w-sm text-sm text-zinc-500">
-                                    Düzenlemek için soldaki listeden bir anket seçin veya yeni bir şablon ile başlayın.
+                                    {t('srvSelectToEdit')}
                                 </p>
                             </div>
                         </motion.div>
@@ -1092,7 +1092,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                                         ...current,
                                                                                         type: event.target.value as SurveyQuestion["type"],
                                                                                         options: ["singleChoice", "multiChoice"].includes(event.target.value)
-                                                                                            ? (current.options && current.options.length > 0 ? current.options : ["Seçenek 1", "Seçenek 2"])
+                                                                                            ? (current.options && current.options.length > 0 ? current.options : ["Option 1", "Option 2"])
                                                                                             : undefined,
                                                                                     }))}
                                                                                 >
@@ -1106,7 +1106,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                                 <Label className="text-xs text-zinc-500 uppercase tracking-wide">Demografik Key (Opsiyonel)</Label>
                                                                                 <Input
                                                                                     className="h-9 rounded-md text-sm"
-                                                                                    placeholder="örn: age, gender"
+                                                                                    placeholder={t('srvCustomFieldPlaceholder')}
                                                                                     value={question.demographicKey || ""}
                                                                                     onChange={(event) => updateQuestion(question.id, (current) => ({ ...current, demographicKey: event.target.value }))}
                                                                                 />
@@ -1139,7 +1139,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                                             checked={question.allowOther === true}
                                                                                             onCheckedChange={(checked) => updateQuestion(question.id, (current) => ({ ...current, allowOther: Boolean(checked) }))}
                                                                                         />
-                                                                                        &apos;Diğer&apos; seçeneği
+                                                                                        {t('srvOtherOption')}
                                                                                     </label>
                                                                                 )}
                                                                             </div>
@@ -1168,7 +1168,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                     </AnimatePresence>
                                                     {draftSurvey.questions.length === 0 && (
                                                         <div className="rounded-lg border border-dashed border-zinc-300 py-8 text-center text-sm text-zinc-500">
-                                                            Henüz soru eklenmedi.
+                                                            {t('srvNoQuestionsYet')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -1263,7 +1263,7 @@ export function SurveyManagerForm({ targetUserId, isSuperAdmin = false }: Survey
                                                                             </div>
                                                                         ) : (
                                                                             <div className="flex h-full items-center justify-center text-xs text-zinc-400">
-                                                                                Bu soru için henüz analiz verisi yok.
+                                                                                {t('srvNoAnalyticsYet')}
                                                                             </div>
                                                                         )}
                                                                     </div>

@@ -1,6 +1,7 @@
 "use client"
 
 import { TestMessageCard } from "@/components/integrations/shared/TestMessageCard"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function InstagramDMVerifyStep(props: {
     recipientId: string
@@ -10,12 +11,13 @@ export function InstagramDMVerifyStep(props: {
     onSend: () => void
     sending?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <TestMessageCard
-            title="Test mesajı gönderin"
-            description="İşletme hesabınızın ID’sini değil, daha önce bu hesaba DM göndermiş kullanıcının Instagram scoped sender ID değerini girerek test edin."
-            recipientLabel="Alıcı Instagram scoped sender ID"
-            recipientPlaceholder="Webhook sender.id değeri, örn. 17841400000000000"
+            title={t('waTestTitle')}
+            description={t('igTestDesc')}
+            recipientLabel={t('igRecipientLabel')}
+            recipientPlaceholder={t('igRecipientPlaceholder')}
             recipientValue={props.recipientId}
             onRecipientChange={props.onRecipientIdChange}
             messageValue={props.message}

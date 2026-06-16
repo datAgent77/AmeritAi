@@ -473,7 +473,7 @@ Minimum contract:
                         : "Scanning your site in the new window, please wait... (You can close the window)"),
             });
         } catch (e) {
-            toast({ title: "Hata", description: "Geçersiz URL", variant: "destructive" });
+            toast({ title: t('error'), description: language === "tr" ? "Geçersiz URL" : "Invalid URL", variant: "destructive" });
         }
     }
 

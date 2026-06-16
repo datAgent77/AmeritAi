@@ -95,7 +95,7 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
 
             toast({
                 title: t('settingsSaved') || "Ayarlar Kaydedildi",
-                description: "Dijital Garson ayarlarınız güncellendi."
+                description: t('dwSavedDesc')
             })
         } catch (error) {
             console.error("Failed to save digital waiter config:", error)
@@ -193,11 +193,11 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                         <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
                             {config.serviceMode === 'table_service' ? (
                                 <p>
-                                    <strong>AI Davranışı:</strong> Garson gibi davranır. Masaya servisten bahseder, menüyü sunar, misafirleri masalarında ağırlar.
+                                    <strong>{t('aiBehavior')}</strong> {t('dwBehaviorWaiter')}
                                 </p>
                             ) : (
                                 <p>
-                                    <strong>AI Davranışı:</strong> Barista gibi davranır. Ürün içeriklerini anlatır, sipariş için kasaya veya teslim noktasına yönlendirir.
+                                    <strong>{t('aiBehavior')}</strong> {t('dwBehaviorBarista')}
                                 </p>
                             )}
                         </div>
@@ -396,8 +396,8 @@ export function DigitalWaiterSettingsForm({ targetUserId, isSuperAdmin = false }
                         {config.signatureDishes.length === 0 && (
                             <p className="text-sm text-muted-foreground">
                                 {config.serviceMode === 'table_service' 
-                                    ? "Henüz imza yemek eklenmedi." 
-                                    : "Henüz ürün eklenmedi."}
+                                    ? t('noSignatureDishesYet')
+                                    : t('noProductsYet')}
                             </p>
                         )}
                     </div>

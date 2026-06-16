@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MissingRequirementAlert } from "@/components/integrations/shared/MissingRequirementAlert"
 import { PreflightChecklist } from "@/components/integrations/shared/PreflightChecklist"
-import { MESSENGER_DM_PREFLIGHT_MESSAGES, type MessengerDMStatusPayload } from "@/lib/integrations/messenger/types"
+import { getMessengerPreflightMessages, type MessengerDMStatusPayload } from "@/lib/integrations/messenger/types"
 import { useLanguage } from "@/context/LanguageContext"
 
 export function MessengerPreflightStep(props: {
@@ -15,7 +15,8 @@ export function MessengerPreflightStep(props: {
     onConnect: () => void
     onPreflight: () => void
 }) {
-    const { t } = useLanguage()
+    const { t, language } = useLanguage()
+    const MESSENGER_DM_PREFLIGHT_MESSAGES = getMessengerPreflightMessages(language)
     const preflight = props.status.config.preflightResult
 
     return (

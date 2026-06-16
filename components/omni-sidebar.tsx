@@ -405,6 +405,12 @@ export function OmniSidebar() {
                                                     {language === "en" ? <Check className="size-4" /> : null}
                                                 </div>
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setLanguage("es")} className="cursor-pointer">
+                                                <div className="flex items-center justify-between w-full">
+                                                    <span>Español</span>
+                                                    {language === "es" ? <Check className="size-4" /> : null}
+                                                </div>
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => setLanguage("tr")} className="cursor-pointer">
                                                 <div className="flex items-center justify-between w-full">
                                                     <span>{t("omni.userMenu.turkish")}</span>

@@ -4,6 +4,7 @@ import { CheckCircle2, RefreshCw, Unplug } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { WhatsAppBizStatusPayload } from "@/lib/integrations/whatsapp-business/types"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function WhatsAppBizConnectedState(props: {
     status: WhatsAppBizStatusPayload
@@ -12,30 +13,31 @@ export function WhatsAppBizConnectedState(props: {
     onRefresh: () => void
     onDisconnect: () => void
 }) {
+    const { t } = useLanguage()
     return (
         <Card className="border-emerald-200 bg-emerald-50/60 shadow-sm">
             <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-base text-emerald-900 font-semibold">
                     <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                    WhatsApp Business Bağlantısı Aktif
+                    {t('waConnectionActive')}
                 </CardTitle>
                 <CardDescription className="text-emerald-800 text-xs">
-                    Vion AI, <strong className="font-semibold">{props.status.config.displayNumber || "seçili numara"}</strong> üzerinden gelen WhatsApp mesajlarını başarıyla yanıtlıyor.
+                    {t('waConnectedDesc').split('{number}')[0]}<strong className="font-semibold">{props.status.config.displayNumber || t('selectedNumber')}</strong>{t('waConnectedDesc').split('{number}')[1]}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2 text-sm text-emerald-900 bg-white/60 p-4 rounded-lg border border-emerald-100">
                     <div>
-                        <p className="text-emerald-600 text-xs font-medium mb-1">İşletme Hesabı (WABA ID)</p>
+                        <p className="text-emerald-600 text-xs font-medium mb-1">{t('businessAccountWaba')}</p>
                         <p className="font-semibold">{props.status.config.wabaId || "-"}</p>
                     </div>
                     <div>
-                        <p className="text-emerald-600 text-xs font-medium mb-1">Bağlı Numara</p>
+                        <p className="text-emerald-600 text-xs font-medium mb-1">{t('connectedNumber')}</p>
                         <p className="font-semibold">{props.status.config.displayNumber || "-"}</p>
                     </div>
                     <div className="sm:col-span-2">
-                        <p className="text-emerald-600 text-xs font-medium mb-1">Son Sistem Kontrolü</p>
-                        <p className="font-medium text-xs">{props.status.config.preflightResult?.checkedAt ? new Date(props.status.config.preflightResult.checkedAt).toLocaleString('tr-TR') : "Henüz yok"}</p>
+                        <p className="text-emerald-600 text-xs font-medium mb-1">{t('lastSystemCheck')}</p>
+                        <p className="font-medium text-xs">{props.status.config.preflightResult?.checkedAt ? new Date(props.status.config.preflightResult.checkedAt).toLocaleString() : t('notYet')}</p>
                     </div>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row pt-2">
@@ -47,7 +49,7 @@ export function WhatsAppBizConnectedState(props: {
                         disabled={props.refreshing}
                     >
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Sistemi Yenile
+                        {t('refreshSystem')}
                     </Button>
                     <Button 
                         type="button" 
@@ -57,7 +59,7 @@ export function WhatsAppBizConnectedState(props: {
                         disabled={props.disconnecting}
                     >
                         <Unplug className="mr-2 h-4 w-4" />
-                        Bağlantıyı Kaldır
+                        {t('removeConnection')}
                     </Button>
                 </div>
             </CardContent>

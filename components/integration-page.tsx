@@ -165,8 +165,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const integrations: Integration[] = [
         {
             id: "meta-channels",
-            name: "Meta Kanalları",
-            description: "Instagram DM, WhatsApp Business ve Facebook Messenger kanallarını ayrı kurulum sihirbazlarıyla yönetin.",
+            name: "Meta Channels",
+            description: "Manage the Instagram DM, WhatsApp Business, and Facebook Messenger channels with separate setup wizards.",
             icon: <MessageCircle className="h-6 w-6 text-gray-900" />,
             iconBg: "bg-gray-100",
             connected: Boolean(
@@ -175,10 +175,10 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 (metaWizardStatus as any)?.messengerDM?.config?.state === "connected"
             ),
             features: [
-                "Instagram DM için ayrı Türkçe adımlar",
-                "WhatsApp Business için ayrı popup akışı",
-                "Facebook Messenger DM entegrasyonu",
-                "Her kanal için bağımsız hata yönetimi",
+                "Separate guided steps for Instagram DM",
+                "Dedicated popup flow for WhatsApp Business",
+                "Facebook Messenger DM integration",
+                "Independent error handling for each channel",
             ],
         },
         {
@@ -274,44 +274,44 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         {
             id: "whatsapp",
             name: "WhatsApp Business",
-            description: "WhatsApp Business hesabınızı ayrı kurulum sihirbazıyla bağlayın ve mesaj akışını yönetin.",
+            description: "Connect your WhatsApp Business account with a dedicated setup wizard and manage the message flow.",
             logo: "/integrations/whatsapp.svg",
             iconBg: "bg-gray-100",
             connected: metaWizardStatus?.whatsappBusiness?.config?.state === "connected",
             connectedInfo: metaWizardStatus?.whatsappBusiness?.config?.displayNumber || undefined,
             features: [
-                "Embedded signup ile yönlendirmeli kurulum",
-                "Telefon numarası ve webhook durumu kontrolü",
-                "Test mesajı ve yeniden bağlanma akışı",
+                "Guided setup with embedded signup",
+                "Phone number and webhook status check",
+                "Test message and reconnection flow",
             ]
         },
         {
             id: "evolution-api",
             name: "Evolution API WhatsApp",
-            description: "WhatsApp Business uygulamasını telefonda tutarak QR tabanlı hızlı bağlantı kurun.",
+            description: "Set up a fast QR-based connection while keeping the WhatsApp Business app on your phone.",
             logo: "/integrations/whatsapp.svg",
             iconBg: "bg-gray-100",
             connected: evolutionApiStatus?.config?.enabled === true,
             connectedInfo: evolutionApiStatus?.config?.connectionState === "open" ? "QR bağlı" : evolutionApiStatus?.config?.instanceName || undefined,
             features: [
-                "QR ile bağlı cihaz deneyimi",
-                "Evolution instance ve webhook kurulumu",
-                "Vion sohbet ekranına inbound mesaj akışı",
-                "Resmi olmayan hızlı bağlantı modu",
+                "QR-linked device experience",
+                "Evolution instance and webhook setup",
+                "Inbound message flow to the Vion chat screen",
+                "Unofficial quick-connect mode",
             ],
         },
         {
             id: "messenger",
             name: "Facebook Messenger",
-            description: "Facebook sayfanıza gelen Messenger mesajlarını otomatik yanıtlayın.",
+            description: "Automatically reply to Messenger messages sent to your Facebook page.",
             icon: <MessageCircle className="h-6 w-6 text-blue-600" />,
             iconBg: "bg-blue-50",
             connected: (metaWizardStatus as any)?.messengerDM?.config?.state === "connected",
             connectedInfo: (metaWizardStatus as any)?.messengerDM?.config?.pageName || undefined,
             features: [
-                "Facebook sayfanızdan Messenger DM akışı",
-                "OAuth ile güvenli yetkilendirme",
-                "Test mesajı ve webhook durumu kontrolü",
+                "Messenger DM flow from your Facebook page",
+                "Secure authorization via OAuth",
+                "Test message and webhook status check",
             ]
         },
         {
@@ -383,7 +383,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         {
             id: "instagram",
             name: "Instagram DM (Resmi Meta)",
-            description: "Instagram Professional hesabınızı resmi Meta OAuth, Page seçimi ve webhook akışıyla Vion'a bağlayın.",
+            description: "Connect your Instagram Professional account to Vion via official Meta OAuth, Page selection, and webhook flow.",
             logo: "/integrations/instagram.svg",
             iconBg: "bg-gray-100",
             connected: metaWizardStatus?.instagramDM?.config?.state === "connected",
@@ -392,11 +392,11 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
                 metaWizardStatus?.instagramDM?.config?.pageName ||
                 undefined,
             features: [
-                "Professional hesap ve Facebook Page ön kontrolü",
-                "Meta OAuth ile izin ve Page seçimi",
-                "Instagram Messaging API webhook akışı",
-                "Omni Inbox'a gelen DM kaydı",
-                "Panelden resmi API ile cevap gönderme",
+                "Professional account and Facebook Page pre-check",
+                "Permission and Page selection via Meta OAuth",
+                "Instagram Messaging API webhook flow",
+                "Incoming DM logging to the Omni Inbox",
+                "Reply via the official API from the panel",
             ],
         },
     ]
@@ -406,7 +406,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         return {
             id: meta.id,
             name: meta.name,
-            description: `${meta.name} mağazanızı bağlayın. Ürünler ve siparişler otomatik olarak senkronize edilir.`,
+            description: `Connect your ${meta.name} store. Products and orders sync automatically.`,
             logo: meta.logoUrl,
             iconBg: "bg-gray-100",
             connected: !!connection,

@@ -77,6 +77,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
 
     const languageLabels: Record<string, string> = {
         en: "English",
+        es: "Español",
         tr: "Türkçe"
     }
 
@@ -261,6 +262,9 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
                             <DropdownMenuContent align="end" className="bg-popover border-border">
                                 <DropdownMenuItem onClick={() => setLanguage('en')} className="text-foreground hover:bg-muted cursor-pointer">
                                     English
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setLanguage('es')} className="text-foreground hover:bg-muted cursor-pointer">
+                                    Español
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setLanguage('tr')} className="text-foreground hover:bg-muted cursor-pointer">
                                     Türkçe

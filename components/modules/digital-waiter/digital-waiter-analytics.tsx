@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { db } from "@/lib/firebase"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { Utensils, Receipt, Clock, TrendingUp, Loader2 } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface Stats {
     total: number
@@ -14,6 +15,7 @@ interface Stats {
 }
 
 export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
+    const { t } = useLanguage()
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -75,7 +77,7 @@ export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="bg-primary/5 border-primary/10">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Toplam İstek</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('totalRequests')}</CardTitle>
                         <TrendingUp className="w-4 h-4 text-primary" />
                     </CardHeader>
                     <CardContent>
@@ -86,7 +88,7 @@ export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Garson Çağrısı</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('staffCalls')}</CardTitle>
                         <Utensils className="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -97,7 +99,7 @@ export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Hesap İstekleri</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('billRequests')}</CardTitle>
                         <Receipt className="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -108,7 +110,7 @@ export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-sm font-medium">Ort. Yanıt Süresi</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('avgResponseTime')}</CardTitle>
                         <Clock className="w-4 h-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -121,10 +123,10 @@ export function DigitalWaiterAnalytics({ chatbotId }: { chatbotId: string }) {
             {/* Gelecekte buraya grafikler eklenebilir */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Servis Performansı</CardTitle>
+                    <CardTitle>{t('servicePerformance')}</CardTitle>
                 </CardHeader>
                 <CardContent className="h-48 flex items-center justify-center text-muted-foreground italic border-2 border-dashed rounded-lg">
-                    Detaylı zaman grafikleri veri biriktikçe burada görünecek.
+                    {t('servicePerformanceDesc')}
                 </CardContent>
             </Card>
         </div>

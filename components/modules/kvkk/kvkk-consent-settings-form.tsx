@@ -21,14 +21,16 @@ interface KvkkConsentSettingsFormProps {
 const PRIVACY_LANGUAGES = ["tr", "en", "de", "es"] as const
 type PrivacyLanguage = (typeof PRIVACY_LANGUAGES)[number]
 
+// Labels are region-neutral (US-first product). The `kvkkNotice` key is kept
+// internally for data compatibility; the displayed label is "Privacy Notice".
 const PRIVACY_DOCUMENT_FIELDS = [
-    { key: "kvkkNotice", label: "KVKK Aydınlatma Metni" },
+    { key: "kvkkNotice", label: "Privacy Notice" },
     { key: "gdprPrivacyNotice", label: "GDPR Privacy Notice" },
-    { key: "explicitConsentLead", label: "Lead Açık Rıza" },
-    { key: "explicitConsentAppointment", label: "Randevu Açık Rıza" },
-    { key: "explicitConsentMarketing", label: "Pazarlama İzni" },
-    { key: "explicitConsentSpecialCategory", label: "Özel Nitelikli Veri" },
-    { key: "explicitConsentInternationalTransfer", label: "Yurt Dışı Aktarım" },
+    { key: "explicitConsentLead", label: "Lead Consent" },
+    { key: "explicitConsentAppointment", label: "Appointment Consent" },
+    { key: "explicitConsentMarketing", label: "Marketing Consent" },
+    { key: "explicitConsentSpecialCategory", label: "Special Category Data" },
+    { key: "explicitConsentInternationalTransfer", label: "International Transfer" },
 ] as const
 
 type PrivacyTextDraft = Record<PrivacyLanguage, {
@@ -64,7 +66,7 @@ function buildDefaultPrivacyTexts(settingsData: Record<string, any>): PrivacyTex
         },
         en: {
             shortNotice: "Information you share in this chat may be processed to provide the service, respond to your request, and keep the service secure. Please do not share special category personal data. You can review the privacy notice. By continuing the chat, you confirm that you have read this notice and accept the necessary processing for the basic chat service.",
-            kvkkNotice: `${companyName} KVKK Privacy Notice\n\nData controller: ${companyName}. Contact: ${contactEmail}.\n\nThis chat may process identity, contact, message content, technical logs, lead and appointment data to provide the service, respond to requests, maintain security, and improve quality.`,
+            kvkkNotice: `${companyName} Privacy Notice\n\nData controller: ${companyName}. Contact: ${contactEmail}.\n\nThis chat may process identity, contact, message content, technical logs, lead and appointment data to provide the service, respond to requests, maintain security, and improve quality. California residents have rights under the CCPA/CPRA (see Privacy Policy).`,
             gdprPrivacyNotice: `${companyName} GDPR Privacy Notice\n\nController: ${companyName}. Contact: ${contactEmail}.\n\nChat messages, technical logs, contact details, lead and appointment information may be processed to provide the requested service, answer questions, maintain security, and improve support quality.`,
             explicitConsentLead: "I consent to the processing of my contact details to create a lead/request record and respond to my request.",
             explicitConsentAppointment: "I consent to the processing of my personal data to create my appointment request and contact me about the appointment.",
@@ -74,7 +76,7 @@ function buildDefaultPrivacyTexts(settingsData: Record<string, any>): PrivacyTex
         },
         de: {
             shortNotice: "Informationen, die Sie in diesem Chat teilen, koennen zur Bereitstellung des Dienstes, zur Beantwortung Ihrer Anfrage und zur Sicherheit verarbeitet werden. Bitte teilen Sie keine besonderen Kategorien personenbezogener Daten. Wenn Sie den Chat fortsetzen, bestaetigen Sie, dass Sie diesen Hinweis gelesen haben.",
-            kvkkNotice: `${companyName} KVKK Datenschutzhinweis\n\nVerantwortlicher: ${companyName}. Kontakt: ${contactEmail}.`,
+            kvkkNotice: `${companyName} Datenschutzhinweis\n\nVerantwortlicher: ${companyName}. Kontakt: ${contactEmail}.`,
             gdprPrivacyNotice: `${companyName} GDPR Privacy Notice\n\nController: ${companyName}. Contact: ${contactEmail}.`,
             explicitConsentLead: "Ich willige in die Verarbeitung meiner Kontaktdaten ein, um meine Anfrage zu bearbeiten.",
             explicitConsentAppointment: "Ich willige in die Verarbeitung meiner personenbezogenen Daten fuer meine Terminanfrage ein.",
@@ -84,7 +86,7 @@ function buildDefaultPrivacyTexts(settingsData: Record<string, any>): PrivacyTex
         },
         es: {
             shortNotice: "La informacion que comparta en este chat puede tratarse para prestar el servicio, responder a su solicitud y mantener la seguridad. No comparta datos personales de categorias especiales. Al continuar el chat, confirma que ha leido este aviso.",
-            kvkkNotice: `${companyName} Aviso KVKK\n\nResponsable del tratamiento: ${companyName}. Contacto: ${contactEmail}.`,
+            kvkkNotice: `${companyName} Aviso de privacidad\n\nResponsable del tratamiento: ${companyName}. Contacto: ${contactEmail}.\n\nLos residentes de California tienen derechos conforme a la CCPA/CPRA (consulte la Política de privacidad).`,
             gdprPrivacyNotice: `${companyName} GDPR Privacy Notice\n\nController: ${companyName}. Contact: ${contactEmail}.`,
             explicitConsentLead: "Consiento el tratamiento de mis datos de contacto para crear una solicitud y responderme.",
             explicitConsentAppointment: "Consiento el tratamiento de mis datos personales para crear mi solicitud de cita.",
@@ -337,10 +339,10 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
         <div className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
             <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-3xl font-bold tracking-tight">KVKK Kabul</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Data Privacy &amp; Consent</h1>
                 </div>
                 <p className="max-w-3xl text-sm text-muted-foreground">
-                    Ziyaretci sohbet baslamadan once KVKK metnini kabul eder. Tenant ozel metin girilmezse super admin tarafinda yayinlanan varsayilan metin kullanilir.
+                    The visitor accepts the privacy notice before starting the chat. If no tenant-specific text is entered, the default published by the super admin is used.
                 </p>
             </div>
 

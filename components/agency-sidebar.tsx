@@ -299,6 +299,12 @@ export function AgencySidebar() {
                                                     {language === "en" ? <Check className="size-4" /> : null}
                                                 </div>
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => setLanguage("es")} className="cursor-pointer">
+                                                <div className="flex w-full items-center justify-between">
+                                                    <span>Español</span>
+                                                    {language === "es" ? <Check className="size-4" /> : null}
+                                                </div>
+                                            </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => setLanguage("tr")} className="cursor-pointer">
                                                 <div className="flex w-full items-center justify-between">
                                                     <span>Türkçe</span>

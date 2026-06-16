@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { QrCode, Printer, Link2 } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function QRGenerator({ chatbotId }: { chatbotId: string }) {
+    const { t } = useLanguage()
     const [tableCount, setTableCount] = useState(10)
-    const [prefix, setPrefix] = useState("Masa ")
+    const [prefix, setPrefix] = useState("Table ")
     
     // In production this should be the actual base URL of the site
     // We can infer it from window.location.origin
@@ -32,24 +34,24 @@ export function QRGenerator({ chatbotId }: { chatbotId: string }) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <QrCode className="w-5 h-5" />
-                        Masa QR Kodları Üret
+                        {t('generateTableQr')}
                     </CardTitle>
                     <CardDescription>
-                        Restoranınızdaki masalar için özel QR kodlar oluşturun. Müşteriler bu kodları okuttuğunda Dijital Garson, hangi masadan sipariş veya çağrı yapıldığını otomatik olarak tanır.
+                        {t('generateTableQrDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>Masa Ön Eki</Label>
-                            <Input 
-                                value={prefix} 
+                            <Label>{t('tablePrefix')}</Label>
+                            <Input
+                                value={prefix}
                                 onChange={(e) => setPrefix(e.target.value)}
-                                placeholder="Örn: Masa "
+                                placeholder={t('tablePrefixPlaceholder')}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Masa Sayısı</Label>
+                            <Label>{t('tableCount')}</Label>
                             <Input 
                                 type="number" 
                                 min="1" 
@@ -62,12 +64,12 @@ export function QRGenerator({ chatbotId }: { chatbotId: string }) {
                     
                     <div className="p-4 bg-muted/50 rounded-lg border flex items-center justify-between">
                         <div className="flex flex-col gap-1">
-                            <span className="text-sm font-medium">Örnek URL Yapısı</span>
+                            <span className="text-sm font-medium">{t('sampleUrlStructure')}</span>
                             <span className="text-xs text-muted-foreground break-all">{widgetUrl}&masa=1</span>
                         </div>
                         <Button onClick={handlePrint} className="shrink-0 ml-4">
                             <Printer className="w-4 h-4 mr-2" />
-                            Yazdır
+                            {t('print')}
                         </Button>
                     </div>
                 </CardContent>
@@ -84,12 +86,12 @@ export function QRGenerator({ chatbotId }: { chatbotId: string }) {
                             {/* Using api.qrserver.com for zero-dependency QR code generation */}
                             <img 
                                 src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(table.url)}`}
-                                alt={`${table.name} QR Kodu`}
+                                alt={`${table.name} ${t('qrCodeAlt')}`}
                                 className="w-32 h-32 object-contain"
                                 crossOrigin="anonymous"
                             />
                             <p className="text-[10px] text-muted-foreground w-full break-all leading-tight">
-                                Dijital menü için okutun
+                                {t('scanForMenu')}
                             </p>
                         </CardContent>
                     </Card>
