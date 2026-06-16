@@ -73,28 +73,30 @@ const INDUSTRY_OPTIONS = [
     "other",
 ]
 
-function getIndustryLabel(value: string, language: "tr" | "en") {
-    const labels: Record<string, { tr: string; en: string }> = {
-        ecommerce: { tr: "E-Ticaret", en: "E-Commerce" },
-        saas: { tr: "SaaS / Yazılım", en: "SaaS / Software" },
-        service: { tr: "Hizmet", en: "Service" },
-        restaurant: { tr: "Restoran", en: "Restaurant" },
-        healthcare: { tr: "Sağlık", en: "Healthcare" },
-        education: { tr: "Eğitim", en: "Education" },
-        finance: { tr: "Finans", en: "Finance" },
-        real_estate: { tr: "Emlak", en: "Real Estate" },
-        booking: { tr: "Seyahat", en: "Travel" },
-        agriculture: { tr: "Tarım", en: "Agriculture" },
-        automotive: { tr: "Otomotiv", en: "Automotive" },
-        insurance: { tr: "Sigorta", en: "Insurance" },
-        logistics: { tr: "Lojistik", en: "Logistics" },
-        beauty: { tr: "Güzellik", en: "Beauty & Wellness" },
-        legal: { tr: "Hukuk", en: "Legal" },
-        fitness: { tr: "Fitness", en: "Fitness" },
-        maritime: { tr: "Denizcilik", en: "Maritime" },
-        other: { tr: "Diğer", en: "Other" },
+function getIndustryLabel(value: string, language: string) {
+    const labels: Record<string, { tr: string; en: string; es: string }> = {
+        ecommerce: { tr: "E-Ticaret", en: "E-Commerce", es: "Comercio electrónico" },
+        saas: { tr: "SaaS / Yazılım", en: "SaaS / Software", es: "SaaS / Software" },
+        service: { tr: "Hizmet", en: "Service", es: "Servicios" },
+        restaurant: { tr: "Restoran", en: "Restaurant", es: "Restaurante" },
+        healthcare: { tr: "Sağlık", en: "Healthcare", es: "Salud" },
+        education: { tr: "Eğitim", en: "Education", es: "Educación" },
+        finance: { tr: "Finans", en: "Finance", es: "Finanzas" },
+        real_estate: { tr: "Emlak", en: "Real Estate", es: "Bienes raíces" },
+        booking: { tr: "Seyahat", en: "Travel", es: "Viajes" },
+        agriculture: { tr: "Tarım", en: "Agriculture", es: "Agricultura" },
+        automotive: { tr: "Otomotiv", en: "Automotive", es: "Automotriz" },
+        insurance: { tr: "Sigorta", en: "Insurance", es: "Seguros" },
+        logistics: { tr: "Lojistik", en: "Logistics", es: "Logística" },
+        beauty: { tr: "Güzellik", en: "Beauty & Wellness", es: "Belleza y bienestar" },
+        legal: { tr: "Hukuk", en: "Legal", es: "Legal" },
+        fitness: { tr: "Fitness", en: "Fitness", es: "Fitness" },
+        maritime: { tr: "Denizcilik", en: "Maritime", es: "Marítimo" },
+        other: { tr: "Diğer", en: "Other", es: "Otro" },
     }
-    return labels[value]?.[language] || value
+    const entry = labels[value]
+    if (!entry) return value
+    return (entry as Record<string, string>)[language] || entry.en
 }
 
 export function OmniAccountCenterPanel() {
@@ -134,7 +136,7 @@ export function OmniAccountCenterPanel() {
             ])
 
             if (!accountCenterRes.ok || !developerRes.ok) {
-                throw new Error(language === "tr" ? "Ayarlar yüklenemedi." : "Failed to load settings.")
+                throw new Error(language === "tr" ? "Ayarlar yüklenemedi." : language === "es" ? "No se pudieron cargar los ajustes." : "Failed to load settings.")
             }
 
             const accountCenterData = await accountCenterRes.json()
@@ -144,8 +146,8 @@ export function OmniAccountCenterPanel() {
             setBillingCycle(accountCenterData?.subscription?.billingCycle === "annual" ? "annual" : "monthly")
         } catch (error: any) {
             toast({
-                title: language === "tr" ? "Hata" : "Error",
-                description: error?.message || (language === "tr" ? "Ayarlar yüklenemedi." : "Failed to load settings."),
+                title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                description: error?.message || (language === "tr" ? "Ayarlar yüklenemedi." : language === "es" ? "No se pudieron cargar los ajustes." : "Failed to load settings."),
                 variant: "destructive",
             })
         } finally {
@@ -174,8 +176,8 @@ export function OmniAccountCenterPanel() {
         if (!value) return
         await navigator.clipboard.writeText(value)
         toast({
-            title: language === "tr" ? "Kopyalandı" : "Copied",
-            description: language === "tr" ? "Değer panoya kopyalandı." : "Value copied to clipboard.",
+            title: language === "tr" ? "Kopyalandı" : language === "es" ? "Copiado" : "Copied",
+            description: language === "tr" ? "Değer panoya kopyalandı." : language === "es" ? "Valor copiado al portapapeles." : "Value copied to clipboard.",
         })
     }
 
@@ -201,13 +203,13 @@ export function OmniAccountCenterPanel() {
             }
             setPayload((current) => current ? { ...current, personal: data.personal } : current)
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
-                description: language === "tr" ? "Profil bilgileri güncellendi." : "Profile details updated.",
+                title: language === "tr" ? "Kaydedildi" : language === "es" ? "Guardado" : "Saved",
+                description: language === "tr" ? "Profil bilgileri güncellendi." : language === "es" ? "Datos del perfil actualizados." : "Profile details updated.",
             })
         } catch (error: any) {
             toast({
-                title: language === "tr" ? "Hata" : "Error",
-                description: error?.message || (language === "tr" ? "Profil kaydedilemedi." : "Failed to save profile."),
+                title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                description: error?.message || (language === "tr" ? "Profil kaydedilemedi." : language === "es" ? "No se pudo guardar el perfil." : "Failed to save profile."),
                 variant: "destructive",
             })
         } finally {
@@ -237,13 +239,13 @@ export function OmniAccountCenterPanel() {
             }
             setPayload((current) => current ? { ...current, company: data.company } : current)
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
-                description: language === "tr" ? "Şirket bilgileri güncellendi." : "Company details updated.",
+                title: language === "tr" ? "Kaydedildi" : language === "es" ? "Guardado" : "Saved",
+                description: language === "tr" ? "Şirket bilgileri güncellendi." : language === "es" ? "Datos de la empresa actualizados." : "Company details updated.",
             })
         } catch (error: any) {
             toast({
-                title: language === "tr" ? "Hata" : "Error",
-                description: error?.message || (language === "tr" ? "Şirket bilgileri kaydedilemedi." : "Failed to save company details."),
+                title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                description: error?.message || (language === "tr" ? "Şirket bilgileri kaydedilemedi." : language === "es" ? "No se pudieron guardar los datos de la empresa." : "Failed to save company details."),
                 variant: "destructive",
             })
         } finally {
@@ -274,20 +276,24 @@ export function OmniAccountCenterPanel() {
             }
             setDeveloper(data.developer || null)
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
+                title: language === "tr" ? "Kaydedildi" : language === "es" ? "Guardado" : "Saved",
                 description:
                     action === "save"
                         ? language === "tr"
                             ? "Developer ayarları güncellendi."
-                            : "Developer settings updated."
+                            : language === "es"
+                              ? "Ajustes de desarrollador actualizados."
+                              : "Developer settings updated."
                         : language === "tr"
                             ? "Gizli anahtarlar yenilendi."
-                            : "Secrets regenerated.",
+                            : language === "es"
+                              ? "Secretos regenerados."
+                              : "Secrets regenerated.",
             })
         } catch (error: any) {
             toast({
-                title: language === "tr" ? "Hata" : "Error",
-                description: error?.message || (language === "tr" ? "Developer ayarları güncellenemedi." : "Failed to update developer settings."),
+                title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                description: error?.message || (language === "tr" ? "Developer ayarları güncellenemedi." : language === "es" ? "No se pudieron actualizar los ajustes de desarrollador." : "Failed to update developer settings."),
                 variant: "destructive",
             })
         } finally {
@@ -305,8 +311,8 @@ export function OmniAccountCenterPanel() {
                 window.localStorage.setItem("omniPushNotificationsEnabled", String(enabled))
                 if (!enabled) {
                     toast({
-                        title: language === "tr" ? "İzin Gerekli" : "Permission Required",
-                        description: language === "tr" ? "Push bildirim izni verilmedi." : "Push notification permission was not granted.",
+                        title: language === "tr" ? "İzin Gerekli" : language === "es" ? "Permiso requerido" : "Permission Required",
+                        description: language === "tr" ? "Push bildirim izni verilmedi." : language === "es" ? "No se concedió el permiso de notificaciones push." : "Push notification permission was not granted.",
                         variant: "destructive",
                     })
                 }
@@ -342,13 +348,13 @@ export function OmniAccountCenterPanel() {
                 },
             } : current)
             toast({
-                title: language === "tr" ? "Talep alındı" : "Request received",
-                description: language === "tr" ? "Plan yükseltme talebi kaydedildi." : "Upgrade request recorded.",
+                title: language === "tr" ? "Talep alındı" : language === "es" ? "Solicitud recibida" : "Request received",
+                description: language === "tr" ? "Plan yükseltme talebi kaydedildi." : language === "es" ? "Solicitud de actualización registrada." : "Upgrade request recorded.",
             })
         } catch (error: any) {
             toast({
-                title: language === "tr" ? "Hata" : "Error",
-                description: error?.message || (language === "tr" ? "Plan talebi gönderilemedi." : "Failed to submit plan request."),
+                title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                description: error?.message || (language === "tr" ? "Plan talebi gönderilemedi." : language === "es" ? "No se pudo enviar la solicitud de plan." : "Failed to submit plan request."),
                 variant: "destructive",
             })
         } finally {
@@ -360,7 +366,7 @@ export function OmniAccountCenterPanel() {
         return (
             <Card className="border-dashed">
                 <CardContent className="py-16 text-center text-sm text-muted-foreground">
-                    {language === "tr" ? "Önce aktif bir account seçin." : "Select an active account first."}
+                    {language === "tr" ? "Önce aktif bir account seçin." : language === "es" ? "Selecciona primero una cuenta activa." : "Select an active account first."}
                 </CardContent>
             </Card>
         )
@@ -382,17 +388,17 @@ export function OmniAccountCenterPanel() {
     return (
         <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid h-auto w-full grid-cols-2 md:grid-cols-5">
-                <TabsTrigger value="profile">{language === "tr" ? "Profil" : "Profile"}</TabsTrigger>
-                <TabsTrigger value="company">{language === "tr" ? "Şirket" : "Company"}</TabsTrigger>
-                <TabsTrigger value="notifications">{language === "tr" ? "Bildirimler" : "Notifications"}</TabsTrigger>
-                <TabsTrigger value="developers">{language === "tr" ? "Geliştirici" : "Developers"}</TabsTrigger>
-                <TabsTrigger value="subscription">{language === "tr" ? "Abonelik" : "Subscription"}</TabsTrigger>
+                <TabsTrigger value="profile">{language === "tr" ? "Profil" : language === "es" ? "Perfil" : "Profile"}</TabsTrigger>
+                <TabsTrigger value="company">{language === "tr" ? "Şirket" : language === "es" ? "Empresa" : "Company"}</TabsTrigger>
+                <TabsTrigger value="notifications">{language === "tr" ? "Bildirimler" : language === "es" ? "Notificaciones" : "Notifications"}</TabsTrigger>
+                <TabsTrigger value="developers">{language === "tr" ? "Geliştirici" : language === "es" ? "Desarrolladores" : "Developers"}</TabsTrigger>
+                <TabsTrigger value="subscription">{language === "tr" ? "Abonelik" : language === "es" ? "Suscripción" : "Subscription"}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><UserCircle className="h-5 w-5" />{language === "tr" ? "Hesap Profili" : "Account Profile"}</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><UserCircle className="h-5 w-5" />{language === "tr" ? "Hesap Profili" : language === "es" ? "Perfil de cuenta" : "Account Profile"}</CardTitle>
                         <CardDescription>
                             {activeAccount?.companyName || activeAccount?.email || chatbotId}
                         </CardDescription>
@@ -400,11 +406,11 @@ export function OmniAccountCenterPanel() {
                     <CardContent className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Ad" : "First name"}</Label>
+                                <Label>{language === "tr" ? "Ad" : language === "es" ? "Nombre" : "First name"}</Label>
                                 <Input value={payload.personal.firstName} onChange={(event) => setPayload((current) => current ? { ...current, personal: { ...current.personal, firstName: event.target.value } } : current)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Soyad" : "Last name"}</Label>
+                                <Label>{language === "tr" ? "Soyad" : language === "es" ? "Apellido" : "Last name"}</Label>
                                 <Input value={payload.personal.lastName} onChange={(event) => setPayload((current) => current ? { ...current, personal: { ...current.personal, lastName: event.target.value } } : current)} />
                             </div>
                         </div>
@@ -414,17 +420,17 @@ export function OmniAccountCenterPanel() {
                                 <Input value={payload.personal.email} disabled />
                             </div>
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Telefon" : "Phone"}</Label>
+                                <Label>{language === "tr" ? "Telefon" : language === "es" ? "Teléfono" : "Phone"}</Label>
                                 <Input value={payload.personal.phone} onChange={(event) => setPayload((current) => current ? { ...current, personal: { ...current.personal, phone: event.target.value } } : current)} />
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <Button onClick={saveProfile} disabled={isSavingProfile}>
                                 {isSavingProfile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {language === "tr" ? "Profili Kaydet" : "Save Profile"}
+                                {language === "tr" ? "Profili Kaydet" : language === "es" ? "Guardar perfil" : "Save Profile"}
                             </Button>
                             <Button variant="outline" disabled>
-                                {language === "tr" ? "Email Değişikliği Yakında" : "Email change coming soon"}
+                                {language === "tr" ? "Email Değişikliği Yakında" : language === "es" ? "Cambio de email próximamente" : "Email change coming soon"}
                             </Button>
                         </div>
                     </CardContent>
@@ -432,8 +438,8 @@ export function OmniAccountCenterPanel() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" />{language === "tr" ? "Güvenlik" : "Security"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Şifre sıfırlama bağlantısını mevcut kullanıcı email’ine gönderir." : "Sends a password reset link to the current user email."}</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" />{language === "tr" ? "Güvenlik" : language === "es" ? "Seguridad" : "Security"}</CardTitle>
+                        <CardDescription>{language === "tr" ? "Şifre sıfırlama bağlantısını mevcut kullanıcı email’ine gönderir." : language === "es" ? "Envía un enlace de restablecimiento de contraseña al email del usuario actual." : "Sends a password reset link to the current user email."}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button variant="outline" onClick={async () => {
@@ -443,19 +449,19 @@ export function OmniAccountCenterPanel() {
                                 const firebaseModule = await import("@/lib/firebase")
                                 await authModule.sendPasswordResetEmail(firebaseModule.auth, user.email)
                                 toast({
-                                    title: language === "tr" ? "Gönderildi" : "Sent",
-                                    description: language === "tr" ? "Şifre sıfırlama email’i gönderildi." : "Password reset email sent.",
+                                    title: language === "tr" ? "Gönderildi" : language === "es" ? "Enviado" : "Sent",
+                                    description: language === "tr" ? "Şifre sıfırlama email’i gönderildi." : language === "es" ? "Email de restablecimiento de contraseña enviado." : "Password reset email sent.",
                                 })
                             } catch (error: any) {
                                 toast({
-                                    title: language === "tr" ? "Hata" : "Error",
-                                    description: error?.message || (language === "tr" ? "Email gönderilemedi." : "Failed to send email."),
+                                    title: language === "tr" ? "Hata" : language === "es" ? "Error" : "Error",
+                                    description: error?.message || (language === "tr" ? "Email gönderilemedi." : language === "es" ? "No se pudo enviar el email." : "Failed to send email."),
                                     variant: "destructive",
                                 })
                             }
                         }}>
                             <Mail className="mr-2 h-4 w-4" />
-                            {language === "tr" ? "Şifre Sıfırlama Email'i Gönder" : "Send Password Reset Email"}
+                            {language === "tr" ? "Şifre Sıfırlama Email'i Gönder" : language === "es" ? "Enviar email de restablecimiento" : "Send Password Reset Email"}
                         </Button>
                     </CardContent>
                 </Card>
@@ -464,42 +470,42 @@ export function OmniAccountCenterPanel() {
             <TabsContent value="company" className="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{language === "tr" ? "Şirket Bilgileri" : "Company Details"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Bu alanlar account profili ile AI bağlamını birlikte besler." : "These fields feed both account profile and AI context."}</CardDescription>
+                        <CardTitle>{language === "tr" ? "Şirket Bilgileri" : language === "es" ? "Datos de la empresa" : "Company Details"}</CardTitle>
+                        <CardDescription>{language === "tr" ? "Bu alanlar account profili ile AI bağlamını birlikte besler." : language === "es" ? "Estos campos alimentan tanto el perfil de la cuenta como el contexto de IA." : "These fields feed both account profile and AI context."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Şirket Adı" : "Company name"}</Label>
+                                <Label>{language === "tr" ? "Şirket Adı" : language === "es" ? "Nombre de la empresa" : "Company name"}</Label>
                                 <Input value={payload.company.companyName} onChange={(event) => setPayload((current) => current ? { ...current, company: { ...current.company, companyName: event.target.value } } : current)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Sektör" : "Industry"}</Label>
+                                <Label>{language === "tr" ? "Sektör" : language === "es" ? "Sector" : "Industry"}</Label>
                                 <select value={payload.company.industry} onChange={(event) => setPayload((current) => current ? { ...current, company: { ...current.company, industry: event.target.value } } : current)} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                                    <option value="">{language === "tr" ? "Seçin" : "Select"}</option>
+                                    <option value="">{language === "tr" ? "Seçin" : language === "es" ? "Selecciona" : "Select"}</option>
                                     {INDUSTRY_OPTIONS.map((option) => (
-                                        <option key={option} value={option}>{getIndustryLabel(option, language === "tr" ? "tr" : "en")}</option>
+                                        <option key={option} value={option}>{getIndustryLabel(option, language)}</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Web Sitesi" : "Website"}</Label>
+                                <Label>{language === "tr" ? "Web Sitesi" : language === "es" ? "Sitio web" : "Website"}</Label>
                                 <Input value={payload.company.companyWebsite} onChange={(event) => setPayload((current) => current ? { ...current, company: { ...current.company, companyWebsite: event.target.value } } : current)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>{language === "tr" ? "Şirket Email" : "Company email"}</Label>
+                                <Label>{language === "tr" ? "Şirket Email" : language === "es" ? "Email de la empresa" : "Company email"}</Label>
                                 <Input value={payload.company.companyEmail} disabled />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label>{language === "tr" ? "Adres" : "Address"}</Label>
+                            <Label>{language === "tr" ? "Adres" : language === "es" ? "Dirección" : "Address"}</Label>
                             <Input value={payload.company.companyAddress} onChange={(event) => setPayload((current) => current ? { ...current, company: { ...current.company, companyAddress: event.target.value } } : current)} />
                         </div>
                         <Button onClick={saveCompany} disabled={isSavingCompany}>
                             {isSavingCompany ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            {language === "tr" ? "Şirket Bilgilerini Kaydet" : "Save Company Details"}
+                            {language === "tr" ? "Şirket Bilgilerini Kaydet" : language === "es" ? "Guardar datos de la empresa" : "Save Company Details"}
                         </Button>
                     </CardContent>
                 </Card>
@@ -508,14 +514,14 @@ export function OmniAccountCenterPanel() {
             <TabsContent value="notifications" className="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />{language === "tr" ? "Bildirim Tercihleri" : "Notification Preferences"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Omni operasyon sesleri ve bildirim izinleri." : "Omni operational sounds and notification permissions."}</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />{language === "tr" ? "Bildirim Tercihleri" : language === "es" ? "Preferencias de notificación" : "Notification Preferences"}</CardTitle>
+                        <CardDescription>{language === "tr" ? "Omni operasyon sesleri ve bildirim izinleri." : language === "es" ? "Sonidos operativos de Omni y permisos de notificación." : "Omni operational sounds and notification permissions."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                             <div>
-                                <div className="font-medium">{language === "tr" ? "Sesli Bildirim" : "Sound Notifications"}</div>
-                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Inbox ve operasyon olaylarında ses çalar." : "Plays a sound for inbox and operational events."}</div>
+                                <div className="font-medium">{language === "tr" ? "Sesli Bildirim" : language === "es" ? "Notificaciones de sonido" : "Sound Notifications"}</div>
+                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Inbox ve operasyon olaylarında ses çalar." : language === "es" ? "Reproduce un sonido para eventos de inbox y operativos." : "Plays a sound for inbox and operational events."}</div>
                             </div>
                             <Switch checked={soundEnabled} onCheckedChange={(checked) => {
                                 setSoundEnabled(checked)
@@ -524,15 +530,15 @@ export function OmniAccountCenterPanel() {
                         </div>
                         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                             <div>
-                                <div className="font-medium">{language === "tr" ? "Push Bildirim" : "Push Notifications"}</div>
-                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Tarayıcı push iznini kullanır." : "Uses browser notification permission."}</div>
+                                <div className="font-medium">{language === "tr" ? "Push Bildirim" : language === "es" ? "Notificaciones push" : "Push Notifications"}</div>
+                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Tarayıcı push iznini kullanır." : language === "es" ? "Usa el permiso de notificaciones del navegador." : "Uses browser notification permission."}</div>
                             </div>
                             <Switch checked={pushEnabled} onCheckedChange={handlePushToggle} />
                         </div>
                         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                             <div>
-                                <div className="font-medium">{language === "tr" ? "Email Özeti" : "Email Summary"}</div>
-                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Operasyon özetlerini email ile almak için yer tutucu tercih." : "Placeholder preference for receiving operational digests by email."}</div>
+                                <div className="font-medium">{language === "tr" ? "Email Özeti" : language === "es" ? "Resumen por email" : "Email Summary"}</div>
+                                <div className="text-sm text-muted-foreground">{language === "tr" ? "Operasyon özetlerini email ile almak için yer tutucu tercih." : language === "es" ? "Preferencia provisional para recibir resúmenes operativos por email." : "Placeholder preference for receiving operational digests by email."}</div>
                             </div>
                             <Switch checked={emailEnabled} onCheckedChange={(checked) => {
                                 setEmailEnabled(checked)
@@ -547,7 +553,7 @@ export function OmniAccountCenterPanel() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" />{language === "tr" ? "Developer Access" : "Developer Access"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Webhook hedefi, access token ve webhook secret burada yönetilir." : "Manage webhook target, access token, and webhook secret here."}</CardDescription>
+                        <CardDescription>{language === "tr" ? "Webhook hedefi, access token ve webhook secret burada yönetilir." : language === "es" ? "Gestiona aquí el destino del webhook, el access token y el webhook secret." : "Manage webhook target, access token, and webhook secret here."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -562,7 +568,7 @@ export function OmniAccountCenterPanel() {
                                 <Button variant="outline" onClick={() => copyValue(developer.accessToken)}><Copy className="h-4 w-4" /></Button>
                                 <Button variant="outline" onClick={() => mutateDeveloper(developer.accessToken ? "regenerate_token" : "bootstrap")} disabled={isSavingDeveloper}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
-                                    {language === "tr" ? "Yenile" : "Regenerate"}
+                                    {language === "tr" ? "Yenile" : language === "es" ? "Regenerar" : "Regenerate"}
                                 </Button>
                             </div>
                         </div>
@@ -582,14 +588,14 @@ export function OmniAccountCenterPanel() {
                                 <Button variant="outline" onClick={() => copyValue(developer.webhookSecret)}><Copy className="h-4 w-4" /></Button>
                                 <Button variant="outline" onClick={() => mutateDeveloper(developer.webhookSecret ? "regenerate_secret" : "bootstrap")} disabled={isSavingDeveloper}>
                                     <RefreshCw className="mr-2 h-4 w-4" />
-                                    {language === "tr" ? "Yenile" : "Regenerate"}
+                                    {language === "tr" ? "Yenile" : language === "es" ? "Regenerar" : "Regenerate"}
                                 </Button>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             <Button onClick={() => mutateDeveloper(developer.accessToken && developer.webhookSecret ? "save" : "bootstrap")} disabled={isSavingDeveloper}>
                                 {isSavingDeveloper ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {language === "tr" ? "Developer Ayarlarını Kaydet" : "Save Developer Settings"}
+                                {language === "tr" ? "Developer Ayarlarını Kaydet" : language === "es" ? "Guardar ajustes de desarrollador" : "Save Developer Settings"}
                             </Button>
                             <Button variant="outline" asChild>
                                 <a href={developer.docsUrl} target="_blank" rel="noreferrer">{language === "tr" ? "Smoke & Webhook Runbook" : "Smoke & Webhook Runbook"}</a>
@@ -600,8 +606,8 @@ export function OmniAccountCenterPanel() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{language === "tr" ? "Webhook Eventleri" : "Webhook Events"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Harici sisteminize göndermeyi hedeflediğimiz olaylar." : "Events intended for your external systems."}</CardDescription>
+                        <CardTitle>{language === "tr" ? "Webhook Eventleri" : language === "es" ? "Eventos de webhook" : "Webhook Events"}</CardTitle>
+                        <CardDescription>{language === "tr" ? "Harici sisteminize göndermeyi hedeflediğimiz olaylar." : language === "es" ? "Eventos destinados a tus sistemas externos." : "Events intended for your external systems."}</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-3 md:grid-cols-2">
                         {developer.webhookEvents.map((eventName) => (
@@ -614,14 +620,14 @@ export function OmniAccountCenterPanel() {
             <TabsContent value="subscription" className="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{language === "tr" ? "Plan & Faturalama" : "Plan & Billing"}</CardTitle>
-                        <CardDescription>{language === "tr" ? "Seçili account için plan durumunu izleyin ve yükseltme talebi gönderin." : "Track plan state and submit an upgrade request for the selected account."}</CardDescription>
+                        <CardTitle>{language === "tr" ? "Plan & Faturalama" : language === "es" ? "Plan y facturación" : "Plan & Billing"}</CardTitle>
+                        <CardDescription>{language === "tr" ? "Seçili account için plan durumunu izleyin ve yükseltme talebi gönderin." : language === "es" ? "Supervisa el estado del plan y envía una solicitud de actualización para la cuenta seleccionada." : "Track plan state and submit an upgrade request for the selected account."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-                            <span><strong>{language === "tr" ? "Mevcut plan:" : "Current plan:"}</strong> {currentPlanId}</span>
-                            <span><strong>{language === "tr" ? "Durum:" : "Status:"}</strong> {payload.subscription.subscriptionStatus}</span>
-                            {pendingPlanId ? <span><strong>{language === "tr" ? "Bekleyen talep:" : "Pending request:"}</strong> {pendingPlanId}</span> : null}
+                            <span><strong>{language === "tr" ? "Mevcut plan:" : language === "es" ? "Plan actual:" : "Current plan:"}</strong> {currentPlanId}</span>
+                            <span><strong>{language === "tr" ? "Durum:" : language === "es" ? "Estado:" : "Status:"}</strong> {payload.subscription.subscriptionStatus}</span>
+                            {pendingPlanId ? <span><strong>{language === "tr" ? "Bekleyen talep:" : language === "es" ? "Solicitud pendiente:" : "Pending request:"}</strong> {pendingPlanId}</span> : null}
                         </div>
                         {showPlanPrices && (
                             <div className="flex justify-center">
@@ -663,12 +669,12 @@ export function OmniAccountCenterPanel() {
                                     >
                                         {isSubmittingPlan === plan.planId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                         {isCurrentPlan
-                                            ? language === "tr" ? "Mevcut Plan" : "Current Plan"
+                                            ? language === "tr" ? "Mevcut Plan" : language === "es" ? "Plan actual" : "Current Plan"
                                             : isPending
-                                                ? language === "tr" ? "Talep Bekliyor" : "Pending Request"
+                                                ? language === "tr" ? "Talep Bekliyor" : language === "es" ? "Solicitud pendiente" : "Pending Request"
                                                 : isDowngrade
-                                                    ? language === "tr" ? "Düşürme Yok" : "Downgrade Disabled"
-                                                    : language === "tr" ? "Yükseltme Talebi" : "Request Upgrade"}
+                                                    ? language === "tr" ? "Düşürme Yok" : language === "es" ? "Descenso deshabilitado" : "Downgrade Disabled"
+                                                    : language === "tr" ? "Yükseltme Talebi" : language === "es" ? "Solicitar actualización" : "Request Upgrade"}
                                     </Button>
                                 </CardContent>
                             </Card>

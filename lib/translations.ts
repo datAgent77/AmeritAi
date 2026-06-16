@@ -1,5 +1,5 @@
 import { omniGeneratedTranslationsEn, omniGeneratedTranslationsTr } from "@/lib/omni-translations-generated";
-import { omniTranslationsEn, omniTranslationsTr } from "@/lib/omni-translations";
+import { omniTranslationsEn, omniTranslationsTr, omniTranslationsEs } from "@/lib/omni-translations";
 
 export type Language = 'en' | 'tr' | 'de' | 'es' | 'fr' | 'pt' | 'ar';
 
@@ -5522,6 +5522,10 @@ export const translations = {
         dragDropScreens: "Bildschirme hierher ziehen oder klicken zum Durchsuchen",
     },
     es: {
+        // Omni: EN base (fallback) overlaid with Spanish where available.
+        ...omniGeneratedTranslationsEn,
+        ...omniTranslationsEn,
+        ...omniTranslationsEs,
         // Widget-facing strings (end-user) — Phase: Spanish for US (CA/FL)
         aiDisclaimer: "La IA puede cometer errores. Verifica la información importante.",
         answering: "Vion está respondiendo...",

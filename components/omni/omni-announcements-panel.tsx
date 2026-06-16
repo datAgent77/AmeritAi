@@ -49,8 +49,8 @@ export function OmniAnnouncementsPanel() {
         } catch (error) {
             console.error("Failed to load announcement", error)
             toast({
-                title: language === "tr" ? "Duyuru yüklenemedi" : "Announcement could not be loaded",
-                description: language === "tr" ? "Daha sonra tekrar deneyin." : "Try again later.",
+                title: language === "tr" ? "Duyuru yüklenemedi" : language === "es" ? "No se pudo cargar el anuncio" : "Announcement could not be loaded",
+                description: language === "tr" ? "Daha sonra tekrar deneyin." : language === "es" ? "Inténtalo de nuevo más tarde." : "Try again later.",
                 variant: "destructive",
             })
         } finally {
@@ -85,8 +85,8 @@ export function OmniAnnouncementsPanel() {
             const data = await response.json()
             setForm(data.announcement || form)
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
-                description: language === "tr" ? "Duyuru güncellendi." : "Announcement was updated.",
+                title: language === "tr" ? "Kaydedildi" : language === "es" ? "Guardado" : "Saved",
+                description: language === "tr" ? "Duyuru güncellendi." : language === "es" ? "El anuncio se actualizó." : "Announcement was updated.",
             })
         } catch (error) {
             console.error("Failed to save announcement", error)
@@ -106,6 +106,8 @@ export function OmniAnnouncementsPanel() {
                 <CardContent className="py-16 text-center text-sm text-muted-foreground">
                     {language === "tr"
                         ? "Global duyuru yönetimi yalnızca super admin erişimi ile kullanılabilir."
+                        : language === "es"
+                        ? "La gestión global de anuncios solo está disponible para super administradores."
                         : "Global announcement management is available to super admins only."}
                 </CardContent>
             </Card>
@@ -124,6 +126,8 @@ export function OmniAnnouncementsPanel() {
                         <CardDescription>
                             {language === "tr"
                                 ? "Tenant dashboard yüzeylerinde görünen global banner mesajını yönetin."
+                                : language === "es"
+                                ? "Gestiona el mensaje del banner global que se muestra en las superficies del panel del cliente."
                                 : "Manage the global banner message shown across tenant dashboard surfaces."}
                         </CardDescription>
                     </div>
@@ -146,6 +150,8 @@ export function OmniAnnouncementsPanel() {
                                 <div className="text-sm text-muted-foreground">
                                     {language === "tr"
                                         ? "Aktif olduğunda dashboard üzerinde banner görünür."
+                                        : language === "es"
+                                        ? "Cuando está activado, el banner se muestra en los paneles."
                                         : "When enabled, the banner is shown on dashboards."}
                                 </div>
                             </div>
@@ -157,17 +163,17 @@ export function OmniAnnouncementsPanel() {
                             <Input
                                 value={form.message || ""}
                                 onChange={(event) => setForm((current) => ({ ...current, message: event.target.value }))}
-                                placeholder={language === "tr" ? "Örn. Planlı bakım bu gece 23:00'te başlayacak." : "e.g. Scheduled maintenance starts tonight at 23:00."}
+                                placeholder={language === "tr" ? "Örn. Planlı bakım bu gece 23:00'te başlayacak." : language === "es" ? "Ej. El mantenimiento programado comienza esta noche a las 23:00." : "e.g. Scheduled maintenance starts tonight at 23:00."}
                             />
                         </div>
 
                         <div className="rounded-lg border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
                             <div>
-                                {language === "tr" ? "Son güncelleme" : "Last updated"}:{" "}
+                                {language === "tr" ? "Son güncelleme" : language === "es" ? "Última actualización" : "Last updated"}:{" "}
                                 {form.updatedAt ? formatOmniDateTime(form.updatedAt, language) : "-"}
                             </div>
                             <div>
-                                {language === "tr" ? "Güncelleyen" : "Updated by"}: {form.updatedBy || "-"}
+                                {language === "tr" ? "Güncelleyen" : language === "es" ? "Actualizado por" : "Updated by"}: {form.updatedBy || "-"}
                             </div>
                         </div>
 

@@ -1078,6 +1078,7 @@ export const omniTranslationsEn = {
     "omni.voice.health.readyYes": "Ready",
     "omni.voice.health.readyNo": "Missing",
     "omni.callback.empty.title": "No callback tickets yet",
+    "omni.voice.disable.description": "When disabled, inbound, outbound, and health flows stop for this voice channel.",
 } as const
 
 export const omniTranslationsTr = {
@@ -2160,4 +2161,43 @@ export const omniTranslationsTr = {
     "omni.voice.health.readyYes": "Hazır",
     "omni.voice.health.readyNo": "Eksik",
     "omni.callback.empty.title": "Henüz callback kaydı yok",
+    "omni.voice.disable.description": "Voice kanalı kapalıysa inbound, outbound ve health akışları durur.",
 } as const
+
+// Spanish (US — CA/FL). Keys not present here fall back to English (omniTranslationsEn)
+// because translations.ts spreads the EN map as the base for the `es` locale.
+export const omniTranslationsEs: Record<string, string> = {
+    "omni.userMenu.language": "Idioma",
+    "omni.userMenu.userFallback": "Usuario",
+    "omni.userMenu.partnerPortal": "Portal de socios",
+    "omni.userMenu.managedAccounts": "Cuentas gestionadas",
+    "omni.userMenu.signOut": "Cerrar sesión",
+
+    "omni.common.save": "Guardar",
+    "omni.common.saving": "Guardando...",
+    "omni.common.loading": "Cargando...",
+    "omni.common.refresh": "Actualizar",
+    "omni.common.search": "Buscar",
+    "omni.common.account": "Cuenta",
+    "omni.common.status": "Estado",
+    "omni.common.health": "Salud",
+    "omni.common.policy": "Política",
+    "omni.common.channel": "Canal",
+    "omni.common.notes": "Notas",
+    "omni.common.none": "Ninguno",
+    "omni.common.notAvailable": "N/D",
+    "omni.common.updatedAt": "Actualizado",
+    "omni.common.createdAt": "Creado",
+    "omni.common.enabled": "Activado",
+    "omni.common.disabled": "Desactivado",
+    "omni.common.actions": "Acciones",
+    "omni.common.owner": "Propietario",
+    "omni.common.assignedTo": "Asignado a",
+    "omni.common.empty": "Aún no hay registros",
+    "omni.common.retry": "Reintentar",
+    "omni.common.message": "Mensaje",
+    "omni.common.yes": "Sí",
+    "omni.common.no": "No",
+    "omni.voice.disable.description": "Cuando está desactivado, los flujos entrantes, salientes y de salud se detienen para este canal de voz.",
+}
+

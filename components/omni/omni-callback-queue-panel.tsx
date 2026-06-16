@@ -18,10 +18,10 @@ import type { Language } from "@/lib/translations"
 import type { CallbackRequestRecord, OmniTeamMember, VoiceNumberRecord } from "@/lib/omni/types"
 
 function formatDateTime(value: string | null | undefined, language: Language) {
-    if (!value) return language === "tr" ? "Planlanmadı" : "Not scheduled"
+    if (!value) return language === "tr" ? "Planlanmadı" : language === "es" ? "No programado" : "Not scheduled"
     const parsed = new Date(value)
     if (Number.isNaN(parsed.getTime())) {
-        return language === "tr" ? "Planlanmadı" : "Not scheduled"
+        return language === "tr" ? "Planlanmadı" : language === "es" ? "No programado" : "Not scheduled"
     }
     return formatOmniDateTime(parsed, language)
 }

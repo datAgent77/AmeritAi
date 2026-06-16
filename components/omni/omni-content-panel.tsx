@@ -19,44 +19,50 @@ import type { CmsBlogPost, CmsContentKind, CmsEducationItem, CmsFaqItem } from "
 
 type ContentItem = CmsBlogPost | CmsFaqItem | CmsEducationItem
 
-function getContentCopy(kind: CmsContentKind, language: "tr" | "en") {
-    const tr = language === "tr"
+function getContentCopy(kind: CmsContentKind, language: string) {
+    const pick = (tr: string, en: string, es: string) => (language === "tr" ? tr : language === "es" ? es : en)
 
     if (kind === "blog") {
         return {
-            singular: tr ? "blog yazısı" : "blog post",
-            plural: tr ? "Blog yazıları" : "Blog posts",
-            description: tr
-                ? "Global blog içeriklerini oluşturun, düzenleyin ve yayın durumunu yönetin."
-                : "Create, edit, and manage publishing state for global blog content.",
-            empty: tr ? "Henüz blog yazısı yok." : "No blog posts yet.",
-            titleLabel: tr ? "Başlık" : "Title",
-            secondaryLabel: tr ? "Özet" : "Excerpt",
+            singular: pick("blog yazısı", "blog post", "entrada de blog"),
+            plural: pick("Blog yazıları", "Blog posts", "Entradas de blog"),
+            description: pick(
+                "Global blog içeriklerini oluşturun, düzenleyin ve yayın durumunu yönetin.",
+                "Create, edit, and manage publishing state for global blog content.",
+                "Crea, edita y gestiona el estado de publicación del contenido global del blog."
+            ),
+            empty: pick("Henüz blog yazısı yok.", "No blog posts yet.", "Aún no hay entradas de blog."),
+            titleLabel: pick("Başlık", "Title", "Título"),
+            secondaryLabel: pick("Özet", "Excerpt", "Extracto"),
         }
     }
 
     if (kind === "faq") {
         return {
-            singular: tr ? "SSS öğesi" : "FAQ item",
-            plural: tr ? "SSS" : "FAQs",
-            description: tr
-                ? "Global SSS içeriğini kategori ve sıralama bilgisiyle yönetin."
-                : "Manage global FAQ content with category and ordering.",
-            empty: tr ? "Henüz SSS kaydı yok." : "No FAQ items yet.",
-            titleLabel: tr ? "Soru" : "Question",
-            secondaryLabel: tr ? "Yanıt" : "Answer",
+            singular: pick("SSS öğesi", "FAQ item", "elemento de FAQ"),
+            plural: pick("SSS", "FAQs", "Preguntas frecuentes"),
+            description: pick(
+                "Global SSS içeriğini kategori ve sıralama bilgisiyle yönetin.",
+                "Manage global FAQ content with category and ordering.",
+                "Gestiona el contenido global de FAQ con categoría y orden."
+            ),
+            empty: pick("Henüz SSS kaydı yok.", "No FAQ items yet.", "Aún no hay elementos de FAQ."),
+            titleLabel: pick("Soru", "Question", "Pregunta"),
+            secondaryLabel: pick("Yanıt", "Answer", "Respuesta"),
         }
     }
 
     return {
-        singular: tr ? "eğitim içeriği" : "education item",
-        plural: tr ? "Eğitim içerikleri" : "Education items",
-        description: tr
-            ? "Operasyon rehberleri, eğitim videoları ve makaleleri burada yönetin."
-            : "Manage operator guides, training videos, and education articles here.",
-        empty: tr ? "Henüz eğitim içeriği yok." : "No education items yet.",
-        titleLabel: tr ? "Başlık" : "Title",
-        secondaryLabel: tr ? "Açıklama" : "Description",
+        singular: pick("eğitim içeriği", "education item", "elemento de formación"),
+        plural: pick("Eğitim içerikleri", "Education items", "Elementos de formación"),
+        description: pick(
+            "Operasyon rehberleri, eğitim videoları ve makaleleri burada yönetin.",
+            "Manage operator guides, training videos, and education articles here.",
+            "Gestiona aquí las guías para operadores, los videos de formación y los artículos."
+        ),
+        empty: pick("Henüz eğitim içeriği yok.", "No education items yet.", "Aún no hay elementos de formación."),
+        titleLabel: pick("Başlık", "Title", "Título"),
+        secondaryLabel: pick("Açıklama", "Description", "Descripción"),
     }
 }
 
@@ -104,7 +110,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
     const { language } = useLanguage()
     const { toast } = useToast()
     const locale = language === "tr" ? "tr" : "en"
-    const copy = useMemo(() => getContentCopy(kind, locale), [kind, locale])
+    const copy = useMemo(() => getContentCopy(kind, language), [kind, language])
     const [items, setItems] = useState<ContentItem[]>([])
     const [search, setSearch] = useState("")
     const [isLoading, setIsLoading] = useState(true)
@@ -134,8 +140,8 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
         } catch (error) {
             console.error("Failed to load content", error)
             toast({
-                title: language === "tr" ? "İçerik yüklenemedi" : "Content could not be loaded",
-                description: language === "tr" ? "Daha sonra tekrar deneyin." : "Try again later.",
+                title: language === "tr" ? "İçerik yüklenemedi" : language === "es" ? "No se pudo cargar el contenido" : "Content could not be loaded",
+                description: language === "tr" ? "Daha sonra tekrar deneyin." : language === "es" ? "Inténtalo de nuevo más tarde." : "Try again later.",
                 variant: "destructive",
             })
         } finally {
@@ -238,14 +244,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
             setEditorOpen(false)
             await load()
             toast({
-                title: language === "tr" ? "Kaydedildi" : "Saved",
-                description: language === "tr" ? "İçerik başarıyla güncellendi." : "Content was updated successfully.",
+                title: language === "tr" ? "Kaydedildi" : language === "es" ? "Guardado" : "Saved",
+                description: language === "tr" ? "İçerik başarıyla güncellendi." : language === "es" ? "El contenido se actualizó correctamente." : "Content was updated successfully.",
             })
         } catch (error) {
             console.error("Failed to save content", error)
             toast({
-                title: language === "tr" ? "Kaydedilemedi" : "Could not save",
-                description: language === "tr" ? "Formu kontrol edip tekrar deneyin." : "Check the form and try again.",
+                title: language === "tr" ? "Kaydedilemedi" : language === "es" ? "No se pudo guardar" : "Could not save",
+                description: language === "tr" ? "Formu kontrol edip tekrar deneyin." : language === "es" ? "Revisa el formulario e inténtalo de nuevo." : "Check the form and try again.",
                 variant: "destructive",
             })
         } finally {
@@ -255,7 +261,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
 
     const remove = async (itemId?: string | null) => {
         if (!itemId || !user) return
-        const confirmed = window.confirm(language === "tr" ? "Bu içeriği silmek istiyor musunuz?" : "Delete this content item?")
+        const confirmed = window.confirm(language === "tr" ? "Bu içeriği silmek istiyor musunuz?" : language === "es" ? "¿Eliminar este elemento de contenido?" : "Delete this content item?")
         if (!confirmed) return
 
         try {
@@ -271,14 +277,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
 
             await load()
             toast({
-                title: language === "tr" ? "Silindi" : "Deleted",
-                description: language === "tr" ? "İçerik kaldırıldı." : "Content item was removed.",
+                title: language === "tr" ? "Silindi" : language === "es" ? "Eliminado" : "Deleted",
+                description: language === "tr" ? "İçerik kaldırıldı." : language === "es" ? "El elemento de contenido se eliminó." : "Content item was removed.",
             })
         } catch (error) {
             console.error("Failed to delete content", error)
             toast({
-                title: language === "tr" ? "Silinemedi" : "Could not delete",
-                description: language === "tr" ? "Tekrar deneyin." : "Try again.",
+                title: language === "tr" ? "Silinemedi" : language === "es" ? "No se pudo eliminar" : "Could not delete",
+                description: language === "tr" ? "Tekrar deneyin." : language === "es" ? "Inténtalo de nuevo." : "Try again.",
                 variant: "destructive",
             })
         }
@@ -306,21 +312,25 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
 
             await load()
             toast({
-                title: language === "tr" ? "Yayın durumu güncellendi" : "Publishing state updated",
+                title: language === "tr" ? "Yayın durumu güncellendi" : language === "es" ? "Estado de publicación actualizado" : "Publishing state updated",
                 description:
                     (item as any).published === false
                         ? language === "tr"
                             ? "İçerik yayına alındı."
-                            : "The content item is now published."
+                            : language === "es"
+                              ? "El elemento de contenido ahora está publicado."
+                              : "The content item is now published."
                         : language === "tr"
                           ? "İçerik taslağa alındı."
-                          : "The content item was moved back to draft.",
+                          : language === "es"
+                            ? "El elemento de contenido se movió de nuevo a borrador."
+                            : "The content item was moved back to draft.",
             })
         } catch (error) {
             console.error("Failed to update publishing state", error)
             toast({
-                title: language === "tr" ? "Yayın durumu güncellenemedi" : "Publishing state could not be updated",
-                description: language === "tr" ? "Tekrar deneyin." : "Try again.",
+                title: language === "tr" ? "Yayın durumu güncellenemedi" : language === "es" ? "No se pudo actualizar el estado de publicación" : "Publishing state could not be updated",
+                description: language === "tr" ? "Tekrar deneyin." : language === "es" ? "Inténtalo de nuevo." : "Try again.",
                 variant: "destructive",
             })
         }
@@ -332,6 +342,8 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                 <CardContent className="py-16 text-center text-sm text-muted-foreground">
                     {language === "tr"
                         ? "İçerik yönetimi yalnızca super admin erişimi ile kullanılabilir."
+                        : language === "es"
+                        ? "La gestión de contenido solo está disponible para super administradores."
                         : "Content management is available to super admins only."}
                 </CardContent>
             </Card>
@@ -343,19 +355,19 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader>
-                        <CardDescription>{language === "tr" ? "Toplam içerik" : "Total content"}</CardDescription>
+                        <CardDescription>{language === "tr" ? "Toplam içerik" : language === "es" ? "Contenido total" : "Total content"}</CardDescription>
                         <CardTitle className="text-2xl">{summary.total}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardDescription>{language === "tr" ? "Yayında" : "Published"}</CardDescription>
+                        <CardDescription>{language === "tr" ? "Yayında" : language === "es" ? "Publicado" : "Published"}</CardDescription>
                         <CardTitle className="text-2xl">{summary.published}</CardTitle>
                     </CardHeader>
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardDescription>{language === "tr" ? "Taslak" : "Draft"}</CardDescription>
+                        <CardDescription>{language === "tr" ? "Taslak" : language === "es" ? "Borrador" : "Draft"}</CardDescription>
                         <CardTitle className="text-2xl">{summary.draft}</CardTitle>
                     </CardHeader>
                 </Card>
@@ -370,11 +382,11 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                         <div className="flex flex-wrap gap-2">
                             <Button variant="outline" onClick={load}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
-                                {language === "tr" ? "Yenile" : "Refresh"}
+                                {language === "tr" ? "Yenile" : language === "es" ? "Actualizar" : "Refresh"}
                             </Button>
                             <Button onClick={openCreate}>
                                 <Plus className="mr-2 h-4 w-4" />
-                                {language === "tr" ? "Yeni ekle" : "Add new"}
+                                {language === "tr" ? "Yeni ekle" : language === "es" ? "Añadir nuevo" : "Add new"}
                             </Button>
                         </div>
                     </div>
@@ -385,7 +397,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                         <Input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder={language === "tr" ? "İçerik ara..." : "Search content..."}
+                            placeholder={language === "tr" ? "İçerik ara..." : language === "es" ? "Buscar contenido..." : "Search content..."}
                             className="pl-9"
                         />
                     </div>
@@ -395,9 +407,9 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">{language === "tr" ? "Tüm durumlar" : "All states"}</SelectItem>
-                                <SelectItem value="published">{language === "tr" ? "Yayında" : "Published"}</SelectItem>
-                                <SelectItem value="draft">{language === "tr" ? "Taslak" : "Draft"}</SelectItem>
+                                <SelectItem value="all">{language === "tr" ? "Tüm durumlar" : language === "es" ? "Todos los estados" : "All states"}</SelectItem>
+                                <SelectItem value="published">{language === "tr" ? "Yayında" : language === "es" ? "Publicado" : "Published"}</SelectItem>
+                                <SelectItem value="draft">{language === "tr" ? "Taslak" : language === "es" ? "Borrador" : "Draft"}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -442,34 +454,34 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                                     <div className="font-medium">{title}</div>
                                                     <Badge variant={(item as any).published !== false ? "secondary" : "outline"}>
                                                         {(item as any).published !== false
-                                                            ? language === "tr" ? "Yayında" : "Published"
-                                                            : language === "tr" ? "Taslak" : "Draft"}
+                                                            ? language === "tr" ? "Yayında" : language === "es" ? "Publicado" : "Published"
+                                                            : language === "tr" ? "Taslak" : language === "es" ? "Borrador" : "Draft"}
                                                     </Badge>
                                                 </div>
                                                 <div className="text-sm text-muted-foreground">{secondary}</div>
                                                 <div className="text-xs text-muted-foreground">{meta}</div>
                                                 <div className="text-xs text-muted-foreground">
-                                                    {language === "tr" ? "Güncellendi" : "Updated"}:{" "}
+                                                    {language === "tr" ? "Güncellendi" : language === "es" ? "Actualizado" : "Updated"}:{" "}
                                                     {formatOmniDateTime((item as any).updatedAt || (item as any).createdAt || new Date().toISOString(), language)}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Button variant="outline" size="sm" onClick={() => openPreview(item)}>
                                                     <Eye className="mr-2 h-4 w-4" />
-                                                    {language === "tr" ? "Önizle" : "Preview"}
+                                                    {language === "tr" ? "Önizle" : language === "es" ? "Vista previa" : "Preview"}
                                                 </Button>
                                                 <Button variant="outline" size="sm" onClick={() => togglePublished(item)}>
                                                     {(item as any).published !== false
-                                                        ? language === "tr" ? "Taslağa al" : "Move to draft"
-                                                        : language === "tr" ? "Yayına al" : "Publish"}
+                                                        ? language === "tr" ? "Taslağa al" : language === "es" ? "Mover a borrador" : "Move to draft"
+                                                        : language === "tr" ? "Yayına al" : language === "es" ? "Publicar" : "Publish"}
                                                 </Button>
                                                 <Button variant="outline" size="sm" onClick={() => openEdit(item)}>
                                                     <Pencil className="mr-2 h-4 w-4" />
-                                                    {language === "tr" ? "Düzenle" : "Edit"}
+                                                    {language === "tr" ? "Düzenle" : language === "es" ? "Editar" : "Edit"}
                                                 </Button>
                                                 <Button variant="outline" size="sm" onClick={() => remove(item.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
-                                                    {language === "tr" ? "Sil" : "Delete"}
+                                                    {language === "tr" ? "Sil" : language === "es" ? "Eliminar" : "Delete"}
                                                 </Button>
                                             </div>
                                         </div>
@@ -486,12 +498,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                     <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
                         <DialogTitle>
                             {editingId
-                                ? language === "tr" ? `${copy.singular} düzenle` : `Edit ${copy.singular}`
-                                : language === "tr" ? `Yeni ${copy.singular}` : `New ${copy.singular}`}
+                                ? language === "tr" ? `${copy.singular} düzenle` : language === "es" ? `Editar ${copy.singular}` : `Edit ${copy.singular}`
+                                : language === "tr" ? `Yeni ${copy.singular}` : language === "es" ? `Nuevo ${copy.singular}` : `New ${copy.singular}`}
                         </DialogTitle>
                         <DialogDescription>
                             {language === "tr"
                                 ? "Türkçe ve İngilizce alanları birlikte yönetin."
+                                : language === "es"
+                                ? "Gestiona los campos en turco e inglés juntos."
                                 : "Manage Turkish and English fields together."}
                         </DialogDescription>
                     </DialogHeader>
@@ -505,22 +519,22 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                         <Input value={form.slug || ""} onChange={(event) => setForm((current: any) => ({ ...current, slug: event.target.value }))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Kategori" : "Category"}</Label>
+                                        <Label>{language === "tr" ? "Kategori" : language === "es" ? "Categoría" : "Category"}</Label>
                                         <Input value={form.category || ""} onChange={(event) => setForm((current: any) => ({ ...current, category: event.target.value }))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Tarih" : "Date"}</Label>
+                                        <Label>{language === "tr" ? "Tarih" : language === "es" ? "Fecha" : "Date"}</Label>
                                         <Input type="date" value={form.date || ""} onChange={(event) => setForm((current: any) => ({ ...current, date: event.target.value }))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Okuma süresi" : "Read time"}</Label>
+                                        <Label>{language === "tr" ? "Okuma süresi" : language === "es" ? "Tiempo de lectura" : "Read time"}</Label>
                                         <Input value={form.readTime || ""} onChange={(event) => setForm((current: any) => ({ ...current, readTime: event.target.value }))} />
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                                     <div>
-                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : "Publishing state"}</div>
-                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "Taslak veya yayında olarak işaretleyin." : "Mark the post as draft or published."}</div>
+                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : language === "es" ? "Estado de publicación" : "Publishing state"}</div>
+                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "Taslak veya yayında olarak işaretleyin." : language === "es" ? "Marca la entrada como borrador o publicada." : "Mark the post as draft or published."}</div>
                                     </div>
                                     <Switch checked={form.published !== false} onCheckedChange={(checked) => setForm((current: any) => ({ ...current, published: checked }))} />
                                 </div>
@@ -546,11 +560,11 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "İçerik" : "Content"} (EN)</Label>
+                                        <Label>{language === "tr" ? "İçerik" : language === "es" ? "Contenido" : "Content"} (EN)</Label>
                                         <Textarea rows={10} value={form.content?.en || ""} onChange={(event) => setForm((current: any) => ({ ...current, content: { ...current.content, en: event.target.value } }))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "İçerik" : "Content"} (TR)</Label>
+                                        <Label>{language === "tr" ? "İçerik" : language === "es" ? "Contenido" : "Content"} (TR)</Label>
                                         <Textarea rows={10} value={form.content?.tr || ""} onChange={(event) => setForm((current: any) => ({ ...current, content: { ...current.content, tr: event.target.value } }))} />
                                     </div>
                                 </div>
@@ -561,18 +575,18 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                             <>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Kategori" : "Category"}</Label>
+                                        <Label>{language === "tr" ? "Kategori" : language === "es" ? "Categoría" : "Category"}</Label>
                                         <Input value={form.category || ""} onChange={(event) => setForm((current: any) => ({ ...current, category: event.target.value }))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Sıra" : "Order"}</Label>
+                                        <Label>{language === "tr" ? "Sıra" : language === "es" ? "Orden" : "Order"}</Label>
                                         <Input type="number" value={form.order ?? 0} onChange={(event) => setForm((current: any) => ({ ...current, order: Number(event.target.value || 0) }))} />
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                                     <div>
-                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : "Publishing state"}</div>
-                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "SSS maddesini taslakta tutabilir veya yayına alabilirsiniz." : "Keep the FAQ item in draft or publish it."}</div>
+                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : language === "es" ? "Estado de publicación" : "Publishing state"}</div>
+                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "SSS maddesini taslakta tutabilir veya yayına alabilirsiniz." : language === "es" ? "Mantén el elemento de FAQ en borrador o publícalo." : "Keep the FAQ item in draft or publish it."}</div>
                                     </div>
                                     <Switch checked={form.published !== false} onCheckedChange={(checked) => setForm((current: any) => ({ ...current, published: checked }))} />
                                 </div>
@@ -601,14 +615,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                             <>
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label>{language === "tr" ? "Tür" : "Type"}</Label>
+                                        <Label>{language === "tr" ? "Tür" : language === "es" ? "Tipo" : "Type"}</Label>
                                         <Select value={form.type || "guide"} onValueChange={(value) => setForm((current: any) => ({ ...current, type: value }))}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="guide">{language === "tr" ? "Rehber" : "Guide"}</SelectItem>
-                                                <SelectItem value="article">{language === "tr" ? "Makale" : "Article"}</SelectItem>
+                                                <SelectItem value="guide">{language === "tr" ? "Rehber" : language === "es" ? "Guía" : "Guide"}</SelectItem>
+                                                <SelectItem value="article">{language === "tr" ? "Makale" : language === "es" ? "Artículo" : "Article"}</SelectItem>
                                                 <SelectItem value="video">{language === "tr" ? "Video" : "Video"}</SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -620,8 +634,8 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                 </div>
                                 <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                                     <div>
-                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : "Publishing state"}</div>
-                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "Eğitim içeriğini operatörlere açmadan önce taslakta tutabilirsiniz." : "Keep the education item in draft before exposing it to operators."}</div>
+                                        <div className="font-medium">{language === "tr" ? "Yayın durumu" : language === "es" ? "Estado de publicación" : "Publishing state"}</div>
+                                        <div className="text-sm text-muted-foreground">{language === "tr" ? "Eğitim içeriğini operatörlere açmadan önce taslakta tutabilirsiniz." : language === "es" ? "Mantén el elemento de formación en borrador antes de exponerlo a los operadores." : "Keep the education item in draft before exposing it to operators."}</div>
                                     </div>
                                     <Switch checked={form.published !== false} onCheckedChange={(checked) => setForm((current: any) => ({ ...current, published: checked }))} />
                                 </div>
@@ -649,11 +663,11 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
 
                     <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setEditorOpen(false)}>
-                            {language === "tr" ? "Kapat" : "Close"}
+                            {language === "tr" ? "Kapat" : language === "es" ? "Cerrar" : "Close"}
                         </Button>
                         <Button onClick={save} disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {language === "tr" ? "Kaydet" : "Save"}
+                            {language === "tr" ? "Kaydet" : language === "es" ? "Guardar" : "Save"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -662,9 +676,9 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
             <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
                 <DialogContent className="max-h-[90vh] max-w-3xl p-0 overflow-hidden flex flex-col">
                     <DialogHeader className="px-8 pt-8 pb-4 shrink-0 border-b">
-                        <DialogTitle>{language === "tr" ? "İçerik önizleme" : "Content preview"}</DialogTitle>
+                        <DialogTitle>{language === "tr" ? "İçerik önizleme" : language === "es" ? "Vista previa del contenido" : "Content preview"}</DialogTitle>
                         <DialogDescription>
-                            {language === "tr" ? "Seçili dilde nasıl görüneceğini burada kontrol edin." : "Review how the selected locale will appear."}
+                            {language === "tr" ? "Seçili dilde nasıl görüneceğini burada kontrol edin." : language === "es" ? "Revisa cómo se verá en el idioma seleccionado." : "Review how the selected locale will appear."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex-1 overflow-y-auto px-8 py-6">
@@ -673,14 +687,14 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                             <div className="flex flex-wrap items-center gap-2">
                                 <Badge variant={(previewItem as any).published !== false ? "secondary" : "outline"}>
                                     {(previewItem as any).published !== false
-                                        ? language === "tr" ? "Yayında" : "Published"
-                                        : language === "tr" ? "Taslak" : "Draft"}
+                                        ? language === "tr" ? "Yayında" : language === "es" ? "Publicado" : "Published"
+                                        : language === "tr" ? "Taslak" : language === "es" ? "Borrador" : "Draft"}
                                 </Badge>
                                 <Badge variant="outline">
                                     {kind === "blog"
-                                        ? (previewItem as CmsBlogPost).category || (language === "tr" ? "Kategorisiz" : "Uncategorized")
+                                        ? (previewItem as CmsBlogPost).category || (language === "tr" ? "Kategorisiz" : language === "es" ? "Sin categoría" : "Uncategorized")
                                         : kind === "faq"
-                                          ? (previewItem as CmsFaqItem).category || (language === "tr" ? "Kategorisiz" : "Uncategorized")
+                                          ? (previewItem as CmsFaqItem).category || (language === "tr" ? "Kategorisiz" : language === "es" ? "Sin categoría" : "Uncategorized")
                                           : (previewItem as CmsEducationItem).type}
                                 </Badge>
                             </div>
@@ -697,7 +711,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                                         ? `${(previewItem as CmsBlogPost).date} • ${(previewItem as CmsBlogPost).readTime}`
                                         : kind === "faq"
                                           ? `#${(previewItem as CmsFaqItem).order}`
-                                          : (previewItem as CmsEducationItem).url || (language === "tr" ? "URL yok" : "No URL")}
+                                          : (previewItem as CmsEducationItem).url || (language === "tr" ? "URL yok" : language === "es" ? "Sin URL" : "No URL")}
                                 </p>
                             </div>
                             <div className="rounded-lg border bg-muted/20 p-4 whitespace-pre-wrap text-sm leading-7">
@@ -712,7 +726,7 @@ export function OmniContentPanel({ kind }: { kind: CmsContentKind }) {
                     </div>
                     <DialogFooter className="px-8 py-6 shrink-0 border-t bg-muted/20">
                         <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-                            {language === "tr" ? "Kapat" : "Close"}
+                            {language === "tr" ? "Kapat" : language === "es" ? "Cerrar" : "Close"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -578,9 +578,7 @@ export function OmniVoiceCallsPanel() {
                                     <div>
                                         <p className="text-sm font-medium">{t("omni.common.enabled")}</p>
                                         <p className="text-sm text-muted-foreground">
-                                            {language === "tr"
-                                                ? "Voice kanalı kapalıysa inbound, outbound ve health akışları durur."
-                                                : "When disabled, inbound, outbound, and health flows stop for this voice channel."}
+                                            {t("omni.voice.disable.description")}
                                         </p>
                                     </div>
                                     <Switch
