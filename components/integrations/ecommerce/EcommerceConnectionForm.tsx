@@ -13,6 +13,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
+import { useLanguage } from "@/context/LanguageContext"
 import type { PlatformMeta } from "@/lib/integrations/ecommerce/platform-registry"
 import type { EcomPlatform } from "@/lib/integrations/ecommerce/types"
 
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSuccess }: Props) {
+    const { t } = useLanguage()
     const [values, setValues] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -51,7 +53,7 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
             })
             const data = await res.json()
             if (!res.ok) {
-                setError(data.error || "Bağlantı kurulamadı")
+                setError(data.error || t('ecomConnectFailed'))
                 return
             }
             onSuccess({ connectionId: data.connectionId, storeName: data.storeName })
@@ -66,14 +68,14 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
         <Dialog open={open} onOpenChange={open => !open && onClose()}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{meta.name} Bağlantısı</DialogTitle>
+                    <DialogTitle>{t('ecomFormTitle').replace('{platform}', meta.name)}</DialogTitle>
                     <DialogDescription>
-                        {meta.name} mağazanızın API bilgilerini girin.
+                        {t('ecomFormDesc').replace('{platform}', meta.name)}
                         {meta.docsUrl && (
                             <>
                                 {" "}
                                 <a href={meta.docsUrl} target="_blank" rel="noopener noreferrer" className="underline">
-                                    Dokümantasyon
+                                    {t('ecomDocs')}
                                 </a>
                             </>
                         )}
@@ -113,11 +115,11 @@ export function EcommerceConnectionForm({ open, meta, chatbotId, onClose, onSucc
 
                     <DialogFooter className="pt-2">
                         <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={loading}>
-                            İptal
+                            {t('cancel')}
                         </Button>
                         <Button type="submit" className="flex-1" disabled={loading}>
                             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                            Bağlantıyı Kur
+                            {t('ecomEstablishConnection')}
                         </Button>
                     </DialogFooter>
                 </form>

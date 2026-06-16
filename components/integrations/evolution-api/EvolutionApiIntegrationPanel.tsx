@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AlertTriangle, Check, Loader2, QrCode, RefreshCw } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +13,7 @@ import type { EvolutionApiStatusPayload } from "@/lib/integrations/evolution-api
 
 export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string }) {
     const { user } = useAuth()
+    const { t } = useLanguage()
     const { toast } = useToast()
     const [status, setStatus] = useState<EvolutionApiStatusPayload | null>(null)
     const [loading, setLoading] = useState(true)
@@ -25,10 +27,10 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
     const [createInstance, setCreateInstance] = useState(true)
     const [qrCode, setQrCode] = useState<string | null>(null)
     const [testPhone, setTestPhone] = useState("")
-    const [testMessage, setTestMessage] = useState("Merhaba, bu Vion Evolution API test mesajıdır.")
+    const [testMessage, setTestMessage] = useState(t('evoTestMessage'))
 
     const getAuthHeaders = async () => {
-        if (!user) throw new Error("Oturum bulunamadı.")
+        if (!user) throw new Error(t('sessionNotFound'))
         const token = await user.getIdToken()
         return {
             "Content-Type": "application/json",
@@ -45,15 +47,15 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                 cache: "no-store",
             })
             const payload = await response.json()
-            if (!response.ok) throw new Error(payload?.error || "Evolution API durumu alınamadı.")
+            if (!response.ok) throw new Error(payload?.error || t('evoStatusFailedMsg'))
             setStatus(payload)
             setBaseUrl(payload.config.baseUrl || "")
             setInstanceName(payload.config.instanceName || "")
             setPhoneNumber(payload.config.phoneNumber || "")
         } catch (error) {
             toast({
-                title: "Evolution API durumu alınamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('evoStatusFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -82,17 +84,17 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                 }),
             })
             const payload = await response.json()
-            if (!response.ok) throw new Error(payload?.error || "Evolution API bağlantısı kaydedilemedi.")
+            if (!response.ok) throw new Error(payload?.error || t('evoConnectFailedMsg'))
             toast({
-                title: "Evolution API bağlantısı kaydedildi",
-                description: createInstance ? "Instance oluşturuldu ve webhook ayarlandı." : "Mevcut instance için webhook ayarlandı.",
+                title: t('evoConnectedTitle'),
+                description: createInstance ? t('evoInstanceCreatedDesc') : t('evoWebhookSetDesc'),
             })
             setApiKey("")
             await loadStatus()
         } catch (error) {
             toast({
-                title: "Evolution API bağlantısı kaydedilemedi",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('evoConnectFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -109,12 +111,12 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                 body: JSON.stringify({ chatbotId }),
             })
             const payload = await response.json()
-            if (!response.ok) throw new Error(payload?.error || "QR kod alınamadı.")
+            if (!response.ok) throw new Error(payload?.error || t('evoQrFailedMsg'))
             setQrCode(payload.qrCode || null)
         } catch (error) {
             toast({
-                title: "QR kod alınamadı",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('evoQrFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -131,13 +133,13 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                 body: JSON.stringify({ chatbotId, to: testPhone, text: testMessage }),
             })
             const payload = await response.json()
-            if (!response.ok) throw new Error(payload?.error || "Test mesajı gönderilemedi.")
-            toast({ title: "Test mesajı gönderildi", description: "Mesaj Evolution API üzerinden iletildi." })
+            if (!response.ok) throw new Error(payload?.error || t('testMsgSendFailedMsg'))
+            toast({ title: t('testMsgSentTitle'), description: t('evoTestSentDesc') })
             await loadStatus()
         } catch (error) {
             toast({
-                title: "Test mesajı gönderilemedi",
-                description: error instanceof Error ? error.message : "Beklenmeyen bir hata oluştu.",
+                title: t('testMsgSendFailedTitle'),
+                description: error instanceof Error ? error.message : t('unexpectedError'),
                 variant: "destructive",
             })
         } finally {
@@ -163,16 +165,16 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
-                        Evolution API Hızlı WhatsApp Bağlantısı
+                        {t('evoPanelTitle')}
                         {connected ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
                                 <Check className="h-3 w-3" />
-                                Bağlı
+                                {t('evoConnectedBadge')}
                             </span>
                         ) : null}
                     </CardTitle>
                     <CardDescription>
-                        WhatsApp Business uygulamasını telefonda kullanmaya devam ederken Vion paneline QR tabanlı mesaj akışı bağlayın.
+                        {t('evoPanelDesc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -180,7 +182,7 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                         <div className="flex gap-2">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                             <p>
-                                Bu yöntem resmi Meta Cloud API değildir. Düşük hacimli hızlı bağlantı için kullanın; toplu pazarlama ve agresif otomasyon için resmi Meta connector tercih edilmeli.
+                                {t('evoUnofficialWarning')}
                             </p>
                         </div>
                     </div>
@@ -194,7 +196,7 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                             <Label>API Key</Label>
                             <Input
                                 type="password"
-                                placeholder={status?.config.apiKeyConfigured ? "Kayıtlı API key korunacak" : "GLOBAL_API_KEY"}
+                                placeholder={status?.config.apiKeyConfigured ? t('evoApiKeyConfigured') : "GLOBAL_API_KEY"}
                                 value={apiKey}
                                 onChange={(event) => setApiKey(event.target.value)}
                             />
@@ -204,7 +206,7 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                             <Input placeholder="vion-tenant-whatsapp" value={instanceName} onChange={(event) => setInstanceName(event.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Telefon Numarası</Label>
+                            <Label>{t('evoPhoneLabel')}</Label>
                             <Input placeholder="905xxxxxxxxx" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} />
                         </div>
                     </div>
@@ -216,7 +218,7 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                             onChange={(event) => setCreateInstance(event.target.checked)}
                             className="h-4 w-4 rounded border-input"
                         />
-                        Instance yoksa Evolution üzerinde oluştur ve webhook ayarla
+                        {t('evoCreateInstanceLabel')}
                     </label>
 
                     {status?.config.webhookUrl ? (
@@ -237,11 +239,11 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                 <CardFooter className="flex flex-wrap gap-2">
                     <Button onClick={handleConnect} disabled={saving || !baseUrl || !instanceName || (!apiKey && !status?.config.apiKeyConfigured)}>
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Kaydet ve Webhook Ayarla
+                        {t('evoSaveWebhook')}
                     </Button>
                     <Button variant="outline" onClick={loadStatus}>
                         <RefreshCw className="mr-2 h-4 w-4" />
-                        Durumu Yenile
+                        {t('evoRefreshStatus')}
                     </Button>
                 </CardFooter>
             </Card>
@@ -251,9 +253,9 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-base">
                             <QrCode className="h-4 w-4" />
-                            QR Bağlantısı
+                            {t('evoQrTitle')}
                         </CardTitle>
-                        <CardDescription>WhatsApp Business uygulamasından bağlı cihaz olarak okutun.</CardDescription>
+                        <CardDescription>{t('evoQrDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {qrImageSrc ? (
@@ -262,22 +264,22 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                             </div>
                         ) : (
                             <div className="flex h-56 items-center justify-center rounded-md border bg-muted text-sm text-muted-foreground">
-                                QR kod henüz alınmadı.
+                                {t('evoQrNotYet')}
                             </div>
                         )}
                     </CardContent>
                     <CardFooter>
                         <Button variant="outline" className="w-full" onClick={handleQr} disabled={qrLoading || !status?.ready}>
                             {qrLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            QR Kod Al
+                            {t('evoGetQr')}
                         </Button>
                     </CardFooter>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-base">Test Mesajı</CardTitle>
-                        <CardDescription>Bağlantı açıldıktan sonra Evolution API üzerinden test mesajı gönderin.</CardDescription>
+                        <CardTitle className="text-base">{t('evoTestTitle')}</CardTitle>
+                        <CardDescription>{t('evoTestDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <Input placeholder="905xxxxxxxxx" value={testPhone} onChange={(event) => setTestPhone(event.target.value)} />
@@ -286,7 +288,7 @@ export function EvolutionApiIntegrationPanel({ chatbotId }: { chatbotId: string 
                     <CardFooter>
                         <Button className="w-full" onClick={handleTest} disabled={testing || !testPhone || !status?.ready}>
                             {testing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Test Mesajı Gönder
+                            {t('evoSendTest')}
                         </Button>
                     </CardFooter>
                 </Card>

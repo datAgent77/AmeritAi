@@ -5,6 +5,7 @@ import { CheckCircle2, AlertCircle, RefreshCw, Unplug, PlugZap, ExternalLink } f
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/context/LanguageContext"
 import type { EcomConnection } from "@/lib/integrations/ecommerce/types"
 import type { PlatformMeta } from "@/lib/integrations/ecommerce/platform-registry"
 
@@ -17,14 +18,14 @@ interface Props {
     onSync: () => Promise<void>
 }
 
-function statusBadge(status?: string) {
-    if (status === "active") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Aktif</Badge>
-    if (status === "error") return <Badge className="bg-rose-100 text-rose-700 border-rose-200">Hata</Badge>
-    if (status === "disconnected") return <Badge variant="outline" className="text-zinc-500">Bağlı Değil</Badge>
-    return <Badge variant="outline" className="text-zinc-500">Bağlı Değil</Badge>
+function statusBadge(status: string | undefined, t: (key: string) => string) {
+    if (status === "active") return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">{t('ecomActive')}</Badge>
+    if (status === "error") return <Badge className="bg-rose-100 text-rose-700 border-rose-200">{t('ecomError')}</Badge>
+    return <Badge variant="outline" className="text-zinc-500">{t('ecomNotConnected')}</Badge>
 }
 
 export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, onDisconnect, onSync }: Props) {
+    const { t } = useLanguage()
     const [disconnecting, setDisconnecting] = useState(false)
     const [syncing, setSyncing] = useState(false)
     const isConnected = !!connection && connection.status === "active"
@@ -61,7 +62,7 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
                             )}
                         </div>
                     </div>
-                    {statusBadge(connection?.status)}
+                    {statusBadge(connection?.status, t)}
                 </div>
             </CardHeader>
 
@@ -69,18 +70,18 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
                 <CardContent className="pt-0 pb-4 space-y-3">
                     <div className="grid grid-cols-2 gap-2 text-xs bg-white/70 rounded-md border border-emerald-100 p-3">
                         <div>
-                            <p className="text-zinc-500 mb-0.5">Ürünler</p>
-                            <p className="font-semibold">{connection.syncedProductCount.toLocaleString("tr-TR")}</p>
+                            <p className="text-zinc-500 mb-0.5">{t('ecomProducts')}</p>
+                            <p className="font-semibold">{connection.syncedProductCount.toLocaleString()}</p>
                         </div>
                         <div>
-                            <p className="text-zinc-500 mb-0.5">Siparişler</p>
-                            <p className="font-semibold">{connection.syncedOrderCount.toLocaleString("tr-TR")}</p>
+                            <p className="text-zinc-500 mb-0.5">{t('ecomOrders')}</p>
+                            <p className="font-semibold">{connection.syncedOrderCount.toLocaleString()}</p>
                         </div>
                         {connection.lastProductSyncAt && (
                             <div className="col-span-2">
-                                <p className="text-zinc-500 mb-0.5">Son senkronizasyon</p>
+                                <p className="text-zinc-500 mb-0.5">{t('ecomLastSync')}</p>
                                 <p className="font-medium">
-                                    {new Date(connection.lastProductSyncAt).toLocaleString("tr-TR")}
+                                    {new Date(connection.lastProductSyncAt).toLocaleString()}
                                 </p>
                             </div>
                         )}
@@ -95,7 +96,7 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
                             disabled={syncing}
                         >
                             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncing ? "animate-spin" : ""}`} />
-                            Senkronize Et
+                            {t('ecomSyncNow')}
                         </Button>
 
                         {connection.storeUrl && (
@@ -107,7 +108,7 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
                             >
                                 <a href={connection.storeUrl} target="_blank" rel="noopener noreferrer">
                                     <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                                    Mağazayı Aç
+                                    {t('ecomOpenStore')}
                                 </a>
                             </Button>
                         )}
@@ -120,7 +121,7 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
                             disabled={disconnecting}
                         >
                             <Unplug className="w-3.5 h-3.5 mr-1.5" />
-                            Bağlantıyı Kes
+                            {t('ecomDisconnect')}
                         </Button>
                     </div>
                 </CardContent>
@@ -129,11 +130,11 @@ export function EcommercePlatformCard({ connection, meta, chatbotId, onConnect, 
             {!isConnected && (
                 <CardContent className="pt-0 pb-4">
                     <CardDescription className="text-xs mb-3">
-                        {meta.name} mağazanızı bağlayarak ürünlerinizi ve siparişlerinizi Vion AI ile senkronize edin.
+                        {t('ecomConnectDesc').replace('{platform}', meta.name)}
                     </CardDescription>
                     <Button size="sm" className="w-full" onClick={onConnect}>
                         <PlugZap className="w-3.5 h-3.5 mr-2" />
-                        Bağla
+                        {t('ecomConnect')}
                     </Button>
                 </CardContent>
             )}

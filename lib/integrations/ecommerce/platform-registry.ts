@@ -28,7 +28,7 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         logoUrl: "/logos/shopify.svg",
         authType: "api_key",
         fields: [
-            { key: "shopDomain", label: "Mağaza Domain", placeholder: "magazaniz.myshopify.com", type: "url", required: true, hint: "myshopify.com uzantılı alan adınız" },
+            { key: "shopDomain", label: "Store Domain", placeholder: "yourstore.myshopify.com", type: "url", required: true, hint: "Your myshopify.com domain" },
             { key: "accessToken", label: "Access Token", placeholder: "shpat_...", type: "password", required: true, hint: "Admin > Apps > Develop apps > Access tokens" },
         ],
         webhookSupport: true,
@@ -43,8 +43,8 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         logoUrl: "/logos/ikas.svg",
         authType: "api_key_secret",
         fields: [
-            { key: "storeUrl", label: "Mağaza URL", placeholder: "https://magazaniz.myikas.com", type: "url", required: true },
-            { key: "apiKey", label: "API Anahtarı", placeholder: "ik_...", type: "password", required: true, hint: "İkas Admin > Entegrasyonlar > API" },
+            { key: "storeUrl", label: "Store URL", placeholder: "https://yourstore.myikas.com", type: "url", required: true },
+            { key: "apiKey", label: "API Key", placeholder: "ik_...", type: "password", required: true, hint: "İkas Admin > Integrations > API" },
             { key: "apiSecret", label: "API Secret", placeholder: "iks_...", type: "password", required: true },
         ],
         webhookSupport: true,
@@ -59,8 +59,8 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         logoUrl: "/logos/ideasoft.svg",
         authType: "api_key",
         fields: [
-            { key: "storeUrl", label: "Mağaza URL", placeholder: "https://magazaniz.com", type: "url", required: true },
-            { key: "accessToken", label: "API Token", placeholder: "Bearer ...", type: "password", required: true, hint: "IdeaSoft Admin > Entegrasyonlar > API Erişim" },
+            { key: "storeUrl", label: "Store URL", placeholder: "https://yourstore.com", type: "url", required: true },
+            { key: "accessToken", label: "API Token", placeholder: "Bearer ...", type: "password", required: true, hint: "IdeaSoft Admin > Integrations > API Access" },
         ],
         webhookSupport: true,
         couponSupport: true,
@@ -74,8 +74,8 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         logoUrl: "/logos/ticimax.svg",
         authType: "api_key",
         fields: [
-            { key: "storeUrl", label: "Mağaza URL", placeholder: "https://magazaniz.com", type: "url", required: true },
-            { key: "accessToken", label: "API Token", type: "password", required: true, hint: "Ticimax Admin > Entegrasyon > API" },
+            { key: "storeUrl", label: "Store URL", placeholder: "https://yourstore.com", type: "url", required: true },
+            { key: "accessToken", label: "API Token", type: "password", required: true, hint: "Ticimax Admin > Integration > API" },
         ],
         webhookSupport: false,
         couponSupport: true,
@@ -88,9 +88,9 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         logoUrl: "/logos/tsoft.svg",
         authType: "api_key",
         fields: [
-            { key: "storeUrl", label: "Mağaza URL", placeholder: "https://magazaniz.com", type: "url", required: true },
-            { key: "apiKey", label: "API Kullanıcı Adı", type: "text", required: true },
-            { key: "apiSecret", label: "API Şifre", type: "password", required: true },
+            { key: "storeUrl", label: "Store URL", placeholder: "https://yourstore.com", type: "url", required: true },
+            { key: "apiKey", label: "API Username", type: "text", required: true },
+            { key: "apiSecret", label: "API Password", type: "password", required: true },
         ],
         webhookSupport: false,
         couponSupport: true,
@@ -103,7 +103,7 @@ export const PLATFORM_META: Record<EcomPlatform, PlatformMeta> = {
         authType: "api_key_secret",
         fields: [
             { key: "siteUrl", label: "Site URL", placeholder: "https://magazaniz.com", type: "url", required: true },
-            { key: "consumerKey", label: "Consumer Key", placeholder: "ck_...", type: "password", required: true, hint: "WP Admin > WooCommerce > Ayarlar > Gelişmiş > REST API" },
+            { key: "consumerKey", label: "Consumer Key", placeholder: "ck_...", type: "password", required: true, hint: "WP Admin > WooCommerce > Settings > Advanced > REST API" },
             { key: "consumerSecret", label: "Consumer Secret", placeholder: "cs_...", type: "password", required: true },
         ],
         webhookSupport: true,

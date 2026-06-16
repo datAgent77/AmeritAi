@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { MessengerPageOption } from "@/lib/integrations/messenger/types"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function MessengerPageSelectStep(props: {
     pages: MessengerPageOption[]
@@ -13,15 +14,16 @@ export function MessengerPageSelectStep(props: {
     onSave: () => void
     saving?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <Card className="border-border/70 shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardHeader className="bg-slate-50/50 pb-4 border-b border-border/40">
                 <CardTitle className="text-base flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground font-semibold">2</span>
-                    Facebook Sayfanızı Seçin
+                    {t('msgrSelectPageTitle')}
                 </CardTitle>
                 <CardDescription className="text-xs">
-                    Messenger mesajları bu Facebook sayfası üzerinden yönlendirilir. Bağlamak istediğiniz sayfayı seçin.
+                    {t('msgrSelectPageDesc')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5 pt-5">
@@ -51,7 +53,7 @@ export function MessengerPageSelectStep(props: {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-foreground truncate">{page.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate mt-0.5">ID: {page.id}</p>
+                                    <p className="text-xs text-muted-foreground truncate mt-0.5">{t('pageId')}: {page.id}</p>
                                 </div>
                             </div>
                             {props.selectedPageId === page.id && (
@@ -69,7 +71,7 @@ export function MessengerPageSelectStep(props: {
                         className="w-full sm:w-auto"
                     >
                         {props.saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Seçimi Kaydet ve Devam Et
+                        {t('saveAndContinue')}
                     </Button>
                 </div>
             </CardContent>

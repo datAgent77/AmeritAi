@@ -5,6 +5,7 @@ import { Store, AlertCircle, CheckCircle2 } from "lucide-react"
 import { EcommercePlatformCard } from "./EcommercePlatformCard"
 import { EcommerceConnectionForm } from "./EcommerceConnectionForm"
 import { PLATFORM_META } from "@/lib/integrations/ecommerce/platform-registry"
+import { useLanguage } from "@/context/LanguageContext"
 import type { EcomConnection, EcomPlatform } from "@/lib/integrations/ecommerce/types"
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function EcommerceIntegrationsPanel({ chatbotId }: Props) {
+    const { t } = useLanguage()
     const [connections, setConnections] = useState<EcomConnection[]>([])
     const [loading, setLoading] = useState(true)
     const [connectingPlatform, setConnectingPlatform] = useState<EcomPlatform | null>(null)
@@ -42,9 +44,9 @@ export function EcommerceIntegrationsPanel({ chatbotId }: Props) {
         })
         if (res.ok) {
             setConnections(prev => prev.filter(c => c.platform !== platform))
-            showToast("success", `${PLATFORM_META[platform].name} bağlantısı kaldırıldı.`)
+            showToast("success", t('ecomDisconnectedToast').replace('{platform}', PLATFORM_META[platform].name))
         } else {
-            showToast("error", "Bağlantı kaldırılamadı.")
+            showToast("error", t('ecomDisconnectFailedToast'))
         }
     }
 
@@ -56,16 +58,16 @@ export function EcommerceIntegrationsPanel({ chatbotId }: Props) {
         })
         const data = await res.json()
         if (res.ok) {
-            showToast("success", `Senkronizasyon tamamlandı. ${data.syncedProducts} ürün, ${data.syncedOrders} sipariş.`)
+            showToast("success", t('ecomSyncDoneToast').replace('{products}', String(data.syncedProducts)).replace('{orders}', String(data.syncedOrders)))
             await loadConnections()
         } else {
-            showToast("error", data.error || "Senkronizasyon başarısız.")
+            showToast("error", data.error || t('ecomSyncFailedToast'))
         }
     }
 
     function handleConnectSuccess(platform: EcomPlatform, result: { connectionId: string; storeName?: string }) {
         setConnectingPlatform(null)
-        showToast("success", `${PLATFORM_META[platform].name} başarıyla bağlandı! ${result.storeName ? `"${result.storeName}"` : ""}`)
+        showToast("success", t('ecomConnectedToast').replace('{platform}', PLATFORM_META[platform].name).replace('{store}', result.storeName ? `"${result.storeName}"` : ""))
         loadConnections()
     }
 
@@ -92,10 +94,10 @@ export function EcommerceIntegrationsPanel({ chatbotId }: Props) {
             <div>
                 <div className="flex items-center gap-2 mb-1">
                     <Store className="w-5 h-5 text-zinc-700" />
-                    <h2 className="text-lg font-semibold tracking-tight">E-Ticaret Platform Bağlantıları</h2>
+                    <h2 className="text-lg font-semibold tracking-tight">{t('ecomPanelHeading')}</h2>
                 </div>
                 <p className="text-sm text-zinc-500">
-                    Mağaza platformunuzu bağlayın. Ürünler ve siparişler otomatik olarak senkronize edilir.
+                    {t('ecomPanelSubtitle')}
                 </p>
             </div>
 

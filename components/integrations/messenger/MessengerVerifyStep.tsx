@@ -1,6 +1,7 @@
 "use client"
 
 import { TestMessageCard } from "@/components/integrations/shared/TestMessageCard"
+import { useLanguage } from "@/context/LanguageContext"
 
 export function MessengerVerifyStep(props: {
     recipientId: string
@@ -10,12 +11,13 @@ export function MessengerVerifyStep(props: {
     onSend: () => void
     sending?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <TestMessageCard
-            title="Test mesajı gönderin"
-            description="Bu sayfaya daha önce Messenger üzerinden mesaj göndermiş kullanıcının PSID değerini girerek test edin."
-            recipientLabel="Alıcı Messenger PSID"
-            recipientPlaceholder="Webhook sender.id değeri, örn. 1234567890123456"
+            title={t('waTestTitle')}
+            description={t('msgrTestDesc')}
+            recipientLabel={t('msgrRecipientLabel')}
+            recipientPlaceholder={t('msgrRecipientPlaceholder')}
             recipientValue={props.recipientId}
             onRecipientChange={props.onRecipientIdChange}
             messageValue={props.message}
