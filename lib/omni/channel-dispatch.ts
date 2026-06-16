@@ -1,8 +1,50 @@
 import { classifyOmniDeliveryError, recordOmniDeliveryAttempt } from "@/lib/omni/delivery-attempts"
 import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
 import { getEvolutionApiKey, normalizeEvolutionApiConfig, sendEvolutionText } from "@/lib/integrations/evolution-api/setup"
+import { isOptedOut, type MessagingChannel } from "@/lib/messaging/opt-out"
 
 const META_API_VERSION = "v23.0"
+
+/**
+ * TCPA/opt-out guard. If the recipient has opted out of this channel, record a
+ * non-retryable suppressed delivery attempt and return a null-message result so
+ * the outbound send is skipped. Pass `metadata.bypassOptOut: true` for the
+ * opt-out/opt-in confirmation message itself.
+ */
+async function suppressIfOptedOut(
+    adminDb: any,
+    chatbotId: string,
+    channel: MessagingChannel,
+    contactKey: string | null | undefined,
+    content: string,
+    options: OmniDispatchOptions
+): Promise<{ messageId: null; deliveryAttemptId: string | null; optOutSuppressed: true } | null> {
+    if (options?.metadata?.bypassOptOut === true || !contactKey) return null
+    const opted = await isOptedOut(adminDb, { chatbotId, channel, contactKey })
+    if (!opted) return null
+    const attempt = await recordOmniDeliveryAttempt(adminDb, {
+        chatbotId,
+        channel,
+        provider: "meta",
+        direction: "outbound",
+        source: options.source,
+        status: "failed",
+        sessionId: options.sessionId || null,
+        callbackId: options.callbackId || null,
+        destination: contactKey,
+        payloadText: content,
+        retryOfAttemptId: options.retryOfAttemptId || null,
+        attemptNumber: options.attemptNumber,
+        errorClass: "config",
+        errorMessage: "Recipient opted out (TCPA STOP); outbound message suppressed",
+        retryEligible: false,
+        metadata: {
+            ...(options.metadata || {}),
+            optOutSuppressed: true,
+        },
+    })
+    return { messageId: null, deliveryAttemptId: attempt.id || null, optOutSuppressed: true }
+}
 
 interface OmniDispatchOptions {
     source: string
@@ -461,6 +503,10 @@ export async function dispatchOmniWhatsAppMessage(
     content: string,
     options: OmniDispatchOptions
 ) {
+    const waContactKey = sessionData.contactKey || sessionData.channelMeta?.remoteJid || null
+    const waSuppressed = await suppressIfOptedOut(adminDb, chatbotId, "whatsapp", waContactKey, content, options)
+    if (waSuppressed) return waSuppressed
+
     const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
     const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
     const omniWhatsapp = omniConfig.whatsapp || {}
@@ -521,6 +567,10 @@ export async function dispatchOmniInstagramMessage(
     content: string,
     options: OmniDispatchOptions
 ) {
+    const igContactKey = sessionData.contactKey || sessionData.channelMeta?.senderId || null
+    const igSuppressed = await suppressIfOptedOut(adminDb, chatbotId, "instagram", igContactKey, content, options)
+    if (igSuppressed) return igSuppressed
+
     const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
     const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
     const instagram = omniConfig.instagram || {}
@@ -551,6 +601,10 @@ export async function dispatchOmniMessengerMessage(
     content: string,
     options: OmniDispatchOptions
 ) {
+    const msgrContactKey = sessionData.contactKey || sessionData.channelMeta?.senderId || null
+    const msgrSuppressed = await suppressIfOptedOut(adminDb, chatbotId, "messenger", msgrContactKey, content, options)
+    if (msgrSuppressed) return msgrSuppressed
+
     const omniConfigSnapshot = await adminDb.collection("omni_channel_configs").doc(chatbotId).get()
     const omniConfig = omniConfigSnapshot.exists ? omniConfigSnapshot.data() || {} : {}
     const pageId = getMessengerPageId(omniConfig) || sessionData.channelMeta?.pageId || null

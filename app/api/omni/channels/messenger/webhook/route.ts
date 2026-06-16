@@ -9,6 +9,14 @@ import { upsertOmniContactMemory } from "@/lib/omni/memory"
 import { claimOmniWebhookEvent } from "@/lib/omni/replay-protection"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import { upsertContactGraph, upsertOmniSession, verifyMetaWebhookSignature } from "@/lib/omni/server-utils"
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out"
 
 export const dynamic = "force-dynamic"
 
@@ -208,6 +216,39 @@ export async function POST(req: Request) {
                 message: userMessage,
                 visitorName: sessionData.visitorName || senderId,
             })
+
+            // TCPA: honor STOP/START before any assistant processing.
+            const consent = classifyConsentKeyword(messageContent)
+            if (consent) {
+                const replyLang = consentReplyLanguage(messageContent)
+                if (consent === "opt_out") {
+                    await recordOptOut(adminDb, { chatbotId, channel: "messenger", contactKey: senderId }, { source: "api/omni/channels/messenger/webhook", keyword: messageContent.slice(0, 40) })
+                } else {
+                    await recordOptIn(adminDb, { chatbotId, channel: "messenger", contactKey: senderId }, { source: "api/omni/channels/messenger/webhook", keyword: messageContent.slice(0, 40) })
+                }
+                const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang)
+                try {
+                    await dispatchOmniMessengerMessage(
+                        adminDb,
+                        chatbotId,
+                        { ...sessionData, contactKey: senderId, canonicalContactId: contact.id || null, channelMeta: { ...(sessionData.channelMeta || {}), pageId, senderId } },
+                        confirmation,
+                        { source: "api/omni/channels/messenger/webhook", sessionId, metadata: { bypassOptOut: true, consent, inboundMessageId: externalId } }
+                    )
+                } catch {
+                    // confirmation delivery failure should not block recording the opt-out
+                }
+                await logOmniAuditEvent({
+                    chatbotId,
+                    channel: "messenger",
+                    eventType: consent === "opt_out" ? "messenger.opt_out" : "messenger.opt_in",
+                    result: "success",
+                    source: "api/omni/channels/messenger/webhook",
+                    message: consent === "opt_out" ? "Contact opted out (STOP)" : "Contact opted back in (START)",
+                    metadata: { sessionId, pageId, inboundMessageId: externalId },
+                })
+                continue
+            }
 
             const sessionMessages = [...existingMessages, userMessage]
             let assistantReplyText = ""

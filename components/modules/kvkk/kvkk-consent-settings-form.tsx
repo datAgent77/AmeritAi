@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Loader2, RefreshCw, Save } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -134,6 +135,8 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
     const { user, role } = useAuth()
     const isSuperAdmin = role === 'SUPER_ADMIN' || role === 'AGENCY_ADMIN';
     const { toast } = useToast()
+    const { language } = useLanguage()
+    const p = (tr: string, en: string, es: string) => (language === "tr" ? tr : language === "es" ? es : en)
     const [activeTab, setActiveTab] = useState<"settings" | "texts" | "consents">("settings")
     const [consentsView, setConsentsView] = useState<"summary" | "details">("summary")
     const [isLoading, setIsLoading] = useState(true)
@@ -198,8 +201,8 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
             } catch (error) {
                 console.error("Failed to load KVKK settings:", error)
                 toast({
-                    title: "Hata",
-                    description: "KVKK ayarlari yuklenemedi.",
+                    title: p("Hata", "Error", "Error"),
+                    description: p("Gizlilik ayarları yüklenemedi.", "Failed to load privacy settings.", "No se pudieron cargar los ajustes de privacidad."),
                     variant: "destructive",
                 })
             } finally {
@@ -235,7 +238,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
             const events = Array.isArray(data?.events) ? data.events : []
             setConsentEvents(events)
         } catch (error: any) {
-            setConsentsError(error?.message || "Onay kayitlari yuklenemedi")
+            setConsentsError(error?.message || p("Onay kayıtları yüklenemedi", "Failed to load consent records", "No se pudieron cargar los registros de consentimiento"))
         } finally {
             setConsentsLoading(false)
         }
@@ -293,14 +296,14 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
             }
 
             toast({
-                title: "Kaydedildi",
-                description: "KVKK modulu ayarlari guncellendi.",
+                title: p("Kaydedildi", "Saved", "Guardado"),
+                description: p("Gizlilik modülü ayarları güncellendi.", "Privacy module settings updated.", "Ajustes del módulo de privacidad actualizados."),
             })
         } catch (error: any) {
             console.error("Failed to save KVKK settings:", error)
             toast({
-                title: "Hata",
-                description: error.message || "KVKK ayarlari kaydedilemedi.",
+                title: p("Hata", "Error", "Error"),
+                description: error.message || p("Gizlilik ayarları kaydedilemedi.", "Failed to save privacy settings.", "No se pudieron guardar los ajustes de privacidad."),
                 variant: "destructive",
             })
         } finally {
@@ -330,7 +333,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
         <div className="flex justify-end">
             <Button onClick={saveSettings} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Kaydet
+                {p("Kaydet", "Save", "Guardar")}
             </Button>
         </div>
     )
@@ -348,23 +351,23 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
 
             <Tabs value={activeTab} onValueChange={(next) => setActiveTab(next as any)}>
                 <TabsList>
-                    <TabsTrigger value="settings">Ayarlar</TabsTrigger>
-                    <TabsTrigger value="texts">Metinler</TabsTrigger>
-                    <TabsTrigger value="consents">Onay Kayıtları</TabsTrigger>
+                    <TabsTrigger value="settings">{p("Ayarlar", "Settings", "Ajustes")}</TabsTrigger>
+                    <TabsTrigger value="texts">{p("Metinler", "Texts", "Textos")}</TabsTrigger>
+                    <TabsTrigger value="consents">{p("Onay Kayıtları", "Consent Records", "Registros de consentimiento")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="settings" className="space-y-6">
                     {isSuperAdmin && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Modul durumu</CardTitle>
-                                <CardDescription>Bu ayar tum paketlerde kullanilabilir.</CardDescription>
+                                <CardTitle>{p("Modül durumu", "Module status", "Estado del módulo")}</CardTitle>
+                                <CardDescription>{p("Bu ayar tüm paketlerde kullanılabilir.", "This setting is available on all plans.", "Este ajuste está disponible en todos los planes.")}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex items-center justify-between gap-4">
                                 <div>
-                                    <Label htmlFor="kvkk-enabled" className="text-base font-medium">KVKK kabul modalini aktif et</Label>
+                                    <Label htmlFor="kvkk-enabled" className="text-base font-medium">{p("Onay modalını aktif et", "Enable consent modal", "Activar modal de consentimiento")}</Label>
                                     <p className="mt-1 text-sm text-muted-foreground">
-                                        Aktif oldugunda ziyaretci kabul etmeden mesaj gonderemez.
+                                        {p("Aktif olduğunda ziyaretçi kabul etmeden mesaj gönderemez.", "When enabled, visitors cannot send messages without accepting.", "Cuando está activado, los visitantes no pueden enviar mensajes sin aceptar.")}
                                     </p>
                                 </div>
                                 <Switch id="kvkk-enabled" checked={enabled} onCheckedChange={setEnabled} />
@@ -375,42 +378,42 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                     <Card>
                         <CardHeader>
                             <div className="flex flex-wrap items-center gap-3">
-                                <CardTitle>Tenant metni</CardTitle>
-                                {publishedVersionId ? <Badge variant="outline">Varsayilan surum: {publishedVersionId}</Badge> : null}
+                                <CardTitle>{p("Tenant metni", "Tenant text", "Texto del tenant")}</CardTitle>
+                                {publishedVersionId ? <Badge variant="outline">{p("Varsayılan sürüm:", "Default version:", "Versión predeterminada:")} {publishedVersionId}</Badge> : null}
                             </div>
                             <CardDescription>
-                                Bu alan bos birakilirsa yayindaki global KVKK metni kullanilir.
+                                {p("Bu alan boş bırakılırsa yayındaki global gizlilik metni kullanılır.", "If left blank, the published global privacy text is used.", "Si se deja en blanco, se usa el texto de privacidad global publicado.")}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="kvkk-rejection-contact-text">Reddedilme Durumu İletişim Metni</Label>
+                                <Label htmlFor="kvkk-rejection-contact-text">{p("Reddedilme Durumu İletişim Metni", "Rejection Contact Text", "Texto de contacto en caso de rechazo")}</Label>
                                 <Textarea
                                     id="kvkk-rejection-contact-text"
                                     value={rejectionContactText}
                                     onChange={(event) => setRejectionContactText(event.target.value)}
-                                    placeholder="Kullanıcı KVKK metnini reddettiğinde ekranda görünecek alternatif iletişim metni (ör: Hizmeti kullanabilmek için onaylamalısınız. İletişim: info@firma.com)"
+                                    placeholder={p("Kullanıcı gizlilik metnini reddettiğinde ekranda görünecek alternatif iletişim metni (ör: Hizmeti kullanabilmek için onaylamalısınız. İletişim: info@firma.com)", "Alternative contact text shown when the user declines the privacy notice (e.g., You must accept to use the service. Contact: info@company.com)", "Texto de contacto alternativo que se muestra cuando el usuario rechaza el aviso de privacidad (ej.: Debes aceptar para usar el servicio. Contacto: info@empresa.com)")}
                                     className="min-h-[100px]"
                                 />
-                                <p className="text-xs text-muted-foreground">Kullanıcı onay metnini reddettiğinde, sohbeti kullanamayacağı için bu iletişim bilgileri gösterilecektir.</p>
+                                <p className="text-xs text-muted-foreground">{p("Kullanıcı onay metnini reddettiğinde, sohbeti kullanamayacağı için bu iletişim bilgileri gösterilecektir.", "When the user declines, this contact info is shown since they cannot use the chat.", "Cuando el usuario rechaza, se muestra esta información de contacto porque no puede usar el chat.")}</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="kvkk-custom-text">Tenant ozel metni</Label>
+                                <Label htmlFor="kvkk-custom-text">{p("Tenant özel metni", "Tenant custom text", "Texto personalizado del tenant")}</Label>
                                 <Textarea
                                     id="kvkk-custom-text"
                                     value={customText}
                                     onChange={(event) => setCustomText(event.target.value)}
-                                    placeholder="Tenant ozel KVKK metnini buraya girin"
+                                    placeholder={p("Tenant özel gizlilik metnini buraya girin", "Enter the tenant-specific privacy text here", "Introduce aquí el texto de privacidad específico del tenant")}
                                     className="min-h-[220px]"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Global varsayilan metin</Label>
+                                <Label>{p("Global varsayılan metin", "Global default text", "Texto global predeterminado")}</Label>
                                 <div className="rounded-xl border bg-muted/30 p-4">
                                     <pre className="whitespace-pre-wrap font-sans text-sm leading-6 text-muted-foreground">
-                                        {defaultText || "Henuz yayinlanmis bir varsayilan KVKK metni yok."}
+                                        {defaultText || p("Henüz yayınlanmış bir varsayılan gizlilik metni yok.", "No default privacy text has been published yet.", "Aún no se ha publicado un texto de privacidad predeterminado.")}
                                     </pre>
                                 </div>
                             </div>
@@ -425,9 +428,9 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                         <CardHeader>
                             <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <CardTitle>Uyumluluk Metinleri</CardTitle>
+                                    <CardTitle>{p("Uyumluluk Metinleri", "Compliance Texts", "Textos de cumplimiento")}</CardTitle>
                                     <CardDescription>
-                                        Chatbotta gösterilecek kısa bilgilendirme ve açık rıza metinlerini dil bazlı düzenleyin. Boş alanlar tenant bilgilerinden oluşturulan varsayılan metinlerle doldurulur.
+                                        {p("Chatbotta gösterilecek kısa bilgilendirme ve açık rıza metinlerini dil bazlı düzenleyin. Boş alanlar tenant bilgilerinden oluşturulan varsayılan metinlerle doldurulur.", "Edit the short notice and explicit consent texts shown in the chatbot, per language. Blank fields are filled with defaults generated from tenant information.", "Edita el aviso breve y los textos de consentimiento explícito que se muestran en el chatbot, por idioma. Los campos vacíos se rellenan con valores predeterminados generados a partir de la información del tenant.")}
                                     </CardDescription>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
@@ -447,7 +450,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                         </CardHeader>
                         <CardContent className="space-y-5">
                             <div className="space-y-2">
-                                <Label htmlFor={`privacy-short-${activeLanguage}`}>Kısa sohbet bilgilendirme metni ({activeLanguage.toUpperCase()})</Label>
+                                <Label htmlFor={`privacy-short-${activeLanguage}`}>{p("Kısa sohbet bilgilendirme metni", "Short chat notice", "Aviso breve del chat")} ({activeLanguage.toUpperCase()})</Label>
                                 <Textarea
                                     id={`privacy-short-${activeLanguage}`}
                                     value={privacyTexts[activeLanguage].shortNotice}
@@ -455,7 +458,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                     className="min-h-[120px]"
                                 />
                                 <p className="text-xs text-muted-foreground">
-                                    Bu metin sohbet içinde bloklamayan bilgilendirme olarak görünür. Kullanıcı butona basmasa bile sohbete devam ettiğinde temel sohbet için kabul kaydı alınır.
+                                    {p("Bu metin sohbet içinde bloklamayan bilgilendirme olarak görünür. Kullanıcı butona basmasa bile sohbete devam ettiğinde temel sohbet için kabul kaydı alınır.", "This text appears as a non-blocking notice in the chat. Even if the user does not click a button, continuing the chat records acceptance for the basic chat service.", "Este texto aparece como un aviso no bloqueante en el chat. Aunque el usuario no haga clic en un botón, continuar el chat registra la aceptación del servicio básico de chat.")}
                                 </p>
                             </div>
 
@@ -483,14 +486,14 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                         <CardHeader>
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
-                                    <CardTitle>Onay kayıtları</CardTitle>
+                                    <CardTitle>{p("Onay kayıtları", "Consent records", "Registros de consentimiento")}</CardTitle>
                                     <CardDescription>
-                                        KVKK/GDPR bilgilendirme ve açık rıza olaylarının denetim izi.
+                                        {p("Gizlilik bilgilendirme ve açık rıza olaylarının denetim izi.", "Audit trail of privacy notice and explicit consent events.", "Registro de auditoría de eventos de aviso de privacidad y consentimiento explícito.")}
                                     </CardDescription>
                                 </div>
                                 <Button type="button" variant="outline" onClick={loadConsentEvents} disabled={consentsLoading} className="gap-2">
                                     {consentsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                    Yenile
+                                    {p("Yenile", "Refresh", "Actualizar")}
                                 </Button>
                             </div>
                         </CardHeader>
@@ -507,7 +510,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Event type (opsiyonel)</Label>
+                                    <Label>{p("Event type (opsiyonel)", "Event type (optional)", "Tipo de evento (opcional)")}</Label>
                                     <Input
                                         value={consentsEventType}
                                         onChange={(e) => setConsentsEventType(e.target.value)}
@@ -515,7 +518,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Purpose (opsiyonel)</Label>
+                                    <Label>{p("Purpose (opsiyonel)", "Purpose (optional)", "Propósito (opcional)")}</Label>
                                     <Input
                                         value={consentsPurpose}
                                         onChange={(e) => setConsentsPurpose(e.target.value)}
@@ -526,7 +529,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
 
                             <div className="flex justify-end">
                                 <Button type="button" onClick={loadConsentEvents} disabled={consentsLoading}>
-                                    Filtrele
+                                    {p("Filtrele", "Filter", "Filtrar")}
                                 </Button>
                             </div>
 
@@ -538,19 +541,19 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
 
                             <Tabs value={consentsView} onValueChange={(next) => setConsentsView(next as any)}>
                                 <TabsList>
-                                    <TabsTrigger value="summary">Özet</TabsTrigger>
-                                    <TabsTrigger value="details">Detay</TabsTrigger>
+                                    <TabsTrigger value="summary">{p("Özet", "Summary", "Resumen")}</TabsTrigger>
+                                    <TabsTrigger value="details">{p("Detay", "Details", "Detalle")}</TabsTrigger>
                                 </TabsList>
 
                                 <TabsContent value="summary">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Tarih</TableHead>
+                                                <TableHead>{p("Tarih", "Date", "Fecha")}</TableHead>
                                                 <TableHead>Event</TableHead>
-                                                <TableHead>Amaç</TableHead>
-                                                <TableHead>Doküman</TableHead>
-                                                <TableHead>Ziyaretçi</TableHead>
+                                                <TableHead>{p("Amaç", "Purpose", "Propósito")}</TableHead>
+                                                <TableHead>{p("Doküman", "Document", "Documento")}</TableHead>
+                                                <TableHead>{p("Ziyaretçi", "Visitor", "Visitante")}</TableHead>
                                                 <TableHead>Origin</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -558,7 +561,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                             {consentEvents.length === 0 ? (
                                                 <TableRow>
                                                     <TableCell colSpan={6} className="text-muted-foreground">
-                                                        {consentsLoading ? "Yükleniyor..." : "Kayıt bulunamadı."}
+                                                        {consentsLoading ? p("Yükleniyor...", "Loading...", "Cargando...") : p("Kayıt bulunamadı.", "No records found.", "No se encontraron registros.")}
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
@@ -587,12 +590,12 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Tarih</TableHead>
+                                                <TableHead>{p("Tarih", "Date", "Fecha")}</TableHead>
                                                 <TableHead>Event</TableHead>
-                                                <TableHead>Amaç</TableHead>
-                                                <TableHead>Doküman</TableHead>
+                                                <TableHead>{p("Amaç", "Purpose", "Propósito")}</TableHead>
+                                                <TableHead>{p("Doküman", "Document", "Documento")}</TableHead>
                                                 <TableHead>Session</TableHead>
-                                                <TableHead>Ziyaretçi</TableHead>
+                                                <TableHead>{p("Ziyaretçi", "Visitor", "Visitante")}</TableHead>
                                                 <TableHead>Doc hash</TableHead>
                                                 <TableHead>Text hash</TableHead>
                                             </TableRow>
@@ -601,7 +604,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                                             {consentEvents.length === 0 ? (
                                                 <TableRow>
                                                     <TableCell colSpan={8} className="text-muted-foreground">
-                                                        {consentsLoading ? "Yükleniyor..." : "Kayıt bulunamadı."}
+                                                        {consentsLoading ? p("Yükleniyor...", "Loading...", "Cargando...") : p("Kayıt bulunamadı.", "No records found.", "No se encontraron registros.")}
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
@@ -634,7 +637,7 @@ export function KvkkConsentSettingsForm({ targetUserId }: KvkkConsentSettingsFor
                             </Tabs>
 
                             <div className="text-xs text-muted-foreground">
-                                Not: Bu liste oturum/ziyaretçi bazında gösterim yapar. IP ve user-agent bilgileri hash olarak tutulur; PII burada gösterilmez.
+                                {p("Not: Bu liste oturum/ziyaretçi bazında gösterim yapar. IP ve user-agent bilgileri hash olarak tutulur; PII burada gösterilmez.", "Note: This list is shown per session/visitor. IP and user-agent are stored as hashes; PII is not shown here.", "Nota: Esta lista se muestra por sesión/visitante. La IP y el user-agent se almacenan como hashes; aquí no se muestra PII.")}
                             </div>
                         </CardContent>
                     </Card>

@@ -10,6 +10,14 @@ import { claimOmniWebhookEvent } from "@/lib/omni/replay-protection"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
 import { upsertContactGraph, upsertOmniSession, verifyMetaWebhookSignature } from "@/lib/omni/server-utils"
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out"
 
 export const dynamic = "force-dynamic"
 
@@ -231,6 +239,44 @@ export async function POST(req: Request) {
                     lastDisposition: "received",
                     assistantProfileId: "omni-default",
                 })
+
+                // TCPA: honor STOP/START before any assistant processing.
+                const consent = classifyConsentKeyword(content)
+                if (consent) {
+                    const replyLang = consentReplyLanguage(content)
+                    if (consent === "opt_out") {
+                        await recordOptOut(adminDb, { chatbotId, channel: "whatsapp", contactKey: from }, { source: "api/omni/channels/whatsapp/webhook", keyword: content.slice(0, 40) })
+                    } else {
+                        await recordOptIn(adminDb, { chatbotId, channel: "whatsapp", contactKey: from }, { source: "api/omni/channels/whatsapp/webhook", keyword: content.slice(0, 40) })
+                    }
+                    const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang)
+                    try {
+                        await dispatchOmniWhatsAppMessage(
+                            adminDb,
+                            chatbotId,
+                            {
+                                ...sessionData,
+                                contactKey: from,
+                                canonicalContactId: contact.id || null,
+                                channelMeta: { ...(sessionData.channelMeta || {}), phoneNumberId, displayNumber },
+                            },
+                            confirmation,
+                            { source: "api/omni/channels/whatsapp/webhook", sessionId, metadata: { bypassOptOut: true, consent, inboundMessageId: externalId } }
+                        )
+                    } catch {
+                        // confirmation delivery failure should not block recording the opt-out
+                    }
+                    await logOmniAuditEvent({
+                        chatbotId,
+                        channel: "whatsapp",
+                        eventType: consent === "opt_out" ? "whatsapp.opt_out" : "whatsapp.opt_in",
+                        result: "success",
+                        source: "api/omni/channels/whatsapp/webhook",
+                        message: consent === "opt_out" ? "Contact opted out (STOP)" : "Contact opted back in (START)",
+                        metadata: { sessionId, phoneNumberId, inboundMessageId: externalId },
+                    })
+                    continue
+                }
 
                 const autoReplyEnabled = whatsappConfig.enabled !== false && (whatsappConfig.defaultReplyMode || "assistant") === "assistant"
                 if (!autoReplyEnabled) {
