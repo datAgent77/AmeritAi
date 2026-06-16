@@ -59,6 +59,7 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
     const { language } = useLanguage();
     const { toast } = useToast();
     const isTr = language === "tr";
+    const isEs = language === "es";
     const effectiveUserId = targetUserId || user?.uid;
 
     const [isLoading, setIsLoading] = useState(true);
@@ -95,8 +96,8 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
             } catch (error) {
                 console.error("[ExperimentsLab] Load error:", error);
                 toast({
-                    title: isTr ? "Hata" : "Error",
-                    description: isTr ? "A/B test ayarları yüklenemedi." : "Failed to load A/B test settings.",
+                    title: isTr ? "Hata" : isEs ? "Error" : "Error",
+                    description: isTr ? "A/B test ayarları yüklenemedi." : isEs ? "No se pudieron cargar los ajustes de prueba A/B." : "Failed to load A/B test settings.",
                     variant: "destructive"
                 });
             } finally {
@@ -141,14 +142,14 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
 
             setBaseShopperConfig(mergedShopperConfig);
             toast({
-                title: isTr ? "Kaydedildi" : "Saved",
-                description: isTr ? "A/B test ayarları güncellendi." : "A/B test settings updated."
+                title: isTr ? "Kaydedildi" : isEs ? "Guardado" : "Saved",
+                description: isTr ? "A/B test ayarları güncellendi." : isEs ? "Ajustes de prueba A/B actualizados." : "A/B test settings updated."
             });
         } catch (error) {
             console.error("[ExperimentsLab] Save error:", error);
             toast({
-                title: isTr ? "Hata" : "Error",
-                description: isTr ? "A/B test ayarları kaydedilemedi." : "Failed to save A/B test settings.",
+                title: isTr ? "Hata" : isEs ? "Error" : "Error",
+                description: isTr ? "A/B test ayarları kaydedilemedi." : isEs ? "No se pudieron guardar los ajustes de prueba A/B." : "Failed to save A/B test settings.",
                 variant: "destructive"
             });
         } finally {
@@ -175,6 +176,8 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                     <CardDescription>
                         {isTr
                             ? "Konuşma stratejilerini kontrollü trafikle test edin, kazananı ölçekleyin."
+                            : isEs
+                            ? "Prueba estrategias de conversación con tráfico controlado y escala la ganadora."
                             : "Test conversation strategies with controlled traffic and scale the winner."}
                     </CardDescription>
                 </CardHeader>
@@ -182,9 +185,9 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-semibold">{isTr ? "A/B Test Aktif" : "Enable A/B Test"}</p>
+                                <p className="text-sm font-semibold">{isTr ? "A/B Test Aktif" : isEs ? "Activar prueba A/B" : "Enable A/B Test"}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {isTr ? "Aktif olduğunda trafik split uygulanır." : "Traffic split is applied when enabled."}
+                                    {isTr ? "Aktif olduğunda trafik split uygulanır." : isEs ? "La división de tráfico se aplica cuando está activada." : "Traffic split is applied when enabled."}
                                 </p>
                             </div>
                             <Switch
@@ -197,9 +200,9 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-semibold">{isTr ? "Kazananı Otomatik Yükselt" : "Auto-Promote Winner"}</p>
+                                <p className="text-sm font-semibold">{isTr ? "Kazananı Otomatik Yükselt" : isEs ? "Promover ganadora automáticamente" : "Auto-Promote Winner"}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {isTr ? "Örneklem tamamlandığında kazananı devreye al." : "Activate winner automatically after sample threshold."}
+                                    {isTr ? "Örneklem tamamlandığında kazananı devreye al." : isEs ? "Activa la ganadora automáticamente tras alcanzar el umbral de muestra." : "Activate winner automatically after sample threshold."}
                                 </p>
                             </div>
                             <Switch
@@ -210,22 +213,22 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>{isTr ? "Hedef KPI" : "Target KPI"}</Label>
+                        <Label>{isTr ? "Hedef KPI" : isEs ? "KPI objetivo" : "Target KPI"}</Label>
                         <Select value={config.goal} onValueChange={(value: ExperimentGoal) => setConfig((prev) => ({ ...prev, goal: value }))}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="ctr">{isTr ? "Öneri Tıklama Oranı (CTR)" : "Recommendation CTR"}</SelectItem>
-                                <SelectItem value="add_to_cart">{isTr ? "Sepete Ekleme Oranı" : "Add to Cart Rate"}</SelectItem>
-                                <SelectItem value="conversion">{isTr ? "Dönüşüm Oranı" : "Conversion Rate"}</SelectItem>
-                                <SelectItem value="avg_order_value">{isTr ? "Ortalama Sepet Tutarı" : "Average Order Value"}</SelectItem>
+                                <SelectItem value="ctr">{isTr ? "Öneri Tıklama Oranı (CTR)" : isEs ? "CTR de recomendación" : "Recommendation CTR"}</SelectItem>
+                                <SelectItem value="add_to_cart">{isTr ? "Sepete Ekleme Oranı" : isEs ? "Tasa de añadir al carrito" : "Add to Cart Rate"}</SelectItem>
+                                <SelectItem value="conversion">{isTr ? "Dönüşüm Oranı" : isEs ? "Tasa de conversión" : "Conversion Rate"}</SelectItem>
+                                <SelectItem value="avg_order_value">{isTr ? "Ortalama Sepet Tutarı" : isEs ? "Valor medio del pedido" : "Average Order Value"}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>{isTr ? "Varyant B Trafik Yüzdesi" : "Variant B Traffic Share (%)"}</Label>
+                        <Label>{isTr ? "Varyant B Trafik Yüzdesi" : isEs ? "Porcentaje de tráfico de la variante B (%)" : "Variant B Traffic Share (%)"}</Label>
                         <Input
                             type="number"
                             min={10}
@@ -237,12 +240,12 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                             }))}
                         />
                         <p className="text-xs text-muted-foreground">
-                            {isTr ? "Kalan trafik otomatik olarak Varyant A'ya gider." : "Remaining traffic automatically goes to Variant A."}
+                            {isTr ? "Kalan trafik otomatik olarak Varyant A'ya gider." : isEs ? "El tráfico restante va automáticamente a la variante A." : "Remaining traffic automatically goes to Variant A."}
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>{isTr ? "Holdout Yüzdesi" : "Holdout (%)"}</Label>
+                        <Label>{isTr ? "Holdout Yüzdesi" : isEs ? "Holdout (%)" : "Holdout (%)"}</Label>
                         <Input
                             type="number"
                             min={0}
@@ -256,7 +259,7 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>{isTr ? "Minimum Örneklem" : "Minimum Sample Size"}</Label>
+                        <Label>{isTr ? "Minimum Örneklem" : isEs ? "Tamaño mínimo de muestra" : "Minimum Sample Size"}</Label>
                         <Input
                             type="number"
                             min={50}
@@ -275,20 +278,20 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <Target className="h-5 w-5 text-zinc-800" />
-                        {isTr ? "Prompt Varyantları" : "Prompt Variants"}
+                        {isTr ? "Prompt Varyantları" : isEs ? "Variantes de prompt" : "Prompt Variants"}
                     </CardTitle>
                     <CardDescription>
-                        {isTr ? "İki farklı satış yaklaşımı tanımlayın ve performansını ölçün." : "Define two sales styles and compare performance."}
+                        {isTr ? "İki farklı satış yaklaşımı tanımlayın ve performansını ölçün." : isEs ? "Define dos estilos de venta y compara su rendimiento." : "Define two sales styles and compare performance."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                        <Label>{isTr ? "Varyant A Adı" : "Variant A Name"}</Label>
+                        <Label>{isTr ? "Varyant A Adı" : isEs ? "Nombre de la variante A" : "Variant A Name"}</Label>
                         <Input
                             value={config.variantAName}
                             onChange={(e) => setConfig((prev) => ({ ...prev, variantAName: e.target.value }))}
                         />
-                        <Label>{isTr ? "Varyant A Prompt" : "Variant A Prompt"}</Label>
+                        <Label>{isTr ? "Varyant A Prompt" : isEs ? "Prompt de la variante A" : "Variant A Prompt"}</Label>
                         <Textarea
                             rows={7}
                             value={config.variantAPrompt}
@@ -296,12 +299,12 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                         />
                     </div>
                     <div className="space-y-3">
-                        <Label>{isTr ? "Varyant B Adı" : "Variant B Name"}</Label>
+                        <Label>{isTr ? "Varyant B Adı" : isEs ? "Nombre de la variante B" : "Variant B Name"}</Label>
                         <Input
                             value={config.variantBName}
                             onChange={(e) => setConfig((prev) => ({ ...prev, variantBName: e.target.value }))}
                         />
-                        <Label>{isTr ? "Varyant B Prompt" : "Variant B Prompt"}</Label>
+                        <Label>{isTr ? "Varyant B Prompt" : isEs ? "Prompt de la variante B" : "Variant B Prompt"}</Label>
                         <Textarea
                             rows={7}
                             value={config.variantBPrompt}
@@ -313,7 +316,7 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
 
             <Card className="border-zinc-200 bg-white shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg">{isTr ? "Hızlı Deney Fikirleri" : "Quick Experiment Ideas"}</CardTitle>
+                    <CardTitle className="text-lg">{isTr ? "Hızlı Deney Fikirleri" : isEs ? "Ideas rápidas de experimento" : "Quick Experiment Ideas"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-muted-foreground">
                     {isTr ? (
@@ -322,6 +325,13 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
                             <p>2. Tek ürün CTA vs çoklu alternatif CTA</p>
                             <p>3. İndirim odaklı metin vs fayda odaklı metin</p>
                             <p>4. Hızlı öneri (2 ürün) vs kapsamlı öneri (4 ürün)</p>
+                        </>
+                    ) : isEs ? (
+                        <>
+                            <p>1. Salida de comparación de productos corta vs detallada</p>
+                            <p>2. CTA de un solo producto vs CTA de múltiples opciones</p>
+                            <p>3. Texto centrado en descuentos vs centrado en beneficios</p>
+                            <p>4. Recomendación rápida (2 artículos) vs recomendación completa (4 artículos)</p>
                         </>
                     ) : (
                         <>
@@ -337,7 +347,7 @@ export function ExperimentsLab({ targetUserId }: ExperimentsLabProps) {
             <div className="flex justify-end">
                 <Button onClick={save} disabled={isSaving} className="bg-black text-white hover:bg-zinc-800">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {isTr ? "A/B Ayarlarını Kaydet" : "Save A/B Settings"}
+                    {isTr ? "A/B Ayarlarını Kaydet" : isEs ? "Guardar ajustes A/B" : "Save A/B Settings"}
                 </Button>
             </div>
         </div>

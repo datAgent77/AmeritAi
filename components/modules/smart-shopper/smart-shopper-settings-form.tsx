@@ -108,11 +108,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">
-                        {language === "tr" ? "Akıllı Alışveriş Asistanı" : "Smart Shopping Assistant"}
+                        {language === "tr" ? "Akıllı Alışveriş Asistanı" : language === "es" ? "Asistente de compras inteligente" : "Smart Shopping Assistant"}
                     </h2>
                     <p className="text-muted-foreground mt-1">
                         {language === "tr"
                             ? "İstek listesi, fiyat/stok bildirimleri ve kişiselleştirilmiş öneri ayarları"
+                            : language === "es"
+                            ? "Lista de deseos, alertas de precio/stock y ajustes de recomendación personalizada"
                             : "Wishlist, price/stock alerts, and personalized recommendation settings"}
                     </p>
                 </div>
@@ -133,11 +135,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-semibold tracking-tight">
-                                        {language === "tr" ? "İstek Listesi" : "Wishlist"}
+                                        {language === "tr" ? "İstek Listesi" : language === "es" ? "Lista de deseos" : "Wishlist"}
                                     </CardTitle>
                                     <CardDescription className="mt-1">
                                         {language === "tr"
                                             ? "Ziyaretçiler beğendikleri ürünleri sohbet içinden istek listesine ekleyebilir."
+                                            : language === "es"
+                                            ? "Los visitantes pueden guardar los productos que les gustan en su lista de deseos desde el chat."
                                             : "Visitors can save products they like to their wishlist from the chat."}
                                     </CardDescription>
                                 </div>
@@ -160,11 +164,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-semibold tracking-tight">
-                                        {language === "tr" ? "Fiyat ve Stok Bildirimleri" : "Price & Stock Alerts"}
+                                        {language === "tr" ? "Fiyat ve Stok Bildirimleri" : language === "es" ? "Alertas de precio y stock" : "Price & Stock Alerts"}
                                     </CardTitle>
                                     <CardDescription className="mt-1">
                                         {language === "tr"
                                             ? "Fiyat düştüğünde veya stok geldiğinde müşterilere otomatik e-posta gönderilir."
+                                            : language === "es"
+                                            ? "Los clientes reciben correos automáticos cuando los precios bajan o los artículos vuelven a estar en stock."
                                             : "Customers receive automatic emails when prices drop or items come back in stock."}
                                     </CardDescription>
                                 </div>
@@ -174,14 +180,14 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                     <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="flex items-center justify-between border p-3 rounded-lg">
-                                <Label>{language === "tr" ? "Fiyat Düşüş Bildirimi" : "Price Drop Alert"}</Label>
+                                <Label>{language === "tr" ? "Fiyat Düşüş Bildirimi" : language === "es" ? "Alerta de bajada de precio" : "Price Drop Alert"}</Label>
                                 <Switch
                                     checked={config.priceAlerts}
                                     onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, priceAlerts: checked }))}
                                 />
                             </div>
                             <div className="flex items-center justify-between border p-3 rounded-lg">
-                                <Label>{language === "tr" ? "Stok Geldi Bildirimi" : "Back-in-Stock Alert"}</Label>
+                                <Label>{language === "tr" ? "Stok Geldi Bildirimi" : language === "es" ? "Alerta de reposición de stock" : "Back-in-Stock Alert"}</Label>
                                 <Switch
                                     checked={config.stockAlerts}
                                     onCheckedChange={(checked) => setConfig((prev) => ({ ...prev, stockAlerts: checked }))}
@@ -193,11 +199,11 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                             <div className="space-y-4 pt-2">
                                 <div className="flex items-center gap-4 border p-3 rounded-lg">
                                     <Label className="min-w-fit">
-                                        {language === "tr" ? "Bildirim E-postası" : "Notification Email"}
+                                        {language === "tr" ? "Bildirim E-postası" : language === "es" ? "Correo de notificación" : "Notification Email"}
                                     </Label>
                                     <Input
                                         type="email"
-                                        placeholder={language === "tr" ? "ornek@isletme.com" : "business@example.com"}
+                                        placeholder={language === "tr" ? "ornek@isletme.com" : language === "es" ? "negocio@ejemplo.com" : "business@example.com"}
                                         value={config.notificationEmail}
                                         onChange={(e) => setConfig((prev) => ({ ...prev, notificationEmail: e.target.value }))}
                                         className="flex-1"
@@ -205,7 +211,7 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div className="flex items-center gap-4 border p-3 rounded-lg">
                                     <Label className="min-w-fit">
-                                        {language === "tr" ? "Düşük Stok Eşiği" : "Low Stock Threshold"}
+                                        {language === "tr" ? "Düşük Stok Eşiği" : language === "es" ? "Umbral de stock bajo" : "Low Stock Threshold"}
                                     </Label>
                                     <div className="flex items-center gap-2 ml-auto">
                                         <Input
@@ -216,7 +222,7 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                             className="w-20 text-center"
                                         />
                                         <span className="text-sm text-muted-foreground">
-                                            {language === "tr" ? "adet" : "units"}
+                                            {language === "tr" ? "adet" : language === "es" ? "unidades" : "units"}
                                         </span>
                                     </div>
                                 </div>
@@ -235,11 +241,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-semibold tracking-tight">
-                                        {language === "tr" ? "Ziyaretçi Profili" : "Visitor Profiling"}
+                                        {language === "tr" ? "Ziyaretçi Profili" : language === "es" ? "Perfil del visitante" : "Visitor Profiling"}
                                     </CardTitle>
                                     <CardDescription className="mt-1">
                                         {language === "tr"
                                             ? "Gezinme geçmişine göre kişiselleştirilmiş ürün önerileri sunar."
+                                            : language === "es"
+                                            ? "Ofrece sugerencias de productos personalizadas según el historial de navegación."
                                             : "Provides personalized product suggestions based on browsing history."}
                                     </CardDescription>
                                 </div>
@@ -262,11 +270,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-semibold tracking-tight">
-                                        {language === "tr" ? "Beden ve Tercih Profili" : "Size & Fit Profile"}
+                                        {language === "tr" ? "Beden ve Tercih Profili" : language === "es" ? "Perfil de talla y ajuste" : "Size & Fit Profile"}
                                     </CardTitle>
                                     <CardDescription className="mt-1">
                                         {language === "tr"
                                             ? "Ziyaretçinin beden/numara tercihlerini hatırlayarak uygun stoktaki ürünleri önerir."
+                                            : language === "es"
+                                            ? "Recuerda las preferencias de talla/ajuste del visitante y recomienda productos en stock."
                                             : "Remembers visitor's size/fit preferences and recommends products in stock."}
                                     </CardDescription>
                                 </div>
@@ -289,11 +299,13 @@ export function SmartShopperSettingsForm({ targetUserId }: SmartShopperSettingsF
                                 </div>
                                 <div>
                                     <CardTitle className="text-xl font-semibold tracking-tight">
-                                        {language === "tr" ? "Müşteri Hesabı Eşleştirme" : "Customer Identity Matching"}
+                                        {language === "tr" ? "Müşteri Hesabı Eşleştirme" : language === "es" ? "Coincidencia de identidad del cliente" : "Customer Identity Matching"}
                                     </CardTitle>
                                     <CardDescription className="mt-1">
                                         {language === "tr"
                                             ? "İstek listesini ve profil verilerini, sitenize giriş yapan müşterinin hesabıyla senkronize eder."
+                                            : language === "es"
+                                            ? "Sincroniza la lista de deseos y los datos de perfil con la cuenta del cliente que ha iniciado sesión en tu sitio."
                                             : "Synchronizes wishlist and profile data with the logged-in customer account on your site."}
                                     </CardDescription>
                                 </div>

@@ -108,25 +108,29 @@ function formatDateTime(value: string | null | undefined, locale: string): strin
     return date.toLocaleString(locale);
 }
 
-function sourceLabel(source: string, isTr: boolean): string {
+function pick3(language: string, tr: string, en: string, es: string): string {
+    return language === "tr" ? tr : language === "es" ? es : en;
+}
+
+function sourceLabel(source: string, language: string): string {
     if (source === "site-crawl") return "Site Crawl";
     if (source === "xml-feed") return "XML Feed";
-    if (source === "file-upload") return isTr ? "Dosya" : "File Upload";
-    if (source === "manual") return isTr ? "Manuel" : "Manual";
+    if (source === "file-upload") return pick3(language, "Dosya", "File Upload", "Subir archivo");
+    if (source === "manual") return pick3(language, "Manuel", "Manual", "Manual");
     return source;
 }
 
-function healthMeta(status: HealthStatus | undefined, isTr: boolean): HealthBadgeMeta {
+function healthMeta(status: HealthStatus | undefined, language: string): HealthBadgeMeta {
     if (status === "excellent") {
-        return { label: isTr ? "Mükemmel" : "Excellent", className: "border-zinc-900 bg-zinc-900 text-white" };
+        return { label: pick3(language, "Mükemmel", "Excellent", "Excelente"), className: "border-zinc-900 bg-zinc-900 text-white" };
     }
     if (status === "good") {
-        return { label: isTr ? "İyi" : "Good", className: "border-zinc-300 bg-zinc-100 text-zinc-900" };
+        return { label: pick3(language, "İyi", "Good", "Bueno"), className: "border-zinc-300 bg-zinc-100 text-zinc-900" };
     }
     if (status === "needs_attention") {
-        return { label: isTr ? "Dikkat Gerekli" : "Needs Attention", className: "border-zinc-400 bg-zinc-200 text-zinc-900" };
+        return { label: pick3(language, "Dikkat Gerekli", "Needs Attention", "Requiere atención"), className: "border-zinc-400 bg-zinc-200 text-zinc-900" };
     }
-    return { label: isTr ? "Geliştirilmeli" : "Weak", className: "border-zinc-300 bg-white text-zinc-900" };
+    return { label: pick3(language, "Geliştirilmeli", "Weak", "Débil"), className: "border-zinc-300 bg-white text-zinc-900" };
 }
 
 export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
@@ -144,92 +148,95 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const isTr = language === "tr";
-    const locale = isTr ? "tr-TR" : "en-US";
+    const isEs = language === "es";
+    const locale = isTr ? "tr-TR" : isEs ? "es-US" : "en-US";
     const effectiveUserId = targetUserId || user?.uid;
     const isSuperAdminView = Boolean(targetUserId && user?.uid !== targetUserId);
-    const statusMeta = healthMeta(health?.quality.status, isTr);
+    const statusMeta = healthMeta(health?.quality.status, language);
 
-    const text = useMemo(
-        () => ({
+    const text = useMemo(() => {
+        const p = (tr: string, en: string, es: string) => (isTr ? tr : isEs ? es : en);
+        return {
             appLabel: "AI Personal Shopper",
-            heroTitle: isTr ? "Operasyon Merkezi" : "Operations Hub",
-            heroDescription: isTr
-                ? "Katalog, veri kaynakları, öneri stratejisi ve deneyleri tek panelden siyah-beyaz sade bir akışla yönetin."
-                : "Manage catalog, data sources, recommendation strategy, and experiments in one streamlined panel.",
-            healthPrefix: isTr ? "Sağlık" : "Health",
-            totalProducts: isTr ? "Toplam Ürün" : "Total Products",
-            qualityScore: isTr ? "Kalite Skoru" : "Quality Score",
-            sourceCount: isTr ? "Kaynak" : "Sources",
-            lastUpdated: isTr ? "Son Güncelleme" : "Last Update",
-            refreshHealth: isTr ? "Sağlığı Yenile" : "Refresh Health",
-            addDataSource: isTr ? "Veri Kaynağı Ekle" : "Add Data Source",
-            openCatalog: isTr ? "Kataloğu Aç" : "Open Catalog",
-            tabOverview: isTr ? "Genel Bakış" : "Overview",
-            tabCatalog: isTr ? "Katalog" : "Catalog",
-            tabDataSources: isTr ? "Kaynaklar" : "Data Sources",
-            tabRecommendation: isTr ? "Öneri Motoru" : "Recommendation Engine",
-            tabExperiments: isTr ? "A/B Test" : "A/B Test",
-            tabSettings: isTr ? "Ayarlar" : "Settings",
-            inStock: isTr ? "Stokta Olan" : "In Stock",
-            outOfStock: isTr ? "Stok dışı" : "Out of Stock",
-            descriptionCoverage: isTr ? "Açıklama Kapsamı" : "Description Coverage",
-            imageCoverage: isTr ? "Görsel" : "Image",
-            priceCoverage: isTr ? "Fiyat Kapsamı" : "Price Coverage",
-            stockCoverage: isTr ? "Stok kapsaması" : "Stock Coverage",
-            crawlPipeline: isTr ? "Crawl Pipeline" : "Crawl Pipeline",
-            active: isTr ? "Aktif" : "Active",
-            none: isTr ? "Yok" : "None",
-            lastRun: isTr ? "Son run" : "Last run",
-            trendTitle: isTr ? "30 Günlük Katalog Trendi" : "30-Day Catalog Trend",
-            trendDesc: isTr ? "Günlük eklenen/güncellenen ürün hareketi." : "Daily added/updated product activity.",
-            chartAdded: isTr ? "Eklenen" : "Added",
-            chartUpdated: isTr ? "Güncellenen" : "Updated",
-            chartTotal: isTr ? "Toplam" : "Total",
-            noTrend: isTr ? "Trend verisi henüz oluşmadı." : "No trend data yet.",
-            operationsNotes: isTr ? "Operasyon Notları" : "Operational Notes",
-            operationsDesc: isTr ? "Kaynak dağılımı ve aksiyon önerileri." : "Source distribution and action recommendations.",
-            sourceDistribution: isTr ? "Kaynak Dağılımı" : "Source Distribution",
-            noSourceData: isTr ? "Henüz kaynak verisi yok." : "No source data yet.",
-            recommendations: isTr ? "Öneriler" : "Recommendations",
-            noCriticalSuggestion: isTr ? "Şu an kritik öneri yok. Akış stabil." : "No critical suggestions at the moment. Flow is stable.",
-            catalogManagement: isTr ? "Katalog Yönetimi" : "Catalog Management",
-            catalogDescription: isTr ? "Ürünleri görüntüle, ekle ve düzenle." : "View, add, and manage products.",
+            heroTitle: p("Operasyon Merkezi", "Operations Hub", "Centro de operaciones"),
+            heroDescription: p(
+                "Katalog, veri kaynakları, öneri stratejisi ve deneyleri tek panelden siyah-beyaz sade bir akışla yönetin.",
+                "Manage catalog, data sources, recommendation strategy, and experiments in one streamlined panel.",
+                "Gestiona el catálogo, las fuentes de datos, la estrategia de recomendación y los experimentos en un solo panel optimizado."
+            ),
+            healthPrefix: p("Sağlık", "Health", "Salud"),
+            totalProducts: p("Toplam Ürün", "Total Products", "Productos totales"),
+            qualityScore: p("Kalite Skoru", "Quality Score", "Puntuación de calidad"),
+            sourceCount: p("Kaynak", "Sources", "Fuentes"),
+            lastUpdated: p("Son Güncelleme", "Last Update", "Última actualización"),
+            refreshHealth: p("Sağlığı Yenile", "Refresh Health", "Actualizar salud"),
+            addDataSource: p("Veri Kaynağı Ekle", "Add Data Source", "Añadir fuente de datos"),
+            openCatalog: p("Kataloğu Aç", "Open Catalog", "Abrir catálogo"),
+            tabOverview: p("Genel Bakış", "Overview", "Resumen"),
+            tabCatalog: p("Katalog", "Catalog", "Catálogo"),
+            tabDataSources: p("Kaynaklar", "Data Sources", "Fuentes de datos"),
+            tabRecommendation: p("Öneri Motoru", "Recommendation Engine", "Motor de recomendación"),
+            tabExperiments: p("A/B Test", "A/B Test", "Prueba A/B"),
+            tabSettings: p("Ayarlar", "Settings", "Ajustes"),
+            inStock: p("Stokta Olan", "In Stock", "En stock"),
+            outOfStock: p("Stok dışı", "Out of Stock", "Sin stock"),
+            descriptionCoverage: p("Açıklama Kapsamı", "Description Coverage", "Cobertura de descripción"),
+            imageCoverage: p("Görsel", "Image", "Imagen"),
+            priceCoverage: p("Fiyat Kapsamı", "Price Coverage", "Cobertura de precio"),
+            stockCoverage: p("Stok kapsaması", "Stock Coverage", "Cobertura de stock"),
+            crawlPipeline: "Crawl Pipeline",
+            active: p("Aktif", "Active", "Activo"),
+            none: p("Yok", "None", "Ninguno"),
+            lastRun: p("Son run", "Last run", "Última ejecución"),
+            trendTitle: p("30 Günlük Katalog Trendi", "30-Day Catalog Trend", "Tendencia del catálogo de 30 días"),
+            trendDesc: p("Günlük eklenen/güncellenen ürün hareketi.", "Daily added/updated product activity.", "Actividad diaria de productos añadidos/actualizados."),
+            chartAdded: p("Eklenen", "Added", "Añadidos"),
+            chartUpdated: p("Güncellenen", "Updated", "Actualizados"),
+            chartTotal: p("Toplam", "Total", "Total"),
+            noTrend: p("Trend verisi henüz oluşmadı.", "No trend data yet.", "Aún no hay datos de tendencia."),
+            operationsNotes: p("Operasyon Notları", "Operational Notes", "Notas operativas"),
+            operationsDesc: p("Kaynak dağılımı ve aksiyon önerileri.", "Source distribution and action recommendations.", "Distribución de fuentes y recomendaciones de acción."),
+            sourceDistribution: p("Kaynak Dağılımı", "Source Distribution", "Distribución de fuentes"),
+            noSourceData: p("Henüz kaynak verisi yok.", "No source data yet.", "Aún no hay datos de fuentes."),
+            recommendations: p("Öneriler", "Recommendations", "Recomendaciones"),
+            noCriticalSuggestion: p("Şu an kritik öneri yok. Akış stabil.", "No critical suggestions at the moment. Flow is stable.", "No hay sugerencias críticas por el momento. El flujo es estable."),
+            catalogManagement: p("Katalog Yönetimi", "Catalog Management", "Gestión del catálogo"),
+            catalogDescription: p("Ürünleri görüntüle, ekle ve düzenle.", "View, add, and manage products.", "Visualiza, añade y gestiona productos."),
             xmlFeedTitle: "XML Feed",
-            xmlFeedDescription: isTr ? "Planlı veya manuel feed senkronizasyonu." : "Scheduled or manual feed synchronization.",
+            xmlFeedDescription: p("Planlı veya manuel feed senkronizasyonu.", "Scheduled or manual feed synchronization.", "Sincronización de feed programada o manual."),
             feedUrl: "Feed URL",
-            feedPlaceholder: isTr ? "https://ornek.com/products.xml" : "https://example.com/products.xml",
-            syncNow: isTr ? "Şimdi Senkronize Et" : "Sync Now",
+            feedPlaceholder: p("https://ornek.com/products.xml", "https://example.com/products.xml", "https://ejemplo.com/products.xml"),
+            syncNow: p("Şimdi Senkronize Et", "Sync Now", "Sincronizar ahora"),
             crawlTitle: "Site Crawl",
-            crawlDescription: isTr ? "Ürün URL’lerini sitemap/robots üzerinden keşfeder." : "Discovers product URLs from sitemap/robots.",
+            crawlDescription: p("Ürün URL’lerini sitemap/robots üzerinden keşfeder.", "Discovers product URLs from sitemap/robots.", "Descubre URLs de productos a través de sitemap/robots."),
             siteUrl: "Site URL",
-            sitePlaceholder: isTr ? "https://ornekmagaza.com" : "https://examplestore.com",
-            crawlNow: isTr ? "Tara ve Ekle" : "Crawl and Import",
+            sitePlaceholder: p("https://ornekmagaza.com", "https://examplestore.com", "https://tiendaejemplo.com"),
+            crawlNow: p("Tara ve Ekle", "Crawl and Import", "Rastrear e importar"),
             csvExcelTitle: "CSV / Excel",
-            csvExcelDescription: isTr ? "Toplu ürün yükleme (manüel import)." : "Bulk product import.",
-            fileImportDesc: isTr ? "Kolon eşleme ile ürün, fiyat, stok ve görsel verilerini içe alın." : "Import product, price, stock, and image data with flexible column mapping.",
-            selectAndUpload: isTr ? "Dosya Seç ve Yükle" : "Select and Upload File",
-            ingestionHubTitle: isTr ? "Ingestion Kontrol Merkezi" : "Ingestion Control Hub",
-            ingestionHubDescription: isTr ? "Kaynak bazında veri akışı ve crawl ilerleme takibi." : "Track source-based data flow and crawl progress.",
-            crawlStatus: isTr ? "Durum" : "Status",
-            crawlScanned: isTr ? "Son tarama" : "Last scan",
-            crawlImported: isTr ? "Son import" : "Last import",
-            crawlDiscovered: isTr ? "Keşif" : "Discovered",
-            noCrawlConfig: isTr ? "Aktif crawl konfigürasyonu yok." : "No active crawl configuration.",
-            success: isTr ? "Başarılı" : "Success",
-            uploadErrorTitle: isTr ? "Yükleme Hatası" : "Upload Error",
-            syncErrorTitle: isTr ? "Senkronizasyon Hatası" : "Sync Error",
-            crawlErrorTitle: isTr ? "Tarama Hatası" : "Crawl Error",
-            healthErrorTitle: isTr ? "Hata" : "Error",
-            healthErrorMessage: isTr ? "Shopper sağlık metrikleri yüklenemedi." : "Failed to load shopper health metrics.",
-            feedMissingUrl: isTr ? "Lütfen geçerli bir XML feed URL girin." : "Please enter a valid XML feed URL.",
-            siteMissingUrl: isTr ? "Lütfen geçerli bir web sitesi URL'i girin." : "Please enter a valid website URL.",
-            feedSyncedTitle: isTr ? "Feed Senkronize" : "Feed Synced",
-            crawlCompletedTitle: isTr ? "Site Tarama Tamamlandı" : "Site Crawl Completed",
-            continuationLabel: isTr ? "Devamı için yeniden çalıştırın (sonraki başlangıç:" : "Run again for continuation (next offset:",
-            cycleCompletedLabel: isTr ? "Keşif havuzu tamamlandı, sonraki çalıştırma baştan güncelleme yapacak." : "Discovery pool completed. Next run starts from the beginning."
-        }),
-        [isTr]
-    );
+            csvExcelDescription: p("Toplu ürün yükleme (manüel import).", "Bulk product import.", "Importación masiva de productos."),
+            fileImportDesc: p("Kolon eşleme ile ürün, fiyat, stok ve görsel verilerini içe alın.", "Import product, price, stock, and image data with flexible column mapping.", "Importa datos de producto, precio, stock e imagen con mapeo flexible de columnas."),
+            selectAndUpload: p("Dosya Seç ve Yükle", "Select and Upload File", "Seleccionar y subir archivo"),
+            ingestionHubTitle: p("Ingestion Kontrol Merkezi", "Ingestion Control Hub", "Centro de control de ingesta"),
+            ingestionHubDescription: p("Kaynak bazında veri akışı ve crawl ilerleme takibi.", "Track source-based data flow and crawl progress.", "Sigue el flujo de datos por fuente y el progreso del rastreo."),
+            crawlStatus: p("Durum", "Status", "Estado"),
+            crawlScanned: p("Son tarama", "Last scan", "Último escaneo"),
+            crawlImported: p("Son import", "Last import", "Última importación"),
+            crawlDiscovered: p("Keşif", "Discovered", "Descubiertos"),
+            noCrawlConfig: p("Aktif crawl konfigürasyonu yok.", "No active crawl configuration.", "No hay configuración de rastreo activa."),
+            success: p("Başarılı", "Success", "Éxito"),
+            uploadErrorTitle: p("Yükleme Hatası", "Upload Error", "Error de carga"),
+            syncErrorTitle: p("Senkronizasyon Hatası", "Sync Error", "Error de sincronización"),
+            crawlErrorTitle: p("Tarama Hatası", "Crawl Error", "Error de rastreo"),
+            healthErrorTitle: p("Hata", "Error", "Error"),
+            healthErrorMessage: p("Shopper sağlık metrikleri yüklenemedi.", "Failed to load shopper health metrics.", "No se pudieron cargar las métricas de salud del shopper."),
+            feedMissingUrl: p("Lütfen geçerli bir XML feed URL girin.", "Please enter a valid XML feed URL.", "Introduce una URL de feed XML válida."),
+            siteMissingUrl: p("Lütfen geçerli bir web sitesi URL'i girin.", "Please enter a valid website URL.", "Introduce una URL de sitio web válida."),
+            feedSyncedTitle: p("Feed Senkronize", "Feed Synced", "Feed sincronizado"),
+            crawlCompletedTitle: p("Site Tarama Tamamlandı", "Site Crawl Completed", "Rastreo del sitio completado"),
+            continuationLabel: p("Devamı için yeniden çalıştırın (sonraki başlangıç:", "Run again for continuation (next offset:", "Ejecuta de nuevo para continuar (siguiente offset:"),
+            cycleCompletedLabel: p("Keşif havuzu tamamlandı, sonraki çalıştırma baştan güncelleme yapacak.", "Discovery pool completed. Next run starts from the beginning.", "Grupo de descubrimiento completado. La siguiente ejecución comienza desde el principio.")
+        };
+    }, [isTr, isEs]);
 
     const loadHealth = useCallback(async () => {
         if (!effectiveUserId || !user) return;
@@ -285,12 +292,12 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
 
             toast({
                 title: text.success,
-                description: isTr ? `${data.count} ürün dosyadan işlendi.` : `${data.count} products processed from file.`
+                description: isTr ? `${data.count} ürün dosyadan işlendi.` : isEs ? `${data.count} productos procesados del archivo.` : `${data.count} products processed from file.`
             });
             setActiveTab("catalog");
             await loadHealth();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : isTr ? "Dosya yüklenemedi" : "File upload failed";
+            const message = error instanceof Error ? error.message : isTr ? "Dosya yüklenemedi" : isEs ? "Error al subir el archivo" : "File upload failed";
             toast({
                 title: text.uploadErrorTitle,
                 description: message,
@@ -332,12 +339,12 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
 
             toast({
                 title: text.feedSyncedTitle,
-                description: isTr ? `${data.count} ürün işlendi.` : `${data.count} products processed.`
+                description: isTr ? `${data.count} ürün işlendi.` : isEs ? `${data.count} productos procesados.` : `${data.count} products processed.`
             });
             setActiveTab("catalog");
             await loadHealth();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : isTr ? "Feed senkronizasyonu başarısız" : "Feed sync failed";
+            const message = error instanceof Error ? error.message : isTr ? "Feed senkronizasyonu başarısız" : isEs ? "Error en la sincronización del feed" : "Feed sync failed";
             toast({
                 title: text.syncErrorTitle,
                 description: message,
@@ -386,12 +393,14 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
                 title: text.crawlCompletedTitle,
                 description: isTr
                     ? `${data.count} ürün eklendi. ${data.scanned || 0} URL tarandı. ${continuationMessage}`
+                    : isEs
+                    ? `${data.count} productos importados. ${data.scanned || 0} URLs escaneadas. ${continuationMessage}`
                     : `${data.count} products imported. ${data.scanned || 0} URLs scanned. ${continuationMessage}`
             });
             setActiveTab("catalog");
             await loadHealth();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : isTr ? "Site tarama başarısız" : "Site crawl failed";
+            const message = error instanceof Error ? error.message : isTr ? "Site tarama başarısız" : isEs ? "Error en el rastreo del sitio" : "Site crawl failed";
             toast({
                 title: text.crawlErrorTitle,
                 description: message,
@@ -605,7 +614,7 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
                                     ) : (
                                         sourceItems.map(([source, count]) => (
                                             <div key={source} className="flex items-center justify-between rounded-lg border border-zinc-200 px-3 py-2 text-sm">
-                                                <span>{sourceLabel(source, isTr)}</span>
+                                                <span>{sourceLabel(source, language)}</span>
                                                 <span className="font-semibold">{count}</span>
                                             </div>
                                         ))
@@ -688,9 +697,9 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
                                 />
                                 {health?.ingestion.crawlConfig && (
                                     <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600">
-                                        <p>{isTr ? "Son URL" : "Last URL"}: {health.ingestion.crawlConfig.siteUrl}</p>
-                                        <p>{isTr ? "Sonraki offset" : "Next offset"}: {health.ingestion.crawlConfig.nextOffset}</p>
-                                        <p>{isTr ? "Keşif havuzu" : "Discovery pool"}: {health.ingestion.crawlConfig.discoveryLimit}</p>
+                                        <p>{isTr ? "Son URL" : isEs ? "Última URL" : "Last URL"}: {health.ingestion.crawlConfig.siteUrl}</p>
+                                        <p>{isTr ? "Sonraki offset" : isEs ? "Siguiente offset" : "Next offset"}: {health.ingestion.crawlConfig.nextOffset}</p>
+                                        <p>{isTr ? "Keşif havuzu" : isEs ? "Grupo de descubrimiento" : "Discovery pool"}: {health.ingestion.crawlConfig.discoveryLimit}</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -746,7 +755,7 @@ export function ShopperWorkspace({ targetUserId }: ShopperWorkspaceProps) {
                                 ) : (
                                     sourceItems.map(([source, count]) => (
                                         <div key={source} className="flex items-center justify-between rounded border border-zinc-200 px-3 py-2 text-sm">
-                                            <span>{sourceLabel(source, isTr)}</span>
+                                            <span>{sourceLabel(source, language)}</span>
                                             <span className="font-semibold">{count}</span>
                                         </div>
                                     ))

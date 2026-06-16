@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { ShoppingBag, Package, AlertCircle, DollarSign, Plus, List, Loader2, ArrowRight, TrendingUp, Sparkles, CheckCircle2 } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
+import { useLanguage } from "@/context/LanguageContext"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,12 @@ interface ShopperDashboardProps {
 
 export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperDashboardProps) {
     const { user } = useAuth()
+    const { language } = useLanguage()
+    const isTr = language === "tr"
+    const isEs = language === "es"
+    const p = (tr: string, en: string, es: string) => (isTr ? tr : isEs ? es : en)
+    const numberLocale = isTr ? "tr-TR" : isEs ? "es-US" : "en-US"
+    const dashboardCurrency = isTr ? "TRY" : "USD"
     const [stats, setStats] = useState<ShopperStats | null>(null)
     const [recentProducts, setRecentProducts] = useState<Product[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -65,7 +72,7 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
             <div className="flex items-center justify-center h-64">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground animate-pulse">Veriler yükleniyor...</p>
+                    <p className="text-sm text-muted-foreground animate-pulse">{p("Veriler yükleniyor...", "Loading data...", "Cargando datos...")}</p>
                 </div>
             </div>
         )
@@ -92,33 +99,33 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
-                    title="Toplam Ürün"
+                    title={p("Toplam Ürün", "Total Products", "Productos totales")}
                     value={stats?.totalProducts || 0}
-                    subtext="Kataloğunuzdaki tüm kalemler"
+                    subtext={p("Kataloğunuzdaki tüm kalemler", "All items in your catalog", "Todos los artículos de tu catálogo")}
                     icon={ShoppingBag}
                     colorClass="text-blue-600"
                     bgColorClass="bg-blue-50"
                 />
                 <StatCard
-                    title="Stokta"
+                    title={p("Stokta", "In Stock", "En stock")}
                     value={stats?.inStock || 0}
-                    subtext="Önerilmeye hazır ürünler"
+                    subtext={p("Önerilmeye hazır ürünler", "Products ready to recommend", "Productos listos para recomendar")}
                     icon={CheckCircle2}
                     colorClass="text-emerald-600"
                     bgColorClass="bg-emerald-50"
                 />
                 <StatCard
-                    title="Tükendi"
+                    title={p("Tükendi", "Out of Stock", "Sin stock")}
                     value={stats?.outOfStock || 0}
-                    subtext="Şu an önerilemeyenler"
+                    subtext={p("Şu an önerilemeyenler", "Currently not recommendable", "Actualmente no recomendables")}
                     icon={AlertCircle}
                     colorClass="text-amber-600"
                     bgColorClass="bg-amber-50"
                 />
                 <StatCard
-                    title="Katalog Değeri"
-                    value={new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(stats?.totalValue || 0)}
-                    subtext="Toplam ürün birim maliyeti"
+                    title={p("Katalog Değeri", "Catalog Value", "Valor del catálogo")}
+                    value={new Intl.NumberFormat(numberLocale, { style: 'currency', currency: dashboardCurrency }).format(stats?.totalValue || 0)}
+                    subtext={p("Toplam ürün birim maliyeti", "Total product unit cost", "Costo unitario total de productos")}
                     icon={DollarSign}
                     colorClass="text-indigo-600"
                     bgColorClass="bg-indigo-50"
@@ -130,11 +137,11 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                 <div className="lg:col-span-4 space-y-4">
                     <div className="flex items-center justify-between px-1">
                         <div>
-                            <h3 className="text-lg font-semibold tracking-tight">Son Eklenenler</h3>
-                            <p className="text-sm text-muted-foreground">Kataloğa dahil edilen son 5 ürün</p>
+                            <h3 className="text-lg font-semibold tracking-tight">{p("Son Eklenenler", "Recently Added", "Añadidos recientemente")}</h3>
+                            <p className="text-sm text-muted-foreground">{p("Kataloğa dahil edilen son 5 ürün", "The last 5 products added to the catalog", "Los últimos 5 productos añadidos al catálogo")}</p>
                         </div>
                         <Button size="sm" variant="ghost" className="text-primary hover:text-primary/80 hover:bg-primary/5 font-medium" onClick={onNavigateToCatalog}>
-                            Tümünü Gör <ArrowRight className="h-4 w-4 ml-1" />
+                            {p("Tümünü Gör", "View All", "Ver todo")} <ArrowRight className="h-4 w-4 ml-1" />
                         </Button>
                     </div>
 
@@ -142,9 +149,9 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow className="hover:bg-transparent border-none">
-                                    <TableHead className="w-[300px] text-xs uppercase font-bold text-muted-foreground">Ürün</TableHead>
-                                    <TableHead className="text-xs uppercase font-bold text-muted-foreground">Fiyat</TableHead>
-                                    <TableHead className="text-xs uppercase font-bold text-muted-foreground">Durum</TableHead>
+                                    <TableHead className="w-[300px] text-xs uppercase font-bold text-muted-foreground">{p("Ürün", "Product", "Producto")}</TableHead>
+                                    <TableHead className="text-xs uppercase font-bold text-muted-foreground">{p("Fiyat", "Price", "Precio")}</TableHead>
+                                    <TableHead className="text-xs uppercase font-bold text-muted-foreground">{p("Durum", "Status", "Estado")}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -156,8 +163,8 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                                     <Package className="h-8 w-8 text-muted-foreground/50" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="font-medium">Henüz ürün bulunmuyor</p>
-                                                    <p className="text-sm text-muted-foreground">Veri kaynaklarını kullanarak ürün ekleyin.</p>
+                                                    <p className="font-medium">{p("Henüz ürün bulunmuyor", "No products yet", "Aún no hay productos")}</p>
+                                                    <p className="text-sm text-muted-foreground">{p("Veri kaynaklarını kullanarak ürün ekleyin.", "Add products using data sources.", "Añade productos usando las fuentes de datos.")}</p>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -174,7 +181,7 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                                 </div>
                                             </TableCell>
                                             <TableCell className="font-semibold">
-                                                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: product.currency || 'TRY' }).format(product.price)}
+                                                {new Intl.NumberFormat(numberLocale, { style: 'currency', currency: product.currency || dashboardCurrency }).format(product.price)}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
@@ -186,7 +193,7 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                                             : "bg-red-50 text-red-700 border-red-100"
                                                     )}
                                                 >
-                                                    {product.inStock ? "Stokta" : "Tükendi"}
+                                                    {product.inStock ? p("Stokta", "In Stock", "En stock") : p("Tükendi", "Out of Stock", "Sin stock")}
                                                 </Badge>
                                             </TableCell>
                                         </TableRow>
@@ -203,12 +210,12 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg font-bold flex items-center gap-2 text-primary">
                                 <Sparkles className="h-5 w-5" />
-                                AI Satış Gücü
+                                {p("AI Satış Gücü", "AI Sales Power", "Potencia de ventas con IA")}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="p-3 bg-white/60 rounded-xl border border-white/40 shadow-sm transition-hover hover:shadow-md transition-all">
-                                <p className="text-xs uppercase font-bold text-muted-foreground mb-1">Eğitim Durumu</p>
+                                <p className="text-xs uppercase font-bold text-muted-foreground mb-1">{p("Eğitim Durumu", "Training Status", "Estado de entrenamiento")}</p>
                                 <div className="flex items-center gap-2">
                                     <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
                                         <div className="h-full bg-primary w-[85%] rounded-full" />
@@ -216,7 +223,7 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                     <span className="text-xs font-bold text-primary">85%</span>
                                 </div>
                                 <p className="text-[11px] text-muted-foreground mt-2 font-medium">
-                                    AI asistanınız son eklenen {recentProducts.length} ürünü analiz etti ve öğrenmeye devam ediyor.
+                                    {p(`AI asistanınız son eklenen ${recentProducts.length} ürünü analiz etti ve öğrenmeye devam ediyor.`, `Your AI assistant analyzed the last ${recentProducts.length} added products and keeps learning.`, `Tu asistente de IA analizó los últimos ${recentProducts.length} productos añadidos y sigue aprendiendo.`)}
                                 </p>
                             </div>
 
@@ -226,8 +233,8 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                         <TrendingUp className="h-3 w-3" />
                                     </div>
                                     <p className="text-sm leading-snug">
-                                        <span className="font-semibold block text-slate-800">Detaylı Açıklamalar</span>
-                                        Ürün açıklamalarını zenginleştirerek öneri isabetini %40 artırabilirsiniz.
+                                        <span className="font-semibold block text-slate-800">{p("Detaylı Açıklamalar", "Detailed Descriptions", "Descripciones detalladas")}</span>
+                                        {p("Ürün açıklamalarını zenginleştirerek öneri isabetini %40 artırabilirsiniz.", "Enrich product descriptions to improve recommendation accuracy by 40%.", "Enriquece las descripciones de productos para mejorar la precisión de las recomendaciones en un 40%.")}
                                     </p>
                                 </div>
                                 <div className="flex items-start gap-3">
@@ -235,8 +242,8 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                         <CheckCircle2 className="h-3 w-3" />
                                     </div>
                                     <p className="text-sm leading-snug">
-                                        <span className="font-semibold block text-slate-800">Stok Senkronizasyonu</span>
-                                        Otomatik feed ile stoktakileri her zaman güncel tutun.
+                                        <span className="font-semibold block text-slate-800">{p("Stok Senkronizasyonu", "Stock Synchronization", "Sincronización de stock")}</span>
+                                        {p("Otomatik feed ile stoktakileri her zaman güncel tutun.", "Keep stock always up to date with an automatic feed.", "Mantén el stock siempre actualizado con un feed automático.")}
                                     </p>
                                 </div>
                             </div>
@@ -245,7 +252,7 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
 
                     <Card className="shadow-sm border-muted/20">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-base font-semibold">Panel Yönetimi</CardTitle>
+                            <CardTitle className="text-base font-semibold">{p("Panel Yönetimi", "Panel Management", "Gestión del panel")}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-2">
                             <Button variant="outline" className="w-full justify-between h-auto py-3 px-4 transition-all hover:border-primary/50 group" onClick={onNavigateToCatalog}>
@@ -254,8 +261,8 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                         <List className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-sm">Ürün Kataloğu</div>
-                                        <div className="text-[11px] text-muted-foreground">Kataloğu düzenle ve yönet</div>
+                                        <div className="font-bold text-sm">{p("Ürün Kataloğu", "Product Catalog", "Catálogo de productos")}</div>
+                                        <div className="text-[11px] text-muted-foreground">{p("Kataloğu düzenle ve yönet", "Edit and manage the catalog", "Edita y gestiona el catálogo")}</div>
                                     </div>
                                 </div>
                                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -267,8 +274,8 @@ export function ShopperDashboard({ onNavigateToCatalog, targetUserId }: ShopperD
                                         <TrendingUp className="h-4 w-4" />
                                     </div>
                                     <div>
-                                        <div className="font-bold text-sm">Analitikler</div>
-                                        <div className="text-[11px] text-muted-foreground">Satış ve etkileşim raporları</div>
+                                        <div className="font-bold text-sm">{p("Analitikler", "Analytics", "Analítica")}</div>
+                                        <div className="text-[11px] text-muted-foreground">{p("Satış ve etkileşim raporları", "Sales and engagement reports", "Informes de ventas y engagement")}</div>
                                     </div>
                                 </div>
                                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />

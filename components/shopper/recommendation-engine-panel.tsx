@@ -109,6 +109,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
     const { language } = useLanguage();
     const { toast } = useToast();
     const isTr = language === "tr";
+    const isEs = language === "es";
 
     const effectiveUserId = targetUserId || user?.uid;
     const [isLoading, setIsLoading] = useState(true);
@@ -144,8 +145,8 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
             } catch (error) {
                 console.error("[RecommendationEnginePanel] Load error:", error);
                 toast({
-                    title: isTr ? "Hata" : "Error",
-                    description: isTr ? "Öneri motoru ayarları yüklenemedi." : "Recommendation engine settings could not be loaded.",
+                    title: isTr ? "Hata" : isEs ? "Error" : "Error",
+                    description: isTr ? "Öneri motoru ayarları yüklenemedi." : isEs ? "No se pudieron cargar los ajustes del motor de recomendación." : "Recommendation engine settings could not be loaded.",
                     variant: "destructive"
                 });
             } finally {
@@ -198,14 +199,14 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
 
             setBaseShopperConfig(mergedShopperConfig);
             toast({
-                title: isTr ? "Kaydedildi" : "Saved",
-                description: isTr ? "Öneri motoru ayarları güncellendi." : "Recommendation engine settings updated."
+                title: isTr ? "Kaydedildi" : isEs ? "Guardado" : "Saved",
+                description: isTr ? "Öneri motoru ayarları güncellendi." : isEs ? "Ajustes del motor de recomendación actualizados." : "Recommendation engine settings updated."
             });
         } catch (error) {
             console.error("[RecommendationEnginePanel] Save error:", error);
             toast({
-                title: isTr ? "Hata" : "Error",
-                description: isTr ? "Öneri motoru ayarları kaydedilemedi." : "Recommendation engine settings could not be saved.",
+                title: isTr ? "Hata" : isEs ? "Error" : "Error",
+                description: isTr ? "Öneri motoru ayarları kaydedilemedi." : isEs ? "No se pudieron guardar los ajustes del motor de recomendación." : "Recommendation engine settings could not be saved.",
                 variant: "destructive"
             });
         } finally {
@@ -227,15 +228,15 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-xl">
                         <Sparkles className="h-5 w-5 text-zinc-800" />
-                        {isTr ? "Öneri Motoru" : "Recommendation Engine"}
+                        {isTr ? "Öneri Motoru" : isEs ? "Motor de recomendación" : "Recommendation Engine"}
                     </CardTitle>
                     <CardDescription>
-                        {isTr ? "Kural ağırlıkları ve AI yeniden sıralama ayarlarını birlikte yönetin." : "Manage rule weights and AI re-ranking together."}
+                        {isTr ? "Kural ağırlıkları ve AI yeniden sıralama ayarlarını birlikte yönetin." : isEs ? "Gestiona los pesos de las reglas y el reordenamiento por IA juntos." : "Manage rule weights and AI re-ranking together."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-3">
-                        <Label>{isTr ? "Ana Strateji" : "Primary Strategy"}</Label>
+                        <Label>{isTr ? "Ana Strateji" : isEs ? "Estrategia principal" : "Primary Strategy"}</Label>
                         <Select
                             value={config.strategy}
                             onValueChange={(value: RecommendationStrategy) => setConfig((prev) => ({ ...prev, strategy: value }))}
@@ -244,16 +245,16 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="balanced">{isTr ? "Dengeli (Alaka + Dönüşüm)" : "Balanced (Relevance + Conversion)"}</SelectItem>
-                                <SelectItem value="conversion">{isTr ? "Dönüşüm Öncelikli" : "Conversion Priority"}</SelectItem>
-                                <SelectItem value="margin">{isTr ? "Marj Öncelikli" : "Margin Priority"}</SelectItem>
-                                <SelectItem value="inventory">{isTr ? "Stok Öncelikli" : "Inventory Priority"}</SelectItem>
+                                <SelectItem value="balanced">{isTr ? "Dengeli (Alaka + Dönüşüm)" : isEs ? "Equilibrada (Relevancia + Conversión)" : "Balanced (Relevance + Conversion)"}</SelectItem>
+                                <SelectItem value="conversion">{isTr ? "Dönüşüm Öncelikli" : isEs ? "Prioridad de conversión" : "Conversion Priority"}</SelectItem>
+                                <SelectItem value="margin">{isTr ? "Marj Öncelikli" : isEs ? "Prioridad de margen" : "Margin Priority"}</SelectItem>
+                                <SelectItem value="inventory">{isTr ? "Stok Öncelikli" : isEs ? "Prioridad de inventario" : "Inventory Priority"}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="space-y-3">
-                        <Label>{isTr ? "Oturum Başına Öneri Sayısı" : "Recommendations Per Session"}</Label>
+                        <Label>{isTr ? "Oturum Başına Öneri Sayısı" : isEs ? "Recomendaciones por sesión" : "Recommendations Per Session"}</Label>
                         <Input
                             type="number"
                             min={1}
@@ -271,7 +272,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                             <div>
                                 <p className="text-sm font-semibold">AI Re-rank</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {isTr ? "Kural sonuçlarını AI ile yeniden sırala." : "Re-rank rule-based results with AI."}
+                                    {isTr ? "Kural sonuçlarını AI ile yeniden sırala." : isEs ? "Reordena los resultados basados en reglas con IA." : "Re-rank rule-based results with AI."}
                                 </p>
                             </div>
                             <Switch
@@ -284,9 +285,9 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-semibold">{isTr ? "Stok Dışı Fallback" : "Out-of-Stock Fallback"}</p>
+                                <p className="text-sm font-semibold">{isTr ? "Stok Dışı Fallback" : isEs ? "Alternativa sin stock" : "Out-of-Stock Fallback"}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {isTr ? "Stok dışıysa benzer alternatif öner." : "Suggest alternatives if an item is out of stock."}
+                                    {isTr ? "Stok dışıysa benzer alternatif öner." : isEs ? "Sugiere alternativas si un artículo está sin stock." : "Suggest alternatives if an item is out of stock."}
                                 </p>
                             </div>
                             <Switch
@@ -302,15 +303,15 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <SlidersHorizontal className="h-5 w-5 text-zinc-800" />
-                        {isTr ? "Ağırlık Dağılımı" : "Weight Distribution"}
+                        {isTr ? "Ağırlık Dağılımı" : isEs ? "Distribución de pesos" : "Weight Distribution"}
                     </CardTitle>
                     <CardDescription>
-                        {isTr ? "Toplamın 100 olması önerilir. Şu an:" : "Recommended total is 100. Current:"} <strong>{totalWeight}</strong>
+                        {isTr ? "Toplamın 100 olması önerilir. Şu an:" : isEs ? "El total recomendado es 100. Actual:" : "Recommended total is 100. Current:"} <strong>{totalWeight}</strong>
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                        <Label>{isTr ? "Alaka Düzeyi (%)" : "Relevance (%)"}</Label>
+                        <Label>{isTr ? "Alaka Düzeyi (%)" : isEs ? "Relevancia (%)" : "Relevance (%)"}</Label>
                         <Input
                             type="number"
                             min={0}
@@ -323,7 +324,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>{isTr ? "Marj (%)" : "Margin (%)"}</Label>
+                        <Label>{isTr ? "Marj (%)" : isEs ? "Margen (%)" : "Margin (%)"}</Label>
                         <Input
                             type="number"
                             min={0}
@@ -336,7 +337,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>{isTr ? "Popülerlik (%)" : "Popularity (%)"}</Label>
+                        <Label>{isTr ? "Popülerlik (%)" : isEs ? "Popularidad (%)" : "Popularity (%)"}</Label>
                         <Input
                             type="number"
                             min={0}
@@ -349,7 +350,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>{isTr ? "Stok Sağlığı (%)" : "Inventory Health (%)"}</Label>
+                        <Label>{isTr ? "Stok Sağlığı (%)" : isEs ? "Salud del inventario (%)" : "Inventory Health (%)"}</Label>
                         <Input
                             type="number"
                             min={0}
@@ -371,15 +372,15 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                         Guardrails
                     </CardTitle>
                     <CardDescription>
-                        {isTr ? "Yanlış önerileri azaltan güvenlik kuralları." : "Safety rules that reduce poor recommendations."}
+                        {isTr ? "Yanlış önerileri azaltan güvenlik kuralları." : isEs ? "Reglas de seguridad que reducen las recomendaciones deficientes." : "Safety rules that reduce poor recommendations."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                         <div>
-                            <p className="text-sm font-medium">{isTr ? "Sadece stoktakini öner" : "Recommend only in-stock items"}</p>
+                            <p className="text-sm font-medium">{isTr ? "Sadece stoktakini öner" : isEs ? "Recomendar solo artículos en stock" : "Recommend only in-stock items"}</p>
                             <p className="text-xs text-muted-foreground">
-                                {isTr ? "Stok dışı ürünleri ana öneri listesine alma." : "Exclude out-of-stock items from primary recommendations."}
+                                {isTr ? "Stok dışı ürünleri ana öneri listesine alma." : isEs ? "Excluye los artículos sin stock de las recomendaciones principales." : "Exclude out-of-stock items from primary recommendations."}
                             </p>
                         </div>
                         <Switch
@@ -392,9 +393,9 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                     </div>
                     <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                         <div>
-                            <p className="text-sm font-medium">{isTr ? "Fiyat tutarlılığı" : "Price consistency"}</p>
+                            <p className="text-sm font-medium">{isTr ? "Fiyat tutarlılığı" : isEs ? "Consistencia de precios" : "Price consistency"}</p>
                             <p className="text-xs text-muted-foreground">
-                                {isTr ? "Konuşma içindeki fiyat değişimlerini sınırla." : "Limit inconsistent price shifts in conversation."}
+                                {isTr ? "Konuşma içindeki fiyat değişimlerini sınırla." : isEs ? "Limita los cambios de precio inconsistentes en la conversación." : "Limit inconsistent price shifts in conversation."}
                             </p>
                         </div>
                         <Switch
@@ -407,9 +408,9 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
                     </div>
                     <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                         <div>
-                            <p className="text-sm font-medium">{isTr ? "Sonuç çeşitliliği" : "Result diversity"}</p>
+                            <p className="text-sm font-medium">{isTr ? "Sonuç çeşitliliği" : isEs ? "Diversidad de resultados" : "Result diversity"}</p>
                             <p className="text-xs text-muted-foreground">
-                                {isTr ? "Aynı kategoriye aşırı yığılmayı azalt." : "Reduce over-concentration in the same category."}
+                                {isTr ? "Aynı kategoriye aşırı yığılmayı azalt." : isEs ? "Reduce la sobreconcentración en la misma categoría." : "Reduce over-concentration in the same category."}
                             </p>
                         </div>
                         <Switch
@@ -426,7 +427,7 @@ export function RecommendationEnginePanel({ targetUserId }: RecommendationEngine
             <div className="flex justify-end">
                 <Button onClick={save} disabled={isSaving} className="bg-black text-white hover:bg-zinc-800">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {isTr ? "Öneri Motorunu Kaydet" : "Save Recommendation Engine"}
+                    {isTr ? "Öneri Motorunu Kaydet" : isEs ? "Guardar motor de recomendación" : "Save Recommendation Engine"}
                 </Button>
             </div>
         </div>

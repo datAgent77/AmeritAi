@@ -18,8 +18,8 @@ interface ShopperSettingsProps {
 
 type ShopperConfigPayload = Record<string, unknown>;
 
-function formatInitialLanguage(value: string | undefined, isTr: boolean): string {
-    if (!value || value === "auto") return isTr ? "Otomatik" : "Auto";
+function formatInitialLanguage(value: string | undefined, language: string): string {
+    if (!value || value === "auto") return language === "tr" ? "Otomatik" : language === "es" ? "Automático" : "Auto";
     if (value === "tr") return "Türkçe";
     if (value === "en") return "English";
     if (value === "de") return "Deutsch";
@@ -33,6 +33,7 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
     const { toast } = useToast();
     const { language } = useLanguage();
     const isTr = language === "tr";
+    const isEs = language === "es";
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -101,14 +102,14 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
             setBaseShopperConfig(mergedShopperConfig);
 
             toast({
-                title: isTr ? "Ayarlar Kaydedildi" : "Settings Saved",
-                description: isTr ? "Shopper ton ayarları güncellendi." : "Shopper tone settings updated."
+                title: isTr ? "Ayarlar Kaydedildi" : isEs ? "Ajustes guardados" : "Settings Saved",
+                description: isTr ? "Shopper ton ayarları güncellendi." : isEs ? "Ajustes de tono del shopper actualizados." : "Shopper tone settings updated."
             });
         } catch (error) {
             console.error("Error saving settings:", error);
             toast({
-                title: isTr ? "Hata" : "Error",
-                description: isTr ? "Ayarlar kaydedilemedi." : "Failed to save settings.",
+                title: isTr ? "Hata" : isEs ? "Error" : "Error",
+                description: isTr ? "Ayarlar kaydedilemedi." : isEs ? "No se pudieron guardar los ajustes." : "Failed to save settings.",
                 variant: "destructive"
             });
         } finally {
@@ -127,7 +128,7 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
     return (
         <Card className="border-zinc-200 bg-white shadow-sm">
             <CardHeader>
-                <CardTitle>{isTr ? "Shopper Davranışı" : "Shopper Behavior"}</CardTitle>
+                <CardTitle>{isTr ? "Shopper Davranışı" : isEs ? "Comportamiento del shopper" : "Shopper Behavior"}</CardTitle>
                 <CardDescription>
                     {isTr
                         ? "Bu bölüm yalnızca Shopper modülünün satış/öneri üslubunu yönetir."
@@ -136,15 +137,15 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
-                    <p className="font-semibold">{isTr ? "Çakışma Notu" : "Conflict Note"}</p>
+                    <p className="font-semibold">{isTr ? "Çakışma Notu" : isEs ? "Nota de conflicto" : "Conflict Note"}</p>
                     <p className="mt-1">
                         {isTr
                             ? "Sohbet dili ayarı Genel Eğitim > Sohbet Davranışı > Chatbot Dili alanından yönetilir. Shopper burada dili değiştirmez."
                             : "Chat language is managed from General Training > Chat Behavior > Chatbot Language. Shopper does not override language here."}
                     </p>
                     <p className="mt-1">
-                        {isTr ? "Mevcut genel sohbet dili:" : "Current global chat language:"}{" "}
-                        <span className="font-medium">{formatInitialLanguage(initialLanguage, isTr)}</span>
+                        {isTr ? "Mevcut genel sohbet dili:" : isEs ? "Idioma de chat global actual:" : "Current global chat language:"}{" "}
+                        <span className="font-medium">{formatInitialLanguage(initialLanguage, language)}</span>
                     </p>
                     <p className="mt-1">
                         {isTr
@@ -154,20 +155,20 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="tone">{isTr ? "Shopper Yanıt Tonu" : "Shopper Response Tone"}</Label>
+                    <Label htmlFor="tone">{isTr ? "Shopper Yanıt Tonu" : isEs ? "Tono de respuesta del shopper" : "Shopper Response Tone"}</Label>
                     <Select
                         value={config.salesTone}
                         onValueChange={(val) => setConfig({ ...config, salesTone: val })}
                     >
                         <SelectTrigger id="tone">
-                            <SelectValue placeholder={isTr ? "Bir ton seçin" : "Select a tone"} />
+                            <SelectValue placeholder={isTr ? "Bir ton seçin" : isEs ? "Selecciona un tono" : "Select a tone"} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="friendly">{isTr ? "Dostça ve Yardımsever" : "Friendly and Helpful"}</SelectItem>
-                            <SelectItem value="professional">{isTr ? "Profesyonel ve Resmi" : "Professional and Formal"}</SelectItem>
-                            <SelectItem value="enthusiastic">{isTr ? "Enerjik ve İkna Edici" : "Energetic and Persuasive"}</SelectItem>
-                            <SelectItem value="empathetic">{isTr ? "Empatik ve Dinleyici" : "Empathetic and Listener"}</SelectItem>
-                            <SelectItem value="direct">{isTr ? "Doğrudan ve Kısa" : "Direct and Concise"}</SelectItem>
+                            <SelectItem value="friendly">{isTr ? "Dostça ve Yardımsever" : isEs ? "Amigable y servicial" : "Friendly and Helpful"}</SelectItem>
+                            <SelectItem value="professional">{isTr ? "Profesyonel ve Resmi" : isEs ? "Profesional y formal" : "Professional and Formal"}</SelectItem>
+                            <SelectItem value="enthusiastic">{isTr ? "Enerjik ve İkna Edici" : isEs ? "Enérgico y persuasivo" : "Energetic and Persuasive"}</SelectItem>
+                            <SelectItem value="empathetic">{isTr ? "Empatik ve Dinleyici" : isEs ? "Empático y receptivo" : "Empathetic and Listener"}</SelectItem>
+                            <SelectItem value="direct">{isTr ? "Doğrudan ve Kısa" : isEs ? "Directo y conciso" : "Direct and Concise"}</SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">
@@ -181,7 +182,7 @@ export function ShopperSettings({ targetUserId }: ShopperSettingsProps) {
                 <Button onClick={handleSave} disabled={isSaving} className="bg-black text-white hover:bg-zinc-800">
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     <Save className="mr-2 h-4 w-4" />
-                    {isTr ? "Değişiklikleri Kaydet" : "Save Changes"}
+                    {isTr ? "Değişiklikleri Kaydet" : isEs ? "Guardar cambios" : "Save Changes"}
                 </Button>
             </CardFooter>
         </Card>
