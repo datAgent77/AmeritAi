@@ -11,6 +11,14 @@ import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
 import { upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils"
 import { normalizeEvolutionApiConfig } from "@/lib/integrations/evolution-api/setup"
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out"
 
 export const dynamic = "force-dynamic"
 
@@ -166,6 +174,39 @@ export async function POST(req: Request) {
             lastDisposition: "received",
             assistantProfileId: "omni-default",
         })
+
+        // TCPA: honor STOP/START before any assistant processing.
+        const consent = classifyConsentKeyword(message.content)
+        if (consent) {
+            const replyLang = consentReplyLanguage(message.content)
+            if (consent === "opt_out") {
+                await recordOptOut(adminDb, { chatbotId, channel: "whatsapp", contactKey: from }, { source: "api/integrations/evolution-api/webhook", keyword: message.content.slice(0, 40) })
+            } else {
+                await recordOptIn(adminDb, { chatbotId, channel: "whatsapp", contactKey: from }, { source: "api/integrations/evolution-api/webhook", keyword: message.content.slice(0, 40) })
+            }
+            const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang)
+            try {
+                await dispatchOmniWhatsAppMessage(
+                    adminDb,
+                    chatbotId,
+                    { ...sessionData, contactKey: from, canonicalContactId: contact.id || null, channelMeta },
+                    confirmation,
+                    { source: "api/integrations/evolution-api/webhook", sessionId, metadata: { bypassOptOut: true, consent, provider: "evolution-api", inboundMessageId: message.externalId } }
+                )
+            } catch {
+                // confirmation delivery failure should not block recording the opt-out
+            }
+            await logOmniAuditEvent({
+                chatbotId,
+                channel: "whatsapp",
+                eventType: consent === "opt_out" ? "evolution_api.opt_out" : "evolution_api.opt_in",
+                result: "success",
+                source: "api/integrations/evolution-api/webhook",
+                message: consent === "opt_out" ? "Contact opted out (STOP)" : "Contact opted back in (START)",
+                metadata: { sessionId, externalId: message.externalId },
+            })
+            continue
+        }
 
         const whatsappConfig = config.whatsapp || {}
         const autoReplyEnabled = whatsappConfig.enabled !== false && (whatsappConfig.defaultReplyMode || "assistant") === "assistant"

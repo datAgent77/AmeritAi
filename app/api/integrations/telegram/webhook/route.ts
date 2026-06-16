@@ -1,5 +1,14 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    isOptedOut,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out";
 import crypto from "crypto";
 
 function isTimingSafeEqual(value: string, expected: string): boolean {
@@ -112,9 +121,36 @@ export async function POST(req: Request) {
             messages: currentMessages
         });
 
+        const sendTgText = (bodyText: string) =>
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: chatId, text: bodyText }),
+            });
+
+        // TCPA-style opt-out: honor STOP/START before any AI processing.
+        const consent = classifyConsentKeyword(text);
+        if (consent) {
+            const replyLang = consentReplyLanguage(text);
+            const identity = { chatbotId, channel: "telegram" as const, contactKey: String(userId) };
+            if (consent === "opt_out") {
+                await recordOptOut(adminDb as any, identity, { source: "api/integrations/telegram/webhook", keyword: String(text).slice(0, 40) });
+            } else {
+                await recordOptIn(adminDb as any, identity, { source: "api/integrations/telegram/webhook", keyword: String(text).slice(0, 40) });
+            }
+            const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang);
+            try { await sendTgText(confirmation); } catch { /* do not block opt-out on delivery error */ }
+            return new Response("OK (consent)", { status: 200 });
+        }
+
         if (isPaused) {
             console.log(`Telegram Webhook: Session ${sessionId} is paused. Skipping AI reply.`);
             return new Response("OK (Paused)", { status: 200 });
+        }
+
+        // Never send outbound to a contact who has opted out.
+        if (await isOptedOut(adminDb as any, { chatbotId, channel: "telegram", contactKey: String(userId) })) {
+            return new Response("OK (opted out)", { status: 200 });
         }
 
         const messages = [
@@ -138,14 +174,7 @@ export async function POST(req: Request) {
         const replyText = aiResult.content;
 
         // 3. Send Reply to Telegram
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: replyText
-            })
-        });
+        await sendTgText(replyText);
 
         return new Response("OK", { status: 200 });
 

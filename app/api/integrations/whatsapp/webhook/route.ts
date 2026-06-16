@@ -1,5 +1,14 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    isOptedOut,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out";
 import crypto from "crypto";
 
 function isTimingSafeEqual(value: string, expected: string): boolean {
@@ -135,6 +144,31 @@ export async function POST(req: Request) {
         const phoneNumberId = waConfig.phoneNumberId;
         const accessToken = waConfig.accessToken;
 
+        const sendWaText = (to: string, bodyText: string) =>
+            fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ messaging_product: "whatsapp", to, text: { body: bodyText } }),
+            });
+
+        // TCPA: honor STOP/START before any AI processing.
+        const consent = classifyConsentKeyword(text);
+        if (consent) {
+            const replyLang = consentReplyLanguage(text);
+            const identity = { chatbotId, channel: "whatsapp" as const, contactKey: from };
+            if (consent === "opt_out") {
+                await recordOptOut(adminDb as any, identity, { source: "api/integrations/whatsapp/webhook", keyword: String(text).slice(0, 40) });
+            } else {
+                await recordOptIn(adminDb as any, identity, { source: "api/integrations/whatsapp/webhook", keyword: String(text).slice(0, 40) });
+            }
+            const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang);
+            try { await sendWaText(from, confirmation); } catch { /* do not block opt-out on delivery error */ }
+            return new Response("OK (consent)", { status: 200 });
+        }
+
         // 2. Session Management
         const sessionId = `whatsapp-${chatbotId}-${from}`;
         const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
@@ -188,23 +222,17 @@ export async function POST(req: Request) {
             { role: "user", content: text }
         ];
 
+        // TCPA: never send outbound to a contact who has opted out.
+        if (await isOptedOut(adminDb as any, { chatbotId, channel: "whatsapp", contactKey: from })) {
+            return new Response("OK (opted out)", { status: 200 });
+        }
+
         // generateAIResponse uses adminDb internally now
         const aiResult = await generateAIResponse(chatbotId, messages as any, sessionId, false);
         const replyText = aiResult.content;
 
         // 4. Send Reply via WhatsApp Cloud API
-        await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                messaging_product: "whatsapp",
-                to: from,
-                text: { body: replyText }
-            })
-        });
+        await sendWaText(from, replyText);
 
         return new Response("OK", { status: 200 });
 

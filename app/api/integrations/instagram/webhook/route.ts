@@ -1,5 +1,14 @@
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateAIResponse } from "@/lib/ai-service";
+import {
+    classifyConsentKeyword,
+    consentReplyLanguage,
+    getOptInConfirmation,
+    getOptOutConfirmation,
+    isOptedOut,
+    recordOptIn,
+    recordOptOut,
+} from "@/lib/messaging/opt-out";
 import crypto from "crypto";
 
 // GET: Webhook Verification (Meta challenge)
@@ -101,6 +110,13 @@ export async function POST(req: Request) {
         const accessToken = igConfig.accessToken;
         const pageId = igConfig.pageId;
 
+        const sendIgText = (recipientId: string, bodyText: string) =>
+            fetch(`https://graph.facebook.com/v18.0/${pageId}/messages`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ recipient: { id: recipientId }, message: { text: bodyText }, messaging_type: "RESPONSE" }),
+            });
+
         // Session management
         const sessionId = `instagram-${chatbotId}-${senderId}`;
         const sessionRef = adminDb.collection("chat_sessions").doc(sessionId);
@@ -139,8 +155,28 @@ export async function POST(req: Request) {
         currentMessages.push(userMsg);
         await sessionRef.update({ messages: currentMessages });
 
+        // TCPA: honor STOP/START before any AI processing.
+        const consent = classifyConsentKeyword(text);
+        if (consent) {
+            const replyLang = consentReplyLanguage(text);
+            const identity = { chatbotId, channel: "instagram" as const, contactKey: senderId };
+            if (consent === "opt_out") {
+                await recordOptOut(adminDb as any, identity, { source: "api/integrations/instagram/webhook", keyword: String(text).slice(0, 40) });
+            } else {
+                await recordOptIn(adminDb as any, identity, { source: "api/integrations/instagram/webhook", keyword: String(text).slice(0, 40) });
+            }
+            const confirmation = consent === "opt_out" ? getOptOutConfirmation(replyLang) : getOptInConfirmation(replyLang);
+            try { await sendIgText(senderId, confirmation); } catch { /* do not block opt-out on delivery error */ }
+            return new Response("OK (consent)", { status: 200 });
+        }
+
         if (isPaused) {
             return new Response("OK (Paused)", { status: 200 });
+        }
+
+        // TCPA: never send outbound to a contact who has opted out.
+        if (await isOptedOut(adminDb as any, { chatbotId, channel: "instagram", contactKey: senderId })) {
+            return new Response("OK (opted out)", { status: 200 });
         }
 
         // Generate AI response
@@ -149,21 +185,7 @@ export async function POST(req: Request) {
         const replyText = aiResult.content;
 
         // Send reply via Instagram Graph API (Messenger Send API)
-        const sendRes = await fetch(
-            `https://graph.facebook.com/v18.0/${pageId}/messages`,
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    recipient: { id: senderId },
-                    message: { text: replyText },
-                    messaging_type: "RESPONSE"
-                })
-            }
-        );
+        const sendRes = await sendIgText(senderId, replyText);
 
         if (!sendRes.ok) {
             const errBody = await sendRes.text();
