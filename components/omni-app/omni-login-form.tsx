@@ -147,7 +147,7 @@ export function OmniLoginForm() {
                         <div className="mb-10 text-center lg:text-left">
                             <h2 className="text-3xl font-semibold tracking-tight text-zinc-900 mb-3">Welcome back</h2>
                             <p className="text-zinc-600">
-                                Sign in to your Vion Omni account
+                                Sign in to your AmeritAI Omni account
                             </p>
                         </div>
 

@@ -1076,7 +1076,7 @@ export default function OnboardingPage() {
                                                 <Input
                                                     value={widget.brandName}
                                                     onChange={(e) => setWidget(prev => ({ ...prev, brandName: e.target.value }))}
-                                                    placeholder={language === 'tr' ? 'Örn: Vion AI' : 'Ex: Vion AI'}
+                                                    placeholder={language === 'tr' ? 'Örn: AmeritAI' : 'Ex: AmeritAI'}
                                                     className="h-12 text-base bg-white/60 dark:bg-zinc-950/50 transition-all focus:ring-2 focus:ring-primary/20"
                                                 />
                                             </div>

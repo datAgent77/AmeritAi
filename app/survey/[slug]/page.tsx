@@ -29,7 +29,7 @@ export default async function PublicSurveyPage({ params }: { params: { slug: str
         <div className="min-h-screen bg-zinc-50 px-4 py-12">
             <div className="mx-auto max-w-3xl space-y-6">
                 <div className="space-y-2 text-center">
-                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Vion Surveys</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">AmeritAI Surveys</p>
                     <h1 className="text-4xl font-semibold tracking-tight text-zinc-950">{survey.title}</h1>
                 </div>
                 <PublicSurveyRuntime survey={buildPublicSurvey(survey)} />

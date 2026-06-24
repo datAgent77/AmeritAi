@@ -203,7 +203,7 @@ export async function pushLeadToZoho(chatbotId: string, lead: ZohoLeadInput): Pr
         const record: Record<string, unknown> = {
             Last_Name: lastName || "Unknown",
             Company: lead.company || lead.name || "Unknown",
-            Lead_Source: lead.source || "Vion Chatbot",
+            Lead_Source: lead.source || "AmeritAI Chatbot",
         }
         if (firstName) record.First_Name = firstName
         if (lead.email) record.Email = lead.email

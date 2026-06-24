@@ -121,11 +121,11 @@ export async function POST(req: Request) {
             messages: currentMessages
         });
 
-        const sendTgText = (bodyText: string) =>
+        const sendTgText = (bodyText: string | undefined) =>
             fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_id: chatId, text: bodyText }),
+                body: JSON.stringify({ chat_id: chatId, text: bodyText ?? "" }),
             });
 
         // TCPA-style opt-out: honor STOP/START before any AI processing.

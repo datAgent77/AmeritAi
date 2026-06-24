@@ -33,13 +33,13 @@ export async function POST(req: Request) {
             sessionId: `test-${Date.now()}`,
             customer: {
                 id: "test-customer",
-                name: "Vion Test Customer",
+                name: "AmeritAI Test Customer",
                 email: "test@example.com",
             },
             issue: {
                 category: "test",
                 priority: "normal",
-                summary: "Vion ticket webhook test event.",
+                summary: "AmeritAI ticket webhook test event.",
                 orderId: "TEST-ORDER-1",
             },
             messages: [

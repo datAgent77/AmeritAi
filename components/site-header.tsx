@@ -100,7 +100,7 @@ export function SiteHeader({
             <div className="absolute left-1/2 -translate-x-1/2 md:hidden">
                 <Image
                     src="/vion-logo-icon-dark.png"
-                    alt="Vion"
+                    alt="AmeritAI"
                     width={32}
                     height={32}
                     className="w-8 h-8"

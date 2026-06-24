@@ -11,7 +11,7 @@ export default function AuthActionPage() {
             <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white dark:bg-white dark:text-zinc-950">
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Vion AI</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">AmeritAI</p>
           </section>
         </main>
       }

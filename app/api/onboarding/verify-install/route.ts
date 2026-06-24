@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
             const response = await fetch(websiteUrl, {
                 headers: {
-                    "User-Agent": "VionBot/1.0 (+https://www.getvion.com/bot)"
+                    "User-Agent": "VionBot/1.0 (+https://www.ameritai.com/bot)"
                 },
                 signal: controller.signal
             });
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
                 // Check for widget script presence
                 const hasDataAttribute = html.includes(`data-chatbot-id="${chatbotId}"`);
                 const hasWidgetScript = html.includes('/widget.js') || html.includes('widget.js');
-                const hasVionReference = html.includes('vion') || html.includes('Vion');
+                const hasVionReference = html.includes('vion') || html.includes('AmeritAI');
 
                 installed = hasDataAttribute || (hasWidgetScript && hasVionReference);
 

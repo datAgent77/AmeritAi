@@ -67,7 +67,7 @@ export function OmniWhatsAppPanel() {
     const [isSendingTest, setIsSendingTest] = useState(false)
     const [testForm, setTestForm] = useState({
         to: "",
-        text: "Vion AI Omni-Channel test message",
+        text: "AmeritAI Omni-Channel test message",
     })
     const [healthCheckResult, setHealthCheckResult] = useState<{
         ok: boolean

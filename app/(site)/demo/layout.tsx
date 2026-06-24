@@ -1,21 +1,21 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Live Demo — Vion AI",
+  title: "Live Demo — AmeritAI",
   description:
-    "See how Vion AI chatbot welcomes visitors, answers instantly, and converts traffic into qualified leads.",
+    "See how AmeritAI chatbot welcomes visitors, answers instantly, and converts traffic into qualified leads.",
   alternates: {
-    canonical: "https://www.getvion.com/demo",
+    canonical: "https://www.ameritai.com/demo",
   },
   robots: {
     index: true,
     follow: true,
   },
   openGraph: {
-    title: "Vion AI Demo",
+    title: "AmeritAI Demo",
     description:
-      "Clean demo landing page for Vion AI chatbot. Learn value fast and start for free.",
-    url: "https://www.getvion.com/demo",
+      "Clean demo landing page for AmeritAI chatbot. Learn value fast and start for free.",
+    url: "https://www.ameritai.com/demo",
   },
 }
 

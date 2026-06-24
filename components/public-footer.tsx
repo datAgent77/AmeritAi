@@ -1,10 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import NextImage from "next/image"
 import { VionLogo } from "@/components/vion-logo"
 import { useLanguage } from "@/context/LanguageContext"
-import { Twitter, Linkedin, Github, Instagram } from "lucide-react"
+import { Twitter, Linkedin, Github, Instagram, Lock } from "lucide-react"
 
 export function PublicFooter() {
     const { t } = useLanguage()
@@ -133,38 +132,19 @@ export function PublicFooter() {
 
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 space-y-6">
-                    {/* Payment Logos */}
-                    <div className="flex flex-wrap items-center justify-start gap-6">
-                        <div className="flex items-center gap-6">
-                            {/* Light Mode Logo */}
-                            <div className="block dark:hidden">
-                                <NextImage 
-                                    src="/payment-methods-light.png" 
-                                    alt="Güvenli Ödeme Yöntemleri" 
-                                    width={280} 
-                                    height={28} 
-                                    className="h-7 w-auto object-contain"
-                                    style={{ width: "auto", height: "28px" }}
-                                />
-                            </div>
-                            {/* Dark Mode Logo */}
-                            <div className="hidden dark:block">
-                                <NextImage 
-                                    src="/payment-methods-dark.png" 
-                                    alt="Güvenli Ödeme Yöntemleri" 
-                                    width={280} 
-                                    height={28} 
-                                    className="h-7 w-auto object-contain opacity-90"
-                                    style={{ width: "auto", height: "28px" }}
-                                />
-                            </div>
-                        </div>
+                    {/* Payments */}
+                    <div className="flex flex-wrap items-center justify-start gap-2">
+                        <Lock size={14} className="text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                            {t('footerSecurePayments') || 'Secure payments powered by'}{" "}
+                            <span className="font-semibold text-foreground">Stripe</span>
+                        </span>
                     </div>
 
                     {/* Links Row */}
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <p className="text-sm text-muted-foreground">
-                            {new Date().getFullYear()} Vion AI. {t('footerRights')}
+                            {new Date().getFullYear()} AmeritAI. {t('footerRights')}
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm text-muted-foreground">
                             <Link href="/about" className="hover:text-foreground transition-colors">

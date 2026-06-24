@@ -157,7 +157,7 @@ export async function createEvolutionInstance(params: {
             qrcode: true,
             number: params.phoneNumber || undefined,
             rejectCall: true,
-            msgCall: "Bu hat Vion destek asistanı ile yönetiliyor.",
+            msgCall: "Bu hat AmeritAI destek asistanı ile yönetiliyor.",
             groupsIgnore: true,
             alwaysOnline: false,
             readMessages: true,

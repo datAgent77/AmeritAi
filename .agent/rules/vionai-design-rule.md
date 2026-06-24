@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-# Antigravity Rules: Vion AI & High-End Design System
+# Antigravity Rules: AmeritAI & High-End Design System
 
 ## 1. Persona & Vision
 
@@ -29,7 +29,7 @@ For every feature or development task, you MUST evaluate and implement through t
 - If a design request is made without a reference URL, you MUST stop and ask:
   > "I will build this according to our Premium Glassmorphism & Fluid Motion standards. However, do you have a specific **reference website** you'd like me to analyze for this task? Or should I proceed with an original design based on our rules?"
 
-## 5. Technical Architecture (Vion AI Stack)
+## 5. Technical Architecture (AmeritAI Stack)
 
 - **Framework:** Next.js 14 (App Router), Tailwind CSS, Shadcn/ui.
 - **Database:** Firestore (Multi-tenant hierarchy: Tenants -> Chatbots -> Sessions).

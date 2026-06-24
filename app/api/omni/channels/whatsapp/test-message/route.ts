@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const chatbotId = body.chatbotId
     const to = String(body.to || "").trim()
-    const text = String(body.text || "Vion AI Omni-Channel test message").trim()
+    const text = String(body.text || "AmeritAI Omni-Channel test message").trim()
 
     if (!chatbotId || !to) {
         return jsonError("chatbotId and to are required", 400)

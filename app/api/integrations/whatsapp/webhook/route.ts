@@ -144,14 +144,14 @@ export async function POST(req: Request) {
         const phoneNumberId = waConfig.phoneNumberId;
         const accessToken = waConfig.accessToken;
 
-        const sendWaText = (to: string, bodyText: string) =>
+        const sendWaText = (to: string, bodyText: string | undefined) =>
             fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${accessToken}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ messaging_product: "whatsapp", to, text: { body: bodyText } }),
+                body: JSON.stringify({ messaging_product: "whatsapp", to, text: { body: bodyText ?? "" } }),
             });
 
         // TCPA: honor STOP/START before any AI processing.

@@ -203,7 +203,7 @@ Bu modda ilk fazda yapman gereken sey service yazmak degil, host app icinde guve
    window.UserexWidget?.setContext(window.VionContextBridge.getSnapshot())
 4. Ham personel verisi gonderme:
    TC kimlik, dogum tarihi, kisisel GSM, adres, saglik verisi, izin nedeni, ham dokuman.
-5. /api/assistant/... endpoint ornekleri su an hazir Vion servisi degil.
+5. /api/assistant/... endpoint ornekleri su an hazir AmeritAI servisi degil.
 6. resolveTool ikinci faz; ilk fazda sadece getSnapshot yeterli.
 
 Minimum kontrat:
@@ -220,7 +220,7 @@ In phase one, do not start by building services. First wire the safe context bri
    window.UserexWidget?.setContext(window.VionContextBridge.getSnapshot())
 4. Do not send raw employee data:
    national ID, birth date, personal phone, address, health data, leave reason, raw documents.
-5. The /api/assistant/... endpoints shown here are examples only, not built-in Vion services.
+5. The /api/assistant/... endpoints shown here are examples only, not built-in AmeritAI services.
 6. resolveTool is phase two; for phase one, getSnapshot alone is enough.
 
 Minimum contract:
@@ -711,8 +711,8 @@ Minimum contract:
                                 </p>
                                 <div className="rounded-md border border-amber-200 bg-amber-50/80 px-3 py-2 text-xs text-amber-800">
                                     {language === "tr"
-                                        ? "Not: Bu endpoint path'leri sadece ornek. Vion repo'sunda hazir gelmez ve widget su anda resolveTool() cagirmiyor. Canli kullanim icin tenant'in kendi backend servislerini yazmasi ve bu akisi ayrica baglamasi gerekir."
-                                        : "Note: These endpoint paths are examples only. They are not shipped by default in Vion, and the widget does not currently call resolveTool() automatically. For live usage, the tenant must implement their own backend services and wire this flow separately."}
+                                        ? "Not: Bu endpoint path'leri sadece ornek. AmeritAI repo'sunda hazir gelmez ve widget su anda resolveTool() cagirmiyor. Canli kullanim icin tenant'in kendi backend servislerini yazmasi ve bu akisi ayrica baglamasi gerekir."
+                                        : "Note: These endpoint paths are examples only. They are not shipped by default in AmeritAI, and the widget does not currently call resolveTool() automatically. For live usage, the tenant must implement their own backend services and wire this flow separately."}
                                 </div>
                                 <pre className="overflow-x-auto rounded-md bg-background p-3 text-[11px] leading-5 border">
                                     <code>{enterpriseToolSnippet}</code>

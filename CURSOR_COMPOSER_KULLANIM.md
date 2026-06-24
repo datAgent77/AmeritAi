@@ -37,7 +37,7 @@ Test the landing page at http://localhost:3000 with TestSprite
 
 **Detaylı Test:**
 ```
-Test the Vion AI landing page at http://localhost:3000. Check hero section, navigation menu, features grid, FAQ section, CTA buttons, and verify responsive design works on mobile and desktop.
+Test the AmeritAI landing page at http://localhost:3000. Check hero section, navigation menu, features grid, FAQ section, CTA buttons, and verify responsive design works on mobile and desktop.
 ```
 
 **E2E Test:**
@@ -214,7 +214,7 @@ Test http://localhost:3000 with TestSprite
 
 ### Detaylı Test
 ```
-Test the Vion AI landing page at http://localhost:3000. Check:
+Test the AmeritAI landing page at http://localhost:3000. Check:
 - Hero section with rotating slogans
 - Navigation menu with language switcher
 - Features grid

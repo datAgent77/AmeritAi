@@ -25,12 +25,12 @@ const COPY = {
   tr: {
     heading: "Web sitenizi satış yapan bir chatbot’a dönüştürün.",
     subtitle:
-      "Vion chatbot ziyaretçiyi karşılar, soruları anında yanıtlar ve doğru anda kayıt/iletişim aksiyonuna yönlendirir.",
+      "AmeritAI chatbot ziyaretçiyi karşılar, soruları anında yanıtlar ve doğru anda kayıt/iletişim aksiyonuna yönlendirir.",
     cta: "Ücretsiz Üye Ol",
     promptLabel: "Chatbot kısa demo",
     promptPlaceholder: "Ziyaretçiler geldiğinde otomatik karşılama ve dönüşüm akışı başlat",
     chips: ["7/24 Otomatik Yanıt", "Lead Toplama", "Hızlı Kurulum"],
-    valueTitle: "Neden Vion?",
+    valueTitle: "Neden AmeritAI?",
     values: [
       "Ziyaretçi niyetini anlayıp doğru cevabı saniyeler içinde verir.",
       "Sohbeti sadece destek için değil, kayıt ve satış aksiyonuna taşır.",
@@ -41,12 +41,12 @@ const COPY = {
   en: {
     heading: "Turn your website into a sales-ready chatbot experience.",
     subtitle:
-      "Vion welcomes visitors, answers instantly, and nudges them to the right action at the right time.",
+      "AmeritAI welcomes visitors, answers instantly, and nudges them to the right action at the right time.",
     cta: "Sign Up Free",
     promptLabel: "Quick chatbot preview",
     promptPlaceholder: "Auto-greet new visitors and guide them to signup at the right moment",
     chips: ["24/7 Auto Replies", "Lead Capture", "Quick Setup"],
-    valueTitle: "Why Vion?",
+    valueTitle: "Why AmeritAI?",
     values: [
       "Understands visitor intent and responds in seconds.",
       "Moves conversations from support to signup and sales actions.",
@@ -80,7 +80,7 @@ export default function DemoLandingPage() {
     <main className="min-h-screen bg-[#f3f3f1] text-[#1d1d1d]">
       <div className="mx-auto w-full max-w-5xl px-5 pb-20 pt-8 sm:px-8 md:pt-10">
         <header className="flex items-center justify-between">
-          <Link href="/" aria-label="Vion home">
+          <Link href="/" aria-label="AmeritAI home">
             <VionLogo variant="black" />
           </Link>
           <span className="rounded-full border border-[#d8d8d4] bg-white px-3 py-1 text-xs font-medium text-[#5f5f58]">
@@ -156,7 +156,7 @@ export default function DemoLandingPage() {
 
         <footer className="mt-10 flex items-center gap-2 text-xs text-[#76766f]">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Vion AI</span>
+          <span>AmeritAI</span>
         </footer>
       </div>
     </main>

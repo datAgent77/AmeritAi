@@ -1,8 +1,8 @@
-# Vion AI - Kurumsal Bilgi Dokümanı
+# AmeritAI - Kurumsal Bilgi Dokümanı
 
-## Vion AI Nedir?
+## AmeritAI Nedir?
 
-Vion AI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış yapay zeka destekli bir chatbot platformudur. Web sitelerine kolayca entegre edilebilen akıllı asistanlar oluşturmanızı sağlar. Otomatik modda 50'den fazla dilde akıcı destek sunar.
+AmeritAI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış yapay zeka destekli bir chatbot platformudur. Web sitelerine kolayca entegre edilebilen akıllı asistanlar oluşturmanızı sağlar. Otomatik modda 50'den fazla dilde akıcı destek sunar.
 
 **Resmi Web Sitesi:** https://getvion.com
 
@@ -38,7 +38,7 @@ Vion AI, işletmelerin müşteri deneyimini iyileştirmek için tasarlanmış ya
 
 ## Desteklenen Sektörler
 
-Vion AI, 18 farklı sektör için optimize edilmiş yapay zeka asistanları sunar:
+AmeritAI, 18 farklı sektör için optimize edilmiş yapay zeka asistanları sunar:
 
 | Sektör | Açıklama |
 |--------|----------|
@@ -94,7 +94,7 @@ Vion AI, 18 farklı sektör için optimize edilmiş yapay zeka asistanları suna
 
 ## Modüller
 
-Vion AI, işletmenizin ihtiyaçlarına göre aktifleştirebileceğiniz modüller sunar:
+AmeritAI, işletmenizin ihtiyaçlarına göre aktifleştirebileceğiniz modüller sunar:
 
 ### Temel Modüller (Ücretsiz)
 - **Genel Chatbot** - Temel soru-cevap
@@ -122,7 +122,7 @@ https://getvion.com/signup adresinden ücretsiz hesap oluşturun.
 İşletmenize uygun sektörü seçin, AI otomatik olarak optimize edilecektir.
 
 ### 3. Chatbot'u Eğitin
-Web sitenizin URL'sini girin, Vion AI içeriğinizi öğrenecek.
+Web sitenizin URL'sini girin, AmeritAI içeriğinizi öğrenecek.
 
 ### 4. Widget'ı Kurun
 Size verilen embed kodunu web sitenize ekleyin.
@@ -138,11 +138,11 @@ Chatbot'unuz anında çalışmaya başlar!
 
 ## Sık Sorulan Sorular (SSS)
 
-### Vion AI'ı hangi sitelere entegre edebilirim?
+### AmeritAI'ı hangi sitelere entegre edebilirim?
 WordPress, Shopify, Wix, Squarespace, özel kodlanmış siteler dahil tüm web sitelerine entegre edilebilir.
 
 ### Kaç dil destekleniyor?
-Vion AI otomatik modda 50'den fazla dili destekler. Chatbot kullanıcının yazdığı dili algılar ve aynı dilde yanıt verir.
+AmeritAI otomatik modda 50'den fazla dili destekler. Chatbot kullanıcının yazdığı dili algılar ve aynı dilde yanıt verir.
 
 ### Verilerim güvende mi?
 Evet. Tüm veriler şifreli olarak saklanır. KVKK ve GDPR uyumludur.
@@ -153,7 +153,7 @@ Evet, 14 gün ücretsiz deneme sunuyoruz. Kredi kartı gerekmez.
 ### Chatbot ne kadar hızlı yanıt veriyor?
 Ortalama yanıt süresi 1-2 saniyedir.
 
-### Mevcut chatbot'umu Vion'a taşıyabilir miyim?
+### Mevcut chatbot'umu AmeritAI'a taşıyabilir miyim?
 Evet, mevcut konuşma geçmişinizi ve eğitim verilerinizi taşımanıza yardımcı oluruz.
 
 ### API erişimi var mı?

@@ -45,7 +45,7 @@ export default function EducationPage() {
                         {language === 'tr' ? 'Akademi' : 'Academy'}
                     </Badge>
                     <h1 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
-                        {language === 'tr' ? 'Vion ile Öğrenin' : 'Learn with Vion'}
+                        {language === 'tr' ? 'AmeritAI ile Öğrenin' : 'Learn with AmeritAI'}
                     </h1>
                     <p className="text-xl text-zinc-400">
                         {language === 'tr'

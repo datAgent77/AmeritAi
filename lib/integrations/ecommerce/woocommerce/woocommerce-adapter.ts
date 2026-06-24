@@ -174,7 +174,7 @@ export class WooCommerceAdapter extends BaseEcommercePlatform {
             await this.request("/webhooks", {
                 method: "POST",
                 body: JSON.stringify({
-                    name: `Vion AI - ${eventType}`,
+                    name: `AmeritAI - ${eventType}`,
                     status: "active",
                     topic,
                     delivery_url: callbackUrl,

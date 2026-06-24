@@ -52,11 +52,11 @@ export async function GET(request: Request) {
 
         try {
             // Resolve company name from chatbot settings
-            let companyName = "Vion AI"
+            let companyName = "AmeritAI"
             if (data.chatbotId) {
                 const chatbotSnap = await adminDb.collection("chatbots").doc(data.chatbotId).get()
                 const cd = chatbotSnap.data()
-                companyName = cd?.companyName || cd?.businessName || cd?.name || "Vion AI"
+                companyName = cd?.companyName || cd?.businessName || cd?.name || "AmeritAI"
             }
 
             const ok = await sendAppointmentReminderEmail({

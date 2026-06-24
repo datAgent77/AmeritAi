@@ -239,7 +239,7 @@ webView.loadUrl(hostedChatUrl)`
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <CardTitle>{isTr ? "Mobile App / API" : "Mobile App / API"}</CardTitle>
-                                <CardDescription>{isTr ? "API-first veya dengeli WebView yöntemiyle mobil uygulamanıza Vion destek asistanını bağlayın." : "Connect the Vion support assistant to your mobile app with API-first or the balanced WebView method."}</CardDescription>
+                                <CardDescription>{isTr ? "API-first veya dengeli WebView yöntemiyle mobil uygulamanıza AmeritAI destek asistanını bağlayın." : "Connect the AmeritAI support assistant to your mobile app with API-first or the balanced WebView method."}</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-sm text-muted-foreground">{isTr ? "Aktif" : "Active"}</span>
@@ -267,8 +267,8 @@ webView.loadUrl(hostedChatUrl)`
                             </Select>
                             <p className="text-sm text-muted-foreground">
                                 {mobileConfig.mode === "hosted_chat"
-                                    ? (isTr ? "Dengeli yöntem: mobil uygulama kısa ömürlü session üretir, Vion sohbet ekranı WebView içinde açılır." : "Balanced method: the mobile app creates a short-lived session, then opens the Vion chat screen in a WebView.")
-                                    : (isTr ? "Native chat arayüzü sizde kalır, mesajlar doğrudan Vion API'ına gönderilir." : "Your native chat UI stays in the app and messages are sent directly to the Vion API.")}
+                                    ? (isTr ? "Dengeli yöntem: mobil uygulama kısa ömürlü session üretir, AmeritAI sohbet ekranı WebView içinde açılır." : "Balanced method: the mobile app creates a short-lived session, then opens the AmeritAI chat screen in a WebView.")
+                                    : (isTr ? "Native chat arayüzü sizde kalır, mesajlar doğrudan AmeritAI API'ına gönderilir." : "Your native chat UI stays in the app and messages are sent directly to the AmeritAI API.")}
                             </p>
                         </div>
 
@@ -334,7 +334,7 @@ webView.loadUrl(hostedChatUrl)`
                         {mobileConfig.mode === "hosted_chat" && (
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="rounded-md border p-4">
-                                    <h3 className="mb-2 text-sm font-semibold">{isTr ? "Vion tarafında" : "Vion side"}</h3>
+                                    <h3 className="mb-2 text-sm font-semibold">{isTr ? "AmeritAI tarafında" : "AmeritAI side"}</h3>
                                     <ul className="space-y-2 text-sm text-muted-foreground">
                                         <li>{isTr ? "Mobile App / API aktif edilir ve client token üretilir." : "Enable Mobile App / API and generate a client token."}</li>
                                         <li>{isTr ? "Gerekirse bundle/package id kısıtı girilir." : "Optionally restrict allowed bundle/package ids."}</li>

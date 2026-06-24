@@ -219,8 +219,8 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             id: "mobile-app-api",
             name: language === "tr" ? "Mobile App / API" : "Mobile App / API",
             description: language === "tr"
-                ? "Native mobil uygulamanızdan Vion destek asistanına güvenli mesaj ve context gönderin."
-                : "Send secure messages and context from your native mobile app to the Vion support assistant.",
+                ? "Native mobil uygulamanızdan AmeritAI destek asistanına güvenli mesaj ve context gönderin."
+                : "Send secure messages and context from your native mobile app to the AmeritAI support assistant.",
             icon: <Code2 className="h-6 w-6 text-gray-900" />,
             iconBg: "bg-gray-100",
             connected: settings?.integrations?.mobileApp?.enabled === true,
@@ -296,7 +296,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
             features: [
                 "QR-linked device experience",
                 "Evolution instance and webhook setup",
-                "Inbound message flow to the Vion chat screen",
+                "Inbound message flow to the AmeritAI chat screen",
                 "Unofficial quick-connect mode",
             ],
         },
@@ -383,7 +383,7 @@ export default function IntegrationPage({ userId }: IntegrationPageProps) {
         {
             id: "instagram",
             name: "Instagram DM (Resmi Meta)",
-            description: "Connect your Instagram Professional account to Vion via official Meta OAuth, Page selection, and webhook flow.",
+            description: "Connect your Instagram Professional account to AmeritAI via official Meta OAuth, Page selection, and webhook flow.",
             logo: "/integrations/instagram.svg",
             iconBg: "bg-gray-100",
             connected: metaWizardStatus?.instagramDM?.config?.state === "connected",

@@ -168,15 +168,15 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
                         "@context": "https://schema.org",
                         "@type": "BlogPosting",
                         "headline": post.title[language as 'en' | 'tr'],
-                        "image": [`https://www.getvion.com${post.image}`],
+                        "image": [`https://www.ameritai.com${post.image}`],
                         "datePublished": post.date,
                         "dateModified": post.date,
                         "author": [{
                             "@type": "Person",
                             "name": post.author.name,
-                            "url": "https://www.getvion.com"
+                            "url": "https://www.ameritai.com"
                         }],
-                        "mainEntityOfPage": `https://www.getvion.com/blog/${post.slug}`,
+                        "mainEntityOfPage": `https://www.ameritai.com/blog/${post.slug}`,
                         "description": post.excerpt[language as 'en' | 'tr']
                     })
                 }}

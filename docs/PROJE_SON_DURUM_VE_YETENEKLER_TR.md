@@ -1,4 +1,4 @@
-# Vion AI Projesi - Son Durum ve Yetenekler (Detaylı Doküman)
+# AmeritAI Projesi - Son Durum ve Yetenekler (Detaylı Doküman)
 
 Bu doküman, projenin mevcut (repo) durumunu, ana mimarisini, ürün yüzeylerini, widget yeteneklerini, modülleri, entegrasyonları ve son dönemde yapılan önemli iyileştirmeleri özetler.
 
@@ -14,7 +14,7 @@ Bu doküman, projenin mevcut (repo) durumunu, ana mimarisini, ürün yüzeylerin
 
 ## 2. Projenin Genel Tanımı
 
-Vion AI; web sitelerine, iframe’lere veya farklı kanallara entegre edilebilen, çok modüllü bir AI chatbot platformudur.
+AmeritAI; web sitelerine, iframe’lere veya farklı kanallara entegre edilebilen, çok modüllü bir AI chatbot platformudur.
 
 Sistem; sadece bir chat widget’tan ibaret değildir. Aynı repo içinde şunları barındırır:
 

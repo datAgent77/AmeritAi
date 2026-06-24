@@ -77,8 +77,8 @@ export default function LandingPage() {
                                 
                                 <p className="text-lg md:text-xl text-muted-foreground/80 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light">
                                     {language === 'tr'
-                                        ? "Vion, web sitenize gelen ziyaretçileri karşılar, sorularını yanıtlar ve onları müşteriye dönüştürür. Kodlama gerekmez."
-                                        : "Vion welcomes visitors to your website, answers their questions, and converts them into customers. No coding required."}
+                                        ? "AmeritAI, web sitenize gelen ziyaretçileri karşılar, sorularını yanıtlar ve onları müşteriye dönüştürür. Kodlama gerekmez."
+                                        : "AmeritAI welcomes visitors to your website, answers their questions, and converts them into customers. No coding required."}
                                 </p>
                             </div>
 

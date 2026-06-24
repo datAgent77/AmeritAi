@@ -262,7 +262,7 @@ export function HeroVisual() {
                                     <div className="text-sm font-semibold truncate">{currentConversation.label[lang]}</div>
                                     <div className="text-[10px] opacity-80 flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 inline-block" />
-                                        Vion AI
+                                        AmeritAI
                                     </div>
                                 </div>
                             </div>
@@ -292,7 +292,7 @@ export function HeroVisual() {
                                             : 'bg-muted text-muted-foreground'
                                     }`}>
                                         {line.role === 'bot'
-                                            ? <NextImage src="/vion-logo-icon-white.png" alt="Vion AI" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
+                                            ? <NextImage src="/vion-logo-icon-white.png" alt="AmeritAI" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
                                             : <User className="w-3.5 h-3.5" />
                                         }
                                     </div>
@@ -316,7 +316,7 @@ export function HeroVisual() {
                                     className="relative z-10 flex items-end gap-2"
                                 >
                                     <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden bg-black">
-                                        <NextImage src="/vion-logo-icon-white.png" alt="Vion AI" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
+                                        <NextImage src="/vion-logo-icon-white.png" alt="AmeritAI" width={18} height={18} className="h-[18px] w-[18px] object-contain" />
                                     </div>
                                     <div className="bg-zinc-100/90 dark:bg-zinc-800/65 border border-zinc-200/70 dark:border-zinc-700/70 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: '0ms' }} />

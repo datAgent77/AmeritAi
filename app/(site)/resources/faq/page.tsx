@@ -71,8 +71,8 @@ export default function FaqPage() {
                     </h1>
                     <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-light">
                         {language === 'tr'
-                            ? 'Vion hakkında merak ettiğiniz her şeyi burada bulabilirsiniz.'
-                            : 'Find answers to all your questions about Vion.'}
+                            ? 'AmeritAI hakkında merak ettiğiniz her şeyi burada bulabilirsiniz.'
+                            : 'Find answers to all your questions about AmeritAI.'}
                     </p>
 
                     {/* Search Bar */}
@@ -143,7 +143,7 @@ export default function FaqPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                             <button className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/80 border border-border transition-colors text-foreground">
-                                <Mail className="w-4 h-4" /> info@getvion.com
+                                <Mail className="w-4 h-4" /> info@ameritai.com
                             </button>
                         </div>
                     </div>

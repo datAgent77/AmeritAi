@@ -10,15 +10,15 @@ describe("resolveSenderIdentity", () => {
     it("keeps the configured From address when Gmail auth is aligned to the same domain", () => {
         const sender = resolveSenderIdentity({
             smtpHost: "smtp.gmail.com",
-            authenticatedEmail: "notifications@getvion.com",
-            configuredFromEmail: "no-reply@getvion.com",
-            configuredFromName: "Vion AI",
+            authenticatedEmail: "notifications@ameritai.com",
+            configuredFromEmail: "no-reply@ameritai.com",
+            configuredFromName: "AmeritAI",
         });
 
         expect(sender).toEqual({
-            fromEmail: "no-reply@getvion.com",
-            fromName: "Vion AI",
-            sender: "notifications@getvion.com",
+            fromEmail: "no-reply@ameritai.com",
+            fromName: "AmeritAI",
+            sender: "notifications@ameritai.com",
         });
     });
 
@@ -28,14 +28,14 @@ describe("resolveSenderIdentity", () => {
         const sender = resolveSenderIdentity({
             smtpHost: "smtp.gmail.com",
             authenticatedEmail: "founder@gmail.com",
-            configuredFromEmail: "no-reply@getvion.com",
-            configuredFromName: "Vion AI",
+            configuredFromEmail: "no-reply@ameritai.com",
+            configuredFromName: "AmeritAI",
         });
 
         expect(sender).toEqual({
             fromEmail: "founder@gmail.com",
-            fromName: "Vion AI",
-            replyTo: "no-reply@getvion.com",
+            fromName: "AmeritAI",
+            replyTo: "no-reply@ameritai.com",
             sender: "founder@gmail.com",
         });
         expect(warnSpy).toHaveBeenCalledOnce();
@@ -47,30 +47,30 @@ describe("resolveSenderIdentity", () => {
         const sender = resolveSenderIdentity({
             smtpHost: "smtp.resend.com",
             authenticatedEmail: "resend",
-            configuredFromEmail: "no-reply@getvion.com",
-            configuredFromName: "Vion AI",
+            configuredFromEmail: "no-reply@ameritai.com",
+            configuredFromName: "AmeritAI",
         });
 
         expect(sender).toEqual({
-            fromEmail: "no-reply@getvion.com",
-            fromName: "Vion AI",
+            fromEmail: "no-reply@ameritai.com",
+            fromName: "AmeritAI",
         });
     });
 
-    it("defaults unconfigured senders to getvion.com", () => {
+    it("defaults unconfigured senders to ameritai.com", () => {
         const sender = resolveSenderIdentity({
             authenticatedEmail: null,
             configuredFromEmail: null,
-            configuredFromName: "Vion AI",
+            configuredFromName: "AmeritAI",
         });
 
         expect(sender).toEqual({
-            fromEmail: "no-reply@getvion.com",
-            fromName: "Vion AI",
+            fromEmail: "no-reply@ameritai.com",
+            fromName: "AmeritAI",
         });
     });
 
-    it("defaults internal recipients to getvion.com", () => {
+    it("defaults internal recipients to ameritai.com", () => {
         vi.stubEnv("VION_ADMIN_EMAIL", "");
         vi.stubEnv("ADMIN_NOTIFICATION_EMAIL", "");
         vi.stubEnv("SUPER_ADMIN_EMAIL", "");
@@ -78,8 +78,8 @@ describe("resolveSenderIdentity", () => {
         vi.stubEnv("CONTACT_EMAIL", "");
         vi.stubEnv("SUPPORT_EMAIL", "");
 
-        expect(getAdminNotificationEmail()).toBe("info@getvion.com");
-        expect(getContactInboxEmail()).toBe("info@getvion.com");
+        expect(getAdminNotificationEmail()).toBe("info@ameritai.com");
+        expect(getContactInboxEmail()).toBe("info@ameritai.com");
 
         vi.unstubAllEnvs();
     });

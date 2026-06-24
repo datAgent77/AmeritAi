@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { getModuleAccess } from "./module-access";
 
-describe("Vion module access matrix", () => {
+describe("AmeritAI module access matrix", () => {
     test("keeps core modules available and non-toggleable on starter", () => {
         expect(getModuleAccess("starter", "generalChatbot", "ecommerce")).toMatchObject({
             status: "core",

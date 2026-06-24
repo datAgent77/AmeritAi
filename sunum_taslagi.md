@@ -1,4 +1,4 @@
-# Vion AI - Medeniyet Teknopark Sunum Taslağı
+# AmeritAI - Medeniyet Teknopark Sunum Taslağı
 
 _Sunum Süresi: 10 Dakika | Odak: Sorun-Çözüm ve Ticarileşme_
 
@@ -6,12 +6,12 @@ _Sunum Süresi: 10 Dakika | Odak: Sorun-Çözüm ve Ticarileşme_
 
 ## 1. Giriş (1 Dakika)
 
-- **Slayt Başlığı:** Vion AI: İşletmelerin 7/24 Çalışan Satış ve Destek Asistanı
+- **Slayt Başlığı:** AmeritAI: İşletmelerin 7/24 Çalışan Satış ve Destek Asistanı
 - **Vurgu:** Biz sadece bir chatbot değiliz; işletmelerin web sitesini "akıllı bir satış temsilcisine" dönüştüren bir yapay zeka platformuyuz.
 
 ---
 
-## 2. Sorun: Neden Vion AI? (1.5 Dakika)
+## 2. Sorun: Neden AmeritAI? (1.5 Dakika)
 
 - **Müşteri Kaybı:** Müşterilerin %70'i mesai saatleri dışında web sitelerini ziyaret ediyor ve muhatap bulamayınca rakibe gidiyor.
 - **Verimsiz Operasyon:** Canlı destek ekipleri, %80 oranında "Kargo nerede?", "Fiyat nedir?" gibi tekrarlayan sorularla boğuluyor.
@@ -19,10 +19,10 @@ _Sunum Süresi: 10 Dakika | Odak: Sorun-Çözüm ve Ticarileşme_
 
 ---
 
-## 3. Çözümümüz: Vion AI Nedir? (2 Dakika)
+## 3. Çözümümüz: AmeritAI Nedir? (2 Dakika)
 
 - **Tanım:** Kendi verilerinizle (PDF, URL, Q&A) eğitilen, kurulumu sadece 2 dakika süren hibrit bir yapay zeka asistanı.
-- **Yenilikçi Yönü (RAG Teknolojisi):** Vion, işletmenin web sitesini ve dökümanlarını saniyeler içinde tarar ve sadece _doğrulanmış_ bilgilerle cevap verir. Asla halüsinasyon görmez (uydurmaz).
+- **Yenilikçi Yönü (RAG Teknolojisi):** AmeritAI, işletmenin web sitesini ve dökümanlarını saniyeler içinde tarar ve sadece _doğrulanmış_ bilgilerle cevap verir. Asla halüsinasyon görmez (uydurmaz).
 - **3 Temel Yetenek:**
   1.  **Destek:** 7/24 çok dilli (50+ dil) müşteri desteği.
   2.  **Satış:** İndirim kodları sunma, stok aciliyeti yaratma ve ürün karşılaştırma.
@@ -65,7 +65,7 @@ _Sunum Süresi: 10 Dakika | Odak: Sorun-Çözüm ve Ticarileşme_
 
 ## 7. Rakip Analizi & Farkımız (1 Dakika)
 
-| Özellik             | Klasik Canlı Destek (Intercom vb.) | Basit Botlar |      **Vion AI**       |
+| Özellik             | Klasik Canlı Destek (Intercom vb.) | Basit Botlar |      **AmeritAI**       |
 | :------------------ | :--------------------------------: | :----------: | :--------------------: |
 | **7/24 Cevap**      |         ❌ (İnsan gerekir)         |      ✅      |           ✅           |
 | **Kurulum**         |                Zor                 |     Orta     |  **Çok Kolay (2 dk)**  |
@@ -95,5 +95,5 @@ _Sunum Süresi: 10 Dakika | Odak: Sorun-Çözüm ve Ticarileşme_
 
 ## Kapanış
 
-**Vion AI:** İşletmenizin yeni nesil dijital çalışanı.
+**AmeritAI:** İşletmenizin yeni nesil dijital çalışanı.
 _Teşekkürler & Soru-Cevap_

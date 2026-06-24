@@ -19,7 +19,7 @@ export default function PricingPage() {
     const plans = getPublicPlansSorted();
     const showPlanPrices = shouldShowPlanPrices();
     const lastPricingViewSignatureRef = useRef<string>("");
-    const baseUrl = "https://www.getvion.com";
+    const baseUrl = "https://www.ameritai.com";
 
     useEffect(() => {
         const signature = `${billingCycle}-${language}-${plans.length}`;
@@ -65,7 +65,7 @@ export default function PricingPage() {
     const offerCatalogJsonLd = showPlanPrices ? {
         "@context": "https://schema.org",
         "@type": "OfferCatalog",
-        "name": language === "tr" ? "Vion AI Fiyatlandırma Planları" : "Vion AI Pricing Plans",
+        "name": language === "tr" ? "AmeritAI Fiyatlandırma Planları" : "AmeritAI Pricing Plans",
         "url": `${baseUrl}/pricing`,
         "itemListElement": plans
             .filter((plan) => !plan.billing.contact)

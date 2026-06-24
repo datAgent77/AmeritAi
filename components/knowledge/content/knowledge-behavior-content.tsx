@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/AuthContext"
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
 import { db } from "@/lib/firebase"
-import { INDUSTRY_CONFIG, IndustryType } from "@/lib/industry-config"
+import { INDUSTRY_CONFIG, IndustryType, getIndustryRole, getIndustrySystemPrompt } from "@/lib/industry-config"
 
 interface KnowledgeBehaviorContentProps {
     userId: string
@@ -161,7 +161,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-medium">{t('chatbotRole') || 'Rol'}:</span>
                                             <span className="text-sm text-primary font-semibold">
-                                                {INDUSTRY_CONFIG[settings.industry]?.role || 'AI Assistant'}
+                                                {getIndustryRole(settings.industry, language) || 'AI Assistant'}
                                             </span>
                                         </div>
 
@@ -169,7 +169,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                             <span className="text-sm font-medium">{t('behaviorSummary') || 'Davranış'}:</span>
                                             <p className="text-sm text-muted-foreground mt-1">
                                                 {(INDUSTRY_CONFIG[settings.industry] as any)?.behaviorSummary?.[language] ||
-                                                    (INDUSTRY_CONFIG[settings.industry]?.systemPrompt?.split('\n').slice(0, 3).join(' ').substring(0, 150) + '...')}
+                                                    (getIndustrySystemPrompt(settings.industry, language).split('\n').slice(0, 3).join(' ').substring(0, 150) + '...')}
                                             </p>
                                         </div>
 
@@ -178,7 +178,7 @@ export function KnowledgeBehaviorContent({ userId }: KnowledgeBehaviorContentPro
                                                 {t('showFullPrompt') || 'Tam prompt\'u göster'}
                                             </summary>
                                             <pre className="mt-2 p-2 bg-background rounded text-xs whitespace-pre-wrap overflow-auto max-h-48 border">
-                                                {INDUSTRY_CONFIG[settings.industry]?.systemPrompt}
+                                                {getIndustrySystemPrompt(settings.industry, language)}
                                             </pre>
                                         </details>
                                     </div>

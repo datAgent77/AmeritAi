@@ -59,7 +59,7 @@ export async function POST(
         // Resolve company name from chatbot settings
         const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get();
         const chatbotData = chatbotSnap.data();
-        const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI";
+        const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "AmeritAI";
 
         // Send confirmation email if customer email exists
         let emailSent = false;

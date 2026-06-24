@@ -1,12 +1,13 @@
 
 import { OpenAI } from "openai";
+import { EMBEDDING_MODEL, EMBEDDING_DIMENSIONS } from "@/lib/embedding-config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { upsertChatSessionRecord } from "@/lib/chat-sessions";
 import type { ChatSessionMessageRecord } from "@/lib/chat-session-messages";
-import { INDUSTRY_CONFIG } from "@/lib/industry-config";
+import { INDUSTRY_CONFIG, getIndustrySystemPrompt } from "@/lib/industry-config";
 import { getAllModules } from "@/lib/modules-registry";
 import { resolveConversationLanguage } from "@/lib/conversation-language";
 import { evaluateCampaigns, buildCampaignSystemPromptBlock, fetchWeatherByCity } from "@/lib/campaigns/campaign-engine";
@@ -591,8 +592,9 @@ export async function generateAIResponse(
                     const index = pc.index("chatbot-knowledge");
                     const embeddingClient = new OpenAI({ apiKey: embeddingApiKey });
                     const embeddingResponse = await embeddingClient.embeddings.create({
-                        model: "text-embedding-3-small",
+                        model: EMBEDDING_MODEL,
                         input: lastMessage.content,
+                        dimensions: EMBEDDING_DIMENSIONS,
                     });
                     const embedding = embeddingResponse.data[0].embedding;
                     const queryResponse = await index.query({
@@ -636,13 +638,13 @@ export async function generateAIResponse(
 # ROLE & IDENTITY
 You are an advanced AI Assistant for ${chatbotId}.
 Your goal is to provide accurate, helpful, and professional support.
-${industryConfig.systemPrompt}
+${getIndustrySystemPrompt(industry, resolvedLanguage)}
 
 # LANGUAGE SUPPORT FACTS
-- Vion AI can communicate in 50+ languages in automatic mode.
+- AmeritAI can communicate in 50+ languages in automatic mode.
 - Detect the user's language from their latest message and continue in that same language.
-- If the user asks which languages are supported, explain that Vion AI supports 50+ languages and can automatically mirror the user's language.
-- Never claim that Vion AI only supports Turkish and English unless the chatbot owner's AI training resources explicitly limit the assistant to those two languages.
+- If the user asks which languages are supported, explain that AmeritAI supports 50+ languages and can automatically mirror the user's language.
+- Never claim that AmeritAI only supports Turkish and English unless the chatbot owner's AI training resources explicitly limit the assistant to those two languages.
 - For platform capability questions, these system-level facts override older or stale snippets retrieved from the AI training resources.
 
 # TURN LANGUAGE

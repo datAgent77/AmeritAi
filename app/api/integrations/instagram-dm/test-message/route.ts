@@ -36,7 +36,7 @@ export async function POST(req: Request) {
             adminDb,
             chatbotId,
             recipientId,
-            text: text || "Merhaba, bu Vion kurulum test mesajıdır.",
+            text: text || "Merhaba, bu AmeritAI kurulum test mesajıdır.",
             endpointTarget,
             accessToken,
             source: "api/integrations/instagram-dm/test-message",

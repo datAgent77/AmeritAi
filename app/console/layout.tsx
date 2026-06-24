@@ -204,8 +204,8 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                     </h1>
                     <p className="mt-3 text-sm text-muted-foreground">
                         {language === "tr"
-                            ? "Bu hesap için açık bir Vion uygulaması bulunmuyor. Erişim için yöneticinizle iletişime geçin."
-                            : "No Vion application is enabled for this account. Contact your administrator for access."}
+                            ? "Bu hesap için açık bir AmeritAI uygulaması bulunmuyor. Erişim için yöneticinizle iletişime geçin."
+                            : "No AmeritAI application is enabled for this account. Contact your administrator for access."}
                     </p>
                     <Button onClick={handleLogout} variant="outline" className="mt-6">
                         <LogOut className="mr-2 h-4 w-4" />
@@ -240,7 +240,7 @@ function ConsoleLayoutContent({ children }: { children: React.ReactNode }) {
                         <Button 
                             variant="outline" 
                             className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => window.location.href = 'mailto:info@getvion.com'}
+                            onClick={() => window.location.href = 'mailto:info@ameritai.com'}
                         >
                             <Mail className="w-4 h-4" />
                             {language === 'tr' ? 'Destek ile İletişime Geç' : 'Contact Support'}

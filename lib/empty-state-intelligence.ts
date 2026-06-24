@@ -319,7 +319,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
         tr: {
             starter: {
                 title: 'Entegrasyonlar',
-                description: 'Diğer araçlarınızı Vion ile bağlayın.',
+                description: 'Diğer araçlarınızı AmeritAI ile bağlayın.',
                 helperText: 'WhatsApp, Instagram ve daha fazlasıyla entegre olun.'
             },
             growth: {
@@ -336,7 +336,7 @@ const COPY: Record<EmptyStateModule, { tr: ModuleCopy; en: ModuleCopy }> = {
         en: {
             starter: {
                 title: 'Integrations',
-                description: 'Connect your other tools with Vion.',
+                description: 'Connect your other tools with AmeritAI.',
                 helperText: 'Integrate with WhatsApp, Instagram, and more.'
             },
             growth: {

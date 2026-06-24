@@ -24,13 +24,13 @@ export default function WhyUsPage() {
 
                     <PublicBreadcrumb 
                         items={[
-                            { label: language === 'tr' ? 'Neden Vion?' : 'Why Vion?' }
+                            { label: language === 'tr' ? 'Neden AmeritAI?' : 'Why AmeritAI?' }
                         ]} 
                     />
 
                     <div className="container mx-auto px-4 relative z-10 text-center">
                         <Badge variant="outline" className="mb-6 border-blue-500/30 text-blue-600 dark:text-blue-300">
-                            {language === 'tr' ? 'Neden Vion?' : 'Why Vion?'}
+                            {language === 'tr' ? 'Neden AmeritAI?' : 'Why AmeritAI?'}
                         </Badge>
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight text-foreground">
                             {language === 'tr'
@@ -97,8 +97,8 @@ export default function WhyUsPage() {
                                 </h2>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
                                     {language === 'tr'
-                                        ? 'Vion, sadece kelimeleri değil, niyetleri anlar. Müşterilerinizle gerçekleştirdiğiniz her etkileşim, bir sonraki görüşmeyi daha akıllı hale getirir. Statik chatbotlar yerine öğrenen bir asistan ile çalışın.'
-                                        : 'Vion understands intentions, not just words. Every interaction with your customers makes the next conversation smarter. Work with a learning assistant instead of static chatbots.'}
+                                        ? 'AmeritAI, sadece kelimeleri değil, niyetleri anlar. Müşterilerinizle gerçekleştirdiğiniz her etkileşim, bir sonraki görüşmeyi daha akıllı hale getirir. Statik chatbotlar yerine öğrenen bir asistan ile çalışın.'
+                                        : 'AmeritAI understands intentions, not just words. Every interaction with your customers makes the next conversation smarter. Work with a learning assistant instead of static chatbots.'}
                                 </p>
                                 <ul className="space-y-3">
                                     {[
@@ -129,8 +129,8 @@ export default function WhyUsPage() {
                                 </h2>
                                 <p className="text-lg text-muted-foreground leading-relaxed">
                                     {language === 'tr'
-                                        ? 'CRM, E-ticaret veya Destek yazılımlarınızı değiştirmek zorunda değilsiniz. Vion, kullandığınız araçlara saniyeler içinde entegre olur ve verilerinizi tek bir merkezden yönetmenizi sağlar.'
-                                        : 'You don\'t have to change your CRM, E-commerce, or Support software. Vion integrates with your tools in seconds and lets you manage your data from a single center.'}
+                                        ? 'CRM, E-ticaret veya Destek yazılımlarınızı değiştirmek zorunda değilsiniz. AmeritAI, kullandığınız araçlara saniyeler içinde entegre olur ve verilerinizi tek bir merkezden yönetmenizi sağlar.'
+                                        : 'You don\'t have to change your CRM, E-commerce, or Support software. AmeritAI integrates with your tools in seconds and lets you manage your data from a single center.'}
                                 </p>
                                 <ul className="space-y-3">
                                     {[
@@ -195,10 +195,10 @@ export default function WhyUsPage() {
                                 </ul>
                             </div>
 
-                            {/* Vion Way - Highlighted (Subtle) */}
+                            {/* AmeritAI Way - Highlighted (Subtle) */}
                             <div className="p-8 rounded-2xl bg-card border-2 border-primary shadow-lg relative z-10 md:-mt-4">
                                 <h3 className="text-2xl font-bold mb-6 text-foreground">
-                                    {language === 'tr' ? 'Vion Ekosistemi' : 'Vion Ecosystem'}
+                                    {language === 'tr' ? 'AmeritAI Ekosistemi' : 'AmeritAI Ecosystem'}
                                 </h3>
                                 <ul className="space-y-5 mb-8">
                                     {[

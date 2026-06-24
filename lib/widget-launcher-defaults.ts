@@ -1,4 +1,4 @@
-export const DEFAULT_WIDGET_LAUNCHER_TEXT = "Vion Ai Assistant"
+export const DEFAULT_WIDGET_LAUNCHER_TEXT = "AmeritAI Ai Assistant"
 
 export const DEFAULT_WIDGET_TEXT_LAUNCHER_SETTINGS = {
     position: "bottom-center",

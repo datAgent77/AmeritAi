@@ -11,8 +11,8 @@ const blockedPaths = ['/api/test', '/api/test-env', '/api/test-firebase-config',
 // only gates genuine cross-origin access. Extra brands/domains can be added via
 // the ADMIN_ALLOWED_ORIGINS env var (comma-separated) without a code change.
 const allowedOrigins = [
-    'https://www.getvion.com',
-    'https://getvion.com',
+    'https://www.ameritai.com',
+    'https://ameritai.com',
     'http://localhost:3000',
     ...(process.env.ADMIN_ALLOWED_ORIGINS || '')
         .split(',')

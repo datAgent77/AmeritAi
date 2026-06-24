@@ -20,7 +20,7 @@ const NEW_SEO_BLOG_POSTS = [
 
 The practical difference is outcome ownership. A chatbot may answer "Do you have this in stock?" and stop. An AI employee continues with recommendation, objection handling, and next-best action.
 
-In Vion AI projects, teams get better results when they map flows by business goal, not by page. For example, a lead flow is designed around "qualified meeting booked", not "message replied". This single change improves quality of pipeline and team focus.
+In AmeritAI projects, teams get better results when they map flows by business goal, not by page. For example, a lead flow is designed around "qualified meeting booked", not "message replied". This single change improves quality of pipeline and team focus.
 
 A second difference is context depth. AI employee architectures combine AI training resources, user context, and intent tracking. This allows answers like "your order is in transit" instead of generic FAQ responses.
 
@@ -31,7 +31,7 @@ If your current chatbot is active but not improving revenue or support velocity,
 
 Temel fark sonuç sahipliğidir. Chatbot "stok var mı?" sorusunu yanıtlayıp durabilir. AI çalışanı ise doğru ürünü önerir, itirazı yönetir ve bir sonraki aksiyonu oluşturur.
 
-Vion AI projelerinde ekipler, sayfa odaklı değil hedef odaklı akış tasarladığında daha iyi sonuç alır. Örneğin lead akışı "mesaj yanıtlandı" değil, "nitelikli görüşme planlandı" hedefiyle kurulur. Bu yaklaşım hem satış kalitesini hem ekip odağını artırır.
+AmeritAI projelerinde ekipler, sayfa odaklı değil hedef odaklı akış tasarladığında daha iyi sonuç alır. Örneğin lead akışı "mesaj yanıtlandı" değil, "nitelikli görüşme planlandı" hedefiyle kurulur. Bu yaklaşım hem satış kalitesini hem ekip odağını artırır.
 
 İkinci fark bağlam derinliğidir. AI çalışanı mimarisi AI eğitim kaynakları, kullanıcı bağlamı ve niyet takibini birlikte kullanır. Böylece genel SSS yanıtı yerine "siparişin dağıtıma çıktı" gibi kişisel ve doğru cevap üretebilir.
 
@@ -43,7 +43,7 @@ Chatbotunuz çalışıyor ama gelir ya da operasyon hızına etkisi düşükse s
         date: "2026-02-18",
         readTime: "8 dk",
         image: "/blog/ai-employee-vs-chatbot.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "ecommerce-ai-personal-shopper-donusum-rehberi",
@@ -66,7 +66,7 @@ The second lift comes from contextual bundles. Instead of random upsells, sugges
 
 Operationally, keep product data clean: titles, specs, stock, and price formatting. AI cannot recommend what your catalog cannot describe clearly.
 
-Teams using Vion AI Product Catalog with guided shopper prompts usually see improvements in add-to-cart quality before they see traffic growth. Better intent matching creates better revenue per session.`,
+Teams using AmeritAI Product Catalog with guided shopper prompts usually see improvements in add-to-cart quality before they see traffic growth. Better intent matching creates better revenue per session.`,
             tr: `E-ticarette sorun çoğu zaman ürün azlığı değil, seçenek fazlalığıdır. AI personal shopper, kullanıcı niyetine göre seçenekleri daraltarak karar yorgunluğunu azaltır.
 
 En etkili akış üç kısa soruyla başlar: bütçe aralığı, kullanım amacı ve alıcı profili. Bu yapı konuşmayı yavaşlatmadan doğru öneri için yeterli bağlam üretir.
@@ -77,13 +77,13 @@ Ardından "en çok satanlar" yerine "ihtiyaca uygun kısa liste" modeline geçin
 
 Operasyon tarafında ürün verisini temiz tutmak kritik: başlık, teknik özellik, stok ve fiyat alanları tutarlı olmalı. Katalog net değilse AI öneri kalitesi de düşer.
 
-Vion AI Product Catalog ve yönlendirilmiş shopper akışı kullanan ekipler çoğu zaman trafik artmadan önce oturum başına gelirde iyileşme görür.`
+AmeritAI Product Catalog ve yönlendirilmiş shopper akışı kullanan ekipler çoğu zaman trafik artmadan önce oturum başına gelirde iyileşme görür.`
         },
         category: "E-Ticaret",
         date: "2026-02-17",
         readTime: "7 dk",
         image: "/blog/ecommerce-personal-shopper.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "lead-collection-proactive-messaging-7-akis",
@@ -106,7 +106,7 @@ Keep the first form small. Name plus one contact field is often enough at first 
 
 Sales teams should define MQL criteria with marketing before launch. Without a shared definition, chatbot lead volume increases but pipeline quality does not.
 
-In Vion AI implementations, combining lead module with proactive messaging usually improves first-response speed and increases booked follow-up opportunities.`,
+In AmeritAI implementations, combining lead module with proactive messaging usually improves first-response speed and increases booked follow-up opportunities.`,
             tr: `Birçok lead formunun düşük performans vermesinin ana nedeni zamanlama hatasıdır. Değer sunmadan iletişim bilgisi istemek, sohbet akışını erken kırar.
 
 Proactive messaging, niyet sinyalleriyle birlikte kullanıldığında bu sorunu çözer. Fiyat soruları, demo isteği, entegrasyon sorusu ve tekrar eden özellik karşılaştırmaları güçlü sinyallerdir.
@@ -117,13 +117,13 @@ Yüksek performanslı akış basittir: yardımcı mesaj, kısa yönlendirme, son
 
 Yayına çıkmadan önce pazarlama ve satış ekipleri MQL tanımını ortaklaştırmalıdır. Ortak tanım yoksa lead sayısı artar ama fırsat kalitesi artmaz.
 
-Vion AI'de lead modülü ile proaktif mesajların birlikte kullanımı, hem ilk yanıt hızını hem takip görüşmesi sayısını artırır.`
+AmeritAI'de lead modülü ile proaktif mesajların birlikte kullanımı, hem ilk yanıt hızını hem takip görüşmesi sayısını artırır.`
         },
         category: "Pazarlama",
         date: "2026-02-16",
         readTime: "6 dk",
         image: "/blog/lead-proactive-flows.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "restoranlar-icin-dijital-garson-qr-menu-ai",
@@ -146,7 +146,7 @@ For revenue, focus on context-aware add-ons. Suggesting drink and side options l
 
 For operations, define handoff rules. If a guest asks policy-sensitive or complex service questions, the flow should escalate to staff seamlessly.
 
-Restaurants using Vion AI Digital Waiter typically gain faster table decisions and fewer repetitive staff interruptions during peak hours.`,
+Restaurants using AmeritAI Digital Waiter typically gain faster table decisions and fewer repetitive staff interruptions during peak hours.`,
             tr: `QR menü baskı maliyetini çözdü ama karar sürecindeki sürtünmeyi çözmedi. Misafir hâlâ uzun süre menüde kalıyor ve aynı soruları tekrar soruyor.
 
 Dijital garson bu sürtünmeyi azaltır. İçerik, alerjen, acılık seviyesi ve eşleşme önerilerini anında yanıtlayarak deneyimi pasif görüntüleme yerine yönlendirilmiş sohbete çevirir.
@@ -157,13 +157,13 @@ Gelir tarafında bağlamsal ek satış önemlidir. Seçilen yemeğe uygun içece
 
 Operasyon tarafında aktarım kurallarını netleştirin. Politika veya özel servis sorularında akışın personele sorunsuz devredilmesi gerekir.
 
-Vion AI Digital Waiter kullanan restoranlar yoğun saatlerde daha hızlı karar ve daha az tekrar eden personel kesintisi elde eder.`
+AmeritAI Digital Waiter kullanan restoranlar yoğun saatlerde daha hızlı karar ve daha az tekrar eden personel kesintisi elde eder.`
         },
         category: "Restoran",
         date: "2026-02-15",
         readTime: "6 dk",
         image: "/blog/digital-waiter-qr-menu.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "rag-dynamic-context-visual-analysis-ai-mimarisi",
@@ -186,7 +186,7 @@ When teams blur these boundaries, response quality drops and debugging becomes h
 
 From a product view, this architecture increases trust because users receive precise and contextual responses instead of broad generic text.
 
-Vion AI module system is designed around this layered approach so teams can enable capabilities progressively without rebuilding the whole assistant.`,
+AmeritAI module system is designed around this layered approach so teams can enable capabilities progressively without rebuilding the whole assistant.`,
             tr: `Güvenilir AI sistemleri tek promptla değil, katmanlı mimariyle kurulur. Tek model çağrısı; doküman doğruluğu, kullanıcıya özel veri ve görsel yorumlama ihtiyaçlarını aynı kalitede taşıyamaz.
 
 RAG katmanı doküman ve site bilgisini doğru şekilde getirir. Dynamic Context, sipariş durumu veya hesap limiti gibi kullanıcıya özel veriyi taşır. Görsel analiz ise yüklenen görseller üzerinden ön değerlendirme sağlar.
@@ -197,13 +197,13 @@ Sınırlar karıştığında cevap kalitesi düşer, hata ayıklama zorlaşır. 
 
 Ürün tarafında bu mimari güven üretir çünkü kullanıcı genel metin değil, bağlama uygun net yanıt alır.
 
-Vion AI modül yapısı bu katmanlı yaklaşımı desteklediği için ekipler tüm sistemi baştan kurmadan yetenekleri adım adım açabilir.`
+AmeritAI modül yapısı bu katmanlı yaklaşımı desteklediği için ekipler tüm sistemi baştan kurmadan yetenekleri adım adım açabilir.`
         },
         category: "Teknik Mimari",
         date: "2026-02-14",
         readTime: "8 dk",
         image: "/blog/rag-dynamic-context.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "ai-ile-seo-odakli-blog-icerik-uretimi",
@@ -226,7 +226,7 @@ Avoid generic statements that could belong to any brand. Add product-specific us
 
 Technical SEO still matters: clean titles, accurate publish dates, internal links, and structured data. AI does not replace these fundamentals.
 
-Teams using Vion AI content workflows usually improve publishing consistency first, then organic traffic quality as expertise depth accumulates across topics.`,
+Teams using AmeritAI content workflows usually improve publishing consistency first, then organic traffic quality as expertise depth accumulates across topics.`,
             tr: `AI içerik üretim hızını artırır, ancak hız tek başına sıralama getirmez. Arama performansı hâlâ fayda, özgünlük ve uzmanlık derinliğine bağlıdır.
 
 Doğru model hibrittir. AI taslak yapı, anahtar kelime eşlemesi ve alternatif başlıklar üretir. Uzman ekip örnekleri, iddiaları ve nihai anlatıyı doğrular.
@@ -237,13 +237,13 @@ Her markaya uyabilecek genel cümlelerden kaçının. Kendi ürününüzden kull
 
 Teknik SEO temelleri değişmez: temiz başlıklar, doğru yayın tarihi, iç link yapısı ve structured data.
 
-Vion AI ile içerik akışı kuran ekipler önce yayın tutarlılığını, sonra da organik trafik kalitesini artırır.`
+AmeritAI ile içerik akışı kuran ekipler önce yayın tutarlılığını, sonra da organik trafik kalitesini artırır.`
         },
         category: "SEO",
         date: "2026-02-13",
         readTime: "7 dk",
         image: "/blog/ai-seo-content.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "cok-dilli-ai-destekte-kaliteyi-korumak",
@@ -266,7 +266,7 @@ Language switching must be natural. If a user starts in English and moves to Tur
 
 Measure quality per language, not global average only. A strong EN score can hide weak TR performance and vice versa.
 
-Vion AI language-aware flows help teams standardize support quality while preserving local communication nuances.`,
+AmeritAI language-aware flows help teams standardize support quality while preserving local communication nuances.`,
             tr: `Çok dilli destek bir çeviri projesi değil, kalite yönetimi projesidir. Ton, politika doğruluğu ve çözüm hızı her dilde korunmalıdır.
 
 İlk ilke tek doğruluk kaynağıdır. Diller farklı kaynaklardan beslenirse çelişki kaçınılmaz olur.
@@ -277,13 +277,13 @@ Dil geçişi doğal olmalıdır. Kullanıcı İngilizce başlayıp Türkçeye d�
 
 Kaliteyi dil bazında ölçün. Sadece genel ortalama metrik, bir dildeki zayıflığı gizleyebilir.
 
-Vion AI dil duyarlı akışları, ekiplerin yerel iletişim nüansını koruyarak standart destek kalitesi sağlamasına yardımcı olur.`
+AmeritAI dil duyarlı akışları, ekiplerin yerel iletişim nüansını koruyarak standart destek kalitesi sağlamasına yardımcı olur.`
         },
         category: "Global",
         date: "2026-02-12",
         readTime: "6 dk",
         image: "/blog/multilingual-ai-support.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "kobi-icin-30-gunde-ai-calisani-kurulum-plani",
@@ -306,7 +306,7 @@ Week 3 should add optimization: proactive prompts, better routing, and response 
 
 Week 4 should finalize operational rhythm: weekly review, ownership matrix, and a backlog of unanswered intents.
 
-Vion AI modular setup fits this model well because teams can start with essentials and expand after each measured iteration.`,
+AmeritAI modular setup fits this model well because teams can start with essentials and expand after each measured iteration.`,
             tr: `KOBİ'ler AI dönüşümünü çoğu zaman büyük ve uzun bir proje gibi gördüğü için erteler. Oysa odaklı bir 30 günlük plan, ölçülebilir sonuç üretir.
 
 1. hafta mevcut metrikleri ve en çok tekrar eden soruları netleştirmekle başlamalıdır. Başlangıç metriği yoksa iyileşme iddiası ölçülemez.
@@ -317,13 +317,13 @@ Vion AI modular setup fits this model well because teams can start with essentia
 
 4. hafta operasyon ritmi kurulur: haftalık değerlendirme, sorumluluk matrisi ve yanıtsız niyetlerin backlog'u.
 
-Vion AI modüler yapısı bu yaklaşım için uygundur; ekipler çekirdek yetenekle başlayıp her ölçüm döngüsünde kapsamı büyütebilir.`
+AmeritAI modüler yapısı bu yaklaşım için uygundur; ekipler çekirdek yetenekle başlayıp her ölçüm döngüsünde kapsamı büyütebilir.`
         },
         category: "KOBİ",
         date: "2026-02-11",
         readTime: "7 dk",
         image: "/blog/kobi-30-day-ai-plan.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "yapay-zeka-ile-satis-optimizasyonu-ve-cart-recovery",
@@ -346,7 +346,7 @@ Objection handling should be structured by type: price, trust, urgency, and comp
 
 Track outcomes by reason code. Knowing why users recovered is as important as total recovery count.
 
-With Vion AI Sales Optimization, teams can move from reactive discounting to systematic conversion support.`,
+With AmeritAI Sales Optimization, teams can move from reactive discounting to systematic conversion support.`,
             tr: `Terk edilen sepetlerin çoğu kesin ret değildir. Çoğu, çözülmemiş sorudur: kargo belirsizliği, ürün uyumu veya fiyat kararsızlığı.
 
 AI satış optimizasyonu bu anlara odaklanır. Asistan kararsızlık dilini algılar ve doğru kanıtı veya aksiyonu sunar.
@@ -357,13 +357,13 @@ Etkili recovery akışları spesifik olur. Genel indirimler kullanıcıyı kampa
 
 Sonuçları neden koduyla ölçün. Kaç sepet kurtarıldığı kadar, neden kurtarıldığı da önemlidir.
 
-Vion AI Sales Optimization modülü ile ekipler reaktif indirim yaklaşımından sistematik dönüşüm desteğine geçebilir.`
+AmeritAI Sales Optimization modülü ile ekipler reaktif indirim yaklaşımından sistematik dönüşüm desteğine geçebilir.`
         },
         category: "Satış",
         date: "2026-02-10",
         readTime: "6 dk",
         image: "/blog/sales-optimization-ai.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "ai-uygulamalarinda-kvkk-gdpr-guvenlik-rehberi-2026",
@@ -386,7 +386,7 @@ Retention policy must be explicit. Define how long conversation logs and uploade
 
 Audit readiness requires traceability. Keep event logs for configuration changes, export actions, and sensitive workflow triggers.
 
-Vion AI deployments can be structured around these controls to align everyday operations with KVKK and GDPR expectations.`,
+AmeritAI deployments can be structured around these controls to align everyday operations with KVKK and GDPR expectations.`,
             tr: `Yönetim modeli olmadan AI kullanımı görünmeyen risk üretir. Uyum, sayfanın altındaki bir metin değil; günlük operasyon disiplinidir.
 
 İlk adım veri minimizasyonudur. Sadece tanımlı amaca gerekli alanları toplayın. Gereksiz hassas verinin serbest metinle sisteme girmesini azaltın.
@@ -397,13 +397,13 @@ Saklama politikası açık olmalıdır. Sohbet logları ve yüklenen dokümanlar
 
 Denetime hazırlık için izlenebilirlik gerekir. Konfigürasyon değişikliği, dışa aktarım ve hassas akış tetiklerinde olay kaydı tutun.
 
-Vion AI kurulumları bu kontroller etrafında yapılandırıldığında, KVKK ve GDPR beklentileriyle günlük işleyiş arasında güçlü bir uyum sağlanır.`
+AmeritAI kurulumları bu kontroller etrafında yapılandırıldığında, KVKK ve GDPR beklentileriyle günlük işleyiş arasında güçlü bir uyum sağlanır.`
         },
         category: "Güvenlik",
         date: "2026-02-09",
         readTime: "7 dk",
         image: "/blog/ai-security-kvkk-gdpr.svg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     }
 ];
 
@@ -460,7 +460,7 @@ Anahtar, insanları tamamen değiştirmek değil, onları gerçekten kişisel bi
         date: "2025-01-15",
         readTime: "5 dk",
         image: "/blog/customer-service-ai.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "e-ticaret-sohbet-asistani-satislari-artirma",
@@ -486,7 +486,7 @@ AI chat assistants are changing this. They can:
 
 **Case Study: Fashion Retailer**
 
-A mid-sized fashion retailer implemented Vion AI's shopping assistant and saw remarkable results within 90 days:
+A mid-sized fashion retailer implemented AmeritAI's shopping assistant and saw remarkable results within 90 days:
 
 - 35% increase in conversion rate
 - 28% higher average order value
@@ -510,7 +510,7 @@ Yapay zeka sohbet asistanları bunu değiştiriyor. Şunları yapabilirler:
 
 **Vaka Çalışması: Moda Perakendecisi**
 
-Orta ölçekli bir moda perakendecisi Vion AI'ın alışveriş asistanını uyguladı ve 90 gün içinde dikkat çekici sonuçlar gördü:
+Orta ölçekli bir moda perakendecisi AmeritAI'ın alışveriş asistanını uyguladı ve 90 gün içinde dikkat çekici sonuçlar gördü:
 
 - Dönüşüm oranında %35 artış
 - Ortalama sipariş değerinde %28 artış
@@ -526,7 +526,7 @@ Anahtar basit başlamaktır. Her şeyi aynı anda otomatikleştirmeye çalışma
         date: "2025-01-08",
         readTime: "6 dk",
         image: "/blog/ecommerce-ai.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "yapay-zeka-ile-lead-toplama-stratejileri",
@@ -590,7 +590,7 @@ Bu yaklaşım satış odaklı değil, yardımcı hissettiriyor. Ziyaretçi etkil
         date: "2025-01-02",
         readTime: "4 dk",
         image: "/blog/lead-generation.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "restoran-dijital-garson-qr-menu",
@@ -652,7 +652,7 @@ Yapay zeka asistanı uygulayan tipik bir restoran şunları görür:
         date: "2024-12-20",
         readTime: "5 dk",
         image: "/blog/restaurant-digital.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "chatbot-entegrasyonu-web-sitesi-rehber",
@@ -736,7 +736,7 @@ Arayın:
         date: "2024-12-15",
         readTime: "7 dk",
         image: "/blog/chatbot-integration.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "yapay-zeka-chatbot-gizlilik-guvenlik",
@@ -814,7 +814,7 @@ Bunun yerine güvenli formlar kullanın veya doğrulanmış ödeme portallarına
         date: "2024-12-10",
         readTime: "6 dk",
         image: "/blog/security-privacy.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "chatbot-analytics-basari-olcumleri",
@@ -894,7 +894,7 @@ Aylık inceleme:
         date: "2024-12-05",
         readTime: "5 dk",
         image: "/blog/analytics-metrics.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "cok-dilli-chatbot-global-isletmeler",
@@ -962,7 +962,7 @@ Birden fazla dili destekleyen Türk işletmelerin çoğu şunları önceliklendi
         date: "2024-11-28",
         readTime: "4 dk",
         image: "/blog/multilingual-global.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "gayrimenkul-yapay-zeka-danismanligi",
@@ -983,7 +983,7 @@ Most property inquiries happen outside of business hours. If a potential buyer a
 
 **The Solution: AI Qualification**
 
-Vion AI can handle the initial vetting process:
+AmeritAI can handle the initial vetting process:
 - "What is your budget range?"
 - "Are you looking to buy or rent?"
 - "How many bedrooms do you need?"
@@ -1004,7 +1004,7 @@ Agencies using AI assistants report a 300% increase in qualified leads and a sig
 
 **Çözüm: Yapay Zeka ile Eleme**
 
-Vion AI, ilk eleme sürecini yönetebilir:
+AmeritAI, ilk eleme sürecini yönetebilir:
 - "Bütçe aralığınız nedir?"
 - "Satın almak mı yoksa kiralamak mı istiyorsunuz?"
 - "Kaç yatak odasına ihtiyacınız var?"
@@ -1022,7 +1022,7 @@ Yapay zeka asistanları kullanan acenteler, kalifiye lead'lerde %300 artış ve 
         date: "2024-11-20",
         readTime: "5 dk",
         image: "/blog/lead-generation.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "saglik-sektorunde-randevu-otomasyonu",
@@ -1051,7 +1051,7 @@ While not a doctor, the AI can ask preliminary screening questions ("Do you have
 
 **Privacy Compliance**
 
-With on-premise or compliant cloud deployment, Vion AI ensures that sensitive patient data remains secure and meets HIPAA/KVKK standards.`,
+With on-premise or compliant cloud deployment, AmeritAI ensures that sensitive patient data remains secure and meets HIPAA/KVKK standards.`,
             tr: `İdari görevler, sağlık personelinin zamanının %40'ını tüketir. Yapay zeka chatbotları, planlama sürecini otomatikleştirerek bu zamanı hasta bakımı için geri kazanıyor.
 
 **Önce Verimlilik**
@@ -1068,13 +1068,13 @@ Bir doktor olmasa da, yapay zeka hastanın doğru uzmana görünmesini veya gelm
 
 **Gizlilik Uyumluluğu**
 
-Yerinde veya uyumlu bulut dağıtımı ile Vion AI, hassas hasta verilerinin güvende kalmasını ve HIPAA/KVKK standartlarını karşılamasını sağlar.`
+Yerinde veya uyumlu bulut dağıtımı ile AmeritAI, hassas hasta verilerinin güvende kalmasını ve HIPAA/KVKK standartlarını karşılamasını sağlar.`
         },
         category: "Sağlık",
         date: "2024-11-15",
         readTime: "6 dk",
         image: "/blog/security-privacy.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "gelecegin-ajanlari-otonom-yapay-zeka",
@@ -1096,9 +1096,9 @@ An AI Agent doesn't just talk; it does.
 - It doesn't just say "I can book a meeting"; it coordinates calendars and sends invites.
 - It doesn't just say "We have stock"; it reserves the item in the ERP system.
 
-**The Vion AI Vision**
+**The AmeritAI Vision**
 
-At Vion AI, we are building towards a future where your business runs on autopilot. Imagine an agent that monitors your inventory, identifies low stock, generates a purchase order, creates a blog post about the new arrival, and emails your VIP customers—all without human intervention.
+At AmeritAI, we are building towards a future where your business runs on autopilot. Imagine an agent that monitors your inventory, identifies low stock, generates a purchase order, creates a blog post about the new arrival, and emails your VIP customers—all without human intervention.
 
 **Preparing for the Future**
 
@@ -1112,9 +1112,9 @@ Bir Yapay Zeka Ajanı sadece konuşmaz; yapar.
 - Sadece "Toplantı ayarlayabilirim" demez; takvimleri koordine eder ve davetiyeleri gönderir.
 - Sadece "Stokumuz var" demez; ERP sisteminde ürünü ayırtır.
 
-**Vion AI Vizyonu**
+**AmeritAI Vizyonu**
 
-Vion AI'da, işinizin otopilotta çalıştığı bir geleceğe doğru inşa ediyoruz. Envanterinizi izleyen, düşük stoğu belirleyen, bir satın alma siparişi oluşturan, yeni gelen ürün hakkında bir blog yazısı yazan ve VIP müşterilerinize e-posta gönderen bir ajan hayal edin—hepsi insan müdahalesi olmadan.
+AmeritAI'da, işinizin otopilotta çalıştığı bir geleceğe doğru inşa ediyoruz. Envanterinizi izleyen, düşük stoğu belirleyen, bir satın alma siparişi oluşturan, yeni gelen ürün hakkında bir blog yazısı yazan ve VIP müşterilerinize e-posta gönderen bir ajan hayal edin—hepsi insan müdahalesi olmadan.
 
 **Geleceğe Hazırlık**
 
@@ -1124,7 +1124,7 @@ Bugün API öncelıklı araçları ve yapılandırılmış verileri benimseyen i
         date: "2024-11-01",
         readTime: "4 dk",
         image: "/blog/multilingual-global.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "neden-7-24-musteri-destegi-sart",
@@ -1176,7 +1176,7 @@ Bu, saat dilimi veya saat ne olursa olsun hiçbir lead'i kaçırmamanızı sağl
         date: "2024-10-25",
         readTime: "3 dk",
         image: "/blog/customer-service-ai.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "egitimde-yapay-zeka-kisisellestirilmis-ogrenme",
@@ -1200,7 +1200,7 @@ Universities and online course providers face a common dilemma: How to support t
 
 **The Solution: Always-On Academic Support**
 
-Vion AI's education modules act as a first line of support. Unlike basic chatbots, they are trained on specific course materials, textbooks, and lecture notes.
+AmeritAI's education modules act as a first line of support. Unlike basic chatbots, they are trained on specific course materials, textbooks, and lecture notes.
 
 1.  **Instant Q&A**: A student studying late at night can ask, "Explain quantum entanglement like I'm 5," and get an instant, accurate analogy.
 2.  **Administrative Relief**: "When is the final paper due?" or "How do I register for Biology 101?" are handled automatically, freeing up distinct staff for complex advising.
@@ -1208,7 +1208,7 @@ Vion AI's education modules act as a first line of support. Unlike basic chatbot
 
 **Case Study: Online Code Academy**
 
-A major coding bootcamp implemented Vion AI to support its 5,000 active students.
+A major coding bootcamp implemented AmeritAI to support its 5,000 active students.
 - **Before:** Average wait time for code review feedback was 6 hours.
 - **After:** Identify syntax errors and logic flaws instantly.
 - **Result:** Course completion rates increased by 18%, and instructor burnout dropped significantly.
@@ -1227,7 +1227,7 @@ It's crucial to note that AI replaces the *task*, not the *teacher*. By handling
 
 **Çözüm: Her Zaman Açık Akademik Destek**
 
-Vion AI'ın eğitim modülleri, ilk destek hattı olarak görev yapar. Temel chatbotların aksine, belirli ders materyalleri, ders kitapları ve ders notları üzerinde eğitilmişlerdir.
+AmeritAI'ın eğitim modülleri, ilk destek hattı olarak görev yapar. Temel chatbotların aksine, belirli ders materyalleri, ders kitapları ve ders notları üzerinde eğitilmişlerdir.
 
 1.  **Anında Soru-Cevap**: Gece geç saatte çalışan bir öğrenci, "Kuantum dolanıklığını 5 yaşındaymışım gibi açıkla" diyebilir ve anında, doğru bir benzetme alabilir.
 2.  **İdari Rahatlama**: "Final ödevi ne zaman?" veya "Biyoloji 101'e nasıl kayıt olurum?" gibi sorular otomatik olarak yanıtlanır, bu da personeli karmaşık danışmanlık hizmetleri için serbest bırakır.
@@ -1235,7 +1235,7 @@ Vion AI'ın eğitim modülleri, ilk destek hattı olarak görev yapar. Temel cha
 
 **Vaka Çalışması: Online Kodlama Akademisi**
 
-Büyük bir kodlama bootcamp'i, 5.000 aktif öğrencisini desteklemek için Vion AI'ı entegre etti.
+Büyük bir kodlama bootcamp'i, 5.000 aktif öğrencisini desteklemek için AmeritAI'ı entegre etti.
 - **Önce:** Kod inceleme geri bildirimi için ortalama bekleme süresi 6 saatti.
 - **Sonra:** Sözdizimi hataları ve mantık kusurları anında belirlendi.
 - **Sonuç:** Kurs tamamlama oranları %18 arttı ve eğitmen tükenmişliği önemli ölçüde azaldı.
@@ -1248,7 +1248,7 @@ Yapay zekanın *öğretmeni* değil, *görevi* değiştirdiğini belirtmek çok 
         date: "2024-10-15",
         readTime: "8 dk",
         image: "/blog/chatbot-integration.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "turizmde-dijital-concierge-deneyimi",
@@ -1314,7 +1314,7 @@ Yapay zeka bu teklifleri bağlamsal olarak, doğru zamanda yapar ve rahatsız ed
         date: "2024-10-01",
         readTime: "7 dk",
         image: "/blog/multilingual-global.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "ik-da-yapay-zeka-ise-alim-otomasyonu",
@@ -1332,7 +1332,7 @@ Yapay zeka bu teklifleri bağlamsal olarak, doğru zamanda yapar ve rahatsız ed
 **Recruitment Revolution**
 
 A typical job posting receives 250+ resumes. Manually reviewing them is time-consuming and prone to bias.
-Vion AI acts as a 24/7 Recruiter Assistant:
+AmeritAI acts as a 24/7 Recruiter Assistant:
 - **Screening:** "Do you have 3+ years of React experience?" - The bot asks knockout questions to filter candidates.
 - **Scheduling:** It coordinates with the hiring manager's calendar to book interviews with qualified candidates.
 - **Q&A:** "What are the benefits?" "Is this remote?" - The bot answers candidate FAQs instantly, keeping them engaged.
@@ -1355,13 +1355,13 @@ For existing employees, the AI acts as a central brain. Instead of navigating a 
 
 **Privacy & Security**
 
-HR data is sensitive. Vion AI's enterprise-grade security ensures that personal employee data—such as salaries and performance reviews—is accessible only to authorized personnel, maintaining strict confidentiality while enabling accessibility.`,
+HR data is sensitive. AmeritAI's enterprise-grade security ensures that personal employee data—such as salaries and performance reviews—is accessible only to authorized personnel, maintaining strict confidentiality while enabling accessibility.`,
             tr: `İnsan Kaynaklarının rolü insanları yönetmektir, ancak ironik bir şekilde, İK profesyonelleri zamanlarının çoğunu kağıt ve süreç yönetimiyle harcarlar. Binlerce CV'yi incelemekten, aynı "Kaç gün iznim var?" sorusunu 500. kez yanıtlamaya kadar, verimlilik genellikle düşüktür.
 
 **İşe Alım Devrimi**
 
 Tipik bir iş ilanı 250'den fazla özgeçmiş alır. Bunları manuel olarak incelemek zaman alıcıdır ve önyargıya açıktır.
-Vion AI, 7/24 İşe Alım Asistanı olarak hareket eder:
+AmeritAI, 7/24 İşe Alım Asistanı olarak hareket eder:
 - **Tarama:** "3+ yıl React deneyiminiz var mı?" - Bot, adayları filtrelemek için eleyici sorular sorar.
 - **Planlama:** Kalifiye adaylarla mülakat ayarlamak için işe alım yöneticisinin takvimiyle koordinasyon sağlar.
 - **Soru-Cevap:** "Yan haklar neler?", "Uzaktan çalışma var mı?" - Bot, adayların sorularını anında yanıtlayarak ilgilerini canlı tutar.
@@ -1384,13 +1384,13 @@ Mevcut çalışanlar için yapay zeka merkezi bir beyin görevi görür. Karmaş
 
 **Gizlilik ve Güvenlik**
 
-İK verileri hassastır. Vion AI'ın kurumsal düzeydeki güvenliği, maaşlar ve performans değerlendirmeleri gibi kişisel çalışan verilerinin yalnızca yetkili personel tarafından erişilebilir olmasını sağlar, erişilebilirliği mümkün kılarken katı gizliliği korur.`
+İK verileri hassastır. AmeritAI'ın kurumsal düzeydeki güvenliği, maaşlar ve performans değerlendirmeleri gibi kişisel çalışan verilerinin yalnızca yetkili personel tarafından erişilebilir olmasını sağlar, erişilebilirliği mümkün kılarken katı gizliliği korur.`
         },
         category: "İnsan Kaynakları",
         date: "2024-09-20",
         readTime: "6 dk",
         image: "/blog/lead-generation.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "hukuk-ve-finans-belge-analizi",
@@ -1416,7 +1416,7 @@ The AI compiles a concise summary for the attorney to review before the first co
 
 **Document Analysis & Summarization**
 
-Imagine a merger requiring the review of 5,000 contracts. Humans would take weeks. Vion AI can scan, OCR, and analyze these documents in hours.
+Imagine a merger requiring the review of 5,000 contracts. Humans would take weeks. AmeritAI can scan, OCR, and analyze these documents in hours.
 - **Flagging Risks:** "Find all contracts with 'Change of Control' clauses."
 - **Comparing Terms:** "How does this NDA differ from our standard template?"
 
@@ -1430,7 +1430,7 @@ And receive an exact citation from the official gazette in seconds.
 
 **Security is Non-Negotiable**
 
-We understand that client privilege and financial secrecy are paramount. Vion AI offers private instances where data is never used to train global models. Your firm's data stays yours, fully encrypted and siloed.`,
+We understand that client privilege and financial secrecy are paramount. AmeritAI offers private instances where data is never used to train global models. Your firm's data stays yours, fully encrypted and siloed.`,
             tr: `Hukuk ve finans sektörlerinde zaman, kelimenin tam anlamıyla paraya eşittir. Profesyoneller saatlik fatura keserler, ancak sayısız faturalandırılamayan saati idari hazırlık çalışmalarına harcarlar. Yapay zeka, yoğun okuma ve ilk işlemeyi üstlenerek bu denklemi değiştiriyor.
 
 **Otomatik Müşteri Kabulü (Intake)**
@@ -1444,7 +1444,7 @@ Yapay zeka, avukatın ilk görüşmeden önce incelemesi için özlü bir özet 
 
 **Belge Analizi ve Özetleme**
 
-5.000 sözleşmenin incelenmesini gerektiren bir birleşme hayal edin. İnsanlar bunun için haftalar harcar. Vion AI, bu belgeleri saatler içinde tarayabilir, OCR yapabilir ve analiz edebilir.
+5.000 sözleşmenin incelenmesini gerektiren bir birleşme hayal edin. İnsanlar bunun için haftalar harcar. AmeritAI, bu belgeleri saatler içinde tarayabilir, OCR yapabilir ve analiz edebilir.
 - **Riskleri İşaretleme:** "'Kontrol Değişikliği' maddeleri içeren tüm sözleşmeleri bul."
 - **Şartları Karşılaştırma:** "Bu Gizlilik Sözleşmesi (NDA) standart şablonumuzdan nasıl farklı?"
 
@@ -1458,27 +1458,27 @@ Ve saniyeler içinde resmi gazeteden kesin bir alıntı alır.
 
 **Güvenlik Tartışılamaz**
 
-Müvekkil gizliliğinin ve finansal mahremiyetin her şeyden önemli olduğunu anlıyoruz. Vion AI, verilerin asla küresel modelleri eğitmek için kullanılmadığı özel örnekler (private instances) sunar. Firmanızın verileri tamamen şifrelenmiş ve izole edilmiş şekilde size ait kalır.`
+Müvekkil gizliliğinin ve finansal mahremiyetin her şeyden önemli olduğunu anlıyoruz. AmeritAI, verilerin asla küresel modelleri eğitmek için kullanılmadığı özel örnekler (private instances) sunar. Firmanızın verileri tamamen şifrelenmiş ve izole edilmiş şekilde size ait kalır.`
         },
         category: "Hukuk & Finans",
         date: "2024-09-05",
         readTime: "7 dk",
         image: "/blog/analytics-metrics.jpg",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     }
 ];
 
 export const SEED_FAQS = [
     {
-        question: { en: "What makes Vion AI different from other chatbots?", tr: "Vion AI'ı diğer chatbotlardan ayıran özellik nedir?" },
+        question: { en: "What makes AmeritAI different from other chatbots?", tr: "AmeritAI'ı diğer chatbotlardan ayıran özellik nedir?" },
         answer: {
-            en: "Unlike passive support bots, Vion AI is a proactive sales assistant. It doesn't just answer questions; it detects intent (like purchase hesitation) and nurtures leads, recommends products, and encourages specific actions like booking a demo.",
-            tr: "Pasif destek botlarının aksine, Vion AI proaktif bir satış asistanıdır. Sadece soruları yanıtlamakla kalmaz; niyeti (satın alma kararsızlığı gibi) tespit eder, lead'leri besler, ürünler önerir ve demo randevusu gibi belirli aksiyonlara teşvik eder."
+            en: "Unlike passive support bots, AmeritAI is a proactive sales assistant. It doesn't just answer questions; it detects intent (like purchase hesitation) and nurtures leads, recommends products, and encourages specific actions like booking a demo.",
+            tr: "Pasif destek botlarının aksine, AmeritAI proaktif bir satış asistanıdır. Sadece soruları yanıtlamakla kalmaz; niyeti (satın alma kararsızlığı gibi) tespit eder, lead'leri besler, ürünler önerir ve demo randevusu gibi belirli aksiyonlara teşvik eder."
         },
         category: "general"
     },
     {
-        question: { en: "How quickly can I set up a chatbot?", tr: "Vion AI kurulumu ne kadar sürer?" },
+        question: { en: "How quickly can I set up a chatbot?", tr: "AmeritAI kurulumu ne kadar sürer?" },
         answer: {
             en: "You can be live in under 10 minutes. Simply sign up, choose your industry template, enter your website URL for auto-training, and paste our widget code. No coding or complex configuration required.",
             tr: "10 dakikadan kısa sürede canlıya geçebilirsiniz. Kayıt olun, sektör şablonunuzu seçin, otomatik eğitim için web sitesi adresinizi girin ve widget kodumuzu yapıştırın. Kodlama veya karmaşık ayar gerekmez."
@@ -1486,7 +1486,7 @@ export const SEED_FAQS = [
         category: "general"
     },
     {
-        question: { en: "Which industries does Vion AI support?", tr: "Vion AI hangi sektörleri destekliyor?" },
+        question: { en: "Which industries does AmeritAI support?", tr: "AmeritAI hangi sektörleri destekliyor?" },
         answer: {
             en: "We offer specialized modes for 15+ industries including E-Commerce, Real Estate, Healthcare, Tourism, SaaS, and Education. Each mode comes with pre-trained knowledge and industry-specific terminology.",
             tr: "E-Ticaret, Emlak, Sağlık, Turizm, SaaS ve Eğitim dahil 15'ten fazla sektör için özelleşmiş modlar sunuyoruz. Her mod, önceden eğitilmiş AI eğitim kaynakları ve sektöre özgü terminoloji ile gelir."
@@ -1496,8 +1496,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Does it support multiple languages?", tr: "Çoklu dil desteği var mı?" },
         answer: {
-            en: "Yes, Vion AI speaks 50+ languages fluently. It automatically detects the user's browser language or input language and responds instantly in the same language, making it perfect for global businesses.",
-            tr: "Evet, Vion AI 50'den fazla dili akıcı bir şekilde konuşur. Kullanıcının tarayıcı dilini veya yazdığı dili otomatik algılar ve anında aynı dilde yanıt verir; global işletmeler için mükemmeldir."
+            en: "Yes, AmeritAI speaks 50+ languages fluently. It automatically detects the user's browser language or input language and responds instantly in the same language, making it perfect for global businesses.",
+            tr: "Evet, AmeritAI 50'den fazla dili akıcı bir şekilde konuşur. Kullanıcının tarayıcı dilini veya yazdığı dili otomatik algılar ve anında aynı dilde yanıt verir; global işletmeler için mükemmeldir."
         },
         category: "general"
     },
@@ -1546,7 +1546,7 @@ export const SEED_FAQS = [
 
     // Integration (Includes API)
     {
-        question: { en: "How do I add Vion AI to my website?", tr: "Vion AI'ı siteme nasıl eklerim?" },
+        question: { en: "How do I add AmeritAI to my website?", tr: "AmeritAI'ı siteme nasıl eklerim?" },
         answer: {
             en: "It's as simple as copy-pasting. We provide a small JavaScript code snippet universally compatible with WordPress, Shopify, Wix, Squarespace, and custom-coded sites. No plugin required.",
             tr: "Kopyala-yapıştır kadar basittir. WordPress, Shopify, Wix, Squarespace ve özel yazılımlarla %100 uyumlu küçük bir JavaScript kodu veriyoruz. Eklenti kurmanıza gerek yoktur."
@@ -1556,8 +1556,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Do you integrate with CRMs?", tr: "CRM programlarıyla entegre oluyor mu?" },
         answer: {
-            en: "Yes, Vion AI connects with major CRMs like HubSpot, Salesforce, and Zoho. Captured leads are automatically pushed to your CRM in real-time. We also support Zapier for 5000+ other apps.",
-            tr: "Evet, Vion AI HubSpot, Salesforce ve Zoho gibi büyük CRM'lerle bağlanır. Toplanan lead'ler gerçek zamanlı olarak CRM'inize aktarılır. Ayrıca 5000+ diğer uygulama için Zapier desteğimiz mevcuttur."
+            en: "Yes, AmeritAI connects with major CRMs like HubSpot, Salesforce, and Zoho. Captured leads are automatically pushed to your CRM in real-time. We also support Zapier for 5000+ other apps.",
+            tr: "Evet, AmeritAI HubSpot, Salesforce ve Zoho gibi büyük CRM'lerle bağlanır. Toplanan lead'ler gerçek zamanlı olarak CRM'inize aktarılır. Ayrıca 5000+ diğer uygulama için Zapier desteğimiz mevcuttur."
         },
         category: "integration"
     },
@@ -1572,8 +1572,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Can I use it on WhatsApp?", tr: "WhatsApp üzerinde kullanabilir miyim?" },
         answer: {
-            en: "Yes, Vion AI can be connected to WhatsApp Business API. This allows your AI assistant to reply to WhatsApp messages with the same intelligence it uses on your website.",
-            tr: "Evet, Vion AI WhatsApp Business API'ye bağlanabilir. Bu sayede asistanınız, web sitenizdeki zekasıyla WhatsApp mesajlarınıza da yanıt verebilir."
+            en: "Yes, AmeritAI can be connected to WhatsApp Business API. This allows your AI assistant to reply to WhatsApp messages with the same intelligence it uses on your website.",
+            tr: "Evet, AmeritAI WhatsApp Business API'ye bağlanabilir. Bu sayede asistanınız, web sitenizdeki zekasıyla WhatsApp mesajlarınıza da yanıt verebilir."
         },
         category: "integration"
     },
@@ -1590,8 +1590,8 @@ export const SEED_FAQS = [
     {
         question: { en: "How do I train the AI on my business?", tr: "AI'yı işim konusunda nasıl eğitirim?" },
         answer: {
-            en: "Training is effortless. Upload your PDF/Word documents, or simply enter your website URL. Vion AI crawls and indexes your content in minutes to answer specific questions accurately.",
-            tr: "Eğitim zahmetsizdir. PDF/Word dosyalarınızı yükleyin veya sadece web sitenizin adresini girin. Vion AI, özel soruları doğru yanıtlamak için içeriğinizi dakikalar içinde tarar ve öğrenir."
+            en: "Training is effortless. Upload your PDF/Word documents, or simply enter your website URL. AmeritAI crawls and indexes your content in minutes to answer specific questions accurately.",
+            tr: "Eğitim zahmetsizdir. PDF/Word dosyalarınızı yükleyin veya sadece web sitenizin adresini girin. AmeritAI, özel soruları doğru yanıtlamak için içeriğinizi dakikalar içinde tarar ve öğrenir."
         },
         category: "customization"
     },
@@ -1632,8 +1632,8 @@ export const SEED_FAQS = [
     {
         question: { en: "Who has access to the chat logs?", tr: "Sohbet kayıtlarına kim erişebilir?" },
         answer: {
-            en: "Only authorized members of your team can view chat logs. Vion AI staff does not access your customer conversations unless you explicitly grant permission for support purposes.",
-            tr: "Yalnızca ekibinizin yetkili üyeleri sohbet kayıtlarını görebilir. Vion AI personeli, destek amacıyla açıkça izin vermediğiniz sürece müşteri görüşmelerinize erişmez."
+            en: "Only authorized members of your team can view chat logs. AmeritAI staff does not access your customer conversations unless you explicitly grant permission for support purposes.",
+            tr: "Yalnızca ekibinizin yetkili üyeleri sohbet kayıtlarını görebilir. AmeritAI personeli, destek amacıyla açıkça izin vermediğiniz sürece müşteri görüşmelerinize erişmez."
         },
         category: "security"
     }

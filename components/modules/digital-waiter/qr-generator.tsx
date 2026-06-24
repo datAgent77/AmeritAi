@@ -15,7 +15,7 @@ export function QRGenerator({ chatbotId }: { chatbotId: string }) {
     
     // In production this should be the actual base URL of the site
     // We can infer it from window.location.origin
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.getvion.com'
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.ameritai.com'
     const widgetUrl = `${baseUrl}/chatbot-view?id=${chatbotId}`
 
     const tables = Array.from({ length: tableCount }, (_, i) => ({

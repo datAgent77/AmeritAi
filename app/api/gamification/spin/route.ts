@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
             // Send tenant notification email (non-blocking)
             const tenantEmail = chatbotData?.email || chatbotData?.ownerEmail || null
-            const businessName = chatbotData?.businessName || chatbotData?.name || "Vion AI"
+            const businessName = chatbotData?.businessName || chatbotData?.name || "AmeritAI"
             if (tenantEmail) {
                 sendGamificationWinnerNotification({
                     tenantEmail,

@@ -10,6 +10,7 @@ import { claimOmniWebhookEvent } from "@/lib/omni/replay-protection"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import { resolveGuidedSkillTurn } from "@/lib/guided-skills/engine"
 import { upsertContactGraph, upsertOmniSession } from "@/lib/omni/server-utils"
+import { detectContactLanguage } from "@/lib/detect-language"
 import { normalizeEvolutionApiConfig } from "@/lib/integrations/evolution-api/setup"
 import {
     classifyConsentKeyword,
@@ -328,7 +329,7 @@ export async function POST(req: Request) {
                 displayName: message.pushName || from,
                 channel: "whatsapp",
                 sourceSessionId: sessionId,
-                preferredLanguage: "tr",
+                preferredLanguage: detectContactLanguage(message.content),
                 userMessage: message.content,
                 assistantReply: replyText,
                 lastDisposition,

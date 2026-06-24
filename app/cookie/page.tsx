@@ -41,7 +41,7 @@ export default function CookiePage() {
                 <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">CMP Workspace</div>
                 <h1 className="text-3xl font-semibold tracking-tight">Çerez Yönetimi</h1>
                 <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                    Vion Cookie, tenant siteleri için çerez tercihleri, aydınlatma metinleri, consent kayıtları ve Google Consent Mode v2 kurulumunu ayrı bir ürün olarak yönetir.
+                    AmeritAI Cookie, tenant siteleri için çerez tercihleri, aydınlatma metinleri, consent kayıtları ve Google Consent Mode v2 kurulumunu ayrı bir ürün olarak yönetir.
                 </p>
             </div>
 

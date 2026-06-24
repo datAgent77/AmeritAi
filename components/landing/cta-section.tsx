@@ -16,8 +16,8 @@ export function CTASection() {
                 </h2>
                 <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto font-light">
                     {language === 'tr'
-                        ? 'Vion ile 5 dakika içinde kendi yapay zeka asistanınızı oluşturun. Kredi kartı gerekmez.'
-                        : 'Create your AI assistant in 5 minutes with Vion. No credit card required.'}
+                        ? 'AmeritAI ile 5 dakika içinde kendi yapay zeka asistanınızı oluşturun. Kredi kartı gerekmez.'
+                        : 'Create your AI assistant in 5 minutes with AmeritAI. No credit card required.'}
                 </p>
                 <Link
                     href="/signup"

@@ -898,7 +898,7 @@ export async function POST(req: Request) {
                     displayName: resolvedName,
                     triggerSource: "user_request",
                     userText: userContent,
-                    companyName: mergedTenantData.companyName || "Vion AI",
+                    companyName: mergedTenantData.companyName || "AmeritAI",
                     notificationEmail,
                     settings: humanHandoffSettings,
                 });
@@ -999,7 +999,7 @@ export async function POST(req: Request) {
                                 displayName: guidedIdentity?.identity?.name || null,
                                 triggerSource: "assistant_trigger",
                                 userText: userContent,
-                                companyName: mergedTenantData.companyName || "Vion AI",
+                                companyName: mergedTenantData.companyName || "AmeritAI",
                                 notificationEmail,
                                 settings: humanHandoffSettings,
                             })
@@ -1047,7 +1047,7 @@ export async function POST(req: Request) {
                             displayName: guidedIdentity?.identity?.name || null,
                             triggerSource: "assistant_trigger",
                             userText: userContent,
-                            companyName: mergedTenantData.companyName || "Vion AI",
+                            companyName: mergedTenantData.companyName || "AmeritAI",
                             notificationEmail,
                             settings: humanHandoffSettings,
                         })

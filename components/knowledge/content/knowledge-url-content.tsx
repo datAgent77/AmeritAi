@@ -211,6 +211,7 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
 
         try {
             let successCount = 0
+            let firstError = ""
             for (let i = 0; i < selectedSitemapUrls.length; i++) {
                 const urlToImport = selectedSitemapUrls[i]
                 try {
@@ -224,17 +225,27 @@ export function KnowledgeUrlContent({ userId }: KnowledgeUrlContentProps) {
 
                     if (response.ok) {
                         successCount++
+                    } else if (!firstError) {
+                        // Surface the real server-side reason (missing API config, SPA/empty page, etc.)
+                        const errData = await response.json().catch(() => null)
+                        firstError = errData?.error || `HTTP ${response.status}`
                     }
-                } catch (e) {
+                } catch (e: any) {
                     console.error("Failed to import URL:", urlToImport, e)
+                    if (!firstError) firstError = e?.message || "Network error"
                 }
                 setImportProgress(Math.round(((i + 1) / selectedSitemapUrls.length) * 100))
             }
 
             if (successCount === 0) {
+                let description = firstError || "Failed to import any URLs. Check for duplicate or empty content."
+                // Friendlier hint for the most common cause: client-rendered (SPA) pages
+                if (firstError && (firstError.includes("JavaScript") || firstError.includes("enough text"))) {
+                    description = t('crawlErrorSpa') || firstError
+                }
                 toast({
                     title: t('error'),
-                    description: `Failed to import any URLs. Check for duplicate or empty content.`,
+                    description,
                     variant: "destructive"
                 })
             } else {

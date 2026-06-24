@@ -5,7 +5,7 @@ import {
     shouldShowTrialExpiredOverlay,
 } from "./subscription-access";
 
-describe("Vion subscription access state", () => {
+describe("AmeritAI subscription access state", () => {
     test("normalizes legacy pro as a paid Scale plan", () => {
         expect(isPaidVionPlan("pro")).toBe(true);
         expect(isPaidVionPlan("growth")).toBe(true);

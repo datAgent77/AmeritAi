@@ -136,7 +136,7 @@ export default function WhyPage() {
                             <span>{language === 'tr' ? 'Farkı Keşfedin' : 'Discover the Difference'}</span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white">
-                            {language === 'tr' ? 'Neden Vion?' : 'Why Vion?'}
+                            {language === 'tr' ? 'Neden AmeritAI?' : 'Why AmeritAI?'}
                         </h1>
                         <p className="text-xl text-white font-medium">
                             {language === 'tr' ? '"Satış yapan chatbot. Destek değil, dönüşüm."' : '"Sales Chatbot. Not Support, Conversion."'}
@@ -286,7 +286,7 @@ export default function WhyPage() {
                             <thead>
                                 <tr className="border-b border-white/10">
                                     <th className="text-left py-4 px-4 w-[200px] text-zinc-300 font-medium">{language === 'tr' ? 'Özellik' : 'Feature'}</th>
-                                    <th className="py-4 px-4 text-white w-[120px] font-bold"><div className="flex justify-center">Vion</div></th>
+                                    <th className="py-4 px-4 text-white w-[120px] font-bold"><div className="flex justify-center">AmeritAI</div></th>
                                     <th className="py-4 px-4 text-zinc-500 w-[120px] font-medium"><div className="flex justify-center">Tawk.to</div></th>
                                     <th className="py-4 px-4 text-zinc-500 w-[120px] font-medium"><div className="flex justify-center">Intercom</div></th>
                                     <th className="py-4 px-4 text-zinc-500 w-[120px] font-medium"><div className="flex justify-center">Drift</div></th>

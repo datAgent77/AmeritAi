@@ -90,7 +90,7 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                                     </div>
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-semibold text-foreground">Vion AI</span>
+                                            <span className="text-sm font-semibold text-foreground">AmeritAI</span>
                                             <div className="px-1.5 py-0.5 rounded-full bg-blue-500/20 text-[10px] font-medium text-blue-300 border border-blue-500/20">
                                                 AI Agent
                                             </div>
@@ -125,7 +125,7 @@ export function AnimatedChat({ conversation }: AnimatedChatProps) {
                             </div>
                         </div>
                         <div>
-                            <span className="text-sm font-semibold text-foreground block mb-1">Vion AI</span>
+                            <span className="text-sm font-semibold text-foreground block mb-1">AmeritAI</span>
                             <div className="bg-card border border-border px-4 py-3 rounded-2xl rounded-tl-sm flex gap-1 items-center w-fit shadow-xl">
                                 <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
                                 <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>

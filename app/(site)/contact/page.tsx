@@ -219,8 +219,8 @@ export default function ContactPage() {
                                         </div>
                                         <div>
                                             <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'E-posta' : 'Email'}</h3>
-                                            <a href="mailto:info@getvion.com" className="text-muted-foreground hover:text-foreground transition-colors">
-                                                info@getvion.com
+                                            <a href="mailto:info@ameritai.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                                                info@ameritai.com
                                             </a>
                                         </div>
                                     </div>
@@ -262,7 +262,7 @@ export default function ContactPage() {
                                         → {language === 'tr' ? 'Fiyatlandırma' : 'Pricing'}
                                     </a>
                                     <a href="/why-us" className="block text-muted-foreground hover:text-foreground transition-colors">
-                                        → {language === 'tr' ? 'Neden Vion?' : 'Why Vion?'}
+                                        → {language === 'tr' ? 'Neden AmeritAI?' : 'Why AmeritAI?'}
                                     </a>
                                     <a href="/industries" className="block text-muted-foreground hover:text-foreground transition-colors">
                                         → {language === 'tr' ? 'Sektörler' : 'Industries'}

@@ -5,6 +5,7 @@ import { auth } from "@/lib/firebase"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Bot, User, Loader2 } from "lucide-react"
+import { useLanguage } from "@/context/LanguageContext"
 
 interface ActivityItem {
     id: string
@@ -15,6 +16,8 @@ interface ActivityItem {
 }
 
 export function AdminActivityFeed() {
+    const { language } = useLanguage()
+    const p = (tr: string, en: string, es: string) => (language === "tr" ? tr : language === "es" ? es : en)
     const [activities, setActivities] = useState<ActivityItem[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -37,7 +40,7 @@ export function AdminActivityFeed() {
                     const activityItems: ActivityItem[] = (data.recentActivity || []).map((item: any) => ({
                         id: item.id,
                         type: 'user' as const,
-                        title: "Yeni kullanıcı kaydı",
+                        title: p("Yeni kullanıcı kaydı", "New user registration", "Nuevo registro de usuario"),
                         subtitle: item.userEmail,
                         timestamp: item.timestamp?.seconds
                             ? new Date(item.timestamp.seconds * 1000)
@@ -65,7 +68,7 @@ export function AdminActivityFeed() {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Son Aktivite</CardTitle>
+                    <CardTitle>{p("Son Aktivite", "Recent Activity", "Actividad reciente")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center py-4">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -77,7 +80,7 @@ export function AdminActivityFeed() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Son Aktivite</CardTitle>
+                <CardTitle>{p("Son Aktivite", "Recent Activity", "Actividad reciente")}</CardTitle>
             </CardHeader>
             <CardContent>
                 <div className="space-y-8">
@@ -100,7 +103,7 @@ export function AdminActivityFeed() {
                         </div>
                     ))}
                     {activities.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-4">Yakın aktivite yok.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{p("Yakın aktivite yok.", "No recent activity.", "Sin actividad reciente.")}</p>
                     )}
                 </div>
             </CardContent>

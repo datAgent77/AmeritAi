@@ -2,7 +2,7 @@
  * Email Service using Nodemailer.
  *
  * Production should use a verified transactional sender domain such as
- * getvion.com via SMTP. A mailbox/mail server is not required for outbound
+ * ameritai.com via SMTP. A mailbox/mail server is not required for outbound
  * transactional delivery, but SPF, DKIM, and DMARC must be configured in DNS.
  */
 
@@ -15,10 +15,10 @@ const parseBooleanEnv = (value?: string | null): boolean => {
 };
 
 const EMAIL_ADDRESS_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/i;
-const DEFAULT_APP_URL = "https://www.getvion.com";
-const DEFAULT_FROM_EMAIL = "no-reply@getvion.com";
-const DEFAULT_ADMIN_EMAIL = "info@getvion.com";
-const DEFAULT_CONTACT_EMAIL = "info@getvion.com";
+const DEFAULT_APP_URL = "https://www.ameritai.com";
+const DEFAULT_FROM_EMAIL = "no-reply@ameritai.com";
+const DEFAULT_ADMIN_EMAIL = "info@ameritai.com";
+const DEFAULT_CONTACT_EMAIL = "info@ameritai.com";
 
 const normalizeEmailAddress = (value?: string | null): string | null => {
     if (!value) return null;
@@ -89,7 +89,7 @@ export function resolveSenderIdentity(options: ResolveSenderIdentityOptions = {}
         authenticatedEmail = process.env.SMTP_USER || process.env.EMAIL_USER,
         configuredFromEmail = process.env.SMTP_FROM_EMAIL,
         configuredFromName = process.env.SMTP_FROM_NAME,
-        fallbackName = "Vion AI",
+        fallbackName = "AmeritAI",
     } = options;
 
     const normalizedAuthenticatedEmail = normalizeEmailAddress(authenticatedEmail);
@@ -236,7 +236,7 @@ export async function sendCmpConsentsBackupEmail(input: {
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion Cookie",
+        fallbackName: "AmeritAI Cookie",
     })
 
     const subject = `CMP Rıza Kayıtları — ${input.fromDate} → ${input.toDate}`
@@ -249,7 +249,7 @@ export async function sendCmpConsentsBackupEmail(input: {
             ? `CMP rıza kayıtları yedeğiniz hazır. İndirme bağlantısı: ${input.downloadUrl}`
             : `CMP rıza kayıtları yedeğiniz ektedir.`
 
-    const text = `Merhaba,\n\n${mainLine}\n\nTenant: ${input.tenantId}\nAralık: ${input.fromDate} - ${input.toDate}\n\nVion Cookie`
+    const text = `Merhaba,\n\n${mainLine}\n\nTenant: ${input.tenantId}\nAralık: ${input.fromDate} - ${input.toDate}\n\nAmeritAI Cookie`
 
     const linkBlock = hasLink
         ? `<div style="margin-top:16px;"><a href="${input.downloadUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;">CSV İndir</a></div><div style="margin-top:10px;font-size:12px;color:#6b7280;word-break:break-all;">${input.downloadUrl}</div>`
@@ -259,7 +259,7 @@ export async function sendCmpConsentsBackupEmail(input: {
         ? `<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">CSV dosyası ektedir.</p>`
         : ``
 
-    const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;"><tr><td style="padding:22px 22px;background:#0f172a;color:#ffffff;"><div style="font-size:14px;opacity:0.9;">Vion Cookie</div><div style="margin-top:6px;font-size:18px;font-weight:700;">CMP Rıza Kayıtları Yedeği</div></td></tr><tr><td style="padding:22px;"><p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#374151;">${deliveryMethod === "link" && hasLink ? "Yedek dosyayı aşağıdaki bağlantıdan indirebilirsiniz." : "CMP rıza kayıtları yedeğiniz hazırlanmıştır."}</p><table cellpadding="0" cellspacing="0" style="font-size:13px;color:#111827;"><tr><td style="padding:4px 0;opacity:0.7;">Tenant</td><td style="padding:4px 0 4px 12px;" translate="no">${input.tenantId}</td></tr><tr><td style="padding:4px 0;opacity:0.7;">Aralık</td><td style="padding:4px 0 4px 12px;" translate="no">${input.fromDate} - ${input.toDate}</td></tr></table>${linkBlock}${attachmentNote}<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Bu e-posta otomatik olarak oluşturulmuştur.</p></td></tr></table></td></tr></table></body></html>`
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="margin:0;padding:0;background:#f5f7fb;font-family:Segoe UI,Tahoma,Verdana,sans-serif;color:#111827;"><table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px;"><tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;"><tr><td style="padding:22px 22px;background:#0f172a;color:#ffffff;"><div style="font-size:14px;opacity:0.9;">AmeritAI Cookie</div><div style="margin-top:6px;font-size:18px;font-weight:700;">CMP Rıza Kayıtları Yedeği</div></td></tr><tr><td style="padding:22px;"><p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#374151;">${deliveryMethod === "link" && hasLink ? "Yedek dosyayı aşağıdaki bağlantıdan indirebilirsiniz." : "CMP rıza kayıtları yedeğiniz hazırlanmıştır."}</p><table cellpadding="0" cellspacing="0" style="font-size:13px;color:#111827;"><tr><td style="padding:4px 0;opacity:0.7;">Tenant</td><td style="padding:4px 0 4px 12px;" translate="no">${input.tenantId}</td></tr><tr><td style="padding:4px 0;opacity:0.7;">Aralık</td><td style="padding:4px 0 4px 12px;" translate="no">${input.fromDate} - ${input.toDate}</td></tr></table>${linkBlock}${attachmentNote}<p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#6b7280;">Bu e-posta otomatik olarak oluşturulmuştur.</p></td></tr></table></td></tr></table></body></html>`
 
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -293,7 +293,7 @@ export async function sendVerificationEmail(data: VerificationEmailData): Promis
         recipientName,
         verificationLink,
         language = "en",
-        companyName = "Vion AI"
+        companyName = "AmeritAI"
     } = data;
 
     const isTurkish = String(language).toLowerCase().startsWith("tr");
@@ -407,7 +407,7 @@ export async function sendAgentInvitationEmail(data: AgentInvitationEmailData): 
         invitationLink,
         tenantName = "Workspace",
         language = "en",
-        companyName = "Vion AI",
+        companyName = "AmeritAI",
     } = data;
 
     const isTurkish = String(language).toLowerCase().startsWith("tr");
@@ -516,7 +516,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
         return false;
     }
 
-    const { customerEmail, customerName, date, time, companyName = 'Vion AI', companyEmail, notes, appointmentId, location } = data;
+    const { customerEmail, customerName, date, time, companyName = 'AmeritAI', companyEmail, notes, appointmentId, location } = data;
 
     const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
         weekday: 'long',
@@ -647,7 +647,7 @@ export async function sendAppointmentConfirmationEmail(data: AppointmentEmailDat
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
                                 ${companyName} tarafından gönderilmiştir.<br>
-                                <span style="color: #adb5bd;">Powered by Vion AI</span>
+                                <span style="color: #adb5bd;">Powered by AmeritAI</span>
                             </p>
                         </td>
                     </tr>
@@ -693,7 +693,7 @@ export async function sendAppointmentCancellationEmail(data: AppointmentEmailDat
         return false;
     }
 
-    const { customerEmail, customerName, date, time, companyName = 'Vion AI' } = data;
+    const { customerEmail, customerName, date, time, companyName = 'AmeritAI' } = data;
 
     const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
         weekday: 'long',
@@ -783,7 +783,7 @@ export async function sendAppointmentTenantAlertEmail(data: AppointmentTenantAle
         return false;
     }
 
-    const { tenantEmail, companyName = 'Vion AI', customerName, customerEmail, customerPhone, date, time, type, notes } = data;
+    const { tenantEmail, companyName = 'AmeritAI', customerName, customerEmail, customerPhone, date, time, type, notes } = data;
 
     const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
         weekday: 'long',
@@ -842,13 +842,13 @@ export async function sendAppointmentTenantAlertEmail(data: AppointmentTenantAle
                                 </tr>
                             </table>
                             <p style="color: #666; font-size: 13px; line-height: 1.6; margin: 0;">
-                                Randevuyu onaylamak veya iptal etmek için Vion AI yönetim panelinizi ziyaret edin.
+                                Randevuyu onaylamak veya iptal etmek için AmeritAI yönetim panelinizi ziyaret edin.
                             </p>
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 20px 40px; text-align: center;">
-                            <p style="color: #adb5bd; font-size: 12px; margin: 0;">Powered by Vion AI — ${companyName}</p>
+                            <p style="color: #adb5bd; font-size: 12px; margin: 0;">Powered by AmeritAI — ${companyName}</p>
                         </td>
                     </tr>
                 </table>
@@ -860,7 +860,7 @@ export async function sendAppointmentTenantAlertEmail(data: AppointmentTenantAle
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion AI",
+        fallbackName: "AmeritAI",
     });
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -886,7 +886,7 @@ export async function sendAppointmentReminderEmail(data: AppointmentEmailData): 
         return false;
     }
 
-    const { customerEmail, customerName, date, time, companyName = 'Vion AI', notes } = data;
+    const { customerEmail, customerName, date, time, companyName = 'AmeritAI', notes } = data;
 
     const formattedDate = new Date(date).toLocaleDateString('tr-TR', {
         weekday: 'long',
@@ -1072,7 +1072,7 @@ export async function sendInvoiceReminderToAdmin(data: InvoiceReminderData): Pro
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
-                                <span style="color: #adb5bd;">Vion AI Admin Bildirimi</span>
+                                <span style="color: #adb5bd;">AmeritAI Admin Bildirimi</span>
                             </p>
                         </td>
                     </tr>
@@ -1086,7 +1086,7 @@ export async function sendInvoiceReminderToAdmin(data: InvoiceReminderData): Pro
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion AI",
+        fallbackName: "AmeritAI",
     });
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -1119,7 +1119,7 @@ export async function sendPaymentReminderToCustomer(data: PaymentReminderData): 
         return false;
     }
 
-    const { customerEmail, customerName, paymentDueDate, planName, amount, currency = 'TRY', companyName = 'Vion AI' } = data;
+    const { customerEmail, customerName, paymentDueDate, planName, amount, currency = 'TRY', companyName = 'AmeritAI' } = data;
 
     const formattedDate = new Date(paymentDueDate).toLocaleDateString('tr-TR', {
         year: 'numeric',
@@ -1194,7 +1194,7 @@ export async function sendPaymentReminderToCustomer(data: PaymentReminderData): 
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
                                 ${companyName}<br>
-                                <span style="color: #adb5bd;">Powered by Vion AI</span>
+                                <span style="color: #adb5bd;">Powered by AmeritAI</span>
                             </p>
                         </td>
                     </tr>
@@ -1317,7 +1317,7 @@ export async function sendTrialExpiredAdminNotification(data: TrialExpiredNotifi
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
-                                <span style="color: #adb5bd;">Vion AI Admin Bildirimi</span>
+                                <span style="color: #adb5bd;">AmeritAI Admin Bildirimi</span>
                             </p>
                         </td>
                     </tr>
@@ -1331,7 +1331,7 @@ export async function sendTrialExpiredAdminNotification(data: TrialExpiredNotifi
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion AI",
+        fallbackName: "AmeritAI",
     });
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -1378,7 +1378,7 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
                     <tr>
                         <td style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); padding: 40px; text-align: center;">
                             <div style="font-size: 40px; margin-bottom: 15px;">🚀</div>
-                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Vion AI Deneme Süreniz Sona Erdi</h1>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">AmeritAI Deneme Süreniz Sona Erdi</h1>
                         </td>
                     </tr>
                     
@@ -1389,7 +1389,7 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
                                 Sayın <strong>${customerName || 'Kullanıcımız'}</strong>,
                             </p>
                             <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-                                <strong>Vion AI ${planName}</strong> planındaki 14 günlük deneme süreniz <strong>${formattedDate}</strong> tarihinde sona ermiştir.
+                                <strong>AmeritAI ${planName}</strong> planındaki 14 günlük deneme süreniz <strong>${formattedDate}</strong> tarihinde sona ermiştir.
                             </p>
                             <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
                                 Hizmetlerimizden kesintisiz yararlanmaya devam etmek ve verilerinizi kaybetmemek için hesabınızı hemen yükseltin.
@@ -1412,8 +1412,8 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
-                                Vion AI Ekibi<br>
-                                <span style="color: #adb5bd;">Powered by Vion AI</span>
+                                AmeritAI Ekibi<br>
+                                <span style="color: #adb5bd;">Powered by AmeritAI</span>
                             </p>
                         </td>
                     </tr>
@@ -1427,19 +1427,19 @@ export async function sendTrialExpiredCustomerNotification(data: Omit<TrialExpir
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion AI",
+        fallbackName: "AmeritAI",
     });
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
         to: customerEmail,
         subject: `🚀 Deneme Süreniz Sona Erdi - Paketinizi Yükseltin`,
-        text: `Sayın ${customerName || 'Kullanıcımız'},\n\nVion AI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: ${settingsUrl}`,
+        text: `Sayın ${customerName || 'Kullanıcımız'},\n\nAmeritAI ${planName} planındaki deneme süreniz ${formattedDate} tarihinde sona ermiştir.\n\nHesabınızı yükseltmek için: ${settingsUrl}`,
         html: htmlContent,
     });
 }
 
 export interface UpgradeRequestData {
-    adminEmail?: string; // Optional, defaults to Vion admin notification email.
+    adminEmail?: string; // Optional, defaults to AmeritAI admin notification email.
     customerEmail: string;
     customerName: string;
     currentUserParams: {
@@ -1552,7 +1552,7 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
                     <tr>
                         <td style="background-color: #f8f9fa; padding: 25px 40px; text-align: center; border-top: 1px solid #e9ecef;">
                             <p style="color: #6c757d; font-size: 13px; margin: 0;">
-                                <span style="color: #adb5bd;">Vion AI Admin Bildirimi</span>
+                                <span style="color: #adb5bd;">AmeritAI Admin Bildirimi</span>
                             </p>
                         </td>
                     </tr>
@@ -1566,7 +1566,7 @@ export async function sendUpgradeRequestToAdmin(data: UpgradeRequestData): Promi
 
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: process.env.SMTP_FROM_NAME,
-        fallbackName: "Vion AI",
+        fallbackName: "AmeritAI",
     });
     return sendEmailOrMock(transporter, {
         ...buildMailSenderOptions(senderIdentity),
@@ -1587,7 +1587,7 @@ export interface HumanHandoffNotificationEmailData {
 
 export async function sendHumanHandoffNotificationEmail(data: HumanHandoffNotificationEmailData): Promise<boolean> {
     const transporter = createTransporter()
-    const companyName = data.companyName || "Vion AI"
+    const companyName = data.companyName || "AmeritAI"
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: companyName,
         fallbackName: companyName,
@@ -1668,7 +1668,7 @@ export async function sendTransactionalEmail(data: {
     const t = createTransporter()
     const senderIdentity = resolveSenderIdentity({
         configuredFromName: data.fromName || process.env.SMTP_FROM_NAME,
-        fallbackName: data.fromName || "Vion AI",
+        fallbackName: data.fromName || "AmeritAI",
     })
     const senderOptions = buildMailSenderOptions(senderIdentity)
     return sendEmailOrMock(t, {
@@ -1702,7 +1702,7 @@ export async function sendGamificationWinnerNotification(data: GamificationWinne
 
     const {
         tenantEmail,
-        businessName = "Vion AI",
+        businessName = "AmeritAI",
         playerEmail,
         prize,
         couponCode,
@@ -1765,7 +1765,7 @@ export async function sendGamificationWinnerNotification(data: GamificationWinne
 </body>
 </html>`
 
-    const text = `${businessName} — Yeni Oyun Kazananı\n\nOyun Türü: ${gameLabel}\nKullanıcı: ${playerEmail}\nKazanılan Ödül: ${prize}${couponCode ? `\nKupon Kodu: ${couponCode}` : ""}\nTarih: ${now}\n\nVion AI Gamification`
+    const text = `${businessName} — Yeni Oyun Kazananı\n\nOyun Türü: ${gameLabel}\nKullanıcı: ${playerEmail}\nKazanılan Ödül: ${prize}${couponCode ? `\nKupon Kodu: ${couponCode}` : ""}\nTarih: ${now}\n\nAmeritAI Gamification`
 
     const senderIdentity = resolveSenderIdentity({ fallbackName: businessName })
     return sendEmailOrMock(transporter, {

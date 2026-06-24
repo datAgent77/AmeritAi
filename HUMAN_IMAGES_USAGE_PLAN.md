@@ -30,7 +30,7 @@
 
 **Örnek Layout:**
 ```
-[Customer Photo] | "Vion sayesinde satışlarımız %40 arttı" - Ahmet Yılmaz, CEO
+[Customer Photo] | "AmeritAI sayesinde satışlarımız %40 arttı" - Ahmet Yılmaz, CEO
 ```
 
 **Faydalar:**
@@ -88,7 +88,7 @@
 **Örnek:**
 ```
 [Customer Photo]
-"Vion ile 3 ayda %60 daha fazla lead topladık"
+"AmeritAI ile 3 ayda %60 daha fazla lead topladık"
 - Mehmet Demir, Marketing Director, TechCorp
 ```
 

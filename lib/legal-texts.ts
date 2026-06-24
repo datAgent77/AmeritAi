@@ -8,26 +8,26 @@ export const legalTexts = {
           <p><strong>1.1. SATICI (HİZMET SAĞLAYICI)</strong><br />
           <strong>Ünvan:</strong> Userex Design Studio (bundan sonra "SATICI" olarak anılacaktır)<br />
           <strong>Adres:</strong> Caferağa Mh. Şifa Sk. No:19, Kadıköy / İstanbul / Turkey<br />
-          <strong>E-Posta:</strong> info@getvion.com<br />
-          <strong>Web Sitesi:</strong> www.getvion.com</p>
+          <strong>E-Posta:</strong> info@ameritai.com<br />
+          <strong>Web Sitesi:</strong> www.ameritai.com</p>
 
           <p><strong>1.2. ALICI (MÜŞTERİ)</strong><br />
           Platforma üye olan, ödeme yapan ve hizmetten yararlanan gerçek veya tüzel kişidir. Üyelik aşamasında beyan edilen bilgiler esas alınır.</p>
 
           <h3>MADDE 2 – KONU</h3>
-          <p>İşbu Sözleşme'nin konusu, ALICI'nın SATICI'ya ait www.getvion.com internet sitesi üzerinden elektronik ortamda siparişini verdiği / satın aldığı, nitelikleri ve satış fiyatı belirtilen "Yazılım Hizmeti"nin (SaaS - Software as a Service) satışı ve ifası ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin saptanmasıdır.</p>
+          <p>İşbu Sözleşme'nin konusu, ALICI'nın SATICI'ya ait www.ameritai.com internet sitesi üzerinden elektronik ortamda siparişini verdiği / satın aldığı, nitelikleri ve satış fiyatı belirtilen "Yazılım Hizmeti"nin (SaaS - Software as a Service) satışı ve ifası ile ilgili olarak 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği hükümleri gereğince tarafların hak ve yükümlülüklerinin saptanmasıdır.</p>
 
           <h3>MADDE 3 – SÖZLEŞME KONUSU HİZMET</h3>
-          <p>Hizmet, Vion AI platformu üzerinden sağlanan yapay zeka destekli asistan, chatbot, analiz ve raporlama hizmetlerini kapsayan abonelik paketleridir. Seçilen paket özellikleri ve kullanım limitleri, satın alma anında web sitesinde belirtildiği gibidir. Hizmet, elektronik ortamda anında ifa edilir.</p>
+          <p>Hizmet, AmeritAI platformu üzerinden sağlanan yapay zeka destekli asistan, chatbot, analiz ve raporlama hizmetlerini kapsayan abonelik paketleridir. Seçilen paket özellikleri ve kullanım limitleri, satın alma anında web sitesinde belirtildiği gibidir. Hizmet, elektronik ortamda anında ifa edilir.</p>
 
           <h3>MADDE 4 – GENEL HÜKÜMLER</h3>
-          <p><strong>4.1.</strong> ALICI, www.getvion.com internet sitesinde sözleşme konusu hizmetin temel nitelikleri, satış fiyatı ve ödeme şekli ile ifaya ilişkin ön bilgileri okuyup bilgi sahibi olduğunu ve elektronik ortamda gerekli teyidi verdiğini kabul eder.</p>
+          <p><strong>4.1.</strong> ALICI, www.ameritai.com internet sitesinde sözleşme konusu hizmetin temel nitelikleri, satış fiyatı ve ödeme şekli ile ifaya ilişkin ön bilgileri okuyup bilgi sahibi olduğunu ve elektronik ortamda gerekli teyidi verdiğini kabul eder.</p>
           <p><strong>4.2.</strong> Sözleşme konusu hizmet, ödemenin başarılı şekilde gerçekleşmesinin ardından ALICI'nın hesabına anında tanımlanır ve kullanıma açılır.</p>
           <p><strong>4.3.</strong> SATICI, hizmetin sözleşmede belirtilen niteliklere uygun, sağlam ve varsa kullanım kılavuzları ile birlikte ifa edilmesinden sorumludur.</p>
 
           <h3>MADDE 5 – CAYMA HAKKI VE İSTİSNALARI</h3>
           <p><strong>5.1.</strong> 6502 sayılı Kanun ve Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca; <strong>"Elektronik ortamda anında ifa edilen hizmetler veya tüketiciye anında teslim edilen gayrimaddi mallara ilişkin sözleşmeler"</strong> cayma hakkının istisnası kapsamındadır.</p>
-          <p><strong>5.2.</strong> Vion AI tarafından sunulan hizmet, elektronik ortamda anında ifa edilen bir yazılım hizmeti (SaaS) olduğundan, ALICI'nın hizmeti satın alıp kullanmaya başlamasından (hesabın aktive edilmesinden) sonra yasal cayma hakkı bulunmamaktadır.</p>
+          <p><strong>5.2.</strong> AmeritAI tarafından sunulan hizmet, elektronik ortamda anında ifa edilen bir yazılım hizmeti (SaaS) olduğundan, ALICI'nın hizmeti satın alıp kullanmaya başlamasından (hesabın aktive edilmesinden) sonra yasal cayma hakkı bulunmamaktadır.</p>
           <p><strong>5.3.</strong> Ancak SATICI, müşteri memnuniyeti kapsamında kendi inisiyatifi ile belirli süreler içinde iade garantisi sunabilir. Bu durum, yasal bir zorunluluk değil, SATICI'nın uhdesindeki bir pazarlama faaliyetidir (Örn: 14 Gün Deneme Süresi vb.).</p>
 
           <h3>MADDE 6 – FİKRİ MÜLKİYET HAKLARI</h3>
@@ -65,7 +65,7 @@ export const legalTexts = {
           <h3>3. KİŞİSEL VERİLERİN İŞLENME AMAÇLARI</h3>
           <p>Kişisel verileriniz aşağıdaki amaçlarla işlenmektedir:</p>
           <ul>
-            <li>Vion AI platformuna üyelik işlemlerinin gerçekleştirilmesi.</li>
+            <li>AmeritAI platformuna üyelik işlemlerinin gerçekleştirilmesi.</li>
             <li>Yapay zeka asistanı ve diğer yazılım hizmetlerinin sunulabilmesi.</li>
             <li>Sözleşmesel yükümlülüklerin yerine getirilmesi.</li>
             <li>Faturalandırma ve finansal işlemlerin yürütülmesi.</li>
@@ -95,7 +95,7 @@ export const legalTexts = {
             <li>Kanuna uygun şartlar oluşmuşsa silinmesini veya yok edilmesini isteme.</li>
           </ul>
 
-          <p>Taleplerinizi info@getvion.com adresine e-posta yoluyla iletebilirsiniz.</p>
+          <p>Taleplerinizi info@ameritai.com adresine e-posta yoluyla iletebilirsiniz.</p>
 
           <h3>7. ÇEREZ (COOKIE) POLİTİKASI</h3>
           <p>Web sitemizde kullanıcı deneyimini iyileştirmek, performansı takip etmek (Google Analytics, GTM) ve tercihlerinizi hatırlamak amacıyla çerezler kullanılmaktadır.</p>
@@ -103,13 +103,13 @@ export const legalTexts = {
     },
     terms: {
       title: "Kullanıcı Sözleşmesi (Terms of Service)",
-      lead: "Vion AI platformunun kullanım koşulları.",
+      lead: "AmeritAI platformunun kullanım koşulları.",
       content: `
           <h3>1. KABUL</h3>
-          <p>Vion AI web sitesine erişerek veya hizmeti kullanarak, bu Kullanıcı Sözleşmesi'ni ve ekindeki Gizlilik Politikasını okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.</p>
+          <p>AmeritAI web sitesine erişerek veya hizmeti kullanarak, bu Kullanıcı Sözleşmesi'ni ve ekindeki Gizlilik Politikasını okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.</p>
 
           <h3>2. HİZMETİN KAPSAMI VE KULLANIMI</h3>
-          <p>Vion AI, kullanıcılarına yapay zeka destekli içerik üretimi, müşteri hizmetleri botu ve veri analizi hizmetleri sunar. Kullanıcı, platformu yalnızca yasalara uygun amaçlarla kullanacağını taahhüt eder.</p>
+          <p>AmeritAI, kullanıcılarına yapay zeka destekli içerik üretimi, müşteri hizmetleri botu ve veri analizi hizmetleri sunar. Kullanıcı, platformu yalnızca yasalara uygun amaçlarla kullanacağını taahhüt eder.</p>
           <p>Yasaklanmış Eylemler:</p>
           <ul>
             <li>Platformun güvenliğini tehdit edecek, işleyişini bozacak yazılımsal müdahaleler yapmak.</li>
@@ -122,11 +122,11 @@ export const legalTexts = {
           <p>Kullanıcı, üyelik oluştururken verdiği bilgilerin doğru ve güncel olduğunu kabul eder. Şifre güvenliğinden kullanıcı sorumludur. Hesabınızla yapılan işlemlerden doğan sorumluluk tamamen size aittir.</p>
 
           <h3>4. TELİF HAKLARI VE İÇERİK MÜLKİYETİ</h3>
-          <p><strong>Platformun Hakları:</strong> Vion AI yazılımı, tasarımı, logosu ve kodları Userex Design Studio mülkiyetindedir.</p>
+          <p><strong>Platformun Hakları:</strong> AmeritAI yazılımı, tasarımı, logosu ve kodları Userex Design Studio mülkiyetindedir.</p>
           <p><strong>Kullanıcı İçeriği:</strong> Kullanıcının platformu kullanarak ürettiği içeriklerin mülkiyeti kullanıcıya aittir. Kullanıcı, ürettiği içeriklerin hukuka aykırı olmayacağını kabul eder.</p>
 
           <h3>5. HİZMET GARANTİSİ VE SORUMLULUK SINIRI</h3>
-          <p>Hizmet "OLDUĞU GİBİ" (AS IS) sunulmaktadır. Vion AI, hizmetin kesintisiz veya hatasız olacağını garanti etmez. AI tarafından üretilen içeriklerin doğruluğundan veya bu içeriklerin kullanımından doğacak zararlardan şirket sorumlu tutulamaz. Yapay zeka çıktılarının doğruluğu kullanıcı tarafından teyit edilmelidir.</p>
+          <p>Hizmet "OLDUĞU GİBİ" (AS IS) sunulmaktadır. AmeritAI, hizmetin kesintisiz veya hatasız olacağını garanti etmez. AI tarafından üretilen içeriklerin doğruluğundan veya bu içeriklerin kullanımından doğacak zararlardan şirket sorumlu tutulamaz. Yapay zeka çıktılarının doğruluğu kullanıcı tarafından teyit edilmelidir.</p>
 
           <h3>6. ÜYELİK İPTALİ VE FESİH</h3>
           <p>Kullanıcı dilediği zaman üyeliğini iptal edebilir. Userex Design Studio, kullanıcının bu sözleşme maddelerini ihlal etmesi durumunda (örn: dolandırıcılık, sisteme saldırı) üyeliği tek taraflı feshetme hakkını saklı tutar.</p>
@@ -147,11 +147,11 @@ export const legalTexts = {
           <h3>1. PARTIES</h3>
           <p><strong>Provider:</strong> Userex Design Studio ("Provider")<br />
           <strong>Address:</strong> Caferağa Mh. Şifa Sk. No:19, Kadıköy / Istanbul / Turkey<br />
-          <strong>Email:</strong> info@getvion.com</p>
+          <strong>Email:</strong> info@ameritai.com</p>
           <p><strong>Subscriber:</strong> The individual or entity registering for the Service.</p>
 
           <h3>2. SERVICE DESCRIPTION</h3>
-          <p>Vion AI provides an AI-powered business assistant software-as-a-service (SaaS). Access is provided on a subscription basis regarding the plan selected.</p>
+          <p>AmeritAI provides an AI-powered business assistant software-as-a-service (SaaS). Access is provided on a subscription basis regarding the plan selected.</p>
 
           <h3>3. PAYMENT AND BILLING</h3>
           <p>The Service is billed in advance on a monthly or annual basis. Payments are non-refundable unless otherwise required by law. The Provider reserves the right to change pricing with reasonable notice.</p>
@@ -198,7 +198,7 @@ export const legalTexts = {
             <li><strong>Right to Opt-Out:</strong> Opt out of the "sale" or "sharing" of your personal information. We do <strong>not</strong> sell your personal information. <em>[Confirm with counsel; add a "Do Not Sell or Share My Personal Information" link if applicable.]</em></li>
             <li><strong>Right to Non-Discrimination:</strong> We will not discriminate against you for exercising any of these rights.</li>
           </ul>
-          <p><!-- LEGAL REVIEW REQUIRED --> To exercise these rights, contact us at info@getvion.com. <em>[Add verifiable-request process and response timelines per CCPA.]</em></p>
+          <p><!-- LEGAL REVIEW REQUIRED --> To exercise these rights, contact us at info@ameritai.com. <em>[Add verifiable-request process and response timelines per CCPA.]</em></p>
 
           <h3>3b. SMS / MESSAGING CONSENT (TCPA)</h3>
           <p><!-- LEGAL REVIEW REQUIRED --> By providing your phone number and opting in, you consent to receive messages (SMS/WhatsApp) related to your request. Message and data rates may apply. Consent is not a condition of purchase. You can opt out at any time by replying STOP. <em>[Final TCPA opt-in/opt-out wording must be confirmed by counsel.]</em></p>
@@ -210,15 +210,15 @@ export const legalTexts = {
           <p>Your data is processed in secure servers. We use standard contractual clauses (SCCs) to ensure data protection when transferring data internationally.</p>
 
           <h3>6. CONTACT</h3>
-          <p>For any privacy-related inquiries, please contact us at info@getvion.com.</p>
+          <p>For any privacy-related inquiries, please contact us at info@ameritai.com.</p>
       `
     },
     terms: {
       title: "Terms of Service",
-      lead: "Rules governing the use of Vion AI Platform.",
+      lead: "Rules governing the use of AmeritAI Platform.",
       content: `
           <h3>1. ACCEPTANCE OF TERMS</h3>
-          <p>By accessing Vion AI, you agree to be bound by these Terms. If you disagree with any part, you may not use the Service.</p>
+          <p>By accessing AmeritAI, you agree to be bound by these Terms. If you disagree with any part, you may not use the Service.</p>
 
           <h3>2. INTELLECTUAL PROPERTY</h3>
           <p>The Service and its original content, features, and functionality are and will remain the exclusive property of Userex Design Studio. The content you generate using the AI belongs to you, subject to fair use.</p>

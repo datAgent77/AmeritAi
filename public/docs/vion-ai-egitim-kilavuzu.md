@@ -1,6 +1,6 @@
-# Vion AI - Chatbot Eğitim Kılavuzu
+# AmeritAI - Chatbot Eğitim Kılavuzu
 
-Bu doküman, Vion AI panelini kullanarak chatbot'unuzu nasıl eğiteceğinizi ve bilgi tabanını nasıl yöneteceğinizi adım adım açıklar.
+Bu doküman, AmeritAI panelini kullanarak chatbot'unuzu nasıl eğiteceğinizi ve bilgi tabanını nasıl yöneteceğinizi adım adım açıklar.
 
 ## İçindekiler
 1.  [Giriş](#giris)
@@ -14,7 +14,7 @@ Bu doküman, Vion AI panelini kullanarak chatbot'unuzu nasıl eğiteceğinizi ve
 ---
 
 ## Giriş <a name="giris"></a>
-Vion AI, yüklediğiniz verileri okuyarak öğrenir ve ziyaretçilerinizin sorularına bu veriler ışığında yanıt verir. Ne kadar kaliteli ve kapsamlı veri eklerseniz, chatbot o kadar akıllı olur.
+AmeritAI, yüklediğiniz verileri okuyarak öğrenir ve ziyaretçilerinizin sorularına bu veriler ışığında yanıt verir. Ne kadar kaliteli ve kapsamlı veri eklerseniz, chatbot o kadar akıllı olur.
 
 Yönetim panelinde sol menüden **Bilgi Tabanı (Knowledge Base)** sekmesine giderek eğitim işlemlerini başlatabilirsiniz.
 

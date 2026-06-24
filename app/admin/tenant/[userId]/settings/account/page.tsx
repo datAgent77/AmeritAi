@@ -264,7 +264,7 @@ export default function TenantAccountSettingsPage() {
                     {[
                         {
                             key: "chatbot" as const,
-                            title: "Vion",
+                            title: "AmeritAI",
                             description: t('appAccessChatbotDesc'),
                         },
                         {

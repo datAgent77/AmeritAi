@@ -49,6 +49,7 @@ type BookingFormData = {
     name: string
     email: string
     phone: string
+    tcpaOptIn?: boolean
 }
 
 function readStoredLeadData(chatbotId: string) {
@@ -1636,9 +1637,9 @@ function ChatbotContainerContent() {
                                         {t('aiDisclaimer')}
                                     </p>
                                     {effectiveSettings.hideVionBranding !== true && (
-                                        <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                                        <a href="https://ameritai.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
                                             <span className="text-[11px] font-medium text-gray-500">{t("poweredBy")}</span>
-                                            <img src="/vion-logo-full-dark.png" alt="Vion" style={{ height: '10px', width: 'auto', opacity: 0.5 }} />
+                                            <span className="text-[11px] font-bold text-gray-600 tracking-tight">AmeritAI</span>
                                         </a>
                                     )}
                                 </div>

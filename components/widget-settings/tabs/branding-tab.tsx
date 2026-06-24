@@ -77,7 +77,7 @@ export function BrandingTab({ settings, setSettings }: BrandingTabProps) {
                             <Label htmlFor="welcome-title">{t('welcomeTitle') || 'Hoş Geldiniz Başlığı'}</Label>
                             <Input
                                 id="welcome-title"
-                                placeholder={language === 'tr' ? "Örn: Vion AI'a Hoş Geldiniz" : "E.g: Welcome to Vion AI"}
+                                placeholder={language === 'tr' ? "Örn: AmeritAI'a Hoş Geldiniz" : "E.g: Welcome to AmeritAI"}
                                 value={settings.welcomeTitle || ''}
                                 onChange={(e) => setSettings(prev => ({ ...prev, welcomeTitle: e.target.value }))}
                             />

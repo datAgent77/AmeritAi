@@ -307,8 +307,8 @@ export async function dispatchTicketWebhook(config: TicketWebhookIntegrationConf
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        "X-Vion-Event": payload.event,
-        "X-Vion-Chatbot-Id": payload.chatbotId,
+        "X-AmeritAI-Event": payload.event,
+        "X-AmeritAI-Chatbot-Id": payload.chatbotId,
     }
 
     if (config.authType === "bearer" && config.authToken) {

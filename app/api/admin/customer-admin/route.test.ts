@@ -83,7 +83,7 @@ beforeEach(() => {
 });
 
 describe("GET /api/admin/customer-admin", () => {
-    test("normalizes legacy membership fields into Vion subscription state", async () => {
+    test("normalizes legacy membership fields into AmeritAI subscription state", async () => {
         createAdminDb({
             email: "tenant@example.com",
             createdAt: "2026-05-01T00:00:00.000Z",

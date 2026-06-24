@@ -21,7 +21,7 @@
 
   // Global Initialization Guard to prevent multiple widgets if script is included twice
   if (window.__VION_WIDGET_INITIALIZED__) {
-    console.warn('Vion AI Widget is already initialized.');
+    console.warn('AmeritAI Widget is already initialized.');
     return;
   }
   window.__VION_WIDGET_INITIALIZED__ = true;
@@ -5936,13 +5936,13 @@
   // ============================================
   function runAutoDiscovery() {
     if (isSiteCrawlPageMode()) {
-      console.log('Vion AI: Site Crawl Page Agent Started...');
+      console.log('AmeritAI: Site Crawl Page Agent Started...');
       runSiteCrawlPageAgent();
       return;
     }
 
     if (isSiteCrawlOrchestratorMode()) {
-      console.log('Vion AI: Site Crawl Orchestrator Mode Started...');
+      console.log('AmeritAI: Site Crawl Orchestrator Mode Started...');
       const params = new URLSearchParams(window.location.search);
       const crawlOptions = {
         trigger: 'manual',
@@ -5990,7 +5990,7 @@
     }
 
     if (window.location.search.includes('vion_scan=1') || window.location.hash.includes('vion_scan')) {
-      console.log('Vion AI: Auto-Discovery Scan Started...');
+      console.log('AmeritAI: Auto-Discovery Scan Started...');
       setTimeout(() => {
         const discovered = [];
         const sanitizeKey = (value, fallback) => {
@@ -6147,7 +6147,7 @@
           // Try to close the scanning popup automatically if permitted
           window.close();
         } else {
-          console.log('Vion AI Discovered Data:', finalResults);
+          console.log('AmeritAI Discovered Data:', finalResults);
         }
       }, 2500); // 2.5 seconds wait for fully loaded page & hydrated SPA
     }

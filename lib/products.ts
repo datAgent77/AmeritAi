@@ -1,5 +1,6 @@
 import { db } from "@/lib/firebase";
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where, serverTimestamp } from "firebase/firestore";
+import { EMBEDDING_MODEL, EMBEDDING_DIMENSIONS } from "@/lib/embedding-config";
 
 export interface Product {
     id?: string;
@@ -98,8 +99,9 @@ export async function indexProduct(product: Product) {
         const textToEmbed = `Product Name: ${product.name}\nDescription: ${product.description}\nPrice: ${product.price} ${product.currency}\nCategory: ${product.category || 'Uncategorized'}`;
 
         const embeddingResponse = await openai.embeddings.create({
-            model: "text-embedding-3-small",
+            model: EMBEDDING_MODEL,
             input: textToEmbed,
+            dimensions: EMBEDDING_DIMENSIONS,
         });
 
         const embedding = embeddingResponse.data[0].embedding;

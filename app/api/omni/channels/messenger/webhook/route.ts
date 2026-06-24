@@ -9,6 +9,7 @@ import { upsertOmniContactMemory } from "@/lib/omni/memory"
 import { claimOmniWebhookEvent } from "@/lib/omni/replay-protection"
 import { normalizeGuidedSkillState } from "@/lib/guided-skills"
 import { upsertContactGraph, upsertOmniSession, verifyMetaWebhookSignature } from "@/lib/omni/server-utils"
+import { detectContactLanguage } from "@/lib/detect-language"
 import {
     classifyConsentKeyword,
     consentReplyLanguage,
@@ -300,8 +301,8 @@ export async function POST(req: Request) {
                     },
                 })
 
-                if (!/geri arama talebinizi kaydettim|callback request/i.test(assistantReplyText)) {
-                    assistantReplyText = `${assistantReplyText} Geri arama talebinizi kaydettim.`.trim()
+                if (!/geri arama talebinizi kaydettim|callback request|solicitud de devolución/i.test(assistantReplyText)) {
+                    assistantReplyText = `${assistantReplyText} I've noted your callback request and our team will reach out.`.trim()
                 }
 
                 handoffStatus = "callback_requested"
@@ -361,7 +362,7 @@ export async function POST(req: Request) {
                 displayName: sessionData.visitorName || senderId,
                 channel: "messenger",
                 sourceSessionId: sessionId,
-                preferredLanguage: "tr",
+                preferredLanguage: detectContactLanguage(messageContent),
                 userMessage: messageContent,
                 assistantReply: assistantReplyText,
                 lastDisposition,

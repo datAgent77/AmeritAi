@@ -58,8 +58,8 @@ export function TrialExpiredOverlay() {
                     </h1>
                     <p className="text-lg text-muted-foreground whitespace-nowrap">
                         {language === 'tr'
-                            ? "Vion'un tüm özelliklerine erişmeye devam etmek için lütfen bir abonelik planı seçin."
-                            : "Please select a subscription plan to continue accessing all Vion features."}
+                            ? "AmeritAI'un tüm özelliklerine erişmeye devam etmek için lütfen bir abonelik planı seçin."
+                            : "Please select a subscription plan to continue accessing all AmeritAI features."}
                     </p>
                 </div>
 

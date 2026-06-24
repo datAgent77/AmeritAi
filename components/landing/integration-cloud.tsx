@@ -90,8 +90,8 @@ export function IntegrationCloud() {
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         {language === 'tr'
-                            ? 'Vion, mevcut araçlarınızla kusursuz bir şekilde entegre olur.'
-                            : 'Vion integrates seamlessly with the tools you already use.'}
+                            ? 'AmeritAI, mevcut araçlarınızla kusursuz bir şekilde entegre olur.'
+                            : 'AmeritAI integrates seamlessly with the tools you already use.'}
                     </p>
                 </div>
 

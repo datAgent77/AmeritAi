@@ -137,7 +137,7 @@ export function PartnerSupportCenterContent({
 
     const preview = useMemo(() => {
         const baseName = form.supportContactName || partner?.partnerName || partner?.agencyName || partner?.email || (isTr ? "Partner Destek Ekibi" : "Partner Support Team")
-        const email = form.supportEmail || partner?.supportEmail || partner?.email || "info@getvion.com"
+        const email = form.supportEmail || partner?.supportEmail || partner?.email || "info@ameritai.com"
         const phone = form.supportPhone || partner?.supportPhone || partner?.phone || null
         const whatsapp = form.supportWhatsapp || partner?.supportWhatsapp || null
         const hours = form.supportHours || partner?.supportHours || (isTr ? "Hafta içi 09:00 - 18:00" : "Weekdays 09:00 - 18:00")
@@ -327,8 +327,8 @@ export function PartnerSupportCenterContent({
                         {!editable && !partner ? (
                             <div className="rounded-xl border border-dashed border-border/70 bg-background p-4 text-sm text-muted-foreground">
                                 {isTr
-                                    ? "Bu hesap için partner yardımı tanımlanmamış. Şimdilik varsayılan Vion destek kanallarını kullanabilirsiniz."
-                                    : "No partner help details are configured for this account yet. You can use the default Vion support channels for now."}
+                                    ? "Bu hesap için partner yardımı tanımlanmamış. Şimdilik varsayılan AmeritAI destek kanallarını kullanabilirsiniz."
+                                    : "No partner help details are configured for this account yet. You can use the default AmeritAI support channels for now."}
                             </div>
                         ) : null}
                     </CardContent>

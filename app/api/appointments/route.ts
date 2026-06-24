@@ -402,7 +402,7 @@ export async function POST(req: Request) {
         // Notify tenant: in-app notification + email
         if (!isAuthorizedRequest) {
             try {
-                const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "Vion AI"
+                const companyName: string = chatbotData?.companyName || chatbotData?.businessName || chatbotData?.name || "AmeritAI"
 
                 // Resolve tenant notification email
                 let tenantEmail: string | null =

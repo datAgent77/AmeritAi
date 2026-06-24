@@ -1,7 +1,8 @@
 import { classifyOmniDeliveryError, recordOmniDeliveryAttempt } from "@/lib/omni/delivery-attempts"
 import { getMessengerPageAccessToken, getMessengerPageId } from "@/lib/integrations/messenger/setup"
 import { getEvolutionApiKey, normalizeEvolutionApiConfig, sendEvolutionText } from "@/lib/integrations/evolution-api/setup"
-import { isOptedOut, type MessagingChannel } from "@/lib/messaging/opt-out"
+import { isOptedOut } from "@/lib/messaging/opt-out"
+import type { OmniProviderChannel } from "@/lib/omni/types"
 
 const META_API_VERSION = "v23.0"
 
@@ -14,7 +15,7 @@ const META_API_VERSION = "v23.0"
 async function suppressIfOptedOut(
     adminDb: any,
     chatbotId: string,
-    channel: MessagingChannel,
+    channel: OmniProviderChannel,
     contactKey: string | null | undefined,
     content: string,
     options: OmniDispatchOptions

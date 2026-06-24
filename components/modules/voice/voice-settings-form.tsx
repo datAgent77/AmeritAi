@@ -294,7 +294,7 @@ export function VoiceSettingsForm({
             ? "Merhaba, randevu için size yardımcı olabilirim."
             : voiceProfile === "restaurant"
               ? "Merhaba, siparişiniz için size yardımcı olayım."
-              : "Merhaba, Vion sesli asistan hazır.";
+              : "Merhaba, AmeritAI sesli asistan hazır.";
 
       const response = await fetch("/api/voice/speak", {
         method: "POST",

@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     const twilioFallbackVoice = resolveTwilioFallbackVoice(voiceNumber)
     const message =
         voiceNumber.greetingMessage ||
-        "Bu bir Vion AI test cagrisidir. Sesli kanaliniz calisiyor. Bu aramayi simdi kapatiyorum."
+        "Bu bir AmeritAI test cagrisidir. Sesli kanaliniz calisiyor. Bu aramayi simdi kapatiyorum."
     const prompt = await renderVoicePrompt({
         chatbotId,
         text: message,

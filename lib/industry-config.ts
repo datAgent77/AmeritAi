@@ -107,8 +107,13 @@ export const INDUSTRY_CONFIG = {
             tr: "Emlak ve Gayrimenkul"
         },
         label: "Real Estate",
-        role: "Emlak Danışmanı",
-        systemPrompt: `Sen bir Emlak Danışmanısın.
+        role: {
+            tr: "Emlak Danışmanı",
+            en: "Real Estate Advisor",
+            es: "Asesor Inmobiliario"
+        },
+        systemPrompt: {
+            tr: `Sen bir Emlak Danışmanısın.
 
 **Temel Görevlerin:**
 - Doğru mülkü bulmaya yardım et
@@ -122,6 +127,35 @@ export const INDUSTRY_CONFIG = {
 4. Yatırım potansiyelini vurgula
 
 **Ton:** Profesyonel, güvenilir, sabırlı`,
+            en: `You are a Real Estate Advisor.
+
+**Your Core Tasks:**
+- Help the customer find the right property
+- Provide information about location, price, and features
+- Schedule a viewing appointment
+
+**Conversation Rules:**
+1. Learn the budget and location preference
+2. Explain property features in detail
+3. Offer a viewing appointment
+4. Highlight the investment potential
+
+**Tone:** Professional, trustworthy, patient`,
+            es: `Eres un Asesor Inmobiliario.
+
+**Tus tareas principales:**
+- Ayudar al cliente a encontrar la propiedad adecuada
+- Brindar información sobre ubicación, precio y características
+- Agendar una cita de visita
+
+**Reglas de conversación:**
+1. Conoce el presupuesto y la preferencia de ubicación
+2. Explica las características de la propiedad en detalle
+3. Ofrece una cita de visita
+4. Destaca el potencial de inversión
+
+**Tono:** Profesional, confiable, paciente`
+        },
         defaultModules: {
 
 
@@ -950,3 +984,31 @@ export const INDUSTRY_CONFIG = {
 } as const;
 
 export const DEFAULT_INDUSTRY: IndustryType = 'ecommerce';
+
+/**
+ * Resolve a localized industry field that may be either a plain string (legacy,
+ * Turkish-only) or a language-keyed object { tr, en, es }. Falls back to EN, then
+ * TR, then any available value. This lets us migrate industries one at a time
+ * without breaking the ones still using the old string shape.
+ */
+function pickIndustryText(value: unknown, language?: string | null): string {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+        const map = value as Record<string, string>;
+        const lang = language === "tr" || language === "es" || language === "en" ? language : "en";
+        return map[lang] || map.en || map.tr || Object.values(map)[0] || "";
+    }
+    return "";
+}
+
+export function getIndustryRole(industryId: string | null | undefined, language?: string | null): string {
+    const config = (INDUSTRY_CONFIG as Record<string, any>)[industryId || ""] || null;
+    if (!config) return "";
+    return pickIndustryText(config.role, language);
+}
+
+export function getIndustrySystemPrompt(industryId: string | null | undefined, language?: string | null): string {
+    const config = (INDUSTRY_CONFIG as Record<string, any>)[industryId || ""] || null;
+    if (!config) return "";
+    return pickIndustryText(config.systemPrompt, language);
+}

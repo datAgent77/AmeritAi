@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { authorizeTargetAccess } from "@/lib/api-auth";
 import { isSafeUrl } from "@/lib/security";
+import { fetchRenderedText } from "@/lib/fetch-rendered";
+import { EMBEDDING_MODEL, EMBEDDING_DIMENSIONS } from "@/lib/embedding-config";
 import * as cheerio from 'cheerio';
 import * as xlsx from 'xlsx';
 import mammoth from 'mammoth';
@@ -147,8 +149,9 @@ export async function POST(req: Request) {
                     const docId = docRef.id;
 
                     const embeddingResponse = await openai.embeddings.create({
-                        model: "text-embedding-3-small",
+                        model: EMBEDDING_MODEL,
                         input: content.substring(0, 8000),
+                        dimensions: EMBEDDING_DIMENSIONS,
                     });
                     const embedding = embeddingResponse.data[0].embedding;
 
@@ -238,14 +241,24 @@ export async function POST(req: Request) {
                         contentToEmbed = $('body').text().replace(/\s+/g, ' ').trim();
                     } catch (e: any) {
                         clearTimeout(timeoutId);
-                        if (e.name === 'AbortError') {
-                            throw new Error("Scraping timed out (10s limit)");
+                        if (e.name !== 'AbortError') {
+                            // Network/HTTP error on raw fetch — let the SPA fallback below try.
+                            console.warn("Raw fetch failed, will try rendered fallback:", e?.message);
                         }
-                        throw e;
+                    }
+
+                    // SPA / JS-rendered fallback: if the raw HTML yielded little text,
+                    // retry via Jina Reader which renders JavaScript.
+                    if (!contentToEmbed || contentToEmbed.length < 200) {
+                        const rendered = await fetchRenderedText(url);
+                        if (rendered && rendered.text.length > (contentToEmbed?.length || 0)) {
+                            contentToEmbed = rendered.text;
+                            if (rendered.title) title = rendered.title;
+                        }
                     }
                 }
 
-                preview = contentToEmbed.substring(0, 200) + "...";
+                preview = (contentToEmbed || "").substring(0, 200) + "...";
 
                 if (!contentToEmbed || contentToEmbed.length < 20) {
                     return NextResponse.json({
@@ -343,9 +356,10 @@ export async function POST(req: Request) {
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];
             const embeddingResponse = await openai.embeddings.create({
-                model: "text-embedding-3-small",
+                model: EMBEDDING_MODEL,
                 input: chunk,
                 encoding_format: "float",
+                dimensions: EMBEDDING_DIMENSIONS,
             });
 
             const embedding = embeddingResponse.data[0].embedding;
@@ -536,8 +550,9 @@ export async function PUT(req: Request) {
 
             // Create new embedding
             const embeddingResponse = await openai.embeddings.create({
-                model: "text-embedding-3-small",
+                model: EMBEDDING_MODEL,
                 input: content.substring(0, 8000),
+                dimensions: EMBEDDING_DIMENSIONS,
             });
             const embedding = embeddingResponse.data[0].embedding;
 

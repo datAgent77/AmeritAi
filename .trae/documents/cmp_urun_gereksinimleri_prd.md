@@ -1,5 +1,5 @@
 ## 1. Product Overview
-CMP (Cookie Management Platform) ile farklı domain’lerde çerez banner’ı ve tercih yönetimini merkezi olarak kurgular, rıza kayıtlarını versiyonlu metinlerle birlikte tutarsın. CMP; Vion ve Omni akışlarını etkilemeden, bağımsız (izole) çalışacak şekilde tasarlanır.
+CMP (Cookie Management Platform) ile farklı domain’lerde çerez banner’ı ve tercih yönetimini merkezi olarak kurgular, rıza kayıtlarını versiyonlu metinlerle birlikte tutarsın. CMP; AmeritAI ve Omni akışlarını etkilemeden, bağımsız (izole) çalışacak şekilde tasarlanır.
 
 ## 2. Core Features
 

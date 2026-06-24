@@ -145,7 +145,7 @@ export function LiveDemoSection() {
                             {t('seePotentialRoi') || "See Your Potential ROI in Seconds"}
                         </h2>
                         <p className="text-xl text-muted-foreground font-light max-w-2xl mx-auto">
-                            {t('enterUrlValues') || "Enter your website URL to simulate how Vion AI can transform your visitor experience and boost conversions."}
+                            {t('enterUrlValues') || "Enter your website URL to simulate how AmeritAI can transform your visitor experience and boost conversions."}
                         </p>
                     </motion.div>
                 </div>

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/context/LanguageContext"
 
 type TemplateState = {
     title: string
@@ -18,13 +19,15 @@ type TemplateState = {
     publishedAt?: string | null
 }
 
-const TEMPLATE_LABELS: Record<ContractTemplateType, string> = {
-    tenantAgreement: "Tenant Sozlesmesi",
-    partnerAgreement: "Partnerlik Sozlesmesi",
-    kvkkDefault: "Varsayilan KVKK Metni",
-}
-
 export function ContractsManagementPage() {
+    const { language } = useLanguage()
+    const p = (tr: string, en: string, es: string) => (language === "tr" ? tr : language === "es" ? es : en)
+    const dateLocale = language === "tr" ? "tr-TR" : language === "es" ? "es-US" : "en-US"
+    const templateLabels: Record<ContractTemplateType, string> = {
+        tenantAgreement: p("Tenant Sözleşmesi", "Tenant Agreement", "Acuerdo de cliente"),
+        partnerAgreement: p("Partnerlik Sözleşmesi", "Partner Agreement", "Acuerdo de socio"),
+        kvkkDefault: p("Varsayılan Gizlilik Metni", "Default Privacy Notice", "Aviso de privacidad predeterminado"),
+    }
     const [isLoading, setIsLoading] = useState(true)
     const [isSavingType, setIsSavingType] = useState<ContractTemplateType | null>(null)
     const [templates, setTemplates] = useState<Record<ContractTemplateType, TemplateState>>({
@@ -124,9 +127,13 @@ export function ContractsManagementPage() {
     return (
         <div className="mx-auto max-w-6xl space-y-6">
             <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">Sozlesmeler</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{p("Sözleşmeler", "Agreements", "Acuerdos")}</h1>
                 <p className="text-sm text-muted-foreground">
-                    Tenant sozlesmesi, partnerlik sozlesmesi ve global KVKK metni burada plain-text olarak versiyonlanir. Kaydetmek yeni immutable surum yayinlar.
+                    {p(
+                        "Tenant sözleşmesi, partnerlik sözleşmesi ve global gizlilik metni burada düz metin olarak versiyonlanır. Kaydetmek yeni değiştirilemez bir sürüm yayınlar.",
+                        "The tenant agreement, partner agreement, and global privacy notice are versioned here as plain text. Saving publishes a new immutable version.",
+                        "El acuerdo de cliente, el acuerdo de socio y el aviso de privacidad global se versionan aquí como texto plano. Guardar publica una nueva versión inmutable."
+                    )}
                 </p>
             </div>
 
@@ -137,22 +144,22 @@ export function ContractsManagementPage() {
                         <Card key={type}>
                             <CardHeader>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <CardTitle>{TEMPLATE_LABELS[type]}</CardTitle>
+                                    <CardTitle>{templateLabels[type]}</CardTitle>
                                     {template.publishedVersionId ? (
                                         <Badge variant="outline">
-                                            Aktif surum: {template.publishedVersionId}
+                                            {p("Aktif sürüm:", "Active version:", "Versión activa:")} {template.publishedVersionId}
                                         </Badge>
                                     ) : null}
                                 </div>
                                 <CardDescription>
                                     {template.publishedAt
-                                        ? `Son yayin tarihi: ${new Date(template.publishedAt).toLocaleString("tr-TR")}`
-                                        : "Bu tipte henuz yayinlanmis bir metin yok."}
+                                        ? `${p("Son yayın tarihi:", "Last published:", "Última publicación:")} ${new Date(template.publishedAt).toLocaleString(dateLocale)}`
+                                        : p("Bu tipte henüz yayınlanmış bir metin yok.", "No text has been published for this type yet.", "Aún no se ha publicado ningún texto para este tipo.")}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor={`${type}-title`}>Baslik</Label>
+                                    <Label htmlFor={`${type}-title`}>{p("Başlık", "Title", "Título")}</Label>
                                     <Input
                                         id={`${type}-title`}
                                         value={template.title}
@@ -166,7 +173,7 @@ export function ContractsManagementPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`${type}-text`}>Metin</Label>
+                                    <Label htmlFor={`${type}-text`}>{p("Metin", "Text", "Texto")}</Label>
                                     <Textarea
                                         id={`${type}-text`}
                                         value={template.text}
@@ -183,7 +190,7 @@ export function ContractsManagementPage() {
                                 <div className="flex justify-end">
                                     <Button onClick={() => publishTemplate(type)} disabled={isSavingType === type}>
                                         {isSavingType === type ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                        Yeni surum yayinla
+                                        {p("Yeni sürüm yayınla", "Publish new version", "Publicar nueva versión")}
                                     </Button>
                                 </div>
                             </CardContent>

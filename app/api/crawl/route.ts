@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import { isSafeUrl } from "@/lib/security";
+import { fetchRenderedText } from "@/lib/fetch-rendered";
 import { checkRateLimitAsync, getClientIp, getRateLimitHeaders } from "@/lib/rate-limiter";
 
 export async function POST(req: Request) {
@@ -67,14 +68,24 @@ export async function POST(req: Request) {
         // Clean up whitespace
         text = text.replace(/\s+/g, " ").trim();
 
+        let title = $('title').text().trim() || url;
+
+        // SPA / JS-rendered fallback: if the raw HTML yielded little text,
+        // retry via Jina Reader which renders JavaScript.
+        if (text.length < 200) {
+            const rendered = await fetchRenderedText(url);
+            if (rendered && rendered.text.length > text.length) {
+                text = rendered.text;
+                if (rendered.title) title = rendered.title;
+            }
+        }
+
         // Basic content length check
         if (text.length < 20) {
             return NextResponse.json({
                 error: "Insufficient content found on the page. This site may be a JavaScript-based (SPA) application which requires dynamic rendering."
             }, { status: 400 });
         }
-
-        const title = $('title').text().trim() || url;
 
         return NextResponse.json({
             title,

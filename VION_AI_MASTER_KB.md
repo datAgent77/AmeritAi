@@ -1,15 +1,15 @@
-# Vion AI - Master Knowledge Base & Training Data
+# AmeritAI - Master Knowledge Base & Training Data
 
 > **Son Güncelleme:** 14 Şubat 2026
 > **Versiyon:** 2.0 (Scenario D Fiyatlandırma & Yeni Modül Yapısı)
 
-Bu belge, Vion AI projesinin **Tek Doğruluk Kaynağı (Single Source of Truth)** olarak hazırlanmıştır. Tüm geliştirme, içerik üretimi ve AI eğitimi süreçlerinde bu veriler referans alınmalıdır.
+Bu belge, AmeritAI projesinin **Tek Doğruluk Kaynağı (Single Source of Truth)** olarak hazırlanmıştır. Tüm geliştirme, içerik üretimi ve AI eğitimi süreçlerinde bu veriler referans alınmalıdır.
 
 ---
 
 ## 1. Ürün Kimliği ve Vizyon
 
-**Vion AI**, işletmelerin web sitelerini "yaşayan, düşünen ve satış yapan" akıllı alanlara dönüştüren yeni nesil bir müşteri deneyimi platformudur. Sıradan bir "chatbot" değil, işletmenin operasyonel süreçlerine entegre olan bir **Yapay Zeka Çalışanıdır**.
+**AmeritAI**, işletmelerin web sitelerini "yaşayan, düşünen ve satış yapan" akıllı alanlara dönüştüren yeni nesil bir müşteri deneyimi platformudur. Sıradan bir "chatbot" değil, işletmenin operasyonel süreçlerine entegre olan bir **Yapay Zeka Çalışanıdır**.
 
 - **Slogan:** "Ziyaretçileri Müşteriye Dönüştüren Yapay Zeka"
 - **Hedef Kitle:** E-ticaret, Hizmet Sektörü (Klinik, Hukuk, Danışmanlık), Restoranlar, Oteller ve SaaS girişimleri.
@@ -19,7 +19,7 @@ Bu belge, Vion AI projesinin **Tek Doğruluk Kaynağı (Single Source of Truth)*
 
 ## 2. Fiyatlandırma (Aktif Senaryo: D)
 
-Vion AI, işletmelerin büyüklüğüne göre ölçeklenen, **kullanım bazlı (mesaj kotası)** bir fiyatlandırma modelini benimser. Tüm fiyatlar **aylık** olup, yıllık ödemelerde **2 ay ücretsiz** avantajı sunulur.
+AmeritAI, işletmelerin büyüklüğüne göre ölçeklenen, **kullanım bazlı (mesaj kotası)** bir fiyatlandırma modelini benimser. Tüm fiyatlar **aylık** olup, yıllık ödemelerde **2 ay ücretsiz** avantajı sunulur.
 
 ### 2.1 Paketler
 
@@ -43,7 +43,7 @@ Vion AI, işletmelerin büyüklüğüne göre ölçeklenen, **kullanım bazlı (
 
 ## 3. Modüller ve Yetenekler (Skills)
 
-Vion AI yetenekleri "Modül" veya "Skill" olarak adlandırılır. Her modül, belirli bir işlevselliği AI'ya kazandırır.
+AmeritAI yetenekleri "Modül" veya "Skill" olarak adlandırılır. Her modül, belirli bir işlevselliği AI'ya kazandırır.
 
 ### C.1 Temel Modüller (Core)
 

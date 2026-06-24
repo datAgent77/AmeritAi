@@ -913,7 +913,7 @@ function ChatbotViewContent() {
 
     const [imgError, setImgError] = useState(false)
     const [settings, setSettings] = useState<ChatbotSettings>({
-        companyName: "Vion AI",
+        companyName: "AmeritAI",
         welcomeTitle: "",
         welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?", // Default welcome message
         brandColor: "#000000",
@@ -1730,7 +1730,7 @@ function ChatbotViewContent() {
                     </div>
 
                     <h3 className="text-xl font-bold text-gray-800 dark:text-zinc-100 mb-2">
-                        {isListening ? "Sizi Dinliyorum..." : isSpeaking ? "Vion Cevap Veriyor..." : "Sesli Asistan Hazır"}
+                        {isListening ? "Sizi Dinliyorum..." : isSpeaking ? "AmeritAI Cevap Veriyor..." : "Sesli Asistan Hazır"}
                     </h3>
                     <p className="text-gray-500 dark:text-zinc-400 text-sm max-w-xs mx-auto">
                         {isListening ? "Lütfen sorunuzu sorun." : isSpeaking ? "Yanıt seslendiriliyor." : "Konuşmak için butona tıklayın."}
@@ -2253,9 +2253,9 @@ function ChatbotViewContent() {
                                     : 'AI can make mistakes. Verify important info.'}
                             </p>
                             <span className="text-[10px] text-gray-300 hidden sm:block">•</span>
-                            <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
+                            <a href="https://ameritai.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity">
                                 <span className="text-[10px] text-gray-400">Powered by</span>
-                                <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
+                                <Image src="/vion-logo-full-dark.png" alt="AmeritAI" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
                             </a>
                         </div>
                     </div>

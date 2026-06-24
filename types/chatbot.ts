@@ -80,7 +80,7 @@ export interface PrivacyComplianceDocument {
 export interface PrivacyComplianceSettings {
     enabled: boolean;
     mode: "hybrid";
-    frameworks: Array<"kvkk" | "gdpr">;
+    frameworks: Array<"kvkk" | "gdpr" | "ccpa" | "tcpa">;
     language: PrivacyLanguageCode;
     shortNoticeByLanguage: Record<PrivacyLanguageCode, string>;
     documentsByLanguage: Record<PrivacyLanguageCode, Record<PrivacyDocumentType, PrivacyComplianceDocument>>;

@@ -10,7 +10,7 @@ const baseEvent: ICalEventData = {
     appointmentId: "appt-1",
     customerName: "Jane Doe",
     customerEmail: "jane@example.com",
-    companyName: "Vion AI",
+    companyName: "AmeritAI",
     date: "2026-04-20",
     time: "09:30",
     durationMinutes: 60,

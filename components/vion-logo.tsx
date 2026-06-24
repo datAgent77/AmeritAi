@@ -8,15 +8,23 @@ interface VionLogoProps {
 
 export function VionLogo({ className, variant = "white" }: VionLogoProps) {
     return (
-        <div className={cn("relative flex items-center justify-start", className)}>
+        <div className={cn("relative flex items-center gap-2", className)}>
             <Image
-                src={variant === "black" ? "/vion-logo-full-dark.png" : "/vion-logo-text-light.png"}
-                alt="Vion"
-                width={128}
-                height={40}
-                className="h-7 w-auto object-contain object-left"
+                src={variant === "black" ? "/vion-logo-icon-dark.png" : "/vion-logo-icon-white.png"}
+                alt="AmeritAI"
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
                 priority
             />
+            <span
+                className={cn(
+                    "font-bold text-xl tracking-tight leading-none",
+                    variant === "black" ? "text-zinc-900" : "text-white"
+                )}
+            >
+                AmeritAI
+            </span>
         </div>
     )
 }

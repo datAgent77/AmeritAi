@@ -41,8 +41,8 @@ export function SectorsGrid() {
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         {language === 'tr'
-                            ? "İşletmeniz ne olursa olsun, Vion o sektörün uzmanı gibi davranır. Size özel bağlam, ton ve hedefler."
-                            : "Whatever your business, Vion acts like an expert in that field. Custom context, tone, and goals."}
+                            ? "İşletmeniz ne olursa olsun, AmeritAI o sektörün uzmanı gibi davranır. Size özel bağlam, ton ve hedefler."
+                            : "Whatever your business, AmeritAI acts like an expert in that field. Custom context, tone, and goals."}
                     </p>
                 </div>
 

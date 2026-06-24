@@ -63,8 +63,8 @@ export interface OnboardingConfig {
 const COPY = {
     starter: {
         introTitle: {
-            en: 'Welcome to Vion',
-            tr: 'Vion\'a Hoş Geldiniz'
+            en: 'Welcome to AmeritAI',
+            tr: 'AmeritAI\'a Hoş Geldiniz'
         },
         introDescription: {
             en: 'Let\'s set up your AI assistant in just a few steps.',
@@ -85,8 +85,8 @@ const COPY = {
     },
     growth: {
         introTitle: {
-            en: 'Welcome to Vion Scale',
-            tr: 'Vion Scale\'e Hoş Geldiniz'
+            en: 'Welcome to AmeritAI Scale',
+            tr: 'AmeritAI Scale\'e Hoş Geldiniz'
         },
         introDescription: {
             en: 'Let\'s set up your AI assistant with enhanced features.',
@@ -107,8 +107,8 @@ const COPY = {
     },
     enterprise: {
         introTitle: {
-            en: 'Welcome to Vion Enterprise',
-            tr: 'Vion Kurumsal\'a Hoş Geldiniz'
+            en: 'Welcome to AmeritAI Enterprise',
+            tr: 'AmeritAI Kurumsal\'a Hoş Geldiniz'
         },
         introDescription: {
             en: 'Configure your AI platform for scale and flexibility.',
@@ -133,8 +133,8 @@ const COPY = {
             tr: 'Ücretsiz Denemenize Hoş Geldiniz'
         },
         introDescription: {
-            en: 'Explore Vion\'s core features. Your chatbot will keep working after the trial.',
-            tr: 'Vion\'un temel özelliklerini keşfedin. Deneme sonrasında chatbotunuz çalışmaya devam edecek.'
+            en: 'Explore AmeritAI\'s core features. Your chatbot will keep working after the trial.',
+            tr: 'AmeritAI\'un temel özelliklerini keşfedin. Deneme sonrasında chatbotunuz çalışmaya devam edecek.'
         },
         lockedMessage: {
             en: 'Premium modules will be available after upgrade.',

@@ -1,12 +1,12 @@
-# Vion AI - Master Knowledge Base & Training Data
+# AmeritAI - Master Knowledge Base & Training Data
 
-Bu doküman, Vion AI yapay zeka asistanının **kendi kendini eğitmesi** için hazırlanmış ana veri kaynağıdır. Vion AI'ın ne olduğu, özellikleri, modülleri ve fiyatlandırma stratejisi hakkında en güncel ve teknik bilgileri içerir.
+Bu doküman, AmeritAI yapay zeka asistanının **kendi kendini eğitmesi** için hazırlanmış ana veri kaynağıdır. AmeritAI'ın ne olduğu, özellikleri, modülleri ve fiyatlandırma stratejisi hakkında en güncel ve teknik bilgileri içerir.
 
 ---
 
-## 1. Vion AI Nedir? (Kimlik ve Vizyon)
+## 1. AmeritAI Nedir? (Kimlik ve Vizyon)
 
-**Vion AI**, sadece soruları yanıtlayan standart bir chatbot değil, işletme hedeflerine (satış yapmak, randevu almak, potansiyel müşteri toplamak) odaklanan **satış odaklı bir yapay zeka platformudur.**
+**AmeritAI**, sadece soruları yanıtlayan standart bir chatbot değil, işletme hedeflerine (satış yapmak, randevu almak, potansiyel müşteri toplamak) odaklanan **satış odaklı bir yapay zeka platformudur.**
 
 *   **Slogan:** "Konuşur, ikna eder ve müşteriyi doğru aksiyona yönlendirir."
 *   **Temel Farkı:** Pasif değil, **proaktiftir**. Müşteriyi beklemek yerine, doğru zamanda (örn: sepeti terk ederken veya kafası karıştığında) devreye girer.
@@ -17,7 +17,7 @@ Bu doküman, Vion AI yapay zeka asistanının **kendi kendini eğitmesi** için 
 
 ## 2. Desteklenen Sektörler
 
-Vion AI, her sektöre özel "uzmanlık" modlarıyla gelir. Genel bir cevap yerine, o sektörün terminolojisini kullanır.
+AmeritAI, her sektöre özel "uzmanlık" modlarıyla gelir. Genel bir cevap yerine, o sektörün terminolojisini kullanır.
 
 1.  **E-Ticaret:** Ürün önerme, beden danışmanlığı, sepet kurtarma.
 2.  **Seyahat (Booking):** Otel/tur rezervasyonu, destinasyon önerisi.
@@ -37,7 +37,7 @@ Vion AI, her sektöre özel "uzmanlık" modlarıyla gelir. Genel bir cevap yerin
 
 ## 3. Fiyatlandırma Stratejisi
 
-Vion AI, işletmelerin ihtiyaçlarına göre ölçeklenen **Özel Çözümler (Enterprise/Custom)** modelini benimser.
+AmeritAI, işletmelerin ihtiyaçlarına göre ölçeklenen **Özel Çözümler (Enterprise/Custom)** modelini benimser.
 
 *   **Standart Yanıt:** "Her işletmenin ihtiyacı farklıdır. En uygun planı oluşturmak için satış ekibimizle görüşün veya ücretsiz deneyin."
 *   **Ücretsiz Deneme:** Kredi kartı gerektirmeyen, **ücretsiz başlangıç (Free Tier)** seçeneği mevcuttur.
@@ -47,7 +47,7 @@ Vion AI, işletmelerin ihtiyaçlarına göre ölçeklenen **Özel Çözümler (E
 
 ## 4. Modüller ve Özellikler (Teknik Detaylar)
 
-Vion AI, "Modüler" bir yapıdadır. İşletmeler sadece ihtiyaç duydukları özellikleri açıp kapatabilir.
+AmeritAI, "Modüler" bir yapıdadır. İşletmeler sadece ihtiyaç duydukları özellikleri açıp kapatabilir.
 
 ### A. Temel Modüller (Core - Ücretsiz/Dahil)
 

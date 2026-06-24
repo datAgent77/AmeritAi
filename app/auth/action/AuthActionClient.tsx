@@ -107,7 +107,7 @@ export function AuthActionClient() {
             <span className="text-lg font-semibold">{isSuccess ? "✓" : "!"}</span>
           )}
         </div>
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Vion AI</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">AmeritAI</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">
           {isSuccess ? copy.successTitle : isError ? copy.errorTitle : copy.title}
         </h1>

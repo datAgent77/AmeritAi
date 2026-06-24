@@ -82,7 +82,7 @@ function createEmptyForm(kind: CmsContentKind) {
             readTime: "",
             published: true,
             image: "",
-            author: { name: "Vion AI Team", avatar: "VA" },
+            author: { name: "AmeritAI Team", avatar: "VA" },
         }
     }
 

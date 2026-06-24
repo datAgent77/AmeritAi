@@ -1,7 +1,7 @@
 /**
  * Modules Registry
  * 
- * Central registry of all modules in the Vion platform.
+ * Central registry of all modules in the AmeritAI platform.
  * This is the source of truth for module definitions.
  * 
  * Adding a new module:

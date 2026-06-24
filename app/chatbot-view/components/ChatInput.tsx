@@ -994,9 +994,9 @@ export function ChatInput({
                             {t('aiDisclaimer')}
                         </p>
                         {settings.hideVionBranding !== true && (
-                            <a href="https://getvion.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
+                            <a href="https://ameritai.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity whitespace-nowrap">
                                 <span className="text-[11px] font-medium text-gray-500">{t("poweredBy")}</span>
-                                <Image src="/vion-logo-full-dark.png" alt="Vion" width={50} height={12} className="h-2.5 w-auto opacity-60" unoptimized />
+                                <span className="text-[11px] font-bold text-gray-600 tracking-tight">AmeritAI</span>
                             </a>
                         )}
                     </div>

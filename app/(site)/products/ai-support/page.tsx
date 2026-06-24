@@ -74,7 +74,7 @@ export default function AiSupportPage() {
             step3Desc: "Copy one line of code to your website.",
 
             ctaTitle: "Ready to Transform Your Customer Support?",
-            ctaSubtitle: "Join thousands of businesses using Vion to deliver exceptional customer experiences.",
+            ctaSubtitle: "Join thousands of businesses using AmeritAI to deliver exceptional customer experiences.",
             ctaButton: "Start Your Free Trial",
             noCreditCard: "No credit card required • 14-day free trial",
         },
@@ -118,7 +118,7 @@ export default function AiSupportPage() {
             step3Desc: "Web sitenize tek satır kod kopyalayın.",
 
             ctaTitle: "Müşteri Desteğinizi Dönüştürmeye Hazır mısınız?",
-            ctaSubtitle: "Olağanüstü müşteri deneyimleri sunmak için Vion kullanan binlerce işletmeye katılın.",
+            ctaSubtitle: "Olağanüstü müşteri deneyimleri sunmak için AmeritAI kullanan binlerce işletmeye katılın.",
             ctaButton: "Ücretsiz Denemenizi Başlatın",
             noCreditCard: "Kredi kartı gerekmez • 14 günlük ücretsiz deneme",
         }

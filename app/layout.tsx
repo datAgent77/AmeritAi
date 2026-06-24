@@ -3,13 +3,13 @@ import { cookies } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.getvion.com'),
-  applicationName: "Vion AI",
+  metadataBase: new URL('https://www.ameritai.com'),
+  applicationName: "AmeritAI",
   title: {
-    default: "Vion AI | AI-Powered Sales & Support Chatbot for Businesses",
-    template: "%s | Vion AI"
+    default: "AmeritAI | AI-Powered Sales & Support Chatbot for Businesses",
+    template: "%s | AmeritAI"
   },
-  description: "Convert website visitors into customers with Vion AI. Intelligent chatbot for sales automation, customer support, and appointment booking. Works in 50+ languages.",
+  description: "Convert website visitors into customers with AmeritAI. Intelligent chatbot for sales automation, customer support, and appointment booking. Works in 50+ languages.",
   keywords: [
     // English keywords
     "AI chatbot", "sales automation", "customer support chatbot", "AI sales assistant",
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     "yapay zeka chatbot", "AI satış asistanı", "müşteri destek chatbot",
     "web sitesi chatbot", "satış otomasyonu", "randevu chatbot",
   ],
-  authors: [{ name: "Vion AI Team" }],
-  creator: "Vion AI",
-  publisher: "Vion AI",
+  authors: [{ name: "AmeritAI Team" }],
+  creator: "AmeritAI",
+  publisher: "AmeritAI",
   category: "business software",
   manifest: "/manifest.webmanifest",
   formatDetection: {
@@ -45,11 +45,11 @@ export const metadata: Metadata = {
     google: '_30_2DpjpK20QsJAjXqrMlw2k0AzdzmfX50MarS2100',
   },
   alternates: {
-    canonical: 'https://www.getvion.com',
+    canonical: 'https://www.ameritai.com',
     languages: {
-      'en': 'https://www.getvion.com',
-      'tr': 'https://www.getvion.com',
-      'x-default': 'https://www.getvion.com',
+      'en': 'https://www.ameritai.com',
+      'tr': 'https://www.ameritai.com',
+      'x-default': 'https://www.ameritai.com',
     },
   },
   icons: {
@@ -62,31 +62,31 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "Vion AI",
+    title: "AmeritAI",
     statusBarStyle: "default",
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     alternateLocale: ['tr_TR'],
-    url: 'https://www.getvion.com',
-    title: 'Vion AI | AI-Powered Sales & Support Chatbot',
-    description: 'Convert website visitors into customers with Vion AI. Intelligent chatbot for sales, support, and booking in 50+ languages.',
-    siteName: 'Vion AI',
+    url: 'https://www.ameritai.com',
+    title: 'AmeritAI | AI-Powered Sales & Support Chatbot',
+    description: 'Convert website visitors into customers with AmeritAI. Intelligent chatbot for sales, support, and booking in 50+ languages.',
+    siteName: 'AmeritAI',
     images: [
       {
-        url: '/vion-logo-full-dark.png',
+        url: '/ameritai-og.png',
         width: 1200,
         height: 630,
-        alt: 'Vion AI - AI-Powered Business Assistant',
+        alt: 'AmeritAI - AI-Powered Business Assistant',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Vion AI | AI-Powered Sales & Support Chatbot',
+    title: 'AmeritAI | AI-Powered Sales & Support Chatbot',
     description: 'Convert website visitors into customers. Intelligent AI chatbot for sales, support, and booking in 50+ languages.',
-    images: ['/vion-logo-full-dark.png'],
+    images: ['/ameritai-og.png'],
   },
 };
 
@@ -112,10 +112,10 @@ export default function RootLayout({
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    '@id': 'https://www.getvion.com/#organization',
-    name: 'Vion AI',
-    url: 'https://www.getvion.com',
-    logo: 'https://www.getvion.com/vion-logo-icon-dark.png',
+    '@id': 'https://www.ameritai.com/#organization',
+    name: 'AmeritAI',
+    url: 'https://www.ameritai.com',
+    logo: 'https://www.ameritai.com/vion-logo-icon-dark.png',
     description: 'AI-Powered Business Assistant for Sales and Support',
     address: {
       '@type': 'PostalAddress',
@@ -129,29 +129,29 @@ export default function RootLayout({
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    '@id': 'https://www.getvion.com/#website',
-    name: 'Vion AI',
-    url: 'https://www.getvion.com',
+    '@id': 'https://www.ameritai.com/#website',
+    name: 'AmeritAI',
+    url: 'https://www.ameritai.com',
     inLanguage: ['en', 'tr'],
     publisher: {
-      '@id': 'https://www.getvion.com/#organization'
+      '@id': 'https://www.ameritai.com/#organization'
     }
   }
 
   const softwareApplicationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Vion AI',
+    name: 'AmeritAI',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     offers: {
       '@type': 'Offer',
-      description: 'Contact Vion AI for current plan pricing and trial details'
+      description: 'Contact AmeritAI for current plan pricing and trial details'
     },
     brand: {
-      '@id': 'https://www.getvion.com/#organization'
+      '@id': 'https://www.ameritai.com/#organization'
     },
-    url: 'https://www.getvion.com'
+    url: 'https://www.ameritai.com'
   }
 
   const jsonLd = [organizationJsonLd, websiteJsonLd, softwareApplicationJsonLd]

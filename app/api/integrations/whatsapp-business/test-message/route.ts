@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         adminDb,
         chatbotId,
         to,
-        text: text || "Merhaba, bu Vion kurulum test mesajıdır.",
+        text: text || "Merhaba, bu AmeritAI kurulum test mesajıdır.",
         phoneNumberId,
         accessToken,
         source: "api/integrations/whatsapp-business/test-message",

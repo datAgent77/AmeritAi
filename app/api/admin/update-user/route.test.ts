@@ -93,7 +93,7 @@ describe("POST /api/admin/update-user", () => {
         }), { merge: true })
     })
 
-    test("updates Vion product access while ignoring retired product toggles", async () => {
+    test("updates AmeritAI product access while ignoring retired product toggles", async () => {
         const set = vi.fn().mockResolvedValue(undefined)
 
         vi.mocked(getAdminAuth).mockReturnValue({

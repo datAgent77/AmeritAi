@@ -380,7 +380,7 @@ const SCENARIO_C: PlanConfig[] = [
 ];
 
 /**
- * SCENARIO D: Vion AI New Pricing (USD)
+ * SCENARIO D: AmeritAI New Pricing (USD)
  * - Starter: core chatbot and compliance modules
  * - Scale: full self-serve growth stack, including legacy Pro features
  * - Enterprise: all modules plus enterprise services
@@ -863,7 +863,7 @@ export function getModuleUpgradeMessage(
 export const PRICING_SETTINGS = {
     defaultBillingCycle: 'monthly' as BillingCycle,
     showAnnualToggle: true,
-    contactEmail: 'enterprise@getvion.com',
+    contactEmail: 'enterprise@ameritai.com',
 
     unlimitedMessagesNote: {
         en: 'Unlimited messages on all plans',

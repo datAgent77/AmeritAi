@@ -2,15 +2,15 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "FAQ — Frequently Asked Questions",
-  description: "Everything you need to know about Vion AI. Setup, pricing, integrations, security, multi-language support, and more. Get answers instantly.",
-  keywords: ["Vion AI FAQ", "chatbot FAQ", "AI chatbot help", "sıkça sorulan sorular", "chatbot yardım"],
+  description: "Everything you need to know about AmeritAI. Setup, pricing, integrations, security, multi-language support, and more. Get answers instantly.",
+  keywords: ["AmeritAI FAQ", "chatbot FAQ", "AI chatbot help", "sıkça sorulan sorular", "chatbot yardım"],
   alternates: {
-    canonical: "https://www.getvion.com/resources/faq",
+    canonical: "https://www.ameritai.com/resources/faq",
   },
   openGraph: {
-    title: "FAQ | Vion AI",
-    description: "Frequently asked questions about Vion AI setup, pricing, and features.",
-    url: "https://www.getvion.com/resources/faq",
+    title: "FAQ | AmeritAI",
+    description: "Frequently asked questions about AmeritAI setup, pricing, and features.",
+    url: "https://www.ameritai.com/resources/faq",
   },
 };
 

@@ -80,7 +80,7 @@ beforeEach(() => {
     } as any);
 });
 
-describe("Vion onboarding API", () => {
+describe("AmeritAI onboarding API", () => {
     test("GET returns 401 without a bearer token", async () => {
         createTestDb();
 
@@ -350,7 +350,7 @@ describe("Vion onboarding API", () => {
         });
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
             ok: true,
-            text: vi.fn().mockResolvedValue('<script src="/widget.js" data-chatbot-id="tenant-1"></script> Vion'),
+            text: vi.fn().mockResolvedValue('<script src="/widget.js" data-chatbot-id="tenant-1"></script> AmeritAI'),
         }));
 
         const response = await postVerifyInstall(request("/api/onboarding/verify-install", {

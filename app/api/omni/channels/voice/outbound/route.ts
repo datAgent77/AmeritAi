@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     const ttsProvider = resolveVoiceTtsProvider(voiceNumber, integration)
     const twilioFallbackVoice = resolveTwilioFallbackVoice(voiceNumber)
     const contactKey = normalizePhoneNumber(String(callback.contactKey || to || "").trim())
-    const greeting = voiceNumber.greetingMessage || "Merhaba, talep ettiginiz geri arama icin ariyorum. Ben Vion AI sesli asistanim."
+    const greeting = voiceNumber.greetingMessage || "Merhaba, talep ettiginiz geri arama icin ariyorum. Ben AmeritAI sesli asistanim."
     const continuePrompt = "Uygunsaniz devam edebiliriz. Sizi dinliyorum."
 
     const contact =

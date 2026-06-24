@@ -678,7 +678,7 @@ export function AppearanceTab({
                                     <Label htmlFor="welcome-title">{t('welcomeTitle') || 'Hoş Geldiniz Başlığı'}</Label>
                                     <Input
                                         id="welcome-title"
-                                        placeholder={language === 'tr' ? "Örn: Vion AI'a Hoş Geldiniz" : "E.g: Welcome to Vion AI"}
+                                        placeholder={language === 'tr' ? "Örn: AmeritAI'a Hoş Geldiniz" : "E.g: Welcome to AmeritAI"}
                                         value={settings.welcomeTitle || ''}
                                         onChange={(e) => setSettings(prev => ({ ...prev, welcomeTitle: e.target.value }))}
                                     />
@@ -702,12 +702,12 @@ export function AppearanceTab({
                                     <div className="flex items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
                                         <div className="space-y-1">
                                             <Label htmlFor="hide-vion-branding">
-                                                {language === 'tr' ? 'Vion brandingini gizle' : 'Hide Vion branding'}
+                                                {language === 'tr' ? 'AmeritAI brandingini gizle' : 'Hide AmeritAI branding'}
                                             </Label>
                                             <p className="text-xs text-muted-foreground">
                                                 {language === 'tr'
-                                                    ? 'Bu tenant için widget footerındaki "Destekleyen Vion" görünümünü kapatır. Bu ayarı yalnızca süper admin yönetebilir.'
-                                                    : 'Disables the "Powered by Vion" footer for this tenant. Only super admins can manage this setting.'}
+                                                    ? 'Bu tenant için widget footerındaki "Destekleyen AmeritAI" görünümünü kapatır. Bu ayarı yalnızca süper admin yönetebilir.'
+                                                    : 'Disables the "Powered by AmeritAI" footer for this tenant. Only super admins can manage this setting.'}
                                             </p>
                                         </div>
                                         <Switch

@@ -142,7 +142,7 @@ function ResetPasswordContent() {
                 </main>
 
                 <footer className="p-6 text-center text-sm text-muted-foreground">
-                    © 2025 Vion. {t('landingAllRights')}
+                    © 2025 AmeritAI. {t('landingAllRights')}
                 </footer>
             </div>
         )
@@ -173,7 +173,7 @@ function ResetPasswordContent() {
                 </main>
 
                 <footer className="p-6 text-center text-sm text-muted-foreground">
-                    © 2025 Vion. {t('landingAllRights')}
+                    © 2025 AmeritAI. {t('landingAllRights')}
                 </footer>
             </div>
         )
@@ -278,7 +278,7 @@ function ResetPasswordContent() {
 
             {/* Footer */}
             <footer className="p-6 text-center text-sm text-muted-foreground">
-                © 2025 Vion. {t('landingAllRights')}
+                © 2025 AmeritAI. {t('landingAllRights')}
             </footer>
         </div>
     )

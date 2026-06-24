@@ -49,25 +49,25 @@ export async function POST(req: Request) {
         const loginUrl = `${getAppBaseUrl()}/login`;
         const emailSent = await sendTransactionalEmail({
             to: normalizedEmail,
-            subject: 'Your Vion Account has been Approved!',
+            subject: 'Your AmeritAI Account has been Approved!',
             text: `
                 Hello ${normalizedName},
                 
-                Your account for Vion has been approved!
+                Your account for AmeritAI has been approved!
                 
                 You can now log in to the platform at: ${loginUrl}
                 
                 Best regards,
-                The Vion Team
+                The AmeritAI Team
             `,
             html: `
-                <h3>Welcome to Vion!</h3>
+                <h3>Welcome to AmeritAI!</h3>
                 <p>Hello ${normalizedName},</p>
                 <p>Your account has been approved!</p>
                 <p>You can now log in to the platform at: <a href="${loginUrl}">${loginUrl}</a></p>
                 <br/>
                 <p>Best regards,</p>
-                <p>The Vion Team</p>
+                <p>The AmeritAI Team</p>
             `
         });
 

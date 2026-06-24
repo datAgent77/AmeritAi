@@ -1,4 +1,4 @@
-# Vion Mail Setup
+# AmeritAI Mail Setup
 
 ## Outbound mail
 
@@ -14,7 +14,7 @@ SMTP_SECURE=false
 SMTP_USER=resend
 SMTP_PASS=<resend-api-key>
 SMTP_FROM_EMAIL=no-reply@getvion.com
-SMTP_FROM_NAME=Vion AI
+SMTP_FROM_NAME=AmeritAI
 VION_ADMIN_EMAIL=info@getvion.com
 VION_CONTACT_EMAIL=info@getvion.com
 NEXT_PUBLIC_APP_URL=https://www.getvion.com

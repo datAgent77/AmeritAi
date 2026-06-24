@@ -62,7 +62,7 @@ function readPreviewDraftSettings(previewDraftKey: string | null | undefined): P
 }
 
 const DEFAULT_SETTINGS: ChatbotSettings = {
-    companyName: "Vion AI",
+    companyName: "AmeritAI",
     welcomeTitle: "",
     welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
     brandColor: "#000000",

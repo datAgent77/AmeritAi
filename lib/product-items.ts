@@ -16,7 +16,7 @@ export interface ProductItem {
 export const products: ProductItem[] = [
     {
         id: "chatbot",
-        title: "Vion",
+        title: "AmeritAI",
         description: "Automate customer support with a custom-trained AI assistant.",
         icon: MessageSquare,
         status: "active",

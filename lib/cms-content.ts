@@ -161,10 +161,10 @@ export function normalizeCmsItem(kind: CmsContentKind, item: any): CmsContentIte
             image: item?.image ? String(item.image) : null,
             author: item?.author
                 ? {
-                      name: String(item.author.name || "Vion AI Team"),
+                      name: String(item.author.name || "AmeritAI Team"),
                       avatar: item.author.avatar ? String(item.author.avatar) : null,
                   }
-                : { name: "Vion AI Team", avatar: "VA" },
+                : { name: "AmeritAI Team", avatar: "VA" },
         }
     }
 

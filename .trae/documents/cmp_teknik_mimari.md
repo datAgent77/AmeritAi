@@ -22,9 +22,9 @@ graph TD
   end
 ```
 
-**İzolasyon ilkeleri (Vion/Omni akışlarını etkilememek için):**
+**İzolasyon ilkeleri (AmeritAI/Omni akışlarını etkilememek için):**
 - CMP runtime scripti asenkron yüklenir (ör. `defer`/`async`); yüklenemezse UI hiç render edilmez ve sayfa çalışmaya devam eder.
-- Runtime; Vion/Omni global değişkenlerine dokunmaz, kendi namespace’inde çalışır.
+- Runtime; AmeritAI/Omni global değişkenlerine dokunmaz, kendi namespace’inde çalışır.
 - Runtime; sadece kendi cookie/localStorage anahtarlarını kullanır; çakışmayı önlemek için prefix uygulanır (örn. `cmp_`).
 
 ## 2.Technology Description

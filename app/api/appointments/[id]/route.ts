@@ -56,7 +56,7 @@ export async function PATCH(
         if (nextStatus === "cancelled" && appointmentData.customerEmail) {
             try {
                 const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
-                const companyName: string = chatbotSnap.data()?.companyName || chatbotSnap.data()?.businessName || chatbotSnap.data()?.name || "Vion AI"
+                const companyName: string = chatbotSnap.data()?.companyName || chatbotSnap.data()?.businessName || chatbotSnap.data()?.name || "AmeritAI"
                 await sendAppointmentCancellationEmail({
                     customerEmail: appointmentData.customerEmail,
                     customerName: appointmentData.customerName || "Değerli Müşterimiz",

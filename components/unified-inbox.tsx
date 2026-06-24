@@ -22,6 +22,29 @@ function formatVionDateTime(value: Date, language: string, options?: Intl.DateTi
     return new Intl.DateTimeFormat(language === "tr" ? "tr-TR" : "en-US", options).format(value)
 }
 
+// Control tokens the AI emits to trigger widget UI (forms, handoff). In the live
+// widget these render an actual form; in the transcript we hide the raw token and
+// show a small badge instead.
+const TRANSCRIPT_CONTROL_TOKENS: Record<string, { tr: string; en: string; es: string }> = {
+    "[SHOW_LEAD_FORM]": { tr: "📋 Lead formu gösterildi", en: "📋 Lead form shown", es: "📋 Formulario de contacto mostrado" },
+    "[SHOW_BOOKING_FORM]": { tr: "📅 Randevu formu gösterildi", en: "📅 Booking form shown", es: "📅 Formulario de reserva mostrado" },
+    "[SHOW_HANDOFF_FORM]": { tr: "🙋 Temsilciye aktarım formu gösterildi", en: "🙋 Handoff form shown", es: "🙋 Formulario de transferencia mostrado" },
+    "[CALL_STAFF]": { tr: "🔔 Personel çağrıldı", en: "🔔 Staff called", es: "🔔 Personal notificado" },
+}
+
+function renderTranscriptContent(content: string, language: string) {
+    if (typeof content !== "string") return { text: content as any, badges: [] as string[] }
+    let text = content
+    const badges: string[] = []
+    for (const [token, labels] of Object.entries(TRANSCRIPT_CONTROL_TOKENS)) {
+        if (text.includes(token)) {
+            text = text.split(token).join("").trim()
+            badges.push(language === "tr" ? labels.tr : language === "es" ? labels.es : labels.en)
+        }
+    }
+    return { text, badges }
+}
+
 function getVionChannelLabel(language: string, channel: string) {
     const labels = {
         tr: {
@@ -1007,7 +1030,23 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                     </div>
                                     <div className="space-y-1">
                                         <div className={`rounded-lg p-3 text-sm shadow-sm ${msg.role === "assistant" || msg.role === "agent" ? "rounded-tr-md bg-primary text-primary-foreground" : "rounded-tl-md border border-border/60 bg-white text-gray-800"}`}>
-                                            {msg.content}
+                                            {(() => {
+                                                const { text, badges } = renderTranscriptContent(msg.content, language)
+                                                return (
+                                                    <>
+                                                        {text ? <span className="whitespace-pre-wrap">{text}</span> : null}
+                                                        {badges.length > 0 ? (
+                                                            <div className={`flex flex-wrap gap-1 ${text ? "mt-2" : ""}`}>
+                                                                {badges.map((b, i) => (
+                                                                    <span key={i} className="inline-flex items-center rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-medium opacity-90">
+                                                                        {b}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : null}
+                                                    </>
+                                                )
+                                            })()}
                                             {msg.role === "assistant" ? (
                                                 <div className="mt-2 flex justify-end">
                                                     <Button

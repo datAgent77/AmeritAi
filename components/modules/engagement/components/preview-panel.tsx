@@ -95,7 +95,7 @@ export function EngagementPreview({ settings, chatDisplayMode }: EngagementPrevi
                             </div>
 
                             <div className="mx-auto h-14 max-w-[320px] rounded-full border border-violet-400/80 bg-black shadow-[0_0_0_1px_rgba(167,139,250,0.35)] px-4 flex items-center gap-3">
-                                <div className="text-violet-300 text-xs">Ask to Vion Ai</div>
+                                <div className="text-violet-300 text-xs">Ask to AmeritAI Ai</div>
                                 <div className="ml-auto h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700" />
                                 <div className="h-8 w-8 rounded-full bg-violet-700/60 border border-violet-500/50" />
                             </div>

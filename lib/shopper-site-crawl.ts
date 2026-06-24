@@ -33,7 +33,7 @@ const NON_PRODUCT_HINTS = [
     '/sitemap'
 ];
 
-const USER_AGENT = 'Mozilla/5.0 (compatible; VionShopperCrawler/1.0; +https://getvion.com)';
+const USER_AGENT = 'Mozilla/5.0 (compatible; VionShopperCrawler/1.0; +https://ameritai.com)';
 
 const xmlParser = new XMLParser({
     ignoreAttributes: true,

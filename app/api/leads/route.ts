@@ -48,8 +48,8 @@ export async function POST(req: Request) {
         await createNotification({
             userId: chatbotId,
             type: "lead_created",
-            title: "Yeni lead kaydi",
-            message: `${name || "Anonim"}${email || phone ? ` - ${email || phone}` : ""}`,
+            title: "New lead captured",
+            message: `${name || "Anonymous"}${email || phone ? ` - ${email || phone}` : ""}`,
             metadata: {
                 leadId: docRef.id,
                 sessionId: sessionId || null,
@@ -68,6 +68,29 @@ export async function POST(req: Request) {
                 const settings = chatbotSnap.data();
 
                 if (settings?.enableLeadNotifications && settings?.leadNotificationEmail) {
+                    // Notification language: respect chatbot setting if tr/es, otherwise default to English
+                    const rawLang = typeof settings?.language === "string" ? settings.language : "en";
+                    const lang = rawLang === "tr" || rawLang === "es" ? rawLang : "en";
+                    const p = (en: string, tr: string, es: string) => (lang === "tr" ? tr : lang === "es" ? es : en);
+
+                    const L = {
+                        notProvided: p("Not provided", "Belirtilmedi", "No proporcionado"),
+                        intro: p(
+                            "A new lead came in through your chatbot!",
+                            "Chatbot'unuz aracılığıyla yeni bir lead geldi!",
+                            "¡Un nuevo cliente potencial llegó a través de tu chatbot!"
+                        ),
+                        name: p("Name", "Ad", "Nombre"),
+                        email: p("Email", "Email", "Correo"),
+                        phone: p("Phone", "Telefon", "Teléfono"),
+                        source: p("Source", "Kaynak", "Origen"),
+                        extra: p("Additional details", "Ek Bilgiler", "Detalles adicionales"),
+                        manage: p("Manage your leads in the dashboard", "Leadlerinizi yönetmek için paneli ziyaret edin", "Gestiona tus clientes potenciales en el panel"),
+                        heading: p("New Lead Notification", "Yeni Lead Bildirimi", "Notificación de nuevo cliente potencial"),
+                        visitPanel: p("visit the dashboard", "paneli ziyaret edin", "visita el panel"),
+                        subject: p("New Lead", "Yeni Lead", "Nuevo cliente potencial"),
+                    };
+
                     // Format custom fields for email
                     const customFieldsText = customFields && Object.keys(customFields).length > 0
                         ? Object.entries(customFields).map(([key, value]) => `${key}: ${value}`).join('\n')
@@ -83,32 +106,32 @@ export async function POST(req: Request) {
 
                     await sendTransactionalEmail({
                         to: settings.leadNotificationEmail,
-                        subject: `🎯 Yeni Lead: ${name || email || 'Anonim'}`,
+                        subject: `🎯 ${L.subject}: ${name || email || L.notProvided}`,
                         replyTo,
                         text: `
-Yeni bir lead chatbot'unuz aracılığıyla geldi!
+${L.intro}
 
-Ad: ${name || 'Belirtilmedi'}
-Email: ${email || 'Belirtilmedi'}
-Telefon: ${phone || 'Belirtilmedi'}
-Kaynak: ${source || 'Pre-chat Form'}
-${customFieldsText ? '\nEk Bilgiler:\n' + customFieldsText : ''}
+${L.name}: ${name || L.notProvided}
+${L.email}: ${email || L.notProvided}
+${L.phone}: ${phone || L.notProvided}
+${L.source}: ${source || 'Pre-chat Form'}
+${customFieldsText ? `\n${L.extra}:\n` + customFieldsText : ''}
 
-Leadlerinizi yönetmek için paneli ziyaret edin: ${leadsUrl}
+${L.manage}: ${leadsUrl}
                         `.trim(),
                         html: `
                             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                                <h2 style="color: #6366f1;">🎯 Yeni Lead Bildirimi</h2>
-                                <p>Chatbot'unuz aracılığıyla yeni bir lead geldi!</p>
+                                <h2 style="color: #6366f1;">🎯 ${L.heading}</h2>
+                                <p>${L.intro}</p>
                                 <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                                    <p><strong>Ad:</strong> ${name || 'Belirtilmedi'}</p>
-                                    <p><strong>Email:</strong> ${email || 'Belirtilmedi'}</p>
-                                    <p><strong>Telefon:</strong> ${phone || 'Belirtilmedi'}</p>
-                                    <p><strong>Kaynak:</strong> ${source || 'Pre-chat Form'}</p>
+                                    <p><strong>${L.name}:</strong> ${name || L.notProvided}</p>
+                                    <p><strong>${L.email}:</strong> ${email || L.notProvided}</p>
+                                    <p><strong>${L.phone}:</strong> ${phone || L.notProvided}</p>
+                                    <p><strong>${L.source}:</strong> ${source || 'Pre-chat Form'}</p>
                                     ${customFieldsHtml}
                                 </div>
                                 <p style="color: #64748b; font-size: 14px;">
-                                    Leadlerinizi yönetmek için <a href="${leadsUrl}" style="color: #6366f1;">paneli ziyaret edin</a>.
+                                    ${L.manage} — <a href="${leadsUrl}" style="color: #6366f1;">${L.visitPanel}</a>.
                                 </p>
                             </div>
                         `
@@ -127,8 +150,8 @@ Leadlerinizi yönetmek için paneli ziyaret edin: ${leadsUrl}
                 email,
                 phone,
                 company: customFields?.company || customFields?.Company,
-                source: source || "Vion Chatbot",
-                description: sessionId ? `Vion session: ${sessionId}` : null,
+                source: source || "AmeritAI Chatbot",
+                description: sessionId ? `AmeritAI session: ${sessionId}` : null,
             });
             if (zohoResult.ok) {
                 await docRef.set(

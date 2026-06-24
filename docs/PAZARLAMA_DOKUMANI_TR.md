@@ -1,6 +1,6 @@
-# Vion AI - Pazarlama Dokümanı (Kullanıma Hazır)
+# AmeritAI - Pazarlama Dokümanı (Kullanıma Hazır)
 
-Bu doküman, Vion AI’ı pazarlamak için kullanılabilecek mesajları, konumlandırma çerçevesini, hedef kitleleri, kampanya fikirlerini ve hazır içerik şablonlarını içerir.
+Bu doküman, AmeritAI’ı pazarlamak için kullanılabilecek mesajları, konumlandırma çerçevesini, hedef kitleleri, kampanya fikirlerini ve hazır içerik şablonlarını içerir.
 
 Amaç:
 - Pazarlama ekibinin hızlı içerik üretmesini sağlamak
@@ -10,9 +10,9 @@ Amaç:
 
 ## 1. Ürün Özeti (Pazarlama Diliyle)
 
-Vion AI, işletmelerin web sitesine ve dijital kanallarına entegre edilen modüler bir yapay zeka asistan platformudur.
+AmeritAI, işletmelerin web sitesine ve dijital kanallarına entegre edilen modüler bir yapay zeka asistan platformudur.
 
-Vion AI ile işletmeler:
+AmeritAI ile işletmeler:
 - Müşteri sorularını 7/24 yanıtlayabilir
 - Lead toplayabilir
 - Satış odaklı öneriler sunabilir
@@ -23,7 +23,7 @@ Vion AI ile işletmeler:
 ## 2. Kısa Konumlandırma (Positioning)
 
 ### Tek cümlelik tanım
-Vion AI, işletmeler için sektör uyumlu, modüler ve özelleştirilebilir bir AI müşteri deneyimi platformudur.
+AmeritAI, işletmeler için sektör uyumlu, modüler ve özelleştirilebilir bir AI müşteri deneyimi platformudur.
 
 ### Kime göre ne?
 - Canlı destek yazılımına göre: daha otomatik ve ölçeklenebilir
@@ -31,7 +31,7 @@ Vion AI, işletmeler için sektör uyumlu, modüler ve özelleştirilebilir bir 
 - Sadece FAQ botlarına göre: daha satış/lead/entegrasyon odaklı
 
 ### Konumlandırma cümlesi (website/sunum için)
-Vion AI, işletmenizin web sitesinde çalışan bir chatbot’tan fazlasıdır; satış, lead, destek ve müşteri etkileşimini tek bir AI platformunda birleştirir.
+AmeritAI, işletmenizin web sitesinde çalışan bir chatbot’tan fazlasıdır; satış, lead, destek ve müşteri etkileşimini tek bir AI platformunda birleştirir.
 
 ## 3. Ana Değer Önerileri (Value Propositions)
 
@@ -69,7 +69,7 @@ Ağrı noktaları:
 - Tekrarlayan sorulara manuel cevap verme
 - Web sitesi trafiğinin boşa gitmesi
 
-Vion mesajı:
+AmeritAI mesajı:
 Web sitenize gelen ziyaretçileri 7/24 karşılayan, soruları yanıtlayan ve lead toplayan bir AI asistan ile dönüşümünüzü artırın.
 
 ## 4.2 E-ticaret işletmeleri
@@ -83,8 +83,8 @@ Ağrı noktaları:
 - Müşteri doğru ürünü bulamıyor
 - Satış ekibi her ziyaretçiye yetişemiyor
 
-Vion mesajı:
-Vion AI, ürün önerileri ve satış optimizasyon modülleri ile ziyaretçileri alışverişe yönlendirir ve dönüşümü artırır.
+AmeritAI mesajı:
+AmeritAI, ürün önerileri ve satış optimizasyon modülleri ile ziyaretçileri alışverişe yönlendirir ve dönüşümü artırır.
 
 ## 4.3 Hizmet işletmeleri (klinik, danışmanlık, servis, ajans)
 Profil:
@@ -96,8 +96,8 @@ Ağrı noktaları:
 - Lead takibi dağınık
 - Aynı sorulara tekrar tekrar cevap verme
 
-Vion mesajı:
-Vion AI, hizmetlerinizi net anlatır, uygun lead’leri toplar ve müşteri iletişimini otomatikleştirir.
+AmeritAI mesajı:
+AmeritAI, hizmetlerinizi net anlatır, uygun lead’leri toplar ve müşteri iletişimini otomatikleştirir.
 
 ## 4.4 Restoran / Kafe
 Profil:
@@ -109,7 +109,7 @@ Ağrı noktaları:
 - Satış artıracak öneri eksikliği
 - Kampanya iletişiminin zayıf olması
 
-Vion mesajı:
+AmeritAI mesajı:
 Dijital Garson modülüyle menü önerileri sunun, müşteri deneyimini hızlandırın ve akıllı önerilerle sepeti büyütün.
 
 ## 4.5 SaaS / Ürün şirketleri
@@ -122,13 +122,13 @@ Ağrı noktaları:
 - Kullanıcılar dashboard’da kayboluyor
 - Kişiselleştirilmiş cevap veremeyen basit botlar
 
-Vion mesajı:
-Dynamic Context modülü ile Vion AI, kullanıcı verisini bağlama alarak daha kişisel ve doğru yanıtlar sunar.
+AmeritAI mesajı:
+Dynamic Context modülü ile AmeritAI, kullanıcı verisini bağlama alarak daha kişisel ve doğru yanıtlar sunar.
 
 ## 5. Ürünün Güçlü Tarafları (Pazarlama Açısından)
 
 ### 5.1 Modüler yapı
-Vion tek bir “sabit chatbot” değildir. İşletme büyüdükçe yeni modüller eklenebilir.
+AmeritAI tek bir “sabit chatbot” değildir. İşletme büyüdükçe yeni modüller eklenebilir.
 
 Öne çıkan modüller:
 - Genel AI Asistanı
@@ -142,7 +142,7 @@ Vion tek bir “sabit chatbot” değildir. İşletme büyüdükçe yeni modüll
 - Dynamic Context
 
 ### 5.2 Sektör uyumu
-Vion, farklı sektörlere uygun modül kombinasyonlarıyla konumlanır:
+AmeritAI, farklı sektörlere uygun modül kombinasyonlarıyla konumlanır:
 - E-ticaret
 - Restoran
 - Hizmet işletmeleri
@@ -188,7 +188,7 @@ Pazarlama kullanımı:
 ## 6. Temel Mesaj Çerçevesi (Messaging Framework)
 
 ## 6.1 Üst seviye mesaj (Hero / Pitch)
-Vion AI ile web sitenizi sadece bilgi veren bir sayfa olmaktan çıkarın; ziyaretçileri karşılayan, yönlendiren ve dönüştüren bir AI asistanına dönüştürün.
+AmeritAI ile web sitenizi sadece bilgi veren bir sayfa olmaktan çıkarın; ziyaretçileri karşılayan, yönlendiren ve dönüştüren bir AI asistanına dönüştürün.
 
 ## 6.2 Destek odaklı mesaj
 Tekrarlayan müşteri sorularını otomatikleştirin, ekibiniz sadece yüksek değerli görüşmelere odaklansın.
@@ -205,24 +205,24 @@ Tek platformdan modül, entegrasyon, widget görünümü ve müşteri deneyimi y
 ## 7. Sektöre Göre Hazır Mesajlar (TR)
 
 ## 7.1 E-ticaret
-Vion AI, ziyaretçilerinize doğru ürünleri önerir, sık sorulan soruları yanıtlar ve satın alma yolculuğunu hızlandırır.
+AmeritAI, ziyaretçilerinize doğru ürünleri önerir, sık sorulan soruları yanıtlar ve satın alma yolculuğunu hızlandırır.
 
 Alternatif:
 Ürün kataloğunuzu konuşan bir satış danışmanına dönüştürün.
 
 ## 7.2 Restoran / Kafe
-Vion AI, menünüzü tanıyan bir dijital garson gibi çalışır; öneri sunar, soruları yanıtlar ve müşteri deneyimini hızlandırır.
+AmeritAI, menünüzü tanıyan bir dijital garson gibi çalışır; öneri sunar, soruları yanıtlar ve müşteri deneyimini hızlandırır.
 
 ## 7.3 Klinik / Sağlık
-Vion AI, bilgilendirme ve ön değerlendirme süreçlerini otomatikleştirerek ekip yükünü azaltır ve ziyaretçilerinize hızlı yanıt sunar.
+AmeritAI, bilgilendirme ve ön değerlendirme süreçlerini otomatikleştirerek ekip yükünü azaltır ve ziyaretçilerinize hızlı yanıt sunar.
 
 (Not: Tıbbi iddialar için regülasyon uyumuna göre yumuşatılmış dil kullanın.)
 
 ## 7.4 Hizmet İşletmesi / Ajans
-Vion AI, hizmetlerinizi net biçimde anlatır, müşterileri doğru çözüme yönlendirir ve lead toplama sürecinizi güçlendirir.
+AmeritAI, hizmetlerinizi net biçimde anlatır, müşterileri doğru çözüme yönlendirir ve lead toplama sürecinizi güçlendirir.
 
 ## 7.5 SaaS
-Vion AI, kullanıcı sorularını yanıtlayan ve ürüne göre kişiselleştirilen bir destek/ürün asistanı olarak çalışır.
+AmeritAI, kullanıcı sorularını yanıtlayan ve ürüne göre kişiselleştirilen bir destek/ürün asistanı olarak çalışır.
 
 ## 8. Rakiplerden Ayrışma Mesajı (Doğrudan isim vermeden)
 
@@ -251,7 +251,7 @@ Vion AI, kullanıcı sorularını yanıtlayan ve ürüne göre kişiselleştiril
 4. Destek, satış ve lead toplama için tek AI platformu
 
 ## 9.2 Hero alt metin alternatifleri
-1. Vion AI ile dakikalar içinde web sitenize entegre edilen, markanıza uyumlu bir AI asistan oluşturun.
+1. AmeritAI ile dakikalar içinde web sitenize entegre edilen, markanıza uyumlu bir AI asistan oluşturun.
 2. Sık soruları yanıtlayın, lead toplayın, satış fırsatlarını yakalayın. Tümünü tek platformdan yönetin.
 3. Sadece chatbot değil: modüller, entegrasyonlar ve sektör odaklı kullanım senaryolarıyla tam müşteri deneyimi çözümü.
 
@@ -282,13 +282,13 @@ Başlıklar:
 - Lead Toplayan Chatbot Platformu
 
 Açıklama:
-Vion AI ile web sitenize modüler AI asistan ekleyin. Destek, satış ve lead toplama tek platformda.
+AmeritAI ile web sitenize modüler AI asistan ekleyin. Destek, satış ve lead toplama tek platformda.
 
 ### Varyasyon B
 Başlıklar:
 - AI Chatbot’tan Fazlası
 - Markanıza Uyumlu Widget
-- Satış ve Destek İçin Vion AI
+- Satış ve Destek İçin AmeritAI
 
 Açıklama:
 Classic ve Ambient widget seçenekleri, gelişmiş özelleştirme ve entegrasyonlarla işletmenize özel AI deneyimi.
@@ -297,7 +297,7 @@ Classic ve Ambient widget seçenekleri, gelişmiş özelleştirme ve entegrasyon
 ### Hook 1
 Web sitenize gelen ziyaretçilerin çoğu soru soramadan çıkıyor olabilir.
 
-Vion AI ile onları karşılayan, yönlendiren ve lead’e dönüştüren bir AI asistan kurun.
+AmeritAI ile onları karşılayan, yönlendiren ve lead’e dönüştüren bir AI asistan kurun.
 
 ### Hook 2
 Sadece chatbot değil.
@@ -305,12 +305,12 @@ Satış, lead toplama, ürün önerileri ve entegrasyonlarla çalışan modüler
 
 ### Hook 3
 Markanıza uymayan chatbot’lardan sıkıldınız mı?
-Vion AI’ın widget görünümünü mobil ve desktop için ayrı ayrı özelleştirin.
+AmeritAI’ın widget görünümünü mobil ve desktop için ayrı ayrı özelleştirin.
 
 ## 10.3 Retargeting Mesajları
 - Demo izlediniz, şimdi widget’ı kendi markanıza göre test edin.
 - Lead toplama ve satış modüllerini bir arada deneyin.
-- 14 günlük deneme ile Vion AI’ı canlı sitenizde görün.
+- 14 günlük deneme ile AmeritAI’ı canlı sitenizde görün.
 
 ## 11. E-posta Pazarlama Şablonları (TR)
 
@@ -321,7 +321,7 @@ Merhaba {{isim}},
 
 {{şirket}} için web sitesi ziyaretçilerini karşılayan, sık soruları yanıtlayan ve lead toplayan bir AI asistan çözümü üzerine çalışıyoruz.
 
-Vion AI ile:
+AmeritAI ile:
 - 7/24 müşteri sorularını yanıtlayabilir,
 - lead toplama akışlarını otomatikleştirebilir,
 - widget görünümünü markanıza göre özelleştirebilirsiniz.
@@ -334,13 +334,13 @@ Sevgiler,
 {{ad}}
 
 ## 11.2 Follow-up (yanıt gelmezse)
-Konu: Kısa takip - Vion AI demo
+Konu: Kısa takip - AmeritAI demo
 
 Merhaba {{isim}},
 
 Kısa bir takip yapmak istedim.
 
-Özellikle {{sektör}} işletmeleri için Vion AI’ın sağladığı en büyük değerler:
+Özellikle {{sektör}} işletmeleri için AmeritAI’ın sağladığı en büyük değerler:
 - tekrar eden soruların otomasyonu,
 - lead toplama,
 - müşteri yönlendirme / satış desteği.
@@ -348,7 +348,7 @@ Kısa bir takip yapmak istedim.
 İsterseniz size özel örnek bir widget görünümü hazırlayabilirim.
 
 ## 11.3 Demo sonrası teklif yönlendirme
-Konu: Demo özeti + size uygun Vion AI kurulum önerisi
+Konu: Demo özeti + size uygun AmeritAI kurulum önerisi
 
 Merhaba {{isim}},
 
@@ -379,7 +379,7 @@ Müşteriye sadece “chatbot konuşuyor” göstermek değil; iş sonucunu gös
 - Destek ekibi tekrarlı sorulara gömülüyor
 - Lead fırsatları kaçıyor
 
-2. Vion AI canlı widget demo (5 dk)
+2. AmeritAI canlı widget demo (5 dk)
 - Soru cevap
 - Suggested questions
 - Lead form tetikleme
@@ -401,11 +401,11 @@ Müşteriye sadece “chatbot konuşuyor” göstermek değil; iş sonucunu gös
 
 ## 13.1 “Bizim canlı destek ekibimiz var”
 Yanıt:
-Harika. Vion AI canlı desteğin yerini almak zorunda değil; tekrar eden soruları filtreleyip ekibinizin daha değerli görüşmelere odaklanmasını sağlar.
+Harika. AmeritAI canlı desteğin yerini almak zorunda değil; tekrar eden soruları filtreleyip ekibinizin daha değerli görüşmelere odaklanmasını sağlar.
 
 ## 13.2 “Chatbotlar markamıza uymuyor”
 Yanıt:
-Vion AI’da widget görünümünü marka renklerinize ve kullanım senaryonuza göre özelleştirebiliyorsunuz. Classic ve Ambient mod seçenekleri de var.
+AmeritAI’da widget görünümünü marka renklerinize ve kullanım senaryonuza göre özelleştirebiliyorsunuz. Classic ve Ambient mod seçenekleri de var.
 
 ## 13.3 “Kurulumu zor olur”
 Yanıt:
@@ -413,7 +413,7 @@ Temel web entegrasyonu script/iframe ile hızlı başlar. Sonrasında modüller 
 
 ## 13.4 “Bizim kullanım senaryomuz farklı”
 Yanıt:
-Vion’un güçlü tarafı modüler yapı. Sektöre ve iş akışına göre modül kombinasyonu ve entegrasyonlarla özelleştirilebilir.
+AmeritAI’un güçlü tarafı modüler yapı. Sektöre ve iş akışına göre modül kombinasyonu ve entegrasyonlarla özelleştirilebilir.
 
 ## 13.5 “Veri güvenliği / kontrol önemli”
 Yanıt:
@@ -516,18 +516,18 @@ Pazarlama metinlerinde ölçülebilir iddia kullanırken dikkat:
 ## 18. Hazır Kısa Tanıtım Metinleri (Bio / About / Profil)
 
 ## 18.1 Çok kısa (1 satır)
-Vion AI, işletmeler için modüler AI asistan ve dönüşüm odaklı widget platformudur.
+AmeritAI, işletmeler için modüler AI asistan ve dönüşüm odaklı widget platformudur.
 
 ## 18.2 Kısa (2-3 satır)
-Vion AI; destek, satış, lead toplama ve müşteri etkileşimini tek platformda birleştiren modüler bir AI asistan çözümüdür. Web sitenize entegre edilir, markanıza göre özelleşir, işiniz büyüdükçe modüllerle genişler.
+AmeritAI; destek, satış, lead toplama ve müşteri etkileşimini tek platformda birleştiren modüler bir AI asistan çözümüdür. Web sitenize entegre edilir, markanıza göre özelleşir, işiniz büyüdükçe modüllerle genişler.
 
 ## 18.3 Kurumsal profil metni
-Vion AI, farklı sektörlerdeki işletmelerin müşteri deneyimini dönüştürmek için geliştirilen modüler bir yapay zeka platformudur. Web widget, entegrasyonlar, sektör modülleri ve özelleştirilebilir görünüm altyapısıyla; destekten satışa, lead toplamadan proaktif etkileşime kadar uçtan uca bir AI deneyimi sunar.
+AmeritAI, farklı sektörlerdeki işletmelerin müşteri deneyimini dönüştürmek için geliştirilen modüler bir yapay zeka platformudur. Web widget, entegrasyonlar, sektör modülleri ve özelleştirilebilir görünüm altyapısıyla; destekten satışa, lead toplamadan proaktif etkileşime kadar uçtan uca bir AI deneyimi sunar.
 
 ## 19. Satış Sunumu İçin Slayt Akışı (Öneri)
 
 1. Problem: Neden klasik web siteleri dönüşüm kaybediyor?
-2. Çözüm: Vion AI platform yaklaşımı
+2. Çözüm: AmeritAI platform yaklaşımı
 3. Canlı demo: Widget + kullanım senaryosu
 4. Modüller: İhtiyaca göre büyüyen yapı
 5. Entegrasyonlar: Mevcut sistemlerle uyum
@@ -569,10 +569,10 @@ Bir içerik/kampanya hazırlarken kontrol edin:
 
 ## 23. Son Söz
 
-Vion AI’ın pazarlama gücü sadece “AI chatbot” olması değil; modüler, sektörel, özelleştirilebilir ve entegrasyon odaklı bir platform olmasıdır.
+AmeritAI’ın pazarlama gücü sadece “AI chatbot” olması değil; modüler, sektörel, özelleştirilebilir ve entegrasyon odaklı bir platform olmasıdır.
 
 Pazarlama iletişiminde en güçlü yaklaşım:
 - önce iş problemini tanımlamak,
 - sonra modül/özellik değil iş sonucu anlatmak,
-- en sonda Vion’un bunu nasıl esnek şekilde sunduğunu göstermek.
+- en sonda AmeritAI’un bunu nasıl esnek şekilde sunduğunu göstermek.
 

@@ -1,6 +1,6 @@
 # Omni Live Smoke Test
 
-Bu runbook, `Vion AI Omni-Channel` icin gercek provider smoke testini production-benzeri sekilde yurutmeye yarar.
+Bu runbook, `AmeritAI Omni-Channel` icin gercek provider smoke testini production-benzeri sekilde yurutmeye yarar.
 
 ## 1. Hazirlik
 

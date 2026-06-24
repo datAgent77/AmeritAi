@@ -131,7 +131,7 @@ export async function POST(req: Request) {
         assistantProfileId: "omni-default",
     })
 
-    const greetingMessage = voiceNumber.greetingMessage || "Merhaba, Vion AI sesli asistana hos geldiniz. Size nasil yardimci olabilirim?"
+    const greetingMessage = voiceNumber.greetingMessage || "Merhaba, AmeritAI sesli asistana hos geldiniz. Size nasil yardimci olabilirim?"
     const gatherAction = buildGatherAction(
         {
             chatbotId,

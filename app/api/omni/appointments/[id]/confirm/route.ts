@@ -55,7 +55,7 @@ export async function POST(
             customerName: existing.customerName || "Değerli Müşterimiz",
             date: existing.date,
             time: existing.time,
-            companyName: chatbotData.companyName || chatbotData.name || "Vion AI",
+            companyName: chatbotData.companyName || chatbotData.name || "AmeritAI",
             notes: existing.notes,
         })
     }

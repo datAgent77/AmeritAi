@@ -94,7 +94,7 @@ export async function dispatchHumanHandoffNotifications(input: {
     if (input.settings.notifyEmail && input.notificationEmail) {
         results.emailSent = await sendHumanHandoffNotificationEmail({
             recipientEmail: input.notificationEmail,
-            companyName: input.companyName || "Vion AI",
+            companyName: input.companyName || "AmeritAI",
             callbackId: input.callbackId,
             triggerSource: input.triggerSource,
             transcriptSnippet: input.userText || "",
@@ -174,7 +174,7 @@ export async function createAndNotifyHumanHandoff(input: {
         adminDb: input.adminDb,
         chatbotId: input.chatbotId,
         callbackId: callback.id || input.sessionId,
-        companyName: input.companyName || "Vion AI",
+        companyName: input.companyName || "AmeritAI",
         notificationEmail: input.notificationEmail || null,
         triggerSource: input.triggerSource,
         userText: input.userText || null,

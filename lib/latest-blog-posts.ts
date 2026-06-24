@@ -13,7 +13,7 @@ export const LATEST_BLOG_POSTS = [
             en: `Conversational commerce is no longer just a trend; it's the standard. With over 2 billion active users, WhatsApp is the ultimate channel for engaging customers. But human agents can't scale to handle thousands of simultaneous messages. This is where WhatsApp AI Chatbots come in.
 
 **Why WhatsApp AI is a Game-Changer**
-Traditional websites have high bounce rates. On WhatsApp, open rates exceed 90%. By deploying an AI assistant like Vion AI on WhatsApp, you meet your customers where they already spend their time. The AI can instantly provide product recommendations, check inventory, and even share payment links.
+Traditional websites have high bounce rates. On WhatsApp, open rates exceed 90%. By deploying an AI assistant like AmeritAI on WhatsApp, you meet your customers where they already spend their time. The AI can instantly provide product recommendations, check inventory, and even share payment links.
 
 **Automating the Sales Funnel**
 A well-designed WhatsApp AI handles the entire funnel:
@@ -26,7 +26,7 @@ Ensure your AI uses a natural, brand-aligned tone. Implement clear escalation pa
             tr: `Diyalogsal ticaret (conversational commerce) artık sadece bir trend değil, bir standart. 2 milyardan fazla aktif kullanıcısıyla WhatsApp, müşterilerle etkileşim kurmak için nihai kanaldır. Ancak insan temsilciler aynı anda binlerce mesajı yönetecek kadar ölçeklenemez. İşte WhatsApp Yapay Zeka Chatbotları burada devreye giriyor.
 
 **WhatsApp Yapay Zekası Neden Oyun Değiştirici?**
-Geleneksel web sitelerinin hemen çıkma oranları yüksektir. WhatsApp'ta ise açılma oranları %90'ı aşar. WhatsApp'ta Vion AI gibi bir yapay zeka asistanı konumlandırarak, müşterilerinizle zaten vakit geçirdikleri yerde buluşursunuz. AI anında ürün önerileri sunabilir, stok kontrolü yapabilir ve hatta ödeme bağlantıları paylaşabilir.
+Geleneksel web sitelerinin hemen çıkma oranları yüksektir. WhatsApp'ta ise açılma oranları %90'ı aşar. WhatsApp'ta AmeritAI gibi bir yapay zeka asistanı konumlandırarak, müşterilerinizle zaten vakit geçirdikleri yerde buluşursunuz. AI anında ürün önerileri sunabilir, stok kontrolü yapabilir ve hatta ödeme bağlantıları paylaşabilir.
 
 **Satış Hunisini Otomatikleştirmek**
 İyi tasarlanmış bir WhatsApp AI tüm huniyi yönetir:
@@ -41,7 +41,7 @@ Yapay zekanızın markanıza uygun, doğal bir ton kullandığından emin olun. 
         date: "2026-03-01",
         readTime: "6 dk",
         image: "/blog/whatsapp-ai-commerce.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "instagram-dm-otomasyonu-ai-satis",
@@ -63,7 +63,7 @@ When a user replies to your story or comments a specific keyword on your reel, t
 With an AI assistant, every DM becomes a lead capture opportunity. The AI can collect emails, phone numbers, and preferences, directly feeding this data into your CRM. This turns anonymous followers into actionable contacts.
 
 **24/7 Social Sales**
-Your social media never sleeps, and neither should your sales team. By utilizing Vion AI's Instagram integration, businesses can run global campaigns without worrying about timezone differences, ensuring every lead is nurtured instantly.`,
+Your social media never sleeps, and neither should your sales team. By utilizing AmeritAI's Instagram integration, businesses can run global campaigns without worrying about timezone differences, ensuring every lead is nurtured instantly.`,
             tr: `Instagram güçlü bir keşif motorudur, ancak beğenileri ve yorumları gerçek gelire dönüştürmek hızlı ve kişiselleştirilmiş bir etkileşim gerektirir. Potansiyel bir müşteri DM'den "Fiyat nedir?" diye sorup saatlerce cevap beklerse, o satış kaybedilir. Yapay zeka destekli Instagram DM Otomasyonu bu gecikme sorununu tamamen çözer.
 
 **Ölçeklenebilir Anında Etkileşim**
@@ -73,13 +73,13 @@ Bir kullanıcı hikayenize yanıt verdiğinde veya reels videonuza belirli bir a
 Bir yapay zeka asistanı ile her DM, bir potansiyel müşteri yakalama fırsatına dönüşür. AI e-posta, telefon numarası ve tercihleri toplayarak bu verileri doğrudan CRM'inize aktarabilir. Bu, anonim takipçileri eyleme dönüştürülebilir kişilere dönüştürür.
 
 **7/24 Sosyal Medya Satışları**
-Sosyal medyanız asla uyumaz, satış ekibiniz de öyle olmamalı. İşletmeler, Vion AI'ın Instagram entegrasyonunu kullanarak zaman dilimi farklılıkları konusunda endişelenmeden global kampanyalar yürütebilir ve her potansiyel müşterinin anında beslenmesini sağlayabilir.`
+Sosyal medyanız asla uyumaz, satış ekibiniz de öyle olmamalı. İşletmeler, AmeritAI'ın Instagram entegrasyonunu kullanarak zaman dilimi farklılıkları konusunda endişelenmeden global kampanyalar yürütebilir ve her potansiyel müşterinin anında beslenmesini sağlayabilir.`
         },
         category: "Sosyal Medya",
         date: "2026-03-03",
         readTime: "5 dk",
         image: "/blog/instagram-dm-ai.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "web-sitesi-sesli-yapay-zeka-asistani",
@@ -101,7 +101,7 @@ Typing complex queries, especially on mobile devices, creates friction. With voi
 For quick, economical interactions, local models like Klassifier provide near-zero latency. This means the assistant responds almost before the user finishes their breath. Voice interfaces also dramatically improve accessibility for visually impaired users or those who simply prefer hands-free navigation.
 
 **Voice Commerce is Here**
-Imagine a user saying, "Show me black running shoes under $100, size 10." The Vion AI Voice Assistant understands the nuanced constraints, filters the catalog, and speaks back: "I found three options for you, displaying them now." This level of seamless interaction is what will define e-commerce winners in the coming years.`,
+Imagine a user saying, "Show me black running shoes under $100, size 10." The AmeritAI Voice Assistant understands the nuanced constraints, filters the catalog, and speaks back: "I found three options for you, displaying them now." This level of seamless interaction is what will define e-commerce winners in the coming years.`,
             tr: `Metin tabanlı sohbet artık bir standart haline geldi, ancak dijital etkileşimin geleceği sestir. Kullanıcılar daha sürtünmesiz deneyimler talep ettikçe, Sesli Yapay Zeka Asistanları 2026'da dönüşüm oranlarını ve erişilebilirliği artırmak isteyen web siteleri için kritik bir altyapı haline geliyor.
 
 **Doğal Konuşmanın Gücü**
@@ -111,13 +111,13 @@ Imagine a user saying, "Show me black running shoes under $100, size 10." The Vi
 Hızlı ve ekonomik etkileşimler için Klassifier gibi yerel modeller neredeyse sıfır gecikme sağlar. Bu, asistanın kullanıcı nefesini bitirmeden hemen önce yanıt verdiği anlamına gelir. Sesli arayüzler ayrıca görme engelli kullanıcılar veya eller serbest gezinmeyi tercih edenler için erişilebilirliği önemli ölçüde artırır.
 
 **Sesli Ticaret (Voice Commerce) Geldi**
-Bir kullanıcının, "Bana 100 doların altında, 43 numara siyah koşu ayakkabılarını göster" dediğini hayal edin. Vion AI Sesli Asistanı nüanslı kısıtlamaları anlar, kataloğu filtreler ve sözlü olarak yanıt verir: "Sizin için üç seçenek buldum, şimdi ekranda listeliyorum." Bu seviyedeki kusursuz etkileşim, önümüzdeki yıllarda e-ticaretin kazananlarını belirleyecek olan şeydir.`
+Bir kullanıcının, "Bana 100 doların altında, 43 numara siyah koşu ayakkabılarını göster" dediğini hayal edin. AmeritAI Sesli Asistanı nüanslı kısıtlamaları anlar, kataloğu filtreler ve sözlü olarak yanıt verir: "Sizin için üç seçenek buldum, şimdi ekranda listeliyorum." Bu seviyedeki kusursuz etkileşim, önümüzdeki yıllarda e-ticaretin kazananlarını belirleyecek olan şeydir.`
         },
         category: "Teknoloji",
         date: "2026-03-05",
         readTime: "7 dk",
         image: "/blog/voice-ai-assistant.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "yapay-zeka-otomatik-ui-ux-denetimi",
@@ -139,7 +139,7 @@ AI models trained on Jakob Nielsen's 10 Usability Heuristics can instantly scan 
 Advanced visual diagnosis tools simulate human eye-tracking. By generating heatmap predictions, the AI shows you exactly where users will look in the first 3 seconds. If they are staring at an irrelevant stock photo instead of your "Buy Now" button, you have a structural problem.
 
 **Actionable Insights for Growth**
-The Vion AI UI/UX Auditor doesn't just point out problems; it suggests solutions. From recommending better copy tone to ensuring WCAG 2.1 accessibility compliance, regular AI audits ensure your website remains a high-converting machine without relying on guesswork.`,
+The AmeritAI UI/UX Auditor doesn't just point out problems; it suggests solutions. From recommending better copy tone to ensuring WCAG 2.1 accessibility compliance, regular AI audits ensure your website remains a high-converting machine without relying on guesswork.`,
             tr: `Web sitenize trafik çekiyorsunuz, ancak ziyaretçiler dönüşmüyor. Genellikle sorun ürün veya fiyat değildir; sorun Kullanıcı Deneyimi (UX). Bu kullanılabilirlik sorunlarını bulmak eskiden pahalı danışmanlar gerektiriyordu. Bugün, yapay zeka destekli Otomatik UI/UX Denetçileri bunu saniyeler içinde yapabiliyor.
 
 **Otopilotta Sezgisel (Heuristic) Analiz**
@@ -149,13 +149,13 @@ Jakob Nielsen'in 10 Kullanılabilirlik Sezgisi üzerine eğitilmiş yapay zeka m
 Gelişmiş görsel teşhis araçları insan göz takibini simüle eder. Yapay zeka, ısı haritası (heatmap) tahminleri oluşturarak kullanıcıların ilk 3 saniyede tam olarak nereye bakacağını gösterir. "Hemen Satın Al" butonunuz yerine ilgisiz bir stok fotoğrafa bakıyorlarsa, yapısal bir sorununuz var demektir.
 
 **Büyüme İçin Eyleme Geçirilebilir İçgörüler**
-Vion AI UI/UX Auditor sadece sorunları göstermekle kalmaz; çözümler önerir. Daha iyi metin tonu önermekten WCAG 2.1 erişilebilirlik uyumluluğunu sağlamaya kadar, düzenli yapay zeka denetimleri web sitenizin tahminlere dayanmadan yüksek dönüşümlü bir makine olarak kalmasını sağlar.`
+AmeritAI UI/UX Auditor sadece sorunları göstermekle kalmaz; çözümler önerir. Daha iyi metin tonu önermekten WCAG 2.1 erişilebilirlik uyumluluğunu sağlamaya kadar, düzenli yapay zeka denetimleri web sitenizin tahminlere dayanmadan yüksek dönüşümlü bir makine olarak kalmasını sağlar.`
         },
         category: "Tasarım",
         date: "2026-03-08",
         readTime: "6 dk",
         image: "/blog/ui-ux-ai-auditor.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "gorsel-teshis-visual-diagnosis-e-ticaret",
@@ -171,7 +171,7 @@ Vion AI UI/UX Auditor sadece sorunları göstermekle kalmaz; çözümler önerir
             en: `Text search is incredibly limiting when a customer doesn't know the exact name of what they're looking for. "That green jacket with the fuzzy collar" is a terrible search query. Enter Visual Diagnosis—the ability for AI to understand and process user-uploaded images.
 
 **Revolutionizing Product Discovery**
-In fashion, furniture, or hardware e-commerce, the fastest way to find a product is to show a picture. With the Vion AI Visual Diagnosis module, a customer can snap a photo of a broken pipe fitting or a dress they saw on Instagram. The AI analyzes the image, cross-references your product catalog, and instantly provides exact matches or visually similar alternatives.
+In fashion, furniture, or hardware e-commerce, the fastest way to find a product is to show a picture. With the AmeritAI Visual Diagnosis module, a customer can snap a photo of a broken pipe fitting or a dress they saw on Instagram. The AI analyzes the image, cross-references your product catalog, and instantly provides exact matches or visually similar alternatives.
 
 **Support and Troubleshooting via Image**
 Beyond sales, visual AI transforms customer support. Instead of a customer trying to describe an error code or a damaged product via text, they upload a screenshot or photo. The AI immediately recognizes the issue and provides the relevant troubleshooting steps or initiates a return flow.
@@ -181,7 +181,7 @@ Users who take the effort to upload an image have extremely high intent. By meet
             tr: `Metin araması, bir müşteri aradığı şeyin tam adını bilmediğinde inanılmaz derecede kısıtlayıcıdır. "Şu tüylü yakalı yeşil ceket" çok kötü bir arama sorgusudur. Görsel Teşhis (Visual Diagnosis) tam burada devreye giriyor—yapay zekanın kullanıcı tarafından yüklenen görselleri anlama ve işleme yeteneği.
 
 **Ürün Keşfinde Devrim**
-Moda, mobilya veya hırdavat e-ticaretinde bir ürünü bulmanın en hızlı yolu fotoğrafını göstermektir. Vion AI Visual Diagnosis modülü ile bir müşteri, kırık bir boru bağlantı parçasının veya Instagram'da gördüğü bir elbisenin fotoğrafını çekebilir. AI görseli analiz eder, ürün kataloğunuzla çapraz referanslar yapar ve anında tam eşleşmeleri veya görsel olarak benzer alternatifleri sunar.
+Moda, mobilya veya hırdavat e-ticaretinde bir ürünü bulmanın en hızlı yolu fotoğrafını göstermektir. AmeritAI Visual Diagnosis modülü ile bir müşteri, kırık bir boru bağlantı parçasının veya Instagram'da gördüğü bir elbisenin fotoğrafını çekebilir. AI görseli analiz eder, ürün kataloğunuzla çapraz referanslar yapar ve anında tam eşleşmeleri veya görsel olarak benzer alternatifleri sunar.
 
 **Görsel Üzerinden Destek ve Sorun Giderme**
 Satışın ötesinde, görsel yapay zeka müşteri desteğini de dönüştürür. Bir müşterinin metin yoluyla bir hata kodunu veya hasarlı bir ürünü tarif etmeye çalışması yerine, bir ekran görüntüsü veya fotoğraf yüklemesi yeterlidir. Yapay zeka sorunu anında tanır ve ilgili sorun giderme adımlarını sağlar veya bir iade akışı başlatır.
@@ -193,7 +193,7 @@ Görsel yükleme zahmetine giren kullanıcıların niyeti son derece yüksektir.
         date: "2026-03-10",
         readTime: "5 dk",
         image: "/blog/visual-diagnosis-ai.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "e-ticaret-oyunlastirma-gamification-ai",
@@ -212,7 +212,7 @@ Görsel yükleme zahmetine giren kullanıcıların niyeti son derece yüksektir.
 Nobody enjoys interacting with a static loyalty page. But when a chatbot challenges you to a quick trivia quiz about coffee beans to unlock a 10% discount on your espresso machine purchase, the dynamic shifts. Gamification makes the buying journey interactive and memorable.
 
 **Dynamic Rewards Systems**
-Vion AI's Gamification modules allow you to set up rules where user engagement translates into points, badges, or hidden discounts. For example, an AI assistant can trigger a "Spin the Wheel" game directly in the chat interface after a user has viewed three different products without adding to cart. 
+AmeritAI's Gamification modules allow you to set up rules where user engagement translates into points, badges, or hidden discounts. For example, an AI assistant can trigger a "Spin the Wheel" game directly in the chat interface after a user has viewed three different products without adding to cart. 
 
 **Data Collection Through Play**
 Gamification is the least intrusive way to collect zero-party data. A quick "Personality Quiz: What's your summer style?" deployed via the chatbot provides the AI with exact preferences, allowing for hyper-targeted product recommendations immediately after the game ends. Playful AI is profitable AI.`,
@@ -222,7 +222,7 @@ Gamification is the least intrusive way to collect zero-party data. A quick "Per
 Kimse statik bir sadakat sayfasında gezinmekten hoşlanmaz. Ancak bir chatbot, espresso makinesi alışverişinizde %10 indirim kilidini açmak için sizi kahve çekirdekleri hakkında hızlı bir bilgi yarışmasına davet ettiğinde dinamik değişir. Oyunlaştırma, satın alma yolculuğunu interaktif ve akılda kalıcı hale getirir.
 
 **Dinamik Ödül Sistemleri**
-Vion AI'ın Oyunlaştırma modülleri, kullanıcı etkileşiminin puanlara, rozetlere veya gizli indirimlere dönüştüğü kurallar belirlemenize olanak tanır. Örneğin, bir yapay zeka asistanı, bir kullanıcı sepete ekleme yapmadan üç farklı ürünü inceledikten sonra doğrudan sohbet arayüzünde bir "Çarkıfelek" oyunu tetikleyebilir.
+AmeritAI'ın Oyunlaştırma modülleri, kullanıcı etkileşiminin puanlara, rozetlere veya gizli indirimlere dönüştüğü kurallar belirlemenize olanak tanır. Örneğin, bir yapay zeka asistanı, bir kullanıcı sepete ekleme yapmadan üç farklı ürünü inceledikten sonra doğrudan sohbet arayüzünde bir "Çarkıfelek" oyunu tetikleyebilir.
 
 **Oyun Yoluyla Veri Toplama**
 Oyunlaştırma, sıfırıncı taraf veri (zero-party data) toplamanın en az rahatsız edici yoludur. Chatbot üzerinden uygulanan hızlı bir "Kişilik Testi: Yaz stiliniz ne?" oyunu, yapay zekaya tam tercihleri sağlar ve oyun bittikten hemen sonra aşırı hedefli ürün önerilerine olanak tanır. Eğlenceli AI, kârlı AI'dır.`
@@ -231,7 +231,7 @@ Oyunlaştırma, sıfırıncı taraf veri (zero-party data) toplamanın en az rah
         date: "2026-03-12",
         readTime: "5 dk",
         image: "/blog/gamification-ai-ecommerce.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "ai-destekli-kampanya-yonetimi-indirim",
@@ -250,7 +250,7 @@ Oyunlaştırma, sıfırıncı taraf veri (zero-party data) toplamanın en az rah
 An AI assistant constantly monitors user behavior—time spent on page, scrolling velocity, and hesitation on the checkout page. If the AI detects exit intent, it can intervene with a highly contextual offer. "I see you're looking at the premium plan. If I can offer you a 15% discount valid for the next 10 minutes, would you complete your order today?"
 
 **Dynamic Pricing & Urgency**
-Vion AI's Sales Optimization module allows you to configure stock alerts and dynamic codes. If stock is genuinely low, the AI leverages scarcity: "We only have 2 left in your size. Use code FAST5 for free shipping if you check out now." This creates authentic urgency.
+AmeritAI's Sales Optimization module allows you to configure stock alerts and dynamic codes. If stock is genuinely low, the AI leverages scarcity: "We only have 2 left in your size. Use code FAST5 for free shipping if you check out now." This creates authentic urgency.
 
 **Maximizing Margins**
 By only deploying promotional codes when a sale is at risk of being lost, AI Campaign Managers ensure that your marketing budget is spent saving conversions rather than subsidizing guaranteed purchases. It's precise, automated, and highly profitable.`,
@@ -260,7 +260,7 @@ By only deploying promotional codes when a sale is at risk of being lost, AI Cam
 Bir yapay zeka asistanı kullanıcı davranışını (sayfada geçirilen süre, kaydırma hızı ve ödeme sayfasındaki kararsızlık) sürekli olarak izler. Yapay zeka çıkış niyeti tespit ederse, oldukça bağlamsal bir teklifle müdahale edebilir. "Premium planı incelediğinizi görüyorum. Önümüzdeki 10 dakika için geçerli %15 indirim sunarsam siparişinizi bugün tamamlar mısınız?"
 
 **Dinamik Fiyatlandırma ve Aciliyet**
-Vion AI'ın Satış Optimizasyonu modülü, stok uyarıları ve dinamik kodlar yapılandırmanıza olanak tanır. Stok gerçekten azsa, AI kıtlık ilkesinden yararlanır: "Sizin bedeninizde sadece 2 adet kaldı. Şimdi ödeme yaparsanız ücretsiz kargo için FAST5 kodunu kullanın." Bu, otantik bir aciliyet yaratır.
+AmeritAI'ın Satış Optimizasyonu modülü, stok uyarıları ve dinamik kodlar yapılandırmanıza olanak tanır. Stok gerçekten azsa, AI kıtlık ilkesinden yararlanır: "Sizin bedeninizde sadece 2 adet kaldı. Şimdi ödeme yaparsanız ücretsiz kargo için FAST5 kodunu kullanın." Bu, otantik bir aciliyet yaratır.
 
 **Kâr Marjlarını Maksimize Etmek**
 Sadece bir satışın kaybedilme riski olduğunda promosyon kodları dağıtan Yapay Zeka Kampanya Yöneticileri, pazarlama bütçenizin garanti satın alımları sübvanse etmek yerine dönüşümleri kurtarmaya harcanmasını sağlar. Hassas, otomatik ve son derece kârlıdır.`
@@ -269,7 +269,7 @@ Sadece bir satışın kaybedilme riski olduğunda promosyon kodları dağıtan Y
         date: "2026-03-15",
         readTime: "6 dk",
         image: "/blog/ai-campaign-manager.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "emlak-sektorunde-yapay-zeka-chatbot",
@@ -288,7 +288,7 @@ Sadece bir satışın kaybedilme riski olduğunda promosyon kodları dağıtan Y
 Not every website visitor is ready to buy. An AI assistant acts as the ultimate filter. It asks prospective buyers about their budget, preferred neighborhoods, property type, and purchasing timeline. By the time a human agent reviews the lead, they have a fully qualified profile ready for action.
 
 **Smart Property Matching**
-Integrated with property databases, Vion AI can recommend listings dynamically. If a user asks, "Do you have any 3-bedroom apartments under $500k near downtown?", the AI fetches the exact listings, displays images, and highlights key features within the chat.
+Integrated with property databases, AmeritAI can recommend listings dynamically. If a user asks, "Do you have any 3-bedroom apartments under $500k near downtown?", the AI fetches the exact listings, displays images, and highlights key features within the chat.
 
 **Seamless Viewing Appointments**
 Using the Appointments module, the AI can cross-reference the agent's calendar and allow the client to book a property viewing directly in the chat window. It removes the back-and-forth email ping-pong, securing the commitment while the buyer's interest is at its absolute peak.`,
@@ -298,7 +298,7 @@ Using the Appointments module, the AI can cross-reference the agent's calendar a
 Her web sitesi ziyaretçisi satın almaya hazır değildir. Bir AI asistanı nihai bir filtre görevi görür. Potansiyel alıcılara bütçelerini, tercih ettikleri semtleri, mülk türünü ve satın alma zaman çizelgelerini sorar. İnsan bir danışman lead'i incelediğinde, harekete geçmeye hazır, tam nitelikli bir profile sahip olur.
 
 **Akıllı Mülk Eşleştirme**
-Gayrimenkul veri tabanlarıyla entegre olan Vion AI, dinamik olarak ilan önerebilir. Bir kullanıcı "Şehir merkezine yakın 5 milyon TL'nin altında 3+1 daireniz var mı?" diye sorarsa, yapay zeka tam ilanları getirir, görsellerini gösterir ve temel özellikleri doğrudan sohbet içinde vurgular.
+Gayrimenkul veri tabanlarıyla entegre olan AmeritAI, dinamik olarak ilan önerebilir. Bir kullanıcı "Şehir merkezine yakın 5 milyon TL'nin altında 3+1 daireniz var mı?" diye sorarsa, yapay zeka tam ilanları getirir, görsellerini gösterir ve temel özellikleri doğrudan sohbet içinde vurgular.
 
 **Sorunsuz Ev Gösterim Randevuları**
 Randevular modülünü kullanan AI, danışmanın takvimiyle çapraz referans yapabilir ve müşterinin doğrudan sohbet penceresinden bir mülk gösterimi rezerve etmesine olanak tanır. Alıcının ilgisi en üst seviyedeyken bağlılığı güvence altına alarak, git-gel e-posta trafiğini ortadan kaldırır.`
@@ -307,7 +307,7 @@ Randevular modülünü kullanan AI, danışmanın takvimiyle çapraz referans ya
         date: "2026-03-18",
         readTime: "5 dk",
         image: "/blog/real-estate-ai.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "saas-onboarding-kullanici-katilimi-ai",
@@ -326,7 +326,7 @@ Randevular modülünü kullanan AI, danışmanın takvimiyle çapraz referans ya
 An AI assistant tracks where a user is within the software. If they linger on the "Integrations" page for too long, the AI can proactively slide in: "Need help connecting your CRM? I can guide you through the process step-by-step." This is proactive, not reactive, support.
 
 **Interactive "Aha!" Moments**
-Vion AI's Guided Flows module allows you to create step-by-step interactive tutorials. The AI asks the user what their primary goal is, and then creates a customized checklist directly in the chat, answering specific questions along the way.
+AmeritAI's Guided Flows module allows you to create step-by-step interactive tutorials. The AI asks the user what their primary goal is, and then creates a customized checklist directly in the chat, answering specific questions along the way.
 
 **Reducing Support Overhead**
 By training the AI Knowledge Base on your technical documentation and API specs, the chatbot handles 80% of setup queries. Users get instant technical answers without waiting for a support ticket resolution, dramatically increasing their satisfaction and the likelihood they'll upgrade to a paid tier.`,
@@ -336,7 +336,7 @@ By training the AI Knowledge Base on your technical documentation and API specs,
 Bir AI asistanı, kullanıcının yazılımın neresinde olduğunu takip eder. Eğer "Entegrasyonlar" sayfasında çok uzun süre kalırlarsa, yapay zeka proaktif olarak araya girebilir: "CRM'inizi bağlamak için yardıma mı ihtiyacınız var? Süreç boyunca size adım adım rehberlik edebilirim." Bu reaktif değil, proaktif hasardır.
 
 **İnteraktif "Aha!" Anları**
-Vion AI'ın Yönlendirmeli Akışlar (Guided Flows) modülü, adım adım interaktif eğitimler oluşturmanıza olanak tanır. Yapay zeka kullanıcıya birincil hedeflerinin ne olduğunu sorar ve ardından doğrudan sohbette özel bir kontrol listesi oluşturarak bu süreçteki spesifik soruları yanıtlar.
+AmeritAI'ın Yönlendirmeli Akışlar (Guided Flows) modülü, adım adım interaktif eğitimler oluşturmanıza olanak tanır. Yapay zeka kullanıcıya birincil hedeflerinin ne olduğunu sorar ve ardından doğrudan sohbette özel bir kontrol listesi oluşturarak bu süreçteki spesifik soruları yanıtlar.
 
 **Destek Yükünü Azaltmak**
 Yapay Zeka Bilgi Bankasını (Knowledge Base) teknik dokümantasyonunuz ve API spesifikasyonlarınız üzerinde eğiterek, chatbot kurulum sorgularının %80'ini halleder. Kullanıcılar bir destek biletinin çözülmesini beklemeden anında teknik cevaplar alır, bu da memnuniyetlerini ve ücretli bir pakete geçme olasılıklarını önemli ölçüde artırır.`
@@ -345,7 +345,7 @@ Yapay Zeka Bilgi Bankasını (Knowledge Base) teknik dokümantasyonunuz ve API s
         date: "2026-03-22",
         readTime: "6 dk",
         image: "/blog/saas-onboarding-ai.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     },
     {
         slug: "canli-destek-yapay-zeka-human-handoff",
@@ -361,20 +361,20 @@ Yapay Zeka Bilgi Bankasını (Knowledge Base) teknik dokümantasyonunuz ve API s
             en: `There is a misconception that AI chatbots are meant to replace humans entirely. In reality, the best customer experience comes from a symbiosis of automation and human empathy. The mechanism that links them is called "Human Handoff," and getting it right is crucial.
 
 **When Should AI Escalate?**
-AI should handle the high-volume, low-complexity tasks: FAQs, order tracking, and initial data collection. However, Vion AI uses sentiment analysis and keyword triggers to recognize when human intervention is necessary. If a customer expresses intense frustration, or if an issue involves complex billing disputes, the AI automatically pauses itself and alerts a human agent.
+AI should handle the high-volume, low-complexity tasks: FAQs, order tracking, and initial data collection. However, AmeritAI uses sentiment analysis and keyword triggers to recognize when human intervention is necessary. If a customer expresses intense frustration, or if an issue involves complex billing disputes, the AI automatically pauses itself and alerts a human agent.
 
 **Context is King**
-The worst experience for a customer is repeating themselves. When Vion AI triggers a human handoff, it transfers the entire conversation history, along with summarized bullet points of the user's intent, directly to the live agent's dashboard. The human agent steps in seamlessly, already fully informed.
+The worst experience for a customer is repeating themselves. When AmeritAI triggers a human handoff, it transfers the entire conversation history, along with summarized bullet points of the user's intent, directly to the live agent's dashboard. The human agent steps in seamlessly, already fully informed.
 
 **Maximizing Human Value**
 By utilizing AI as the frontline defense, support agents are no longer bogged down by repetitive copy-paste answers. They are elevated to problem-solvers who handle high-value relationships, drastically improving job satisfaction and the overall quality of customer care.`,
             tr: `Yapay zeka chatbotlarının insanları tamamen değiştirmesi gerektiğine dair yaygın bir yanılgı vardır. Gerçekte, en iyi müşteri deneyimi otomasyon ve insan empatisinin simbiyozundan (birlikteliğinden) gelir. Onları birbirine bağlayan mekanizmaya "Human Handoff" (İnsana Aktarım) denir ve bunu doğru yapmak çok önemlidir.
 
 **AI Ne Zaman İnsana Aktarmalı?**
-Yapay zeka yüksek hacimli, düşük karmaşıklıklı görevleri halletmelidir: SSS'ler, sipariş takibi ve ilk veri toplama. Ancak Vion AI, insan müdahalesinin ne zaman gerekli olduğunu anlamak için duygu analizi ve anahtar kelime tetikleyicileri kullanır. Bir müşteri yoğun hayal kırıklığı ifade ederse veya bir sorun karmaşık faturalandırma anlaşmazlıkları içeriyorsa, AI otomatik olarak kendini duraklatır ve bir insan temsilciyi uyarır.
+Yapay zeka yüksek hacimli, düşük karmaşıklıklı görevleri halletmelidir: SSS'ler, sipariş takibi ve ilk veri toplama. Ancak AmeritAI, insan müdahalesinin ne zaman gerekli olduğunu anlamak için duygu analizi ve anahtar kelime tetikleyicileri kullanır. Bir müşteri yoğun hayal kırıklığı ifade ederse veya bir sorun karmaşık faturalandırma anlaşmazlıkları içeriyorsa, AI otomatik olarak kendini duraklatır ve bir insan temsilciyi uyarır.
 
 **Bağlam Her Şeydir**
-Bir müşteri için en kötü deneyim kendini tekrar etmektir. Vion AI bir insana aktarım tetiklediğinde, kullanıcının niyetinin özetlenmiş maddeleriyle birlikte tüm konuşma geçmişini doğrudan canlı destek temsilcisinin paneline aktarır. İnsan temsilci zaten tam olarak bilgilendirilmiş bir şekilde pürüzsüz bir giriş yapar.
+Bir müşteri için en kötü deneyim kendini tekrar etmektir. AmeritAI bir insana aktarım tetiklediğinde, kullanıcının niyetinin özetlenmiş maddeleriyle birlikte tüm konuşma geçmişini doğrudan canlı destek temsilcisinin paneline aktarır. İnsan temsilci zaten tam olarak bilgilendirilmiş bir şekilde pürüzsüz bir giriş yapar.
 
 **İnsan Değerini Maksimize Etmek**
 Yapay zekayı ön hat savunması olarak kullanarak, destek temsilcileri artık tekrar eden kopyala-yapıştır cevaplarla boğulmazlar. Yüksek değerli ilişkileri yöneten sorun çözücülere dönüşürler; bu da iş tatminini ve genel müşteri hizmetleri kalitesini büyük ölçüde artırır.`
@@ -383,6 +383,6 @@ Yapay zekayı ön hat savunması olarak kullanarak, destek temsilcileri artık t
         date: "2026-03-25",
         readTime: "5 dk",
         image: "/blog/human-handoff-ai.png",
-        author: { name: "Vion AI Team", avatar: "VA" }
+        author: { name: "AmeritAI Team", avatar: "VA" }
     }
 ];

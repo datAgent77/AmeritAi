@@ -118,7 +118,7 @@ async function createLead(adminDb: any, request: VionGuidedActionRequest, operat
         name: payload.name || identity.displayName || "Anonymous",
         email,
         phone,
-        source: payload.source || `Vion ${request.sourceChannel || "web"}`,
+        source: payload.source || `AmeritAI ${request.sourceChannel || "web"}`,
         status: payload.status || "new",
         sourceChannel: request.sourceChannel || null,
         sourceSessionId: request.sourceSessionId || null,

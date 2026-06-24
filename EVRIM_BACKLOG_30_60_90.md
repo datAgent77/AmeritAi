@@ -1,7 +1,7 @@
-# Vion AI Evrim Backlogu (30-60-90)
+# AmeritAI Evrim Backlogu (30-60-90)
 
 ## Hedef
-Vion AI'yi "chatbot"tan "AI calisani + otomasyon platformu" seviyesine cikarmak.
+AmeritAI'yi "chatbot"tan "AI calisani + otomasyon platformu" seviyesine cikarmak.
 
 ## Kuzey Yildizi Metrikleri
 - Sohbetten lead'e donusum orani

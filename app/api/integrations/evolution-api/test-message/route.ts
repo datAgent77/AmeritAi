@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         apiKey,
         instanceName: config.instanceName,
         to,
-        text: text || "Merhaba, bu Vion Evolution API test mesajıdır.",
+        text: text || "Merhaba, bu AmeritAI Evolution API test mesajıdır.",
     })
     const providerMessageId = payload?.key?.id || payload?.messageId || payload?.id || null
     const attempt = await recordOmniDeliveryAttempt(adminDb, {
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         source: "api/integrations/evolution-api/test-message",
         status: "success",
         destination: to,
-        payloadText: text || "Merhaba, bu Vion Evolution API test mesajıdır.",
+        payloadText: text || "Merhaba, bu AmeritAI Evolution API test mesajıdır.",
         providerMessageId,
         providerTargetId: config.instanceName,
         metadata: {

@@ -83,8 +83,8 @@ export function FeaturesGrid() {
                 >
                     <p className="text-muted-foreground text-sm font-light max-w-2xl mx-auto">
                         {language === 'tr' 
-                            ? 'Ve daha fazlası... Vion, işletmenizin ihtiyaçlarına göre özelleştirilebilir onlarca özellik sunar. Tüm özellikleri keşfetmek için modüller sayfasını ziyaret edin.'
-                            : 'And much more... Vion offers dozens of customizable features tailored to your business needs. Visit the modules page to explore all features.'}
+                            ? 'Ve daha fazlası... AmeritAI, işletmenizin ihtiyaçlarına göre özelleştirilebilir onlarca özellik sunar. Tüm özellikleri keşfetmek için modüller sayfasını ziyaret edin.'
+                            : 'And much more... AmeritAI offers dozens of customizable features tailored to your business needs. Visit the modules page to explore all features.'}
                     </p>
                 </motion.div>
             </div>

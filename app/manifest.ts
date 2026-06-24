@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: "Vion AI",
-        short_name: "Vion",
+        name: "AmeritAI",
+        short_name: "AmeritAI",
         description: "AI-powered sales and support chatbot for businesses.",
         start_url: "/",
         display: "standalone",

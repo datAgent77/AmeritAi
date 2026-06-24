@@ -135,16 +135,16 @@ export function generateICalContent(data: ICalEventData): string {
 
     const organizer = companyEmail
         ? `ORGANIZER;CN=${escapeICalText(companyName)}:MAILTO:${companyEmail}`
-        : `ORGANIZER;CN=${escapeICalText(companyName)}:MAILTO:noreply@getvion.com`
+        : `ORGANIZER;CN=${escapeICalText(companyName)}:MAILTO:noreply@ameritai.com`
 
     return [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Vion AI//Appointment//EN",
+        "PRODID:-//AmeritAI//Appointment//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:REQUEST",
         "BEGIN:VEVENT",
-        `UID:appointment-${appointmentId}@getvion.com`,
+        `UID:appointment-${appointmentId}@ameritai.com`,
         `DTSTAMP:${dtstamp}`,
         `DTSTART:${dtStart}`,
         `DTEND:${dtEnd}`,

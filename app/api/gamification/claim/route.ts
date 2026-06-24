@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
         const chatbotSnap = await adminDb.collection("chatbots").doc(chatbotId).get()
         const chatbotData = chatbotSnap.data() || {}
-        const businessName = chatbotData.businessName || chatbotData.name || "Vion AI"
+        const businessName = chatbotData.businessName || chatbotData.name || "AmeritAI"
         const prize = spinData.prizeWon || "-"
         const couponCode = spinData.couponCode || null
         const safeBusinessName = escapeHtml(String(businessName))
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
               <div style="font-family:monospace;font-size:26px;font-weight:800;letter-spacing:3px;color:#6d28d9;">${safeCouponCode}</div>
             </div>` : `
             <div style="margin:18px 0;padding:18px;border-radius:12px;background:#f9fafb;color:#374151;">Ödülünüz işletme ekibi tarafından e-posta adresiniz üzerinden takip edilecektir.</div>`}
-            <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#9ca3af;">Bu e-posta Vion AI gamification modülü üzerinden otomatik gönderilmiştir.</p>
+            <p style="margin:18px 0 0;font-size:12px;line-height:1.6;color:#9ca3af;">Bu e-posta AmeritAI gamification modülü üzerinden otomatik gönderilmiştir.</p>
           </td>
         </tr>
       </table>
@@ -143,8 +143,8 @@ export async function POST(req: Request) {
 </body>
 </html>`
         const emailText = couponCode
-            ? `${businessName} - Ödülünüz hazır\n\nKazanılan ödül: ${prize}\nKupon kodunuz: ${couponCode}\n\nVion AI`
-            : `${businessName} - Ödülünüz hazır\n\nKazanılan ödül: ${prize}\nÖdülünüz işletme ekibi tarafından e-posta adresiniz üzerinden takip edilecektir.\n\nVion AI`
+            ? `${businessName} - Ödülünüz hazır\n\nKazanılan ödül: ${prize}\nKupon kodunuz: ${couponCode}\n\nAmeritAI`
+            : `${businessName} - Ödülünüz hazır\n\nKazanılan ödül: ${prize}\nÖdülünüz işletme ekibi tarafından e-posta adresiniz üzerinden takip edilecektir.\n\nAmeritAI`
 
         const emailSent = await sendTransactionalEmail({
             to: email,

@@ -111,7 +111,7 @@ export function PublicHeader({ transparent = false }: PublicHeaderProps) {
     const resources = [
         { title: { en: "Blog", tr: "Blog" }, href: "/blog", desc: { en: "Industry insights and news", tr: "Sektörel haberler ve içgörüler" } },
         { title: { en: "Help Center (FAQ)", tr: "Yardım Merkezi (SSS)" }, href: "/resources/faq", desc: { en: "Common questions", tr: "Sıkça sorulan sorular" } },
-        { title: { en: "Partner Program", tr: "Partner Programı" }, href: "/partner", desc: { en: "Earn commissions by reselling Vion", tr: "Vion'u satarak komisyon kazanın" } }
+        { title: { en: "Partner Program", tr: "Partner Programı" }, href: "/partner", desc: { en: "Earn commissions by reselling AmeritAI", tr: "AmeritAI'u satarak komisyon kazanın" } }
     ]
     // ----------------------
 

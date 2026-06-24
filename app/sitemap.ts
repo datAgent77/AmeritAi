@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { SEED_BLOG_POSTS } from '@/lib/seed-cms-data'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://www.getvion.com'
+    const baseUrl = 'https://www.ameritai.com'
 
     // Core pages — highest priority
     const coreRoutes = ['', '/pricing', '/products', '/solutions', '/industries', '/contact', '/why'].map((route) => ({

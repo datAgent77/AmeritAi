@@ -54,8 +54,8 @@ ${message}
         const emailSent = await sendTransactionalEmail({
             to: getContactInboxEmail(),
             replyTo: normalizedEmail,
-            fromName: 'Vion İletişim Formu',
-            subject: `[Vion] ${subjectLabels[subject] || 'İletişim'} - ${name}`,
+            fromName: 'AmeritAI İletişim Formu',
+            subject: `[AmeritAI] ${subjectLabels[subject] || 'İletişim'} - ${name}`,
             text: emailContent
         })
 

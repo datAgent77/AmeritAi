@@ -61,8 +61,8 @@ export default function ModulesPage() {
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                         {language === 'tr'
-                            ? 'Vion platformunun sunduğu tüm yapay zeka modüllerini keşfedin.'
-                            : 'Explore all AI modules offered by the Vion platform.'}
+                            ? 'AmeritAI platformunun sunduğu tüm yapay zeka modüllerini keşfedin.'
+                            : 'Explore all AI modules offered by the AmeritAI platform.'}
                     </p>
                 </div>
             </section>

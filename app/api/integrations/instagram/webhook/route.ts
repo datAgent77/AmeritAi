@@ -110,11 +110,11 @@ export async function POST(req: Request) {
         const accessToken = igConfig.accessToken;
         const pageId = igConfig.pageId;
 
-        const sendIgText = (recipientId: string, bodyText: string) =>
+        const sendIgText = (recipientId: string, bodyText: string | undefined) =>
             fetch(`https://graph.facebook.com/v18.0/${pageId}/messages`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ recipient: { id: recipientId }, message: { text: bodyText }, messaging_type: "RESPONSE" }),
+                body: JSON.stringify({ recipient: { id: recipientId }, message: { text: bodyText ?? "" }, messaging_type: "RESPONSE" }),
             });
 
         // Session management

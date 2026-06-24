@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SEED_BLOG_POSTS } from "@/lib/seed-cms-data";
 
-const baseUrl = "https://www.getvion.com";
+const baseUrl = "https://www.ameritai.com";
 const BLOG_IMAGE_FALLBACK = "/blog/customer-service-ai.jpg";
 
 function resolveBlogImage(image: string | undefined) {
@@ -16,8 +16,8 @@ export async function generateMetadata(
 
     if (!post) {
         return {
-            title: "Blog | Vion AI",
-            description: "Insights and updates from Vion AI.",
+            title: "Blog | AmeritAI",
+            description: "Insights and updates from AmeritAI.",
             alternates: {
                 canonical: `${baseUrl}/blog/${params.slug}`
             }
@@ -35,7 +35,7 @@ export async function generateMetadata(
             title: post.title.en,
             description: post.excerpt.en,
             url: `${baseUrl}/blog/${post.slug}`,
-            siteName: "Vion AI",
+            siteName: "AmeritAI",
             images: [
                 {
                     url: `${baseUrl}${resolveBlogImage(post.image)}`,

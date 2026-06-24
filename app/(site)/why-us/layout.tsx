@@ -1,16 +1,16 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Why Vion AI? — 10 Reasons to Choose Us",
-  description: "Easy setup, industry-specific AI, multi-language support, real-time analytics, and more. See why businesses choose Vion AI over competitors.",
-  keywords: ["why Vion AI", "AI chatbot comparison", "best AI chatbot", "neden Vion", "chatbot karşılaştırma"],
+  title: "Why AmeritAI? — 10 Reasons to Choose Us",
+  description: "Easy setup, industry-specific AI, multi-language support, real-time analytics, and more. See why businesses choose AmeritAI over competitors.",
+  keywords: ["why AmeritAI", "AI chatbot comparison", "best AI chatbot", "neden AmeritAI", "chatbot karşılaştırma"],
   alternates: {
-    canonical: "https://www.getvion.com/why-us",
+    canonical: "https://www.ameritai.com/why-us",
   },
   openGraph: {
-    title: "Why Vion AI?",
+    title: "Why AmeritAI?",
     description: "Easy setup, industry-specific AI, real-time analytics, and multi-language support.",
-    url: "https://www.getvion.com/why-us",
+    url: "https://www.ameritai.com/why-us",
   },
 };
 

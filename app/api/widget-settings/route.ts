@@ -349,7 +349,7 @@ export async function GET(req: Request) {
                 if (userData?.isActive === false) {
                     return NextResponse.json({
                         isEnabled: false,
-                        companyName: userData?.companyName || "Vion AI",
+                        companyName: userData?.companyName || "AmeritAI",
                         hideVionBranding: false,
                         theme: "classic"
                     }, {
@@ -697,7 +697,7 @@ export async function GET(req: Request) {
 
             const defaultSettings = {
                 isEnabled: true,
-                companyName: "Vion AI",
+                companyName: "AmeritAI",
                 welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
                 brandColor: "#000000",
                 brandLogo: "", // Ensure this is a valid path if possible, or empty
@@ -865,7 +865,7 @@ export async function GET(req: Request) {
             // Return defaults on error instead of 500
             return NextResponse.json({
                 isEnabled: true,
-                companyName: "Vion AI",
+                companyName: "AmeritAI",
                 welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
                 brandColor: "#000000",
                 hideVionBranding: false,
@@ -950,7 +950,7 @@ export async function GET(req: Request) {
         // Return defaults on catastrophic error
         return NextResponse.json({
             isEnabled: true,
-            companyName: "Vion AI",
+            companyName: "AmeritAI",
             welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
             brandColor: "#000000",
             suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
