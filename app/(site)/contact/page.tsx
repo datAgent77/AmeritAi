@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from "lucide-react"
+import { Mail, Send, Loader2, CheckCircle2 } from "lucide-react"
 import { PublicHeader } from "@/components/public-header"
 import { PublicFooter } from "@/components/public-footer"
 import { useLanguage } from "@/context/LanguageContext"
@@ -222,31 +222,6 @@ export default function ContactPage() {
                                             <a href="mailto:info@ameritai.com" className="text-muted-foreground hover:text-foreground transition-colors">
                                                 info@ameritai.com
                                             </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center flex-shrink-0 border border-border">
-                                            <Phone className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'Telefon' : 'Phone'}</h3>
-                                            <a href="tel:+905443357784" className="text-muted-foreground hover:text-foreground transition-colors">
-                                                0 544 335 77 84
-                                            </a>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-card flex items-center justify-center flex-shrink-0 border border-border">
-                                            <MapPin className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold mb-1 text-foreground">{language === 'tr' ? 'Adres' : 'Address'}</h3>
-                                            <p className="text-muted-foreground">
-                                                Caferağa Mh. Şifa Sk. No:19<br />
-                                                Kadıköy / İstanbul / Turkey
-                                            </p>
                                         </div>
                                     </div>
                                 </div>
