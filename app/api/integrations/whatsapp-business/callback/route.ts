@@ -79,7 +79,7 @@ export async function GET(req: Request) {
 
         const expiresAt = typeof expiresIn === "number" ? new Date(Date.now() + expiresIn * 1000).toISOString() : null
         const currentConfig = ((await adminDb.collection("omni_channel_configs").doc(chatbotId).get()).data() || {}) as Record<string, any>
-        const discovery = await discoverWhatsAppBusinesses(accessToken)
+        const discovery = await discoverWhatsAppBusinesses(accessToken, { appId: appConfig.appId, appSecret: appConfig.appSecret })
         const firstBusiness = discovery.businesses.find((business) => business.phoneNumbers.length > 0) || discovery.businesses[0] || null
         const firstPhone = firstBusiness?.phoneNumbers[0] || null
         const preflight = await runWhatsAppBizPreflight(accessToken, chatbotId, adminDb)

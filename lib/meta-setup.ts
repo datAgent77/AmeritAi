@@ -567,22 +567,64 @@ async function fetchWhatsAppPhoneNumbers(accessToken: string, businessAccountId:
     }
 }
 
-export async function discoverWhatsAppBusinesses(accessToken: string) {
+/**
+ * Read the WABA IDs granted directly in the Facebook Login for Business consent
+ * (including Meta-provided test WABAs) from the token's granular_scopes. These
+ * frequently do NOT surface under me/businesses → owned_whatsapp_business_accounts,
+ * so this is the reliable source for Business Login grants.
+ */
+async function fetchGrantedWabaIds(
+    accessToken: string,
+    appConfig?: { appId?: string; appSecret?: string }
+): Promise<string[]> {
+    if (!appConfig?.appId || !appConfig?.appSecret) return []
     try {
+        const url = new URL(`https://graph.facebook.com/${META_API_VERSION}/debug_token`)
+        url.searchParams.set("input_token", accessToken)
+        url.searchParams.set("access_token", `${appConfig.appId}|${appConfig.appSecret}`)
+        const response = await fetch(url, { cache: "no-store" })
+        const payload = await response.json().catch(() => null)
+        const scopes = payload?.data?.granular_scopes
+        if (!Array.isArray(scopes)) return []
+        const ids = new Set<string>()
+        for (const scope of scopes) {
+            if (scope?.scope === "whatsapp_business_management" || scope?.scope === "whatsapp_business_messaging") {
+                for (const target of Array.isArray(scope?.target_ids) ? scope.target_ids : []) {
+                    const id = String(target || "").trim()
+                    if (id) ids.add(id)
+                }
+            }
+        }
+        return Array.from(ids)
+    } catch {
+        return []
+    }
+}
+
+export async function discoverWhatsAppBusinesses(
+    accessToken: string,
+    appConfig?: { appId?: string; appSecret?: string }
+) {
+    try {
+        const seen = new Set<string>()
+        const results: MetaWhatsAppDiscoveryBusiness[] = []
+
+        // 1) Classic path: businesses the user owns/manages, with their WABAs.
         const businessesPayload = await graphFetch(
             "me/businesses",
             accessToken,
-            "id,name,owned_whatsapp_business_accounts{id,name}"
+            "id,name,owned_whatsapp_business_accounts{id,name},client_whatsapp_business_accounts{id,name}"
         )
-
         const rawBusinesses = Array.isArray(businessesPayload?.data) ? businessesPayload.data : []
-        const results: MetaWhatsAppDiscoveryBusiness[] = []
-
         for (const business of rawBusinesses) {
-            const owned = Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []
-            for (const waba of owned) {
+            const wabas = [
+                ...(Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []),
+                ...(Array.isArray(business?.client_whatsapp_business_accounts) ? business.client_whatsapp_business_accounts : []),
+            ]
+            for (const waba of wabas) {
                 const id = String(waba?.id || "").trim()
-                if (!id) continue
+                if (!id || seen.has(id)) continue
+                seen.add(id)
                 const phoneNumbers = await fetchWhatsAppPhoneNumbers(accessToken, id)
                 results.push({
                     id,
@@ -590,6 +632,23 @@ export async function discoverWhatsAppBusinesses(accessToken: string) {
                     phoneNumbers,
                 })
             }
+        }
+
+        // 2) Business Login grants: WABA IDs (incl. test WABAs) selected in the
+        //    consent that aren't returned by me/businesses. Fetch each directly.
+        const grantedIds = await fetchGrantedWabaIds(accessToken, appConfig)
+        for (const id of grantedIds) {
+            if (seen.has(id)) continue
+            seen.add(id)
+            let name = `WABA ${id}`
+            try {
+                const wabaInfo = await graphFetch(encodeURIComponent(id), accessToken, "id,name")
+                if (typeof wabaInfo?.name === "string" && wabaInfo.name.trim()) name = wabaInfo.name.trim()
+            } catch {
+                // name lookup is best-effort
+            }
+            const phoneNumbers = await fetchWhatsAppPhoneNumbers(accessToken, id)
+            results.push({ id, name, phoneNumbers })
         }
 
         return { businesses: sanitizeWhatsAppBusinesses(results), error: null as string | null }
