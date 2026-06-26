@@ -208,15 +208,11 @@ export function OmniSidebar() {
             <SidebarHeader className="!h-16 !p-0 border-b border-white/10 bg-[#111111]">
                 <div className="flex h-full items-center justify-between px-4 group-data-[collapsible=icon]:justify-center">
                     <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden">
-                        <Image
-                            src="/vion-logo-icon-white.png"
+                        <img
+                            src="/ameritai-logo-white.svg"
                             alt="AmeritAI"
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 object-contain"
-                            priority
+                            className="h-6 w-auto object-contain"
                         />
-                        <span className="font-bold text-lg tracking-tight leading-none text-white">AmeritAI</span>
                         <Badge className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-white/5">
                             {t("omni.brand.badge")}
                         </Badge>

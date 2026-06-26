@@ -344,16 +344,12 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
             <Sidebar collapsible="icon" className="!top-0 !h-screen border-r-0 bg-[#000000] text-white z-40" variant="sidebar">
                 <SidebarHeader className="!h-16 !p-0 flex items-center justify-center border-b border-white/10 bg-[#000000]">
                     {/* Expanded state: logo left-aligned */}
-                    <div className="flex items-center gap-2 h-full px-4 w-full group-data-[collapsible=icon]:hidden">
-                        <Image
-                            src="/vion-logo-icon-white.png"
+                    <div className="flex items-center h-full px-4 w-full group-data-[collapsible=icon]:hidden">
+                        <img
+                            src="/ameritai-logo-white.svg"
                             alt="AmeritAI"
-                            width={28}
-                            height={28}
-                            className="h-7 w-7 object-contain"
-                            priority
+                            className="h-7 w-auto object-contain"
                         />
-                        <span className="font-bold text-xl tracking-tight leading-none text-white">AmeritAI</span>
                     </div>
                     {/* Collapsed state: icon centered */}
                     <div className="hidden items-center justify-center h-full w-full group-data-[collapsible=icon]:flex">

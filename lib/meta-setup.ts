@@ -585,7 +585,6 @@ async function fetchGrantedWabaIds(
         const response = await fetch(url, { cache: "no-store" })
         const payload = await response.json().catch(() => null)
         const scopes = payload?.data?.granular_scopes
-        console.log("[WA discovery] debug_token granular_scopes:", JSON.stringify(scopes))
         if (!Array.isArray(scopes)) return []
         const ids = new Set<string>()
         for (const scope of scopes) {
@@ -596,10 +595,8 @@ async function fetchGrantedWabaIds(
                 }
             }
         }
-        console.log("[WA discovery] granted WABA ids from debug_token:", Array.from(ids))
         return Array.from(ids)
-    } catch (err) {
-        console.warn("[WA discovery] debug_token failed:", err instanceof Error ? err.message : String(err))
+    } catch {
         return []
     }
 }
@@ -609,7 +606,6 @@ export async function discoverWhatsAppBusinesses(
     appConfig?: { appId?: string; appSecret?: string }
 ) {
     try {
-        console.log("[WA discovery] v3 start, appConfig present:", Boolean(appConfig?.appId && appConfig?.appSecret))
         const seen = new Set<string>()
         const results: MetaWhatsAppDiscoveryBusiness[] = []
 
@@ -623,7 +619,6 @@ export async function discoverWhatsAppBusinesses(
                 "id,name,owned_whatsapp_business_accounts{id,name}"
             )
             const rawBusinesses = Array.isArray(businessesPayload?.data) ? businessesPayload.data : []
-            console.log("[WA discovery] me/businesses count:", rawBusinesses.length, "names:", rawBusinesses.map((b: any) => b?.name))
             for (const business of rawBusinesses) {
                 const wabas = Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []
                 for (const waba of wabas) {
@@ -638,14 +633,13 @@ export async function discoverWhatsAppBusinesses(
                     })
                 }
             }
-        } catch (bizErr) {
-            console.warn("[WA discovery] me/businesses failed (continuing with debug_token):", bizErr instanceof Error ? bizErr.message : String(bizErr))
+        } catch {
+            // me/businesses can fail (e.g. missing permission); continue with debug_token path.
         }
 
         // 2) Business Login grants: WABA IDs (incl. test WABAs) selected in the
         //    consent that aren't returned by me/businesses. Fetch each directly.
         const grantedIds = await fetchGrantedWabaIds(accessToken, appConfig)
-        console.log("[WA discovery] grantedIds in main:", grantedIds, "count:", grantedIds.length, "seen:", Array.from(seen))
         for (const id of grantedIds) {
             if (seen.has(id)) continue
             seen.add(id)
@@ -660,10 +654,8 @@ export async function discoverWhatsAppBusinesses(
             results.push({ id, name, phoneNumbers })
         }
 
-        console.log("[WA discovery] final WABA results:", results.map((r) => ({ id: r.id, phones: r.phoneNumbers.length })))
         return { businesses: sanitizeWhatsAppBusinesses(results), error: null as string | null }
     } catch (error) {
-        console.warn("[WA discovery] error:", error instanceof Error ? error.message : String(error))
         return {
             businesses: [] as MetaWhatsAppDiscoveryBusiness[],
             error: normalizeDiscoveryError(error, "WhatsApp hesaplari kesfedilemedi."),

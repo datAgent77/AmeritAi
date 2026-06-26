@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface VionLogoProps {
@@ -7,24 +6,13 @@ interface VionLogoProps {
 }
 
 export function VionLogo({ className, variant = "white" }: VionLogoProps) {
+    // variant "black" -> navy logo (for light backgrounds)
+    // variant "white" -> white logo (for dark backgrounds)
     return (
-        <div className={cn("relative flex items-center gap-2", className)}>
-            <Image
-                src={variant === "black" ? "/vion-logo-icon-dark.png" : "/vion-logo-icon-white.png"}
-                alt="AmeritAI"
-                width={28}
-                height={28}
-                className="h-7 w-7 object-contain"
-                priority
-            />
-            <span
-                className={cn(
-                    "font-bold text-xl tracking-tight leading-none",
-                    variant === "black" ? "text-zinc-900" : "text-white"
-                )}
-            >
-                AmeritAI
-            </span>
-        </div>
+        <img
+            src={variant === "black" ? "/ameritai-logo.svg" : "/ameritai-logo-white.svg"}
+            alt="AmeritAI"
+            className={cn("h-7 w-auto object-contain", className)}
+        />
     )
 }
