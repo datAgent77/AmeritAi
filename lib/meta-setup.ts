@@ -585,6 +585,7 @@ async function fetchGrantedWabaIds(
         const response = await fetch(url, { cache: "no-store" })
         const payload = await response.json().catch(() => null)
         const scopes = payload?.data?.granular_scopes
+        console.log("[WA discovery] debug_token granular_scopes:", JSON.stringify(scopes))
         if (!Array.isArray(scopes)) return []
         const ids = new Set<string>()
         for (const scope of scopes) {
@@ -595,8 +596,10 @@ async function fetchGrantedWabaIds(
                 }
             }
         }
+        console.log("[WA discovery] granted WABA ids from debug_token:", Array.from(ids))
         return Array.from(ids)
-    } catch {
+    } catch (err) {
+        console.warn("[WA discovery] debug_token failed:", err instanceof Error ? err.message : String(err))
         return []
     }
 }
@@ -616,6 +619,7 @@ export async function discoverWhatsAppBusinesses(
             "id,name,owned_whatsapp_business_accounts{id,name},client_whatsapp_business_accounts{id,name}"
         )
         const rawBusinesses = Array.isArray(businessesPayload?.data) ? businessesPayload.data : []
+        console.log("[WA discovery] me/businesses count:", rawBusinesses.length, "names:", rawBusinesses.map((b: any) => b?.name))
         for (const business of rawBusinesses) {
             const wabas = [
                 ...(Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []),
@@ -651,8 +655,10 @@ export async function discoverWhatsAppBusinesses(
             results.push({ id, name, phoneNumbers })
         }
 
+        console.log("[WA discovery] final WABA results:", results.map((r) => ({ id: r.id, phones: r.phoneNumbers.length })))
         return { businesses: sanitizeWhatsAppBusinesses(results), error: null as string | null }
     } catch (error) {
+        console.warn("[WA discovery] error:", error instanceof Error ? error.message : String(error))
         return {
             businesses: [] as MetaWhatsAppDiscoveryBusiness[],
             error: normalizeDiscoveryError(error, "WhatsApp hesaplari kesfedilemedi."),
