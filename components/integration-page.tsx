@@ -45,13 +45,30 @@ interface Integration {
 }
 
 const HIDDEN_INTEGRATION_IDS = new Set([
+    // legacy / not part of the US launch surface
     "slack",
     "salesforce",
     "mailchimp",
     "sendgrid",
     "constant-contact",
     "meta-channels",
+    // hidden for US launch (keep only the curated set below)
+    "iframe",
+    "direct-link",
+    "mobile-app-api",
+    "ticket-webhook",
+    "telegram",
+    "evolution-api",
+    "zoho-crm",
+    // Turkey-only e-commerce platforms
+    "ikas",
+    "ideasoft",
+    "ticimax",
+    "tsoft",
+    "woocommerce",
 ])
+// Visible after filtering: website, wordpress, messenger, instagram,
+// whatsapp, google-calendar, outlook-calendar, shopify
 
 export default function IntegrationPage({ userId }: IntegrationPageProps) {
     const { toast } = useToast()
