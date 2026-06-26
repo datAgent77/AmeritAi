@@ -609,6 +609,7 @@ export async function discoverWhatsAppBusinesses(
     appConfig?: { appId?: string; appSecret?: string }
 ) {
     try {
+        console.log("[WA discovery] v3 start, appConfig present:", Boolean(appConfig?.appId && appConfig?.appSecret))
         const seen = new Set<string>()
         const results: MetaWhatsAppDiscoveryBusiness[] = []
 
@@ -644,6 +645,7 @@ export async function discoverWhatsAppBusinesses(
         // 2) Business Login grants: WABA IDs (incl. test WABAs) selected in the
         //    consent that aren't returned by me/businesses. Fetch each directly.
         const grantedIds = await fetchGrantedWabaIds(accessToken, appConfig)
+        console.log("[WA discovery] grantedIds in main:", grantedIds, "count:", grantedIds.length, "seen:", Array.from(seen))
         for (const id of grantedIds) {
             if (seen.has(id)) continue
             seen.add(id)
