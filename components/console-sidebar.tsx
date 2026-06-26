@@ -282,14 +282,8 @@ export function ConsoleSidebar({ targetUserId, targetEmail, sectorId, daysLeft, 
                 {
                     title: t('subscription') || "Abonelik",
                     icon: CreditCard,
-                    href: "/console/settings/customer-admin",
-                    active: isActive("/console/settings/customer-admin")
-                },
-                {
-                    title: t('aiConfiguration') || "AI Yapılandırması",
-                    icon: Settings,
-                    href: "/console/settings/ai",
-                    active: isActive("/console/settings/ai")
+                    href: "/console/settings/subscription",
+                    active: isActive("/console/settings/subscription")
                 },
                 {
                     title: t('notificationSettings') || "Bildirimler",

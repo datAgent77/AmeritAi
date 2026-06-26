@@ -613,29 +613,32 @@ export async function discoverWhatsAppBusinesses(
         const results: MetaWhatsAppDiscoveryBusiness[] = []
 
         // 1) Classic path: businesses the user owns/manages, with their WABAs.
-        const businessesPayload = await graphFetch(
-            "me/businesses",
-            accessToken,
-            "id,name,owned_whatsapp_business_accounts{id,name},client_whatsapp_business_accounts{id,name}"
-        )
-        const rawBusinesses = Array.isArray(businessesPayload?.data) ? businessesPayload.data : []
-        console.log("[WA discovery] me/businesses count:", rawBusinesses.length, "names:", rawBusinesses.map((b: any) => b?.name))
-        for (const business of rawBusinesses) {
-            const wabas = [
-                ...(Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []),
-                ...(Array.isArray(business?.client_whatsapp_business_accounts) ? business.client_whatsapp_business_accounts : []),
-            ]
-            for (const waba of wabas) {
-                const id = String(waba?.id || "").trim()
-                if (!id || seen.has(id)) continue
-                seen.add(id)
-                const phoneNumbers = await fetchWhatsAppPhoneNumbers(accessToken, id)
-                results.push({
-                    id,
-                    name: typeof waba?.name === "string" && waba.name.trim() ? waba.name.trim() : `WABA ${id}`,
-                    phoneNumbers,
-                })
+        //    Wrapped in its own try/catch so a failure here (e.g. missing
+        //    permission) does NOT block the debug_token path below.
+        try {
+            const businessesPayload = await graphFetch(
+                "me/businesses",
+                accessToken,
+                "id,name,owned_whatsapp_business_accounts{id,name}"
+            )
+            const rawBusinesses = Array.isArray(businessesPayload?.data) ? businessesPayload.data : []
+            console.log("[WA discovery] me/businesses count:", rawBusinesses.length, "names:", rawBusinesses.map((b: any) => b?.name))
+            for (const business of rawBusinesses) {
+                const wabas = Array.isArray(business?.owned_whatsapp_business_accounts) ? business.owned_whatsapp_business_accounts : []
+                for (const waba of wabas) {
+                    const id = String(waba?.id || "").trim()
+                    if (!id || seen.has(id)) continue
+                    seen.add(id)
+                    const phoneNumbers = await fetchWhatsAppPhoneNumbers(accessToken, id)
+                    results.push({
+                        id,
+                        name: typeof waba?.name === "string" && waba.name.trim() ? waba.name.trim() : `WABA ${id}`,
+                        phoneNumbers,
+                    })
+                }
             }
+        } catch (bizErr) {
+            console.warn("[WA discovery] me/businesses failed (continuing with debug_token):", bizErr instanceof Error ? bizErr.message : String(bizErr))
         }
 
         // 2) Business Login grants: WABA IDs (incl. test WABAs) selected in the
