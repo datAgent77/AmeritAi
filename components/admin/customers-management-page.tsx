@@ -314,6 +314,8 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
     const [conversionPartnerName, setConversionPartnerName] = useState("")
     const [conversionPartnerLevel, setConversionPartnerLevel] = useState<PartnerLevel>("partner")
     const [isConvertingPartner, setIsConvertingPartner] = useState(false)
+    const [endUserConvertTarget, setEndUserConvertTarget] = useState<AgencyData | null>(null)
+    const [isConvertingEndUser, setIsConvertingEndUser] = useState(false)
 
     const getPartnerName = useCallback((agency: AgencyData) => {
         return agency.partnerName || agency.agencyName || agency.email || agency.id
@@ -667,6 +669,46 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
             })
         } finally {
             setIsConvertingPartner(false)
+        }
+    }
+
+    const handleConvertPartnerToEndUser = async () => {
+        if (!endUserConvertTarget) return
+        setIsConvertingEndUser(true)
+        try {
+            const token = await auth.currentUser?.getIdToken()
+            const response = await fetch("/api/admin/update-user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    targetUserId: endUserConvertTarget.id,
+                    role: "TENANT_ADMIN",
+                })
+            })
+
+            const data = await response.json().catch(() => ({}))
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to convert partner to end user")
+            }
+
+            toast({
+                title: "Success",
+                description: t('partnerConvertedToEndUser') || "Partner converted to an end user."
+            })
+
+            setEndUserConvertTarget(null)
+            await Promise.all([fetchDashboardData(), fetchAgencies()])
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error?.message || t('partnerConvertToEndUserFailed') || "Failed to convert partner to end user.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsConvertingEndUser(false)
         }
     }
 
@@ -1050,6 +1092,15 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                         >
                                                             <CreditCard className="h-4 w-4 mr-1" />
                                                             {t('manageSubscription') || "Abonelik"}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setEndUserConvertTarget(agency)}
+                                                            title={t('convertToEndUser') || "Convert to End User"}
+                                                        >
+                                                            <Users className="h-4 w-4 mr-1" />
+                                                            {t('convertToEndUser') || "Convert to End User"}
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
@@ -1567,6 +1618,37 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            )}
+
+            {isAgenciesSection && (
+                <AlertDialog open={!!endUserConvertTarget} onOpenChange={(open) => !open && !isConvertingEndUser && setEndUserConvertTarget(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t('convertToEndUser') || "Convert to End User"}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t('convertToEndUserConfirm') || "This partner account will be converted to an end user (tenant). It will move from Partners to End Users and lose partner access. If this partner has assigned customers, reassign them to another partner first."}
+                                {endUserConvertTarget?.email ? (
+                                    <span className="mt-2 block font-medium text-foreground">{endUserConvertTarget.email}</span>
+                                ) : null}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isConvertingEndUser}>
+                                {t('cancel') || "İptal"}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    handleConvertPartnerToEndUser()
+                                }}
+                                disabled={isConvertingEndUser}
+                            >
+                                {isConvertingEndUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {t('convertToEndUser') || "Convert to End User"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             )}
 
             {isEndUsersSection && (
