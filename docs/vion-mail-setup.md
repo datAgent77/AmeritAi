@@ -2,7 +2,7 @@
 
 ## Outbound mail
 
-Transactional emails are sent through SMTP with the verified `getvion.com`
+Transactional emails are sent through SMTP with the verified `ameritai.com`
 sender domain.
 
 Required production environment variables:
@@ -13,20 +13,20 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=resend
 SMTP_PASS=<resend-api-key>
-SMTP_FROM_EMAIL=no-reply@getvion.com
+SMTP_FROM_EMAIL=no-reply@ameritai.com
 SMTP_FROM_NAME=AmeritAI
-VION_ADMIN_EMAIL=info@getvion.com
-VION_CONTACT_EMAIL=info@getvion.com
-NEXT_PUBLIC_APP_URL=https://www.getvion.com
+VION_ADMIN_EMAIL=info@ameritai.com
+VION_CONTACT_EMAIL=info@ameritai.com
+NEXT_PUBLIC_APP_URL=https://www.ameritai.com
 ```
 
 Current DNS records for sending:
 
 ```txt
-resend._domainkey.getvion.com TXT <Resend DKIM public key>
-send.getvion.com MX 10 feedback-smtp.us-east-1.amazonses.com
-send.getvion.com TXT v=spf1 include:amazonses.com ~all
-_dmarc.getvion.com TXT v=DMARC1; p=none;
+resend._domainkey.ameritai.com TXT <Resend DKIM public key>
+send.ameritai.com MX 10 feedback-smtp.us-east-1.amazonses.com
+send.ameritai.com TXT v=spf1 include:amazonses.com ~all
+_dmarc.ameritai.com TXT v=DMARC1; p=none;
 ```
 
 Verify locally:
@@ -45,7 +45,7 @@ npm run check:mail -- --dns --strict
 ## Inbound mail
 
 Resend domain verification only enables sending. Receiving mail at
-`info@getvion.com` requires a root `getvion.com` MX record from an inbox or
+`info@ameritai.com` requires a root `ameritai.com` MX record from an inbox or
 forwarding provider.
 
 Recommended options:
@@ -56,4 +56,4 @@ Recommended options:
 - Cloudflare Email Routing only if DNS is moved to Cloudflare nameservers.
 
 Until root MX is configured, contact form notifications can still be sent to
-`info@getvion.com`, but that inbox will not receive mail.
+`info@ameritai.com`, but that inbox will not receive mail.

@@ -69,7 +69,7 @@ async function hasDnsRecord(resolver) {
 }
 
 async function main() {
-  const appUrl = requireValue("NEXT_PUBLIC_APP_URL", "set to https://www.getvion.com in production")
+  const appUrl = requireValue("NEXT_PUBLIC_APP_URL", "set to https://www.ameritai.com in production")
   if (appUrl) {
     addResult(/^https?:\/\//i.test(appUrl), "NEXT_PUBLIC_APP_URL format", "must start with http:// or https://")
   }
@@ -101,59 +101,59 @@ async function main() {
 
   requireValue("SMTP_PASS", "set to the Resend API key")
 
-  const fromEmail = requireValue("SMTP_FROM_EMAIL", "expected no-reply@getvion.com")
+  const fromEmail = requireValue("SMTP_FROM_EMAIL", "expected no-reply@ameritai.com")
   if (fromEmail) {
     addResult(emailPattern.test(fromEmail), "SMTP_FROM_EMAIL format", "must be a valid email address")
-    addResult(fromEmail.endsWith("@getvion.com"), "SMTP_FROM_EMAIL domain", "must use getvion.com")
+    addResult(fromEmail.endsWith("@ameritai.com"), "SMTP_FROM_EMAIL domain", "must use ameritai.com")
   }
 
   requireValue("SMTP_FROM_NAME", "expected Vion AI")
 
   for (const key of ["VION_ADMIN_EMAIL", "VION_CONTACT_EMAIL"]) {
-    const value = requireValue(key, "expected info@getvion.com")
+    const value = requireValue(key, "expected info@ameritai.com")
     if (value) {
       addResult(emailPattern.test(value), `${key} format`, "must be a valid email address")
-      addResult(value.endsWith("@getvion.com"), `${key} domain`, "must use getvion.com")
+      addResult(value.endsWith("@ameritai.com"), `${key} domain`, "must use ameritai.com")
     }
   }
 
   if (checkDns) {
     addResult(
       await hasDnsRecord(async () => {
-        const records = await dns.resolveTxt("resend._domainkey.getvion.com")
+        const records = await dns.resolveTxt("resend._domainkey.ameritai.com")
         return records.filter((parts) => parts.join("").startsWith("p="))
       }),
-      "DNS DKIM resend._domainkey.getvion.com",
+      "DNS DKIM resend._domainkey.ameritai.com",
       "add the DKIM TXT record shown by Resend"
     )
     addResult(
       await hasDnsRecord(async () => {
-        const records = await dns.resolveMx("send.getvion.com")
+        const records = await dns.resolveMx("send.ameritai.com")
         return records.filter((record) => record.exchange === "feedback-smtp.us-east-1.amazonses.com")
       }),
-      "DNS MX send.getvion.com",
+      "DNS MX send.ameritai.com",
       "add MX send -> feedback-smtp.us-east-1.amazonses.com priority 10"
     )
     addResult(
       await hasDnsRecord(async () => {
-        const records = await dns.resolveTxt("send.getvion.com")
+        const records = await dns.resolveTxt("send.ameritai.com")
         return records.filter((parts) => parts.join("").startsWith("v=spf1 include:amazonses.com"))
       }),
-      "DNS SPF send.getvion.com",
+      "DNS SPF send.ameritai.com",
       "add TXT send -> v=spf1 include:amazonses.com ~all"
     )
     addResult(
       await hasDnsRecord(async () => {
-        const records = await dns.resolveTxt("_dmarc.getvion.com")
+        const records = await dns.resolveTxt("_dmarc.ameritai.com")
         return records.filter((parts) => parts.join("").startsWith("v=DMARC1"))
       }),
-      "DNS DMARC _dmarc.getvion.com",
+      "DNS DMARC _dmarc.ameritai.com",
       "add TXT: v=DMARC1; p=none;"
     )
     addResult(
-      await hasDnsRecord(() => dns.resolveMx("getvion.com")),
-      "DNS inbound MX getvion.com",
-      "required only for receiving info@getvion.com mail / forwarding"
+      await hasDnsRecord(() => dns.resolveMx("ameritai.com")),
+      "DNS inbound MX ameritai.com",
+      "required only for receiving info@ameritai.com mail / forwarding"
     )
   }
 

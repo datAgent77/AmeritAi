@@ -45,7 +45,7 @@ function renderTranscriptContent(content: string, language: string) {
     return { text, badges }
 }
 
-function getVionChannelLabel(language: string, channel: string) {
+function getChannelDisplayLabel(language: string, channel: string) {
     const labels = {
         tr: {
             all: "Tüm kanallar",
@@ -276,7 +276,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
     }
 
     const getChannelName = (session: ChatSession) => {
-        return getVionChannelLabel(language, resolveSessionChannel(session))
+        return getChannelDisplayLabel(language, resolveSessionChannel(session))
     }
 
     const getSessionDisplayName = useCallback((session: ChatSession) => {
@@ -718,7 +718,7 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                         <div className="min-w-0 space-y-1">
                             <div className="text-sm font-semibold text-foreground">{t("omni.inbox.sidebar.sessions")}</div>
                             <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? getVionChannelLabel(language, "all") : getVionChannelLabel(language, channelFilter)}
+                                {filteredSessions.length} {language === "tr" ? "oturum" : "sessions"} • {channelFilter === "all" ? getChannelDisplayLabel(language, "all") : getChannelDisplayLabel(language, channelFilter)}
                             </div>
                         </div>
                         <Badge variant="outline" className="h-6 rounded-full bg-white/80 px-2.5 text-[11px]">
@@ -756,11 +756,11 @@ export function UnifiedInbox({ userId, showOmniFeatures = true }: UnifiedInboxPr
                                 onChange={(e) => setChannelFilter(e.target.value)}
                             >
                                 <option value="all">{t("omni.inbox.filter.allChannels")}</option>
-                                <option value="web">{getVionChannelLabel(language, "web")}</option>
-                                <option value="telegram">{getVionChannelLabel(language, "telegram")}</option>
-                                <option value="whatsapp">{getVionChannelLabel(language, "whatsapp")}</option>
-                                <option value="instagram">{getVionChannelLabel(language, "instagram")}</option>
-                                <option value="voice">{getVionChannelLabel(language, "voice")}</option>
+                                <option value="web">{getChannelDisplayLabel(language, "web")}</option>
+                                <option value="telegram">{getChannelDisplayLabel(language, "telegram")}</option>
+                                <option value="whatsapp">{getChannelDisplayLabel(language, "whatsapp")}</option>
+                                <option value="instagram">{getChannelDisplayLabel(language, "instagram")}</option>
+                                <option value="voice">{getChannelDisplayLabel(language, "voice")}</option>
                             </select>
                         ) : (
                             <div className="flex h-9 min-w-0 items-center rounded-md border border-input bg-white px-3 py-2 text-sm text-muted-foreground">

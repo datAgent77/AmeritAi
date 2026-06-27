@@ -199,7 +199,7 @@ Verify all buttons are clickable, links work correctly, and content displays pro
 
 2. **Doğru URL'yi Kullandığınızdan Emin Olun**
    - Local: `http://localhost:3000`
-   - Production: `https://www.getvion.com`
+   - Production: `https://www.ameritai.com`
 
 3. **TestSprite Loglarını Kontrol Edin**
    - Composer'da test sonuçlarını inceleyin

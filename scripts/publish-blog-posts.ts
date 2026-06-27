@@ -102,7 +102,7 @@ async function main() {
   );
   console.log("Live URLs:");
   for (const post of targetPosts) {
-    console.log(`- https://www.getvion.com/blog/${post.slug}`);
+    console.log(`- https://www.ameritai.com/blog/${post.slug}`);
   }
 }
 

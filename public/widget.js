@@ -38,8 +38,8 @@
   const scriptSrc = currentScript.src;
   let baseUrl = new URL(scriptSrc).origin; // Dynamically get base URL
   // Canonicalize to avoid CORS preflight redirects
-  if (baseUrl === 'https://getvion.com') {
-    baseUrl = 'https://www.getvion.com';
+  if (baseUrl === 'https://ameritai.com') {
+    baseUrl = 'https://www.ameritai.com';
   }
 
   const attrColor = currentScript.getAttribute('data-color');

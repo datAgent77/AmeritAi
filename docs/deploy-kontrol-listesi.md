@@ -107,7 +107,7 @@ Vercel → Project → Settings → Environment Variables. `NEXT_PUBLIC_*` deği
 ## 4. Domain
 
 1. Vercel → Project → Settings → Domains → `ameritai.com` ekle.
-2. DNS'i Vercel'in verdiği kayıtlara yönlendir (A / CNAME). `getvion.com`'dan geçişi unutma.
+2. DNS'i Vercel'in verdiği kayıtlara yönlendir (A / CNAME). `ameritai.com`'dan geçişi unutma.
 3. SSL otomatik gelir.
 4. `NEXT_PUBLIC_APP_URL`'i `https://ameritai.com` olarak güncelle (gerekirse redeploy).
 

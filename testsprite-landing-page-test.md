@@ -2,7 +2,7 @@
 
 ## Test URL
 - **Local**: http://localhost:3000
-- **Production**: https://www.getvion.com
+- **Production**: https://www.ameritai.com
 
 ## Test Senaryoları
 
