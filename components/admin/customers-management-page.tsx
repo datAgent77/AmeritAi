@@ -1041,15 +1041,26 @@ export function CustomersManagementPage({ section }: CustomersManagementPageProp
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/admin/agency/${agency.id}`)}
-                                                        title={t('manage') || "Yönet"}
-                                                    >
-                                                        <Settings className="h-4 w-4 mr-1" />
-                                                        {t('manage') || "Yönet"}
-                                                    </Button>
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => router.push(`/admin/tenant/${agency.id}/settings/customer-admin`)}
+                                                            title={t('manageSubscription') || "Abonelik"}
+                                                        >
+                                                            <CreditCard className="h-4 w-4 mr-1" />
+                                                            {t('manageSubscription') || "Abonelik"}
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => router.push(`/admin/agency/${agency.id}`)}
+                                                            title={t('manage') || "Yönet"}
+                                                        >
+                                                            <Settings className="h-4 w-4 mr-1" />
+                                                            {t('manage') || "Yönet"}
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
