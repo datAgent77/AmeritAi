@@ -370,6 +370,10 @@ export const translations = {
         actionCheckPartnerTitle: "Check the partner channel",
         actionCheckPartnerDesc: "{count} active partner managers listed.",
         userConvertedToPartner: "User converted to a partner account.",
+        convertToEndUser: "Convert to End User",
+        convertToEndUserConfirm: "This partner account will be converted to an end user (tenant). It will move from Partners to End Users and lose partner access. If this partner has assigned customers, reassign them to another partner first.",
+        partnerConvertedToEndUser: "Partner converted to an end user.",
+        partnerConvertToEndUserFailed: "Failed to convert partner to end user.",
         userConvertToPartnerFailed: "Could not convert user to a partner account.",
         // Content Management (Phase 2 i18n)
         cmsBlogPosts: "Blog Posts",
@@ -4091,6 +4095,10 @@ export const translations = {
         actionCheckPartnerTitle: "Partner kanalını kontrol et",
         actionCheckPartnerDesc: "{count} aktif partner yöneticisi listeleniyor.",
         userConvertedToPartner: "Kullanıcı partner hesabına dönüştürüldü.",
+        convertToEndUser: "End User'a Dönüştür",
+        convertToEndUserConfirm: "Bu partner hesabı bir end user (kiracı) hesabına dönüştürülecek. Partners listesinden çıkıp End Users listesine geçecek ve partner erişimini kaybedecek. Bu partner'a atanmış müşteriler varsa, önce onları başka bir partner'a taşıyın.",
+        partnerConvertedToEndUser: "Partner, end user hesabına dönüştürüldü.",
+        partnerConvertToEndUserFailed: "Partner, end user hesabına dönüştürülemedi.",
         userConvertToPartnerFailed: "Kullanıcı partner hesabına dönüştürülemedi.",
         // Content Management (Phase 2 i18n)
         cmsBlogPosts: "Blog Yazıları",
@@ -5502,6 +5510,10 @@ export const translations = {
     es: {
         // Omni: EN base (fallback) overlaid with Spanish where available.
         ...omniGeneratedTranslationsEn,
+        convertToEndUser: "Convertir en usuario final",
+        convertToEndUserConfirm: "Esta cuenta de socio se convertirá en un usuario final (inquilino). Pasará de Socios a Usuarios finales y perderá el acceso de socio. Si este socio tiene clientes asignados, reasígnalos primero a otro socio.",
+        partnerConvertedToEndUser: "Socio convertido en usuario final.",
+        partnerConvertToEndUserFailed: "No se pudo convertir el socio en usuario final.",
         ...omniTranslationsEn,
         ...omniTranslationsEs,
         // Widget-facing strings (end-user) — Phase: Spanish for US (CA/FL)
