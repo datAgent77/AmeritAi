@@ -64,7 +64,7 @@ function readPreviewDraftSettings(previewDraftKey: string | null | undefined): P
 const DEFAULT_SETTINGS: ChatbotSettings = {
     companyName: "AmeritAI",
     welcomeTitle: "",
-    welcomeMessage: "Merhaba! Size nasıl yardımcı olabilirim?",
+    welcomeMessage: "Hi! How can I help you today?",
     brandColor: "#000000",
     brandLogo: "",
     hideVionBranding: false,
@@ -73,7 +73,7 @@ const DEFAULT_SETTINGS: ChatbotSettings = {
     headerLogoHeight: 32,
     headerBackgroundColor: "",
     headerTextColor: "",
-    suggestedQuestions: ["Fiyatlarınız nedir?", "Nasıl başlarım?", "İletişim"],
+    suggestedQuestions: ["What are your prices?", "How do I get started?", "Contact"],
     enableLeadCollection: false,
     enableSurveyManager: false,
     enableHumanHandoff: false,
